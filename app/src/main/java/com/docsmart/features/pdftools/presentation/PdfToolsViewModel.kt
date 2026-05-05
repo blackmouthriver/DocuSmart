@@ -1,0 +1,249 @@
+package com.docsmart.features.pdftools.presentation
+
+import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import androidx.core.content.FileProvider
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.docsmart.core.ads.AdManager
+import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.SplitPdfUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.io.File
+import java.io.FileInputStream
+import javax.inject.Inject
+
+enum class PdfTool {
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE
+}
+
+data class PdfToolsUiState(
+    val selectedTool: PdfTool = PdfTool.NONE,
+    val selectedPdfs: List<Uri> = emptyList(),
+    val isProcessing: Boolean = false,
+    val result: PdfToolResult? = null,
+    val errorMessage: String? = null,
+    val savedToDownloads: Boolean = false,
+    val outputFileName: String = "",
+    val splitFromPage: Int = 1,
+    val splitToPage: Int = 2,
+    val compressionQuality: Int = 60,
+    val rotationDegrees: Int = 90
+)
+
+@HiltViewModel
+class PdfToolsViewModel @Inject constructor(
+    private val mergePdf: MergePdfUseCase,
+    private val splitPdf: SplitPdfUseCase,
+    private val compressPdf: CompressPdfUseCase,
+    private val rotatePdf: RotatePdfUseCase,
+    val adManager: AdManager
+) : ViewModel() {
+
+    companion object {
+        private const val TAG = "PdfToolsViewModel"
+    }
+
+    private val _uiState = MutableStateFlow(PdfToolsUiState())
+    val uiState: StateFlow<PdfToolsUiState> = _uiState.asStateFlow()
+
+    fun selectTool(tool: PdfTool) {
+        _uiState.update { PdfToolsUiState(selectedTool = tool) }
+    }
+
+    fun onPdfsSelected(uris: List<Uri>) {
+        _uiState.update { state ->
+            state.copy(
+                selectedPdfs = uris,
+                result = null,
+                errorMessage = null,
+                savedToDownloads = false,
+                outputFileName = ""
+            )
+        }
+    }
+
+    fun addPdfsToMerge(uris: List<Uri>) {
+        _uiState.update { state ->
+            val current = state.selectedPdfs.toMutableList()
+            uris.forEach { uri ->
+                if (!current.contains(uri)) current.add(uri)
+            }
+            state.copy(
+                selectedPdfs = current,
+                result = null,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun removePdf(uri: Uri) {
+        _uiState.update { state ->
+            state.copy(
+                selectedPdfs = state.selectedPdfs.filter { it != uri }
+            )
+        }
+    }
+
+    fun onOutputFileNameChange(name: String) {
+        _uiState.update { it.copy(outputFileName = name) }
+    }
+
+    fun onSplitFromPageChange(page: Int) {
+        _uiState.update { it.copy(splitFromPage = page.coerceAtLeast(1)) }
+    }
+
+    fun onSplitToPageChange(page: Int) {
+        _uiState.update { it.copy(splitToPage = page.coerceAtLeast(1)) }
+    }
+
+    fun onCompressionQualityChange(quality: Int) {
+        _uiState.update { it.copy(compressionQuality = quality.coerceIn(20, 100)) }
+    }
+
+    fun onRotationDegreesChange(degrees: Int) {
+        _uiState.update { it.copy(rotationDegrees = degrees) }
+    }
+
+    fun execute() {
+        val state = _uiState.value
+        if (state.selectedPdfs.isEmpty()) return
+
+        val customName = state.outputFileName.trim().ifBlank { null }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isProcessing = true,
+                    result = null,
+                    errorMessage = null
+                )
+            }
+
+            val result = when (state.selectedTool) {
+                PdfTool.MERGE -> mergePdf(
+                    pdfUris = state.selectedPdfs,
+                    outputFileName = customName
+                )
+                PdfTool.SPLIT -> splitPdf(
+                    pdfUri = state.selectedPdfs.first(),
+                    fromPage = state.splitFromPage,
+                    toPage = state.splitToPage,
+                    outputFileName = customName
+                )
+                PdfTool.COMPRESS -> compressPdf(
+                    pdfUri = state.selectedPdfs.first(),
+                    quality = state.compressionQuality,
+                    outputFileName = customName
+                )
+                PdfTool.ROTATE -> rotatePdf(
+                    pdfUri = state.selectedPdfs.first(),
+                    degrees = state.rotationDegrees,
+                    outputFileName = customName
+                )
+                PdfTool.NONE -> return@launch
+            }
+
+            Timber.d("Resultado: $result")
+
+            _uiState.update {
+                it.copy(
+                    isProcessing = false,
+                    result = result,
+                    errorMessage = if (result is PdfToolResult.Error)
+                        result.message
+                    else null
+                )
+            }
+        }
+    }
+
+    fun shareResult(context: Context) {
+        val result = _uiState.value.result as? PdfToolResult.Success ?: return
+        try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                result.outputFile
+            )
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(
+                Intent.createChooser(intent, "Compartir PDF")
+            )
+        } catch (e: Exception) {
+            Timber.e("Error compartiendo: ${e.message}")
+            _uiState.update {
+                it.copy(errorMessage = "No se pudo compartir el archivo")
+            }
+        }
+    }
+
+    fun saveToDownloads(context: Context) {
+        val result = _uiState.value.result as? PdfToolResult.Success ?: return
+        viewModelScope.launch {
+            val saved = copyToDownloads(context, result.outputFile)
+            _uiState.update { state ->
+                if (saved) state.copy(savedToDownloads = true)
+                else state.copy(errorMessage = "No se pudo guardar en Descargas")
+            }
+        }
+    }
+
+    private fun copyToDownloads(context: Context, file: File): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, file.name)
+                    put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+                val resolver = context.contentResolver
+                val uri = resolver.insert(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
+                ) ?: return false
+                resolver.openOutputStream(uri)?.use { output ->
+                    FileInputStream(file).use { input -> input.copyTo(output) }
+                }
+                values.clear()
+                values.put(MediaStore.Downloads.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                true
+            } else {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOWNLOADS
+                )
+                file.copyTo(File(downloadsDir, file.name), overwrite = true)
+                true
+            }
+        } catch (e: Exception) {
+            Timber.e("Error guardando en Descargas: ${e.message}")
+            false
+        }
+    }
+
+    fun reset() {
+        _uiState.update { PdfToolsUiState() }
+    }
+
+    fun dismissError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+}

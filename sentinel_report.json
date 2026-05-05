@@ -1,0 +1,267 @@
+{
+  "generated_at": "2026-05-03T13:16:58.891105",
+  "project": "C:\\Users\\HP\\AndroidStudioProjects\\docsmart",
+  "stats": {
+    "total_files": 40,
+    "total_issues": 24,
+    "critical": 0,
+    "high": 2,
+    "medium": 10,
+    "low": 5,
+    "security_issues": 5,
+    "bug_issues": 5,
+    "performance_issues": 7,
+    "duplicate_issues": 0
+  },
+  "summary": {
+    "project_summary": "El análisis del proyecto móvil indica un buen estado general de seguridad y calidad, con ausencia de issues críticos y solo dos clasificados como altos. Se han detectado varios problemas de severidad media y baja, principalmente relacionados con rendimiento y prácticas de calidad del código. A pesar de los hallazgos, las soluciones sugeridas son factibles y no requieren cambios estructurales significativos, lo que sugiere que con un enfoque estratégico, el proyecto puede mejorar rápidamente en estos aspectos.",
+    "scores": {
+      "security": 75,
+      "quality": 70,
+      "performance": 65,
+      "overall": 70
+    },
+    "top_risks": [
+      "Permisos excesivos en el AndroidManifest",
+      "Manejo inseguro de archivos en ConverterViewModel",
+      "Uso ineficiente de lógica de carga de anuncios"
+    ],
+    "quick_wins": [
+      "Eliminar permiso WRITE_EXTERNAL_STORAGE del AndroidManifest",
+      "Implementar bloques try-catch en operaciones de archivos en ConverterViewModel",
+      "Optimizar ProGuard en app\\build.gradle.kts para mejorar el rendimiento"
+    ],
+    "roadmap": [
+      {
+        "priority": "inmediato",
+        "action": "Eliminar permisos innecesarios del AndroidManifest y asegurar el manejo de excepciones en operaciónes de archivo"
+      },
+      {
+        "priority": "corto plazo",
+        "action": "Revisar y optimizar la lógica de carga de anuncios y mejorar el manejo de excepciones para evitar exposición de información sensible"
+      },
+      {
+        "priority": "largo plazo",
+        "action": "Establecer un proceso de revisión continuo para mantener la calidad del código y minimizar la duplicación y el código inconsistente"
+      }
+    ]
+  },
+  "issues": [
+    {
+      "file": "app\\build.gradle.kts",
+      "line": null,
+      "category": "performance",
+      "severity": "info",
+      "title": "ProGuard rules optimization",
+      "description": "Optimize ProGuard configuration for better performance and reduced file size.",
+      "fix": "Review and update ProGuard rules to remove unnecessary keep rules and enable R8 for better optimization."
+    },
+    {
+      "file": "app\\src\\main\\AndroidManifest.xml",
+      "line": 10,
+      "category": "security",
+      "severity": "high",
+      "title": "Excessive permissions",
+      "description": "WRITE_EXTERNAL_STORAGE permission is not recommended for APIs 29 and above due to Scoped Storage.",
+      "fix": "Remove WRITE_EXTERNAL_STORAGE permission and use MediaStore APIs or Storage Access Framework for accessing shared storage."
+    },
+    {
+      "file": "app\\src\\main\\AndroidManifest.xml",
+      "line": 5,
+      "category": "security",
+      "severity": "info",
+      "title": "Redundant permission",
+      "description": "READ_EXTERNAL_STORAGE permission is limited to API 28, consider removing it if minimum SDK is above.",
+      "fix": "Remove the READ_EXTERNAL_STORAGE permission if it's not necessary for API levels above 28."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\ads\\AdConstants.kt",
+      "line": 7,
+      "category": "bug",
+      "severity": "medium",
+      "title": "Duplicate Ad Banner IDs",
+      "description": "The same Ad Banner ID is used for different contexts, which might lead to misconfigured ad serving.",
+      "fix": "Assign unique Ad Banner IDs for different contexts to conform with AdMob guidelines."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\ads\\AdManager.kt",
+      "line": 60,
+      "category": "performance",
+      "severity": "medium",
+      "title": "Inefficient Ad loading logic",
+      "description": "Ad loading is triggered immediately upon initialization, which can delay app startup.",
+      "fix": "Consider lazy loading ads or loading them on demand after the app finishes initializing other critical components."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\ads\\DocuSmartBannerAd.kt",
+      "line": 34,
+      "category": "bug",
+      "severity": "low",
+      "title": "Exception handling in AdView creation",
+      "description": "Exceptions during AdView creation are caught but not handled properly, which could hide underlying issues.",
+      "fix": "Improve exception handling by investigating and addressing root causes instead of general catch-all solutions."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\navegation\\DocuSmartNavGraph.kt",
+      "line": 30,
+      "category": "quality",
+      "severity": "medium",
+      "title": "Code duplication: URI permission handling",
+      "description": "The logic for handling URI permissions is duplicated in this file and can be refactored to use the centralized PermissionHandler.",
+      "fix": "Replace the URI permission handling logic in onOpenFile with a call to PermissionHandler.takePersistableReadPermission."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\navegation\\DocuSmartNavGraph.kt",
+      "line": null,
+      "category": "performance",
+      "severity": "low",
+      "title": "Timber logging in production environments",
+      "description": "Timber is used extensively for logging, which might affect performance if not properly managed in production environments.",
+      "fix": "Ensure that Timber logs are appropriately disabled or minimized in production builds."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\permission\\PermissionHandler.kt",
+      "line": 41,
+      "category": "security",
+      "severity": "medium",
+      "title": "Exception handling exposes sensitive information",
+      "description": "The catch blocks log detailed exception messages which might contain sensitive information.",
+      "fix": "Ensure that log messages do not expose sensitive information, and consider redacting details not necessary for debugging."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\premium\\PremiumManager.kt",
+      "line": 46,
+      "category": "security",
+      "severity": "low",
+      "title": "Incomplete exception logging",
+      "description": "Exception logging lacks detailed information for certain critical actions in simulatePurchase.",
+      "fix": "Ensure all exception captures log relevant details for debugging, but avoid exposure in sensitive contexts."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\ui\\components\\buttons\\DocuSmartButtons.kt",
+      "line": null,
+      "category": "quality",
+      "severity": "low",
+      "title": "Inconsistent styling",
+      "description": "The button styling (e.g., elevation) should maintain consistency across different button types for a uniform user experience.",
+      "fix": "Review and standardize the styling properties across all button components, unless a deviation is justified by design needs."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\ui\\components\\cards\\DocuSmartCards.kt",
+      "line": 27,
+      "category": "quality",
+      "severity": "low",
+      "title": "Inconsistent padding",
+      "description": "Different paddings are used in DocuSmartQuickAccessCard modifying alignment and space distribution.",
+      "fix": "Normalize the padding across the Card components, unless otherwise specified by design requirements."
+    },
+    {
+      "file": "app/src/main/java/com/docsmart/core/ui/components/DocuSmartBottomBar.kt",
+      "line": 16,
+      "category": "quality",
+      "severity": "info",
+      "title": "Unselected icon duplicate",
+      "description": "The selectedIcon and unselectedIcon are the same for each BottomNavItem, resulting in unnecessary duplication.",
+      "fix": "Consider using a single icon property if selected and unselected icons do not change."
+    },
+    {
+      "file": "app/src/main/java/com/docsmart/core/ui/components/DocuSmartDocumentItem.kt",
+      "line": 60,
+      "category": "bug",
+      "severity": "medium",
+      "title": "Truncated Code",
+      "description": "The code provided seems to be truncated and incomplete, potentially leading to unexpected behavior.",
+      "fix": "Ensure that the function and logic are completely implemented and check for code truncation."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\core\\ui\\theme\\Theme.kt",
+      "line": 41,
+      "category": "bug",
+      "severity": "medium",
+      "title": "Unreachable code in SideEffect lambda",
+      "description": "The lambda passed to SideEffect potentially returns early if window is null, making isAppearanceLightStatusBars and isAppearanceLightNavigationBars modifications unreachable.",
+      "fix": "Ensure that the lambda's logic accounts for cases where the window might not be accessible, or remove unreachable code."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\DocuSmartApplication.kt",
+      "line": 32,
+      "category": "quality",
+      "severity": "info",
+      "title": "Hardcoded test device IDs in production",
+      "description": "The testDeviceIds are hardcoded, and although they're switched off in production via BuildConfig, it's best to externalize such configurations.",
+      "fix": "Consider moving test device configurations to a more flexible setup, such as a configuration file or environment-specific builds."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\features\\converter\\domain\\usecase\\ConvertImageToPdfUseCase.kt",
+      "line": 40,
+      "category": "performance",
+      "severity": "medium",
+      "title": "Bitmap recycling inefficiency",
+      "description": "Bitmaps are recycled after each page creation individually. This could be optimized by pooling or batch processing to improve memory usage.",
+      "fix": "Consider implementing a bitmap pool or reuse strategy to minimize bitmap recycling overheads and memory churn during conversion."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\features\\converter\\domain\\usecase\\ConvertImageToPdfUseCase.kt",
+      "line": 87,
+      "category": "quality",
+      "severity": "info",
+      "title": "Potential NullPointerException",
+      "description": "The method openInputStream can return null, which may lead to a NullPointerException if not handled properly.",
+      "fix": "Add null checks or more robust error handling around openInputStream to avoid potential crashes."
+    },
+    {
+      "file": "app/src/main/java/com/docsmart/features/converter/presentation/components/ConversionSuccess.kt",
+      "line": 30,
+      "category": "bug",
+      "severity": "medium",
+      "title": "FileProvider usage without authority",
+      "description": "FileProvider is used to share files with other applications, but no FileProvider authority is set. This may cause file sharing to fail.",
+      "fix": "Ensure that FileProvider has a valid authority defined in the manifest and that it's used when creating URIs."
+    },
+    {
+      "file": "app/src/main/java/com/docsmart/features/converter/presentation/ConverterScreen.kt",
+      "line": 13,
+      "category": "quality",
+      "severity": "info",
+      "title": "Casting LocalContext to Activity",
+      "description": "Casting LocalContext to Activity without checking may lead to a ClassCastException if the context is not an Activity.",
+      "fix": "Check if the context is an instance of Activity before casting to avoid potential ClassCastException."
+    },
+    {
+      "file": "app/src/main/java/com/docsmart/features/converter/presentation/ConverterViewModel.kt",
+      "line": 14,
+      "category": "security",
+      "severity": "high",
+      "title": "Insecure file handling",
+      "description": "Files are being handled insecurely, without checking for FileNotFoundException or SecurityException, potentially leading to crashes or permission issues.",
+      "fix": "Implement try-catch blocks around file operations to handle possible exceptions like FileNotFoundException and SecurityException."
+    },
+    {
+      "file": "app\\src\\main\\java\\com\\docsmart\\features\\home\\presentation\\HomeScreen.kt",
+      "line": 21,
+      "category": "performance",
+      "severity": "info",
+      "title": "Logging in Composable functions",
+      "description": "Using extensive Timber logging in Composable functions may introduce unnecessary performance overhead during recompositions.",
+      "fix": "Consider reducing logging level or removing excessive logs within Composable functions to enhance performance."
+    },
+    {
+      "file": "app/src/main/java/com/docsmart/features/library/presentation/components/DocumentListSection.kt",
+      "line": 30,
+      "category": "performance",
+      "severity": "medium",
+      "title": "Inefficient loop over documents",
+      "description": "Using a forEach loop to create composable elements can be inefficient for larger lists as it creates all Composable instances at once instead of reusing them.",
+      "fix": "Use LazyColumn or LazyRow with the 'items' function instead of forEach to avoid creating all elements at once."
+    },
+    {
+      "file": "app/src/main/java/com/docsmart/features/library/presentation/components/FavoritesSection.kt",
+      "line": 46,
+      "category": "performance",
+      "severity": "medium",
+      "title": "Potential performance issue with flatClick modifiers",
+      "description": "The usage of clickable modifier directly on Card can lead to misaligned touch targets which may not follow the visual feedback.",
+      "fix": "Consider wrapping the clickable area with a Box or another composable to ensure touch target is aligned with visual feedback."
+    }
+  ]
+}
