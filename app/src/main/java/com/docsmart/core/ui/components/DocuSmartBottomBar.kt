@@ -1,5 +1,4 @@
-// core/ui/components/DocuSmartBottomBar.kt
-package com.docusmart.core.ui.components
+package com.docsmart.core.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*

@@ -40,14 +40,16 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
 
             val isRealUri = documentId.startsWith("content://") ||
                     documentId.startsWith("file://") ||
-                    documentId.startsWith("content%3A")
+                    documentId.startsWith("content%3A") ||
+                    documentId.startsWith("/")
 
             if (isRealUri) {
-                val uriString = if (documentId.startsWith("content%3A")) {
-                    Uri.decode(documentId)
-                } else {
-                    documentId
+                val uriString = when {
+                    documentId.startsWith("content%3A") -> Uri.decode(documentId)
+                    documentId.startsWith("/") -> "file://$documentId"
+                    else -> documentId
                 }
+
                 val uri = Uri.parse(uriString)
 
                 val mimeType: String = context.contentResolver.getType(uri)

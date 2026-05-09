@@ -7,8 +7,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,12 +25,18 @@ import timber.log.Timber
 fun HomeScreen(
     onOpenFile: (Uri) -> Unit = {},
     onConvert: () -> Unit = {},
+    onScan: () -> Unit = {},
     onDocumentClick: (String) -> Unit = {},
     onSeeAll: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     Timber.d("HomeScreen: iniciando composición")
+    val context = LocalContext.current
 
+// ── Recargar recientes al volver al Home ──────────────
+    LaunchedEffect(Unit) {
+        viewModel.loadRecentDocuments()
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val filePicker = rememberLauncherForActivityResult(
@@ -75,7 +83,7 @@ fun HomeScreen(
         }
         item {
             QuickAccessGrid(
-                onScanClick = { },
+                onScanClick = onScan,
                 onImageToPdfClick = onConvert,
                 onSafeBoxClick = { },
                 onStudyModeClick = { },

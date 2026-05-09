@@ -1,6 +1,5 @@
 package com.docsmart.features.pdftools.presentation
 
-
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -18,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
@@ -64,27 +64,16 @@ fun PdfToolsScreen(
             contentPadding = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-
-            // ── Header ────────────────────────────────
+            // ── Banner azul con logo ───────────────────
             item {
-                Column(
+                DocuSmartTopBanner(
+                    screenTitle = "Herramientas PDF",
+                    screenSubtitle = "Gestiona tus PDFs de forma rápida",
                     modifier = Modifier.padding(
                         horizontal = 20.dp,
                         vertical = 24.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "Herramientas PDF",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = "Gestiona tus PDFs de forma rápida",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                )
             }
 
             // ── Banner AdMob ──────────────────────────
@@ -108,7 +97,6 @@ fun PdfToolsScreen(
 
             // ── Herramienta activa ────────────────────
             if (uiState.selectedTool != PdfTool.NONE) {
-
                 item {
                     TextButton(
                         onClick = { viewModel.reset() },
@@ -143,9 +131,7 @@ fun PdfToolsScreen(
 
                 if (result !is PdfToolResult.Success) {
                     item {
-                        Box(
-                            modifier = Modifier.padding(horizontal = 20.dp)
-                        ) {
+                        Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                             when (uiState.selectedTool) {
                                 PdfTool.MERGE -> MergePdfScreen(
                                     selectedPdfs = uiState.selectedPdfs,
