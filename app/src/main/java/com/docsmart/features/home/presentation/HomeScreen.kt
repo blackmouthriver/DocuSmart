@@ -6,9 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -87,12 +85,16 @@ fun HomeScreen(
         }
         item {
             RecentDocuments(
-                documents = uiState.recentDocuments,
+                documents       = uiState.recentDocuments,
                 onDocumentClick = { doc -> onDocumentClick(doc.id) },
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
-                onSeeAllClick = onSeeAll,
-                onOpenFileClick = openFileLauncher, // ← conectado al mismo filePicker
-                modifier = Modifier.padding(horizontal = 20.dp)
+                onSeeAllClick   = onSeeAll,
+                onOpenFileClick = openFileLauncher,
+                // Convertir: navega al convertidor con el archivo seleccionado
+                onConvertClick  = { doc -> onConvert() },
+                // Eliminar: quita del historial en memoria
+                onDeleteClick   = { id -> viewModel.removeDocument(id) },
+                modifier        = Modifier.padding(horizontal = 20.dp)
             )
         }
     }

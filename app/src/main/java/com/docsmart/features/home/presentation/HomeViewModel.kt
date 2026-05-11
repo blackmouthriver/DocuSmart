@@ -64,4 +64,12 @@ class HomeViewModel @Inject constructor(
             )
         }
     }
+
+    fun removeDocument(documentId: String) {
+        _uiState.update { state ->
+            state.copy(
+                recentDocuments = state.recentDocuments.filter { it.id != documentId }
+            )
+        }
+    }
 }

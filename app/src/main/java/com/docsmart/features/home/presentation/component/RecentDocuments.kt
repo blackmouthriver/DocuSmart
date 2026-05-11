@@ -1,11 +1,15 @@
 package com.docsmart.features.home.presentation.component
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.docsmart.core.ui.components.DocuSmartDocumentItem
 import com.docsmart.core.ui.components.DocuSmartEmptyState
@@ -17,10 +21,13 @@ fun RecentDocuments(
     onDocumentClick: (DocumentUiModel) -> Unit,
     onFavoriteClick: (String) -> Unit,
     onSeeAllClick: () -> Unit,
-    // ── FUNC-02: callback para abrir archivo desde EmptyState ──
     onOpenFileClick: () -> Unit = {},
+    onConvertClick: ((DocumentUiModel) -> Unit)? = null,
+    onDeleteClick: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     Column(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -48,7 +55,7 @@ fun RecentDocuments(
                 title       = "Sin documentos recientes",
                 description = "Abre un archivo para verlo aquí",
                 actionLabel = "Abrir archivo",
-                onAction    = onOpenFileClick  // ← conectado
+                onAction    = onOpenFileClick
             )
         } else {
             Card(
@@ -60,13 +67,50 @@ fun RecentDocuments(
             ) {
                 documents.forEachIndexed { index, document ->
                     DocuSmartDocumentItem(
-                        document       = document,
-                        onClick        = { onDocumentClick(document) },
+                        document        = document,
+                        onClick         = { onDocumentClick(document) },
                         onFavoriteClick = { onFavoriteClick(document.id) },
-                        showDivider    = index < documents.size - 1
+                        showDivider     = index < documents.size - 1,
+                        // Acciones del menú contextual
+                        onOpenClick     = { onDocumentClick(document) },
+                        onConvertClick  = onConvertClick?.let { cb -> { cb(document) } },
+                        onShareClick    = { shareDocument(context, document) },
+                        onDeleteClick   = onDeleteClick?.let { cb -> { cb(document.id) } }
                     )
                 }
             }
+        }
+    }
+}
+
+// Función utilitaria para compartir
+private fun shareDocument(context: Context, document: DocumentUiModel) {
+    try {
+        val uri = Uri.parse(document.id)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "*/*"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, document.name)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
+    } catch (e: Exception) {
+        // Si el ID es una ruta de archivo local
+        try {
+            val file = java.io.File(document.id)
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                file
+            )
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "*/*"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
+        } catch (e2: Exception) {
+            e2.printStackTrace()
         }
     }
 }
