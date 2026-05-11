@@ -10,6 +10,7 @@ import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -20,6 +21,10 @@ import javax.inject.Inject
 class MergePdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    companion object {
+        private const val TAG = "MergePdfUseCase"
+    }
+
     suspend operator fun invoke(
         pdfUris: List<Uri>,
         outputFileName: String? = null
@@ -35,7 +40,11 @@ class MergePdfUseCase @Inject constructor(
             var pageIndex = 0
 
             pdfUris.forEach { uri ->
-                val file = copyUriToCache(uri) ?: return@forEach
+                val file = copyUriToCache(uri) ?: run {
+                    Timber.w("$TAG: no se pudo copiar URI al cache: $uri")
+                    return@forEach
+                }
+
                 val fileDescriptor = ParcelFileDescriptor.open(
                     file, ParcelFileDescriptor.MODE_READ_ONLY
                 )
@@ -43,9 +52,14 @@ class MergePdfUseCase @Inject constructor(
 
                 for (i in 0 until renderer.pageCount) {
                     val page = renderer.openPage(i)
+
+                    // ── CORRECCIÓN BUG-03: guardar dimensiones ANTES de cerrar la página ──
+                    val pageWidth  = page.width * 2
+                    val pageHeight = page.height * 2
+
                     val bitmap = Bitmap.createBitmap(
-                        page.width * 2,
-                        page.height * 2,
+                        pageWidth,
+                        pageHeight,
                         Bitmap.Config.ARGB_8888
                     )
                     bitmap.eraseColor(android.graphics.Color.WHITE)
@@ -53,11 +67,11 @@ class MergePdfUseCase @Inject constructor(
                         bitmap, null, null,
                         PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
                     )
-                    page.close()
+                    page.close() // cerrar DESPUÉS de renderizar y guardar dimensiones
 
                     val pageInfo = PdfDocument.PageInfo.Builder(
-                        page.width * 2,
-                        page.height * 2,
+                        pageWidth,
+                        pageHeight,
                         ++pageIndex
                     ).create()
 
@@ -71,16 +85,31 @@ class MergePdfUseCase @Inject constructor(
                 fileDescriptor.close()
             }
 
+            if (pageIndex == 0) {
+                mergedDocument.close()
+                return@withContext PdfToolResult.Error(
+                    "No se pudo leer ninguna página de los PDFs seleccionados."
+                )
+            }
+
             val outputFile = createOutputFile(outputFileName ?: "Merged")
             FileOutputStream(outputFile).use { mergedDocument.writeTo(it) }
             mergedDocument.close()
 
+            if (outputFile.length() == 0L) {
+                return@withContext PdfToolResult.Error(
+                    "Error al generar el PDF combinado."
+                )
+            }
+
+            Timber.d("$TAG: merge exitoso — $pageIndex páginas, ${outputFile.length() / 1024} KB")
+
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message = "PDFs unidos correctamente — ${pdfUris.size} archivos"
+                message    = "PDFs unidos correctamente — ${pdfUris.size} archivos, $pageIndex páginas"
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "$TAG: error al unir PDFs")
             PdfToolResult.Error(
                 "Error al unir PDFs: ${e.message ?: "Error desconocido"}",
                 e
@@ -102,7 +131,7 @@ class MergePdfUseCase @Inject constructor(
             } ?: return null
             file
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "$TAG: error copiando URI al cache")
             null
         }
     }

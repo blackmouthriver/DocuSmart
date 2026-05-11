@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
@@ -34,7 +36,6 @@ fun HomeBanner(
             )
             .padding(20.dp)
     ) {
-        // Círculo decorativo de fondo
         Box(
             modifier = Modifier
                 .size(140.dp)
@@ -57,33 +58,25 @@ fun HomeBanner(
         )
 
         Column {
-            // Saludo
             Text(
-                text = "DocuSmart",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(4.dp))
-
-            // Título principal
             Text(
-                text = "Tus documentos\nen un solo lugar",
+                text = stringResource(R.string.home_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(4.dp))
-
             Text(
-                text = "Abre, convierte y gestiona\ntus archivos fácilmente",
+                text = stringResource(R.string.home_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.75f)
             )
-
             Spacer(modifier = Modifier.height(20.dp))
-
-            // Botones de acción
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                // Botón primario
                 Button(
                     onClick = onOpenFileClick,
                     modifier = Modifier.weight(1f).height(44.dp),
@@ -101,12 +94,10 @@ fun HomeBanner(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Abrir",
+                        text = stringResource(R.string.home_open),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
-
-                // Botón secundario
                 OutlinedButton(
                     onClick = onConvertClick,
                     modifier = Modifier.weight(1f).height(44.dp),
@@ -127,7 +118,7 @@ fun HomeBanner(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Convertir",
+                        text = stringResource(R.string.home_convert),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

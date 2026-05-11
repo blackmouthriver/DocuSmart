@@ -12,16 +12,17 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(onSplashFinished: () -> Unit) {
-
     val scale = remember { Animatable(0.6f) }
     val alpha = remember { Animatable(0f) }
 
@@ -38,7 +39,6 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
             delay(800)
             onSplashFinished()
         } catch (e: Exception) {
-            // Si algo falla navega igual
             onSplashFinished()
         }
     }
@@ -60,6 +60,7 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
                 .scale(scale.value)
                 .alpha(alpha.value)
         ) {
+            // ── Logo ──────────────────────────────────
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -76,14 +77,18 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
                     color = Color.White
                 )
             }
+
+            // ── Nombre de la app ──────────────────────
             Text(
-                text = "DocuSmart",
+                text = stringResource(R.string.app_name),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
+
+            // ── Tagline ───────────────────────────────
             Text(
-                text = "Tus documentos inteligentes",
+                text = stringResource(R.string.splash_tagline),
                 fontSize = 14.sp,
                 color = Color.White.copy(alpha = 0.8f)
             )

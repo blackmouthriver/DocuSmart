@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,7 +26,7 @@ import com.docsmart.features.pdftools.presentation.components.OutputFileNameFiel
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
-
+import com.docsmart.R
 @Composable
 fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = hiltViewModel()
@@ -67,8 +68,8 @@ fun PdfToolsScreen(
             // ── Banner azul con logo ───────────────────
             item {
                 DocuSmartTopBanner(
-                    screenTitle = "Herramientas PDF",
-                    screenSubtitle = "Gestiona tus PDFs de forma rápida",
+                    screenTitle = stringResource(R.string.pdf_tools_title),
+                    screenSubtitle = stringResource(R.string.pdf_tools_subtitle),
                     modifier = Modifier.padding(
                         horizontal = 20.dp,
                         vertical = 24.dp

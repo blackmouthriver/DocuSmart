@@ -9,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.components.cards.DocuSmartQuickAccessCard
 import com.docsmart.core.ui.theme.*
 
@@ -31,25 +33,25 @@ fun QuickAccessGrid(
     val items = listOf(
         QuickAccessItem(
             icon = Icons.Rounded.DocumentScanner,
-            label = "Escanear",
+            label = stringResource(R.string.home_scan),
             color = InfoCyan,
             onClick = onScanClick
         ),
         QuickAccessItem(
             icon = Icons.Rounded.Image,
-            label = "Img→PDF",
+            label = stringResource(R.string.home_img_pdf),
             color = ColorPdf,
             onClick = onImageToPdfClick
         ),
         QuickAccessItem(
             icon = Icons.Rounded.Lock,
-            label = "Seguridad",
+            label = stringResource(R.string.home_security),
             color = PremiumGold,
             onClick = onSafeBoxClick
         ),
         QuickAccessItem(
             icon = Icons.Rounded.MenuBook,
-            label = "Estudio",
+            label = stringResource(R.string.home_study),
             color = SuccessGreen,
             onClick = onStudyModeClick
         )
@@ -57,7 +59,7 @@ fun QuickAccessGrid(
 
     Column(modifier = modifier) {
         Text(
-            text = "Accesos rápidos",
+            text = stringResource(R.string.home_quick_access),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface
         )

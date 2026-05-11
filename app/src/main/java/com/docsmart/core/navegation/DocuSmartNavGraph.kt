@@ -8,24 +8,27 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.theme.ThemeManager
 import com.docsmart.features.converter.presentation.ConverterScreen
 import com.docsmart.features.home.presentation.HomeScreen
 import com.docsmart.features.library.presentation.LibraryScreen
 import com.docsmart.features.pdftools.presentation.PdfToolsScreen
 import com.docsmart.features.premium.presentation.PremiumScreen
+import com.docsmart.features.scanner.presentation.ScanResultScreen
+import com.docsmart.features.scanner.presentation.ScannerScreen
 import com.docsmart.features.settings.presentation.SettingsScreen
 import com.docsmart.features.splash.presentation.SplashScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
-import com.docsmart.features.scanner.presentation.ScannerScreen
-import com.docsmart.features.scanner.presentation.ScanResultScreen
+import com.docsmart.features.security.presentation.SecurityScreen
+import com.docsmart.features.study.presentation.StudyScreen
 import timber.log.Timber
-import kotlin.collections.emptyList
 
 @Composable
 fun DocuSmartNavGraph(
     navController: NavHostController,
-    themeManager: ThemeManager
+    themeManager: ThemeManager,
+    languageManager: LanguageManager
 ) {
     NavHost(
         navController = navController,
@@ -60,8 +63,14 @@ fun DocuSmartNavGraph(
                 onConvert = {
                     navController.navigate(NavRoutes.Converter.route)
                 },
+                onSecurity = {
+                    navController.navigate(NavRoutes.Security.route)
+                             },
                 onDocumentClick = { documentId ->
                     navController.navigate(NavRoutes.Viewer.createRoute(documentId))
+                },
+                onStudy = {
+                    navController.navigate(NavRoutes.Study.route)
                 },
                 onSeeAll = {
                     navController.navigate(NavRoutes.Library.route)
@@ -73,36 +82,22 @@ fun DocuSmartNavGraph(
             val context = androidx.compose.ui.platform.LocalContext.current
             LibraryScreen(
                 onDocumentClick = { documentId ->
-                    // ── Encodear URI igual que en Home ────────────
-                    // documentId puede ser:
-                    // - content://media/external/file/123 (MediaStore)
-                    // - /data/user/0/.../files/converted/file.pdf (app)
                     val isUri = documentId.startsWith("content://") ||
                             documentId.startsWith("file://") ||
                             documentId.startsWith("/")
 
-                    if (isUri) {
-                        // ── Intentar persistir permiso si es content:// ──
-                        if (documentId.startsWith("content://")) {
-                            try {
-                                val uri = Uri.parse(documentId)
-                                context.contentResolver.takePersistableUriPermission(
-                                    uri,
-                                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                )
-                            } catch (e: Exception) {
-                                Timber.w("No se pudo persistir permiso biblioteca: ${e.message}")
-                            }
+                    if (isUri && documentId.startsWith("content://")) {
+                        try {
+                            val uri = Uri.parse(documentId)
+                            context.contentResolver.takePersistableUriPermission(
+                                uri,
+                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        } catch (e: Exception) {
+                            Timber.w("No se pudo persistir permiso: ${e.message}")
                         }
-                        navController.navigate(
-                            NavRoutes.Viewer.createRoute(documentId)
-                        )
-                    } else {
-                        // ── ID mock numérico ──────────────────────
-                        navController.navigate(
-                            NavRoutes.Viewer.createRoute(documentId)
-                        )
                     }
+                    navController.navigate(NavRoutes.Viewer.createRoute(documentId))
                 }
             )
         }
@@ -145,6 +140,7 @@ fun DocuSmartNavGraph(
         composable(NavRoutes.Settings.route) {
             SettingsScreen(
                 themeManager = themeManager,
+                languageManager = languageManager,
                 onPremiumClick = {
                     navController.navigate(NavRoutes.Premium.route)
                 }
@@ -157,19 +153,14 @@ fun DocuSmartNavGraph(
             )
         }
 
-        // ── Escáner ───────────────────────────────────────────
-        // ── Escáner ───────────────────────────────────────────
+        // ── Escáner ───────────────────────────────────
         composable(NavRoutes.Scanner.route) {
-            // Guardamos las URIs en el SavedStateHandle para
-            // pasarlas a ScanResult sin serialización compleja
             val scanResultEntry = remember {
                 navController.getBackStackEntry(NavRoutes.Scanner.route)
             }
-
             ScannerScreen(
                 onBack = { navController.popBackStack() },
                 onScanComplete = { uris ->
-                    // Guardar URIs en el estado del NavGraph
                     scanResultEntry.savedStateHandle["scanned_uris"] =
                         uris.map { it.toString() }
                     scanResultEntry.savedStateHandle["is_pdf"] =
@@ -179,9 +170,8 @@ fun DocuSmartNavGraph(
             )
         }
 
-// ── Resultado del escaneo ─────────────────────────────
+        // ── Resultado del escaneo ─────────────────────
         composable(NavRoutes.ScanResult.route) {
-            // Recuperar URIs del Scanner
             val scannerEntry = remember {
                 navController.getBackStackEntry(NavRoutes.Scanner.route)
             }
@@ -203,5 +193,18 @@ fun DocuSmartNavGraph(
             )
         }
 
+        // ── Seguridad ─────────────────────────────────────────
+        composable(NavRoutes.Security.route) {
+            SecurityScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ── Estudio ───────────────────────────────────────────
+        composable(NavRoutes.Study.route) {
+            StudyScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }

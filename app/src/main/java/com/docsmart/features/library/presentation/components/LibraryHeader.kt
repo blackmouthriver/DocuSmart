@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartSearchBar
 
 @Composable
@@ -21,12 +23,12 @@ fun LibraryHeader(
             .padding(horizontal = 20.dp)
     ) {
         Text(
-            text = "Biblioteca",
+            text = stringResource(R.string.library_title),
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "$totalDocuments archivos guardados",
+            text = "$totalDocuments ${stringResource(R.string.library_documents)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -35,7 +37,7 @@ fun LibraryHeader(
             query = searchQuery,
             onQueryChange = onQueryChange,
             onClear = onClear,
-            placeholder = "Buscar en biblioteca..."
+            placeholder = stringResource(R.string.library_search)
         )
     }
 }

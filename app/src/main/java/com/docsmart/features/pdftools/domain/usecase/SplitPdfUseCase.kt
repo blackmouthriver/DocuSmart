@@ -10,6 +10,7 @@ import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -20,6 +21,10 @@ import javax.inject.Inject
 class SplitPdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    companion object {
+        private const val TAG = "SplitPdfUseCase"
+    }
+
     suspend operator fun invoke(
         pdfUri: Uri,
         fromPage: Int,
@@ -40,46 +45,37 @@ class SplitPdfUseCase @Inject constructor(
 
             if (totalPages == 0) {
                 renderer.close()
+                fileDescriptor.close()
                 return@withContext PdfToolResult.Error("El PDF no tiene páginas.")
             }
 
-            // ── Validación correcta del rango ─────────
-            // fromPage y toPage son 1-indexed desde la UI
             val startIndex = (fromPage - 1).coerceIn(0, totalPages - 1)
-            val endIndex = toPage.coerceIn(startIndex + 1, totalPages)
+            val endIndex   = toPage.coerceIn(startIndex + 1, totalPages)
 
             if (startIndex >= endIndex) {
                 renderer.close()
+                fileDescriptor.close()
                 return@withContext PdfToolResult.Error(
-                    "Rango inválido. La página final ($toPage) debe ser " +
-                            "mayor que la inicial ($fromPage)."
+                    "Rango inválido. La página final ($toPage) debe ser mayor que la inicial ($fromPage)."
                 )
             }
 
             val newDocument = PdfDocument()
 
-            // ── Renderiza solo las páginas del rango ──
             for (i in startIndex until endIndex) {
                 val page = renderer.openPage(i)
 
+                // Guardar dimensiones ANTES de cerrar la página
                 val width  = page.width * 2
                 val height = page.height * 2
 
-                val bitmap = Bitmap.createBitmap(
-                    width, height,
-                    Bitmap.Config.ARGB_8888
-                )
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(
-                    bitmap, null, null,
-                    PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-                )
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 page.close()
 
-                // Número de página en el nuevo doc empieza en 1
                 val pageInfo = PdfDocument.PageInfo.Builder(
-                    width, height,
-                    i - startIndex + 1
+                    width, height, i - startIndex + 1
                 ).create()
 
                 val docPage = newDocument.startPage(pageInfo)
@@ -92,39 +88,31 @@ class SplitPdfUseCase @Inject constructor(
             fileDescriptor.close()
 
             val pagesExtracted = endIndex - startIndex
-            val name = outputFileName
-                ?: "Split_p${startIndex + 1}-p$endIndex"
-
+            val name       = outputFileName ?: "Split_p${startIndex + 1}-p$endIndex"
             val outputFile = createOutputFile(name)
+
             FileOutputStream(outputFile).use { newDocument.writeTo(it) }
             newDocument.close()
 
             if (outputFile.length() == 0L) {
-                return@withContext PdfToolResult.Error(
-                    "Error al generar el PDF dividido."
-                )
+                return@withContext PdfToolResult.Error("Error al generar el PDF dividido.")
             }
+
+            Timber.d("$TAG: split exitoso — $pagesExtracted páginas, ${outputFile.length() / 1024} KB")
 
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message = "PDF dividido: $pagesExtracted página(s) " +
-                        "extraídas (${outputFile.length() / 1024} KB)"
+                message    = "PDF dividido: $pagesExtracted página(s) extraídas (${outputFile.length() / 1024} KB)"
             )
         } catch (e: Exception) {
-            e.printStackTrace()
-            PdfToolResult.Error(
-                "Error al dividir: ${e.message ?: "Error desconocido"}",
-                e
-            )
+            Timber.e(e, "$TAG: error al dividir PDF")
+            PdfToolResult.Error("Error al dividir: ${e.message ?: "Error desconocido"}", e)
         }
     }
 
     private fun copyUriToCache(uri: Uri): File? {
         return try {
-            val file = File(
-                context.cacheDir,
-                "split_${System.currentTimeMillis()}.pdf"
-            )
+            val file = File(context.cacheDir, "split_${System.currentTimeMillis()}.pdf")
             context.contentResolver.openInputStream(uri)?.use { input ->
                 file.outputStream().use { output ->
                     val bytes = input.copyTo(output)
@@ -133,15 +121,13 @@ class SplitPdfUseCase @Inject constructor(
             } ?: return null
             file
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "$TAG: error copiando URI al cache")
             null
         }
     }
 
     private fun createOutputFile(name: String): File {
-        val timestamp = SimpleDateFormat(
-            "yyyyMMdd_HHmmss", Locale.getDefault()
-        ).format(Date())
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
         return File(dir, "${name}_$timestamp.pdf")
     }

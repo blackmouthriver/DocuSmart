@@ -11,6 +11,7 @@ import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -21,6 +22,10 @@ import javax.inject.Inject
 class RotatePdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    companion object {
+        private const val TAG = "RotatePdfUseCase"
+    }
+
     suspend operator fun invoke(
         pdfUri: Uri,
         degrees: Int = 90,
@@ -32,38 +37,30 @@ class RotatePdfUseCase @Inject constructor(
                     "No se pudo leer el PDF. Verifica que sea un archivo válido."
                 )
 
-            val fileDescriptor = ParcelFileDescriptor.open(
-                cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
-            )
-            val renderer = PdfRenderer(fileDescriptor)
-            val rotatedDocument = PdfDocument()
+            val fileDescriptor   = ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY)
+            val renderer         = PdfRenderer(fileDescriptor)
+            val rotatedDocument  = PdfDocument()
 
             for (i in 0 until renderer.pageCount) {
                 val page = renderer.openPage(i)
-                val bitmap = Bitmap.createBitmap(
-                    page.width * 2,
-                    page.height * 2,
-                    Bitmap.Config.ARGB_8888
-                )
+
+                // Guardar dimensiones ANTES de cerrar la página
+                val pageWidth  = page.width * 2
+                val pageHeight = page.height * 2
+
+                val bitmap = Bitmap.createBitmap(pageWidth, pageHeight, Bitmap.Config.ARGB_8888)
                 bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(
-                    bitmap, null, null,
-                    PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-                )
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 page.close()
 
                 val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
                 val rotatedBitmap = Bitmap.createBitmap(
-                    bitmap, 0, 0,
-                    bitmap.width, bitmap.height,
-                    matrix, true
+                    bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
                 )
                 bitmap.recycle()
 
                 val pageInfo = PdfDocument.PageInfo.Builder(
-                    rotatedBitmap.width,
-                    rotatedBitmap.height,
-                    i + 1
+                    rotatedBitmap.width, rotatedBitmap.height, i + 1
                 ).create()
 
                 val docPage = rotatedDocument.startPage(pageInfo)
@@ -75,30 +72,31 @@ class RotatePdfUseCase @Inject constructor(
             renderer.close()
             fileDescriptor.close()
 
-            val name = outputFileName ?: "Rotated_${degrees}deg"
+            val name       = outputFileName ?: "Rotated_${degrees}deg"
             val outputFile = createOutputFile(name)
+
             FileOutputStream(outputFile).use { rotatedDocument.writeTo(it) }
             rotatedDocument.close()
 
+            if (outputFile.length() == 0L) {
+                return@withContext PdfToolResult.Error("Error al generar el PDF rotado.")
+            }
+
+            Timber.d("$TAG: rotación exitosa ${degrees}° — ${outputFile.length() / 1024} KB")
+
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message = "PDF rotado ${degrees}° correctamente"
+                message    = "PDF rotado ${degrees}° correctamente"
             )
         } catch (e: Exception) {
-            e.printStackTrace()
-            PdfToolResult.Error(
-                "Error al rotar PDF: ${e.message ?: "Error desconocido"}",
-                e
-            )
+            Timber.e(e, "$TAG: error al rotar PDF")
+            PdfToolResult.Error("Error al rotar PDF: ${e.message ?: "Error desconocido"}", e)
         }
     }
 
     private fun copyUriToCache(uri: Uri): File? {
         return try {
-            val file = File(
-                context.cacheDir,
-                "rotate_${System.currentTimeMillis()}.pdf"
-            )
+            val file = File(context.cacheDir, "rotate_${System.currentTimeMillis()}.pdf")
             context.contentResolver.openInputStream(uri)?.use { input ->
                 file.outputStream().use { output ->
                     val bytes = input.copyTo(output)
@@ -107,15 +105,13 @@ class RotatePdfUseCase @Inject constructor(
             } ?: return null
             file
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "$TAG: error copiando URI al cache")
             null
         }
     }
 
     private fun createOutputFile(name: String): File {
-        val timestamp = SimpleDateFormat(
-            "yyyyMMdd_HHmmss", Locale.getDefault()
-        ).format(Date())
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
         return File(dir, "DocuSmart_${name}_$timestamp.pdf")
     }

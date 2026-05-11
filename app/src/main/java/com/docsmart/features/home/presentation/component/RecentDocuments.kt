@@ -17,10 +17,11 @@ fun RecentDocuments(
     onDocumentClick: (DocumentUiModel) -> Unit,
     onFavoriteClick: (String) -> Unit,
     onSeeAllClick: () -> Unit,
+    // ── FUNC-02: callback para abrir archivo desde EmptyState ──
+    onOpenFileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        // Header de sección
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -41,18 +42,17 @@ fun RecentDocuments(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Contenido
         if (documents.isEmpty()) {
             DocuSmartEmptyState(
-                icon = Icons.Rounded.FolderOff,
-                title = "Sin documentos recientes",
+                icon        = Icons.Rounded.FolderOff,
+                title       = "Sin documentos recientes",
                 description = "Abre un archivo para verlo aquí",
                 actionLabel = "Abrir archivo",
-                onAction = { }
+                onAction    = onOpenFileClick  // ← conectado
             )
         } else {
             Card(
-                shape = MaterialTheme.shapes.large,
+                shape  = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
@@ -60,10 +60,10 @@ fun RecentDocuments(
             ) {
                 documents.forEachIndexed { index, document ->
                     DocuSmartDocumentItem(
-                        document = document,
-                        onClick = { onDocumentClick(document) },
+                        document       = document,
+                        onClick        = { onDocumentClick(document) },
                         onFavoriteClick = { onFavoriteClick(document.id) },
-                        showDivider = index < documents.size - 1
+                        showDivider    = index < documents.size - 1
                     )
                 }
             }

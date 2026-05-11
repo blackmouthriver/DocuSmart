@@ -29,9 +29,9 @@ class DocumentRepository @Inject constructor(
                 documents.addAll(loadImagesFromMediaStore())
                 documents.addAll(loadAppGeneratedFiles())
 
-                // Deduplicar por nombre
+                // CORRECCIÓN BUG-07: deduplicar por id (URI única) no por nombre
                 val seen = mutableSetOf<String>()
-                val unique = documents.filter { seen.add(it.name) }
+                val unique = documents.filter { seen.add(it.id) }
 
                 unique.sortedByDescending { it.date }
             } catch (e: Exception) {
@@ -40,7 +40,6 @@ class DocumentRepository @Inject constructor(
             }
         }
 
-    // ── Leer PDFs desde Downloads ─────────────────────
     private fun loadPdfsFromDownloads(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
 
@@ -49,7 +48,6 @@ class DocumentRepository @Inject constructor(
         }
 
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-
         val projection = arrayOf(
             MediaStore.Downloads._ID,
             MediaStore.Downloads.DISPLAY_NAME,
@@ -67,16 +65,13 @@ class DocumentRepository @Inject constructor(
             "application/vnd.ms-powerpoint",
             "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         )
-
         val selection = mimeTypes.joinToString(" OR ") {
             "${MediaStore.Downloads.MIME_TYPE} = ?"
         }
 
         try {
             context.contentResolver.query(
-                collection,
-                projection,
-                selection,
+                collection, projection, selection,
                 mimeTypes.toTypedArray(),
                 "${MediaStore.Downloads.DATE_MODIFIED} DESC"
             )?.use { cursor ->
@@ -93,41 +88,34 @@ class DocumentRepository @Inject constructor(
                         val size   = cursor.getLong(sizeCol)
                         val dateMs = cursor.getLong(dateCol) * 1000
                         val mime   = cursor.getString(mimeCol) ?: continue
-
                         if (name.startsWith(".")) continue
 
                         val uri = Uri.withAppendedPath(
-                            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                            id.toString()
+                            MediaStore.Downloads.EXTERNAL_CONTENT_URI, id.toString()
                         )
-
-                        documents.add(
-                            DocumentUiModel(
-                                id = uri.toString(),
-                                name = name,
-                                type = mimeToDocumentType(mime, name),
-                                size = formatSize(size),
-                                date = formatDate(dateMs),
-                                isFavorite = false
-                            )
-                        )
+                        documents.add(DocumentUiModel(
+                            id         = uri.toString(),
+                            name       = name,
+                            type       = mimeToDocumentType(mime, name),
+                            size       = formatSize(size),
+                            date       = formatDate(dateMs),
+                            isFavorite = false
+                        ))
                     } catch (e: Exception) {
                         Timber.w("Error leyendo fila Downloads: ${e.message}")
                     }
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error consultando Downloads: ${e.message}")
+            Timber.e(e, "Error consultando Downloads")
         }
 
         Timber.d("Downloads: ${documents.size} documentos")
         return documents
     }
 
-    // ── Leer imágenes desde MediaStore ────────────────
     private fun loadImagesFromMediaStore(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
-
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME,
@@ -139,9 +127,7 @@ class DocumentRepository @Inject constructor(
         try {
             context.contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
+                projection, null, null,
                 "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
             )?.use { cursor ->
                 val idCol   = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
@@ -157,25 +143,20 @@ class DocumentRepository @Inject constructor(
                         val name   = cursor.getString(nameCol) ?: continue
                         val size   = cursor.getLong(sizeCol)
                         val dateMs = cursor.getLong(dateCol) * 1000
-                        val mime   = cursor.getString(mimeCol) ?: continue
-
+                        cursor.getString(mimeCol) ?: continue
                         if (name.startsWith(".")) continue
 
                         val uri = Uri.withAppendedPath(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                            id.toString()
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()
                         )
-
-                        documents.add(
-                            DocumentUiModel(
-                                id = uri.toString(),
-                                name = name,
-                                type = DocumentType.IMAGE,
-                                size = formatSize(size),
-                                date = formatDate(dateMs),
-                                isFavorite = false
-                            )
-                        )
+                        documents.add(DocumentUiModel(
+                            id         = uri.toString(),
+                            name       = name,
+                            type       = DocumentType.IMAGE,
+                            size       = formatSize(size),
+                            date       = formatDate(dateMs),
+                            isFavorite = false
+                        ))
                         count++
                     } catch (e: Exception) {
                         Timber.w("Error leyendo imagen: ${e.message}")
@@ -183,22 +164,19 @@ class DocumentRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error consultando imágenes: ${e.message}")
+            Timber.e(e, "Error consultando imágenes")
         }
 
         Timber.d("Imágenes: ${documents.size}")
         return documents
     }
 
-    // ── Leer archivos generados por la app ────────────
     private fun loadAppGeneratedFiles(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
-
         val dirs = listOf(
             File(context.filesDir, "converted"),
             File(context.filesDir, "pdftools")
         )
-
         dirs.forEach { dir ->
             if (!dir.exists()) return@forEach
             dir.listFiles()
@@ -206,61 +184,50 @@ class DocumentRepository @Inject constructor(
                 ?.sortedByDescending { it.lastModified() }
                 ?.forEach { file ->
                     try {
-                        documents.add(
-                            DocumentUiModel(
-                                id = file.absolutePath,
-                                name = file.name,
-                                type = extensionToDocumentType(file.extension),
-                                size = formatSize(file.length()),
-                                date = formatDate(file.lastModified()),
-                                isFavorite = false
-                            )
-                        )
+                        documents.add(DocumentUiModel(
+                            id         = file.absolutePath,
+                            name       = file.name,
+                            type       = extensionToDocumentType(file.extension),
+                            size       = formatSize(file.length()),
+                            date       = formatDate(file.lastModified()),
+                            isFavorite = false
+                        ))
                     } catch (e: Exception) {
                         Timber.w("Error leyendo archivo app: ${e.message}")
                     }
                 }
         }
-
         Timber.d("App files: ${documents.size}")
         return documents
     }
 
-    private fun mimeToDocumentType(mime: String, name: String): DocumentType {
-        return when {
-            mime.contains("pdf") -> DocumentType.PDF
-            mime.contains("word") || mime.contains("msword") -> DocumentType.WORD
-            mime.contains("excel") || mime.contains("sheet") -> DocumentType.EXCEL
-            mime.contains("powerpoint") || mime.contains("presentation") -> DocumentType.POWERPOINT
-            mime.contains("image") -> DocumentType.IMAGE
-            mime.contains("text") -> DocumentType.TEXT
-            else -> extensionToDocumentType(name.substringAfterLast("."))
-        }
+    private fun mimeToDocumentType(mime: String, name: String): DocumentType = when {
+        mime.contains("pdf")                                          -> DocumentType.PDF
+        mime.contains("word") || mime.contains("msword")             -> DocumentType.WORD
+        mime.contains("excel") || mime.contains("sheet")             -> DocumentType.EXCEL
+        mime.contains("powerpoint") || mime.contains("presentation") -> DocumentType.POWERPOINT
+        mime.contains("image")                                        -> DocumentType.IMAGE
+        mime.contains("text")                                         -> DocumentType.TEXT
+        else -> extensionToDocumentType(name.substringAfterLast("."))
     }
 
-    private fun extensionToDocumentType(ext: String): DocumentType {
-        return when (ext.lowercase()) {
-            "pdf" -> DocumentType.PDF
-            "doc", "docx" -> DocumentType.WORD
-            "xls", "xlsx" -> DocumentType.EXCEL
-            "ppt", "pptx" -> DocumentType.POWERPOINT
-            "jpg", "jpeg", "png", "webp", "gif" -> DocumentType.IMAGE
-            "txt", "md" -> DocumentType.TEXT
-            "zip", "rar", "7z" -> DocumentType.ZIP
-            else -> DocumentType.PDF
-        }
+    private fun extensionToDocumentType(ext: String): DocumentType = when (ext.lowercase()) {
+        "pdf"                                -> DocumentType.PDF
+        "doc", "docx"                        -> DocumentType.WORD
+        "xls", "xlsx"                        -> DocumentType.EXCEL
+        "ppt", "pptx"                        -> DocumentType.POWERPOINT
+        "jpg", "jpeg", "png", "webp", "gif" -> DocumentType.IMAGE
+        "txt", "md"                          -> DocumentType.TEXT
+        "zip", "rar", "7z"                   -> DocumentType.ZIP
+        else                                 -> DocumentType.PDF
     }
 
-    private fun formatSize(bytes: Long): String {
-        return when {
-            bytes < 1024 -> "$bytes B"
-            bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-            else -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
-        }
+    private fun formatSize(bytes: Long): String = when {
+        bytes < 1024            -> "$bytes B"
+        bytes < 1024 * 1024    -> "${bytes / 1024} KB"
+        else                   -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
     }
 
-    private fun formatDate(ms: Long): String {
-        return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            .format(Date(ms))
-    }
+    private fun formatDate(ms: Long): String =
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(ms))
 }

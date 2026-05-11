@@ -1,3 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">docsmart</string>
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── Navegación ─────────────────────────────── -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_library">Biblioteca</string>
+    <string name="nav_converter">Convertir</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- ── Home ───────────────────────────────────── -->
+    <string name="home_title">Tus documentos\nen un solo lugar</string>
+    <string name="home_subtitle">Abre, convierte y gestiona\ntus archivos fácilmente</string>
+    <string name="home_open">Abrir</string>
+    <string name="home_convert">Convertir</string>
+    <string name="home_quick_access">Accesos rápidos</string>
+    <string name="home_recents">Recientes</string>
+    <string name="home_see_all">Ver todos</string>
+    <string name="home_no_recents">Sin documentos recientes</string>
+    <string name="home_open_file">Abrir archivo</string>
+    <string name="home_scan">Escanear</string>
+    <string name="home_img_pdf">Img→PDF</string>
+    <string name="home_security">Seguridad</string>
+    <string name="home_study">Estudio</string>
+
+    <!-- ── Biblioteca ─────────────────────────────── -->
+    <string name="library_title">Biblioteca</string>
+    <string name="library_subtitle">Todos tus documentos</string>
+    <string name="library_search">Buscar en biblioteca…</string>
+    <string name="library_no_results">Sin resultados</string>
+    <string name="library_no_documents">No hay documentos en esta categoría</string>
+    <string name="library_documents">documentos</string>
+    <string name="library_favorites">Favoritos</string>
+
+    <!-- ── Convertidor ────────────────────────────── -->
+    <string name="converter_title">Convertidor</string>
+    <string name="converter_subtitle">Convierte tus documentos fácilmente</string>
+    <string name="converter_select">¿Qué quieres convertir?</string>
+    <string name="converter_select_type">Selecciona la conversión</string>
+    <string name="converter_converting">Convirtiendo…</string>
+    <string name="converter_success">¡Conversión exitosa!</string>
+    <string name="converter_save">Guardar en Descargas</string>
+    <string name="converter_share">Compartir</string>
+    <string name="converter_another">Convertir otro</string>
+    <string name="converter_file_name">Nombre del archivo</string>
+    <string name="converter_auto_name">Nombre automático</string>
+
+    <!-- ── PDF Tools ──────────────────────────────── -->
+    <string name="pdf_tools_title">Herramientas PDF</string>
+    <string name="pdf_tools_subtitle">Gestiona tus PDFs de forma rápida</string>
+    <string name="pdf_merge">Unir PDFs</string>
+    <string name="pdf_split">Dividir PDF</string>
+    <string name="pdf_compress">Comprimir PDF</string>
+    <string name="pdf_rotate">Rotar PDF</string>
+    <string name="pdf_processing">Procesando…</string>
+    <string name="pdf_success">¡Operación exitosa!</string>
+
+    <!-- ── Ajustes ────────────────────────────────── -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_subtitle">Personaliza tu experiencia</string>
+    <string name="settings_premium">DocuSmart Premium</string>
+    <string name="settings_premium_subtitle">Desbloquea todas las funciones</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_storage">Almacenamiento</string>
+    <string name="settings_storage_subtitle">Ver archivos generados</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">Seleccionar idioma</string>
+    <string name="settings_select_theme">Seleccionar tema</string>
+    <string name="settings_close">Cerrar</string>
+
+    <!-- ── Temas ──────────────────────────────────── -->
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_system">Sistema</string>
+
+    <!-- ── Escáner ────────────────────────────────── -->
+    <string name="scanner_title">Iniciando escáner</string>
+    <string name="scanner_hint">Prepara el documento y\napunta la cámara hacia él</string>
+    <string name="scanner_result_title">Documento escaneado</string>
+    <string name="scanner_generate">Generar PDF</string>
+    <string name="scanner_again">Escanear de nuevo</string>
+    <string name="scanner_save">Guardar en Descargas</string>
+    <string name="scanner_share">Compartir PDF</string>
+    <string name="scanner_back">Volver al inicio</string>
+
+    <!-- ── Visor ──────────────────────────────────── -->
+    <string name="viewer_error">Error al abrir el documento</string>
+    <string name="viewer_back">Volver</string>
+    <string name="viewer_rendering">Renderizando documento…</string>
+    <string name="viewer_page">Página %1$d de %2$d</string>
+    <string name="viewer_unsupported">Este formato no es compatible con el visor integrado.</string>
+    <string name="viewer_open_other">Abrir con otra aplicación</string>
+
+    <!-- ── General ────────────────────────────────── -->
+    <string name="general_save">Guardar</string>
+    <string name="general_cancel">Cancelar</string>
+    <string name="general_back">Volver</string>
+    <string name="general_error">Error</string>
+    <string name="general_success">¡Éxito!</string>
+    <string name="general_loading">Cargando…</string>
+    <string name="general_retry">Reintentar</string>
+    <string name="general_share">Compartir</string>
+    <string name="general_delete">Eliminar</string>
+    <string name="general_saved_downloads">Guardado en Descargas</string>
+    <string name="general_new_operation">Nueva operación</string>
+    <string name="general_select_file">Seleccionar archivo</string>
+
+    <!-- ── PDF Tools descriptions ─────────────────────── -->
+    <string name="pdf_merge_desc">Combina varios PDFs en uno solo</string>
+    <string name="pdf_split_desc">Extrae páginas de un PDF</string>
+    <string name="pdf_compress_desc">Reduce el tamaño del archivo</string>
+    <string name="pdf_rotate_desc">Rota las páginas del documento</string>
+
+    <!-- ── Home empty state ───────────────────────────── -->
+    <string name="home_open_file_hint">Abre un archivo para verlo aquí</string>
+
+    <!-- ── Converter categorías ──────────────────────── -->
+    <string name="converter_category_image">Imagen</string>
+    <string name="converter_category_pdf">PDF</string>
+    <string name="converter_category_word">Word</string>
+    <string name="converter_category_excel">Excel</string>
+    <string name="converter_category_ppt">PowerPoint</string>
+    <string name="converter_select_files">Toca para seleccionar %1$s</string>
+    <string name="converter_files_selected">%1$d archivo(s) seleccionado(s)</string>
+    <string name="converter_formats">Formatos: %1$s</string>
+    <string name="converter_to_format">Convertir a %1$s</string>
+    <string name="converter_file_name_label">Nombre del archivo</string>
+    <string name="converter_file_name_placeholder">Nombre automático</string>
+    <string name="general_back_action">Volver</string>
+
+    <string name="splash_tagline">Tus documentos inteligentes</string>
 </resources>

@@ -26,6 +26,8 @@ fun HomeScreen(
     onOpenFile: (Uri) -> Unit = {},
     onConvert: () -> Unit = {},
     onScan: () -> Unit = {},
+    onSecurity: () -> Unit = {},
+    onStudy: () -> Unit = {},
     onDocumentClick: (String) -> Unit = {},
     onSeeAll: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
@@ -85,8 +87,8 @@ fun HomeScreen(
             QuickAccessGrid(
                 onScanClick = onScan,
                 onImageToPdfClick = onConvert,
-                onSafeBoxClick = { },
-                onStudyModeClick = { },
+                onSafeBoxClick = onSecurity,
+                onStudyModeClick = onStudy,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
         }
