@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,12 +32,11 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     Timber.d("HomeScreen: iniciando composición")
-    val context = LocalContext.current
 
-// ── Recargar recientes al volver al Home ──────────────
     LaunchedEffect(Unit) {
         viewModel.loadRecentDocuments()
     }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val filePicker = rememberLauncherForActivityResult(
@@ -46,12 +44,17 @@ fun HomeScreen(
     ) { result ->
         val uri = result.data?.data
         Timber.d("filePicker: uri recibida = $uri")
-        if (uri != null) {
-            Timber.d("filePicker: llamando onOpenFile con $uri")
-            onOpenFile(uri)
-        } else {
-            Timber.d("filePicker: uri es NULL, usuario canceló")
+        if (uri != null) onOpenFile(uri)
+    }
+
+    val openFileLauncher = {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
+        filePicker.launch(intent)
     }
 
     LazyColumn(
@@ -60,18 +63,8 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         item {
-            // ── Home usa su propio HomeBanner especial ─
-            // con botones de acción integrados
             HomeBanner(
-                onOpenFileClick = {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "*/*"
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                    }
-                    filePicker.launch(intent)
-                },
+                onOpenFileClick = openFileLauncher,
                 onConvertClick = onConvert,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
@@ -98,6 +91,7 @@ fun HomeScreen(
                 onDocumentClick = { doc -> onDocumentClick(doc.id) },
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
                 onSeeAllClick = onSeeAll,
+                onOpenFileClick = openFileLauncher, // ← conectado al mismo filePicker
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
         }

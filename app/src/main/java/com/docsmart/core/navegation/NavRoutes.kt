@@ -3,7 +3,8 @@ package com.docsmart.core.navegation
 import android.net.Uri
 
 sealed class NavRoutes(val route: String) {
-    data object Splash      : NavRoutes("splash")
+    data object SplashMouthBlack : NavRoutes("splash_mouthblack") // ← NUEVO
+    data object SplashDocuSmart  : NavRoutes("splash_docusmart")  // ← NUEVO
     data object Home        : NavRoutes("home")
     data object Library     : NavRoutes("library")
     data object Converter   : NavRoutes("converter")

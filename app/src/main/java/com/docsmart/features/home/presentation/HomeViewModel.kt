@@ -1,6 +1,5 @@
 package com.docsmart.features.home.presentation
 
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
@@ -26,6 +25,7 @@ class HomeViewModel @Inject constructor(
     val adManager: AdManager,
     private val repository: DocumentRepository
 ) : ViewModel() {
+
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -38,7 +38,6 @@ class HomeViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val docs = repository.loadAllDocuments()
-                // ── Tomar los 5 más recientes ─────────
                 val recents = docs.take(5)
                 _uiState.update { state ->
                     state.copy(
