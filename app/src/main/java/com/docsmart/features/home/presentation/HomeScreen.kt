@@ -90,6 +90,7 @@ fun HomeScreen(
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
                 onSeeAllClick   = onSeeAll,
                 onOpenFileClick = openFileLauncher,
+                onRenameClick = { id, newName -> viewModel.renameDocument(id, newName) },
                 // Convertir: navega al convertidor con el archivo seleccionado
                 onConvertClick  = { doc -> onConvert() },
                 // Eliminar: quita del historial en memoria

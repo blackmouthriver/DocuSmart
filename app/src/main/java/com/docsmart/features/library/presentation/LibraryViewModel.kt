@@ -3,6 +3,7 @@ package com.docsmart.features.library.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
@@ -27,15 +28,12 @@ data class LibraryUiState(
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     val adManager: AdManager,
-    private val repository: DocumentRepository
+    private val repository: DocumentRepository,
+    private val favoritesRepository: FavoritesRepository  // ← NUEVO
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
-
-    // ── Favoritos persistidos en memoria ─────────────
-    // En la siguiente fase se migrarán a Room/SharedPreferences
-    private val favoriteIds = mutableSetOf<String>()
 
     init { loadDocuments() }
 
@@ -43,24 +41,17 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                // DocumentRepository ya aplica isFavorite desde FavoritesRepository
                 val docs = repository.loadAllDocuments()
-
-                // ── Aplicar favoritos guardados ───────
-                val docsWithFavorites = docs.map { doc ->
-                    doc.copy(isFavorite = favoriteIds.contains(doc.id))
-                }
-
                 _uiState.update { state ->
                     state.copy(
-                        allDocuments      = docsWithFavorites,
-                        filteredDocuments = docsWithFavorites,
-                        favorites         = docsWithFavorites.filter { it.isFavorite },
+                        allDocuments      = docs,
+                        filteredDocuments = applyCurrentFilters(docs, state),
+                        favorites         = docs.filter { it.isFavorite },
                         isLoading         = false
                     )
                 }
-
                 Timber.d("LibraryViewModel: ${docs.size} documentos cargados")
-
             } catch (e: Exception) {
                 Timber.e(e, "LibraryViewModel: error cargando documentos")
                 _uiState.update { it.copy(isLoading = false) }
@@ -68,53 +59,108 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    fun toggleFavorite(documentId: String) {
+        viewModelScope.launch {
+            // Persiste en disco
+            val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
+
+            // Actualiza estado en memoria inmediatamente (sin esperar reload)
+            val updated = _uiState.value.allDocuments.map { doc ->
+                if (doc.id == documentId) doc.copy(isFavorite = isNowFavorite) else doc
+            }
+            _uiState.update { state ->
+                state.copy(
+                    allDocuments      = updated,
+                    filteredDocuments = applyCurrentFilters(updated, state),
+                    favorites         = updated.filter { it.isFavorite }
+                )
+            }
+            Timber.d("LibraryViewModel: toggleFavorite $documentId → $isNowFavorite")
+        }
+    }
+
     fun onSearchQueryChange(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
-        applyFilters()
+        _uiState.update { state ->
+            val filtered = applyCurrentFilters(state.allDocuments, state.copy(searchQuery = query))
+            state.copy(searchQuery = query, filteredDocuments = filtered)
+        }
     }
 
     fun onCategorySelected(type: DocumentType?) {
         _uiState.update { state ->
             val newCategory = if (state.selectedCategory == type) null else type
-            state.copy(selectedCategory = newCategory)
-        }
-        applyFilters()
-    }
-
-    fun toggleFavorite(documentId: String) {
-        if (favoriteIds.contains(documentId)) {
-            favoriteIds.remove(documentId)
-        } else {
-            favoriteIds.add(documentId)
-        }
-
-        val updated = _uiState.value.allDocuments.map { doc ->
-            if (doc.id == documentId) doc.copy(isFavorite = !doc.isFavorite) else doc
-        }
-
-        _uiState.update { state ->
-            state.copy(
-                allDocuments = updated,
-                favorites    = updated.filter { it.isFavorite }
+            val filtered = applyCurrentFilters(
+                state.allDocuments,
+                state.copy(selectedCategory = newCategory)
             )
+            state.copy(selectedCategory = newCategory, filteredDocuments = filtered)
         }
-        applyFilters()
-    }
-
-    private fun applyFilters() {
-        val state = _uiState.value
-        val result = state.allDocuments.filter { doc ->
-            val matchesQuery    = state.searchQuery.isBlank() ||
-                    doc.name.contains(state.searchQuery, ignoreCase = true)
-            val matchesCategory = state.selectedCategory == null ||
-                    doc.type == state.selectedCategory
-            matchesQuery && matchesCategory
-        }
-        _uiState.update { it.copy(filteredDocuments = result) }
     }
 
     fun clearSearch() { onSearchQueryChange("") }
 
-    // ── Recargar al volver a la pantalla ──────────────
     fun refresh() { loadDocuments() }
+
+    private fun applyCurrentFilters(
+        docs: List<DocumentUiModel>,
+        state: LibraryUiState
+    ): List<DocumentUiModel> = docs.filter { doc ->
+        val matchesQuery    = state.searchQuery.isBlank() ||
+                doc.name.contains(state.searchQuery, ignoreCase = true)
+        val matchesCategory = state.selectedCategory == null ||
+                doc.type == state.selectedCategory
+        matchesQuery && matchesCategory
+    }
+
+    fun renameDocument(documentId: String, newName: String) {
+        viewModelScope.launch {
+            try {
+                val isAppFile = !documentId.startsWith("content://")
+
+                if (isAppFile) {
+                    // Archivo generado por la app → renombra en disco
+                    val file    = java.io.File(documentId)
+                    val newFile = java.io.File(file.parent, newName)
+                    val renamed = file.renameTo(newFile)
+
+                    if (renamed) {
+                        // Actualiza aliases con la nueva ruta
+                        favoritesRepository.removeAlias(documentId)
+                        // Recarga para reflejar nueva ruta
+                        loadDocuments()
+                        Timber.d("Archivo renombrado en disco: $newFile")
+                    } else {
+                        Timber.w("No se pudo renombrar en disco: $documentId")
+                        // Fallback: guarda alias aunque el rename físico falle
+                        favoritesRepository.saveAlias(documentId, newName)
+                        updateNameInState(documentId, newName)
+                    }
+                } else {
+                    // Archivo del dispositivo → guarda alias
+                    favoritesRepository.saveAlias(documentId, newName)
+                    updateNameInState(documentId, newName)
+                    Timber.d("Alias guardado para $documentId → $newName")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error renombrando documento")
+                // Fallback seguro: siempre guarda alias
+                favoritesRepository.saveAlias(documentId, newName)
+                updateNameInState(documentId, newName)
+            }
+        }
+    }
+
+    private fun updateNameInState(documentId: String, newName: String) {
+        val updated = _uiState.value.allDocuments.map { doc ->
+            if (doc.id == documentId) doc.copy(name = newName) else doc
+        }
+        _uiState.update { state ->
+            state.copy(
+                allDocuments      = updated,
+                filteredDocuments = applyCurrentFilters(updated, state),
+                favorites         = updated.filter { it.isFavorite }
+            )
+        }
+    }
+
 }

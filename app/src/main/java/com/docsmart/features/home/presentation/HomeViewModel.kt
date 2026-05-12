@@ -3,6 +3,7 @@ package com.docsmart.features.home.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,29 +24,28 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     val adManager: AdManager,
-    private val repository: DocumentRepository
+    private val repository: DocumentRepository,
+    private val favoritesRepository: FavoritesRepository  // ← NUEVO
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    init {
-        loadRecentDocuments()
-    }
+    init { loadRecentDocuments() }
 
     fun loadRecentDocuments() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                // DocumentRepository ya aplica isFavorite desde FavoritesRepository
                 val docs = repository.loadAllDocuments()
-                val recents = docs.take(5)
                 _uiState.update { state ->
                     state.copy(
-                        recentDocuments = recents,
+                        recentDocuments = docs.take(5),
                         isLoading = false
                     )
                 }
-                Timber.d("HomeViewModel: ${recents.size} documentos recientes")
+                Timber.d("HomeViewModel: ${docs.size} documentos recientes")
             } catch (e: Exception) {
                 Timber.e(e, "HomeViewModel: error cargando recientes")
                 _uiState.update { it.copy(isLoading = false) }
@@ -54,14 +54,19 @@ class HomeViewModel @Inject constructor(
     }
 
     fun toggleFavorite(documentId: String) {
-        _uiState.update { state ->
-            state.copy(
-                recentDocuments = state.recentDocuments.map { doc ->
-                    if (doc.id == documentId)
-                        doc.copy(isFavorite = !doc.isFavorite)
-                    else doc
-                }
-            )
+        viewModelScope.launch {
+            // Persiste en disco
+            val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
+
+            // Actualiza UI en memoria inmediatamente
+            _uiState.update { state ->
+                state.copy(
+                    recentDocuments = state.recentDocuments.map { doc ->
+                        if (doc.id == documentId) doc.copy(isFavorite = isNowFavorite) else doc
+                    }
+                )
+            }
+            Timber.d("HomeViewModel: toggleFavorite $documentId → $isNowFavorite")
         }
     }
 
@@ -70,6 +75,33 @@ class HomeViewModel @Inject constructor(
             state.copy(
                 recentDocuments = state.recentDocuments.filter { it.id != documentId }
             )
+        }
+    }
+
+    fun renameDocument(documentId: String, newName: String) {
+        viewModelScope.launch {
+            try {
+                val isAppFile = !documentId.startsWith("content://")
+                if (isAppFile) {
+                    val file    = java.io.File(documentId)
+                    val newFile = java.io.File(file.parent, newName)
+                    if (!file.renameTo(newFile)) {
+                        favoritesRepository.saveAlias(documentId, newName)
+                    }
+                } else {
+                    favoritesRepository.saveAlias(documentId, newName)
+                }
+            } catch (e: Exception) {
+                favoritesRepository.saveAlias(documentId, newName)
+            }
+            // Actualiza UI en memoria
+            _uiState.update { state ->
+                state.copy(
+                    recentDocuments = state.recentDocuments.map { doc ->
+                        if (doc.id == documentId) doc.copy(name = newName) else doc
+                    }
+                )
+            }
         }
     }
 }

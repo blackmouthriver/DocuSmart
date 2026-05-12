@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -19,7 +20,8 @@ import javax.inject.Singleton
 
 @Singleton
 class DocumentRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val favoritesRepository: FavoritesRepository  // ← NUEVO
 ) {
     suspend fun loadAllDocuments(): List<DocumentUiModel> =
         withContext(Dispatchers.IO) {
@@ -29,11 +31,20 @@ class DocumentRepository @Inject constructor(
                 documents.addAll(loadImagesFromMediaStore())
                 documents.addAll(loadAppGeneratedFiles())
 
-                // CORRECCIÓN BUG-07: deduplicar por id (URI única) no por nombre
                 val seen = mutableSetOf<String>()
                 val unique = documents.filter { seen.add(it.id) }
 
-                unique.sortedByDescending { it.date }
+                // ── Aplica favoritos persistidos al cargar ─────────────────
+                val favoriteIds = favoritesRepository.getAllFavoriteIds()
+                val withFavorites = unique.map { doc ->
+                    val alias = favoritesRepository.getAlias(doc.id)
+                    doc.copy(
+                        isFavorite = favoriteIds.contains(doc.id),
+                        name       = alias ?: doc.name   // ← aplica alias si existe
+                    )
+                }
+
+                withFavorites.sortedByDescending { it.date }
             } catch (e: Exception) {
                 Timber.e(e, "Error cargando documentos")
                 emptyList()
@@ -42,10 +53,7 @@ class DocumentRepository @Inject constructor(
 
     private fun loadPdfsFromDownloads(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return documents
-        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return documents
 
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
         val projection = arrayOf(
@@ -55,7 +63,6 @@ class DocumentRepository @Inject constructor(
             MediaStore.Downloads.DATE_MODIFIED,
             MediaStore.Downloads.MIME_TYPE
         )
-
         val mimeTypes = listOf(
             "application/pdf",
             "application/msword",
@@ -68,7 +75,6 @@ class DocumentRepository @Inject constructor(
         val selection = mimeTypes.joinToString(" OR ") {
             "${MediaStore.Downloads.MIME_TYPE} = ?"
         }
-
         try {
             context.contentResolver.query(
                 collection, projection, selection,
@@ -99,7 +105,7 @@ class DocumentRepository @Inject constructor(
                             type       = mimeToDocumentType(mime, name),
                             size       = formatSize(size),
                             date       = formatDate(dateMs),
-                            isFavorite = false
+                            isFavorite = false // se aplica luego en loadAllDocuments
                         ))
                     } catch (e: Exception) {
                         Timber.w("Error leyendo fila Downloads: ${e.message}")
@@ -109,7 +115,6 @@ class DocumentRepository @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Error consultando Downloads")
         }
-
         Timber.d("Downloads: ${documents.size} documentos")
         return documents
     }
@@ -123,7 +128,6 @@ class DocumentRepository @Inject constructor(
             MediaStore.Images.Media.DATE_MODIFIED,
             MediaStore.Images.Media.MIME_TYPE
         )
-
         try {
             context.contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -166,7 +170,6 @@ class DocumentRepository @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Error consultando imágenes")
         }
-
         Timber.d("Imágenes: ${documents.size}")
         return documents
     }
@@ -223,9 +226,9 @@ class DocumentRepository @Inject constructor(
     }
 
     private fun formatSize(bytes: Long): String = when {
-        bytes < 1024            -> "$bytes B"
-        bytes < 1024 * 1024    -> "${bytes / 1024} KB"
-        else                   -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+        bytes < 1024         -> "$bytes B"
+        bytes < 1024 * 1024  -> "${bytes / 1024} KB"
+        else                 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
     }
 
     private fun formatDate(ms: Long): String =

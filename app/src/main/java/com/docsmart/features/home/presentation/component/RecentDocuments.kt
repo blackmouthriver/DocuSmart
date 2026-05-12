@@ -7,26 +7,43 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.docsmart.core.ui.components.DocuSmartDocumentItem
 import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.core.ui.components.RenameDocumentDialog
 
 @Composable
 fun RecentDocuments(
-    documents: List<DocumentUiModel>,
+    documents      : List<DocumentUiModel>,
     onDocumentClick: (DocumentUiModel) -> Unit,
     onFavoriteClick: (String) -> Unit,
-    onSeeAllClick: () -> Unit,
+    onSeeAllClick  : () -> Unit,
     onOpenFileClick: () -> Unit = {},
-    onConvertClick: ((DocumentUiModel) -> Unit)? = null,
-    onDeleteClick: ((String) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onConvertClick : ((DocumentUiModel) -> Unit)? = null,
+    onDeleteClick  : ((String) -> Unit)? = null,
+    onRenameClick  : ((String, String) -> Unit)? = null,  // ← NUEVO (id, newName)
+    modifier       : Modifier = Modifier
 ) {
     val context = LocalContext.current
+
+    // Estado del dialog de renombrar
+    var documentToRename by remember { mutableStateOf<DocumentUiModel?>(null) }
+
+    // Dialog de renombrar
+    documentToRename?.let { doc ->
+        RenameDocumentDialog(
+            currentName = doc.name,
+            onConfirm   = { newName ->
+                onRenameClick?.invoke(doc.id, newName)
+                documentToRename = null
+            },
+            onDismiss   = { documentToRename = null }
+        )
+    }
 
     Column(modifier = modifier) {
         Row(
@@ -34,13 +51,13 @@ fun RecentDocuments(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Recientes",
+                text  = "Recientes",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             TextButton(onClick = onSeeAllClick) {
                 Text(
-                    text = "Ver todos",
+                    text  = "Ver todos",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -71,10 +88,12 @@ fun RecentDocuments(
                         onClick         = { onDocumentClick(document) },
                         onFavoriteClick = { onFavoriteClick(document.id) },
                         showDivider     = index < documents.size - 1,
-                        // Acciones del menú contextual
                         onOpenClick     = { onDocumentClick(document) },
                         onConvertClick  = onConvertClick?.let { cb -> { cb(document) } },
                         onShareClick    = { shareDocument(context, document) },
+                        onRenameClick   = if (onRenameClick != null) {
+                            { documentToRename = document }
+                        } else null,
                         onDeleteClick   = onDeleteClick?.let { cb -> { cb(document.id) } }
                     )
                 }
@@ -83,10 +102,9 @@ fun RecentDocuments(
     }
 }
 
-// Función utilitaria para compartir
 private fun shareDocument(context: Context, document: DocumentUiModel) {
     try {
-        val uri = Uri.parse(document.id)
+        val uri    = Uri.parse(document.id)
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "*/*"
             putExtra(Intent.EXTRA_STREAM, uri)
@@ -95,13 +113,10 @@ private fun shareDocument(context: Context, document: DocumentUiModel) {
         }
         context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
     } catch (e: Exception) {
-        // Si el ID es una ruta de archivo local
         try {
             val file = java.io.File(document.id)
-            val uri = androidx.core.content.FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.provider",
-                file
+            val uri  = androidx.core.content.FileProvider.getUriForFile(
+                context, "${context.packageName}.provider", file
             )
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "*/*"
@@ -109,8 +124,6 @@ private fun shareDocument(context: Context, document: DocumentUiModel) {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
-        } catch (e2: Exception) {
-            e2.printStackTrace()
-        }
+        } catch (e2: Exception) { e2.printStackTrace() }
     }
 }

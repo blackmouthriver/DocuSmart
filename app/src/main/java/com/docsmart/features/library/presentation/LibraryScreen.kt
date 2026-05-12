@@ -124,6 +124,7 @@ fun LibraryScreen(
                 documents = uiState.filteredDocuments,
                 onDocumentClick = { doc -> onDocumentClick(doc.id) },
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
+                onRenameClick = { id, newName -> viewModel.renameDocument(id, newName) },
                 searchQuery = uiState.searchQuery
             )
         }
