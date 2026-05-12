@@ -159,4 +159,10 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
+    implementation("org.apache.poi:poi-scratchpad:5.2.3") {
+        exclude(group = "org.apache.xmlbeans")
+        exclude(group = "com.github.virtuald")
+        exclude(group = "org.junit.jupiter")
+        exclude(group = "com.zaxxer")
+    }
 }

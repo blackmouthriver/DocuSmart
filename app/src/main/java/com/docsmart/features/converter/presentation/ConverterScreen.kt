@@ -8,8 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -26,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.*
 import com.docsmart.features.converter.domain.model.ConversionResult
@@ -37,26 +37,22 @@ import com.docsmart.features.converter.presentation.components.ConversionSuccess
 fun ConverterScreen(
     viewModel: ConverterViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState           = viewModel.uiState.collectAsStateWithLifecycle().value
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
-    val activity = context as? Activity
+    val context           = LocalContext.current
+    val activity          = context as? Activity
 
     val fileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        if (uris.isNotEmpty()) viewModel.onFilesSelected(uris)
-    }
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris -> if (uris.isNotEmpty()) viewModel.onFilesSelected(uris) }
 
     val singleFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { viewModel.onFilesSelected(listOf(it)) }
-    }
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { viewModel.onFilesSelected(listOf(it)) } }
 
     LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
             viewModel.dismissError()
         }
     }
@@ -68,88 +64,156 @@ fun ConverterScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost   = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                horizontal = 20.dp,
-                vertical = 24.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            modifier       = Modifier.fillMaxSize().padding(innerPadding),
+            contentPadding = PaddingValues(bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // ── Banner ────────────────────────────────
+            // ── Banner azul ───────────────────────────────────────────────────
             item {
                 DocuSmartTopBanner(
-                    screenTitle = stringResource(R.string.converter_title),
-                    screenSubtitle = stringResource(R.string.converter_subtitle)
+                    screenTitle    = stringResource(R.string.converter_title),
+                    screenSubtitle = stringResource(R.string.converter_subtitle),
+                    modifier       = Modifier.padding(horizontal = 20.dp, vertical = 24.dp)
                 )
             }
 
+            // ── Banner AdMob ──────────────────────────────────────────────────
+            item {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_CONVERTER_ID,
+                    adManager = viewModel.adManager,
+                    modifier  = Modifier.padding(horizontal = 20.dp)
+                )
+            }
+
+            // ── Éxito ─────────────────────────────────────────────────────────
             val result = uiState.conversionResult
             if (result is ConversionResult.Success) {
                 item {
                     ConversionSuccess(
-                        result = result,
-                        savedToDownloads = uiState.savedToDownloads,
-                        onConvertAnother = { viewModel.clearAll() },
-                        onSaveToDownloads = { viewModel.saveToDownloads(context) }
+                        result            = result,
+                        savedToDownloads  = uiState.savedToDownloads,
+                        onConvertAnother  = { viewModel.clearAll() },
+                        onSaveToDownloads = { viewModel.saveToDownloads(context) },
+                        modifier          = Modifier.padding(horizontal = 20.dp)
                     )
                 }
                 return@LazyColumn
             }
 
+            // ── Progreso ──────────────────────────────────────────────────────
             if (uiState.isConverting) {
                 item {
-                    ConversionProgress(totalImages = uiState.selectedFiles.size)
+                    ConversionProgress(
+                        totalImages = uiState.selectedFiles.size,
+                        modifier    = Modifier.padding(horizontal = 20.dp)
+                    )
                 }
                 return@LazyColumn
             }
 
-            if (uiState.selectedType == null) {
-                item {
-                    Text(
-                        text = stringResource(R.string.converter_select),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                item {
-                    ConversionCategoryGrid(
-                        selectedCategory = uiState.selectedCategory,
-                        onCategorySelected = { viewModel.onCategorySelected(it) }
-                    )
-                }
-                item {
-                    val types = uiState.filteredTypes
-                    if (types.isNotEmpty()) {
-                        ConversionTypeList(
-                            types = types,
-                            onTypeSelected = { viewModel.onTypeSelected(it) }
-                        )
-                    }
-                }
-            } else {
+            // ── Detalle de conversión seleccionada ────────────────────────────
+            if (uiState.selectedType != null) {
                 item {
                     ConversionDetailCard(
-                        type = uiState.selectedType!!,
-                        selectedFiles = uiState.selectedFiles,
-                        fileName = uiState.fileName,
+                        type             = uiState.selectedType!!,
+                        selectedFiles    = uiState.selectedFiles,
+                        fileName         = uiState.fileName,
                         onFileNameChange = { viewModel.onFileNameChange(it) },
-                        onSelectFiles = {
+                        onSelectFiles    = {
                             val mime = getMimeForType(uiState.selectedType!!)
-                            if (uiState.selectedType == ConversionType.IMAGE_TO_PDF) {
+                            if (uiState.selectedType == ConversionType.IMAGE_TO_PDF)
                                 fileLauncher.launch(mime)
-                            } else {
+                            else
                                 singleFileLauncher.launch(mime)
-                            }
                         },
                         onConvert = { viewModel.convert() },
-                        onBack = { viewModel.clearAll() }
+                        onBack    = { viewModel.clearAll() },
+                        modifier  = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+                return@LazyColumn
+            }
+
+            // ── Título grilla ─────────────────────────────────────────────────
+            item {
+                Text(
+                    text       = stringResource(R.string.converter_select),
+                    style      = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    modifier   = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+
+            // ── Secciones por categoría ───────────────────────────────────────
+            val allTypes = ConversionType.entries.toList()
+
+            val imageTypes = allTypes.filter { it.getCategoryForUi() == "Imagen" }
+            if (imageTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "Imagen",
+                        icon           = Icons.Rounded.Image,
+                        color          = ColorImage,
+                        types          = imageTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
+                    )
+                }
+            }
+
+            val pdfTypes = allTypes.filter { it.getCategoryForUi() == "PDF" }
+            if (pdfTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "PDF",
+                        icon           = Icons.Rounded.PictureAsPdf,
+                        color          = ColorPdf,
+                        types          = pdfTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
+                    )
+                }
+            }
+
+            val wordTypes = allTypes.filter { it.getCategoryForUi() == "Word" }
+            if (wordTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "Word",
+                        icon           = Icons.Rounded.Description,
+                        color          = ColorWord,
+                        types          = wordTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
+                    )
+                }
+            }
+
+            val excelTypes = allTypes.filter { it.getCategoryForUi() == "Excel" }
+            if (excelTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "Excel",
+                        icon           = Icons.Rounded.TableChart,
+                        color          = ColorExcel,
+                        types          = excelTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
+                    )
+                }
+            }
+
+            val pptTypes = allTypes.filter { it.getCategoryForUi() == "PowerPoint" }
+            if (pptTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "PowerPoint",
+                        icon           = Icons.Rounded.Slideshow,
+                        color          = ColorPowerPoint,
+                        types          = pptTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
                     )
                 }
             }
@@ -157,209 +221,191 @@ fun ConverterScreen(
     }
 }
 
-// ── Grid de categorías ────────────────────────────────
+// ── Sección por categoría con grilla 2 columnas ───────────────────────────────
+
 @Composable
-private fun ConversionCategoryGrid(
-    selectedCategory: String?,
-    onCategorySelected: (String) -> Unit
-) {
-    // ── Usamos strings localizados como clave ─────────
-    // La clave de categoría es el string en el idioma actual
-    val imgLabel = stringResource(R.string.converter_category_image)
-    val pdfLabel = stringResource(R.string.converter_category_pdf)
-    val wordLabel = stringResource(R.string.converter_category_word)
-    val excelLabel = stringResource(R.string.converter_category_excel)
-    val pptLabel = stringResource(R.string.converter_category_ppt)
-
-    val categories = listOf(
-        Triple(imgLabel, Icons.Rounded.Image, ColorImage),
-        Triple(pdfLabel, Icons.Rounded.PictureAsPdf, ColorPdf),
-        Triple(wordLabel, Icons.Rounded.Description, ColorWord),
-        Triple(excelLabel, Icons.Rounded.TableChart, ColorExcel),
-        Triple(pptLabel, Icons.Rounded.Slideshow, ColorPowerPoint)
-    )
-
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        items(categories) { (label, icon, color) ->
-            val isSelected = selectedCategory == label
-            Card(
-                modifier = Modifier
-                    .width(90.dp)
-                    .clickable { onCategorySelected(label) },
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected)
-                        color.copy(alpha = 0.15f)
-                    else MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(
-                    if (isSelected) 0.dp else 2.dp
-                ),
-                border = if (isSelected)
-                    androidx.compose.foundation.BorderStroke(1.5.dp, color)
-                else null
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = if (isSelected) color
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) color
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-    }
-}
-
-// ── Lista de tipos de conversión ──────────────────────
-@Composable
-private fun ConversionTypeList(
-    types: List<ConversionType>,
+private fun ConversionSection(
+    title         : String,
+    icon          : ImageVector,
+    color         : Color,
+    types         : List<ConversionType>,
     onTypeSelected: (ConversionType) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            text = stringResource(R.string.converter_select_type),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        types.forEach { type ->
-            ConversionTypeCard(
-                type = type,
-                onClick = { onTypeSelected(type) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 24.dp)
+    ) {
+        Row(
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier              = Modifier.padding(bottom = 12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(color.copy(alpha = 0.12f), MaterialTheme.shapes.small),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector        = icon,
+                    contentDescription = null,
+                    tint               = color,
+                    modifier           = Modifier.size(18.dp)
+                )
+            }
+            Text(
+                text       = title,
+                style      = MaterialTheme.typography.titleMedium,
+                color      = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold
             )
+            HorizontalDivider(
+                modifier  = Modifier.weight(1f),
+                thickness = 0.5.dp,
+                color     = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+
+        val rows = types.chunked(2)
+        rows.forEach { rowItems ->
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowItems.forEach { type ->
+                    ConversionGridCard(
+                        type     = type,
+                        onClick  = { onTypeSelected(type) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
 
-// ── Card de tipo de conversión ────────────────────────
+// ── Tarjeta de grilla ─────────────────────────────────────────────────────────
+
 @Composable
-private fun ConversionTypeCard(
-    type: ConversionType,
-    onClick: () -> Unit
+private fun ConversionGridCard(
+    type    : ConversionType,
+    onClick : () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val (fromColor, fromIcon) = getFormatStyle(type.fromFormat)
-    val (toColor, toIcon) = getFormatStyle(type.toFormat)
+    val (toColor,   toIcon)   = getFormatStyle(type.toFormat)
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier  = modifier
+            .height(110.dp)
             .clickable { onClick() },
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
+        shape     = MaterialTheme.shapes.large,
+        colors    = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier            = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        fromColor.copy(alpha = 0.15f),
-                        MaterialTheme.shapes.medium
-                    ),
-                contentAlignment = Alignment.Center
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(fromColor.copy(alpha = 0.15f), MaterialTheme.shapes.small),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector        = fromIcon,
+                        contentDescription = null,
+                        tint               = fromColor,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                }
                 Icon(
-                    imageVector = fromIcon,
+                    imageVector        = Icons.Rounded.ArrowForward,
                     contentDescription = null,
-                    tint = fromColor,
-                    modifier = Modifier.size(22.dp)
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier           = Modifier.size(14.dp)
                 )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(toColor.copy(alpha = 0.15f), MaterialTheme.shapes.small),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector        = toIcon,
+                        contentDescription = null,
+                        tint               = toColor,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                }
             }
-            Icon(
-                imageVector = Icons.Rounded.ArrowForward,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        toColor.copy(alpha = 0.15f),
-                        MaterialTheme.shapes.medium
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = toIcon,
-                    contentDescription = null,
-                    tint = toColor,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
+
+            Column {
                 Text(
-                    text = type.label,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text       = type.label,
+                    style      = MaterialTheme.typography.labelLarge,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
+                    maxLines   = 1
                 )
                 Text(
-                    text = "${type.fromFormat} → ${type.toFormat}",
+                    text  = "${type.fromFormat} → ${type.toFormat}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(
-                imageVector = Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
 
-// ── Detalle de conversión ─────────────────────────────
+// ── Detalle de conversión ─────────────────────────────────────────────────────
+
 @Composable
 private fun ConversionDetailCard(
-    type: ConversionType,
-    selectedFiles: List<Uri>,
-    fileName: String,
+    type            : ConversionType,
+    selectedFiles   : List<Uri>,
+    fileName        : String,
     onFileNameChange: (String) -> Unit,
-    onSelectFiles: () -> Unit,
-    onConvert: () -> Unit,
-    onBack: () -> Unit
+    onSelectFiles   : () -> Unit,
+    onConvert       : () -> Unit,
+    onBack          : () -> Unit,
+    modifier        : Modifier = Modifier
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier            = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = Icons.Rounded.ArrowBackIosNew,
+                    imageVector        = Icons.Rounded.ArrowBackIosNew,
                     contentDescription = stringResource(R.string.general_back_action),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint               = MaterialTheme.colorScheme.primary
                 )
             }
             Text(
-                text = type.label,
-                style = MaterialTheme.typography.titleLarge,
+                text       = type.label,
+                style      = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color      = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -367,39 +413,38 @@ private fun ConversionDetailCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onSelectFiles() },
-            shape = MaterialTheme.shapes.large,
+            shape  = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-                    .copy(alpha = 0.3f)
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
             ),
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(
-                modifier = Modifier
+                modifier            = Modifier
                     .fillMaxWidth()
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.FolderOpen,
+                    imageVector        = Icons.Rounded.FolderOpen,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(40.dp)
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(40.dp)
                 )
                 Text(
                     text = if (selectedFiles.isEmpty())
                         stringResource(R.string.converter_select_files, type.fromFormat)
                     else
                         stringResource(R.string.converter_files_selected, selectedFiles.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (selectedFiles.isEmpty())
+                    style     = MaterialTheme.typography.bodyMedium,
+                    color     = if (selectedFiles.isEmpty())
                         MaterialTheme.colorScheme.onSurfaceVariant
                     else MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = stringResource(
+                    text  = stringResource(
                         R.string.converter_formats,
                         type.fromExtensions.joinToString(", ").uppercase()
                     ),
@@ -411,40 +456,38 @@ private fun ConversionDetailCard(
 
         if (selectedFiles.isNotEmpty()) {
             OutlinedTextField(
-                value = fileName,
+                value         = fileName,
                 onValueChange = onFileNameChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.converter_file_name_label)) },
-                placeholder = { Text(stringResource(R.string.converter_file_name_placeholder)) },
-                trailingIcon = {
+                modifier      = Modifier.fillMaxWidth(),
+                label         = { Text(stringResource(R.string.converter_file_name_label)) },
+                placeholder   = { Text(stringResource(R.string.converter_file_name_placeholder)) },
+                trailingIcon  = {
                     Text(
-                        text = ".${type.outputExtension}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text     = ".${type.outputExtension}",
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 12.dp)
                     )
                 },
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium
+                shape      = MaterialTheme.shapes.medium
             )
 
             Button(
-                onClick = onConvert,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(
+                onClick  = onConvert,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape    = MaterialTheme.shapes.medium,
+                colors   = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.SwapHoriz,
+                    imageVector        = Icons.Rounded.SwapHoriz,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    modifier           = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = stringResource(R.string.converter_to_format, type.toFormat),
+                    text  = stringResource(R.string.converter_to_format, type.toFormat),
                     style = MaterialTheme.typography.labelLarge
                 )
             }
@@ -452,35 +495,41 @@ private fun ConversionDetailCard(
     }
 }
 
-// ── Helpers ───────────────────────────────────────────
-private fun getFormatStyle(format: String): Pair<Color, ImageVector> {
-    return when (format.lowercase()) {
-        "pdf" -> Pair(ColorPdf, Icons.Rounded.PictureAsPdf)
-        "imagen", "image", "jpg", "png" -> Pair(ColorImage, Icons.Rounded.Image)
-        "word" -> Pair(ColorWord, Icons.Rounded.Description)
-        "excel" -> Pair(ColorExcel, Icons.Rounded.TableChart)
-        "powerpoint" -> Pair(ColorPowerPoint, Icons.Rounded.Slideshow)
-        "txt", "texto", "text" -> Pair(ColorText, Icons.Rounded.TextSnippet)
-        "csv" -> Pair(ColorExcel, Icons.Rounded.GridOn)
-        else -> Pair(ColorText, Icons.Rounded.InsertDriveFile)
-    }
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+private fun ConversionType.getCategoryForUi(): String = when (this) {
+    ConversionType.IMAGE_TO_PDF,
+    ConversionType.IMAGE_TO_JPG,
+    ConversionType.IMAGE_TO_PNG  -> "Imagen"
+    ConversionType.PDF_TO_IMAGE,
+    ConversionType.PDF_TO_TXT    -> "PDF"
+    ConversionType.WORD_TO_PDF,
+    ConversionType.WORD_TO_TXT   -> "Word"
+    ConversionType.EXCEL_TO_PDF,
+    ConversionType.EXCEL_TO_CSV  -> "Excel"
+    ConversionType.PPT_TO_PDF    -> "PowerPoint"
 }
 
-private fun getMimeForType(type: ConversionType): String {
-    return when (type) {
-        ConversionType.IMAGE_TO_PDF,
-        ConversionType.IMAGE_TO_JPG,
-        ConversionType.IMAGE_TO_PNG -> "image/*"
+private fun getFormatStyle(format: String): Pair<Color, ImageVector> = when (format.lowercase()) {
+    "pdf"                           -> Pair(ColorPdf,       Icons.Rounded.PictureAsPdf)
+    "imagen", "image", "jpg", "png" -> Pair(ColorImage,     Icons.Rounded.Image)
+    "word"                          -> Pair(ColorWord,       Icons.Rounded.Description)
+    "excel"                         -> Pair(ColorExcel,      Icons.Rounded.TableChart)
+    "powerpoint"                    -> Pair(ColorPowerPoint, Icons.Rounded.Slideshow)
+    "txt", "texto", "text"          -> Pair(ColorText,       Icons.Rounded.TextSnippet)
+    "csv"                           -> Pair(ColorExcel,      Icons.Rounded.GridOn)
+    else                            -> Pair(ColorText,       Icons.Rounded.InsertDriveFile)
+}
 
-        ConversionType.PDF_TO_IMAGE,
-        ConversionType.PDF_TO_TXT -> "application/pdf"
-
-        ConversionType.WORD_TO_PDF,
-        ConversionType.WORD_TO_TXT -> "application/msword"
-
-        ConversionType.EXCEL_TO_PDF,
-        ConversionType.EXCEL_TO_CSV -> "application/vnd.ms-excel"
-
-        ConversionType.PPT_TO_PDF -> "application/vnd.ms-powerpoint"
-    }
+private fun getMimeForType(type: ConversionType): String = when (type) {
+    ConversionType.IMAGE_TO_PDF,
+    ConversionType.IMAGE_TO_JPG,
+    ConversionType.IMAGE_TO_PNG  -> "image/*"
+    ConversionType.PDF_TO_IMAGE,
+    ConversionType.PDF_TO_TXT    -> "application/pdf"
+    ConversionType.WORD_TO_PDF,
+    ConversionType.WORD_TO_TXT   -> "application/msword"
+    ConversionType.EXCEL_TO_PDF,
+    ConversionType.EXCEL_TO_CSV  -> "application/vnd.ms-excel"
+    ConversionType.PPT_TO_PDF    -> "application/vnd.ms-powerpoint"
 }

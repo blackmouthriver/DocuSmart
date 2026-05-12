@@ -163,4 +163,14 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    fun removeDocument(documentId: String) {
+        val updated = _uiState.value.allDocuments.filter { it.id != documentId }
+        _uiState.update { state ->
+            state.copy(
+                allDocuments      = updated,
+                filteredDocuments = applyCurrentFilters(updated, state),
+                favorites         = updated.filter { it.isFavorite }
+            )
+        }
+    }
 }

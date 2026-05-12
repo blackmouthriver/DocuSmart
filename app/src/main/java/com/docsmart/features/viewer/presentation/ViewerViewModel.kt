@@ -75,22 +75,41 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
 
             val uri = Uri.parse(uriString)
 
-            val mimeType: String = context.contentResolver.getType(uri)
-                ?: resolveMimeType(uriString)
-                ?: "application/octet-stream"
-
-            // Usar resolveFileName CON context para obtener nombre real
+            // ── Detección robusta de MIME type ────────────────────────────────
+            // 1. Intentar por ContentResolver
+            // 2. Fallback por extensión del nombre real
+            // 3. Fallback por extensión de la URI
             val fileName = resolveFileName(uriString, context)
 
-            Timber.d("$TAG: uri=$uriString mimeType=$mimeType fileName=$fileName")
+            val mimeType: String = run {
+                val fromResolver = try {
+                    context.contentResolver.getType(uri)
+                } catch (e: Exception) { null }
+
+                val fromExtension = resolveMimeTypeByExtension(fileName)
+                    ?: resolveMimeType(uriString)
+
+                // Preferir extensión si el resolver devuelve genérico
+                when {
+                    fromResolver == null                          -> fromExtension ?: "application/octet-stream"
+                    fromResolver == "application/octet-stream"   -> fromExtension ?: fromResolver
+                    fromResolver.contains("*")                   -> fromExtension ?: fromResolver
+                    else                                         -> fromResolver
+                }
+            }
+
+            Timber.d("ViewerViewModel: uri=$uriString mimeType=$mimeType fileName=$fileName")
 
             val documentType = when {
-                mimeType.contains("image")                          -> DocumentType.IMAGE
-                mimeType.contains("pdf")                           -> DocumentType.PDF
-                mimeType.contains("word") || mimeType.contains("msword") -> DocumentType.WORD
-                mimeType.contains("excel") || mimeType.contains("sheet") -> DocumentType.EXCEL
-                mimeType.contains("text")                          -> DocumentType.TEXT
-                else                                               -> DocumentType.PDF
+                mimeType.contains("image")                                    -> DocumentType.IMAGE
+                mimeType.contains("pdf")                                      -> DocumentType.PDF
+                mimeType.contains("word") || mimeType.contains("msword") ||
+                        mimeType.contains("wordprocessingml")                         -> DocumentType.WORD
+                mimeType.contains("excel") || mimeType.contains("sheet") ||
+                        mimeType.contains("spreadsheet")                              -> DocumentType.EXCEL
+                mimeType.contains("powerpoint") || mimeType.contains("presentation") -> DocumentType.POWERPOINT
+                mimeType.contains("text")                                     -> DocumentType.TEXT
+                else                                                          -> DocumentType.PDF
             }
 
             val document = DocumentUiModel(
@@ -113,7 +132,6 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
             }
         }
     }
-
     private fun loadFromMock(id: String) {
         val mockDocument = getMockDocument(id)
         _uiState.update { state ->
@@ -163,6 +181,27 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    // Detecta MIME por extensión del nombre de archivo — más confiable que ContentResolver
+    private fun resolveMimeTypeByExtension(fileName: String): String? {
+        val ext = fileName.substringAfterLast(".", "").lowercase()
+        return when (ext) {
+            "pdf"  -> "application/pdf"
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "doc"  -> "application/msword"
+            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "xls"  -> "application/vnd.ms-excel"
+            "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            "ppt"  -> "application/vnd.ms-powerpoint"
+            "jpg", "jpeg" -> "image/jpeg"
+            "png"  -> "image/png"
+            "webp" -> "image/webp"
+            "gif"  -> "image/gif"
+            "txt"  -> "text/plain"
+            "md"   -> "text/markdown"
+            "csv"  -> "text/csv"
+            else   -> null
+        }
+    }
     fun onPageChanged(page: Int, total: Int) {
         _uiState.update { it.copy(currentPage = page, totalPages = total) }
     }

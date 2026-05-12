@@ -92,59 +92,64 @@ fun ViewerScreen(
                 }
             }
             uiState.document != null -> {
-                val fileUri = uiState.fileUri
-                val mimeType = uiState.mimeType ?: ""
+                val fileUri  = uiState.fileUri
+                val mime     = (uiState.mimeType ?: "").lowercase()
+                val fileName = (uiState.document?.name ?: "").lowercase()
+
                 when {
-                    mimeType.contains("image") -> {
+                    mime.contains("image") ||
+                            fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
+                            fileName.endsWith(".png") || fileName.endsWith(".webp") ||
+                            fileName.endsWith(".gif") -> {
                         ImageViewerContent(
-                            uri = fileUri,
+                            uri   = fileUri,
                             onTap = { viewModel.toggleControls() }
                         )
                     }
-                    mimeType.contains("pdf") -> {
+                    mime.contains("pdf") || fileName.endsWith(".pdf") -> {
                         PdfViewerContent(
-                            uri = fileUri,
-                            onPageChanged = { page, total ->
-                                viewModel.onPageChanged(page, total)
-                            },
-                            onTap = { viewModel.toggleControls() }
+                            uri           = fileUri,
+                            onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
+                            onTap         = { viewModel.toggleControls() }
                         )
                     }
-                    mimeType.contains("word") ||
-                            mimeType.contains("msword") ||
-                            mimeType.contains("wordprocessingml") -> {
+                    mime.contains("word") || mime.contains("msword") ||
+                            mime.contains("wordprocessingml") ||
+                            fileName.endsWith(".doc") || fileName.endsWith(".docx") -> {
                         WordViewerContent(
-                            uri = fileUri,
+                            uri   = fileUri,
                             onTap = { viewModel.toggleControls() }
                         )
                     }
-                    mimeType.contains("excel") ||
-                            mimeType.contains("spreadsheet") ||
-                            mimeType.contains("ms-excel") -> {
+                    mime.contains("excel") || mime.contains("spreadsheet") ||
+                            mime.contains("ms-excel") || mime.contains("sheet") ||
+                            fileName.endsWith(".xls") || fileName.endsWith(".xlsx") -> {
                         ExcelViewerContent(
-                            uri = fileUri,
+                            uri   = fileUri,
                             onTap = { viewModel.toggleControls() }
                         )
                     }
-                    mimeType.contains("powerpoint") ||
-                            mimeType.contains("presentation") -> {
+                    mime.contains("powerpoint") || mime.contains("presentation") ||
+                            fileName.endsWith(".ppt") || fileName.endsWith(".pptx") -> {
                         PptViewerContent(
-                            uri = fileUri,
+                            uri   = fileUri,
                             onTap = { viewModel.toggleControls() }
                         )
                     }
-                    mimeType.contains("text") -> {
+                    mime.contains("text") ||
+                            fileName.endsWith(".txt") || fileName.endsWith(".md") ||
+                            fileName.endsWith(".csv") -> {
                         TextViewerContent(
-                            uri = fileUri,
+                            uri   = fileUri,
                             onTap = { viewModel.toggleControls() }
                         )
                     }
                     else -> {
                         UnsupportedFormatContent(
-                            mimeType = mimeType,
+                            mimeType = mime,
                             fileName = uiState.document?.name ?: "",
-                            fileUri = fileUri,
-                            onTap = { viewModel.toggleControls() }
+                            fileUri  = fileUri,
+                            onTap    = { viewModel.toggleControls() }
                         )
                     }
                 }
@@ -153,32 +158,32 @@ fun ViewerScreen(
 
         uiState.document?.let { doc ->
             ViewerTopBar(
-                fileName = doc.name,
-                isFavorite = uiState.isFavorite,
-                visible = uiState.showControls,
-                onBackClick = onBack,
+                fileName        = doc.name,
+                isFavorite      = uiState.isFavorite,
+                visible         = uiState.showControls,
+                onBackClick     = onBack,
                 onFavoriteClick = { viewModel.toggleFavorite() },
-                onShareClick = { viewModel.shareDocument(context) },
-                onSearchClick = { },
-                modifier = Modifier.align(Alignment.TopCenter)
+                onShareClick    = { viewModel.shareDocument(context) },
+                onSearchClick   = { },
+                modifier        = Modifier.align(Alignment.TopCenter)
             )
         }
 
         ViewerBottomBar(
             currentPage = uiState.currentPage,
-            totalPages = uiState.totalPages,
-            visible = uiState.showControls,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            totalPages  = uiState.totalPages,
+            visible     = uiState.showControls,
+            modifier    = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
 
-// ── Visor de imágenes ─────────────────────────────────
+// ── Visor de imágenes ─────────────────────────────────────────────────────────
 @Composable
 private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
     val context = LocalContext.current
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var scale by remember { mutableFloatStateOf(1f) }
+    var bitmap  by remember { mutableStateOf<Bitmap?>(null) }
+    var scale   by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
 
@@ -209,14 +214,14 @@ private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
             .clickable { onTap() }
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(0.5f, 5f)
+                    scale   = (scale * zoom).coerceIn(0.5f, 5f)
                     offsetX += pan.x
                     offsetY += pan.y
                 }
             }
             .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
+                scaleX       = scale,
+                scaleY       = scale,
                 translationX = offsetX,
                 translationY = offsetY
             ),
@@ -224,29 +229,29 @@ private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
     ) {
         bitmap?.let {
             Image(
-                bitmap = it.asImageBitmap(),
+                bitmap             = it.asImageBitmap(),
                 contentDescription = null,
-                modifier = Modifier
+                modifier           = Modifier
                     .fillMaxWidth()
-                    .padding(top = 72.dp, bottom = 72.dp)
+                    .padding(top = 92.dp, bottom = 92.dp) // ← FIX
             )
         }
     }
 }
 
-// ── Visor de PDF ──────────────────────────────────────
+// ── Visor de PDF ──────────────────────────────────────────────────────────────
 @Composable
 private fun PdfViewerContent(
-    uri: Uri?,
+    uri          : Uri?,
     onPageChanged: (Int, Int) -> Unit,
-    onTap: () -> Unit
+    onTap        : () -> Unit
 ) {
-    val context = LocalContext.current
-    var pages by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
+    val context   = LocalContext.current
+    var pages     by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     var loadError by remember { mutableStateOf(false) }
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
+    var scale     by remember { mutableFloatStateOf(1f) }
+    var offsetX   by remember { mutableFloatStateOf(0f) }
+    var offsetY   by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
@@ -261,20 +266,15 @@ private fun PdfViewerContent(
                     cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
                 )
                 val pdfRenderer = PdfRenderer(fileDescriptor)
-                val bitmaps = mutableListOf<Bitmap>()
+                val bitmaps     = mutableListOf<Bitmap>()
 
                 for (i in 0 until pdfRenderer.pageCount) {
-                    val page = pdfRenderer.openPage(i)
+                    val page   = pdfRenderer.openPage(i)
                     val bitmap = Bitmap.createBitmap(
-                        page.width * 2,
-                        page.height * 2,
-                        Bitmap.Config.ARGB_8888
+                        page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888
                     )
                     bitmap.eraseColor(android.graphics.Color.WHITE)
-                    page.render(
-                        bitmap, null, null,
-                        PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-                    )
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                     page.close()
                     bitmaps.add(bitmap)
                 }
@@ -294,7 +294,7 @@ private fun PdfViewerContent(
     if (loadError) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = stringResource(R.string.viewer_error),
+                text  = stringResource(R.string.viewer_error),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -308,7 +308,7 @@ private fun PdfViewerContent(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = stringResource(R.string.viewer_rendering),
+                    text  = stringResource(R.string.viewer_rendering),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -323,20 +323,20 @@ private fun PdfViewerContent(
             .clickable { onTap() }
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(0.5f, 4f)
+                    scale   = (scale * zoom).coerceIn(0.5f, 4f)
                     offsetX += pan.x
                     offsetY += pan.y
                 }
             }
             .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
+                scaleX       = scale,
+                scaleY       = scale,
                 translationX = offsetX,
                 translationY = offsetY
             ),
         contentPadding = PaddingValues(
-            top = 72.dp, bottom = 72.dp,
-            start = 8.dp, end = 8.dp
+            top    = 100.dp, bottom = 100.dp, // ← FIX
+            start  = 8.dp,  end    = 8.dp
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -345,57 +345,67 @@ private fun PdfViewerContent(
                 onPageChanged(index, pages.size)
             }
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.small,
+                modifier  = Modifier.fillMaxWidth(),
+                shape     = MaterialTheme.shapes.small,
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Image(
-                    bitmap = bitmap.asImageBitmap(),
+                    bitmap             = bitmap.asImageBitmap(),
                     contentDescription = "Página ${index + 1}",
-                    modifier = Modifier.fillMaxWidth()
+                    modifier           = Modifier.fillMaxWidth()
                 )
             }
         }
     }
 }
 
-// ── Visor de Word ─────────────────────────────────────
-// Lee el .docx como ZIP y extrae el XML sin Apache POI
+// ── Visor de Word ─────────────────────────────────────────────────────────────
 @Composable
 private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
     val context = LocalContext.current
-    var paragraphs by remember { mutableStateOf<List<String>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError by remember { mutableStateOf(false) }
+
+    data class WordParagraph(val text: String, val isHeading: Boolean)
+
+    var paragraphs by remember { mutableStateOf<List<WordParagraph>>(emptyList()) }
+    var isLoading  by remember { mutableStateOf(true) }
+    var hasError   by remember { mutableStateOf(false) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
         paragraphs = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    val zipInput = ZipInputStream(input)
-                    var entry = zipInput.nextEntry
-                    val result = mutableListOf<String>()
+                    val zip   = ZipInputStream(input)
+                    var entry = zip.nextEntry
+                    val result = mutableListOf<WordParagraph>()
 
                     while (entry != null) {
                         if (entry.name == "word/document.xml") {
-                            val content = zipInput.readBytes().toString(Charsets.UTF_8)
-                            val texts = content
-                                .replace(Regex("<w:p[ >]"), "\n")
-                                .replace(Regex("<[^>]+>"), "")
-                                .replace("&lt;", "<")
-                                .replace("&gt;", ">")
-                                .replace("&amp;", "&")
-                                .replace("&nbsp;", " ")
-                                .split("\n")
-                                .map { it.trim() }
-                                .filter { it.isNotBlank() }
-                            result.addAll(texts)
+                            val xml        = zip.readBytes().toString(Charsets.UTF_8)
+                            val paraRegex  = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
+
+                            paraRegex.findAll(xml).forEach { match ->
+                                val paraXml   = match.value
+                                val isHeading = paraXml.contains(Regex(
+                                    "w:val=\"(Heading|heading|Title|title|Titulo|H[123456])"
+                                ))
+                                val text = paraXml
+                                    .replace(Regex("<w:rPr>.*?</w:rPr>", RegexOption.DOT_MATCHES_ALL), "")
+                                    .replace(Regex("<w:pPr>.*?</w:pPr>", RegexOption.DOT_MATCHES_ALL), "")
+                                    .replace(Regex("<[^>]+>"), "")
+                                    .replace("&lt;", "<")
+                                    .replace("&gt;", ">")
+                                    .replace("&amp;", "&")
+                                    .replace("&nbsp;", " ")
+                                    .replace(Regex("\\s+"), " ")
+                                    .trim()
+                                if (text.isNotBlank()) result.add(WordParagraph(text, isHeading))
+                            }
                             break
                         }
-                        entry = zipInput.nextEntry
+                        entry = zip.nextEntry
                     }
-                    zipInput.close()
+                    zip.close()
                     result
                 } ?: emptyList()
             } catch (e: Exception) {
@@ -411,83 +421,139 @@ private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .clickable { onTap() }
     ) {
         when {
             isLoading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
+                color    = MaterialTheme.colorScheme.primary
             )
             hasError || paragraphs.isEmpty() -> Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(32.dp),
+                modifier            = Modifier.align(Alignment.Center).padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "No se pudo leer el contenido del archivo",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text      = "No se pudo leer el contenido del archivo Word",
+                    style     = MaterialTheme.typography.bodyMedium,
+                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
             else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(
-                    top = 80.dp, bottom = 80.dp,
-                    start = 20.dp, end = 20.dp
+                    top    = 100.dp, bottom = 100.dp, // ← FIX
+                    start  = 20.dp, end    = 20.dp
                 ),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                itemsIndexed(paragraphs) { _, text ->
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        lineHeight = 22.sp
-                    )
+                itemsIndexed(paragraphs) { _, para ->
+                    if (para.isHeading) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text       = para.text,
+                                style      = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color      = MaterialTheme.colorScheme.primary,
+                                lineHeight = 26.sp
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            HorizontalDivider(
+                                color     = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                thickness = 1.dp
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    } else {
+                        Text(
+                            text       = para.text,
+                            style      = MaterialTheme.typography.bodyMedium,
+                            color      = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 24.sp,
+                            modifier   = Modifier.padding(vertical = 3.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-// ── Visor de Excel ────────────────────────────────────
-// Lee el .xlsx como ZIP y extrae strings compartidos
+// ── Visor de Excel ────────────────────────────────────────────────────────────
 @Composable
 private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
     val context = LocalContext.current
-    var rows by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    data class ExcelCell(val value: String, val row: Int)
+
+    var cells     by remember { mutableStateOf<List<ExcelCell>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var hasError  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        rows = withContext(Dispatchers.IO) {
+        cells = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    val zipInput = ZipInputStream(input)
-                    var entry = zipInput.nextEntry
-                    val result = mutableListOf<String>()
+                    val zip       = ZipInputStream(input)
+                    var entry     = zip.nextEntry
+                    var sharedXml = ""
+                    var sheet1Xml = ""
 
                     while (entry != null) {
-                        if (entry.name == "xl/sharedStrings.xml") {
-                            val content = zipInput.readBytes().toString(Charsets.UTF_8)
-                            val texts = content
-                                .split(Regex("<t>|<t "))
-                                .drop(1)
-                                .map { it.substringBefore("</t>").trim() }
-                                .filter { it.isNotBlank() && !it.startsWith("<") }
-                            result.addAll(texts)
-                            break
+                        when (entry.name) {
+                            "xl/sharedStrings.xml"        -> sharedXml = zip.readBytes().toString(Charsets.UTF_8)
+                            "xl/worksheets/sheet1.xml"    -> sheet1Xml = zip.readBytes().toString(Charsets.UTF_8)
                         }
-                        entry = zipInput.nextEntry
+                        entry = zip.nextEntry
                     }
-                    zipInput.close()
-                    result.distinct()
+                    zip.close()
+
+                    val sharedStrings = mutableListOf<String>()
+                    val tRegex = Regex("<t(?:\\s[^>]*)?>([^<]*)</t>")
+                    tRegex.findAll(sharedXml).forEach { match ->
+                        sharedStrings.add(
+                            match.groupValues[1]
+                                .replace("&amp;", "&").replace("&lt;", "<")
+                                .replace("&gt;", ">").replace("&quot;", "\"").trim()
+                        )
+                    }
+
+                    val result    = mutableListOf<ExcelCell>()
+                    var rowNum    = 0
+                    val rowRegex  = Regex("<row[^>]*>(.*?)</row>", RegexOption.DOT_MATCHES_ALL)
+                    val cellRegex = Regex("<c[^>]*>(.*?)</c>",     RegexOption.DOT_MATCHES_ALL)
+                    val vRegex    = Regex("<v>([^<]*)</v>")
+
+                    rowRegex.findAll(sheet1Xml).forEach { rowMatch ->
+                        val rowCells = mutableListOf<String>()
+                        cellRegex.findAll(rowMatch.groupValues[1]).forEach { cellMatch ->
+                            val cellXml      = cellMatch.value
+                            val typeAttr     = Regex("""t="([^"]*)"""").find(cellXml)?.groupValues?.get(1) ?: ""
+                            val vValue       = vRegex.find(cellXml)?.groupValues?.get(1)?.trim() ?: ""
+                            val displayValue = when (typeAttr) {
+                                "s"                      -> { val idx = vValue.toIntOrNull() ?: -1; if (idx >= 0 && idx < sharedStrings.size) sharedStrings[idx] else "" }
+                                "b"                      -> if (vValue == "1") "TRUE" else "FALSE"
+                                "str", "inlineStr"       -> vValue
+                                else                     -> vValue
+                            }
+                            if (displayValue.isNotBlank()) rowCells.add(displayValue)
+                        }
+                        if (rowCells.isNotEmpty()) {
+                            result.add(ExcelCell(rowCells.joinToString("  |  "), rowNum))
+                            rowNum++
+                        }
+                    }
+                    result
                 } ?: emptyList()
             } catch (e: Exception) {
                 Timber.e("Error leyendo Excel: ${e.message}")
+                hasError = true
                 emptyList()
             } finally {
                 isLoading = false
@@ -498,49 +564,65 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .clickable { onTap() }
     ) {
         when {
             isLoading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
+                color    = MaterialTheme.colorScheme.primary
             )
-            rows.isEmpty() -> Text(
-                text = "No se pudo leer el contenido",
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(32.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            hasError || cells.isEmpty() -> Text(
+                text      = "No se pudo leer el contenido del archivo Excel",
+                modifier  = Modifier.align(Alignment.Center).padding(32.dp),
+                color     = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top = 80.dp, bottom = 80.dp,
-                    start = 16.dp, end = 16.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(1.dp)
+                modifier       = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp) // ← FIX
             ) {
-                itemsIndexed(rows) { index, cell ->
+                val header = cells.firstOrNull()
+                val data   = if (cells.size > 1) cells.drop(1) else cells
+
+                if (header != null) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.primary)
+                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text       = header.value,
+                                style      = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color      = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                }
+
+                itemsIndexed(data) { index, cell ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
                                 if (index % 2 == 0)
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                                 else
                                     MaterialTheme.colorScheme.surface
                             )
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = 16.dp, vertical = 9.dp)
                     ) {
                         Text(
-                            text = cell,
+                            text  = cell.value,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant,
+                        color     = MaterialTheme.colorScheme.outlineVariant,
                         thickness = 0.5.dp
                     )
                 }
@@ -549,12 +631,14 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
     }
 }
 
-// ── Visor de PowerPoint ───────────────────────────────
-// Lee el .pptx como ZIP y extrae el texto de cada slide
+// ── Visor de PowerPoint ───────────────────────────────────────────────────────
 @Composable
 private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
     val context = LocalContext.current
-    var slides by remember { mutableStateOf<List<Pair<Int, String>>>(emptyList()) }
+
+    data class SlideContent(val number: Int, val title: String, val body: String)
+
+    var slides    by remember { mutableStateOf<List<SlideContent>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(uri) {
@@ -562,40 +646,35 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
         slides = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    val zipInput = ZipInputStream(input)
-                    var entry = zipInput.nextEntry
-                    val slideMap = mutableMapOf<Int, String>()
+                    val zip      = ZipInputStream(input)
+                    var entry    = zip.nextEntry
+                    val slideMap = mutableMapOf<Int, SlideContent>()
 
                     while (entry != null) {
                         if (entry.name.startsWith("ppt/slides/slide") &&
                             entry.name.endsWith(".xml") &&
                             !entry.name.contains("_rels")
                         ) {
-                            val slideNum = entry.name
-                                .removePrefix("ppt/slides/slide")
-                                .removeSuffix(".xml")
-                                .toIntOrNull() ?: 0
+                            val num       = entry.name.removePrefix("ppt/slides/slide").removeSuffix(".xml").toIntOrNull() ?: 0
+                            val xml       = zip.readBytes().toString(Charsets.UTF_8)
+                            val paraRegex = Regex("<a:p[ >](.*?)</a:p>", RegexOption.DOT_MATCHES_ALL)
+                            val lines     = paraRegex.findAll(xml).mapNotNull { match ->
+                                val text = match.value
+                                    .replace(Regex("<a:rPr[^/]*/?>|</a:rPr>"), "")
+                                    .replace(Regex("<[^>]+>"), "")
+                                    .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+                                    .replace(Regex("\\s+"), " ").trim()
+                                if (text.isNotBlank()) text else null
+                            }.toList()
 
-                            val content = zipInput.readBytes().toString(Charsets.UTF_8)
-                            val text = content
-                                .replace(Regex("<a:p[ >]"), "\n")
-                                .replace(Regex("<[^>]+>"), "")
-                                .replace("&lt;", "<")
-                                .replace("&gt;", ">")
-                                .replace("&amp;", "&")
-                                .split("\n")
-                                .map { it.trim() }
-                                .filter { it.isNotBlank() }
-                                .joinToString("\n")
-
-                            if (text.isNotBlank()) {
-                                slideMap[slideNum] = text
+                            if (lines.isNotEmpty()) {
+                                slideMap[num] = SlideContent(num, lines.first(), lines.drop(1).joinToString("\n"))
                             }
                         }
-                        entry = zipInput.nextEntry
+                        entry = zip.nextEntry
                     }
-                    zipInput.close()
-                    slideMap.toSortedMap().entries.map { Pair(it.key, it.value) }
+                    zip.close()
+                    slideMap.toSortedMap().values.toList()
                 } ?: emptyList()
             } catch (e: Exception) {
                 Timber.e("Error leyendo PPT: ${e.message}")
@@ -609,61 +688,93 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .clickable { onTap() }
     ) {
         when {
             isLoading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
+                color    = MaterialTheme.colorScheme.primary
             )
             slides.isEmpty() -> Text(
-                text = "No se pudo leer el contenido",
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(32.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text      = "No se pudo leer el contenido de la presentación",
+                modifier  = Modifier.align(Alignment.Center).padding(32.dp),
+                color     = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier       = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    top = 80.dp, bottom = 80.dp,
-                    start = 16.dp, end = 16.dp
+                    top    = 100.dp, bottom = 100.dp, // ← FIX
+                    start  = 16.dp, end    = 16.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 itemsIndexed(slides) { _, slide ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
+                        modifier  = Modifier.fillMaxWidth(),
+                        shape     = MaterialTheme.shapes.large,
+                        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Surface(
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primaryContainer
-                            ) {
-                                Text(
-                                    text = "Slide ${slide.first}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(
-                                        horizontal = 8.dp, vertical = 4.dp
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                                            topStart = 16.dp, topEnd = 16.dp
+                                        )
                                     )
+                                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                                verticalAlignment     = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.primary
+                                ) {
+                                    Text(
+                                        text       = "${slide.number}",
+                                        style      = MaterialTheme.typography.labelSmall,
+                                        color      = MaterialTheme.colorScheme.onPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier   = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                    )
+                                }
+                                Text(
+                                    text       = slide.title,
+                                    style      = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color      = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier   = Modifier.weight(1f)
                                 )
                             }
-                            Text(
-                                text = slide.second,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 22.sp
-                            )
+                            if (slide.body.isNotBlank()) {
+                                Column(
+                                    modifier            = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    slide.body.split("\n").forEach { line ->
+                                        if (line.isNotBlank()) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                modifier              = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text("•", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                                                Text(
+                                                    text       = line,
+                                                    style      = MaterialTheme.typography.bodyMedium,
+                                                    color      = MaterialTheme.colorScheme.onSurface,
+                                                    lineHeight = 22.sp,
+                                                    modifier   = Modifier.weight(1f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -672,20 +783,18 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
     }
 }
 
-// ── Visor de texto plano ──────────────────────────────
+// ── Visor de texto plano ──────────────────────────────────────────────────────
 @Composable
 private fun TextViewerContent(uri: Uri?, onTap: () -> Unit) {
-    val context = LocalContext.current
-    var text by remember { mutableStateOf("") }
+    val context   = LocalContext.current
+    var text      by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
         text = withContext(Dispatchers.IO) {
             try {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    input.bufferedReader().readText()
-                } ?: ""
+                context.contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() } ?: ""
             } catch (e: Exception) {
                 Timber.e("Error leyendo TXT: ${e.message}")
                 ""
@@ -703,22 +812,22 @@ private fun TextViewerContent(uri: Uri?, onTap: () -> Unit) {
         when {
             isLoading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
+                color    = MaterialTheme.colorScheme.primary
             )
             else -> Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(
-                        top = 80.dp, bottom = 80.dp,
-                        start = 20.dp, end = 20.dp
+                        top    = 100.dp, bottom = 100.dp, // ← FIX
+                        start  = 20.dp, end    = 20.dp
                     )
             ) {
                 Text(
-                    text = text.ifBlank { "El archivo está vacío" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    text       = text.ifBlank { "El archivo está vacío" },
+                    style      = MaterialTheme.typography.bodyMedium,
+                    fontSize   = 15.sp,
+                    color      = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 24.sp
                 )
             }
@@ -726,82 +835,57 @@ private fun TextViewerContent(uri: Uri?, onTap: () -> Unit) {
     }
 }
 
-// ── Formato no soportado ──────────────────────────────
+// ── Formato no soportado ──────────────────────────────────────────────────────
 @Composable
 private fun UnsupportedFormatContent(
     mimeType: String,
     fileName: String,
-    fileUri: Uri?,
-    onTap: () -> Unit
+    fileUri : Uri?,
+    onTap   : () -> Unit
 ) {
-    val context = LocalContext.current
-    val openWithText = stringResource(R.string.viewer_open_other)
+    val context         = LocalContext.current
+    val openWithText    = stringResource(R.string.viewer_open_other)
     val unsupportedText = stringResource(R.string.viewer_unsupported)
 
     val formatLabel = when {
-        mimeType.contains("word") || mimeType.contains("msword") -> "Word"
-        mimeType.contains("excel") || mimeType.contains("sheet") -> "Excel"
+        mimeType.contains("word")       || mimeType.contains("msword")       -> "Word"
+        mimeType.contains("excel")      || mimeType.contains("sheet")        -> "Excel"
         mimeType.contains("powerpoint") || mimeType.contains("presentation") -> "PowerPoint"
-        mimeType.contains("text") -> "Texto"
-        else -> "Archivo"
+        mimeType.contains("text")                                             -> "Texto"
+        else                                                                  -> "Archivo"
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable { onTap() },
+        modifier         = Modifier.fillMaxSize().clickable { onTap() },
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier            = Modifier.padding(32.dp)
         ) {
             Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.medium
-                    ),
+                    .background(MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = formatLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Text(formatLabel, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
-            Text(
-                text = fileName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = unsupportedText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            Text(fileName,        style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,        textAlign = TextAlign.Center)
+            Text(unsupportedText, style = MaterialTheme.typography.bodyMedium,  color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             if (fileUri != null) {
-                Button(
-                    onClick = {
-                        try {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(fileUri, mimeType)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(
-                                Intent.createChooser(intent, openWithText)
-                            )
-                        } catch (e: Exception) {
-                            Timber.e("No se pudo abrir: ${e.message}")
+                Button(onClick = {
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(fileUri, mimeType)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
+                        context.startActivity(Intent.createChooser(intent, openWithText))
+                    } catch (e: Exception) {
+                        Timber.e("No se pudo abrir: ${e.message}")
                     }
-                ) {
-                    Text(openWithText)
-                }
+                }) { Text(openWithText) }
             }
         }
     }

@@ -113,19 +113,23 @@ fun LibraryScreen(
         if (uiState.searchQuery.isBlank() && uiState.selectedCategory == null) {
             item {
                 FavoritesSection(
-                    favorites = uiState.favorites,
-                    onDocumentClick = { doc -> onDocumentClick(doc.id) }
+                    favorites       = uiState.favorites,
+                    onDocumentClick = { doc -> onDocumentClick(doc.id) },
+                    onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
+                    onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
+                    onDeleteClick   = { id -> viewModel.removeDocument(id) }
                 )
             }
         }
 
         item {
             DocumentListSection(
-                documents = uiState.filteredDocuments,
+                documents       = uiState.filteredDocuments,
                 onDocumentClick = { doc -> onDocumentClick(doc.id) },
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
-                onRenameClick = { id, newName -> viewModel.renameDocument(id, newName) },
-                searchQuery = uiState.searchQuery
+                onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
+                onDeleteClick   = { id -> viewModel.removeDocument(id) },
+                searchQuery     = uiState.searchQuery
             )
         }
     }
