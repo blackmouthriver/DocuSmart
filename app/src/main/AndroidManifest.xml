@@ -26,6 +26,8 @@
         android:minSdkVersion="33" />
     <!-- ── Requerido por AdMob ───────────────────────── -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:name=".DocuSmartApplication"
@@ -38,6 +40,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Docsmart"
         android:enableOnBackInvokedCallback="true">
+
 
         <!-- AdMob App ID — reemplazar con el tuyo al publicar -->
         <meta-data

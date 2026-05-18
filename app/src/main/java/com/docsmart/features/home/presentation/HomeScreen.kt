@@ -20,14 +20,17 @@ import timber.log.Timber
 
 @Composable
 fun HomeScreen(
-    onOpenFile: (Uri) -> Unit = {},
-    onConvert: () -> Unit = {},
-    onScan: () -> Unit = {},
-    onSecurity: () -> Unit = {},
-    onStudy: () -> Unit = {},
+    onOpenFile     : (Uri) -> Unit = {},
+    onConvert      : () -> Unit = {},
+    onScan         : () -> Unit = {},
+    onSecurity     : () -> Unit = {},
+    onStudy        : () -> Unit = {},
     onDocumentClick: (String) -> Unit = {},
-    onSeeAll: () -> Unit = {},
-    viewModel: HomeViewModel = hiltViewModel()
+    onSeeAll       : () -> Unit = {},
+    onQr           : () -> Unit = {},
+    onQrReader     : () -> Unit = {},  // ← NUEVO
+    onQrCreator    : () -> Unit = {},  // ← NUEVO
+    viewModel      : HomeViewModel = hiltViewModel()
 ) {
     Timber.d("HomeScreen: iniciando composición")
 
@@ -56,31 +59,34 @@ fun HomeScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 20.dp, bottom = 100.dp),
+        modifier        = Modifier.fillMaxSize(),
+        contentPadding  = PaddingValues(top = 20.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         item {
             HomeBanner(
                 onOpenFileClick = openFileLauncher,
-                onConvertClick = onConvert,
-                modifier = Modifier.padding(horizontal = 20.dp)
+                onConvertClick  = onConvert,
+                modifier        = Modifier.padding(horizontal = 20.dp)
             )
         }
         item {
             DocuSmartBannerAd(
-                adUnitId = AdConstants.BANNER_HOME_ID,
+                adUnitId  = AdConstants.BANNER_HOME_ID,
                 adManager = viewModel.adManager,
-                modifier = Modifier.padding(horizontal = 20.dp)
+                modifier  = Modifier.padding(horizontal = 20.dp)
             )
         }
         item {
             QuickAccessGrid(
-                onScanClick = onScan,
+                onScanClick       = onScan,
                 onImageToPdfClick = onConvert,
-                onSafeBoxClick = onSecurity,
-                onStudyModeClick = onStudy,
-                modifier = Modifier.padding(horizontal = 20.dp)
+                onSafeBoxClick    = onSecurity,
+                onStudyModeClick  = onStudy,
+                onQrClick         = onQr,
+                onQrReaderClick   = onQrReader,
+                onQrCreatorClick  = onQrCreator,
+                modifier          = Modifier.padding(horizontal = 20.dp)
             )
         }
         item {
@@ -90,10 +96,8 @@ fun HomeScreen(
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
                 onSeeAllClick   = onSeeAll,
                 onOpenFileClick = openFileLauncher,
-                onRenameClick = { id, newName -> viewModel.renameDocument(id, newName) },
-                // Convertir: navega al convertidor con el archivo seleccionado
+                onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
                 onConvertClick  = { doc -> onConvert() },
-                // Eliminar: quita del historial en memoria
                 onDeleteClick   = { id -> viewModel.removeDocument(id) },
                 modifier        = Modifier.padding(horizontal = 20.dp)
             )

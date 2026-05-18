@@ -1,18 +1,16 @@
 package com.docsmart.features.pdftools.domain.usecase
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.pdf.PdfDocument
-import android.graphics.pdf.PdfRenderer
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfReader
+import com.itextpdf.kernel.pdf.PdfWriter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -26,87 +24,70 @@ class SplitPdfUseCase @Inject constructor(
     }
 
     suspend operator fun invoke(
-        pdfUri: Uri,
-        fromPage: Int,
-        toPage: Int,
+        pdfUri        : Uri,
+        fromPage      : Int,
+        toPage        : Int,
         outputFileName: String? = null
     ): PdfToolResult = withContext(Dispatchers.IO) {
+        var cacheFile: File? = null
         try {
-            val cacheFile = copyUriToCache(pdfUri)
+            cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(
                     "No se pudo leer el PDF. Verifica que sea un archivo válido."
                 )
 
-            val fileDescriptor = ParcelFileDescriptor.open(
-                cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
-            )
-            val renderer = PdfRenderer(fileDescriptor)
-            val totalPages = renderer.pageCount
+            val reader     = PdfReader(cacheFile)
+            val sourcePdf  = PdfDocument(reader)
+            val totalPages = sourcePdf.numberOfPages
+
+            Timber.d("$TAG: PDF abierto — $totalPages páginas totales")
 
             if (totalPages == 0) {
-                renderer.close()
-                fileDescriptor.close()
+                sourcePdf.close()
                 return@withContext PdfToolResult.Error("El PDF no tiene páginas.")
             }
 
-            val startIndex = (fromPage - 1).coerceIn(0, totalPages - 1)
-            val endIndex   = toPage.coerceIn(startIndex + 1, totalPages)
+            val startPage = fromPage.coerceIn(1, totalPages)
+            val endPage   = toPage.coerceIn(startPage, totalPages)
 
-            if (startIndex >= endIndex) {
-                renderer.close()
-                fileDescriptor.close()
+            if (startPage == endPage && totalPages > 1) {
+                sourcePdf.close()
                 return@withContext PdfToolResult.Error(
-                    "Rango inválido. La página final ($toPage) debe ser mayor que la inicial ($fromPage)."
+                    "El rango debe incluir al menos 2 páginas. El PDF tiene $totalPages páginas."
                 )
             }
 
-            val newDocument = PdfDocument()
+            val pagesExtracted = endPage - startPage + 1
+            Timber.d("$TAG: extrayendo páginas $startPage a $endPage ($pagesExtracted páginas)")
 
-            for (i in startIndex until endIndex) {
-                val page = renderer.openPage(i)
-
-                // Guardar dimensiones ANTES de cerrar la página
-                val width  = page.width * 2
-                val height = page.height * 2
-
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                page.close()
-
-                val pageInfo = PdfDocument.PageInfo.Builder(
-                    width, height, i - startIndex + 1
-                ).create()
-
-                val docPage = newDocument.startPage(pageInfo)
-                docPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
-                newDocument.finishPage(docPage)
-                bitmap.recycle()
-            }
-
-            renderer.close()
-            fileDescriptor.close()
-
-            val pagesExtracted = endIndex - startIndex
-            val name       = outputFileName ?: "Split_p${startIndex + 1}-p$endIndex"
+            val name       = outputFileName ?: "Split_p${startPage}-p${endPage}"
             val outputFile = createOutputFile(name)
+            val writer     = PdfWriter(outputFile)
+            val destPdf    = PdfDocument(writer)
 
-            FileOutputStream(outputFile).use { newDocument.writeTo(it) }
-            newDocument.close()
+            sourcePdf.copyPagesTo(startPage, endPage, destPdf)
 
-            if (outputFile.length() == 0L) {
+            destPdf.close()
+            sourcePdf.close()
+
+            if (outputFile.length() == 0L)
                 return@withContext PdfToolResult.Error("Error al generar el PDF dividido.")
-            }
 
-            Timber.d("$TAG: split exitoso — $pagesExtracted páginas, ${outputFile.length() / 1024} KB")
+            val sizeKb = outputFile.length() / 1024
+            Timber.d("$TAG: split exitoso — $pagesExtracted páginas, $sizeKb KB")
 
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message    = "PDF dividido: $pagesExtracted página(s) extraídas (${outputFile.length() / 1024} KB)"
+                message    = "PDF dividido: $pagesExtracted página(s) extraídas · $sizeKb KB"
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al dividir PDF")
-            PdfToolResult.Error("Error al dividir: ${e.message ?: "Error desconocido"}", e)
+            PdfToolResult.Error(
+                message = "Error al dividir: ${e.message ?: "Error desconocido"}",
+                cause   = e
+            )
+        } finally {
+            cacheFile?.delete()
         }
     }
 
@@ -128,7 +109,7 @@ class SplitPdfUseCase @Inject constructor(
 
     private fun createOutputFile(name: String): File {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
+        val dir       = File(context.filesDir, "pdftools").apply { mkdirs() }
         return File(dir, "${name}_$timestamp.pdf")
     }
 }

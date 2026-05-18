@@ -660,57 +660,164 @@ private fun ParagraphItem(
 // ── Tab de Notas ──────────────────────────────────────
 @Composable
 private fun NotesTab(
-    notes: String,
+    notes        : String,
     onNotesChange: (String) -> Unit,
-    highlights: Set<Int>,
-    documentText: List<String>
+    highlights   : Set<Int>,
+    documentText : List<String>
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // ── Párrafos resaltados ───────────────────────
+    val context = LocalContext.current
+
+    data class SavedNote(
+        val id      : String,
+        val title   : String,
+        val text    : String,
+        val dateTime: String
+    )
+
+    fun loadNotes(): List<SavedNote> {
+        return try {
+            val prefs = context.getSharedPreferences("study_notes", Context.MODE_PRIVATE)
+            val json  = prefs.getString("notes_list", "[]") ?: "[]"
+            val result = mutableListOf<SavedNote>()
+            val items  = json.removeSurrounding("[", "]").split("},{")
+            items.forEach { item ->
+                val clean = item.removePrefix("{").removeSuffix("}")
+                val map   = mutableMapOf<String, String>()
+                // Parser manual tolerante a comas dentro de valores
+                val regex = Regex(""""([^"]+)":"([^"]*?)"""")
+                regex.findAll(clean).forEach { m ->
+                    map[m.groupValues[1]] = m.groupValues[2]
+                }
+                val id    = map["id"]    ?: return@forEach
+                val title = map["title"] ?: ""
+                val text  = map["text"]  ?: return@forEach
+                val date  = map["date"]  ?: ""
+                result.add(SavedNote(id, title.replace("\\n", "\n"), text.replace("\\n", "\n"), date))
+            }
+            result.reversed()
+        } catch (e: Exception) { emptyList() }
+    }
+
+    fun saveNotes(notes: List<SavedNote>) {
+        try {
+            val prefs = context.getSharedPreferences("study_notes", Context.MODE_PRIVATE)
+            val json  = notes.joinToString(",", "[", "]") { note ->
+                val safeTitle = note.title.replace("\"", "'").replace("\n", "\\n")
+                val safeText  = note.text.replace("\"", "'").replace("\n", "\\n")
+                """{"id":"${note.id}","title":"$safeTitle","text":"$safeText","date":"${note.dateTime}"}"""
+            }
+            prefs.edit().putString("notes_list", json).apply()
+        } catch (e: Exception) { Timber.e(e, "Error guardando notas") }
+    }
+
+    // ── Estado ────────────────────────────────────────────────────────────────
+    var savedNotes    by remember { mutableStateOf(loadNotes()) }
+    var currentTitle  by remember { mutableStateOf("") }
+    var currentNote   by remember { mutableStateOf(notes) }
+    var showDeleteAll by remember { mutableStateOf(false) }
+    var isListening   by remember { mutableStateOf(false) }
+
+    val dateFormatter = remember {
+        java.text.SimpleDateFormat("dd/MM/yyyy · HH:mm", java.util.Locale.getDefault())
+    }
+
+    // ── Reconocimiento de voz ─────────────────────────────────────────────────
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        isListening = false
+        val matches = result.data
+            ?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+        if (!matches.isNullOrEmpty()) {
+            val spoken = matches[0]
+            currentNote = if (currentNote.isBlank()) spoken
+            else "$currentNote $spoken"
+            onNotesChange(currentNote)
+        }
+    }
+
+    fun startVoiceInput() {
+        try {
+            val intent = android.content.Intent(
+                android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+            ).apply {
+                putExtra(
+                    android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                )
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "es-CO")
+                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Habla para redactar tu nota...")
+                putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            }
+            isListening = true
+            speechLauncher.launch(intent)
+        } catch (e: Exception) {
+            isListening = false
+            Timber.e(e, "Error iniciando reconocimiento de voz")
+        }
+    }
+
+    // ── Diálogo eliminar todas ────────────────────────────────────────────────
+    if (showDeleteAll) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAll = false },
+            shape            = MaterialTheme.shapes.large,
+            title = { Text("Eliminar todas las notas") },
+            text  = { Text("¿Seguro que quieres eliminar todas las notas? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    saveNotes(emptyList())
+                    savedNotes    = emptyList()
+                    showDeleteAll = false
+                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAll = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // ── Párrafos resaltados ───────────────────────────────────────────────
         if (highlights.isNotEmpty() && documentText.isNotEmpty()) {
-            Text(
-                text = "Párrafos resaltados (${highlights.size})",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 200.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val sortedHighlights = highlights.sorted()
-                itemsIndexed(sortedHighlights) { _, index ->
-                    if (index < documentText.size) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.medium,
-                            colors = CardDefaults.cardColors(
-                                containerColor = WarningAmber.copy(alpha = 0.1f)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Text(
+                    text       = "Párrafos resaltados (${highlights.size})",
+                    style      = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface
+                )
+                LazyColumn(
+                    modifier            = Modifier.fillMaxWidth().heightIn(max = 140.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    itemsIndexed(highlights.sorted()) { _, index ->
+                        if (index < documentText.size) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape    = MaterialTheme.shapes.medium,
+                                colors   = CardDefaults.cardColors(
+                                    containerColor = WarningAmber.copy(alpha = 0.1f)
+                                )
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Bookmark,
-                                    contentDescription = null,
-                                    tint = WarningAmber,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = documentText[index],
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 3
-                                )
+                                Row(
+                                    modifier              = Modifier.padding(10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Bookmark, null,
+                                        tint     = WarningAmber,
+                                        modifier = Modifier.size(16.dp))
+                                    Text(
+                                        text     = documentText[index],
+                                        style    = MaterialTheme.typography.bodySmall,
+                                        color    = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 2
+                                    )
+                                }
                             }
                         }
                     }
@@ -719,32 +826,265 @@ private fun NotesTab(
             HorizontalDivider()
         }
 
-        // ── Editor de notas ───────────────────────────
-        Text(
-            text = "Mis notas",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        OutlinedTextField(
-            value = notes,
-            onValueChange = onNotesChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            placeholder = {
-                Text(
-                    text = "Escribe tus apuntes aquí...",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            shape = MaterialTheme.shapes.large,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+        // ── Editor de nota nueva ──────────────────────────────────────────────
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text       = "Nueva nota",
+                style      = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color      = MaterialTheme.colorScheme.onSurface
             )
-        )
+
+            // Campo título
+            OutlinedTextField(
+                value         = currentTitle,
+                onValueChange = { currentTitle = it },
+                modifier      = Modifier.fillMaxWidth(),
+                label         = { Text("Título de la nota") },
+                placeholder   = { Text("Ej: Conceptos clave del capítulo 3") },
+                singleLine    = true,
+                leadingIcon   = {
+                    Icon(
+                        imageVector        = Icons.Rounded.Title,
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(20.dp)
+                    )
+                },
+                shape  = MaterialTheme.shapes.large,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
+            )
+
+            // Campo contenido + botón micrófono
+            OutlinedTextField(
+                value         = currentNote,
+                onValueChange = {
+                    currentNote = it
+                    onNotesChange(it)
+                },
+                modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
+                placeholder   = { Text("Escribe o dicta tu nota...") },
+                trailingIcon  = {
+                    IconButton(
+                        onClick  = { startVoiceInput() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector        = if (isListening)
+                                Icons.Rounded.MicOff
+                            else
+                                Icons.Rounded.Mic,
+                            contentDescription = "Dictar nota por voz",
+                            tint               = if (isListening)
+                                MaterialTheme.colorScheme.error
+                            else
+                                MaterialTheme.colorScheme.primary,
+                            modifier           = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                shape  = MaterialTheme.shapes.large,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor   = if (isListening)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
+            )
+
+            // Indicador de escucha activa
+            if (isListening) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment     = Alignment.CenterVertically,
+                    modifier              = Modifier.padding(start = 4.dp)
+                ) {
+                    Icon(
+                        imageVector        = Icons.Rounded.GraphicEq,
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.error,
+                        modifier           = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text  = "Escuchando... habla ahora",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            // Botón guardar
+            Button(
+                onClick = {
+                    val text  = currentNote.trim()
+                    val title = currentTitle.trim()
+                    if (text.isNotBlank()) {
+                        val newNote = SavedNote(
+                            id       = System.currentTimeMillis().toString(),
+                            title    = title.ifBlank { "Nota sin título" },
+                            text     = text,
+                            dateTime = dateFormatter.format(java.util.Date())
+                        )
+                        val updated = listOf(newNote) + savedNotes
+                        saveNotes(updated)
+                        savedNotes   = updated
+                        currentNote  = ""
+                        currentTitle = ""
+                        onNotesChange("")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape    = MaterialTheme.shapes.medium,
+                enabled  = currentNote.trim().isNotBlank()
+            ) {
+                Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Guardar nota", style = MaterialTheme.typography.labelLarge)
+            }
+        }
+
+        HorizontalDivider()
+
+        // ── Lista de notas guardadas ──────────────────────────────────────────
+        Row(
+            modifier              = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Text(
+                text       = if (savedNotes.isEmpty()) "Sin notas guardadas"
+                else "Notas guardadas (${savedNotes.size})",
+                style      = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color      = MaterialTheme.colorScheme.onSurface
+            )
+            if (savedNotes.isNotEmpty()) {
+                TextButton(onClick = { showDeleteAll = true }) {
+                    Text(
+                        text  = "Eliminar todas",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+
+        if (savedNotes.isEmpty()) {
+            Column(
+                modifier            = Modifier.fillMaxWidth().padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector        = Icons.Rounded.NoteAlt,
+                    contentDescription = null,
+                    modifier           = Modifier.size(48.dp),
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
+                Text(
+                    text      = "Aún no tienes notas guardadas",
+                    style     = MaterialTheme.typography.bodyMedium,
+                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier       = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                itemsIndexed(savedNotes, key = { _, note -> note.id }) { _, note ->
+                    Card(
+                        modifier  = Modifier.fillMaxWidth(),
+                        shape     = MaterialTheme.shapes.large,
+                        colors    = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            // Cabecera: título + eliminar
+                            Row(
+                                modifier              = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment     = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment     = Alignment.CenterVertically,
+                                    modifier              = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector        = Icons.Rounded.NoteAlt,
+                                        contentDescription = null,
+                                        tint               = MaterialTheme.colorScheme.primary,
+                                        modifier           = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text       = note.title,
+                                        style      = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color      = MaterialTheme.colorScheme.onSurface,
+                                        maxLines   = 1,
+                                        overflow   = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
+                                IconButton(
+                                    onClick  = {
+                                        val updated = savedNotes.filter { it.id != note.id }
+                                        saveNotes(updated)
+                                        savedNotes = updated
+                                    },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector        = Icons.Rounded.DeleteOutline,
+                                        contentDescription = "Eliminar nota",
+                                        tint               = MaterialTheme.colorScheme.error,
+                                        modifier           = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+
+                            // Fecha
+                            Text(
+                                text  = note.dateTime,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color     = MaterialTheme.colorScheme.outlineVariant
+                            )
+
+                            // Contenido
+                            Text(
+                                text       = note.text,
+                                style      = MaterialTheme.typography.bodyMedium,
+                                color      = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 22.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

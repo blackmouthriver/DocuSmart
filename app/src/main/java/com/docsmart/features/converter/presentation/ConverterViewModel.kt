@@ -44,12 +44,17 @@ data class ConverterUiState(
 @HiltViewModel
 class ConverterViewModel @Inject constructor(
     private val convertImageToPdf: ConvertImageToPdfUseCase,
-    private val pdfToImage: PdfToImageUseCase,
-    private val pdfToText: PdfToTextUseCase,
-    private val imageFormat: ImageFormatUseCase,
-    private val wordToPdf: WordToPdfUseCase,
-    private val excelToPdf: ExcelToPdfUseCase,
-    val adManager: AdManager
+    private val pdfToImage       : PdfToImageUseCase,
+    private val pdfToText        : PdfToTextUseCase,
+    private val pdfToWord        : PdfToWordUseCase,
+    private val pdfToHtml        : PdfToHtmlUseCase,
+    private val imageFormat      : ImageFormatUseCase,
+    private val wordToPdf        : WordToPdfUseCase,
+    private val wordToHtml       : WordToHtmlUseCase,
+    private val excelToPdf       : ExcelToPdfUseCase,
+    private val excelToHtml      : ExcelToHtmlUseCase,
+    private val pptToText        : PptToTextUseCase,
+    val adManager                : AdManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConverterUiState())
@@ -145,7 +150,9 @@ class ConverterViewModel @Inject constructor(
                     convertImageToPdf(imageUris = files, fileName = customName)
 
                 ConversionType.IMAGE_TO_JPG,
-                ConversionType.IMAGE_TO_PNG ->
+                ConversionType.IMAGE_TO_PNG,
+                ConversionType.IMAGE_TO_WEBP,
+                ConversionType.IMAGE_TO_BMP ->
                     imageFormat(files.first(), type, customName)
 
                 ConversionType.PDF_TO_IMAGE ->
@@ -154,16 +161,31 @@ class ConverterViewModel @Inject constructor(
                 ConversionType.PDF_TO_TXT ->
                     pdfToText(files.first(), customName)
 
+                ConversionType.PDF_TO_WORD ->
+                    pdfToWord(files.first(), customName)
+
+                ConversionType.PDF_TO_HTML ->
+                    pdfToHtml(files.first(), customName)
+
                 ConversionType.WORD_TO_PDF,
                 ConversionType.WORD_TO_TXT ->
                     wordToPdf(files.first(), customName)
+
+                ConversionType.WORD_TO_HTML ->
+                    wordToHtml(files.first(), customName)
 
                 ConversionType.EXCEL_TO_PDF,
                 ConversionType.EXCEL_TO_CSV ->
                     excelToPdf(files.first(), customName)
 
+                ConversionType.EXCEL_TO_HTML ->
+                    excelToHtml(files.first(), customName)
+
                 ConversionType.PPT_TO_PDF ->
                     wordToPdf(files.first(), customName)
+
+                ConversionType.PPT_TO_TXT ->
+                    pptToText(files.first(), customName)
             }
 
             Timber.d("Resultado conversión $type: $result")

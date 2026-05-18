@@ -1,4 +1,1177 @@
 package com.docsmart.features.scanner.presentation
 
-class QrScreen {
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Size
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import com.docsmart.core.ui.theme.DocuBlue
+import com.docsmart.core.ui.theme.SuccessGreen
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.common.InputImage
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.Executors
+
+// ── Tipos de contenido QR detectado ──────────────────────────────────────────
+private enum class QrContentType {
+    URL, IMAGE, DOCUMENT, EMAIL, PHONE, TEXT
+}
+
+private fun detectQrContentType(value: String): QrContentType = when {
+    value.startsWith("http://") || value.startsWith("https://") -> {
+        val lower = value.lowercase()
+        when {
+            lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
+                    lower.endsWith(".png") || lower.endsWith(".webp") ||
+                    lower.endsWith(".gif") -> QrContentType.IMAGE
+            lower.endsWith(".pdf") || lower.endsWith(".docx") ||
+                    lower.endsWith(".xlsx") || lower.endsWith(".pptx") ||
+                    lower.endsWith(".txt") -> QrContentType.DOCUMENT
+            else -> QrContentType.URL
+        }
+    }
+    value.startsWith("content://") || value.startsWith("file://") -> {
+        val lower = value.lowercase()
+        when {
+            lower.contains(".jpg") || lower.contains(".jpeg") ||
+                    lower.contains(".png") || lower.contains(".webp") -> QrContentType.IMAGE
+            else -> QrContentType.DOCUMENT
+        }
+    }
+    value.startsWith("mailto:") -> QrContentType.EMAIL
+    value.startsWith("tel:")    -> QrContentType.PHONE
+    else                        -> QrContentType.TEXT
+}
+
+// ── Pantalla: Leer QR con cámara ─────────────────────────────────────────────
+@androidx.camera.core.ExperimentalGetImage
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QrReaderScreen(onBack: () -> Unit = {}) {
+    val context        = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.CAMERA
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> hasCameraPermission = granted }
+
+    LaunchedEffect(Unit) {
+        if (!hasCameraPermission) permissionLauncher.launch(android.Manifest.permission.CAMERA)
+    }
+
+    var qrResult     by remember { mutableStateOf<String?>(null) }
+    var qrType       by remember { mutableStateOf(QrContentType.TEXT) }
+    var isScanning   by remember { mutableStateOf(true) }
+    var copiedMsg    by remember { mutableStateOf(false) }
+    var imageBitmap  by remember { mutableStateOf<Bitmap?>(null) }
+
+    val executor = remember { Executors.newSingleThreadExecutor() }
+    val scanner  = remember { BarcodeScanning.getClient() }
+    val scope    = rememberCoroutineScope()
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("Leer código QR",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold)
+                        Text("Apunta la cámara al código QR",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+        ) {
+            if (qrResult == null) {
+                if (!hasCameraPermission) {
+                    // ── Sin permiso ───────────────────────────────────────────
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Rounded.CameraAlt, null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(64.dp))
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            "Se necesita acceso a la cámara para escanear códigos QR",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = { permissionLauncher.launch(android.Manifest.permission.CAMERA) },
+                            shape = MaterialTheme.shapes.medium
+                        ) { Text("Permitir acceso a cámara") }
+                    }
+                } else {
+                    // ── Vista de cámara ───────────────────────────────────────
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                        AndroidView(
+                            factory = { ctx ->
+                                val previewView = PreviewView(ctx)
+                                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                                cameraProviderFuture.addListener({
+                                    val cameraProvider = cameraProviderFuture.get()
+                                    val preview = Preview.Builder().build().also {
+                                        it.setSurfaceProvider(previewView.surfaceProvider)
+                                    }
+                                    val imageAnalysis = ImageAnalysis.Builder()
+                                        .setTargetResolution(Size(1280, 720))
+                                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                        .build()
+                                    imageAnalysis.setAnalyzer(executor) { imageProxy ->
+                                        if (!isScanning) { imageProxy.close(); return@setAnalyzer }
+                                        val mediaImage = imageProxy.image
+                                        if (mediaImage != null) {
+                                            val image = InputImage.fromMediaImage(
+                                                mediaImage, imageProxy.imageInfo.rotationDegrees
+                                            )
+                                            scanner.process(image)
+                                                .addOnSuccessListener { barcodes ->
+                                                    barcodes.firstOrNull()?.rawValue?.let { value ->
+                                                        isScanning = false
+                                                        qrResult   = value
+                                                        qrType     = detectQrContentType(value)
+                                                        // Si es imagen URL, cargarla
+                                                        if (qrType == QrContentType.IMAGE) {
+                                                            scope.launch {
+                                                                imageBitmap = loadBitmapFromUrl(value)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                .addOnCompleteListener { imageProxy.close() }
+                                        } else imageProxy.close()
+                                    }
+                                    try {
+                                        cameraProvider.unbindAll()
+                                        cameraProvider.bindToLifecycle(
+                                            lifecycleOwner,
+                                            CameraSelector.DEFAULT_BACK_CAMERA,
+                                            preview, imageAnalysis
+                                        )
+                                    } catch (e: Exception) { Timber.e(e, "Error cámara") }
+                                }, ContextCompat.getMainExecutor(ctx))
+                                previewView
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        // Marco
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Box(modifier = Modifier.size(240.dp).border(
+                                2.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(16.dp)
+                            ))
+                            QrCornerDecoration()
+                        }
+                        // Guía
+                        Surface(
+                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color.Black.copy(alpha = 0.65f)
+                        ) {
+                            Text("Centra el código QR en el recuadro",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        }
+                    }
+                }
+            } else {
+                // ── Resultado según tipo ──────────────────────────────────────
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Spacer(Modifier.height(8.dp))
+
+                    // Ícono según tipo
+                    val (typeIcon, typeColor, typeLabel) = when (qrType) {
+                        QrContentType.URL      -> Triple(Icons.Rounded.Link,         DocuBlue,    "URL detectada")
+                        QrContentType.IMAGE    -> Triple(Icons.Rounded.Image,        SuccessGreen,"Imagen detectada")
+                        QrContentType.DOCUMENT -> Triple(Icons.Rounded.Description,  DocuBlue,    "Documento detectado")
+                        QrContentType.EMAIL    -> Triple(Icons.Rounded.Email,        DocuBlue,    "Email detectado")
+                        QrContentType.PHONE    -> Triple(Icons.Rounded.Phone,        SuccessGreen,"Teléfono detectado")
+                        QrContentType.TEXT     -> Triple(Icons.Rounded.TextFields,   DocuBlue,    "Texto detectado")
+                    }
+
+                    Box(
+                        modifier = Modifier.size(80.dp).background(
+                            typeColor.copy(alpha = 0.12f), RoundedCornerShape(20.dp)
+                        ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(typeIcon, null, tint = typeColor, modifier = Modifier.size(44.dp))
+                    }
+
+                    Text("¡Código QR detectado!",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface)
+
+                    // ── Imagen inline si es tipo imagen ───────────────────────
+                    if (qrType == QrContentType.IMAGE) {
+                        Card(
+                            shape = MaterialTheme.shapes.large,
+                            elevation = CardDefaults.cardElevation(2.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (imageBitmap != null) {
+                                Image(
+                                    bitmap = imageBitmap!!.asImageBitmap(),
+                                    contentDescription = "Imagen del QR",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 300.dp)
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        CircularProgressIndicator(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+                                        Text("Cargando imagen...",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── Card con contenido y acciones ─────────────────────────
+                    Card(
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(2.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(typeIcon, null,
+                                    tint = typeColor, modifier = Modifier.size(20.dp))
+                                Text(typeLabel,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface)
+                            }
+
+                            Surface(
+                                shape = MaterialTheme.shapes.medium,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            ) {
+                                Text(
+                                    text = qrResult ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(12.dp),
+                                    maxLines = 3
+                                )
+                            }
+
+                            if (copiedMsg) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Rounded.CheckCircle, null,
+                                        tint = SuccessGreen, modifier = Modifier.size(14.dp))
+                                    Text("Copiado al portapapeles",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SuccessGreen)
+                                }
+                            }
+
+                            // ── Botones según tipo ────────────────────────────
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                when (qrType) {
+                                    QrContentType.URL -> {
+                                        Button(
+                                            onClick = { openUrl(context, qrResult ?: "") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.OpenInBrowser, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Abrir en navegador")
+                                        }
+                                        OutlinedButton(
+                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.ContentCopy, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Copiar URL")
+                                        }
+                                    }
+                                    QrContentType.IMAGE -> {
+                                        Button(
+                                            onClick = { openUrl(context, qrResult ?: "") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.OpenInBrowser, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Abrir imagen")
+                                        }
+                                        OutlinedButton(
+                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.ContentCopy, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Copiar enlace")
+                                        }
+                                    }
+                                    QrContentType.DOCUMENT -> {
+                                        Button(
+                                            onClick = { openDocumentExternally(context, qrResult ?: "") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.OpenInNew, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Abrir documento")
+                                        }
+                                        OutlinedButton(
+                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.ContentCopy, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Copiar ruta")
+                                        }
+                                    }
+                                    QrContentType.EMAIL -> {
+                                        Button(
+                                            onClick = { openUrl(context, qrResult ?: "") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.Email, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Enviar email")
+                                        }
+                                        OutlinedButton(
+                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.ContentCopy, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Copiar email")
+                                        }
+                                    }
+                                    QrContentType.PHONE -> {
+                                        Button(
+                                            onClick = { openUrl(context, qrResult ?: "") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.Phone, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Llamar")
+                                        }
+                                        OutlinedButton(
+                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.ContentCopy, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Copiar número")
+                                        }
+                                    }
+                                    QrContentType.TEXT -> {
+                                        Button(
+                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.ContentCopy, null,
+                                                modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Copiar texto")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { qrResult = null; isScanning = true; copiedMsg = false; imageBitmap = null },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Icon(Icons.Rounded.QrCodeScanner, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Escanear otro código")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Esquinas decorativas ──────────────────────────────────────────────────────
+@Composable
+private fun QrCornerDecoration() {
+    val color      = DocuBlue
+    val frameSize  = 240.dp
+    val cornerSize = 28.dp
+    val stroke     = 4.dp
+
+    Box(modifier = Modifier.size(frameSize)) {
+        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)))
+        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)))
+        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)))
+        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)))
+        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)))
+        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)))
+        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)))
+        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)))
+    }
+}
+
+// ── Pantalla: Crear QR ────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QrCreatorScreen(onBack: () -> Unit = {}) {
+    val context = LocalContext.current
+    val scope   = rememberCoroutineScope()
+
+    // 0=URL, 1=Texto, 2=Email, 3=Teléfono, 4=Imagen, 5=Documento
+    var selectedType by remember { mutableIntStateOf(0) }
+    var content      by remember { mutableStateOf("") }
+    var selectedUri  by remember { mutableStateOf<Uri?>(null) }
+    var selectedName by remember { mutableStateOf("") }
+    var password     by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var usePassword  by remember { mutableStateOf(false) }
+    var qrBitmap     by remember { mutableStateOf<Bitmap?>(null) }
+    var isGenerating by remember { mutableStateOf(false) }
+    var savedMsg     by remember { mutableStateOf<String?>(null) }
+    var errorMsg     by remember { mutableStateOf<String?>(null) }
+
+    val types = listOf("URL", "Texto", "Email", "Tel", "Imagen", "Doc")
+    val typeIcons = listOf(
+        Icons.Rounded.Link,
+        Icons.Rounded.TextFields,
+        Icons.Rounded.Email,
+        Icons.Rounded.Phone,
+        Icons.Rounded.Image,
+        Icons.Rounded.Description
+    )
+
+    // Launchers para seleccionar imagen o documento
+    val imageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            selectedUri  = it
+            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: "imagen"
+            content      = it.toString()
+            qrBitmap     = null
+            savedMsg     = null
+        }
+    }
+
+    val documentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            selectedUri  = it
+            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: "documento"
+            content      = it.toString()
+            qrBitmap     = null
+            savedMsg     = null
+        }
+    }
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("Crear código QR",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold)
+                        Text("Genera QR para URL, texto, archivos y más",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Spacer(Modifier.height(4.dp))
+
+            // ── Selector de tipo en 2 filas ───────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    types.take(3).forEachIndexed { index, label ->
+                        FilterChip(
+                            selected  = selectedType == index,
+                            onClick   = {
+                                selectedType = index
+                                content      = ""
+                                selectedUri  = null
+                                selectedName = ""
+                                qrBitmap     = null
+                                savedMsg     = null
+                                errorMsg     = null
+                            },
+                            label     = {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment     = Alignment.CenterVertically
+                                ) {
+                                    Icon(typeIcons[index], null, modifier = Modifier.size(14.dp))
+                                    Text(label, style = MaterialTheme.typography.labelSmall)
+                                }
+                            },
+                            modifier  = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    types.drop(3).forEachIndexed { i, label ->
+                        val index = i + 3
+                        FilterChip(
+                            selected  = selectedType == index,
+                            onClick   = {
+                                selectedType = index
+                                content      = ""
+                                selectedUri  = null
+                                selectedName = ""
+                                qrBitmap     = null
+                                savedMsg     = null
+                                errorMsg     = null
+                            },
+                            label     = {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment     = Alignment.CenterVertically
+                                ) {
+                                    Icon(typeIcons[index], null, modifier = Modifier.size(14.dp))
+                                    Text(label, style = MaterialTheme.typography.labelSmall)
+                                }
+                            },
+                            modifier  = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // ── Entrada según tipo ────────────────────────────────────────────
+            when (selectedType) {
+                4 -> {
+                    // Imagen
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick  = { imageLauncher.launch("image/*") },
+                        shape    = MaterialTheme.shapes.large,
+                        colors   = CardDefaults.cardColors(
+                            containerColor = if (selectedUri != null)
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            else MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (selectedUri != null) Icons.Rounded.CheckCircle
+                                else Icons.Rounded.AddPhotoAlternate,
+                                null,
+                                tint = if (selectedUri != null) SuccessGreen
+                                else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Column {
+                                Text(
+                                    if (selectedUri != null) selectedName
+                                    else "Seleccionar imagen",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (selectedUri != null)
+                                        MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    if (selectedUri != null) "Imagen seleccionada ✓"
+                                    else "JPG, PNG, WebP",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+                5 -> {
+                    // Documento
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick  = { documentLauncher.launch("*/*") },
+                        shape    = MaterialTheme.shapes.large,
+                        colors   = CardDefaults.cardColors(
+                            containerColor = if (selectedUri != null)
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            else MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (selectedUri != null) Icons.Rounded.CheckCircle
+                                else Icons.Rounded.FileOpen,
+                                null,
+                                tint = if (selectedUri != null) SuccessGreen
+                                else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Column {
+                                Text(
+                                    if (selectedUri != null) selectedName
+                                    else "Seleccionar documento",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (selectedUri != null)
+                                        MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    if (selectedUri != null) "Documento seleccionado ✓"
+                                    else "PDF, Word, Excel, PPT, TXT",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    // URL, Texto, Email, Teléfono
+                    OutlinedTextField(
+                        value         = content,
+                        onValueChange = { content = it; qrBitmap = null; savedMsg = null },
+                        modifier      = Modifier.fillMaxWidth(),
+                        label         = {
+                            Text(when (selectedType) {
+                                0    -> "URL del sitio web"
+                                1    -> "Texto del mensaje"
+                                2    -> "Dirección de email"
+                                else -> "Número de teléfono"
+                            })
+                        },
+                        placeholder   = {
+                            Text(
+                                when (selectedType) {
+                                    0    -> "https://ejemplo.com"
+                                    1    -> "Escribe tu mensaje..."
+                                    2    -> "correo@ejemplo.com"
+                                    else -> "+57 300 000 0000"
+                                },
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        leadingIcon   = {
+                            Icon(typeIcons[selectedType], null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp))
+                        },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = when (selectedType) {
+                                0    -> KeyboardType.Uri
+                                2    -> KeyboardType.Email
+                                3    -> KeyboardType.Phone
+                                else -> KeyboardType.Text
+                            }
+                        ),
+                        minLines = if (selectedType == 1) 3 else 1,
+                        maxLines = if (selectedType == 1) 5 else 1,
+                        shape    = MaterialTheme.shapes.large
+                    )
+                }
+            }
+
+            // ── Contraseña ────────────────────────────────────────────────────
+            Card(
+                shape  = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(
+                    containerColor = if (usePassword)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    else MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(if (usePassword) 0.dp else 2.dp)
+            ) {
+                Column(
+                    modifier            = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment     = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Rounded.Lock, null,
+                                tint = if (usePassword) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp))
+                            Column {
+                                Text("Proteger con contraseña",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface)
+                                Text("Solo quien tenga la clave puede ver el contenido",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Switch(
+                            checked         = usePassword,
+                            onCheckedChange = { usePassword = it; if (!it) password = "" }
+                        )
+                    }
+                    if (usePassword) {
+                        OutlinedTextField(
+                            value         = password,
+                            onValueChange = { password = it },
+                            modifier      = Modifier.fillMaxWidth(),
+                            label         = { Text("Contraseña") },
+                            placeholder   = { Text("Mínimo 4 caracteres") },
+                            leadingIcon   = {
+                                Icon(Icons.Rounded.Key, null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp))
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = { showPassword = !showPassword }) {
+                                    Icon(
+                                        if (showPassword) Icons.Rounded.VisibilityOff
+                                        else Icons.Rounded.Visibility,
+                                        null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            },
+                            visualTransformation = if (showPassword) VisualTransformation.None
+                            else PasswordVisualTransformation(),
+                            singleLine = true,
+                            shape      = MaterialTheme.shapes.medium
+                        )
+                    }
+                }
+            }
+
+            errorMsg?.let {
+                Text(it, style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error)
+            }
+
+            // ── Botón generar ─────────────────────────────────────────────────
+            val hasContent = when (selectedType) {
+                4, 5 -> selectedUri != null
+                else -> content.isNotBlank()
+            }
+
+            Button(
+                onClick = {
+                    if (!hasContent) {
+                        errorMsg = when (selectedType) {
+                            4    -> "Selecciona una imagen"
+                            5    -> "Selecciona un documento"
+                            else -> "Escribe el contenido del QR"
+                        }
+                        return@Button
+                    }
+                    if (usePassword && password.length < 4) {
+                        errorMsg = "La contraseña debe tener al menos 4 caracteres"
+                        return@Button
+                    }
+                    errorMsg     = null
+                    savedMsg     = null
+                    isGenerating = true
+                    scope.launch {
+                        val rawContent = when (selectedType) {
+                            4, 5 -> selectedUri.toString()
+                            0    -> if (!content.startsWith("http")) "https://$content" else content
+                            2    -> "mailto:$content"
+                            3    -> "tel:$content"
+                            else -> content
+                        }
+                        val finalContent = if (usePassword && password.isNotBlank())
+                            "PROTECTED:${encryptContent(rawContent, password)}"
+                        else rawContent
+                        qrBitmap     = generateQrBitmap(finalContent)
+                        isGenerating = false
+                    }
+                },
+                enabled  = hasContent,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape    = MaterialTheme.shapes.medium
+            ) {
+                if (isGenerating) {
+                    CircularProgressIndicator(color = Color.White,
+                        modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Rounded.QrCode, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Generar QR", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+
+            // ── QR generado ───────────────────────────────────────────────────
+            qrBitmap?.let { bitmap ->
+                Card(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(4.dp),
+                    modifier  = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text("Tu código QR",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface)
+
+                        Box(
+                            modifier = Modifier
+                                .size(220.dp)
+                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .padding(12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Código QR generado",
+                                modifier = Modifier.fillMaxSize())
+                        }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer) {
+                                Text(types[selectedType],
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                            }
+                            if (usePassword) {
+                                Surface(shape = MaterialTheme.shapes.small,
+                                    color = SuccessGreen.copy(alpha = 0.15f)) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Rounded.Lock, null,
+                                            tint = SuccessGreen, modifier = Modifier.size(12.dp))
+                                        Text("Protegido",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = SuccessGreen)
+                                    }
+                                }
+                            }
+                        }
+
+                        savedMsg?.let { msg ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Rounded.CheckCircle, null,
+                                    tint = SuccessGreen, modifier = Modifier.size(16.dp))
+                                Text(msg, style = MaterialTheme.typography.labelMedium,
+                                    color = SuccessGreen)
+                            }
+                        }
+
+                        Row(modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        val file = saveQrToFile(context, bitmap)
+                                        if (file != null) {
+                                            saveQrToDownloads(context, file)
+                                            savedMsg = "Guardado en Descargas"
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Guardar")
+                            }
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        val file = saveQrToFile(context, bitmap)
+                                        if (file != null) shareQrImage(context, file)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Icon(Icons.Rounded.Share, null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Compartir")
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(20.dp))
+        }
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
+    withContext(Dispatchers.IO) {
+        try {
+            val connection = java.net.URL(url).openConnection()
+            connection.connectTimeout = 5000
+            connection.readTimeout    = 5000
+            BitmapFactory.decodeStream(connection.getInputStream())
+        } catch (e: Exception) {
+            Timber.e(e, "loadBitmapFromUrl: error")
+            null
+        }
+    }
+
+private fun openDocumentExternally(context: Context, uriString: String) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse(uriString)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Abrir documento"))
+    } catch (e: Exception) {
+        Timber.e(e, "openDocumentExternally: error")
+    }
+}
+
+private suspend fun generateQrBitmap(content: String): Bitmap? =
+    withContext(Dispatchers.IO) {
+        try {
+            val size      = 512
+            val bitMatrix = MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
+            val bitmap    = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+            for (x in 0 until size) {
+                for (y in 0 until size) {
+                    bitmap.setPixel(x, y,
+                        if (bitMatrix[x, y]) android.graphics.Color.BLACK
+                        else android.graphics.Color.WHITE)
+                }
+            }
+            bitmap
+        } catch (e: Exception) {
+            Timber.e(e, "generateQrBitmap: error")
+            null
+        }
+    }
+
+private fun encryptContent(content: String, password: String): String {
+    val key    = password.toByteArray(Charsets.UTF_8)
+    val bytes  = content.toByteArray(Charsets.UTF_8)
+    val result = ByteArray(bytes.size)
+    for (i in bytes.indices)
+        result[i] = (bytes[i].toInt() xor key[i % key.size].toInt()).toByte()
+    return android.util.Base64.encodeToString(result, android.util.Base64.NO_WRAP)
+}
+
+private suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
+    withContext(Dispatchers.IO) {
+        try {
+            val dir  = File(context.cacheDir, "qr").apply { mkdirs() }
+            val file = File(dir, "QR_${System.currentTimeMillis()}.png")
+            FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            file
+        } catch (e: Exception) { Timber.e(e, "saveQrToFile"); null }
+    }
+
+private fun saveQrToDownloads(context: Context, file: File) {
+    try {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, file.name)
+                put(android.provider.MediaStore.Downloads.MIME_TYPE, "image/png")
+                put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val resolver = context.contentResolver
+            val uri = resolver.insert(
+                android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
+            ) ?: return
+            resolver.openOutputStream(uri)?.use { out ->
+                java.io.FileInputStream(file).use { it.copyTo(out) }
+            }
+            values.clear()
+            values.put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+        }
+    } catch (e: Exception) { Timber.e(e, "saveQrToDownloads") }
+}
+
+private fun shareQrImage(context: Context, file: File) {
+    try {
+        val uri = FileProvider.getUriForFile(
+            context, "${context.packageName}.fileprovider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Compartir QR"))
+    } catch (e: Exception) { Timber.e(e, "shareQrImage") }
+}
+
+private fun copyToClipboard(context: Context, text: String) {
+    val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    cb.setPrimaryClip(android.content.ClipData.newPlainText("QR", text))
+}
+
+private fun openUrl(context: Context, url: String) {
+    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    catch (e: Exception) { Timber.e(e, "openUrl") }
 }

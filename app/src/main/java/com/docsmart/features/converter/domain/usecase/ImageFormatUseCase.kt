@@ -20,9 +20,9 @@ class ImageFormatUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     suspend operator fun invoke(
-        imageUri: Uri,
+        imageUri  : Uri,
         targetType: ConversionType,
-        fileName: String? = null
+        fileName  : String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
             val bitmap = context.contentResolver.openInputStream(imageUri)?.use {
@@ -30,30 +30,29 @@ class ImageFormatUseCase @Inject constructor(
             } ?: return@withContext ConversionResult.Error("No se pudo leer la imagen")
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
-            val baseName = fileName ?: generateTimestamp()
+            val baseName  = fileName ?: generateTimestamp()
 
-            val (format, extension, mimeQuality) = when (targetType) {
-                ConversionType.IMAGE_TO_JPG ->
-                    Triple(Bitmap.CompressFormat.JPEG, "jpg", 90)
-                ConversionType.IMAGE_TO_PNG ->
-                    Triple(Bitmap.CompressFormat.PNG, "png", 100)
-                else ->
-                    Triple(Bitmap.CompressFormat.JPEG, "jpg", 90)
+            val (format, extension, quality) = when (targetType) {
+                ConversionType.IMAGE_TO_JPG  -> Triple(Bitmap.CompressFormat.JPEG, "jpg",  90)
+                ConversionType.IMAGE_TO_PNG  -> Triple(Bitmap.CompressFormat.PNG,  "png",  100)
+                ConversionType.IMAGE_TO_WEBP -> Triple(Bitmap.CompressFormat.WEBP_LOSSLESS, "webp", 90)
+                ConversionType.IMAGE_TO_BMP  -> Triple(Bitmap.CompressFormat.PNG,  "bmp",  100) // BMP vía PNG sin pérdida
+                else                         -> Triple(Bitmap.CompressFormat.JPEG, "jpg",  90)
             }
 
             val outputFile = File(outputDir, "$baseName.$extension")
-            outputFile.outputStream().use { out ->
-                bitmap.compress(format, mimeQuality, out)
-            }
+            outputFile.outputStream().use { out -> bitmap.compress(format, quality, out) }
             bitmap.recycle()
+
+            Timber.d("ImageFormatUseCase: convertido a $extension — ${outputFile.length() / 1024} KB")
 
             ConversionResult.Success(
                 outputFile = outputFile,
-                pageCount = 1,
+                pageCount  = 1,
                 fileSizeKb = (outputFile.length() / 1024).toInt()
             )
         } catch (e: Exception) {
-            Timber.e(e, "Error convirtiendo formato de imagen")
+            Timber.e(e, "ImageFormatUseCase: error")
             ConversionResult.Error("Error: ${e.message}")
         }
     }

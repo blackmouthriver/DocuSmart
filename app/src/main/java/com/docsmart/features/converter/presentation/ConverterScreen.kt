@@ -72,7 +72,6 @@ fun ConverterScreen(
             contentPadding = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // ── Banner azul ───────────────────────────────────────────────────
             item {
                 DocuSmartTopBanner(
                     screenTitle    = stringResource(R.string.converter_title),
@@ -81,7 +80,6 @@ fun ConverterScreen(
                 )
             }
 
-            // ── Banner AdMob ──────────────────────────────────────────────────
             item {
                 DocuSmartBannerAd(
                     adUnitId  = AdConstants.BANNER_CONVERTER_ID,
@@ -90,7 +88,6 @@ fun ConverterScreen(
                 )
             }
 
-            // ── Éxito ─────────────────────────────────────────────────────────
             val result = uiState.conversionResult
             if (result is ConversionResult.Success) {
                 item {
@@ -105,7 +102,6 @@ fun ConverterScreen(
                 return@LazyColumn
             }
 
-            // ── Progreso ──────────────────────────────────────────────────────
             if (uiState.isConverting) {
                 item {
                     ConversionProgress(
@@ -116,7 +112,6 @@ fun ConverterScreen(
                 return@LazyColumn
             }
 
-            // ── Detalle de conversión seleccionada ────────────────────────────
             if (uiState.selectedType != null) {
                 item {
                     ConversionDetailCard(
@@ -139,7 +134,6 @@ fun ConverterScreen(
                 return@LazyColumn
             }
 
-            // ── Título grilla ─────────────────────────────────────────────────
             item {
                 Text(
                     text       = stringResource(R.string.converter_select),
@@ -150,7 +144,6 @@ fun ConverterScreen(
                 )
             }
 
-            // ── Secciones por categoría ───────────────────────────────────────
             val allTypes = ConversionType.entries.toList()
 
             val imageTypes = allTypes.filter { it.getCategoryForUi() == "Imagen" }
@@ -221,8 +214,6 @@ fun ConverterScreen(
     }
 }
 
-// ── Sección por categoría con grilla 2 columnas ───────────────────────────────
-
 @Composable
 private fun ConversionSection(
     title         : String,
@@ -281,16 +272,12 @@ private fun ConversionSection(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+                if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
-
-// ── Tarjeta de grilla ─────────────────────────────────────────────────────────
 
 @Composable
 private fun ConversionGridCard(
@@ -302,19 +289,13 @@ private fun ConversionGridCard(
     val (toColor,   toIcon)   = getFormatStyle(type.toFormat)
 
     Card(
-        modifier  = modifier
-            .height(110.dp)
-            .clickable { onClick() },
+        modifier  = modifier.height(110.dp).clickable { onClick() },
         shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
-            modifier            = Modifier
-                .fillMaxSize()
-                .padding(14.dp),
+            modifier            = Modifier.fillMaxSize().padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -327,18 +308,12 @@ private fun ConversionGridCard(
                         .background(fromColor.copy(alpha = 0.15f), MaterialTheme.shapes.small),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector        = fromIcon,
-                        contentDescription = null,
-                        tint               = fromColor,
-                        modifier           = Modifier.size(18.dp)
-                    )
+                    Icon(fromIcon, null, tint = fromColor, modifier = Modifier.size(18.dp))
                 }
                 Icon(
-                    imageVector        = Icons.Rounded.ArrowForward,
-                    contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier           = Modifier.size(14.dp)
+                    Icons.Rounded.ArrowForward, null,
+                    tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp)
                 )
                 Box(
                     modifier = Modifier
@@ -346,15 +321,9 @@ private fun ConversionGridCard(
                         .background(toColor.copy(alpha = 0.15f), MaterialTheme.shapes.small),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector        = toIcon,
-                        contentDescription = null,
-                        tint               = toColor,
-                        modifier           = Modifier.size(18.dp)
-                    )
+                    Icon(toIcon, null, tint = toColor, modifier = Modifier.size(18.dp))
                 }
             }
-
             Column {
                 Text(
                     text       = type.label,
@@ -373,8 +342,6 @@ private fun ConversionGridCard(
     }
 }
 
-// ── Detalle de conversión ─────────────────────────────────────────────────────
-
 @Composable
 private fun ConversionDetailCard(
     type            : ConversionType,
@@ -386,17 +353,14 @@ private fun ConversionDetailCard(
     onBack          : () -> Unit,
     modifier        : Modifier = Modifier
 ) {
-    Column(
-        modifier            = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector        = Icons.Rounded.ArrowBackIosNew,
+                    Icons.Rounded.ArrowBackIosNew,
                     contentDescription = stringResource(R.string.general_back_action),
                     tint               = MaterialTheme.colorScheme.primary
                 )
@@ -410,27 +374,22 @@ private fun ConversionDetailCard(
         }
 
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onSelectFiles() },
-            shape  = MaterialTheme.shapes.large,
-            colors = CardDefaults.cardColors(
+            modifier = Modifier.fillMaxWidth().clickable { onSelectFiles() },
+            shape    = MaterialTheme.shapes.large,
+            colors   = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
             ),
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(
-                modifier            = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
+                modifier            = Modifier.fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(
-                    imageVector        = Icons.Rounded.FolderOpen,
-                    contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(40.dp)
+                    Icons.Rounded.FolderOpen, null,
+                    tint     = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp)
                 )
                 Text(
                     text = if (selectedFiles.isEmpty())
@@ -480,11 +439,7 @@ private fun ConversionDetailCard(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Icon(
-                    imageVector        = Icons.Rounded.SwapHoriz,
-                    contentDescription = null,
-                    modifier           = Modifier.size(18.dp)
-                )
+                Icon(Icons.Rounded.SwapHoriz, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text  = stringResource(R.string.converter_to_format, type.toFormat),
@@ -500,36 +455,60 @@ private fun ConversionDetailCard(
 private fun ConversionType.getCategoryForUi(): String = when (this) {
     ConversionType.IMAGE_TO_PDF,
     ConversionType.IMAGE_TO_JPG,
-    ConversionType.IMAGE_TO_PNG  -> "Imagen"
+    ConversionType.IMAGE_TO_PNG,
+    ConversionType.IMAGE_TO_WEBP,
+    ConversionType.IMAGE_TO_BMP  -> "Imagen"
+
     ConversionType.PDF_TO_IMAGE,
-    ConversionType.PDF_TO_TXT    -> "PDF"
+    ConversionType.PDF_TO_TXT,
+    ConversionType.PDF_TO_WORD,
+    ConversionType.PDF_TO_HTML   -> "PDF"
+
     ConversionType.WORD_TO_PDF,
-    ConversionType.WORD_TO_TXT   -> "Word"
+    ConversionType.WORD_TO_TXT,
+    ConversionType.WORD_TO_HTML  -> "Word"
+
     ConversionType.EXCEL_TO_PDF,
-    ConversionType.EXCEL_TO_CSV  -> "Excel"
-    ConversionType.PPT_TO_PDF    -> "PowerPoint"
+    ConversionType.EXCEL_TO_CSV,
+    ConversionType.EXCEL_TO_HTML -> "Excel"
+
+    ConversionType.PPT_TO_PDF,
+    ConversionType.PPT_TO_TXT   -> "PowerPoint"
 }
 
 private fun getFormatStyle(format: String): Pair<Color, ImageVector> = when (format.lowercase()) {
-    "pdf"                           -> Pair(ColorPdf,       Icons.Rounded.PictureAsPdf)
-    "imagen", "image", "jpg", "png" -> Pair(ColorImage,     Icons.Rounded.Image)
-    "word"                          -> Pair(ColorWord,       Icons.Rounded.Description)
-    "excel"                         -> Pair(ColorExcel,      Icons.Rounded.TableChart)
-    "powerpoint"                    -> Pair(ColorPowerPoint, Icons.Rounded.Slideshow)
-    "txt", "texto", "text"          -> Pair(ColorText,       Icons.Rounded.TextSnippet)
-    "csv"                           -> Pair(ColorExcel,      Icons.Rounded.GridOn)
-    else                            -> Pair(ColorText,       Icons.Rounded.InsertDriveFile)
+    "pdf"                                    -> Pair(ColorPdf,        Icons.Rounded.PictureAsPdf)
+    "imagen", "image", "jpg", "png",
+    "webp", "bmp"                            -> Pair(ColorImage,      Icons.Rounded.Image)
+    "word", "docx"                           -> Pair(ColorWord,        Icons.Rounded.Description)
+    "excel"                                  -> Pair(ColorExcel,       Icons.Rounded.TableChart)
+    "powerpoint"                             -> Pair(ColorPowerPoint,  Icons.Rounded.Slideshow)
+    "txt", "texto", "text"                   -> Pair(ColorText,        Icons.Rounded.TextSnippet)
+    "csv"                                    -> Pair(ColorExcel,       Icons.Rounded.GridOn)
+    "html"                                   -> Pair(ColorOcr,         Icons.Rounded.Code)
+    else                                     -> Pair(ColorText,        Icons.Rounded.InsertDriveFile)
 }
 
 private fun getMimeForType(type: ConversionType): String = when (type) {
     ConversionType.IMAGE_TO_PDF,
     ConversionType.IMAGE_TO_JPG,
-    ConversionType.IMAGE_TO_PNG  -> "image/*"
+    ConversionType.IMAGE_TO_PNG,
+    ConversionType.IMAGE_TO_WEBP,
+    ConversionType.IMAGE_TO_BMP  -> "image/*"
+
     ConversionType.PDF_TO_IMAGE,
-    ConversionType.PDF_TO_TXT    -> "application/pdf"
+    ConversionType.PDF_TO_TXT,
+    ConversionType.PDF_TO_WORD,
+    ConversionType.PDF_TO_HTML   -> "application/pdf"
+
     ConversionType.WORD_TO_PDF,
-    ConversionType.WORD_TO_TXT   -> "application/msword"
+    ConversionType.WORD_TO_TXT,
+    ConversionType.WORD_TO_HTML  -> "application/msword"
+
     ConversionType.EXCEL_TO_PDF,
-    ConversionType.EXCEL_TO_CSV  -> "application/vnd.ms-excel"
-    ConversionType.PPT_TO_PDF    -> "application/vnd.ms-powerpoint"
+    ConversionType.EXCEL_TO_CSV,
+    ConversionType.EXCEL_TO_HTML -> "*/*"
+
+    ConversionType.PPT_TO_PDF,
+    ConversionType.PPT_TO_TXT   -> "*/*"
 }

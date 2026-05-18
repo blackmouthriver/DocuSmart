@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,19 +20,21 @@ import timber.log.Timber
 import javax.inject.Inject
 
 data class ViewerUiState(
-    val document: DocumentUiModel? = null,
-    val currentPage: Int = 0,
-    val totalPages: Int = 0,
-    val isLoading: Boolean = true,
-    val error: String? = null,
-    val isFavorite: Boolean = false,
+    val document    : DocumentUiModel? = null,
+    val currentPage : Int     = 0,
+    val totalPages  : Int     = 0,
+    val isLoading   : Boolean = true,
+    val error       : String? = null,
+    val isFavorite  : Boolean = false,
     val showControls: Boolean = true,
-    val fileUri: Uri? = null,
-    val mimeType: String? = null
+    val fileUri     : Uri?    = null,
+    val mimeType    : String? = null
 )
 
 @HiltViewModel
-class ViewerViewModel @Inject constructor() : ViewModel() {
+class ViewerViewModel @Inject constructor(
+    private val favoritesRepository: FavoritesRepository  // ← NUEVO
+) : ViewModel() {
 
     companion object {
         private const val TAG = "ViewerViewModel"
@@ -43,28 +46,20 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
     fun loadDocument(documentId: String, context: Context) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-
             try {
                 val isRealUri = documentId.startsWith("content://") ||
-                        documentId.startsWith("file://") ||
+                        documentId.startsWith("file://")  ||
                         documentId.startsWith("content%3A") ||
                         documentId.startsWith("/")
-
-                if (isRealUri) {
-                    loadFromUri(documentId, context)
-                } else {
-                    loadFromMock(documentId)
-                }
+                if (isRealUri) loadFromUri(documentId, context)
+                else           loadFromMock(documentId)
             } catch (e: Exception) {
                 Timber.e(e, "$TAG: error inesperado cargando documento")
-                _uiState.update {
-                    it.copy(isLoading = false, error = "Error al cargar el documento")
-                }
+                _uiState.update { it.copy(isLoading = false, error = "Error al cargar el documento") }
             }
         }
     }
 
-    // ── CORRECCIÓN BUG-02: loadFromUri recibe context para resolver nombre real ──
     private suspend fun loadFromUri(documentId: String, context: Context) {
         withContext(Dispatchers.IO) {
             val uriString = when {
@@ -73,44 +68,36 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
                 else                                -> documentId
             }
 
-            val uri = Uri.parse(uriString)
-
-            // ── Detección robusta de MIME type ────────────────────────────────
-            // 1. Intentar por ContentResolver
-            // 2. Fallback por extensión del nombre real
-            // 3. Fallback por extensión de la URI
+            val uri      = Uri.parse(uriString)
             val fileName = resolveFileName(uriString, context)
 
             val mimeType: String = run {
-                val fromResolver = try {
-                    context.contentResolver.getType(uri)
-                } catch (e: Exception) { null }
-
-                val fromExtension = resolveMimeTypeByExtension(fileName)
-                    ?: resolveMimeType(uriString)
-
-                // Preferir extensión si el resolver devuelve genérico
+                val fromResolver  = try { context.contentResolver.getType(uri) } catch (e: Exception) { null }
+                val fromExtension = resolveMimeTypeByExtension(fileName) ?: resolveMimeType(uriString)
                 when {
-                    fromResolver == null                          -> fromExtension ?: "application/octet-stream"
-                    fromResolver == "application/octet-stream"   -> fromExtension ?: fromResolver
-                    fromResolver.contains("*")                   -> fromExtension ?: fromResolver
-                    else                                         -> fromResolver
+                    fromResolver == null                        -> fromExtension ?: "application/octet-stream"
+                    fromResolver == "application/octet-stream" -> fromExtension ?: fromResolver
+                    fromResolver.contains("*")                 -> fromExtension ?: fromResolver
+                    else                                       -> fromResolver
                 }
             }
 
-            Timber.d("ViewerViewModel: uri=$uriString mimeType=$mimeType fileName=$fileName")
+            Timber.d("$TAG: uri=$uriString mimeType=$mimeType fileName=$fileName")
 
             val documentType = when {
-                mimeType.contains("image")                                    -> DocumentType.IMAGE
-                mimeType.contains("pdf")                                      -> DocumentType.PDF
-                mimeType.contains("word") || mimeType.contains("msword") ||
-                        mimeType.contains("wordprocessingml")                         -> DocumentType.WORD
+                mimeType.contains("image")                                              -> DocumentType.IMAGE
+                mimeType.contains("pdf")                                                -> DocumentType.PDF
+                mimeType.contains("word")  || mimeType.contains("msword") ||
+                        mimeType.contains("wordprocessingml")                                   -> DocumentType.WORD
                 mimeType.contains("excel") || mimeType.contains("sheet") ||
-                        mimeType.contains("spreadsheet")                              -> DocumentType.EXCEL
-                mimeType.contains("powerpoint") || mimeType.contains("presentation") -> DocumentType.POWERPOINT
-                mimeType.contains("text")                                     -> DocumentType.TEXT
-                else                                                          -> DocumentType.PDF
+                        mimeType.contains("spreadsheet")                                        -> DocumentType.EXCEL
+                mimeType.contains("powerpoint") || mimeType.contains("presentation")   -> DocumentType.POWERPOINT
+                mimeType.contains("text")                                               -> DocumentType.TEXT
+                else                                                                    -> DocumentType.PDF
             }
+
+            // ── Leer estado de favorito desde repositorio persistido ──────────
+            val isFavorite = favoritesRepository.isFavorite(uriString)
 
             val document = DocumentUiModel(
                 id         = uriString,
@@ -118,45 +105,49 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
                 type       = documentType,
                 size       = "",
                 date       = "",
-                isFavorite = false
+                isFavorite = isFavorite
             )
 
             _uiState.update { state ->
                 state.copy(
-                    document  = document,
-                    fileUri   = uri,
-                    mimeType  = mimeType,
-                    isLoading = false,
-                    error     = null
+                    document   = document,
+                    fileUri    = uri,
+                    mimeType   = mimeType,
+                    isFavorite = isFavorite, // ← refleja estado real desde disco
+                    isLoading  = false,
+                    error      = null
                 )
             }
         }
     }
+
     private fun loadFromMock(id: String) {
         val mockDocument = getMockDocument(id)
+        // Para mocks también verificamos favoritos persistidos
+        val isFavorite = mockDocument?.let {
+            favoritesRepository.isFavorite(it.id)
+        } ?: false
+
         _uiState.update { state ->
             state.copy(
-                document    = mockDocument,
-                isFavorite  = mockDocument?.isFavorite ?: false,
-                isLoading   = false,
-                error       = if (mockDocument == null) "Documento no encontrado" else null
+                document   = mockDocument,
+                isFavorite = isFavorite,
+                isLoading  = false,
+                error      = if (mockDocument == null) "Documento no encontrado" else null
             )
         }
     }
 
-    // ── Resuelve nombre real usando ContentResolver ──
     private fun resolveFileName(uriString: String, context: Context): String {
         return try {
-            val uri = Uri.parse(uriString)
+            val uri  = Uri.parse(uriString)
             var name = "Documento"
             context.contentResolver.query(
                 uri,
                 arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
                 null, null, null
             )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    name = cursor.getString(0) ?: "Documento"
-                }
+                if (cursor.moveToFirst()) name = cursor.getString(0) ?: "Documento"
             }
             name
         } catch (e: Exception) {
@@ -165,49 +156,58 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    private fun resolveMimeType(uriString: String): String? {
-        return when {
-            uriString.contains("image")                          -> "image/jpeg"
-            uriString.endsWith(".pdf", ignoreCase = true)        -> "application/pdf"
-            uriString.endsWith(".docx", ignoreCase = true)       -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            uriString.endsWith(".doc", ignoreCase = true)        -> "application/msword"
-            uriString.endsWith(".xlsx", ignoreCase = true)       -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            uriString.endsWith(".xls", ignoreCase = true)        -> "application/vnd.ms-excel"
-            uriString.endsWith(".jpg", ignoreCase = true) ||
-            uriString.endsWith(".jpeg", ignoreCase = true)       -> "image/jpeg"
-            uriString.endsWith(".png", ignoreCase = true)        -> "image/png"
-            uriString.endsWith(".txt", ignoreCase = true)        -> "text/plain"
-            else                                                 -> null
-        }
+    private fun resolveMimeType(uriString: String): String? = when {
+        uriString.contains("image")                          -> "image/jpeg"
+        uriString.endsWith(".pdf",  ignoreCase = true)       -> "application/pdf"
+        uriString.endsWith(".docx", ignoreCase = true)       -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        uriString.endsWith(".doc",  ignoreCase = true)       -> "application/msword"
+        uriString.endsWith(".xlsx", ignoreCase = true)       -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        uriString.endsWith(".xls",  ignoreCase = true)       -> "application/vnd.ms-excel"
+        uriString.endsWith(".jpg",  ignoreCase = true) ||
+                uriString.endsWith(".jpeg", ignoreCase = true)       -> "image/jpeg"
+        uriString.endsWith(".png",  ignoreCase = true)       -> "image/png"
+        uriString.endsWith(".txt",  ignoreCase = true)       -> "text/plain"
+        else                                                 -> null
     }
 
-    // Detecta MIME por extensión del nombre de archivo — más confiable que ContentResolver
     private fun resolveMimeTypeByExtension(fileName: String): String? {
         val ext = fileName.substringAfterLast(".", "").lowercase()
         return when (ext) {
-            "pdf"  -> "application/pdf"
-            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            "doc"  -> "application/msword"
-            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            "xls"  -> "application/vnd.ms-excel"
-            "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-            "ppt"  -> "application/vnd.ms-powerpoint"
-            "jpg", "jpeg" -> "image/jpeg"
-            "png"  -> "image/png"
-            "webp" -> "image/webp"
-            "gif"  -> "image/gif"
-            "txt"  -> "text/plain"
-            "md"   -> "text/markdown"
-            "csv"  -> "text/csv"
-            else   -> null
+            "pdf"        -> "application/pdf"
+            "docx"       -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "doc"        -> "application/msword"
+            "xlsx"       -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "xls"        -> "application/vnd.ms-excel"
+            "pptx"       -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            "ppt"        -> "application/vnd.ms-powerpoint"
+            "jpg","jpeg" -> "image/jpeg"
+            "png"        -> "image/png"
+            "webp"       -> "image/webp"
+            "gif"        -> "image/gif"
+            "txt"        -> "text/plain"
+            "md"         -> "text/markdown"
+            "csv"        -> "text/csv"
+            else         -> null
         }
     }
+
     fun onPageChanged(page: Int, total: Int) {
         _uiState.update { it.copy(currentPage = page, totalPages = total) }
     }
 
+    // ── toggleFavorite: ahora persiste en disco ───────────────────────────────
     fun toggleFavorite() {
-        _uiState.update { it.copy(isFavorite = !it.isFavorite) }
+        val documentId = _uiState.value.document?.id ?: return
+        viewModelScope.launch {
+            val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
+            _uiState.update { state ->
+                state.copy(
+                    isFavorite = isNowFavorite,
+                    document   = state.document?.copy(isFavorite = isNowFavorite)
+                )
+            }
+            Timber.d("$TAG: toggleFavorite $documentId → $isNowFavorite")
+        }
     }
 
     fun toggleControls() {
@@ -215,7 +215,7 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
     }
 
     fun shareDocument(context: Context) {
-        val state = _uiState.value
+        val state    = _uiState.value
         val document = state.document ?: return
         try {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -226,9 +226,7 @@ class ViewerViewModel @Inject constructor() : ViewModel() {
                 }
                 putExtra(Intent.EXTRA_SUBJECT, document.name)
             }
-            context.startActivity(
-                Intent.createChooser(shareIntent, "Compartir ${document.name}")
-            )
+            context.startActivity(Intent.createChooser(shareIntent, "Compartir ${document.name}"))
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error compartiendo documento")
             _uiState.update { it.copy(error = "No se pudo compartir el archivo") }

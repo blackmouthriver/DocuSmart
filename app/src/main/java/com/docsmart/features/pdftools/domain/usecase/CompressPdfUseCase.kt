@@ -3,7 +3,6 @@ package com.docsmart.features.pdftools.domain.usecase
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.pdf.PdfDocument
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -28,38 +27,29 @@ class CompressPdfUseCase @Inject constructor(
     }
 
     suspend operator fun invoke(
-        pdfUri: Uri,
-        quality: Int = 60,
+        pdfUri        : Uri,
+        quality       : Int = 60,
         outputFileName: String? = null
     ): PdfToolResult = withContext(Dispatchers.IO) {
+        var cacheFile: File? = null
         try {
-            Timber.d("Iniciando compresión — URI: $pdfUri, calidad: $quality")
+            Timber.d("$TAG: iniciando compresión — calidad: $quality")
 
-            val cacheFile = copyUriToCache(pdfUri)
-            if (cacheFile == null) {
-                Timber.e("No se pudo copiar el archivo al cache")
-                return@withContext PdfToolResult.Error(
+            cacheFile = copyUriToCache(pdfUri)
+                ?: return@withContext PdfToolResult.Error(
                     "No se pudo leer el archivo. Verifica que sea un PDF válido."
                 )
-            }
 
-            Timber.d("Cache: ${cacheFile.absolutePath}, tamaño: ${cacheFile.length()} bytes")
-
-            if (cacheFile.length() == 0L) {
-                return@withContext PdfToolResult.Error(
-                    "El archivo PDF está vacío o corrupto."
-                )
-            }
+            if (cacheFile.length() == 0L)
+                return@withContext PdfToolResult.Error("El archivo PDF está vacío o corrupto.")
 
             val originalSize = cacheFile.length()
+            Timber.d("$TAG: tamaño original = ${originalSize / 1024} KB")
 
             val fileDescriptor = ParcelFileDescriptor.open(
-                cacheFile,
-                ParcelFileDescriptor.MODE_READ_ONLY
+                cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
             )
             val renderer = PdfRenderer(fileDescriptor)
-
-            Timber.d("PDF abierto: ${renderer.pageCount} páginas")
 
             if (renderer.pageCount == 0) {
                 renderer.close()
@@ -67,91 +57,95 @@ class CompressPdfUseCase @Inject constructor(
                 return@withContext PdfToolResult.Error("El PDF no contiene páginas.")
             }
 
-            val compressedDocument = PdfDocument()
+            Timber.d("$TAG: ${renderer.pageCount} páginas a comprimir")
 
             val scaleFactor = when {
                 quality >= 80 -> 1.5f
-                quality >= 60 -> 1.0f
-                quality >= 40 -> 0.75f
-                else          -> 0.5f
+                quality >= 60 -> 1.2f
+                quality >= 40 -> 0.9f
+                else          -> 0.6f
             }
 
-            Timber.d("Factor de escala: $scaleFactor")
+            val pdfDocument = android.graphics.pdf.PdfDocument()
 
             for (i in 0 until renderer.pageCount) {
-                val page = renderer.openPage(i)
-
+                val page   = renderer.openPage(i)
                 val width  = (page.width  * scaleFactor).toInt().coerceAtLeast(1)
                 val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)
 
-                Timber.d("Procesando página $i: ${width}x${height}")
-
-                val bitmap = Bitmap.createBitmap(
-                    width, height,
-                    Bitmap.Config.ARGB_8888
-                )
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 bitmap.eraseColor(android.graphics.Color.WHITE)
-
-                page.render(
-                    bitmap, null, null,
-                    PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-                )
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 page.close()
 
-                val compressedBitmap = recompressBitmap(bitmap, quality)
+                val compressed = recompressBitmap(bitmap, quality)
 
-                val pageInfo = PdfDocument.PageInfo.Builder(
-                    width, height, i + 1
-                ).create()
-
-                val docPage = compressedDocument.startPage(pageInfo)
-                docPage.canvas.drawBitmap(compressedBitmap, 0f, 0f, null)
-                compressedDocument.finishPage(docPage)
+                val pageInfo = android.graphics.pdf.PdfDocument.PageInfo
+                    .Builder(width, height, i + 1).create()
+                val docPage  = pdfDocument.startPage(pageInfo)
+                docPage.canvas.drawBitmap(compressed, 0f, 0f, null)
+                pdfDocument.finishPage(docPage)
 
                 bitmap.recycle()
-                compressedBitmap.recycle()
+                if (compressed !== bitmap) compressed.recycle()
+
+                Timber.d("$TAG: página ${i + 1} procesada")
             }
 
             renderer.close()
             fileDescriptor.close()
 
-            val name = outputFileName ?: "Compressed_q$quality"
+            val name       = outputFileName ?: "Compressed_q$quality"
             val outputFile = createOutputFile(name)
 
-            Timber.d("Guardando en: ${outputFile.absolutePath}")
-
             FileOutputStream(outputFile).use { stream ->
-                compressedDocument.writeTo(stream)
+                pdfDocument.writeTo(stream)
                 stream.flush()
             }
-            compressedDocument.close()
+            pdfDocument.close()
 
-            Timber.d("Archivo guardado: ${outputFile.length()} bytes")
+            if (outputFile.length() == 0L)
+                return@withContext PdfToolResult.Error("Error al generar el PDF comprimido.")
 
-            if (outputFile.length() == 0L) {
-                return@withContext PdfToolResult.Error(
-                    "Error al generar el PDF comprimido."
-                )
+            val newSize    = outputFile.length()
+            val originalKb = originalSize / 1024
+            val newKb      = newSize / 1024
+            val reduction  = if (originalSize > 0)
+                ((originalSize - newSize) * 100 / originalSize).toInt()
+            else 0
+
+            Timber.d("$TAG: $originalKb KB → $newKb KB ($reduction%)")
+
+            // ── Si el comprimido es mayor que el original
+            // devolvemos el original con mensaje informativo ──────────────────
+            val finalFile = if (newSize >= originalSize) {
+                Timber.d("$TAG: comprimido mayor que original — usando original")
+                val originalOutput = createOutputFile("${name}_optimizado")
+                cacheFile!!.copyTo(originalOutput, overwrite = true)
+                originalOutput
+            } else {
+                outputFile
             }
 
-            val newSize = outputFile.length()
-            val reduction = if (originalSize > 0) {
-                ((originalSize - newSize) * 100 / originalSize).toInt()
-            } else 0
-
-            Timber.d("Compresión exitosa: $originalSize → $newSize bytes ($reduction%)")
+            val finalKb      = finalFile.length() / 1024
+            val finalMessage = if (newSize >= originalSize)
+                "El PDF ya está optimizado · Tamaño: ${originalKb} KB"
+            else
+                "Antes: ${originalKb} KB → Después: ${finalKb} KB · Reducción: $reduction%"
 
             PdfToolResult.Success(
-                outputFile = outputFile,
-                message = "Reducido $reduction% — ${newSize / 1024} KB"
+                outputFile = finalFile,
+                message    = finalMessage
             )
 
         } catch (e: Exception) {
-            Timber.e(e, "Error al comprimir: ${e.message}")
+            Timber.e(e, "$TAG: error al comprimir: ${e.message}")
             PdfToolResult.Error(
                 message = "Error al comprimir: ${e.message ?: "Error desconocido"}",
-                cause = e
+                cause   = e
             )
+        } finally {
+            cacheFile?.delete()
         }
     }
 
@@ -162,41 +156,31 @@ class CompressPdfUseCase @Inject constructor(
             val bytes = stream.toByteArray()
             BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: bitmap
         } catch (e: Exception) {
-            Timber.e("Error recomprimiendo bitmap: ${e.message}")
+            Timber.e("$TAG: error recomprimiendo: ${e.message}")
             bitmap
         }
     }
 
     private fun copyUriToCache(uri: Uri): File? {
         return try {
-            val file = File(
-                context.cacheDir,
-                "compress_${System.currentTimeMillis()}.pdf"
-            )
-            val inputStream = context.contentResolver.openInputStream(uri)
-            if (inputStream == null) {
-                Timber.e("No se pudo abrir el InputStream del URI")
-                return null
-            }
-            inputStream.use { input ->
+            val file = File(context.cacheDir, "compress_${System.currentTimeMillis()}.pdf")
+            context.contentResolver.openInputStream(uri)?.use { input ->
                 file.outputStream().use { output ->
                     val bytes = input.copyTo(output)
-                    Timber.d("Copiados $bytes bytes al cache")
+                    Timber.d("$TAG: copiados $bytes bytes al cache")
                     if (bytes == 0L) return null
                 }
-            }
+            } ?: return null
             file
         } catch (e: Exception) {
-            Timber.e(e, "Error copiando URI al cache: ${e.message}")
+            Timber.e(e, "$TAG: error copiando URI al cache")
             null
         }
     }
 
     private fun createOutputFile(name: String): File {
-        val timestamp = SimpleDateFormat(
-            "yyyyMMdd_HHmmss", Locale.getDefault()
-        ).format(Date())
-        val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val dir       = File(context.filesDir, "pdftools").apply { mkdirs() }
         return File(dir, "${name}_$timestamp.pdf")
     }
 }

@@ -15,28 +15,30 @@ import com.docsmart.features.home.presentation.HomeScreen
 import com.docsmart.features.library.presentation.LibraryScreen
 import com.docsmart.features.pdftools.presentation.PdfToolsScreen
 import com.docsmart.features.premium.presentation.PremiumScreen
+import com.docsmart.features.scanner.presentation.QrCreatorScreen
+import com.docsmart.features.scanner.presentation.QrReaderScreen
 import com.docsmart.features.scanner.presentation.ScanResultScreen
 import com.docsmart.features.scanner.presentation.ScannerScreen
-import com.docsmart.features.settings.presentation.SettingsScreen
-import com.docsmart.features.splash.presentation.SplashDocuSmartScreen  // ← NUEVO
-import com.docsmart.features.splash.presentation.SplashMouthBlackScreen // ← NUEVO
-import com.docsmart.features.viewer.presentation.ViewerScreen
 import com.docsmart.features.security.presentation.SecurityScreen
+import com.docsmart.features.settings.presentation.SettingsScreen
+import com.docsmart.features.splash.presentation.SplashDocuSmartScreen
+import com.docsmart.features.splash.presentation.SplashMouthBlackScreen
 import com.docsmart.features.study.presentation.StudyScreen
+import com.docsmart.features.viewer.presentation.ViewerScreen
 import timber.log.Timber
 
 @Composable
 fun DocuSmartNavGraph(
-    navController: NavHostController,
-    themeManager: ThemeManager,
+    navController  : NavHostController,
+    themeManager   : ThemeManager,
     languageManager: LanguageManager
 ) {
     NavHost(
-        navController = navController,
-        startDestination = NavRoutes.SplashMouthBlack.route // ← CAMBIA
+        navController    = navController,
+        startDestination = NavRoutes.SplashMouthBlack.route
     ) {
 
-        // ── SPLASH 1: MouthBlack ─────────────────────────────────────────────
+        // ── Splash 1: MouthBlack ──────────────────────────────────────────────
         composable(NavRoutes.SplashMouthBlack.route) {
             SplashMouthBlackScreen(
                 onFinished = {
@@ -47,7 +49,7 @@ fun DocuSmartNavGraph(
             )
         }
 
-        // ── SPLASH 2: DocuSmart ──────────────────────────────────────────────
+        // ── Splash 2: DocuSmart ───────────────────────────────────────────────
         composable(NavRoutes.SplashDocuSmart.route) {
             SplashDocuSmartScreen(
                 onFinished = {
@@ -58,7 +60,7 @@ fun DocuSmartNavGraph(
             )
         }
 
-        // ── HOME ─────────────────────────────────────────────────────────────
+        // ── Home ──────────────────────────────────────────────────────────────
         composable(NavRoutes.Home.route) {
             val context = androidx.compose.ui.platform.LocalContext.current
             HomeScreen(
@@ -71,18 +73,20 @@ fun DocuSmartNavGraph(
                     }
                     navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
                 },
-                onScan = { navController.navigate(NavRoutes.Scanner.route) },
-                onConvert = { navController.navigate(NavRoutes.Converter.route) },
-                onSecurity = { navController.navigate(NavRoutes.Security.route) },
+                onScan      = { navController.navigate(NavRoutes.Scanner.route) },
+                onConvert   = { navController.navigate(NavRoutes.Converter.route) },
+                onSecurity  = { navController.navigate(NavRoutes.Security.route) },
+                onStudy     = { navController.navigate(NavRoutes.Study.route) },
+                onSeeAll    = { navController.navigate(NavRoutes.Library.route) },
+                onQrReader  = { navController.navigate(NavRoutes.QrReader.route) },  // ← NUEVO
+                onQrCreator = { navController.navigate(NavRoutes.QrCreator.route) }, // ← NUEVO
                 onDocumentClick = { documentId ->
                     navController.navigate(NavRoutes.Viewer.createRoute(documentId))
-                },
-                onStudy = { navController.navigate(NavRoutes.Study.route) },
-                onSeeAll = { navController.navigate(NavRoutes.Library.route) }
+                }
             )
         }
 
-        // ── El resto del NavGraph queda EXACTAMENTE igual ────────────────────
+        // ── Library ───────────────────────────────────────────────────────────
         composable(NavRoutes.Library.route) {
             val context = androidx.compose.ui.platform.LocalContext.current
             LibraryScreen(
@@ -106,43 +110,49 @@ fun DocuSmartNavGraph(
             )
         }
 
+        // ── Viewer ────────────────────────────────────────────────────────────
         composable(
-            route = NavRoutes.Viewer.route,
+            route     = NavRoutes.Viewer.route,
             arguments = listOf(
                 navArgument("documentId") {
-                    type = NavType.StringType
-                    nullable = true
+                    type         = NavType.StringType
+                    nullable     = true
                     defaultValue = null
                 }
             )
         ) { backStackEntry ->
-            val encodedId = backStackEntry.arguments
+            val encodedId  = backStackEntry.arguments
                 ?.getString("documentId") ?: return@composable
-            val documentId = if (encodedId.startsWith("content%3A")) {
-                Uri.decode(encodedId)
-            } else encodedId
+            val documentId = if (encodedId.startsWith("content%3A"))
+                Uri.decode(encodedId) else encodedId
             Timber.d("Viewer: documentId final = $documentId")
             ViewerScreen(
                 documentId = documentId,
-                onBack = { navController.popBackStack() }
+                onBack     = { navController.popBackStack() }
             )
         }
 
+        // ── Converter ─────────────────────────────────────────────────────────
         composable(NavRoutes.Converter.route) { ConverterScreen() }
+
+        // ── PDF Tools ─────────────────────────────────────────────────────────
         composable(NavRoutes.PdfTools.route) { PdfToolsScreen() }
 
+        // ── Settings ──────────────────────────────────────────────────────────
         composable(NavRoutes.Settings.route) {
             SettingsScreen(
-                themeManager = themeManager,
+                themeManager    = themeManager,
                 languageManager = languageManager,
-                onPremiumClick = { navController.navigate(NavRoutes.Premium.route) }
+                onPremiumClick  = { navController.navigate(NavRoutes.Premium.route) }
             )
         }
 
+        // ── Premium ───────────────────────────────────────────────────────────
         composable(NavRoutes.Premium.route) {
             PremiumScreen(onClose = { navController.popBackStack() })
         }
 
+        // ── Scanner ───────────────────────────────────────────────────────────
         composable(NavRoutes.Scanner.route) {
             val scanResultEntry = remember {
                 navController.getBackStackEntry(NavRoutes.Scanner.route)
@@ -159,6 +169,7 @@ fun DocuSmartNavGraph(
             )
         }
 
+        // ── Scan Result ───────────────────────────────────────────────────────
         composable(NavRoutes.ScanResult.route) {
             val scannerEntry = remember {
                 navController.getBackStackEntry(NavRoutes.Scanner.route)
@@ -166,12 +177,12 @@ fun DocuSmartNavGraph(
             val uriStrings = scannerEntry.savedStateHandle
                 .get<List<String>>("scanned_uris") ?: emptyList()
             val isPdf = scannerEntry.savedStateHandle.get<Boolean>("is_pdf") ?: false
-            val uris = uriStrings.map { Uri.parse(it) }
+            val uris  = uriStrings.map { Uri.parse(it) }
             ScanResultScreen(
                 scannedUris = uris,
-                isPdf = isPdf,
-                onBack = { navController.popBackStack() },
-                onDone = {
+                isPdf       = isPdf,
+                onBack      = { navController.popBackStack() },
+                onDone      = {
                     navController.navigate(NavRoutes.Home.route) {
                         popUpTo(NavRoutes.Scanner.route) { inclusive = true }
                     }
@@ -179,12 +190,24 @@ fun DocuSmartNavGraph(
             )
         }
 
+        // ── Security ──────────────────────────────────────────────────────────
         composable(NavRoutes.Security.route) {
             SecurityScreen(onBack = { navController.popBackStack() })
         }
 
+        // ── Study ─────────────────────────────────────────────────────────────
         composable(NavRoutes.Study.route) {
             StudyScreen(onBack = { navController.popBackStack() })
+        }
+
+        // ── QR Reader ─────────────────────────────────────────────────────────
+        composable(NavRoutes.QrReader.route) {
+            QrReaderScreen(onBack = { navController.popBackStack() })
+        }
+
+        // ── QR Creator ────────────────────────────────────────────────────────
+        composable(NavRoutes.QrCreator.route) {
+            QrCreatorScreen(onBack = { navController.popBackStack() })
         }
     }
 }
