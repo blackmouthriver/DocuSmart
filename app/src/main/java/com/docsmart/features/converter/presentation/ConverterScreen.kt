@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +43,9 @@ fun ConverterScreen(
     val context           = LocalContext.current
     val activity          = context as? Activity
 
+    // ── Rewarded ready state ──────────────────────────────────────────────────
+    val isRewardedReady by viewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
+    val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     val fileLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris -> if (uris.isNotEmpty()) viewModel.onFilesSelected(uris) }
@@ -63,13 +67,25 @@ fun ConverterScreen(
         }
     }
 
+    // ── Dialog de límite diario ───────────────────────────────────────────────
+    if (uiState.showLimitDialog) {
+        DailyLimitDialog(
+            conversionCount = uiState.conversionCount,
+            conversionLimit = uiState.conversionLimit,
+            isRewardedReady = isRewardedReady,
+            onWatchAd       = { activity?.let { viewModel.watchAdForConversion(it) } },
+            onDismiss       = { viewModel.dismissLimitDialog() },
+            onGetPremium    = { /* navegar a Premium */ }
+        )
+    }
+
     Scaffold(
         snackbarHost   = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
-            modifier       = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 100.dp),
+            modifier            = Modifier.fillMaxSize().padding(innerPadding),
+            contentPadding      = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             item {
@@ -86,6 +102,17 @@ fun ConverterScreen(
                     adManager = viewModel.adManager,
                     modifier  = Modifier.padding(horizontal = 20.dp)
                 )
+            }
+
+            // ── Contador de conversiones (usuarios free) ──────────────────────
+            if (!isPremium) {
+                item {
+                    ConversionLimitIndicator(
+                        count   = uiState.conversionCount,
+                        limit   = uiState.conversionLimit,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             val result = uiState.conversionResult
@@ -214,6 +241,65 @@ fun ConverterScreen(
     }
 }
 
+// ── Indicador de límite diario ────────────────────────────────────────────────
+@Composable
+private fun ConversionLimitIndicator(
+    count   : Int,
+    limit   : Int,
+    modifier: Modifier = Modifier
+) {
+    if (count == 0) return
+    val progress = (count.toFloat() / limit).coerceIn(0f, 1f)
+    val color    = when {
+        progress >= 1f   -> MaterialTheme.colorScheme.error
+        progress >= 0.6f -> MaterialTheme.colorScheme.tertiary
+        else             -> MaterialTheme.colorScheme.primary
+    }
+
+    Card(
+        modifier  = modifier.fillMaxWidth(),
+        shape     = MaterialTheme.shapes.medium,
+        colors    = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.08f)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier              = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Rounded.SwapHoriz, null,
+                    tint     = color,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    "Conversiones hoy: $count / $limit",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = color
+                )
+            }
+            LinearProgressIndicator(
+                progress  = { progress },
+                modifier  = Modifier
+                    .width(80.dp)
+                    .height(6.dp)
+                    .clip(MaterialTheme.shapes.small),
+                color      = color,
+                trackColor = color.copy(alpha = 0.2f)
+            )
+        }
+    }
+}
+
+// ── Sección por categoría ─────────────────────────────────────────────────────
 @Composable
 private fun ConversionSection(
     title         : String,
@@ -239,12 +325,7 @@ private fun ConversionSection(
                     .background(color.copy(alpha = 0.12f), MaterialTheme.shapes.small),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector        = icon,
-                    contentDescription = null,
-                    tint               = color,
-                    modifier           = Modifier.size(18.dp)
-                )
+                Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
             }
             Text(
                 text       = title,
@@ -258,7 +339,6 @@ private fun ConversionSection(
                 color     = MaterialTheme.colorScheme.outlineVariant
             )
         }
-
         val rows = types.chunked(2)
         rows.forEach { rowItems ->
             Row(
@@ -279,6 +359,7 @@ private fun ConversionSection(
     }
 }
 
+// ── Tarjeta de grilla ─────────────────────────────────────────────────────────
 @Composable
 private fun ConversionGridCard(
     type    : ConversionType,
@@ -310,11 +391,9 @@ private fun ConversionGridCard(
                 ) {
                     Icon(fromIcon, null, tint = fromColor, modifier = Modifier.size(18.dp))
                 }
-                Icon(
-                    Icons.Rounded.ArrowForward, null,
-                    tint     = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
-                )
+                Icon(Icons.Rounded.ArrowForward, null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp))
                 Box(
                     modifier = Modifier
                         .size(32.dp)
@@ -342,6 +421,7 @@ private fun ConversionGridCard(
     }
 }
 
+// ── Detalle de conversión ─────────────────────────────────────────────────────
 @Composable
 private fun ConversionDetailCard(
     type            : ConversionType,
@@ -374,9 +454,9 @@ private fun ConversionDetailCard(
         }
 
         Card(
-            modifier = Modifier.fillMaxWidth().clickable { onSelectFiles() },
-            shape    = MaterialTheme.shapes.large,
-            colors   = CardDefaults.cardColors(
+            modifier  = Modifier.fillMaxWidth().clickable { onSelectFiles() },
+            shape     = MaterialTheme.shapes.large,
+            colors    = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
             ),
             elevation = CardDefaults.cardElevation(0.dp)
@@ -386,11 +466,9 @@ private fun ConversionDetailCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    Icons.Rounded.FolderOpen, null,
-                    tint     = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(40.dp)
-                )
+                Icon(Icons.Rounded.FolderOpen, null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp))
                 Text(
                     text = if (selectedFiles.isEmpty())
                         stringResource(R.string.converter_select_files, type.fromFormat)
@@ -450,43 +528,127 @@ private fun ConversionDetailCard(
     }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Dialog límite diario ──────────────────────────────────────────────────────
+@Composable
+private fun DailyLimitDialog(
+    conversionCount : Int,
+    conversionLimit : Int,
+    isRewardedReady : Boolean,
+    onWatchAd       : () -> Unit,
+    onDismiss       : () -> Unit,
+    onGetPremium    : () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape            = MaterialTheme.shapes.extraLarge,
+        icon             = {
+            Icon(Icons.Rounded.HourglassEmpty, null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp))
+        },
+        title = {
+            Text(
+                "Límite diario alcanzado",
+                style     = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Has usado $conversionCount de $conversionLimit conversiones de hoy.",
+                    style     = MaterialTheme.typography.bodyMedium,
+                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                LinearProgressIndicator(
+                    progress   = { conversionCount.toFloat() / conversionLimit },
+                    modifier   = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(MaterialTheme.shapes.small),
+                    color      = MaterialTheme.colorScheme.error,
+                    trackColor = MaterialTheme.colorScheme.errorContainer
+                )
+                Text(
+                    "El límite se reinicia mañana.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Column(
+                modifier            = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick  = onWatchAd,
+                    enabled  = isRewardedReady,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = MaterialTheme.shapes.medium
+                ) {
+                    Icon(Icons.Rounded.PlayCircle, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (isRewardedReady) "Ver anuncio → +1 conversión"
+                        else "Anuncio no disponible aún"
+                    )
+                }
+                OutlinedButton(
+                    onClick  = onGetPremium,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = MaterialTheme.shapes.medium
+                ) {
+                    Icon(Icons.Rounded.Star, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Obtener Premium → sin límites")
+                }
+                TextButton(
+                    onClick  = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Cancelar") }
+            }
+        },
+        dismissButton = {}
+    )
+}
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 private fun ConversionType.getCategoryForUi(): String = when (this) {
     ConversionType.IMAGE_TO_PDF,
     ConversionType.IMAGE_TO_JPG,
     ConversionType.IMAGE_TO_PNG,
     ConversionType.IMAGE_TO_WEBP,
     ConversionType.IMAGE_TO_BMP  -> "Imagen"
-
     ConversionType.PDF_TO_IMAGE,
     ConversionType.PDF_TO_TXT,
     ConversionType.PDF_TO_WORD,
     ConversionType.PDF_TO_HTML   -> "PDF"
-
     ConversionType.WORD_TO_PDF,
     ConversionType.WORD_TO_TXT,
     ConversionType.WORD_TO_HTML  -> "Word"
-
     ConversionType.EXCEL_TO_PDF,
     ConversionType.EXCEL_TO_CSV,
     ConversionType.EXCEL_TO_HTML -> "Excel"
-
     ConversionType.PPT_TO_PDF,
     ConversionType.PPT_TO_TXT   -> "PowerPoint"
 }
 
 private fun getFormatStyle(format: String): Pair<Color, ImageVector> = when (format.lowercase()) {
-    "pdf"                                    -> Pair(ColorPdf,        Icons.Rounded.PictureAsPdf)
-    "imagen", "image", "jpg", "png",
-    "webp", "bmp"                            -> Pair(ColorImage,      Icons.Rounded.Image)
-    "word", "docx"                           -> Pair(ColorWord,        Icons.Rounded.Description)
-    "excel"                                  -> Pair(ColorExcel,       Icons.Rounded.TableChart)
-    "powerpoint"                             -> Pair(ColorPowerPoint,  Icons.Rounded.Slideshow)
-    "txt", "texto", "text"                   -> Pair(ColorText,        Icons.Rounded.TextSnippet)
-    "csv"                                    -> Pair(ColorExcel,       Icons.Rounded.GridOn)
-    "html"                                   -> Pair(ColorOcr,         Icons.Rounded.Code)
-    else                                     -> Pair(ColorText,        Icons.Rounded.InsertDriveFile)
+    "pdf"                                 -> Pair(ColorPdf,       Icons.Rounded.PictureAsPdf)
+    "imagen","image","jpg","png",
+    "webp","bmp"                          -> Pair(ColorImage,     Icons.Rounded.Image)
+    "word","docx"                         -> Pair(ColorWord,      Icons.Rounded.Description)
+    "excel"                               -> Pair(ColorExcel,     Icons.Rounded.TableChart)
+    "powerpoint"                          -> Pair(ColorPowerPoint,Icons.Rounded.Slideshow)
+    "txt","texto","text"                  -> Pair(ColorText,      Icons.Rounded.TextSnippet)
+    "csv"                                 -> Pair(ColorExcel,     Icons.Rounded.GridOn)
+    "html"                                -> Pair(ColorOcr,       Icons.Rounded.Code)
+    else                                  -> Pair(ColorText,      Icons.Rounded.InsertDriveFile)
 }
 
 private fun getMimeForType(type: ConversionType): String = when (type) {
@@ -495,20 +657,16 @@ private fun getMimeForType(type: ConversionType): String = when (type) {
     ConversionType.IMAGE_TO_PNG,
     ConversionType.IMAGE_TO_WEBP,
     ConversionType.IMAGE_TO_BMP  -> "image/*"
-
     ConversionType.PDF_TO_IMAGE,
     ConversionType.PDF_TO_TXT,
     ConversionType.PDF_TO_WORD,
     ConversionType.PDF_TO_HTML   -> "application/pdf"
-
     ConversionType.WORD_TO_PDF,
     ConversionType.WORD_TO_TXT,
     ConversionType.WORD_TO_HTML  -> "application/msword"
-
     ConversionType.EXCEL_TO_PDF,
     ConversionType.EXCEL_TO_CSV,
     ConversionType.EXCEL_TO_HTML -> "*/*"
-
     ConversionType.PPT_TO_PDF,
     ConversionType.PPT_TO_TXT   -> "*/*"
 }
