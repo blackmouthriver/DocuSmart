@@ -192,7 +192,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.mockk:mockk:1.13.13")
-    testImplementation("app.cash.turbine:turbine:1.1.0")
+    testImplementation("app.cash.turbine:turbine:1.2.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     // El stub de Android para unit tests deja org.json.* sin implementar
     // ("not mocked") — esta dependencia real (mismo paquete org.json) la
