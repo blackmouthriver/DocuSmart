@@ -186,7 +186,7 @@ dependencies {
     // ── Firebase BOM ──────────────────────────────────────────────────────────
     implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
     implementation("com.google.firebase:firebase-analytics:21.3.0")
-    implementation("com.google.firebase:firebase-crashlytics:18.4.3")
+    implementation("com.google.firebase:firebase-crashlytics:20.1.0")
 
     // ── Testing ───────────────────────────────────────────────────────────────
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
