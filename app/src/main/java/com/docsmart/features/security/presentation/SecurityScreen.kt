@@ -62,6 +62,7 @@ fun SecurityScreen(
     val biometricNotRecognized = stringResource(R.string.security_biometric_not_recognized)
     val fileProtectedSuccess   = stringResource(R.string.security_file_protected_success)
     val fileProtectError       = stringResource(R.string.security_file_protect_error)
+    val fileProtectedOriginalKept = stringResource(R.string.security_file_protected_original_kept)
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
@@ -121,7 +122,12 @@ fun SecurityScreen(
                         onRestoreFile     = { file -> viewModel.restoreFile(file, context) },
                         onChangePinClick  = { viewModel.goToSetupPin() },
                         onToggleBiometric = { viewModel.toggleBiometric() },
-                        onImportFile      = { uri -> viewModel.importFileToSecure(context, uri, fileProtectedSuccess, fileProtectError) },
+                        onImportFile      = { uri ->
+                            viewModel.importFileToSecure(
+                                context, uri,
+                                fileProtectedSuccess, fileProtectError, fileProtectedOriginalKept
+                            )
+                        },
                         onImportLocalFile = { file -> viewModel.importLocalFile(file, fileProtectedSuccess, fileProtectError) }
                     )
                 }
@@ -416,8 +422,11 @@ private fun SecureFolderContent(
 ) {
     var showImportDialog by remember { mutableStateOf(false) }
 
+    // OpenDocument (no GetContent) porque devuelve un Uri de documento que sí soporta
+    // DocumentsContract.deleteDocument en la mayoría de proveedores — necesario para
+    // poder borrar el original al proteger un archivo (RF-SEC-05).
     val fileLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { onImportFile(it) } }
 
     if (showImportDialog) {
@@ -434,7 +443,7 @@ private fun SecureFolderContent(
                     Card(
                         modifier = Modifier.fillMaxWidth().clickable {
                             showImportDialog = false
-                            fileLauncher.launch("*/*")
+                            fileLauncher.launch(arrayOf("*/*"))
                         },
                         shape  = MaterialTheme.shapes.medium,
                         colors = CardDefaults.cardColors(

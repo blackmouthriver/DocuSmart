@@ -43,6 +43,7 @@ import androidx.core.content.FileProvider
 import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.SuccessGreen
+import com.docsmart.features.scanner.domain.QrCrypto
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.google.zxing.BarcodeFormat
@@ -122,10 +123,41 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
     var copiedMsg    by remember { mutableStateOf(false) }
     var imageBitmap  by remember { mutableStateOf<Bitmap?>(null) }
 
+    // ── QR protegido (HU-SEC-09/10) ───────────────────
+    var pendingProtectedContent by remember { mutableStateOf<String?>(null) }
+    var qrPassword              by remember { mutableStateOf("") }
+    var qrPasswordVisible       by remember { mutableStateOf(false) }
+    var qrPasswordError         by remember { mutableStateOf<String?>(null) }
+
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanner  = remember { BarcodeScanning.getClient() }
     val scope    = rememberCoroutineScope()
-    val openDocumentLabel = stringResource(R.string.qr_open_document)
+    val openDocumentLabel     = stringResource(R.string.qr_open_document)
+    val wrongQrPasswordMessage = stringResource(R.string.pdf_pw_wrong_password)
+
+    fun resumeScanning() {
+        pendingProtectedContent = null
+        qrPassword = ""
+        qrPasswordError = null
+        isScanning = true
+    }
+
+    fun tryUnlockQr() {
+        val protectedContent = pendingProtectedContent ?: return
+        val decrypted = QrCrypto.decrypt(protectedContent, qrPassword)
+        if (decrypted != null) {
+            qrResult = decrypted
+            qrType   = detectQrContentType(decrypted)
+            pendingProtectedContent = null
+            qrPassword = ""
+            qrPasswordError = null
+            if (qrType == QrContentType.IMAGE) {
+                scope.launch { imageBitmap = loadBitmapFromUrl(decrypted) }
+            }
+        } else {
+            qrPasswordError = wrongQrPasswordMessage
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -152,6 +184,57 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
             )
         }
     ) { innerPadding ->
+        // ── Diálogo: QR protegido con contraseña ──────────────────────────────
+        pendingProtectedContent?.let {
+            AlertDialog(
+                onDismissRequest = { resumeScanning() },
+                shape = MaterialTheme.shapes.large,
+                icon  = { Icon(Icons.Rounded.Lock, null) },
+                title = { Text(stringResource(R.string.qr_protected_title)) },
+                text  = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            stringResource(R.string.qr_protected_desc),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedTextField(
+                            value = qrPassword,
+                            onValueChange = { qrPassword = it; qrPasswordError = null },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(stringResource(R.string.qr_password_label)) },
+                            visualTransformation = if (qrPasswordVisible) VisualTransformation.None
+                            else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { qrPasswordVisible = !qrPasswordVisible }) {
+                                    Icon(
+                                        if (qrPasswordVisible) Icons.Rounded.VisibilityOff
+                                        else Icons.Rounded.Visibility, null
+                                    )
+                                }
+                            },
+                            isError = qrPasswordError != null,
+                            supportingText = qrPasswordError?.let { msg ->
+                                { Text(msg, color = MaterialTheme.colorScheme.error) }
+                            },
+                            singleLine = true,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { tryUnlockQr() }) {
+                        Text(stringResource(R.string.qr_unlock))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { resumeScanning() }) {
+                        Text(stringResource(R.string.general_cancel))
+                    }
+                }
+            )
+        }
+
         Column(
             modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
@@ -206,12 +289,17 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                                 .addOnSuccessListener { barcodes ->
                                                     barcodes.firstOrNull()?.rawValue?.let { value ->
                                                         isScanning = false
-                                                        qrResult   = value
-                                                        qrType     = detectQrContentType(value)
-                                                        // Si es imagen URL, cargarla
-                                                        if (qrType == QrContentType.IMAGE) {
-                                                            scope.launch {
-                                                                imageBitmap = loadBitmapFromUrl(value)
+                                                        if (value.startsWith(QrCrypto.PREFIX)) {
+                                                            pendingProtectedContent =
+                                                                value.removePrefix(QrCrypto.PREFIX)
+                                                        } else {
+                                                            qrResult = value
+                                                            qrType   = detectQrContentType(value)
+                                                            // Si es imagen URL, cargarla
+                                                            if (qrType == QrContentType.IMAGE) {
+                                                                scope.launch {
+                                                                    imageBitmap = loadBitmapFromUrl(value)
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -959,7 +1047,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             else -> content
                         }
                         val finalContent = if (usePassword && password.isNotBlank())
-                            "PROTECTED:${encryptContent(rawContent, password)}"
+                            "${QrCrypto.PREFIX}${QrCrypto.encrypt(rawContent, password)}"
                         else rawContent
                         qrBitmap     = generateQrBitmap(finalContent)
                         isGenerating = false
@@ -1138,14 +1226,6 @@ private suspend fun generateQrBitmap(content: String): Bitmap? =
         }
     }
 
-private fun encryptContent(content: String, password: String): String {
-    val key    = password.toByteArray(Charsets.UTF_8)
-    val bytes  = content.toByteArray(Charsets.UTF_8)
-    val result = ByteArray(bytes.size)
-    for (i in bytes.indices)
-        result[i] = (bytes[i].toInt() xor key[i % key.size].toInt()).toByte()
-    return android.util.Base64.encodeToString(result, android.util.Base64.NO_WRAP)
-}
 
 private suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
     withContext(Dispatchers.IO) {
