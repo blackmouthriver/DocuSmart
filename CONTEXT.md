@@ -353,6 +353,16 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   (restablecer borra archivos), migrar cifrado de QR de XOR a AES,
   auto-bloqueo al pasar a segundo plano. Ver
   [`docs/requirements/security.md`](docs/requirements/security.md).
+- **Workflow de git (2026-08-24):** de aquí en adelante creo commits pero
+  **no hago push** salvo que lo pida explícitamente para ese commit puntual
+  — el usuario revisa y sube manualmente. Para cada HU/módulo que se
+  trabaje, se crea una rama propia desde `main`, se trabaja ahí, y al
+  terminar se fusiona con `main`; el usuario borra la rama manualmente tras
+  el push. Ramas `desarrollo` y `preproductivo` eliminadas hoy (local y
+  remoto) tras fusionar todo su contenido pendiente en `main` — `preproductivo`
+  no tenía ningún cambio único, solo una versión vieja ya superada.
+  Repo simplificado a **una sola rama larga (`main`) + ramas de feature
+  de corta duración por HU**.
 
 ---
 
