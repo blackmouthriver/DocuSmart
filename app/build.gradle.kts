@@ -184,7 +184,7 @@ dependencies {
     implementation("com.google.android.material:material:1.14.0")
 
     // ── Firebase BOM ──────────────────────────────────────────────────────────
-    implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
+    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
     implementation("com.google.firebase:firebase-analytics:21.3.0")
     implementation("com.google.firebase:firebase-crashlytics:18.4.3")
 
