@@ -11,7 +11,9 @@ complexity:
   LongMethod:
     threshold: 150 # los Composables de pantalla completa suelen superar el default de 60
   LongParameterList:
-    ignoreAnnotated: ['Composable']
+    ignoreAnnotated: ['Composable', 'Inject'] # constructores @Inject de ViewModel inyectan
+                                              # un use case por responsabilidad (Clean Architecture) —
+                                              # agrupar parámetros ahí sería artificial
     functionThreshold: 8
     constructorThreshold: 8
   TooManyFunctions:

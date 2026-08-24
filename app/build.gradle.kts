@@ -138,19 +138,16 @@ dependencies {
 
     // ── Apache POI ────────────────────────────────────────────────────────────
     implementation("org.apache.poi:poi:5.2.3") {
-        exclude(group = "org.apache.xmlbeans")
         exclude(group = "com.github.virtuald")
         exclude(group = "org.junit.jupiter")
         exclude(group = "com.zaxxer")
     }
     implementation("org.apache.poi:poi-ooxml:5.2.3") {
-        exclude(group = "org.apache.xmlbeans")
         exclude(group = "com.github.virtuald")
         exclude(group = "org.junit.jupiter")
         exclude(group = "com.zaxxer")
     }
     implementation("org.apache.poi:poi-scratchpad:5.2.3") {
-        exclude(group = "org.apache.xmlbeans")
         exclude(group = "com.github.virtuald")
         exclude(group = "org.junit.jupiter")
         exclude(group = "com.zaxxer")

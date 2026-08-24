@@ -17,10 +17,14 @@
 -keep class com.itextpdf.** { *; }
 -dontwarn com.itextpdf.**
 
-# Apache POI
+# Apache POI (requiere xmlbeans para leer/escribir .docx/.xlsx — sin -keep,
+# R8 puede eliminar clases que XmlBeans carga por reflexión en build de release)
 -keep class org.apache.poi.** { *; }
 -dontwarn org.apache.poi.**
+-keep class org.apache.xmlbeans.** { *; }
 -dontwarn org.apache.xmlbeans.**
+-keep class org.openxmlformats.schemas.** { *; }
+-dontwarn org.openxmlformats.schemas.**
 
 # ZXing
 -keep class com.google.zxing.** { *; }

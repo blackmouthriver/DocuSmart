@@ -11,6 +11,7 @@
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
 - [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md) — Unir, Dividir, Comprimir, Rotar PDF (en refinamiento)
 - [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) — Visor, Biblioteca, Home/Recientes (en refinamiento)
+- [`docs/requirements/conversion.md`](docs/requirements/conversion.md) — 17 combinaciones de conversión (en refinamiento)
 
 ---
 
@@ -34,7 +35,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   push/PR a `main`/`desarrollo`/`preproductivo`.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 42 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 51 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -87,15 +88,33 @@ sesión, sin registro de cuándo): favoritos, pestañas dispositivo/app, botón
 (`SearchPdfTextUseCaseTest`, `DocumentRepositoryTest`).
 Detalle completo en [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md).
 
+### Módulo Conversión de documentos (2026-08-24)
+Bug de configuración crítico corregido: `app/build.gradle.kts` excluía
+`org.apache.xmlbeans` de las 3 dependencias de Apache POI, rompiendo en
+silencio **toda** conversión que usara su modelo de objetos OOXML
+(`XWPFDocument`, `WorkbookFactory`) con `NoClassDefFoundError` — incluyendo
+Word→PDF y Excel→PDF, ya marcadas como "implementadas". Verificado con un
+test que lee un .docx real hecho a mano: falla sin xmlbeans, funciona al
+quitar la exclusión; `assembleDebug`/`checkDebugDuplicateClasses` confirman
+que la exclusión no evitaba ningún conflicto real de build. Se agregaron
+reglas ProGuard para que el build de release no elimine esas clases.
+Además, 3 opciones del menú de conversión estaban enrutadas al use case
+equivocado (Word→Texto y Excel→CSV entregaban un PDF; PPT→PDF fallaba
+siempre) — corregidas con 3 use cases nuevos. El hallazgo de QA "muy pocas
+opciones de conversión" resultó obsoleto en cuanto a cantidad (17
+combinaciones ya declaradas); el problema real era el enrutamiento y el bug
+de xmlbeans. 12 tests nuevos.
+Detalle completo en [`docs/requirements/conversion.md`](docs/requirements/conversion.md).
+
 ### Avance por dimensión (estimado 2026-08-24)
 No hay un único "% completado" honesto — depende del eje:
 
 | Dimensión | Avance | Nota |
 |---|---|---|
 | Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
-| Funcionalidad core (25 requerimientos) | ~55-60% | ~9 sólidos, ~11 parciales con bugs, ~2-3 sin empezar |
-| Documentación formal (HU con criterios de aceptación) | ~35% | 3 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca) |
-| Pruebas automatizadas | ~10% | 42 tests cubriendo 8 archivos de decenas |
+| Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
+| Documentación formal (HU con criterios de aceptación) | ~45% | 4 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión) |
+| Pruebas automatizadas | ~12% | 51 tests cubriendo 11 archivos de decenas |
 | Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
@@ -131,7 +150,7 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | # | Requerimiento | Estado conocido |
 |---|---|---|
 | 1 | Visor universal: Word/Excel/PDF/img/texto, desde dispositivo, link, QR, correo, WhatsApp | Visor de PDF/imagen funciona bien; Word/Excel/PPT con inconvenientes por confirmar (no se tocó en esta pasada). Refinado con HU en [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) |
-| 2 | Conversión: imágenes↔pdf/jpg/png/webp/bmp; pdf↔img/texto/word/html; word↔pdf/texto/html; ppt→pdf/texto | Solo un subconjunto implementado (img→pdf, pdf→img limitado, word→pdf/texto, excel→pdf/csv, ppt→pdf). Falta ampliar todos los combos |
+| 2 | Conversión: imágenes↔pdf/jpg/png/webp/bmp; pdf↔img/texto/word/html; word↔pdf/texto/html; ppt→pdf/texto | Las 17 combinaciones ya estaban declaradas y visibles — el problema real era enrutamiento incorrecto (3 opciones daban el formato equivocado) y un bug de dependencias que rompía Word→PDF/Excel→PDF en silencio. Corregido y refinado con HU (ver [`docs/requirements/conversion.md`](docs/requirements/conversion.md)) |
 | 3 | Herramientas PDF: unir, dividir, comprimir, rotar, editar, firmar, marca de agua, numeración, detector de formularios, recortar, ordenar, proteger con contraseña, OCR avanzado | Unir/dividir/comprimir/rotar/proteger implementados y refinados con HU (ver [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md)) — bug de arquitectura en Unir/Rotar corregido hoy (rasterizaban a imagen), "dividir no funciona" confirmado obsoleto con tests. Editar, firmar, marca de agua, numeración, formularios, recortar, ordenar, comparar, censurar, OCR avanzado: **backlog documentado, no implementado** |
 | 4 | Biblioteca con lista navegable, filtro por formato | Implementado, incluyendo pestañas dispositivo/app (ya existían, confirmado). Refinado con HU |
 | 5 | Sub-menú por documento: abrir, favorito, renombrar, compartir, convertir, crear QR; favoritos visibles en biblioteca | Favorito ahora consistente entre Visor/Biblioteca/Home (bug de id corregido hoy); falta renombrar/eliminar desde el Visor específicamente (backlog) |
@@ -188,10 +207,12 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - Tarjetas de favoritos con tamaños inconsistentes en el carrusel horizontal — ajuste visual, no funcional, fuera de alcance de esta pasada.
 - Formatos en carrusel esconden opciones — sugerido: grilla en vez de carrusel — pendiente.
 
-### Convertidor
-- Muy pocas opciones de conversión por formato (2-3 cuando el requerimiento pide más).
-- Banner de publicidad no se visualiza en esta pantalla.
-- Vista en carrusel se ve vacía — sugerido grilla/lista.
+### Convertidor — refinado 2026-08-24, ver [`docs/requirements/conversion.md`](docs/requirements/conversion.md)
+- ~~Muy pocas opciones de conversión por formato (2-3 cuando el requerimiento pide más).~~ **Obsoleto en cantidad** — hay 17 combinaciones ya declaradas y visibles. El problema real: 3 opciones enrutaban al use case equivocado (entregaban el formato incorrecto) y 2 más ya "implementadas" fallaban al ejecutarse — ver bug real abajo.
+- **Bug real encontrado hoy (más grave que lo buscado, no reportado en la QA):** "Word → PDF" y "Excel → PDF" fallaban con `NoClassDefFoundError` al leer un documento real — `app/build.gradle.kts` excluía `org.apache.xmlbeans` de las dependencias de Apache POI, rompiendo en silencio cualquier conversión que usara su modelo de objetos OOXML. Corregido quitando la exclusión + reglas ProGuard nuevas para release.
+- "Word → Texto" entregaba un PDF, "Excel → CSV" entregaba un PDF, "PPT → PDF" fallaba siempre — los 3 estaban enrutados al use case equivocado en `ConverterViewModel.convert()`. Corregidos con 3 use cases nuevos (`WordToTextUseCase`, `ExcelToCsvUseCase`, `PptToPdfUseCase`).
+- Banner de publicidad no se visualiza en esta pantalla — no reproducido por lectura de código (conectado igual que en pantallas que sí funcionan), requiere verificación visual.
+- Vista en carrusel se ve vacía — sugerido grilla/lista — no verificado, requiere prueba visual.
 
 ### Herramientas PDF — refinado 2026-08-24, ver [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md)
 - ~~Dividir PDF no funciona — genera el mismo PDF sin dividir.~~ **Obsoleto** — 4 tests con PDFs reales confirman que el rango extraído es correcto; no se reprodujo contra el código actual.
@@ -380,6 +401,11 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
 - Tercer módulo refinado (2026-08-24, primero bajo el flujo de ramas por HU):
   **Visor + Biblioteca + Home**, en rama `feature/visor-biblioteca`. Ver
   [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md).
+- Cuarto módulo refinado (2026-08-24): **Conversión de documentos**, en rama
+  `feature/conversion`. Encontrado y corregido un bug de configuración que
+  rompía Word→PDF/Excel→PDF en silencio (exclusión de `org.apache.xmlbeans`
+  en las dependencias de Apache POI). Ver
+  [`docs/requirements/conversion.md`](docs/requirements/conversion.md).
 
 ---
 

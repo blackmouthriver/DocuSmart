@@ -56,9 +56,12 @@ class ConverterViewModel @Inject constructor(
     private val pdfToHtml        : PdfToHtmlUseCase,
     private val imageFormat      : ImageFormatUseCase,
     private val wordToPdf        : WordToPdfUseCase,
+    private val wordToText       : WordToTextUseCase,
     private val wordToHtml       : WordToHtmlUseCase,
     private val excelToPdf       : ExcelToPdfUseCase,
+    private val excelToCsv       : ExcelToCsvUseCase,
     private val excelToHtml      : ExcelToHtmlUseCase,
+    private val pptToPdf         : PptToPdfUseCase,
     private val pptToText        : PptToTextUseCase,
     val adManager                : AdManager,
     private val dailyLimitManager: DailyLimitManager   // ← NUEVO
@@ -196,18 +199,20 @@ class ConverterViewModel @Inject constructor(
                     pdfToWord(files.first(), customName)
                 ConversionType.PDF_TO_HTML ->
                     pdfToHtml(files.first(), customName)
-                ConversionType.WORD_TO_PDF,
-                ConversionType.WORD_TO_TXT ->
+                ConversionType.WORD_TO_PDF ->
                     wordToPdf(files.first(), customName)
+                ConversionType.WORD_TO_TXT ->
+                    wordToText(files.first(), customName)
                 ConversionType.WORD_TO_HTML ->
                     wordToHtml(files.first(), customName)
-                ConversionType.EXCEL_TO_PDF,
-                ConversionType.EXCEL_TO_CSV ->
+                ConversionType.EXCEL_TO_PDF ->
                     excelToPdf(files.first(), customName)
+                ConversionType.EXCEL_TO_CSV ->
+                    excelToCsv(files.first(), customName)
                 ConversionType.EXCEL_TO_HTML ->
                     excelToHtml(files.first(), customName)
                 ConversionType.PPT_TO_PDF ->
-                    wordToPdf(files.first(), customName)
+                    pptToPdf(files.first(), customName)
                 ConversionType.PPT_TO_TXT ->
                     pptToText(files.first(), customName)
             }
