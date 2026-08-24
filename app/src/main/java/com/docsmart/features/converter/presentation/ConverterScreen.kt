@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DailyLimitDialog
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.*
 import com.docsmart.features.converter.domain.model.ConversionResult
@@ -69,8 +70,9 @@ fun ConverterScreen(
     // ── Dialog de límite diario ───────────────────────────────────────────────
     if (uiState.showLimitDialog) {
         DailyLimitDialog(
-            conversionCount = uiState.conversionCount,
-            conversionLimit = uiState.conversionLimit,
+            usedCount       = uiState.conversionCount,
+            limit           = uiState.conversionLimit,
+            itemLabelPlural = "conversiones",
             isRewardedReady = isRewardedReady,
             onWatchAd       = { activity?.let { viewModel.watchAdForConversion(it) } },
             onDismiss       = { viewModel.dismissLimitDialog() },
@@ -524,95 +526,6 @@ private fun ConversionDetailCard(
             }
         }
     }
-}
-
-// ── Dialog límite diario ──────────────────────────────────────────────────────
-@Composable
-private fun DailyLimitDialog(
-    conversionCount : Int,
-    conversionLimit : Int,
-    isRewardedReady : Boolean,
-    onWatchAd       : () -> Unit,
-    onDismiss       : () -> Unit,
-    onGetPremium    : () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape            = MaterialTheme.shapes.extraLarge,
-        icon             = {
-            Icon(Icons.Rounded.HourglassEmpty, null,
-                tint     = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp))
-        },
-        title = {
-            Text(
-                "Límite diario alcanzado",
-                style     = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "Has usado $conversionCount de $conversionLimit conversiones de hoy.",
-                    style     = MaterialTheme.typography.bodyMedium,
-                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                LinearProgressIndicator(
-                    progress   = { conversionCount.toFloat() / conversionLimit },
-                    modifier   = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(MaterialTheme.shapes.small),
-                    color      = MaterialTheme.colorScheme.error,
-                    trackColor = MaterialTheme.colorScheme.errorContainer
-                )
-                Text(
-                    "El límite se reinicia mañana.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        confirmButton = {
-            Column(
-                modifier            = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick  = onWatchAd,
-                    enabled  = isRewardedReady,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape    = MaterialTheme.shapes.medium
-                ) {
-                    Icon(Icons.Rounded.PlayCircle, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (isRewardedReady) "Ver anuncio → +1 conversión"
-                        else "Anuncio no disponible aún"
-                    )
-                }
-                OutlinedButton(
-                    onClick  = onGetPremium,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape    = MaterialTheme.shapes.medium
-                ) {
-                    Icon(Icons.Rounded.Star, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Obtener Premium → sin límites")
-                }
-                TextButton(
-                    onClick  = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Cancelar") }
-            }
-        },
-        dismissButton = {}
-    )
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

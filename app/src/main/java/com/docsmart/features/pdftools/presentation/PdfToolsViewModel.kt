@@ -6,11 +6,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.app.Activity
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
@@ -42,7 +44,11 @@ data class PdfToolsUiState(
     val splitFromPage: Int = 1,
     val splitToPage: Int = 2,
     val compressionQuality: Int = 60,
-    val rotationDegrees: Int = 90
+    val rotationDegrees: Int = 90,
+    // ── Límite diario ──────────────────────────────────
+    val showLimitDialog: Boolean = false,
+    val toolUseCount: Int = 0,
+    val toolUseLimit: Int = DailyLimitManager.LIMIT_PDF_TOOLS
 )
 
 @HiltViewModel
@@ -51,6 +57,7 @@ class PdfToolsViewModel @Inject constructor(
     private val splitPdf: SplitPdfUseCase,
     private val compressPdf: CompressPdfUseCase,
     private val rotatePdf: RotatePdfUseCase,
+    private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
 
@@ -62,7 +69,33 @@ class PdfToolsViewModel @Inject constructor(
     val uiState: StateFlow<PdfToolsUiState> = _uiState.asStateFlow()
 
     fun selectTool(tool: PdfTool) {
-        _uiState.update { PdfToolsUiState(selectedTool = tool) }
+        _uiState.update {
+            PdfToolsUiState(
+                selectedTool = tool,
+                toolUseCount = if (tool == PdfTool.NONE) 0 else dailyLimitManager.getPdfToolCount(tool.name),
+                toolUseLimit = dailyLimitManager.getPdfToolLimit()
+            )
+        }
+    }
+
+    // ── Ver anuncio para desbloquear un uso extra de la herramienta ───────────
+    fun watchAdForTool(activity: Activity, adNotAvailableMessage: String) {
+        _uiState.update { it.copy(showLimitDialog = false) }
+        adManager.showRewardedAd(
+            activity = activity,
+            onRewarded = {
+                dailyLimitManager.addRewardedPdfTool()
+                _uiState.update { it.copy(toolUseLimit = dailyLimitManager.getPdfToolLimit()) }
+                Timber.d("$TAG: +1 uso de herramienta por Rewarded Ad")
+            },
+            onFailed = {
+                _uiState.update { it.copy(errorMessage = adNotAvailableMessage) }
+            }
+        )
+    }
+
+    fun dismissLimitDialog() {
+        _uiState.update { it.copy(showLimitDialog = false) }
     }
 
     fun onPdfsSelected(uris: List<Uri>) {
@@ -121,7 +154,13 @@ class PdfToolsViewModel @Inject constructor(
 
     fun execute() {
         val state = _uiState.value
-        if (state.selectedPdfs.isEmpty()) return
+        if (state.selectedPdfs.isEmpty() || state.selectedTool == PdfTool.NONE) return
+
+        if (!adManager.isPremium.value && !dailyLimitManager.canUsePdfTool(state.selectedTool.name)) {
+            _uiState.update { it.copy(showLimitDialog = true) }
+            Timber.d("$TAG: límite diario alcanzado para ${state.selectedTool}")
+            return
+        }
 
         val customName = state.outputFileName.trim().ifBlank { null }
 
@@ -160,10 +199,15 @@ class PdfToolsViewModel @Inject constructor(
 
             Timber.d("Resultado: $result")
 
+            if (result is PdfToolResult.Success) {
+                dailyLimitManager.registerPdfTool(state.selectedTool.name)
+            }
+
             _uiState.update {
                 it.copy(
                     isProcessing = false,
                     result = result,
+                    toolUseCount = dailyLimitManager.getPdfToolCount(state.selectedTool.name),
                     errorMessage = if (result is PdfToolResult.Error)
                         result.message
                     else null

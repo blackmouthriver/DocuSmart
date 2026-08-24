@@ -46,6 +46,15 @@ class LanguageManager @Inject constructor(
         Timber.d("LanguageManager: idioma cambiado a ${language.label}")
     }
 
+    /**
+     * Idioma del dispositivo si es uno de los soportados, o español si no lo
+     * es. Usado por "Restablecer configuración" en Ajustes — antes forzaba
+     * español sin importar el idioma configurado del dispositivo, mismo tipo
+     * de bug ya corregido en TTS y reconocimiento de voz (Modo Estudio).
+     */
+    fun deviceDefaultLanguage(): AppLanguage =
+        AppLanguage.entries.find { it.code == Locale.getDefault().language } ?: AppLanguage.SPANISH
+
     private fun updateContextLocale(context: Context, language: AppLanguage): Context {
         val locale = Locale(language.code)
         Locale.setDefault(locale)

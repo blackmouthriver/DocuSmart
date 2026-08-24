@@ -26,6 +26,7 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_COMPRESS      = "count_compress"
         private const val KEY_ROTATE        = "count_rotate"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
+        private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
 
         // ── Límites diarios ───────────────────────────────────────────────────
         const val LIMIT_CONVERSIONS = 5
@@ -52,6 +53,7 @@ class DailyLimitManager @Inject constructor(
                 .putInt(KEY_COMPRESS,       0)
                 .putInt(KEY_ROTATE,         0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
+                .putInt(KEY_EXTRA_PDF_TOOLS, 0)
                 .apply()
         }
     }
@@ -68,10 +70,11 @@ class DailyLimitManager @Inject constructor(
 
     fun canUsePdfTool(toolKey: String): Boolean {
         checkAndResetIfNewDay()
-        val key   = getPdfToolKey(toolKey)
-        val count = prefs.getInt(key, 0)
-        val canDo = count < LIMIT_PDF_TOOLS
-        Timber.d("DailyLimitManager: canUsePdfTool[$toolKey]=$canDo ($count/$LIMIT_PDF_TOOLS)")
+        val key    = getPdfToolKey(toolKey)
+        val count  = prefs.getInt(key, 0)
+        val extras = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
+        val canDo  = count < LIMIT_PDF_TOOLS + extras
+        Timber.d("DailyLimitManager: canUsePdfTool[$toolKey]=$canDo ($count/${LIMIT_PDF_TOOLS + extras})")
         return canDo
     }
 
@@ -99,6 +102,14 @@ class DailyLimitManager @Inject constructor(
         Timber.d("DailyLimitManager: +1 extra por rewarded → ${current + 1} extras")
     }
 
+    // ── Agregar uso extra de herramienta PDF (reward por ver anuncio) ─────────
+    fun addRewardedPdfTool() {
+        checkAndResetIfNewDay()
+        val current = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
+        prefs.edit().putInt(KEY_EXTRA_PDF_TOOLS, current + 1).apply()
+        Timber.d("DailyLimitManager: +1 extra de herramienta PDF por rewarded → ${current + 1} extras")
+    }
+
     // ── Obtener contadores para mostrar en UI ─────────────────────────────────
     fun getConversionCount(): Int {
         checkAndResetIfNewDay()
@@ -114,6 +125,12 @@ class DailyLimitManager @Inject constructor(
     fun getPdfToolCount(toolKey: String): Int {
         checkAndResetIfNewDay()
         return prefs.getInt(getPdfToolKey(toolKey), 0)
+    }
+
+    fun getPdfToolLimit(): Int {
+        checkAndResetIfNewDay()
+        val extras = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
+        return LIMIT_PDF_TOOLS + extras
     }
 
     private fun getPdfToolKey(toolKey: String): String = when (toolKey) {

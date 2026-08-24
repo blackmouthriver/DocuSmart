@@ -13,6 +13,7 @@
 - [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) — Visor, Biblioteca, Home/Recientes (en refinamiento)
 - [`docs/requirements/conversion.md`](docs/requirements/conversion.md) — 17 combinaciones de conversión (en refinamiento)
 - [`docs/requirements/scanner.md`](docs/requirements/scanner.md) — Escanear documento (ML Kit) + lector/creador de QR (en refinamiento)
+- [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) — Ajustes + Premium/límites de uso (en refinamiento)
 
 ---
 
@@ -36,7 +37,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   push/PR a `main`/`desarrollo`/`preproductivo`.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 61 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 72 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -121,6 +122,25 @@ esquema en mayúsculas se clasificaba como texto plano, no como URL/email/
 teléfono). 10 tests nuevos.
 Detalle completo en [`docs/requirements/scanner.md`](docs/requirements/scanner.md).
 
+### Módulo Ajustes + Premium (2026-08-24)
+El límite diario de uso gratis para Herramientas PDF (requerimiento #16,
+marcado "Pendiente" en este mismo documento) resultó ser un caso más del
+patrón de esta sesión: la lógica ya existía completa en `DailyLimitManager`
+(`canUsePdfTool`/`registerPdfTool`, con contador independiente por
+herramienta) pero nunca se llamaba desde `PdfToolsViewModel` — el límite no
+tenía ningún efecto real. Se conectó siguiendo el mismo patrón que ya usaba
+Conversión, y se extrajo `DailyLimitDialog` a un componente compartido
+(antes vivía duplicado y privado en `ConverterScreen.kt`). Además,
+"Restablecer configuración" en Ajustes forzaba español sin importar el
+idioma del dispositivo — mismo tipo de bug ya corregido hoy en TTS y
+reconocimiento de voz (Modo Estudio) — corregido con
+`LanguageManager.deviceDefaultLanguage()`. La compra Premium simulada
+(requerimiento #18) se confirmó como placeholder ya documentado en el
+propio código ("Fase 10 se conecta Play Billing real"), no un bug oculto —
+requiere configuración de Play Console que el usuario debe hacer, así que
+no se implementó en esta pasada. 11 tests nuevos.
+Detalle completo en [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
+
 ### Avance por dimensión (estimado 2026-08-24)
 No hay un único "% completado" honesto — depende del eje:
 
@@ -128,8 +148,8 @@ No hay un único "% completado" honesto — depende del eje:
 |---|---|---|
 | Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
-| Documentación formal (HU con criterios de aceptación) | ~55% | 5 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner) |
-| Pruebas automatizadas | ~14% | 61 tests cubriendo 13 archivos de decenas |
+| Documentación formal (HU con criterios de aceptación) | ~75% | 6 formalizados en esta rama (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium) + Estudio en `feature/study` (aún no fusionada) = 7 de ~7-8 módulos |
+| Pruebas automatizadas | ~18% | 72 tests cubriendo 16 archivos de decenas (sin contar los 5 de `feature/study`, aún no fusionada) |
 | Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
@@ -175,13 +195,13 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien (delega captura a Google ML Kit); leer QR con URL/navegación y QR con contraseña ya estaban implementados (hallazgo obsoleto). Refinado con HU en [`docs/requirements/scanner.md`](docs/requirements/scanner.md) |
 | 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); **carpeta segura no bloquea realmente el acceso al archivo por su ruta original** (bug crítico confirmado) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; falta guardar/listar notas (¡ya corregido — ver StudyScreen actual, tiene lista de notas guardadas!) — verificar que el barrido de pruebas quedó desactualizado en este punto |
-| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado (Settings ya conectado a i18n hoy) |
+| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
 | 13 | Multilenguaje con default según ubicación geográfica de Play Store | **Pendiente** — hoy el idioma por defecto es fijo (español), falta detectar locale del dispositivo/tienda |
 | 14 | Sección de beneficios plan de pago | Implementado (Premium screen) |
 | 15 | Banner para no-premium, desaparece al pagar | Implementado (AdMob banner condicional) |
-| 16 | Límite de uso de herramientas para no-premium | **Pendiente** — está en el roadmap (V1.1, prioridad alta) |
-| 17 | Mínima opción de uso garantizada sin pago | Por definir junto con el límite de uso |
-| 18 | Restaurar compras / cancelar suscripción | Restaurar existe (simulado); falta conectar a Play Billing real |
+| 16 | Límite de uso de herramientas para no-premium | **Corregido hoy** — la lógica ya existía (`DailyLimitManager`) pero no estaba conectada a Herramientas PDF; ya funciona igual que en Conversión (5 conversiones + 3 usos por herramienta PDF al día, con anuncio recompensado para +1) |
+| 17 | Mínima opción de uso garantizada sin pago | Resuelto junto con el #16 — 3 usos gratis por herramienta PDF, 5 conversiones/día |
+| 18 | Restaurar compras / cancelar suscripción | Restaurar existe (simulado); falta conectar a Play Billing real — confirmado como placeholder ya documentado en el código, no un bug oculto (backlog RF-PREM-05) |
 | 19 | Tema personalizable (colores, texto, iconos) por el usuario | **No implementado** — hoy solo claro/oscuro/sistema |
 | 20 | Mostrar almacenamiento usado + caché, con confirmación al borrar | Implementado en Settings (diálogo de almacenamiento) |
 | 21 | Restablecer configuración por defecto | Implementado |
@@ -257,9 +277,12 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - (Documento de mayo indica que faltaba guardado/lista de notas — **el código actual ya tiene lista de notas guardadas**, parece corregido; confirmar con el usuario si ya lo probó en la versión actual).
 - Lectura se ve como texto plano — mejorar presentación visual.
 
-### Ajustes
-- Idioma: falta detección geográfica automática y más idiomas (agregar portugués, alemán, ruso, japonés, coreano, mandarín, italiano, francés — **es/en/de/pt/ru ya están, faltan ja/ko/zh/it/fr para el pedido completo**).
-- Falta personalización de colores/estilos por el usuario (banner, botones, iconos, nav bar).
+### Ajustes + Premium — refinado 2026-08-24, ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md)
+- **Bug real encontrado hoy (no reportado en la QA):** "Restablecer configuración" forzaba español sin importar el idioma del dispositivo. Corregido con `LanguageManager.deviceDefaultLanguage()`.
+- **Hueco real encontrado hoy (requerimiento #16, no un bug de QA pero sí de código):** el límite diario de uso gratis para Herramientas PDF existía por completo en `DailyLimitManager` pero nunca se llamaba desde `PdfToolsViewModel` — no tenía ningún efecto real. Corregido.
+- Idioma: falta detección geográfica automática al primer inicio y más idiomas (agregar portugués, alemán, ruso, japonés, coreano, mandarín, italiano, francés — **es/en/de/pt/ru ya están, faltan ja/ko/zh/it/fr para el pedido completo**) — backlog, no abordado en esta pasada (distinto del bug de "restablecer" ya corregido).
+- Falta personalización de colores/estilos por el usuario (banner, botones, iconos, nav bar) — backlog.
+- Compra Premium simulada — confirmado como placeholder ya documentado en el código ("Fase 10 se conecta Play Billing real"), requiere configuración de Play Console, no implementado en esta pasada.
 
 ### General / transversal
 - Banner de anuncios: ubicarlo consistente (arriba antes del banner azul, o abajo cerca de la nav bar) en todas las vistas, y ocultarlo por completo para usuarios premium.
@@ -429,6 +452,18 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   Google ML Kit Document Scanner, lector de QR ya reconstruido en el módulo
   Seguridad); 2 bugs reales menores corregidos. Ver
   [`docs/requirements/scanner.md`](docs/requirements/scanner.md).
+- Sexto módulo refinado (2026-08-24, en paralelo con Estudio): **Ajustes +
+  Premium**, en rama `feature/settings-premium`. El límite diario de uso
+  gratis en Herramientas PDF (requerimiento #16) ya existía en código pero
+  nunca se conectó — corregido; "restablecer configuración" forzaba español
+  sin importar el dispositivo — corregido. Compra Premium confirmada como
+  placeholder intencional (Play Billing real pendiente de que el usuario
+  configure Play Console). Ver
+  [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
+  **Nota:** esta rama y `feature/study` se crearon ambas desde `main` y las
+  dos tocan las secciones compartidas de `CONTEXT.md` (lista de specs,
+  tabla de avance, contador de tests) — al fusionar la segunda probablemente
+  haga falta resolver un conflicto simple en este archivo.
 
 ---
 

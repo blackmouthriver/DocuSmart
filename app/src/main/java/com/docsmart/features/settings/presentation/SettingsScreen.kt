@@ -313,7 +313,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     themeManager.setTheme(AppTheme.SYSTEM)
-                    languageManager.setLanguage(AppLanguage.SPANISH)
+                    languageManager.setLanguage(languageManager.deviceDefaultLanguage())
                     java.io.File(context.filesDir, "converted").listFiles()?.forEach { it.delete() }
                     java.io.File(context.filesDir, "pdftools").listFiles()?.forEach { it.delete() }
                     showResetDialog = false

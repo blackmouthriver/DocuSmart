@@ -49,6 +49,7 @@
     <!-- ── Ferramentas PDF ──────────────────────────────── -->
     <string name="pdf_tools_title">Ferramentas PDF</string>
     <string name="pdf_tools_subtitle">Gerencie seus PDFs rapidamente</string>
+    <string name="pdf_tools_ad_not_available">O anúncio não está disponível. Tente novamente em alguns segundos.</string>
     <string name="pdf_merge">Unir PDFs</string>
     <string name="pdf_split">Dividir PDF</string>
     <string name="pdf_compress">Comprimir PDF</string>

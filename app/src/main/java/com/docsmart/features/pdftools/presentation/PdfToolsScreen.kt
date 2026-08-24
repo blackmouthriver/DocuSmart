@@ -1,5 +1,6 @@
 package com.docsmart.features.pdftools.presentation
 
+import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DailyLimitDialog
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
@@ -31,10 +33,13 @@ import com.docsmart.R
 fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = hiltViewModel()
 ) {
-    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
-    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val isRewardedReady by viewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
     val context    = LocalContext.current
+    val activity   = context as? Activity
     val snackbarHostState = remember { SnackbarHostState() }
+    val adNotAvailableMessage = stringResource(R.string.pdf_tools_ad_not_available)
 
     val multiPdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -53,6 +58,21 @@ fun PdfToolsScreen(
             snackbarHostState.showSnackbar(message)
             viewModel.dismissError()
         }
+    }
+
+    // ── Dialog de límite diario ────────────────────────
+    if (uiState.showLimitDialog) {
+        DailyLimitDialog(
+            usedCount       = uiState.toolUseCount,
+            limit           = uiState.toolUseLimit,
+            itemLabelPlural = "usos de esta herramienta",
+            isRewardedReady = isRewardedReady,
+            onWatchAd       = {
+                activity?.let { viewModel.watchAdForTool(it, adNotAvailableMessage) }
+            },
+            onDismiss       = { viewModel.dismissLimitDialog() },
+            onGetPremium    = { }
+        )
     }
 
     Scaffold(
@@ -115,6 +135,21 @@ fun PdfToolsScreen(
                         Text(
                             text = "Volver a herramientas",
                             style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+
+                // ── Contador de usos diarios (usuarios free) ──
+                if (!isPremium && uiState.toolUseCount > 0) {
+                    item {
+                        Text(
+                            text = "Usos hoy: ${uiState.toolUseCount} / ${uiState.toolUseLimit}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (uiState.toolUseCount >= uiState.toolUseLimit)
+                                MaterialTheme.colorScheme.error
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp)
                         )
                     }
                 }
