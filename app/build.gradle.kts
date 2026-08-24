@@ -172,7 +172,7 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // ── ZXing ─────────────────────────────────────────────────────────────────
-    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.zxing:core:3.5.4")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
 
     // ── Guava ─────────────────────────────────────────────────────────────────
