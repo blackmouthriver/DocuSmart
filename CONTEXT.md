@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-24
+**Última actualización:** 2026-08-24 (migración AGP/Kotlin/KSP/Hilt)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -39,8 +39,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 72 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
-- **Tests:** 66 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Estudio: 5, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 77 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, Estudio: 5, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -168,10 +167,8 @@ No hay un único "% completado" honesto — depende del eje:
 |---|---|---|
 | Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
-| Documentación formal (HU con criterios de aceptación) | ~75% | 6 formalizados en esta rama (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium) + Estudio en `feature/study` (aún no fusionada) = 7 de ~7-8 módulos |
-| Pruebas automatizadas | ~18% | 72 tests cubriendo 16 archivos de decenas (sin contar los 5 de `feature/study`, aún no fusionada) |
-| Documentación formal (HU con criterios de aceptación) | ~65% | 6 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Estudio) |
-| Pruebas automatizadas | ~16% | 66 tests cubriendo 14 archivos de decenas |
+| Documentación formal (HU con criterios de aceptación) | ~85% | 7 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium, Estudio) |
+| Pruebas automatizadas | ~19% | 77 tests cubriendo 17 archivos de decenas |
 | Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
@@ -216,10 +213,8 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 8 | Acceso directo a abrir/convertir | Implementado (banner Home) — botón "Abrir" confirmado funcional (obsoleto el hallazgo de que no hacía nada) |
 | 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien (delega captura a Google ML Kit); leer QR con URL/navegación y QR con contraseña ya estaban implementados (hallazgo obsoleto). Refinado con HU en [`docs/requirements/scanner.md`](docs/requirements/scanner.md) |
 | 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); **carpeta segura no bloquea realmente el acceso al archivo por su ruta original** (bug crítico confirmado) |
-| 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; falta guardar/listar notas (¡ya corregido — ver StudyScreen actual, tiene lista de notas guardadas!) — verificar que el barrido de pruebas quedó desactualizado en este punto |
-| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; lista de notas guardadas existe, pero tenía 2 bugs reales de persistencia (corrupción de comillas, orden invertido) corregidos hoy. Refinado con HU en [`docs/requirements/study.md`](docs/requirements/study.md) |
-| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado (Settings ya conectado a i18n hoy) |
+| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
 | 13 | Multilenguaje con default según ubicación geográfica de Play Store | **Pendiente** — hoy el idioma por defecto es fijo (español), falta detectar locale del dispositivo/tienda |
 | 14 | Sección de beneficios plan de pago | Implementado (Premium screen) |
 | 15 | Banner para no-premium, desaparece al pagar | Implementado (AdMob banner condicional) |
@@ -250,7 +245,6 @@ Bugs y mejoras identificados por el usuario en pruebas manuales
 (pueden estar parcialmente corregidos ya — **verificar contra el código actual
 antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 
-### Home
 ### Home / Visor / Biblioteca — refinado 2026-08-24, ver [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md)
 - ~~Botón "Abrir" del banner no genera ninguna acción.~~ **Obsoleto** — ya lanza `ACTION_OPEN_DOCUMENT` correctamente.
 - ~~Accesos rápidos de scanner/seguridad/estudio no están atados a ninguna pantalla (aislados).~~ **Obsoleto** — ya navegan a rutas reales.
@@ -436,6 +430,51 @@ específico vía `.gitleaks.toml` (`[allowlist] paths`), no desactivar la
 regla globalmente. Pendiente para el usuario: confirmar en Google Cloud
 Console que la key tiene restricciones configuradas.
 
+### Migración AGP + Kotlin + KSP + Hilt (2026-08-24)
+Motivada por 7 PRs de Dependabot bloqueados — todos fallaban por el mismo
+techo: AGP 8.7.0/Kotlin 2.0.21 eran demasiado viejos para el resto del
+ecosistema de dependencias. Migración coordinada en rama
+`feature/agp-kotlin-migration`:
+
+- AGP 8.7.0 → **8.13.2** (última versión de la serie 8.x). Se evaluó AGP
+  9.3.2 primero y se descartó: 4 incompatibilidades internas distintas con
+  KSP/Hilt en esa rama nueva del plugin (Kotlin integrado por defecto,
+  `kotlinOptions` removido, conflicto de cast interno al reactivar el
+  plugin de Kotlin standalone), ninguna resoluble sin comprometer la
+  estabilidad del build.
+- Kotlin 2.0.21 → **2.2.21**, KSP → **2.2.21-2.0.5**.
+- Hilt 2.44 → **2.57** — no la más reciente (2.60.1): 2.59.2 y 2.60.1
+  requieren AGP 9.0+ explícitamente; 2.52-2.55 aplican bien en AGP 8.x pero
+  su `kotlin-metadata-jvm` embebido no soporta metadata de Kotlin 2.2 (tope
+  en 2.1.0) y `hiltJavaCompileDebug` falla. 2.57 es la primera versión que
+  resuelve ambos requisitos a la vez.
+- compileSdk 35 → **36**. Gradle wrapper → **9.5.0**.
+- activity-compose → 1.13.0, coroutines → 1.11.0.
+- Firebase BOM: se quitó la versión propia fija en `firebase-analytics`/
+  `firebase-crashlytics` (anulaba el propósito del BOM).
+
+**2 bugs reales encontrados durante la migración** (no relacionados con la
+causa original, solo visibles al recompilar con las versiones nuevas):
+1. `DocuSmartAnalytics.kt` importaba `com.google.firebase.analytics.ktx.analytics`
+   y `com.google.firebase.ktx.Firebase` — paquetes `-ktx` que Firebase fusionó
+   a los artefactos principales hace tiempo; sin versión propia fija en el
+   BOM quedaron irresolubles. Corregido a `com.google.firebase.Firebase` /
+   `com.google.firebase.analytics.analytics`.
+2. `DocuSmartNavGraph.kt` (rutas Scanner/ScanResult): `getBackStackEntry()`
+   dentro de `remember { }` sin key — un lint check nuevo de
+   `navigation-compose` (`UnrememberedGetBackStackEntry`) lo marca como
+   error porque el handle quedaría obsoleto si la composable se reutiliza
+   para otra entrada del backstack. Corregido con
+   `remember(backStackEntry) { ... }`, usando la `NavBackStackEntry` que la
+   propia composable ya recibe como parámetro.
+
+Verificado en verde: `assembleDebug` + `lintDebug` + `detekt` +
+`testDebugUnitTest` (77 tests, 0 fallos). Con esto, los PRs de Dependabot
+para Kotlin/KSP/activity-compose/coroutines deberían poder re-evaluarse; el
+que fija Hilt en 2.60.1 seguirá bloqueado mientras el proyecto no migre a
+AGP 9.x (decisión deliberada de esta migración: quedarse en AGP 8.x hasta
+que KSP/Hilt maduren sobre el modo de Kotlin integrado de AGP 9).
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)
@@ -509,11 +548,7 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   placeholder intencional (Play Billing real pendiente de que el usuario
   configure Play Console). Ver
   [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
-  **Nota:** esta rama y `feature/study` se crearon ambas desde `main` y las
-  dos tocan las secciones compartidas de `CONTEXT.md` (lista de specs,
-  tabla de avance, contador de tests) — al fusionar la segunda probablemente
-  haga falta resolver un conflicto simple en este archivo.
-- Sexto módulo refinado (2026-08-24): **Estudio**, en rama `feature/study`.
+- Séptimo módulo refinado (2026-08-24, en paralelo con Ajustes+Premium): **Estudio**, en rama `feature/study`.
   Corrupción silenciosa de comillas en notas guardadas + orden invertido al
   recargar + TTS forzando español — los 3 corregidos. `StudyScreen.kt` queda
   documentado como deuda de arquitectura (única pantalla grande sin

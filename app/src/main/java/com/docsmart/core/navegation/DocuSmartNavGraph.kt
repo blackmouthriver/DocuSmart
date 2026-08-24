@@ -192,8 +192,8 @@ fun DocuSmartNavGraph(
         }
 
         // ── Scanner ───────────────────────────────────────────────────────────
-        composable(NavRoutes.Scanner.route) {
-            val scanResultEntry = remember {
+        composable(NavRoutes.Scanner.route) { backStackEntry ->
+            val scanResultEntry = remember(backStackEntry) {
                 navController.getBackStackEntry(NavRoutes.Scanner.route)
             }
             ScannerScreen(
@@ -209,8 +209,8 @@ fun DocuSmartNavGraph(
         }
 
         // ── Scan Result ───────────────────────────────────────────────────────
-        composable(NavRoutes.ScanResult.route) {
-            val scannerEntry = remember {
+        composable(NavRoutes.ScanResult.route) { backStackEntry ->
+            val scannerEntry = remember(backStackEntry) {
                 navController.getBackStackEntry(NavRoutes.Scanner.route)
             }
             val uriStrings = scannerEntry.savedStateHandle
