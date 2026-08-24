@@ -34,7 +34,8 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
 - **Build:** compila limpio, lint en 0 errores, detekt integrado con
   baseline (457 hallazgos previos suprimidos), CI en GitHub Actions
   (`.github/workflows/ci.yml`) corriendo build+lint+detekt+tests en cada
-  push/PR a `main`/`desarrollo`/`preproductivo`.
+  push/PR a `main` (simplificado tras la limpieza de ramas), más
+  Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
 - **Tests:** 66 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Estudio: 5, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
@@ -381,10 +382,32 @@ como documentos separados.
 | V2.0 | Mapas conceptuales | Baja |
 
 ### Roadmap técnico (definido en esta sesión, complementario)
-Fase 0 (estabilización) ✅ completada. Fase 1 (CI básico) ✅ completada hoy.
-Siguen: pruebas unitarias de UseCases críticos, HU con criterios de
-aceptación, Dependabot/Gitleaks/SonarCloud, Room para biblioteca/historial,
-pruebas de integración/sistema, despliegue y publicación.
+Fase 0 (estabilización) ✅ completada. Fase 1 (CI básico) ✅ completada.
+Fase 2 (Dependabot + Gitleaks) ✅ completada 2026-08-24, rama
+`feature/dependabot-gitleaks` — ver detalle abajo. Siguen: SonarCloud
+(requiere que el usuario conecte el repo a una cuenta primero), Room para
+biblioteca/historial, pruebas de integración/sistema, Compose UI Testing en
+flujos críticos, despliegue y publicación.
+
+### Dependabot + Gitleaks (2026-08-24)
+`.github/dependabot.yml` — actualizaciones semanales de dependencias Gradle
+y de las Actions usadas en CI. `.github/workflows/gitleaks.yml` — escaneo de
+secretos en cada push/PR a `main`, usando el binario de gitleaks directamente
+(no la Action del marketplace, para evitar cualquier dependencia de
+licenciamiento en repos privados/de organización). Se aprovechó para
+corregir `ci.yml`, que todavía disparaba en `desarrollo`/`preproductivo`
+(ramas eliminadas en la limpieza de ramas de este mismo día).
+
+**Hallazgo real del primer escaneo local:** `app/google-services.json` (ya
+en el repo) contiene una API key de Google que gitleaks detecta por patrón.
+Es el archivo de configuración estándar de Firebase — Google documenta
+oficialmente que es seguro versionarlo; el riesgo real depende de que la key
+esté restringida por paquete+SHA-1 en Google Cloud Console, algo que el
+usuario debe verificar por su cuenta (no visible ni verificable desde el
+código). Decisión del usuario (2026-08-24): permitir este archivo
+específico vía `.gitleaks.toml` (`[allowlist] paths`), no desactivar la
+regla globalmente. Pendiente para el usuario: confirmar en Google Cloud
+Console que la key tiene restricciones configuradas.
 
 ---
 

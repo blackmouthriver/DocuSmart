@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # ── Dependencias de Gradle (app + build) ─────────────────────────────────
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+
+  # ── Acciones usadas en los workflows de CI ───────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "ci"
+    commit-message:
+      prefix: "ci"

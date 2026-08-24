@@ -1,0 +1,55 @@
+name: Gitleaks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: gitleaks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gitleaks:
+    name: Escaneo de secretos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (historial completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Se usa el binario de gitleaks directamente (Apache-2.0, sin licencia
+      # ni cuenta externa) en vez de la Action del marketplace, para evitar
+      # cualquier dependencia de licenciamiento en repos privados/de organización.
+      - name: Descargar gitleaks
+        run: |
+          set -euo pipefail
+          VERSION=$(curl -sSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
+            | grep -Po '"tag_name":\s*"v\K[^"]*')
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+            -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          chmod +x gitleaks
+          ./gitleaks version
+
+      - name: Escanear repositorio
+        run: |
+          ./gitleaks detect \
+            --source . \
+            --redact \
+            --report-format sarif \
+            --report-path gitleaks-report.sarif \
+            --verbose
+
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          retention-days: 14
+          path: gitleaks-report.sarif
+          if-no-files-found: ignore
