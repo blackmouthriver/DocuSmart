@@ -29,6 +29,9 @@ jobs:
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Permiso de ejecución para gradlew
+        run: chmod +x ./gradlew
+
       - name: Compilar (debug)
         run: ./gradlew assembleDebug --no-daemon
 
