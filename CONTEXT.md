@@ -7,6 +7,9 @@
 
 **Última actualización:** 2026-08-24
 
+**Specs por módulo (FR/NFR + HU con criterios de aceptación):**
+- [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
+
 ---
 
 ## 1. Qué es DocuSmart
@@ -275,6 +278,18 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
 - Sin apuro en el timeline — prioriza calidad antes de publicar.
 - Es un proyecto también académico (ver §7), así que puede necesitar
   entregables formales de metodología ágil además del trabajo técnico.
+- Formato elegido para requerimientos/HU: specs ligeras por módulo dentro
+  de `docs/requirements/`, enlazadas desde este archivo (no un SRS separado
+  por ahora).
+- Metodología de trabajo por módulo: primero corregir los bugs de QA ya
+  confirmados (con su HU como criterio de aceptación), luego tests
+  unitarios que cubran ese comportamiento — no documentar todo antes de
+  tocar código.
+- Empezamos por el módulo **Seguridad** (2026-08-24). Decisiones tomadas:
+  borrar el archivo original al proteger, sin recuperación de PIN
+  (restablecer borra archivos), migrar cifrado de QR de XOR a AES,
+  auto-bloqueo al pasar a segundo plano. Ver
+  [`docs/requirements/security.md`](docs/requirements/security.md).
 
 ---
 

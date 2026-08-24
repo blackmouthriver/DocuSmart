@@ -64,6 +64,13 @@ android {
         disable += "NullSafeMutableLiveData"
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { it.useJUnitPlatform() }
+        }
+    }
+
     packaging {
         resources {
             excludes += setOf(
@@ -185,7 +192,11 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics:18.4.3")
 
     // ── Testing ───────────────────────────────────────────────────────────────
-    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("app.cash.turbine:turbine:1.1.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))

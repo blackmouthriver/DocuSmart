@@ -144,11 +144,12 @@ class SecurityViewModel @Inject constructor(
         }.sortedByDescending { it.lastModified() }
     }
 
+    // RF-SEC-05: proteger un archivo debe copiarlo a la carpeta segura Y eliminar
+    // el original de su ubicación — moveToSecure() ya hace ambas cosas.
     fun importLocalFile(file: File, successMessage: String, errorMessage: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val dest = File(securityManager.secureFolder, file.name)
-                file.copyTo(dest, overwrite = true)
+            val moved = securityManager.moveToSecure(file)
+            if (moved) {
                 val secureFiles = securityManager.getSecureFiles()
                 val appFiles    = loadAppFiles()
                 _uiState.update {
@@ -158,14 +159,19 @@ class SecurityViewModel @Inject constructor(
                         successMessage = successMessage
                     )
                 }
-            } catch (e: Exception) {
-                Timber.e(e, "Error importando archivo local")
+            } else {
                 _uiState.update { it.copy(error = errorMessage) }
             }
         }
     }
 
-    fun importFileToSecure(context: Context, uri: Uri, successMessage: String, errorMessage: String) {
+    // RNF-SEC-01: para un Uri de SAF el borrado del original solo es posible si el
+    // proveedor de almacenamiento lo permite — se intenta y se avisa si no se pudo,
+    // en vez de fallar en silencio o prometer un borrado que no ocurrió.
+    fun importFileToSecure(
+        context: Context, uri: Uri,
+        successMessage: String, errorMessage: String, originalKeptMessage: String
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val fileName = resolveFileName(context, uri)
@@ -173,9 +179,18 @@ class SecurityViewModel @Inject constructor(
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     destFile.outputStream().use { output -> input.copyTo(output) }
                 }
+                val originalDeleted = try {
+                    android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)
+                } catch (e: Exception) {
+                    Timber.w(e, "No se pudo eliminar el archivo original tras protegerlo: $uri")
+                    false
+                }
                 val files = securityManager.getSecureFiles()
                 _uiState.update {
-                    it.copy(secureFiles = files, successMessage = successMessage)
+                    it.copy(
+                        secureFiles    = files,
+                        successMessage = if (originalDeleted) successMessage else originalKeptMessage
+                    )
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error importando archivo: ${e.message}")
