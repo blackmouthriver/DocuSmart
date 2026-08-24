@@ -39,7 +39,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 77 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, Estudio: 5, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 77 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa en `main` ya fusionado. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -142,6 +142,7 @@ propio código ("Fase 10 se conecta Play Billing real"), no un bug oculto —
 requiere configuración de Play Console que el usuario debe hacer, así que
 no se implementó en esta pasada. 11 tests nuevos.
 Detalle completo en [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
+
 ### Módulo Estudio (2026-08-24)
 La nota anterior de este documento (§3, requerimiento #11) daba por corregido
 el guardado de notas solo porque la lista existía — al auditar su
@@ -405,10 +406,31 @@ como documentos separados.
 ### Roadmap técnico (definido en esta sesión, complementario)
 Fase 0 (estabilización) ✅ completada. Fase 1 (CI básico) ✅ completada.
 Fase 2 (Dependabot + Gitleaks) ✅ completada 2026-08-24, rama
-`feature/dependabot-gitleaks` — ver detalle abajo. Siguen: SonarCloud
-(requiere que el usuario conecte el repo a una cuenta primero), Room para
-biblioteca/historial, pruebas de integración/sistema, Compose UI Testing en
-flujos críticos, despliegue y publicación.
+`feature/dependabot-gitleaks`. Fase 3 (SonarCloud + cobertura) ✅ completada
+2026-08-24, rama `feature/sonarcloud-coverage` — ver detalle abajo. Siguen:
+Room para biblioteca/historial, pruebas de integración/sistema, Compose UI
+Testing en flujos críticos, despliegue y publicación.
+
+### SonarCloud + cobertura JaCoCo (2026-08-24)
+El usuario creó la cuenta SonarCloud y conectó el repo (`blackmouthriver` /
+`blackmouthriver_DocuSmart`) — el análisis automático ya corría sin tocar
+código (quality gate "Aprobado", 1 cuestión de seguridad, 42 de
+mantenibilidad, sin cobertura). Para agregar cobertura real (requiere
+análisis por CI, no el automático) se agregó:
+- Plugin `org.sonarqube` (7.4.0.8496) en el `build.gradle.kts` raíz, con
+  `sonar.projectKey`/`sonar.organization` fijos y
+  `sonar.coverage.jacoco.xmlReportPaths` apuntando al reporte de JaCoCo.
+- Plugin `jacoco` + tarea `jacocoTestReport` en `app/build.gradle.kts` —
+  corre los unit tests existentes y genera el XML de cobertura, excluyendo
+  clases generadas (Hilt/Dagger/KSP, R, BuildConfig). Verificado localmente:
+  reporte real, ~4.4% de líneas cubiertas hoy (77 tests sobre una base de
+  código mucho más grande que solo los use cases probados).
+- `.github/workflows/sonarcloud.yml` — corre `jacocoTestReport sonar` en
+  cada push/PR a `main`, con `SONAR_TOKEN` como secret de GitHub (el usuario
+  lo generó y lo agregó — Claude no maneja tokens directamente).
+Pendiente para el usuario: revisar los 42 hallazgos de mantenibilidad y 1 de
+seguridad en el dashboard de SonarCloud — el usuario pidió que Claude los
+revise y corrija los reales en la siguiente sesión de trabajo sobre esto.
 
 ### Dependabot + Gitleaks (2026-08-24)
 `.github/dependabot.yml` — actualizaciones semanales de dependencias Gradle
@@ -540,19 +562,27 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   Google ML Kit Document Scanner, lector de QR ya reconstruido en el módulo
   Seguridad); 2 bugs reales menores corregidos. Ver
   [`docs/requirements/scanner.md`](docs/requirements/scanner.md).
-- Sexto módulo refinado (2026-08-24, en paralelo con Estudio): **Ajustes +
-  Premium**, en rama `feature/settings-premium`. El límite diario de uso
-  gratis en Herramientas PDF (requerimiento #16) ya existía en código pero
-  nunca se conectó — corregido; "restablecer configuración" forzaba español
-  sin importar el dispositivo — corregido. Compra Premium confirmada como
-  placeholder intencional (Play Billing real pendiente de que el usuario
-  configure Play Console). Ver
-  [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
-- Séptimo módulo refinado (2026-08-24, en paralelo con Ajustes+Premium): **Estudio**, en rama `feature/study`.
-  Corrupción silenciosa de comillas en notas guardadas + orden invertido al
-  recargar + TTS forzando español — los 3 corregidos. `StudyScreen.kt` queda
-  documentado como deuda de arquitectura (única pantalla grande sin
-  ViewModel). Ver [`docs/requirements/study.md`](docs/requirements/study.md).
+- Sexto y séptimo módulos refinados en paralelo (2026-08-24, cada uno en su
+  propia rama desde `main`):
+  - **Estudio** (`feature/study`) — corrupción silenciosa de comillas en
+    notas guardadas + orden invertido al recargar + TTS forzando español,
+    los 3 corregidos. `StudyScreen.kt` queda documentado como deuda de
+    arquitectura (única pantalla grande sin ViewModel). Ver
+    [`docs/requirements/study.md`](docs/requirements/study.md).
+  - **Ajustes + Premium** (`feature/settings-premium`) — el límite diario de
+    uso gratis en Herramientas PDF (requerimiento #16) ya existía en código
+    pero nunca se conectó — corregido; "restablecer configuración" forzaba
+    español sin importar el dispositivo — corregido. Compra Premium
+    confirmada como placeholder intencional (Play Billing real pendiente de
+    que el usuario configure Play Console). Ver
+    [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
+  - Al fusionar ambas ramas por separado en `main`, el merge dejó contenido
+    duplicado/en conflicto en este archivo (bullets de tests repetidos,
+    filas de requerimientos repetidas, encabezados sin fusionar) —
+    corregido en la limpieza de 2026-08-24 durante el trabajo de SonarCloud
+    y, de forma independiente en paralelo, durante la migración de
+    AGP/Kotlin/KSP/Hilt (ambas limpiezas se combinaron sin pérdida al
+    fusionar las dos ramas en `main`).
 
 ---
 
