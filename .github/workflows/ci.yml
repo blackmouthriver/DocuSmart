@@ -27,7 +27,7 @@ jobs:
           java-version: '17'
 
       - name: Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Permiso de ejecución para gradlew
         run: chmod +x ./gradlew
