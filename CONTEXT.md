@@ -12,6 +12,7 @@
 - [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md) — Unir, Dividir, Comprimir, Rotar PDF (en refinamiento)
 - [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) — Visor, Biblioteca, Home/Recientes (en refinamiento)
 - [`docs/requirements/conversion.md`](docs/requirements/conversion.md) — 17 combinaciones de conversión (en refinamiento)
+- [`docs/requirements/scanner.md`](docs/requirements/scanner.md) — Escanear documento (ML Kit) + lector/creador de QR (en refinamiento)
 
 ---
 
@@ -35,7 +36,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   push/PR a `main`/`desarrollo`/`preproductivo`.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 51 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 61 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -106,6 +107,20 @@ combinaciones ya declaradas); el problema real era el enrutamiento y el bug
 de xmlbeans. 12 tests nuevos.
 Detalle completo en [`docs/requirements/conversion.md`](docs/requirements/conversion.md).
 
+### Módulo Escáner (2026-08-24)
+Módulo con menos deuda real de lo que sugería la QA de mayo: la mayoría de
+sus hallazgos resultaron obsoletos, no por corregirse hoy sino porque la
+captura de documentos ahora delega por completo en Google ML Kit Document
+Scanner (ya no hay cámara/recorte/filtros propios que auditar) y porque el
+lector de QR con navegación a URL ya estaba implementado (probablemente
+desde la reconstrucción de `QrScreen.kt` en el módulo Seguridad). Se
+encontraron y corrigieron 2 bugs reales menores: guardar un PDF escaneado en
+Descargas fallaba en silencio en Android 8/9 (sin ruta pre-`MediaStore`), y
+la detección de tipo de contenido de QR era sensible a mayúsculas (un QR con
+esquema en mayúsculas se clasificaba como texto plano, no como URL/email/
+teléfono). 10 tests nuevos.
+Detalle completo en [`docs/requirements/scanner.md`](docs/requirements/scanner.md).
+
 ### Avance por dimensión (estimado 2026-08-24)
 No hay un único "% completado" honesto — depende del eje:
 
@@ -113,8 +128,8 @@ No hay un único "% completado" honesto — depende del eje:
 |---|---|---|
 | Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
-| Documentación formal (HU con criterios de aceptación) | ~45% | 4 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión) |
-| Pruebas automatizadas | ~12% | 51 tests cubriendo 11 archivos de decenas |
+| Documentación formal (HU con criterios de aceptación) | ~55% | 5 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner) |
+| Pruebas automatizadas | ~14% | 61 tests cubriendo 13 archivos de decenas |
 | Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
@@ -157,7 +172,7 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 6 | Buscador en vistas relevantes | Funciona en Biblioteca; en el Visor **corregido hoy** — antes el botón aparecía habilitado para PDF pero no hacía nada, ahora busca por página con iText7 y navega entre coincidencias |
 | 7 | Accesos rápidos | **Obsoleto el hallazgo de "aislados"** — confirmado que ya navegan a rutas reales (scanner/seguridad/estudio) |
 | 8 | Acceso directo a abrir/convertir | Implementado (banner Home) — botón "Abrir" confirmado funcional (obsoleto el hallazgo de que no hacía nada) |
-| 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien; falta leer QR con URL/navegación y QR con contraseña compartible |
+| 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien (delega captura a Google ML Kit); leer QR con URL/navegación y QR con contraseña ya estaban implementados (hallazgo obsoleto). Refinado con HU en [`docs/requirements/scanner.md`](docs/requirements/scanner.md) |
 | 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); **carpeta segura no bloquea realmente el acceso al archivo por su ruta original** (bug crítico confirmado) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; falta guardar/listar notas (¡ya corregido — ver StudyScreen actual, tiene lista de notas guardadas!) — verificar que el barrido de pruebas quedó desactualizado en este punto |
 | 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado (Settings ya conectado a i18n hoy) |
@@ -230,10 +245,13 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - Selector de archivo a proteger no ofrece elegir desde la biblioteca de la app, solo desde el dispositivo.
 - Falta opción explícita de encriptar/quitar contraseña de archivo individual.
 
-### Escáner
-- Funciona bien (captura, recorte, rotar, filtros, aplicar, guardar/compartir).
-- Miniatura de filtros no refleja la imagen real capturada.
-- Faltan: escalar imagen, ajuste de brillo/contraste, lector de QR con navegación a URL, QR con contraseña compartible.
+### Escáner — refinado 2026-08-24, ver [`docs/requirements/scanner.md`](docs/requirements/scanner.md)
+- Funciona bien (captura, recorte, rotar, filtros, aplicar, guardar/compartir) — confirmado: se delega por completo a Google ML Kit Document Scanner, no a una cámara/recorte propios.
+- ~~Miniatura de filtros no refleja la imagen real capturada.~~ **Obsoleto por cambio de arquitectura** — no existe una miniatura de filtro propia; la captura entera es de Google ML Kit.
+- ~~Faltan: lector de QR con navegación a URL, QR con contraseña compartible.~~ **Obsoleto** — ambos ya implementados (el segundo, en el módulo Seguridad).
+- Faltan (backlog, RF-SCAN-06/07): escalar imagen, ajuste de brillo/contraste — Google ML Kit no expone estos controles, requeriría un paso de edición propio.
+- **Bug real encontrado hoy (no reportado en la QA):** guardar un documento escaneado en modo "Documento" en Descargas fallaba en silencio en Android 8/9 (`savePdfUriToDownloads` sin implementación pre-Q). Corregido.
+- **Bug real encontrado hoy (no reportado en la QA):** detección de tipo de contenido de QR sensible a mayúsculas — un QR con esquema en mayúsculas (`HTTPS://...`) se clasificaba como texto plano en vez de URL. Corregido.
 
 ### Estudio
 - (Documento de mayo indica que faltaba guardado/lista de notas — **el código actual ya tiene lista de notas guardadas**, parece corregido; confirmar con el usuario si ya lo probó en la versión actual).
@@ -406,6 +424,11 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   rompía Word→PDF/Excel→PDF en silencio (exclusión de `org.apache.xmlbeans`
   en las dependencias de Apache POI). Ver
   [`docs/requirements/conversion.md`](docs/requirements/conversion.md).
+- Quinto módulo refinado (2026-08-24): **Escáner** (documento + QR), en rama
+  `feature/scanner`. La mayoría de la QA de mayo resultó obsoleta (cambio a
+  Google ML Kit Document Scanner, lector de QR ya reconstruido en el módulo
+  Seguridad); 2 bugs reales menores corregidos. Ver
+  [`docs/requirements/scanner.md`](docs/requirements/scanner.md).
 
 ---
 
