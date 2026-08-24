@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.detekt)
 }
 
 configurations.all {
@@ -80,6 +81,13 @@ android {
             )
         }
     }
+}
+
+detekt {
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    baseline = file("$rootDir/config/detekt/baseline.xml")
+    buildUponDefaultConfig = true
+    autoCorrect = false
 }
 
 dependencies {

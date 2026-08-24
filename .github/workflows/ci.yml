@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, desarrollo, preproductivo ]
+  pull_request:
+    branches: [ main, desarrollo, preproductivo ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, lint, detekt y tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compilar (debug)
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Lint
+        run: ./gradlew lintDebug --no-daemon
+
+      - name: detekt (análisis estático)
+        run: ./gradlew detekt --no-daemon
+
+      - name: Pruebas unitarias
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Publicar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-calidad
+          retention-days: 14
+          path: |
+            app/build/reports/lint-results-debug.html
+            app/build/reports/detekt/detekt.html
+            app/build/test-results/testDebugUnitTest/
+          if-no-files-found: ignore

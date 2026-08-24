@@ -191,7 +191,7 @@
     <string name="premium_period_month">в месяц</string>
     <string name="premium_period_year">в год</string>
     <string name="premium_period_onetime">разовый платёж</string>
-    <string name="premium_savings_44">Экономия 44%</string>
+    <string name="premium_savings_44">Экономия 44%%</string>
     <string name="premium_savings_best_value">Лучшая цена</string>
     <string name="premium_feature_no_ads_title">Без рекламы</string>
     <string name="premium_feature_no_ads_desc">Пользуйтесь DocuSmart без прерываний</string>
@@ -206,7 +206,7 @@
     <string name="premium_feature_cloud_title">Облачная интеграция</string>
     <string name="premium_feature_cloud_desc">Синхронизация с Google Drive и Dropbox</string>
     <string name="premium_feature_compress_title">Расширенное сжатие</string>
-    <string name="premium_feature_compress_desc">Уменьшайте PDF до 90% без заметной потери качества</string>
+    <string name="premium_feature_compress_desc">Уменьшайте PDF до 90%% без заметной потери качества</string>
     <string name="premium_feature_unlimited_title">Неограниченные конвертации</string>
     <string name="premium_feature_unlimited_desc">Без дневного лимита конвертаций</string>
     <string name="premium_you_are_premium">Вы Premium!</string>

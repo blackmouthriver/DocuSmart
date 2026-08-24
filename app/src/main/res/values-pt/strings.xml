@@ -191,7 +191,7 @@
     <string name="premium_period_month">por mês</string>
     <string name="premium_period_year">por ano</string>
     <string name="premium_period_onetime">pagamento único</string>
-    <string name="premium_savings_44">Economize 44%</string>
+    <string name="premium_savings_44">Economize 44%%</string>
     <string name="premium_savings_best_value">Melhor valor</string>
     <string name="premium_feature_no_ads_title">Sem anúncios</string>
     <string name="premium_feature_no_ads_desc">Aproveite o DocuSmart sem interrupções</string>
@@ -206,7 +206,7 @@
     <string name="premium_feature_cloud_title">Nuvem integrada</string>
     <string name="premium_feature_cloud_desc">Sincronize com Google Drive e Dropbox</string>
     <string name="premium_feature_compress_title">Compressão avançada</string>
-    <string name="premium_feature_compress_desc">Reduza PDFs em até 90% sem perda visível de qualidade</string>
+    <string name="premium_feature_compress_desc">Reduza PDFs em até 90%% sem perda visível de qualidade</string>
     <string name="premium_feature_unlimited_title">Conversões ilimitadas</string>
     <string name="premium_feature_unlimited_desc">Sem limite diário de conversões</string>
     <string name="premium_you_are_premium">Você é Premium!</string>

@@ -1,0 +1,25 @@
+# Config propia sobre la config por defecto de detekt (buildUponDefaultConfig = true).
+# Solo se listan las reglas que se ajustan respecto al default; el resto queda tal cual.
+# Los hallazgos existentes al día de hoy están suprimidos vía baseline.xml — estas reglas
+# aplican de lleno a partir de ahora, para código nuevo o modificado.
+
+style:
+  MagicNumber:
+    active: false # muy ruidoso en Compose (dp, sp, colores, tamaños de fuente por todos lados)
+
+complexity:
+  LongMethod:
+    threshold: 150 # los Composables de pantalla completa suelen superar el default de 60
+  LongParameterList:
+    ignoreAnnotated: ['Composable']
+    functionThreshold: 8
+    constructorThreshold: 8
+  TooManyFunctions:
+    ignoreAnnotated: ['Composable']
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable'] # nombres PascalCase de funciones @Composable
+
+potential-bugs:
+  active: true
