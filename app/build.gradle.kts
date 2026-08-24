@@ -16,7 +16,7 @@ configurations.all {
 
 android {
     namespace   = "com.docsmart"
-    compileSdk  = 35
+    compileSdk  = 36
 
     defaultConfig {
         applicationId         = "com.docsmart"
@@ -184,16 +184,19 @@ dependencies {
     implementation("com.google.android.material:material:1.14.0")
 
     // ── Firebase BOM ──────────────────────────────────────────────────────────
-    implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
-    implementation("com.google.firebase:firebase-analytics:21.3.0")
-    implementation("com.google.firebase:firebase-crashlytics:18.4.3")
+    // Sin versión propia en los artefactos individuales — el BOM es quien la
+    // fija. Antes analytics/crashlytics traían una versión fija por su cuenta,
+    // lo que anulaba el propósito del BOM (podían quedar desalineados entre sí).
+    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
 
     // ── Testing ───────────────────────────────────────────────────────────────
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("app.cash.turbine:turbine:1.2.1")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     // El stub de Android para unit tests deja org.json.* sin implementar
     // ("not mocked") — esta dependencia real (mismo paquete org.json) la
     // sustituye solo para los tests, sin afectar el runtime de la app.
