@@ -62,7 +62,7 @@ class PremiumViewModel @Inject constructor(
     }
 
     // ── Simular compra (en Fase 10 se conecta Play Billing real) ──
-    fun purchase() {
+    fun purchase(purchaseErrorMessage: String) {
         val plan = _uiState.value.selectedPlan ?: return
         viewModelScope.launch {
             _uiState.update {
@@ -84,14 +84,14 @@ class PremiumViewModel @Inject constructor(
                 } else {
                     state.copy(
                         isPurchasing = false,
-                        errorMessage = "No se pudo completar la compra. Intenta de nuevo."
+                        errorMessage = purchaseErrorMessage
                     )
                 }
             }
         }
     }
 
-    fun restorePurchases() {
+    fun restorePurchases(noPurchasesFoundMessage: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isPurchasing = true) }
             delay(1000)
@@ -99,7 +99,7 @@ class PremiumViewModel @Inject constructor(
             _uiState.update { state ->
                 state.copy(
                     isPurchasing = false,
-                    errorMessage = "No se encontraron compras anteriores"
+                    errorMessage = noPurchasesFoundMessage
                 )
             }
         }

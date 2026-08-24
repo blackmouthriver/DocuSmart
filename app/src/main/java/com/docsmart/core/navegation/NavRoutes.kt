@@ -14,11 +14,13 @@ sealed class NavRoutes(val route: String) {
     data object Scanner     : NavRoutes("scanner")
     data object ScanResult  : NavRoutes("scan_result")
     data object Security    : NavRoutes("security")
+    data object PdfPassword : NavRoutes("pdf_password")  // ← NUEVA
     data object Study       : NavRoutes("study")
     data object Qr          : NavRoutes("qr")
     data object QrReader    : NavRoutes("qr_reader")
     data object QrCreator   : NavRoutes("qr_creator")
-
+    data object Onboarding  : NavRoutes("onboarding")
+    data object SecureFolder : NavRoutes("secure_folder")
     data object Viewer : NavRoutes("viewer/{documentId}") {
         fun createRoute(documentId: String): String {
             return "viewer/${Uri.encode(documentId)}"

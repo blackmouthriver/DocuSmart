@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,7 +36,7 @@ class ImageFormatUseCase @Inject constructor(
             val (format, extension, quality) = when (targetType) {
                 ConversionType.IMAGE_TO_JPG  -> Triple(Bitmap.CompressFormat.JPEG, "jpg",  90)
                 ConversionType.IMAGE_TO_PNG  -> Triple(Bitmap.CompressFormat.PNG,  "png",  100)
-                ConversionType.IMAGE_TO_WEBP -> Triple(Bitmap.CompressFormat.WEBP_LOSSLESS, "webp", 90)
+                ConversionType.IMAGE_TO_WEBP -> Triple(webpFormat(), "webp", 90)
                 ConversionType.IMAGE_TO_BMP  -> Triple(Bitmap.CompressFormat.PNG,  "bmp",  100) // BMP vía PNG sin pérdida
                 else                         -> Triple(Bitmap.CompressFormat.JPEG, "jpg",  90)
             }
@@ -59,4 +60,13 @@ class ImageFormatUseCase @Inject constructor(
 
     private fun generateTimestamp() =
         SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+
+    // WEBP_LOSSLESS/WEBP_LOSSY requieren API 30+; minSdk de la app es 26.
+    @Suppress("DEPRECATION")
+    private fun webpFormat(): Bitmap.CompressFormat =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSLESS
+        } else {
+            Bitmap.CompressFormat.WEBP
+        }
 }

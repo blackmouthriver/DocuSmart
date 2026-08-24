@@ -31,8 +31,9 @@ import com.docsmart.R
 fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val context    = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     val multiPdfLauncher = rememberLauncherForActivityResult(
@@ -65,24 +66,26 @@ fun PdfToolsScreen(
             contentPadding = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // ── Banner AdMob — solo para usuarios free ─
+            if (!isPremium) {
+                item {
+                    DocuSmartBannerAd(
+                        adUnitId  = AdConstants.BANNER_TOOLS_ID,
+                        adManager = viewModel.adManager,
+                        modifier  = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+            }
+
             // ── Banner azul con logo ───────────────────
             item {
                 DocuSmartTopBanner(
-                    screenTitle = stringResource(R.string.pdf_tools_title),
+                    screenTitle    = stringResource(R.string.pdf_tools_title),
                     screenSubtitle = stringResource(R.string.pdf_tools_subtitle),
-                    modifier = Modifier.padding(
+                    modifier       = Modifier.padding(
                         horizontal = 20.dp,
-                        vertical = 24.dp
+                        vertical   = 24.dp
                     )
-                )
-            }
-
-            // ── Banner AdMob ──────────────────────────
-            item {
-                DocuSmartBannerAd(
-                    adUnitId = AdConstants.BANNER_TOOLS_ID,
-                    adManager = viewModel.adManager,
-                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
 

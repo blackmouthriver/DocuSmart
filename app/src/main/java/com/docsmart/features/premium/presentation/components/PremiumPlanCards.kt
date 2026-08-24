@@ -12,7 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.features.premium.domain.model.PremiumPlan
 
@@ -28,7 +30,7 @@ fun PremiumPlanCards(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
-            text = "Elige tu plan",
+            text = stringResource(R.string.premium_choose_plan),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -89,7 +91,7 @@ private fun PlanCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "⭐ Recomendado",
+                        text = stringResource(R.string.premium_recommended),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
@@ -125,12 +127,12 @@ private fun PlanCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = plan.title,
+                            text = stringResource(plan.titleRes),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         // Badge de ahorro
-                        plan.savingsLabel?.let { label ->
+                        plan.savingsLabelRes?.let { labelRes ->
                             Surface(
                                 shape = MaterialTheme.shapes.extraSmall,
                                 color = if (plan.isPopular)
@@ -139,7 +141,7 @@ private fun PlanCard(
                                     MaterialTheme.colorScheme.primaryContainer
                             ) {
                                 Text(
-                                    text = label,
+                                    text = stringResource(labelRes),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (plan.isPopular)
                                         PremiumGold
@@ -154,7 +156,7 @@ private fun PlanCard(
                         }
                     }
                     Text(
-                        text = plan.period,
+                        text = stringResource(plan.periodRes),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

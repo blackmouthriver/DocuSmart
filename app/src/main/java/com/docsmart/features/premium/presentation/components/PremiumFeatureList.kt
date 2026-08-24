@@ -9,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.*
 import com.docsmart.features.premium.domain.model.PremiumFeature
 
@@ -37,7 +39,7 @@ fun PremiumFeatureList(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Todo lo que obtienes",
+            text = stringResource(R.string.premium_all_you_get),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -90,7 +92,7 @@ private fun PremiumFeatureItem(
         // Texto
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = feature.title,
+                text = stringResource(feature.titleRes),
                 style = MaterialTheme.typography.titleSmall,
                 color = if (isUnlocked)
                     MaterialTheme.colorScheme.onSurface
@@ -98,7 +100,7 @@ private fun PremiumFeatureItem(
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
             Text(
-                text = feature.description,
+                text = stringResource(feature.descRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

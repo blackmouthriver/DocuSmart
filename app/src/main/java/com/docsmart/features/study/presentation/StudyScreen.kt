@@ -26,10 +26,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
@@ -52,7 +54,18 @@ fun StudyScreen(onBack: () -> Unit = {}) {
     // ── Estado general ────────────────────────────────
     var selectedTab by remember { mutableIntStateOf(0) }
     var documentText by remember { mutableStateOf<List<String>>(emptyList()) }
-    var documentName by remember { mutableStateOf("Sin documento") }
+    val noDocumentLabel = stringResource(R.string.study_no_document)
+    var documentName by remember { mutableStateOf(noDocumentLabel) }
+
+    val extractionMessages = StudyExtractionMessages(
+        noTextFound          = stringResource(R.string.study_extract_no_text_found),
+        couldNotOpen          = stringResource(R.string.study_extract_could_not_open),
+        couldNotRead          = stringResource(R.string.study_extract_could_not_read),
+        pdfNoText             = stringResource(R.string.study_extract_pdf_no_text),
+        pdfErrorTemplate       = stringResource(R.string.study_extract_pdf_error),
+        genericErrorTemplate   = stringResource(R.string.study_extract_generic_error),
+        defaultDocumentName    = stringResource(R.string.study_default_document_name)
+    )
     var notes by remember { mutableStateOf("") }
     var highlights by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var isLoadingDoc by remember { mutableStateOf(false) }
@@ -131,7 +144,7 @@ fun StudyScreen(onBack: () -> Unit = {}) {
         uri?.let {
             isLoadingDoc = true
             scope.launch {
-                val result = extractTextFromUri(context, uri)
+                val result = extractTextFromUri(context, uri, extractionMessages)
                 documentText = result.first
                 documentName = result.second
                 isLoadingDoc = false
@@ -159,7 +172,11 @@ fun StudyScreen(onBack: () -> Unit = {}) {
                 .padding(innerPadding)
         ) {
             // ── Tabs ──────────────────────────────────
-            val tabs = listOf("Lectura", "Notas", "Pomodoro")
+            val tabs = listOf(
+                stringResource(R.string.study_tab_reading),
+                stringResource(R.string.study_tab_notes),
+                stringResource(R.string.study_tab_pomodoro)
+            )
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface
@@ -308,7 +325,7 @@ private fun StudyTopBar(
         title = {
             Column {
                 Text(
-                    text = "Modo Estudio",
+                    text = stringResource(R.string.study_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -322,14 +339,14 @@ private fun StudyTopBar(
         },
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Icon(Icons.Rounded.ArrowBack, contentDescription = "Volver")
+                Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
             }
         },
         actions = {
             IconButton(onClick = onSelectDoc) {
                 Icon(
                     imageVector = Icons.Rounded.FolderOpen,
-                    contentDescription = "Abrir documento",
+                    contentDescription = stringResource(R.string.qr_open_document),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -387,13 +404,13 @@ private fun ReadingTab(
                         )
                     }
                     Text(
-                        text = "Modo Estudio",
+                        text = stringResource(R.string.study_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Abre un documento para comenzar a estudiar",
+                        text = stringResource(R.string.study_empty_state_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -408,7 +425,7 @@ private fun ReadingTab(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Abrir documento")
+                        Text(stringResource(R.string.qr_open_document))
                     }
                 }
             }
@@ -441,10 +458,12 @@ private fun ReadingTab(
                             )
                             Text(
                                 text = if (isSpeaking)
-                                    "Leyendo el documento..."
+                                    stringResource(R.string.study_reading_document)
                                 else
-                                    "${documentText.size} párrafos · ${
-                                        highlights.size} resaltados",
+                                    stringResource(
+                                        R.string.study_paragraphs_highlighted_count,
+                                        documentText.size, highlights.size
+                                    ),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.weight(1f)
@@ -464,7 +483,7 @@ private fun ReadingTab(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                Text(if (isSpeaking) "Detener" else "Leer todo")
+                                Text(if (isSpeaking) stringResource(R.string.study_stop) else stringResource(R.string.study_read_all))
                             }
                         }
                     }
@@ -736,6 +755,8 @@ private fun NotesTab(
         }
     }
 
+    val voicePrompt = stringResource(R.string.study_voice_prompt)
+
     fun startVoiceInput() {
         try {
             val intent = android.content.Intent(
@@ -745,8 +766,8 @@ private fun NotesTab(
                     android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                     android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                 )
-                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "es-CO")
-                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Habla para redactar tu nota...")
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, voicePrompt)
                 putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             }
             isListening = true
@@ -762,17 +783,17 @@ private fun NotesTab(
         AlertDialog(
             onDismissRequest = { showDeleteAll = false },
             shape            = MaterialTheme.shapes.large,
-            title = { Text("Eliminar todas las notas") },
-            text  = { Text("¿Seguro que quieres eliminar todas las notas? Esta acción no se puede deshacer.") },
+            title = { Text(stringResource(R.string.study_delete_all_notes_title)) },
+            text  = { Text(stringResource(R.string.study_delete_all_notes_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     saveNotes(emptyList())
                     savedNotes    = emptyList()
                     showDeleteAll = false
-                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteAll = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDeleteAll = false }) { Text(stringResource(R.string.general_cancel)) }
             }
         )
     }
@@ -786,7 +807,7 @@ private fun NotesTab(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text       = "Párrafos resaltados (${highlights.size})",
+                    text       = stringResource(R.string.study_highlighted_paragraphs_count, highlights.size),
                     style      = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color      = MaterialTheme.colorScheme.onSurface
@@ -832,7 +853,7 @@ private fun NotesTab(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text       = "Nueva nota",
+                text       = stringResource(R.string.study_new_note),
                 style      = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color      = MaterialTheme.colorScheme.onSurface
@@ -843,8 +864,8 @@ private fun NotesTab(
                 value         = currentTitle,
                 onValueChange = { currentTitle = it },
                 modifier      = Modifier.fillMaxWidth(),
-                label         = { Text("Título de la nota") },
-                placeholder   = { Text("Ej: Conceptos clave del capítulo 3") },
+                label         = { Text(stringResource(R.string.study_note_title_label)) },
+                placeholder   = { Text(stringResource(R.string.study_note_title_placeholder)) },
                 singleLine    = true,
                 leadingIcon   = {
                     Icon(
@@ -869,7 +890,7 @@ private fun NotesTab(
                     onNotesChange(it)
                 },
                 modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
-                placeholder   = { Text("Escribe o dicta tu nota...") },
+                placeholder   = { Text(stringResource(R.string.study_note_content_placeholder)) },
                 trailingIcon  = {
                     IconButton(
                         onClick  = { startVoiceInput() },
@@ -880,7 +901,7 @@ private fun NotesTab(
                                 Icons.Rounded.MicOff
                             else
                                 Icons.Rounded.Mic,
-                            contentDescription = "Dictar nota por voz",
+                            contentDescription = stringResource(R.string.study_dictate_note),
                             tint               = if (isListening)
                                 MaterialTheme.colorScheme.error
                             else
@@ -913,12 +934,14 @@ private fun NotesTab(
                         modifier           = Modifier.size(16.dp)
                     )
                     Text(
-                        text  = "Escuchando... habla ahora",
+                        text  = stringResource(R.string.study_listening),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
             }
+
+            val untitledNoteLabel = stringResource(R.string.study_untitled_note)
 
             // Botón guardar
             Button(
@@ -928,7 +951,7 @@ private fun NotesTab(
                     if (text.isNotBlank()) {
                         val newNote = SavedNote(
                             id       = System.currentTimeMillis().toString(),
-                            title    = title.ifBlank { "Nota sin título" },
+                            title    = title.ifBlank { untitledNoteLabel },
                             text     = text,
                             dateTime = dateFormatter.format(java.util.Date())
                         )
@@ -946,7 +969,7 @@ private fun NotesTab(
             ) {
                 Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Guardar nota", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.study_save_note), style = MaterialTheme.typography.labelLarge)
             }
         }
 
@@ -961,8 +984,8 @@ private fun NotesTab(
             verticalAlignment     = Alignment.CenterVertically
         ) {
             Text(
-                text       = if (savedNotes.isEmpty()) "Sin notas guardadas"
-                else "Notas guardadas (${savedNotes.size})",
+                text       = if (savedNotes.isEmpty()) stringResource(R.string.study_no_saved_notes)
+                else stringResource(R.string.study_saved_notes_count, savedNotes.size),
                 style      = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color      = MaterialTheme.colorScheme.onSurface
@@ -970,7 +993,7 @@ private fun NotesTab(
             if (savedNotes.isNotEmpty()) {
                 TextButton(onClick = { showDeleteAll = true }) {
                     Text(
-                        text  = "Eliminar todas",
+                        text  = stringResource(R.string.study_delete_all),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -991,7 +1014,7 @@ private fun NotesTab(
                     tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                 )
                 Text(
-                    text      = "Aún no tienes notas guardadas",
+                    text      = stringResource(R.string.study_no_notes_yet),
                     style     = MaterialTheme.typography.bodyMedium,
                     color     = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -1054,7 +1077,7 @@ private fun NotesTab(
                                 ) {
                                     Icon(
                                         imageVector        = Icons.Rounded.DeleteOutline,
-                                        contentDescription = "Eliminar nota",
+                                        contentDescription = stringResource(R.string.study_delete_note_desc),
                                         tint               = MaterialTheme.colorScheme.error,
                                         modifier           = Modifier.size(16.dp)
                                     )
@@ -1115,7 +1138,7 @@ private fun PomodoroTab(
             else DocuBlue.copy(alpha = 0.15f)
         ) {
             Text(
-                text = if (isBreak) "🌿 Descanso" else "📚 Estudio",
+                text = if (isBreak) stringResource(R.string.study_break_label) else stringResource(R.string.study_study_label),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = if (isBreak) SuccessGreen else DocuBlue,
@@ -1148,7 +1171,7 @@ private fun PomodoroTab(
                     color = if (isBreak) SuccessGreen else DocuBlue
                 )
                 Text(
-                    text = if (isRunning) "en progreso" else "pausado",
+                    text = if (isRunning) stringResource(R.string.study_in_progress) else stringResource(R.string.study_paused),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1164,7 +1187,7 @@ private fun PomodoroTab(
             ) {
                 Icon(Icons.Rounded.Refresh, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Reiniciar")
+                Text(stringResource(R.string.study_restart))
             }
 
             Button(
@@ -1183,7 +1206,7 @@ private fun PomodoroTab(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = if (isRunning) "Pausar" else "Iniciar",
+                    text = if (isRunning) stringResource(R.string.study_pause) else stringResource(R.string.study_start),
                     style = MaterialTheme.typography.labelLarge
                 )
             }
@@ -1211,12 +1234,12 @@ private fun PomodoroTab(
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Pomodoros completados",
+                        text = stringResource(R.string.study_pomodoros_completed),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Cada 4 pomodoros = descanso largo",
+                        text = stringResource(R.string.study_pomodoros_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1251,7 +1274,7 @@ private fun PomodoroTab(
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = "Técnica Pomodoro: 25 min estudio + 5 min descanso",
+                    text = stringResource(R.string.study_pomodoro_technique_info),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1260,39 +1283,52 @@ private fun PomodoroTab(
     }
 }
 
+// Mensajes localizados, resueltos en la capa de presentación (stringResource)
+// y pasados hacia abajo — estas funciones de extracción no tienen Context de recursos.
+data class StudyExtractionMessages(
+    val noTextFound       : String,
+    val couldNotOpen      : String,
+    val couldNotRead      : String,
+    val pdfNoText         : String,
+    val pdfErrorTemplate  : String, // formato: %1$s
+    val genericErrorTemplate: String, // formato: %1$s
+    val defaultDocumentName: String
+)
+
 // ── Extraer texto de documento ────────────────────────
 private suspend fun extractTextFromUri(
     context: Context,
-    uri: Uri
+    uri: Uri,
+    messages: StudyExtractionMessages
 ): Pair<List<String>, String> = withContext(Dispatchers.IO) {
     try {
         val mimeType = context.contentResolver.getType(uri) ?: ""
-        val fileName = resolveFileName(context, uri)
+        val fileName = resolveFileName(context, uri, messages)
 
         val text = when {
-            mimeType.contains("pdf") -> extractPdfText(context, uri)
+            mimeType.contains("pdf") -> extractPdfText(context, uri, messages)
             mimeType.contains("word") || mimeType.contains("msword") ||
-                    mimeType.contains("wordprocessingml") -> extractWordText(context, uri)
-            mimeType.contains("text") -> extractPlainText(context, uri)
+                    mimeType.contains("wordprocessingml") -> extractWordText(context, uri, messages)
+            mimeType.contains("text") -> extractPlainText(context, uri, messages)
             mimeType.contains("powerpoint") || mimeType.contains("presentation") ->
-                extractPptText(context, uri)
-            else -> extractPlainText(context, uri)
+                extractPptText(context, uri, messages)
+            else -> extractPlainText(context, uri, messages)
         }
 
         Pair(text, fileName)
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto")
-        Pair(emptyList(), "Error")
+        Pair(emptyList(), String.format(messages.genericErrorTemplate, e.message ?: ""))
     }
 }
 
-private fun extractPdfText(context: Context, uri: Uri): List<String> {
+private fun extractPdfText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
     return try {
         // ── Copiar al cache ───────────────────────────
         val cacheFile = File(context.cacheDir, "study_temp.pdf")
         context.contentResolver.openInputStream(uri)?.use { input ->
             cacheFile.outputStream().use { output -> input.copyTo(output) }
-        } ?: return listOf("No se pudo leer el archivo")
+        } ?: return listOf(messages.couldNotRead)
 
         // ── Extraer texto con iText7 ──────────────────
         val paragraphs = mutableListOf<String>()
@@ -1317,17 +1353,17 @@ private fun extractPdfText(context: Context, uri: Uri): List<String> {
         pdfDoc.close()
 
         if (paragraphs.isEmpty()) {
-            listOf("Este PDF no contiene texto extraíble. Puede ser un PDF escaneado.")
+            listOf(messages.pdfNoText)
         } else {
             paragraphs
         }
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto PDF")
-        listOf("Error al leer el PDF: ${e.message}")
+        listOf(String.format(messages.pdfErrorTemplate, e.message ?: ""))
     }
 }
 
-private fun extractWordText(context: Context, uri: Uri): List<String> {
+private fun extractWordText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
     return try {
         context.contentResolver.openInputStream(uri)?.use { input ->
             val zip = ZipInputStream(input)
@@ -1348,14 +1384,14 @@ private fun extractWordText(context: Context, uri: Uri): List<String> {
                 entry = zip.nextEntry
             }
             zip.close()
-            result.ifEmpty { listOf("No se encontró texto") }
-        } ?: listOf("No se pudo abrir el archivo")
+            result.ifEmpty { listOf(messages.noTextFound) }
+        } ?: listOf(messages.couldNotOpen)
     } catch (e: Exception) {
-        listOf("Error: ${e.message}")
+        listOf(String.format(messages.genericErrorTemplate, e.message ?: ""))
     }
 }
 
-private fun extractPptText(context: Context, uri: Uri): List<String> {
+private fun extractPptText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
     return try {
         context.contentResolver.openInputStream(uri)?.use { input ->
             val zip = ZipInputStream(input)
@@ -1377,29 +1413,29 @@ private fun extractPptText(context: Context, uri: Uri): List<String> {
             }
             zip.close()
             slideMap.toSortedMap().values.toList()
-                .ifEmpty { listOf("No se encontró texto") }
-        } ?: listOf("No se pudo abrir el archivo")
+                .ifEmpty { listOf(messages.noTextFound) }
+        } ?: listOf(messages.couldNotOpen)
     } catch (e: Exception) {
-        listOf("Error: ${e.message}")
+        listOf(String.format(messages.genericErrorTemplate, e.message ?: ""))
     }
 }
 
-private fun extractPlainText(context: Context, uri: Uri): List<String> {
+private fun extractPlainText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
     return try {
         context.contentResolver.openInputStream(uri)?.use { input ->
             input.bufferedReader().readText()
                 .split("\n")
                 .map { it.trim() }
                 .filter { it.length > 2 }
-        } ?: listOf("No se pudo leer el archivo")
+        } ?: listOf(messages.couldNotRead)
     } catch (e: Exception) {
-        listOf("Error: ${e.message}")
+        listOf(String.format(messages.genericErrorTemplate, e.message ?: ""))
     }
 }
 
-private fun resolveFileName(context: Context, uri: Uri): String {
+private fun resolveFileName(context: Context, uri: Uri, messages: StudyExtractionMessages): String {
     return try {
-        var name = "Documento"
+        var name = messages.defaultDocumentName
         context.contentResolver.query(
             uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
             null, null, null
@@ -1407,5 +1443,5 @@ private fun resolveFileName(context: Context, uri: Uri): String {
             if (cursor.moveToFirst()) name = cursor.getString(0) ?: name
         }
         name
-    } catch (e: Exception) { "Documento" }
+    } catch (e: Exception) { messages.defaultDocumentName }
 }

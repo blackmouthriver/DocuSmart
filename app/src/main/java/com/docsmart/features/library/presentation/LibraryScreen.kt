@@ -32,8 +32,9 @@ fun LibraryScreen(
     onDocumentClick: (String) -> Unit = {},
     viewModel      : LibraryViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context  = LocalContext.current
+    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val context    = LocalContext.current
 
     var hasPermission   by remember { mutableStateOf(checkStoragePermission(context)) }
     var permissionDenied by remember { mutableStateOf(false) }
@@ -58,21 +59,23 @@ fun LibraryScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding  = PaddingValues(top = 24.dp, bottom = 100.dp)
     ) {
+        // ── AdMob — solo para usuarios free ──────────────────────────────────
+        if (!isPremium) {
+            item {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_LIBRARY_ID,
+                    adManager = viewModel.adManager,
+                    modifier  = Modifier.padding(horizontal = 20.dp)
+                )
+            }
+        }
+
         // ── Banner azul ───────────────────────────────────────────────────────
         item {
             DocuSmartTopBanner(
                 screenTitle    = "Biblioteca",
                 screenSubtitle = "Todos tus documentos",
                 modifier       = Modifier.padding(horizontal = 20.dp)
-            )
-        }
-
-        // ── AdMob ─────────────────────────────────────────────────────────────
-        item {
-            DocuSmartBannerAd(
-                adUnitId  = AdConstants.BANNER_LIBRARY_ID,
-                adManager = viewModel.adManager,
-                modifier  = Modifier.padding(horizontal = 20.dp)
             )
         }
 

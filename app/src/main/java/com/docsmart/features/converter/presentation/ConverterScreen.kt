@@ -38,14 +38,13 @@ import com.docsmart.features.converter.presentation.components.ConversionSuccess
 fun ConverterScreen(
     viewModel: ConverterViewModel = hiltViewModel()
 ) {
-    val uiState           = viewModel.uiState.collectAsStateWithLifecycle().value
+    val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val isRewardedReady by viewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context           = LocalContext.current
     val activity          = context as? Activity
 
-    // ── Rewarded ready state ──────────────────────────────────────────────────
-    val isRewardedReady by viewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
-    val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     val fileLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris -> if (uris.isNotEmpty()) viewModel.onFilesSelected(uris) }
@@ -75,7 +74,7 @@ fun ConverterScreen(
             isRewardedReady = isRewardedReady,
             onWatchAd       = { activity?.let { viewModel.watchAdForConversion(it) } },
             onDismiss       = { viewModel.dismissLimitDialog() },
-            onGetPremium    = { /* navegar a Premium */ }
+            onGetPremium    = { }
         )
     }
 
@@ -88,6 +87,18 @@ fun ConverterScreen(
             contentPadding      = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
+            // ── AdMob — solo para usuarios free ──────────────────────────────
+            if (!isPremium) {
+                item {
+                    DocuSmartBannerAd(
+                        adUnitId  = AdConstants.BANNER_CONVERTER_ID,
+                        adManager = viewModel.adManager,
+                        modifier  = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+            }
+
+            // ── Banner azul ───────────────────────────────────────────────────
             item {
                 DocuSmartTopBanner(
                     screenTitle    = stringResource(R.string.converter_title),
@@ -96,20 +107,12 @@ fun ConverterScreen(
                 )
             }
 
-            item {
-                DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_CONVERTER_ID,
-                    adManager = viewModel.adManager,
-                    modifier  = Modifier.padding(horizontal = 20.dp)
-                )
-            }
-
             // ── Contador de conversiones (usuarios free) ──────────────────────
             if (!isPremium) {
                 item {
                     ConversionLimitIndicator(
-                        count   = uiState.conversionCount,
-                        limit   = uiState.conversionLimit,
+                        count    = uiState.conversionCount,
+                        limit    = uiState.conversionLimit,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
                     )
                 }
@@ -259,9 +262,7 @@ private fun ConversionLimitIndicator(
     Card(
         modifier  = modifier.fillMaxWidth(),
         shape     = MaterialTheme.shapes.medium,
-        colors    = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.08f)
-        ),
+        colors    = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
@@ -275,11 +276,8 @@ private fun ConversionLimitIndicator(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Rounded.SwapHoriz, null,
-                    tint     = color,
-                    modifier = Modifier.size(16.dp)
-                )
+                Icon(Icons.Rounded.SwapHoriz, null,
+                    tint = color, modifier = Modifier.size(16.dp))
                 Text(
                     "Conversiones hoy: $count / $limit",
                     style = MaterialTheme.typography.labelMedium,
@@ -287,8 +285,8 @@ private fun ConversionLimitIndicator(
                 )
             }
             LinearProgressIndicator(
-                progress  = { progress },
-                modifier  = Modifier
+                progress   = { progress },
+                modifier   = Modifier
                     .width(80.dp)
                     .height(6.dp)
                     .clip(MaterialTheme.shapes.small),
@@ -392,7 +390,7 @@ private fun ConversionGridCard(
                     Icon(fromIcon, null, tint = fromColor, modifier = Modifier.size(18.dp))
                 }
                 Icon(Icons.Rounded.ArrowForward, null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint     = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp))
                 Box(
                     modifier = Modifier
@@ -467,7 +465,7 @@ private fun ConversionDetailCard(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(Icons.Rounded.FolderOpen, null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint     = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(40.dp))
                 Text(
                     text = if (selectedFiles.isEmpty())
@@ -543,7 +541,7 @@ private fun DailyLimitDialog(
         shape            = MaterialTheme.shapes.extraLarge,
         icon             = {
             Icon(Icons.Rounded.HourglassEmpty, null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint     = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp))
         },
         title = {
@@ -639,16 +637,16 @@ private fun ConversionType.getCategoryForUi(): String = when (this) {
 }
 
 private fun getFormatStyle(format: String): Pair<Color, ImageVector> = when (format.lowercase()) {
-    "pdf"                                 -> Pair(ColorPdf,       Icons.Rounded.PictureAsPdf)
+    "pdf"                        -> Pair(ColorPdf,        Icons.Rounded.PictureAsPdf)
     "imagen","image","jpg","png",
-    "webp","bmp"                          -> Pair(ColorImage,     Icons.Rounded.Image)
-    "word","docx"                         -> Pair(ColorWord,      Icons.Rounded.Description)
-    "excel"                               -> Pair(ColorExcel,     Icons.Rounded.TableChart)
-    "powerpoint"                          -> Pair(ColorPowerPoint,Icons.Rounded.Slideshow)
-    "txt","texto","text"                  -> Pair(ColorText,      Icons.Rounded.TextSnippet)
-    "csv"                                 -> Pair(ColorExcel,     Icons.Rounded.GridOn)
-    "html"                                -> Pair(ColorOcr,       Icons.Rounded.Code)
-    else                                  -> Pair(ColorText,      Icons.Rounded.InsertDriveFile)
+    "webp","bmp"                 -> Pair(ColorImage,      Icons.Rounded.Image)
+    "word","docx"                -> Pair(ColorWord,       Icons.Rounded.Description)
+    "excel"                      -> Pair(ColorExcel,      Icons.Rounded.TableChart)
+    "powerpoint"                 -> Pair(ColorPowerPoint, Icons.Rounded.Slideshow)
+    "txt","texto","text"         -> Pair(ColorText,       Icons.Rounded.TextSnippet)
+    "csv"                        -> Pair(ColorExcel,      Icons.Rounded.GridOn)
+    "html"                       -> Pair(ColorOcr,        Icons.Rounded.Code)
+    else                         -> Pair(ColorText,       Icons.Rounded.InsertDriveFile)
 }
 
 private fun getMimeForType(type: ConversionType): String = when (type) {

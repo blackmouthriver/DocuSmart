@@ -21,10 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.buttons.DocuSmartPrimaryButton
 import com.docsmart.core.ui.components.buttons.DocuSmartSecondaryButton
@@ -58,6 +60,9 @@ fun ScanResultScreen(
     var savedFile by remember { mutableStateOf<File?>(null) }
     var isPreparingShare by remember { mutableStateOf(false) }
 
+    val defaultNameTemplate = stringResource(R.string.scan_result_default_name_prefix)
+    val shareChooserTitle   = stringResource(R.string.scanner_share)
+
     // ── Inicializar según tipo de resultado ───────────
     LaunchedEffect(scannedUris, isPdf) {
         if (!isPdf) {
@@ -77,10 +82,10 @@ fun ScanResultScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Resultado del escaneo") },
+                title = { Text(stringResource(R.string.scan_result_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
                     }
                 }
             )
@@ -99,8 +104,8 @@ fun ScanResultScreen(
             // ── Banner ────────────────────────────────
             item {
                 DocuSmartTopBanner(
-                    screenTitle = "Documento escaneado",
-                    screenSubtitle = "${scannedUris.size} página(s)"
+                    screenTitle = stringResource(R.string.scanner_result_title),
+                    screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, scannedUris.size)
                 )
             }
 
@@ -108,7 +113,7 @@ fun ScanResultScreen(
             if (!isPdf && scannedUris.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Vista previa",
+                        text = stringResource(R.string.scan_result_preview),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -122,7 +127,7 @@ fun ScanResultScreen(
                             ) {
                                 AsyncImage(
                                     model = uri,
-                                    contentDescription = "Página ${index + 1}",
+                                    contentDescription = stringResource(R.string.scan_result_page_content_desc, index + 1),
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -138,7 +143,7 @@ fun ScanResultScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "Nombre del archivo",
+                        text = stringResource(R.string.scan_result_filename_label),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -148,7 +153,7 @@ fun ScanResultScreen(
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = {
                             Text(
-                                text = "Ej: Documento_escaneado",
+                                text = stringResource(R.string.scan_result_filename_placeholder),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -163,7 +168,7 @@ fun ScanResultScreen(
                         shape = MaterialTheme.shapes.medium
                     )
                     Text(
-                        text = "Si lo dejas vacío se generará un nombre automático",
+                        text = stringResource(R.string.scan_result_filename_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -190,7 +195,7 @@ fun ScanResultScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    text = "Guardado en Descargas",
+                                    text = stringResource(R.string.general_saved_downloads),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -198,11 +203,11 @@ fun ScanResultScreen(
                         } else {
                             // ── Guardar en Descargas ──
                             DocuSmartPrimaryButton(
-                                text = "Guardar en Descargas",
+                                text = stringResource(R.string.converter_save),
                                 onClick = {
                                     scope.launch {
                                         val name = fileName.ifBlank {
-                                            "Escaneo_${generateTimestamp()}"
+                                            String.format(defaultNameTemplate, generateTimestamp())
                                         }
                                         val success = when {
                                             savedFile != null ->
@@ -235,7 +240,7 @@ fun ScanResultScreen(
                             }
                         } else {
                             DocuSmartSecondaryButton(
-                                text = "Compartir PDF",
+                                text = stringResource(R.string.scanner_share),
                                 onClick = {
                                     scope.launch {
                                         isPreparingShare = true
@@ -243,7 +248,7 @@ fun ScanResultScreen(
                                             when {
                                                 // ── Compartir desde File ──────
                                                 savedFile != null -> {
-                                                    shareFile(context, savedFile!!)
+                                                    shareFile(context, savedFile!!, shareChooserTitle)
                                                 }
                                                 // ── Compartir URI del escáner ─
                                                 // Primero copiar al cache para
@@ -253,11 +258,11 @@ fun ScanResultScreen(
                                                         context,
                                                         scannedUris.first(),
                                                         fileName.ifBlank {
-                                                            "Escaneo_${generateTimestamp()}"
+                                                            String.format(defaultNameTemplate, generateTimestamp())
                                                         }
                                                     )
                                                     if (cacheFile != null) {
-                                                        shareFile(context, cacheFile)
+                                                        shareFile(context, cacheFile, shareChooserTitle)
                                                     } else {
                                                         Timber.e("No se pudo copiar PDF al cache")
                                                     }
@@ -279,7 +284,7 @@ fun ScanResultScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Volver al inicio")
+                            Text(stringResource(R.string.scanner_back))
                         }
 
                     } else {
@@ -297,7 +302,7 @@ fun ScanResultScreen(
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Text(
-                                        text = "Generando PDF...",
+                                        text = stringResource(R.string.scan_result_generating_pdf),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -305,7 +310,7 @@ fun ScanResultScreen(
                             }
                         } else {
                             DocuSmartPrimaryButton(
-                                text = "Generar PDF",
+                                text = stringResource(R.string.scanner_generate),
                                 onClick = {
                                     val customName = fileName.trim().ifBlank { null }
                                     if (customName != null) {
@@ -317,7 +322,7 @@ fun ScanResultScreen(
                             )
 
                             DocuSmartSecondaryButton(
-                                text = "Escanear de nuevo",
+                                text = stringResource(R.string.scanner_again),
                                 onClick = {
                                     converterViewModel.clearAll()
                                     onBack()
@@ -354,7 +359,7 @@ private suspend fun copyUriToCache(
 }
 
 // ── Compartir archivo via FileProvider ────────────────
-private fun shareFile(context: Context, file: File) {
+private fun shareFile(context: Context, file: File, chooserTitle: String) {
     try {
         if (!file.exists()) {
             Timber.e("shareFile: archivo no existe — ${file.absolutePath}")
@@ -370,7 +375,7 @@ private fun shareFile(context: Context, file: File) {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Compartir PDF"))
+        context.startActivity(Intent.createChooser(intent, chooserTitle))
         Timber.d("shareFile: compartiendo ${file.name}")
     } catch (e: Exception) {
         Timber.e(e, "Error compartiendo archivo: ${e.message}")

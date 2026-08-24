@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -84,8 +86,14 @@ private fun detectQrContentType(value: String): QrContentType = when {
     else                        -> QrContentType.TEXT
 }
 
+// ImageProxy.image requiere @ExperimentalGetImage. El checker de lint de AGP 8.7.0 no
+// reconoce esa anotación como marcador de opt-in válido (bug conocido: @OptIn no la silencia),
+// así que se aísla aquí y se suprime puntualmente en vez de desactivar la regla en todo el proyecto.
+@OptIn(androidx.camera.core.ExperimentalGetImage::class)
+@Suppress("UnsafeOptInUsageError")
+private fun ImageProxy.toMediaImageOrNull() = image
+
 // ── Pantalla: Leer QR con cámara ─────────────────────────────────────────────
-@androidx.camera.core.ExperimentalGetImage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QrReaderScreen(onBack: () -> Unit = {}) {
@@ -117,6 +125,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanner  = remember { BarcodeScanning.getClient() }
     val scope    = rememberCoroutineScope()
+    val openDocumentLabel = stringResource(R.string.qr_open_document)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -124,17 +133,17 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Leer código QR",
+                        Text(stringResource(R.string.qr_reader_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold)
-                        Text("Apunta la cámara al código QR",
+                        Text(stringResource(R.string.qr_reader_subtitle),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -159,7 +168,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                             modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "Se necesita acceso a la cámara para escanear códigos QR",
+                            stringResource(R.string.qr_camera_permission_needed),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -168,7 +177,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                         Button(
                             onClick = { permissionLauncher.launch(android.Manifest.permission.CAMERA) },
                             shape = MaterialTheme.shapes.medium
-                        ) { Text("Permitir acceso a cámara") }
+                        ) { Text(stringResource(R.string.qr_allow_camera_access)) }
                     }
                 } else {
                     // ── Vista de cámara ───────────────────────────────────────
@@ -188,7 +197,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                         .build()
                                     imageAnalysis.setAnalyzer(executor) { imageProxy ->
                                         if (!isScanning) { imageProxy.close(); return@setAnalyzer }
-                                        val mediaImage = imageProxy.image
+                                        val mediaImage = imageProxy.toMediaImageOrNull()
                                         if (mediaImage != null) {
                                             val image = InputImage.fromMediaImage(
                                                 mediaImage, imageProxy.imageInfo.rotationDegrees
@@ -236,7 +245,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                             shape = RoundedCornerShape(20.dp),
                             color = Color.Black.copy(alpha = 0.65f)
                         ) {
-                            Text("Centra el código QR en el recuadro",
+                            Text(stringResource(R.string.qr_center_in_frame),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = Color.White,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
@@ -257,12 +266,12 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
 
                     // Ícono según tipo
                     val (typeIcon, typeColor, typeLabel) = when (qrType) {
-                        QrContentType.URL      -> Triple(Icons.Rounded.Link,         DocuBlue,    "URL detectada")
-                        QrContentType.IMAGE    -> Triple(Icons.Rounded.Image,        SuccessGreen,"Imagen detectada")
-                        QrContentType.DOCUMENT -> Triple(Icons.Rounded.Description,  DocuBlue,    "Documento detectado")
-                        QrContentType.EMAIL    -> Triple(Icons.Rounded.Email,        DocuBlue,    "Email detectado")
-                        QrContentType.PHONE    -> Triple(Icons.Rounded.Phone,        SuccessGreen,"Teléfono detectado")
-                        QrContentType.TEXT     -> Triple(Icons.Rounded.TextFields,   DocuBlue,    "Texto detectado")
+                        QrContentType.URL      -> Triple(Icons.Rounded.Link,         DocuBlue,    stringResource(R.string.qr_type_url_detected))
+                        QrContentType.IMAGE    -> Triple(Icons.Rounded.Image,        SuccessGreen,stringResource(R.string.qr_type_image_detected))
+                        QrContentType.DOCUMENT -> Triple(Icons.Rounded.Description,  DocuBlue,    stringResource(R.string.qr_type_document_detected))
+                        QrContentType.EMAIL    -> Triple(Icons.Rounded.Email,        DocuBlue,    stringResource(R.string.qr_type_email_detected))
+                        QrContentType.PHONE    -> Triple(Icons.Rounded.Phone,        SuccessGreen,stringResource(R.string.qr_type_phone_detected))
+                        QrContentType.TEXT     -> Triple(Icons.Rounded.TextFields,   DocuBlue,    stringResource(R.string.qr_type_text_detected))
                     }
 
                     Box(
@@ -274,7 +283,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                         Icon(typeIcon, null, tint = typeColor, modifier = Modifier.size(44.dp))
                     }
 
-                    Text("¡Código QR detectado!",
+                    Text(stringResource(R.string.qr_detected_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface)
@@ -289,7 +298,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                             if (imageBitmap != null) {
                                 Image(
                                     bitmap = imageBitmap!!.asImageBitmap(),
-                                    contentDescription = "Imagen del QR",
+                                    contentDescription = stringResource(R.string.qr_image_content_desc),
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -306,7 +315,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             modifier = Modifier.size(32.dp)
                                         )
                                         Spacer(Modifier.height(8.dp))
-                                        Text("Cargando imagen...",
+                                        Text(stringResource(R.string.qr_loading_image),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
@@ -360,7 +369,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                 ) {
                                     Icon(Icons.Rounded.CheckCircle, null,
                                         tint = SuccessGreen, modifier = Modifier.size(14.dp))
-                                    Text("Copiado al portapapeles",
+                                    Text(stringResource(R.string.qr_copied_clipboard),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = SuccessGreen)
                                 }
@@ -378,7 +387,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.OpenInBrowser, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Abrir en navegador")
+                                            Text(stringResource(R.string.qr_open_browser))
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
@@ -388,7 +397,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.ContentCopy, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Copiar URL")
+                                            Text(stringResource(R.string.qr_copy_url))
                                         }
                                     }
                                     QrContentType.IMAGE -> {
@@ -400,7 +409,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.OpenInBrowser, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Abrir imagen")
+                                            Text(stringResource(R.string.qr_open_image))
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
@@ -410,19 +419,19 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.ContentCopy, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Copiar enlace")
+                                            Text(stringResource(R.string.qr_copy_link))
                                         }
                                     }
                                     QrContentType.DOCUMENT -> {
                                         Button(
-                                            onClick = { openDocumentExternally(context, qrResult ?: "") },
+                                            onClick = { openDocumentExternally(context, qrResult ?: "", openDocumentLabel) },
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.OpenInNew, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Abrir documento")
+                                            Text(stringResource(R.string.qr_open_document))
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
@@ -432,7 +441,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.ContentCopy, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Copiar ruta")
+                                            Text(stringResource(R.string.qr_copy_path))
                                         }
                                     }
                                     QrContentType.EMAIL -> {
@@ -444,7 +453,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.Email, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Enviar email")
+                                            Text(stringResource(R.string.qr_send_email))
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
@@ -454,7 +463,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.ContentCopy, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Copiar email")
+                                            Text(stringResource(R.string.qr_copy_email))
                                         }
                                     }
                                     QrContentType.PHONE -> {
@@ -466,7 +475,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.Phone, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Llamar")
+                                            Text(stringResource(R.string.qr_call))
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
@@ -476,7 +485,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.ContentCopy, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Copiar número")
+                                            Text(stringResource(R.string.qr_copy_number))
                                         }
                                     }
                                     QrContentType.TEXT -> {
@@ -488,7 +497,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                                             Icon(Icons.Rounded.ContentCopy, null,
                                                 modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Copiar texto")
+                                            Text(stringResource(R.string.qr_copy_text))
                                         }
                                     }
                                 }
@@ -503,7 +512,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                     ) {
                         Icon(Icons.Rounded.QrCodeScanner, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Escanear otro código")
+                        Text(stringResource(R.string.qr_scan_another))
                     }
                 }
             }
@@ -551,7 +560,14 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
     var savedMsg     by remember { mutableStateOf<String?>(null) }
     var errorMsg     by remember { mutableStateOf<String?>(null) }
 
-    val types = listOf("URL", "Texto", "Email", "Tel", "Imagen", "Doc")
+    val types = listOf(
+        stringResource(R.string.qr_chip_url),
+        stringResource(R.string.qr_chip_text),
+        stringResource(R.string.qr_chip_email),
+        stringResource(R.string.qr_chip_phone),
+        stringResource(R.string.qr_chip_image),
+        stringResource(R.string.qr_chip_document)
+    )
     val typeIcons = listOf(
         Icons.Rounded.Link,
         Icons.Rounded.TextFields,
@@ -561,13 +577,16 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
         Icons.Rounded.Description
     )
 
+    val defaultImageName    = stringResource(R.string.qr_chip_image)
+    val defaultDocumentName = stringResource(R.string.pdf_pw_default_document_name)
+
     // Launchers para seleccionar imagen o documento
     val imageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
             selectedUri  = it
-            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: "imagen"
+            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultImageName
             content      = it.toString()
             qrBitmap     = null
             savedMsg     = null
@@ -579,7 +598,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
     ) { uri ->
         uri?.let {
             selectedUri  = it
-            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: "documento"
+            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultDocumentName
             content      = it.toString()
             qrBitmap     = null
             savedMsg     = null
@@ -592,17 +611,17 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Crear código QR",
+                        Text(stringResource(R.string.qr_creator_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold)
-                        Text("Genera QR para URL, texto, archivos y más",
+                        Text(stringResource(R.string.qr_creator_subtitle),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -715,7 +734,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             Column {
                                 Text(
                                     if (selectedUri != null) selectedName
-                                    else "Seleccionar imagen",
+                                    else stringResource(R.string.qr_select_image),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = if (selectedUri != null)
@@ -723,7 +742,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                                     else MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    if (selectedUri != null) "Imagen seleccionada ✓"
+                                    if (selectedUri != null) stringResource(R.string.qr_image_selected)
                                     else "JPG, PNG, WebP",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -761,7 +780,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             Column {
                                 Text(
                                     if (selectedUri != null) selectedName
-                                    else "Seleccionar documento",
+                                    else stringResource(R.string.qr_select_document),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = if (selectedUri != null)
@@ -769,7 +788,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                                     else MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    if (selectedUri != null) "Documento seleccionado ✓"
+                                    if (selectedUri != null) stringResource(R.string.qr_document_selected)
                                     else "PDF, Word, Excel, PPT, TXT",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -786,17 +805,17 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                         modifier      = Modifier.fillMaxWidth(),
                         label         = {
                             Text(when (selectedType) {
-                                0    -> "URL del sitio web"
-                                1    -> "Texto del mensaje"
-                                2    -> "Dirección de email"
-                                else -> "Número de teléfono"
+                                0    -> stringResource(R.string.qr_label_url)
+                                1    -> stringResource(R.string.qr_label_text)
+                                2    -> stringResource(R.string.qr_label_email)
+                                else -> stringResource(R.string.qr_label_phone)
                             })
                         },
                         placeholder   = {
                             Text(
                                 when (selectedType) {
                                     0    -> "https://ejemplo.com"
-                                    1    -> "Escribe tu mensaje..."
+                                    1    -> stringResource(R.string.qr_placeholder_text)
                                     2    -> "correo@ejemplo.com"
                                     else -> "+57 300 000 0000"
                                 },
@@ -851,11 +870,11 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                                 else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp))
                             Column {
-                                Text("Proteger con contraseña",
+                                Text(stringResource(R.string.qr_protect_password),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface)
-                                Text("Solo quien tenga la clave puede ver el contenido",
+                                Text(stringResource(R.string.qr_protect_password_desc),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -870,8 +889,8 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             value         = password,
                             onValueChange = { password = it },
                             modifier      = Modifier.fillMaxWidth(),
-                            label         = { Text("Contraseña") },
-                            placeholder   = { Text("Mínimo 4 caracteres") },
+                            label         = { Text(stringResource(R.string.qr_password_label)) },
+                            placeholder   = { Text(stringResource(R.string.qr_password_min_chars)) },
                             leadingIcon   = {
                                 Icon(Icons.Rounded.Key, null,
                                     tint = MaterialTheme.colorScheme.primary,
@@ -907,18 +926,25 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                 else -> content.isNotBlank()
             }
 
+            val errorSelectImage    = stringResource(R.string.qr_error_select_image)
+            val errorSelectDocument = stringResource(R.string.qr_error_select_document)
+            val errorEmptyContent   = stringResource(R.string.qr_error_empty_content)
+            val errorPasswordShort  = stringResource(R.string.qr_error_password_short)
+            val savedDownloadsMsg   = stringResource(R.string.general_saved_downloads)
+            val shareQrChooserTitle = stringResource(R.string.qr_share_chooser_title)
+
             Button(
                 onClick = {
                     if (!hasContent) {
                         errorMsg = when (selectedType) {
-                            4    -> "Selecciona una imagen"
-                            5    -> "Selecciona un documento"
-                            else -> "Escribe el contenido del QR"
+                            4    -> errorSelectImage
+                            5    -> errorSelectDocument
+                            else -> errorEmptyContent
                         }
                         return@Button
                     }
                     if (usePassword && password.length < 4) {
-                        errorMsg = "La contraseña debe tener al menos 4 caracteres"
+                        errorMsg = errorPasswordShort
                         return@Button
                     }
                     errorMsg     = null
@@ -949,7 +975,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                 } else {
                     Icon(Icons.Rounded.QrCode, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Generar QR", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.qr_generate), style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -968,7 +994,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text("Tu código QR",
+                        Text(stringResource(R.string.qr_your_code),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface)
@@ -981,7 +1007,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             contentAlignment = Alignment.Center
                         ) {
                             Image(bitmap = bitmap.asImageBitmap(),
-                                contentDescription = "Código QR generado",
+                                contentDescription = stringResource(R.string.qr_generated_content_desc),
                                 modifier = Modifier.fillMaxSize())
                         }
 
@@ -1003,7 +1029,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                                     ) {
                                         Icon(Icons.Rounded.Lock, null,
                                             tint = SuccessGreen, modifier = Modifier.size(12.dp))
-                                        Text("Protegido",
+                                        Text(stringResource(R.string.qr_protected_badge),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = SuccessGreen)
                                     }
@@ -1031,7 +1057,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                                         val file = saveQrToFile(context, bitmap)
                                         if (file != null) {
                                             saveQrToDownloads(context, file)
-                                            savedMsg = "Guardado en Descargas"
+                                            savedMsg = savedDownloadsMsg
                                         }
                                     }
                                 },
@@ -1040,13 +1066,13 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             ) {
                                 Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Guardar")
+                                Text(stringResource(R.string.general_save))
                             }
                             Button(
                                 onClick = {
                                     scope.launch {
                                         val file = saveQrToFile(context, bitmap)
-                                        if (file != null) shareQrImage(context, file)
+                                        if (file != null) shareQrImage(context, file, shareQrChooserTitle)
                                     }
                                 },
                                 modifier = Modifier.weight(1f),
@@ -1054,7 +1080,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             ) {
                                 Icon(Icons.Rounded.Share, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Compartir")
+                                Text(stringResource(R.string.general_share))
                             }
                         }
                     }
@@ -1080,13 +1106,13 @@ private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
         }
     }
 
-private fun openDocumentExternally(context: Context, uriString: String) {
+private fun openDocumentExternally(context: Context, uriString: String, chooserTitle: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse(uriString)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Abrir documento"))
+        context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) {
         Timber.e(e, "openDocumentExternally: error")
     }
@@ -1153,7 +1179,7 @@ private fun saveQrToDownloads(context: Context, file: File) {
     } catch (e: Exception) { Timber.e(e, "saveQrToDownloads") }
 }
 
-private fun shareQrImage(context: Context, file: File) {
+private fun shareQrImage(context: Context, file: File, chooserTitle: String) {
     try {
         val uri = FileProvider.getUriForFile(
             context, "${context.packageName}.fileprovider", file)
@@ -1162,7 +1188,7 @@ private fun shareQrImage(context: Context, file: File) {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Compartir QR"))
+        context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) { Timber.e(e, "shareQrImage") }
 }
 

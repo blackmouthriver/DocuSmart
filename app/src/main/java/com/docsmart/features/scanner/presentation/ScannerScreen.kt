@@ -16,10 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
@@ -37,6 +39,8 @@ fun ScannerScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     val uiState by viewModel.uiState.collectAsState()
+
+    val scannerStartErrorTemplate = stringResource(R.string.scanner_start_error)
 
     val scannerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -83,7 +87,8 @@ fun ScannerScreen(
                     IntentSenderRequest.Builder(intentSender).build()
                 )
             },
-            onError = { error ->
+            onError = { message ->
+                val error = String.format(scannerStartErrorTemplate, message)
                 Timber.e("Error escáner: $error")
                 viewModel.onError(error)
             }
@@ -124,14 +129,14 @@ fun ScannerScreen(
             }
 
             Text(
-                text = "Iniciando escáner",
+                text = stringResource(R.string.scanner_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
 
             Text(
-                text = "Prepara el documento y\napunta la cámara hacia él",
+                text = stringResource(R.string.scanner_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
@@ -158,7 +163,7 @@ fun ScannerScreen(
                         contentColor = Color.White
                     )
                 ) {
-                    Text("Volver")
+                    Text(stringResource(R.string.general_back))
                 }
             } else {
                 CircularProgressIndicator(
@@ -195,6 +200,6 @@ private fun launchScanner(
         .addOnSuccessListener { onLaunched(it) }
         .addOnFailureListener { e ->
             Timber.e(e, "Error obteniendo intent del escáner")
-            onError("No se pudo iniciar el escáner: ${e.message}")
+            onError(e.message ?: "")
         }
 }

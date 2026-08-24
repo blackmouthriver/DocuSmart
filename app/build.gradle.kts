@@ -56,6 +56,13 @@ android {
         buildConfig = true
     }
 
+    lint {
+        // Workaround for https://issuetracker.google.com/issues/374783344:
+        // NonNullableMutableLiveDataDetector crashes lint under Kotlin 2.0.21's Analysis API.
+        // Safe to disable — this project uses Compose state / StateFlow, not LiveData.
+        disable += "NullSafeMutableLiveData"
+    }
+
     packaging {
         resources {
             excludes += setOf(
@@ -111,6 +118,8 @@ dependencies {
     implementation("com.itextpdf:itext7-core:7.2.5") {
         exclude(group = "org.bouncycastle")
     }
+    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+    implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
 
     // ── Apache POI ────────────────────────────────────────────────────────────
     implementation("org.apache.poi:poi:5.2.3") {
@@ -147,7 +156,7 @@ dependencies {
     implementation("androidx.camera:camera-extensions:$cameraxVersion")
 
     // ── ML Kit ────────────────────────────────────────────────────────────────
-    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // ── ZXing ─────────────────────────────────────────────────────────────────
@@ -159,8 +168,8 @@ dependencies {
 
     // ── Biometría ─────────────────────────────────────────────────────────────
     implementation("androidx.biometric:biometric:1.1.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("com.google.android.material:material:1.14.0")
 
     // ── Firebase BOM ──────────────────────────────────────────────────────────
     implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
@@ -169,8 +178,8 @@ dependencies {
 
     // ── Testing ───────────────────────────────────────────────────────────────
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)

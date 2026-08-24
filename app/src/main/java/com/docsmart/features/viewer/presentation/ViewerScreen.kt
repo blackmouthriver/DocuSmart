@@ -14,9 +14,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.BrokenImage
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
@@ -44,44 +46,63 @@ import java.util.zip.ZipInputStream
 @Composable
 fun ViewerScreen(
     documentId: String,
-    onBack: () -> Unit,
-    viewModel: ViewerViewModel = hiltViewModel()
+    onBack    : () -> Unit,
+    viewModel : ViewerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val context       = LocalContext.current
+    var showSearch    by remember { mutableStateOf(false) }
+    var searchQuery   by remember { mutableStateOf("") }
 
     LaunchedEffect(documentId) {
         viewModel.loadDocument(documentId, context)
     }
 
+    // ── Dialog de contraseña PDF ──────────────────────────────────────────────
+    if (uiState.requiresPassword) {
+        PdfPasswordDialog(
+            fileName      = uiState.document?.name ?: "Documento",
+            passwordError = uiState.passwordError,
+            isLoading     = uiState.isLoading,
+            onConfirm     = { password -> viewModel.unlockPdfWithPassword(password) },
+            onDismiss     = {
+                viewModel.dismissPasswordDialog()
+                // Usar onBack — el NavGraph decide si popBackStack o finish()
+                onBack()
+            }
+        )
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
         when {
+            uiState.requiresPassword -> {
+                // No mostrar nada mientras se pide contraseña — el dialog ya se muestra arriba
+            }
             uiState.isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
+                    color    = MaterialTheme.colorScheme.primary
                 )
             }
             uiState.error != null -> {
                 Column(
-                    modifier = Modifier
+                    modifier            = Modifier
                         .align(Alignment.Center)
                         .padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.BrokenImage,
+                        imageVector        = Icons.Rounded.BrokenImage,
                         contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.error
+                        modifier           = Modifier.size(64.dp),
+                        tint               = MaterialTheme.colorScheme.error
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = uiState.error ?: stringResource(R.string.viewer_error),
+                        text  = uiState.error ?: stringResource(R.string.viewer_error),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -95,53 +116,61 @@ fun ViewerScreen(
                 val fileUri  = uiState.fileUri
                 val mime     = (uiState.mimeType ?: "").lowercase()
                 val fileName = (uiState.document?.name ?: "").lowercase()
+                android.util.Log.d("ViewerScreen", "document!=null fileUri=$fileUri mime=$mime fileName=$fileName requiresPassword=${uiState.requiresPassword} error=${uiState.error}")
 
                 when {
                     mime.contains("image") ||
-                            fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
-                            fileName.endsWith(".png") || fileName.endsWith(".webp") ||
-                            fileName.endsWith(".gif") -> {
+                            fileName.endsWith(".jpg")  || fileName.endsWith(".jpeg") ||
+                            fileName.endsWith(".png")  || fileName.endsWith(".webp") ||
+                            fileName.endsWith(".gif")  -> {
                         ImageViewerContent(
                             uri   = fileUri,
                             onTap = { viewModel.toggleControls() }
                         )
                     }
                     mime.contains("pdf") || fileName.endsWith(".pdf") -> {
-                        PdfViewerContent(
-                            uri           = fileUri,
-                            onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
-                            onTap         = { viewModel.toggleControls() }
-                        )
+                        // key fuerza recrear el composable cuando cambia la URI (ej: después de desencriptar)
+                        key(fileUri?.toString()) {
+                            PdfViewerContent(
+                                uri           = fileUri,
+                                onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
+                                onTap         = { viewModel.toggleControls() }
+                            )
+                        }
                     }
                     mime.contains("word") || mime.contains("msword") ||
                             mime.contains("wordprocessingml") ||
                             fileName.endsWith(".doc") || fileName.endsWith(".docx") -> {
                         WordViewerContent(
-                            uri   = fileUri,
-                            onTap = { viewModel.toggleControls() }
+                            uri         = fileUri,
+                            searchQuery = searchQuery,
+                            onTap       = { viewModel.toggleControls() }
                         )
                     }
                     mime.contains("excel") || mime.contains("spreadsheet") ||
                             mime.contains("ms-excel") || mime.contains("sheet") ||
                             fileName.endsWith(".xls") || fileName.endsWith(".xlsx") -> {
                         ExcelViewerContent(
-                            uri   = fileUri,
-                            onTap = { viewModel.toggleControls() }
+                            uri         = fileUri,
+                            searchQuery = searchQuery,
+                            onTap       = { viewModel.toggleControls() }
                         )
                     }
                     mime.contains("powerpoint") || mime.contains("presentation") ||
                             fileName.endsWith(".ppt") || fileName.endsWith(".pptx") -> {
                         PptViewerContent(
-                            uri   = fileUri,
-                            onTap = { viewModel.toggleControls() }
+                            uri         = fileUri,
+                            searchQuery = searchQuery,
+                            onTap       = { viewModel.toggleControls() }
                         )
                     }
                     mime.contains("text") ||
                             fileName.endsWith(".txt") || fileName.endsWith(".md") ||
                             fileName.endsWith(".csv") -> {
                         TextViewerContent(
-                            uri   = fileUri,
-                            onTap = { viewModel.toggleControls() }
+                            uri         = fileUri,
+                            searchQuery = searchQuery,
+                            onTap       = { viewModel.toggleControls() }
                         )
                     }
                     else -> {
@@ -156,7 +185,18 @@ fun ViewerScreen(
             }
         }
 
+        // ── TopBar + SearchBar ────────────────────────────────────────────────
         uiState.document?.let { doc ->
+            val mime        = (uiState.mimeType ?: "").lowercase()
+            val isTextBased = mime.contains("pdf")        ||
+                    mime.contains("word")       ||
+                    mime.contains("text")       ||
+                    mime.contains("excel")      ||
+                    mime.contains("powerpoint") ||
+                    doc.name.endsWith(".txt")   ||
+                    doc.name.endsWith(".md")    ||
+                    doc.name.endsWith(".csv")
+
             ViewerTopBar(
                 fileName        = doc.name,
                 isFavorite      = uiState.isFavorite,
@@ -164,9 +204,28 @@ fun ViewerScreen(
                 onBackClick     = onBack,
                 onFavoriteClick = { viewModel.toggleFavorite() },
                 onShareClick    = { viewModel.shareDocument(context) },
-                onSearchClick   = { },
+                onSearchClick   = {
+                    if (isTextBased) {
+                        showSearch = !showSearch
+                        if (!showSearch) searchQuery = ""
+                    }
+                },
                 modifier        = Modifier.align(Alignment.TopCenter)
             )
+
+            // ── Barra de búsqueda ─────────────────────────────────────────────
+            if (showSearch && isTextBased) {
+                SearchBar(
+                    query    = searchQuery,
+                    onQuery  = { searchQuery = it },
+                    onClose  = { showSearch = false; searchQuery = "" },
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 56.dp)
+                        .statusBarsPadding()
+                        .zIndex(10f)
+                )
+            }
         }
 
         ViewerBottomBar(
@@ -175,6 +234,58 @@ fun ViewerScreen(
             visible     = uiState.showControls,
             modifier    = Modifier.align(Alignment.BottomCenter)
         )
+    }
+}
+
+// ── Barra de búsqueda inline ──────────────────────────────────────────────────
+@Composable
+private fun SearchBar(
+    query   : String,
+    onQuery : (String) -> Unit,
+    onClose : () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier        = modifier.fillMaxWidth(),
+        color           = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier              = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                Icons.Rounded.Search, null,
+                tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            OutlinedTextField(
+                value         = query,
+                onValueChange = onQuery,
+                modifier      = Modifier.weight(1f),
+                placeholder   = {
+                    Text(
+                        "Buscar en documento...",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                singleLine = true,
+                shape      = MaterialTheme.shapes.medium,
+                colors     = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
+            )
+            IconButton(onClick = onClose) {
+                Icon(
+                    Icons.Rounded.Close, null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
@@ -233,7 +344,7 @@ private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
                 contentDescription = null,
                 modifier           = Modifier
                     .fillMaxWidth()
-                    .padding(top = 92.dp, bottom = 92.dp) // ← FIX
+                    .padding(top = 92.dp, bottom = 92.dp)
             )
         }
     }
@@ -257,10 +368,36 @@ private fun PdfViewerContent(
         if (uri == null) return@LaunchedEffect
         pages = withContext(Dispatchers.IO) {
             try {
-                val cacheFile = File(context.cacheDir, "temp_preview.pdf")
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    cacheFile.outputStream().use { output -> input.copyTo(output) }
-                } ?: return@withContext emptyList()
+                val cacheFile = File(context.cacheDir, "preview_${System.currentTimeMillis()}.pdf")
+                val copied = when {
+                    uri.scheme == "file" -> {
+                        val path    = uri.path ?: return@withContext emptyList()
+                        val srcFile = File(path)
+                        Timber.d("PdfViewer: file:// path=$path existe=${srcFile.exists()} size=${srcFile.length()}")
+                        if (srcFile.exists() && srcFile.length() > 0) {
+                            java.io.FileInputStream(srcFile).use { input ->
+                                cacheFile.outputStream().use { output -> input.copyTo(output) }
+                            }
+                            true
+                        } else false
+                    }
+                    else -> {
+                        try {
+                            context.contentResolver.openInputStream(uri)?.use { input ->
+                                cacheFile.outputStream().use { output -> input.copyTo(output) }
+                                true
+                            } ?: false
+                        } catch (e: Exception) {
+                            Timber.e("PdfViewer: error openInputStream → ${e.message}")
+                            false
+                        }
+                    }
+                }
+                if (!copied) {
+                    Timber.e("PdfViewer: no se pudo copiar el PDF al caché")
+                    return@withContext emptyList()
+                }
+                Timber.d("PdfViewer: cacheFile copiado → ${cacheFile.length()}b")
 
                 val fileDescriptor = ParcelFileDescriptor.open(
                     cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
@@ -334,10 +471,7 @@ private fun PdfViewerContent(
                 translationX = offsetX,
                 translationY = offsetY
             ),
-        contentPadding = PaddingValues(
-            top    = 100.dp, bottom = 100.dp, // ← FIX
-            start  = 8.dp,  end    = 8.dp
-        ),
+        contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(pages) { index, bitmap ->
@@ -361,7 +495,11 @@ private fun PdfViewerContent(
 
 // ── Visor de Word ─────────────────────────────────────────────────────────────
 @Composable
-private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
+private fun WordViewerContent(
+    uri        : Uri?,
+    searchQuery: String = "",
+    onTap      : () -> Unit
+) {
     val context = LocalContext.current
 
     data class WordParagraph(val text: String, val isHeading: Boolean)
@@ -375,14 +513,14 @@ private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
         paragraphs = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    val zip   = ZipInputStream(input)
-                    var entry = zip.nextEntry
+                    val zip    = ZipInputStream(input)
+                    var entry  = zip.nextEntry
                     val result = mutableListOf<WordParagraph>()
 
                     while (entry != null) {
                         if (entry.name == "word/document.xml") {
-                            val xml        = zip.readBytes().toString(Charsets.UTF_8)
-                            val paraRegex  = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
+                            val xml       = zip.readBytes().toString(Charsets.UTF_8)
+                            val paraRegex = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
 
                             paraRegex.findAll(xml).forEach { match ->
                                 val paraXml   = match.value
@@ -393,12 +531,9 @@ private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
                                     .replace(Regex("<w:rPr>.*?</w:rPr>", RegexOption.DOT_MATCHES_ALL), "")
                                     .replace(Regex("<w:pPr>.*?</w:pPr>", RegexOption.DOT_MATCHES_ALL), "")
                                     .replace(Regex("<[^>]+>"), "")
-                                    .replace("&lt;", "<")
-                                    .replace("&gt;", ">")
-                                    .replace("&amp;", "&")
-                                    .replace("&nbsp;", " ")
-                                    .replace(Regex("\\s+"), " ")
-                                    .trim()
+                                    .replace("&lt;", "<").replace("&gt;", ">")
+                                    .replace("&amp;", "&").replace("&nbsp;", " ")
+                                    .replace(Regex("\\s+"), " ").trim()
                                 if (text.isNotBlank()) result.add(WordParagraph(text, isHeading))
                             }
                             break
@@ -417,6 +552,10 @@ private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
             }
         }
     }
+
+    // Filtrar por búsqueda
+    val displayParagraphs = if (searchQuery.isBlank()) paragraphs
+    else paragraphs.filter { it.text.contains(searchQuery, ignoreCase = true) }
 
     Box(
         modifier = Modifier
@@ -442,18 +581,32 @@ private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
                 )
             }
             else -> LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentPadding = PaddingValues(
-                    top    = 100.dp, bottom = 100.dp, // ← FIX
-                    start  = 20.dp, end    = 20.dp
-                ),
+                modifier            = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                itemsIndexed(paragraphs) { _, para ->
+                if (searchQuery.isNotBlank()) {
+                    item {
+                        Text(
+                            text     = "${displayParagraphs.size} resultado(s) para \"$searchQuery\"",
+                            style    = MaterialTheme.typography.labelMedium,
+                            color    = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
+                itemsIndexed(displayParagraphs) { _, para ->
+                    val bgColor = if (searchQuery.isNotBlank())
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    else
+                        MaterialTheme.colorScheme.background
+
                     if (para.isHeading) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(bgColor, RoundedCornerShape(8.dp))
+                        ) {
                             Spacer(Modifier.height(16.dp))
                             Text(
                                 text       = para.text,
@@ -475,7 +628,11 @@ private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
                             style      = MaterialTheme.typography.bodyMedium,
                             color      = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 24.sp,
-                            modifier   = Modifier.padding(vertical = 3.dp)
+                            modifier   = Modifier
+                                .padding(vertical = 3.dp)
+                                .fillMaxWidth()
+                                .background(bgColor, RoundedCornerShape(4.dp))
+                                .padding(horizontal = if (searchQuery.isNotBlank()) 8.dp else 0.dp)
                         )
                     }
                 }
@@ -486,7 +643,11 @@ private fun WordViewerContent(uri: Uri?, onTap: () -> Unit) {
 
 // ── Visor de Excel ────────────────────────────────────────────────────────────
 @Composable
-private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
+private fun ExcelViewerContent(
+    uri        : Uri?,
+    searchQuery: String = "",
+    onTap      : () -> Unit
+) {
     val context = LocalContext.current
 
     data class ExcelCell(val value: String, val row: Int)
@@ -507,8 +668,8 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
 
                     while (entry != null) {
                         when (entry.name) {
-                            "xl/sharedStrings.xml"        -> sharedXml = zip.readBytes().toString(Charsets.UTF_8)
-                            "xl/worksheets/sheet1.xml"    -> sheet1Xml = zip.readBytes().toString(Charsets.UTF_8)
+                            "xl/sharedStrings.xml"     -> sharedXml = zip.readBytes().toString(Charsets.UTF_8)
+                            "xl/worksheets/sheet1.xml" -> sheet1Xml = zip.readBytes().toString(Charsets.UTF_8)
                         }
                         entry = zip.nextEntry
                     }
@@ -537,10 +698,10 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
                             val typeAttr     = Regex("""t="([^"]*)"""").find(cellXml)?.groupValues?.get(1) ?: ""
                             val vValue       = vRegex.find(cellXml)?.groupValues?.get(1)?.trim() ?: ""
                             val displayValue = when (typeAttr) {
-                                "s"                      -> { val idx = vValue.toIntOrNull() ?: -1; if (idx >= 0 && idx < sharedStrings.size) sharedStrings[idx] else "" }
-                                "b"                      -> if (vValue == "1") "TRUE" else "FALSE"
-                                "str", "inlineStr"       -> vValue
-                                else                     -> vValue
+                                "s"                -> { val idx = vValue.toIntOrNull() ?: -1; if (idx >= 0 && idx < sharedStrings.size) sharedStrings[idx] else "" }
+                                "b"                -> if (vValue == "1") "TRUE" else "FALSE"
+                                "str","inlineStr"  -> vValue
+                                else               -> vValue
                             }
                             if (displayValue.isNotBlank()) rowCells.add(displayValue)
                         }
@@ -561,6 +722,9 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
         }
     }
 
+    val displayCells = if (searchQuery.isBlank()) cells
+    else cells.filter { it.value.contains(searchQuery, ignoreCase = true) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -580,10 +744,22 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
             )
             else -> LazyColumn(
                 modifier       = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp) // ← FIX
+                contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp)
             ) {
-                val header = cells.firstOrNull()
-                val data   = if (cells.size > 1) cells.drop(1) else cells
+                if (searchQuery.isNotBlank()) {
+                    item {
+                        Text(
+                            text     = "${displayCells.size} resultado(s) para \"$searchQuery\"",
+                            style    = MaterialTheme.typography.labelMedium,
+                            color    = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+
+                val header = if (searchQuery.isBlank()) displayCells.firstOrNull() else null
+                val data   = if (searchQuery.isBlank() && displayCells.size > 1)
+                    displayCells.drop(1) else displayCells
 
                 if (header != null) {
                     item {
@@ -608,7 +784,9 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                if (index % 2 == 0)
+                                if (searchQuery.isNotBlank())
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                else if (index % 2 == 0)
                                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                                 else
                                     MaterialTheme.colorScheme.surface
@@ -633,7 +811,11 @@ private fun ExcelViewerContent(uri: Uri?, onTap: () -> Unit) {
 
 // ── Visor de PowerPoint ───────────────────────────────────────────────────────
 @Composable
-private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
+private fun PptViewerContent(
+    uri        : Uri?,
+    searchQuery: String = "",
+    onTap      : () -> Unit
+) {
     val context = LocalContext.current
 
     data class SlideContent(val number: Int, val title: String, val body: String)
@@ -662,7 +844,7 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
                                 val text = match.value
                                     .replace(Regex("<a:rPr[^/]*/?>|</a:rPr>"), "")
                                     .replace(Regex("<[^>]+>"), "")
-                                    .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+                                    .replace("&lt;","<").replace("&gt;",">").replace("&amp;","&")
                                     .replace(Regex("\\s+"), " ").trim()
                                 if (text.isNotBlank()) text else null
                             }.toList()
@@ -685,6 +867,12 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
         }
     }
 
+    val displaySlides = if (searchQuery.isBlank()) slides
+    else slides.filter {
+        it.title.contains(searchQuery, ignoreCase = true) ||
+                it.body.contains(searchQuery, ignoreCase = true)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -703,18 +891,30 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
                 textAlign = TextAlign.Center
             )
             else -> LazyColumn(
-                modifier       = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top    = 100.dp, bottom = 100.dp, // ← FIX
-                    start  = 16.dp, end    = 16.dp
-                ),
+                modifier            = Modifier.fillMaxSize(),
+                contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                itemsIndexed(slides) { _, slide ->
+                if (searchQuery.isNotBlank()) {
+                    item {
+                        Text(
+                            text     = "${displaySlides.size} slide(s) con \"$searchQuery\"",
+                            style    = MaterialTheme.typography.labelMedium,
+                            color    = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+                }
+                itemsIndexed(displaySlides) { _, slide ->
                     Card(
                         modifier  = Modifier.fillMaxWidth(),
                         shape     = MaterialTheme.shapes.large,
-                        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        colors    = CardDefaults.cardColors(
+                            containerColor = if (searchQuery.isNotBlank())
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                            else
+                                MaterialTheme.colorScheme.surface
+                        ),
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
@@ -723,9 +923,7 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
                                     .fillMaxWidth()
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer,
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                                            topStart = 16.dp, topEnd = 16.dp
-                                        )
+                                        RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                                     )
                                     .padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment     = Alignment.CenterVertically,
@@ -762,7 +960,8 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                 modifier              = Modifier.fillMaxWidth()
                                             ) {
-                                                Text("•", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                                                Text("•", color = MaterialTheme.colorScheme.primary,
+                                                    style = MaterialTheme.typography.bodyMedium)
                                                 Text(
                                                     text       = line,
                                                     style      = MaterialTheme.typography.bodyMedium,
@@ -785,7 +984,11 @@ private fun PptViewerContent(uri: Uri?, onTap: () -> Unit) {
 
 // ── Visor de texto plano ──────────────────────────────────────────────────────
 @Composable
-private fun TextViewerContent(uri: Uri?, onTap: () -> Unit) {
+private fun TextViewerContent(
+    uri        : Uri?,
+    searchQuery: String = "",
+    onTap      : () -> Unit
+) {
     val context   = LocalContext.current
     var text      by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
@@ -794,7 +997,9 @@ private fun TextViewerContent(uri: Uri?, onTap: () -> Unit) {
         if (uri == null) return@LaunchedEffect
         text = withContext(Dispatchers.IO) {
             try {
-                context.contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() } ?: ""
+                context.contentResolver.openInputStream(uri)?.use {
+                    it.bufferedReader().readText()
+                } ?: ""
             } catch (e: Exception) {
                 Timber.e("Error leyendo TXT: ${e.message}")
                 ""
@@ -818,23 +1023,152 @@ private fun TextViewerContent(uri: Uri?, onTap: () -> Unit) {
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(
-                        top    = 100.dp, bottom = 100.dp, // ← FIX
-                        start  = 20.dp, end    = 20.dp
-                    )
+                    .padding(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp)
             ) {
-                Text(
-                    text       = text.ifBlank { "El archivo está vacío" },
-                    style      = MaterialTheme.typography.bodyMedium,
-                    fontSize   = 15.sp,
-                    color      = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 24.sp
-                )
+                if (searchQuery.isBlank()) {
+                    Text(
+                        text       = text.ifBlank { "El archivo está vacío" },
+                        style      = MaterialTheme.typography.bodyMedium,
+                        fontSize   = 15.sp,
+                        color      = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = 24.sp
+                    )
+                } else {
+                    val lines = text.lines().filter {
+                        it.contains(searchQuery, ignoreCase = true)
+                    }
+                    if (lines.isEmpty()) {
+                        Text(
+                            text  = "Sin resultados para \"$searchQuery\"",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text     = "${lines.size} resultado(s):",
+                            style    = MaterialTheme.typography.labelMedium,
+                            color    = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        lines.forEach { line ->
+                            Text(
+                                text       = line,
+                                style      = MaterialTheme.typography.bodyMedium,
+                                fontSize   = 15.sp,
+                                color      = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 24.sp,
+                                modifier   = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                        MaterialTheme.shapes.small
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+// ── Dialog de contraseña PDF ──────────────────────────────────────────────────
+@Composable
+private fun PdfPasswordDialog(
+    fileName     : String,
+    passwordError: String?,
+    isLoading    : Boolean,
+    onConfirm    : (String) -> Unit,
+    onDismiss    : () -> Unit
+) {
+    var password    by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape            = MaterialTheme.shapes.extraLarge,
+        icon             = {
+            Icon(
+                Icons.Rounded.Lock, null,
+                tint     = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = {
+            Text(
+                text      = "Documento protegido",
+                style     = MaterialTheme.typography.titleLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text  = "\"$fileName\" está protegido con contraseña.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value         = password,
+                    onValueChange = { password = it },
+                    modifier      = Modifier.fillMaxWidth(),
+                    label         = { Text("Contraseña") },
+                    placeholder   = { Text("Ingresa la contraseña") },
+                    visualTransformation = if (showPassword)
+                        androidx.compose.ui.text.input.VisualTransformation.None
+                    else
+                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                if (showPassword) Icons.Rounded.VisibilityOff
+                                else Icons.Rounded.Visibility,
+                                null
+                            )
+                        }
+                    },
+                    isError    = passwordError != null,
+                    singleLine = true,
+                    shape      = MaterialTheme.shapes.medium
+                )
+
+                passwordError?.let {
+                    Text(
+                        text  = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick  = { if (password.isNotBlank()) onConfirm(password) },
+                enabled  = password.isNotBlank() && !isLoading,
+                modifier = Modifier.fillMaxWidth(),
+                shape    = MaterialTheme.shapes.medium
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier    = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color       = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Icon(Icons.Rounded.LockOpen, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Abrir documento")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
+}
 // ── Formato no soportado ──────────────────────────────────────────────────────
 @Composable
 private fun UnsupportedFormatContent(
@@ -867,13 +1201,17 @@ private fun UnsupportedFormatContent(
             Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium),
+                    .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center
             ) {
-                Text(formatLabel, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text(formatLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
-            Text(fileName,        style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,        textAlign = TextAlign.Center)
-            Text(unsupportedText, style = MaterialTheme.typography.bodyMedium,  color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            Text(fileName,        style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,        textAlign = TextAlign.Center)
+            Text(unsupportedText, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             if (fileUri != null) {
                 Button(onClick = {
                     try {
@@ -890,3 +1228,4 @@ private fun UnsupportedFormatContent(
         }
     }
 }
+

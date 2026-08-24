@@ -38,7 +38,8 @@ fun HomeScreen(
         viewModel.loadRecentDocuments()
     }
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -63,18 +64,20 @@ fun HomeScreen(
         contentPadding  = PaddingValues(top = 20.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        if (!isPremium) {
+            item {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_HOME_ID,
+                    adManager = viewModel.adManager,
+                    modifier  = Modifier.padding(horizontal = 20.dp)
+                )
+            }
+        }
         item {
             HomeBanner(
                 onOpenFileClick = openFileLauncher,
                 onConvertClick  = onConvert,
                 modifier        = Modifier.padding(horizontal = 20.dp)
-            )
-        }
-        item {
-            DocuSmartBannerAd(
-                adUnitId  = AdConstants.BANNER_HOME_ID,
-                adManager = viewModel.adManager,
-                modifier  = Modifier.padding(horizontal = 20.dp)
             )
         }
         item {

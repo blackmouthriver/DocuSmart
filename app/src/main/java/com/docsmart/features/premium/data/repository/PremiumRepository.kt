@@ -1,5 +1,6 @@
 package com.docsmart.features.premium.data.repository
 
+import com.docsmart.R
 import com.docsmart.features.premium.domain.model.PremiumPlan
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -10,27 +11,27 @@ class PremiumRepository @Inject constructor() {
     fun getAvailablePlans(): List<PremiumPlan> = listOf(
         PremiumPlan(
             id = "monthly",
-            title = "Mensual",
+            titleRes = R.string.premium_plan_monthly,
             price = "$2.99",
-            period = "por mes",
+            periodRes = R.string.premium_period_month,
             isPopular = false,
             productId = "com.docsmart.premium.monthly"
         ),
         PremiumPlan(
             id = "annual",
-            title = "Anual",
+            titleRes = R.string.premium_plan_annual,
             price = "$19.99",
-            period = "por año",
-            savingsLabel = "Ahorra 44%",
+            periodRes = R.string.premium_period_year,
+            savingsLabelRes = R.string.premium_savings_44,
             isPopular = true,
             productId = "com.docsmart.premium.annual"
         ),
         PremiumPlan(
             id = "lifetime",
-            title = "De por vida",
+            titleRes = R.string.premium_plan_lifetime,
             price = "$49.99",
-            period = "pago único",
-            savingsLabel = "Mejor valor",
+            periodRes = R.string.premium_period_onetime,
+            savingsLabelRes = R.string.premium_savings_best_value,
             isPopular = false,
             productId = "com.docsmart.premium.lifetime"
         )
