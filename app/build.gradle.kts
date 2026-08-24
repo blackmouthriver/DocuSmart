@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
+    jacoco
 }
 
 configurations.all {
@@ -95,6 +96,42 @@ detekt {
     baseline = file("$rootDir/config/detekt/baseline.xml")
     buildUponDefaultConfig = true
     autoCorrect = false
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+// Reporte XML de cobertura para SonarCloud, a partir de los unit tests de
+// la variante debug (no hay tests instrumentados todavía). Excluye clases
+// generadas (Hilt/Dagger/KSP, R, BuildConfig) que no reflejan cobertura real.
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val fileFilter = listOf(
+        "**/R.class", "**/R\$*.class", "**/BuildConfig.*", "**/Manifest*.*",
+        "**/*Test*.*", "android/**/*.*",
+        "**/Hilt_*.*", "**/*_Factory.*", "**/*_MembersInjector.*",
+        "**/*Module_*Factory.*", "**/dagger/**", "**/*_HiltModules*.*",
+        "**/di/**",
+    )
+    val debugTree = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+        exclude(fileFilter)
+    }
+    val mainSrc = "$projectDir/src/main/java"
+
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(
+        fileTree(layout.buildDirectory.get()) {
+            include("**/jacoco/testDebugUnitTest.exec")
+        }
+    )
 }
 
 dependencies {

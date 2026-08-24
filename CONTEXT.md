@@ -39,8 +39,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 72 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
-- **Tests:** 66 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Estudio: 5, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 77 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Estudio: 5, Ajustes+Premium: 11, ejemplo: 1), 0 fallos, verificado en `main` ya con las 2 ramas fusionadas. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -143,6 +142,7 @@ propio código ("Fase 10 se conecta Play Billing real"), no un bug oculto —
 requiere configuración de Play Console que el usuario debe hacer, así que
 no se implementó en esta pasada. 11 tests nuevos.
 Detalle completo en [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
+
 ### Módulo Estudio (2026-08-24)
 La nota anterior de este documento (§3, requerimiento #11) daba por corregido
 el guardado de notas solo porque la lista existía — al auditar su
@@ -168,10 +168,8 @@ No hay un único "% completado" honesto — depende del eje:
 |---|---|---|
 | Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
-| Documentación formal (HU con criterios de aceptación) | ~75% | 6 formalizados en esta rama (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium) + Estudio en `feature/study` (aún no fusionada) = 7 de ~7-8 módulos |
-| Pruebas automatizadas | ~18% | 72 tests cubriendo 16 archivos de decenas (sin contar los 5 de `feature/study`, aún no fusionada) |
-| Documentación formal (HU con criterios de aceptación) | ~65% | 6 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Estudio) |
-| Pruebas automatizadas | ~16% | 66 tests cubriendo 14 archivos de decenas |
+| Documentación formal (HU con criterios de aceptación) | ~85% | 7 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Estudio, Ajustes+Premium) |
+| Pruebas automatizadas | ~19% | 77 tests cubriendo 16 archivos de decenas |
 | Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
@@ -216,10 +214,8 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 8 | Acceso directo a abrir/convertir | Implementado (banner Home) — botón "Abrir" confirmado funcional (obsoleto el hallazgo de que no hacía nada) |
 | 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien (delega captura a Google ML Kit); leer QR con URL/navegación y QR con contraseña ya estaban implementados (hallazgo obsoleto). Refinado con HU en [`docs/requirements/scanner.md`](docs/requirements/scanner.md) |
 | 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); **carpeta segura no bloquea realmente el acceso al archivo por su ruta original** (bug crítico confirmado) |
-| 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; falta guardar/listar notas (¡ya corregido — ver StudyScreen actual, tiene lista de notas guardadas!) — verificar que el barrido de pruebas quedó desactualizado en este punto |
-| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; lista de notas guardadas existe, pero tenía 2 bugs reales de persistencia (corrupción de comillas, orden invertido) corregidos hoy. Refinado con HU en [`docs/requirements/study.md`](docs/requirements/study.md) |
-| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado (Settings ya conectado a i18n hoy) |
+| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
 | 13 | Multilenguaje con default según ubicación geográfica de Play Store | **Pendiente** — hoy el idioma por defecto es fijo (español), falta detectar locale del dispositivo/tienda |
 | 14 | Sección de beneficios plan de pago | Implementado (Premium screen) |
 | 15 | Banner para no-premium, desaparece al pagar | Implementado (AdMob banner condicional) |
@@ -250,7 +246,6 @@ Bugs y mejoras identificados por el usuario en pruebas manuales
 (pueden estar parcialmente corregidos ya — **verificar contra el código actual
 antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 
-### Home
 ### Home / Visor / Biblioteca — refinado 2026-08-24, ver [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md)
 - ~~Botón "Abrir" del banner no genera ninguna acción.~~ **Obsoleto** — ya lanza `ACTION_OPEN_DOCUMENT` correctamente.
 - ~~Accesos rápidos de scanner/seguridad/estudio no están atados a ninguna pantalla (aislados).~~ **Obsoleto** — ya navegan a rutas reales.
@@ -411,10 +406,31 @@ como documentos separados.
 ### Roadmap técnico (definido en esta sesión, complementario)
 Fase 0 (estabilización) ✅ completada. Fase 1 (CI básico) ✅ completada.
 Fase 2 (Dependabot + Gitleaks) ✅ completada 2026-08-24, rama
-`feature/dependabot-gitleaks` — ver detalle abajo. Siguen: SonarCloud
-(requiere que el usuario conecte el repo a una cuenta primero), Room para
-biblioteca/historial, pruebas de integración/sistema, Compose UI Testing en
-flujos críticos, despliegue y publicación.
+`feature/dependabot-gitleaks`. Fase 3 (SonarCloud + cobertura) ✅ completada
+2026-08-24, rama `feature/sonarcloud-coverage` — ver detalle abajo. Siguen:
+Room para biblioteca/historial, pruebas de integración/sistema, Compose UI
+Testing en flujos críticos, despliegue y publicación.
+
+### SonarCloud + cobertura JaCoCo (2026-08-24)
+El usuario creó la cuenta SonarCloud y conectó el repo (`blackmouthriver` /
+`blackmouthriver_DocuSmart`) — el análisis automático ya corría sin tocar
+código (quality gate "Aprobado", 1 cuestión de seguridad, 42 de
+mantenibilidad, sin cobertura). Para agregar cobertura real (requiere
+análisis por CI, no el automático) se agregó:
+- Plugin `org.sonarqube` (7.4.0.8496) en el `build.gradle.kts` raíz, con
+  `sonar.projectKey`/`sonar.organization` fijos y
+  `sonar.coverage.jacoco.xmlReportPaths` apuntando al reporte de JaCoCo.
+- Plugin `jacoco` + tarea `jacocoTestReport` en `app/build.gradle.kts` —
+  corre los unit tests existentes y genera el XML de cobertura, excluyendo
+  clases generadas (Hilt/Dagger/KSP, R, BuildConfig). Verificado localmente:
+  reporte real, ~4.4% de líneas cubiertas hoy (77 tests sobre una base de
+  código mucho más grande que solo los use cases probados).
+- `.github/workflows/sonarcloud.yml` — corre `jacocoTestReport sonar` en
+  cada push/PR a `main`, con `SONAR_TOKEN` como secret de GitHub (el usuario
+  lo generó y lo agregó — Claude no maneja tokens directamente).
+Pendiente para el usuario: revisar los 42 hallazgos de mantenibilidad y 1 de
+seguridad en el dashboard de SonarCloud — el usuario pidió que Claude los
+revise y corrija los reales en la siguiente sesión de trabajo sobre esto.
 
 ### Dependabot + Gitleaks (2026-08-24)
 `.github/dependabot.yml` — actualizaciones semanales de dependencias Gradle
@@ -501,23 +517,24 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   Google ML Kit Document Scanner, lector de QR ya reconstruido en el módulo
   Seguridad); 2 bugs reales menores corregidos. Ver
   [`docs/requirements/scanner.md`](docs/requirements/scanner.md).
-- Sexto módulo refinado (2026-08-24, en paralelo con Estudio): **Ajustes +
-  Premium**, en rama `feature/settings-premium`. El límite diario de uso
-  gratis en Herramientas PDF (requerimiento #16) ya existía en código pero
-  nunca se conectó — corregido; "restablecer configuración" forzaba español
-  sin importar el dispositivo — corregido. Compra Premium confirmada como
-  placeholder intencional (Play Billing real pendiente de que el usuario
-  configure Play Console). Ver
-  [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
-  **Nota:** esta rama y `feature/study` se crearon ambas desde `main` y las
-  dos tocan las secciones compartidas de `CONTEXT.md` (lista de specs,
-  tabla de avance, contador de tests) — al fusionar la segunda probablemente
-  haga falta resolver un conflicto simple en este archivo.
-- Sexto módulo refinado (2026-08-24): **Estudio**, en rama `feature/study`.
-  Corrupción silenciosa de comillas en notas guardadas + orden invertido al
-  recargar + TTS forzando español — los 3 corregidos. `StudyScreen.kt` queda
-  documentado como deuda de arquitectura (única pantalla grande sin
-  ViewModel). Ver [`docs/requirements/study.md`](docs/requirements/study.md).
+- Sexto y séptimo módulos refinados en paralelo (2026-08-24, cada uno en su
+  propia rama desde `main`):
+  - **Estudio** (`feature/study`) — corrupción silenciosa de comillas en
+    notas guardadas + orden invertido al recargar + TTS forzando español,
+    los 3 corregidos. `StudyScreen.kt` queda documentado como deuda de
+    arquitectura (única pantalla grande sin ViewModel). Ver
+    [`docs/requirements/study.md`](docs/requirements/study.md).
+  - **Ajustes + Premium** (`feature/settings-premium`) — el límite diario de
+    uso gratis en Herramientas PDF (requerimiento #16) ya existía en código
+    pero nunca se conectó — corregido; "restablecer configuración" forzaba
+    español sin importar el dispositivo — corregido. Compra Premium
+    confirmada como placeholder intencional (Play Billing real pendiente de
+    que el usuario configure Play Console). Ver
+    [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
+  - Al fusionar ambas ramas por separado en `main`, el merge dejó contenido
+    duplicado/en conflicto en este archivo (bullets de tests repetidos,
+    filas de requerimientos repetidas, encabezados sin fusionar) —
+    corregido en la limpieza de 2026-08-24 durante el trabajo de SonarCloud.
 
 ---
 
