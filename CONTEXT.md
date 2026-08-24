@@ -9,6 +9,7 @@
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
+- [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md) — Unir, Dividir, Comprimir, Rotar PDF (en refinamiento)
 
 ---
 
@@ -32,7 +33,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   push/PR a `main`/`desarrollo`/`preproductivo`.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 0% cobertura real (solo `ExampleUnitTest.kt` de plantilla).
+- **Tests:** 32 tests reales (Seguridad: 23, Herramientas PDF: 8, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -45,6 +46,66 @@ Crash de conversión WebP en Android 8-10, memory leak en `ViewerViewModel`,
 selector de idioma inalcanzable en Ajustes, botón de tutorial roto,
 reconocimiento de voz forzando español, escape de `%` roto en 2 strings.
 
+### Módulo Seguridad (2026-08-24)
+Bug crítico corregido: "carpeta segura no bloquea archivo" — causado por
+`SecurityViewModel` copiando archivos sin llamar a `SecurityManager.moveToSecure()`
+(que ya existía y sí borraba el original). QR pasó de cifrado XOR débil a
+AES-256/GCM + PBKDF2 (`QrCrypto.kt`), y se construyó el flujo completo de
+lectura de QR protegido (antes no existía UI para desbloquear, solo el
+cifrado al crear). Primeros tests unitarios reales del proyecto: 24 tests
+(JUnit5 + MockK), `QrCryptoTest`, `SecurityManagerTest`, `PdfPasswordUseCaseTest`.
+Detalle completo en [`docs/requirements/security.md`](docs/requirements/security.md).
+
+### Módulo Herramientas PDF (2026-08-24)
+Bug de arquitectura corregido: Unir y Rotar rasterizaban cada página a bitmap
+antes de reconstruir el PDF, destruyendo todo el texto seleccionable/buscable
+del resultado — no estaba en ningún reporte de QA, se encontró al auditar el
+código antes de escribir tests. Ambos migrados a iText7 (mismo enfoque que ya
+usaban Dividir y la contraseña de PDF). Dos hallazgos de la QA de mayo
+("dividir no funciona", "comprimir no ofrece guardar/compartir") se
+confirmaron **obsoletos** mediante tests reales — ya no se reproducen contra
+el código actual. 8 tests nuevos (`SplitPdfUseCaseTest`, `MergePdfUseCaseTest`,
+`RotatePdfUseCaseTest`). Backlog de nuevas funcionalidades (numeración, marca
+de agua, reordenar páginas, etc.) documentado como RF-PDF-06 a RF-PDF-15.
+Detalle completo en [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md).
+
+### Avance por dimensión (estimado 2026-08-24)
+No hay un único "% completado" honesto — depende del eje:
+
+| Dimensión | Avance | Nota |
+|---|---|---|
+| Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
+| Funcionalidad core (25 requerimientos) | ~55-60% | ~9 sólidos, ~11 parciales con bugs, ~2-3 sin empezar |
+| Documentación formal (HU con criterios de aceptación) | ~25% | 2 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF) |
+| Pruebas automatizadas | ~8% | 32 tests cubriendo 6 archivos de decenas |
+| Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
+
+**Estimado global "producto listo para producción": ~35-40%.** No es un problema
+de código faltante — es que lo que falta (bugs en funciones centrales, billing
+simulado, casi sin red de pruebas) es justo lo que separa un prototipo funcional
+de un producto publicable.
+
+### Mejoras y funcionalidades candidatas a agregar a las HU
+Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
+
+- **Seguridad:** cambiar PIN sin borrar archivos (hoy solo "restablecer" destructivo),
+  backup/exportación cifrada de la carpeta segura, registro de último acceso.
+- **Herramientas PDF:** dividir/comprimir/rotar ya verificados y corregidos
+  (ver módulo arriba); pendiente agregar numeración de páginas y marca de agua
+  (rápidas, alto valor) antes que firma digital u OCR avanzado (más costosas);
+  comparar/censurar PDF como diferencial (backlog en `pdf-tools.md`).
+- **Conversión:** PDF → Word editable (killer feature premium), conversión por
+  lotes, conversión en segundo plano para archivos grandes.
+- **Visor/Biblioteca:** buscador y favoritos no persisten (mismo patrón de bug
+  que Seguridad: lógica existente mal conectada — revisar con esa hipótesis
+  antes de reescribir); papelera de reciclaje; discriminar archivos app vs. dispositivo.
+- **Estudio:** exportar notas, estadísticas de estudio (tiempo leído, pomodoros/semana).
+- **Premium:** conectar Play Billing real y límite diario no-premium (bloqueantes
+  para publicar), programa de referidos.
+- **Transversal:** estandarizar banner azul en todas las vistas (pedido repetido
+  en QA), accesibilidad (TalkBack, fuentes dinámicas), completar idiomas
+  pendientes (ja/ko/zh/it/fr).
+
 ---
 
 ## 3. Requerimientos funcionales (fuente: mensaje del usuario, 2026-08-24)
@@ -53,7 +114,7 @@ reconocimiento de voz forzando español, escape de `%` roto en 2 strings.
 |---|---|---|
 | 1 | Visor universal: Word/Excel/PDF/img/texto, desde dispositivo, link, QR, correo, WhatsApp | Visor de PDF/imagen funciona; Word/Excel/PPT **con inconvenientes** (confirmado en barrido de pruebas) |
 | 2 | Conversión: imágenes↔pdf/jpg/png/webp/bmp; pdf↔img/texto/word/html; word↔pdf/texto/html; ppt→pdf/texto | Solo un subconjunto implementado (img→pdf, pdf→img limitado, word→pdf/texto, excel→pdf/csv, ppt→pdf). Falta ampliar todos los combos |
-| 3 | Herramientas PDF: unir, dividir, comprimir, rotar, editar, firmar, marca de agua, numeración, detector de formularios, recortar, ordenar, proteger con contraseña, OCR avanzado | Unir/dividir/comprimir/rotar/proteger existen pero **con bugs** (ver §5). Editar, firmar, marca de agua, numeración, formularios, recortar, ordenar, OCR avanzado: **no implementados** |
+| 3 | Herramientas PDF: unir, dividir, comprimir, rotar, editar, firmar, marca de agua, numeración, detector de formularios, recortar, ordenar, proteger con contraseña, OCR avanzado | Unir/dividir/comprimir/rotar/proteger implementados y refinados con HU (ver [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md)) — bug de arquitectura en Unir/Rotar corregido hoy (rasterizaban a imagen), "dividir no funciona" confirmado obsoleto con tests. Editar, firmar, marca de agua, numeración, formularios, recortar, ordenar, comparar, censurar, OCR avanzado: **backlog documentado, no implementado** |
 | 4 | Biblioteca con lista navegable, filtro por formato | Implementado, con bugs de favoritos (§5) |
 | 5 | Sub-menú por documento: abrir, favorito, renombrar, compartir, convertir, crear QR; favoritos visibles en biblioteca | Parcial — falta renombrar; favoritos no persisten al salir de la vista |
 | 6 | Buscador en vistas relevantes | Funciona en Biblioteca; **no funciona en el Visor** (bug confirmado) |
@@ -118,12 +179,14 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - Banner de publicidad no se visualiza en esta pantalla.
 - Vista en carrusel se ve vacía — sugerido grilla/lista.
 
-### Herramientas PDF
-- **Dividir PDF no funciona** — genera el mismo PDF sin dividir.
-- **Comprimir PDF** no indica dónde queda guardado el archivo, y no ofrece compartir/descargar tras comprimir.
-- **Rotar PDF**: la vista previa no refleja la rotación real en grados.
-- Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado).
-- Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar.
+### Herramientas PDF — refinado 2026-08-24, ver [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md)
+- ~~Dividir PDF no funciona — genera el mismo PDF sin dividir.~~ **Obsoleto** — 4 tests con PDFs reales confirman que el rango extraído es correcto; no se reprodujo contra el código actual.
+- ~~Comprimir PDF no indica dónde queda guardado, no ofrece compartir/descargar.~~ **Obsoleto** — `ToolSuccessCard` ya cubre nombre, tamaño y ambas acciones.
+- **Rotar PDF**: la vista previa no refleja la rotación real en grados. Mitigado indirectamente — la rotación real ahora se escribe con `PdfPage.setRotation()` (metadato estándar de PDF), no con una matriz de bitmap manual.
+- Nombre de archivo antepone "DocuSmart_" — confirmado como decisión de marca deliberada, estandarizado en las 4 herramientas.
+- **Bug real encontrado hoy (no reportado en la QA):** Unir y Rotar rasterizaban cada página a imagen antes de reconstruir el PDF, destruyendo todo el texto seleccionable/buscable del resultado. Corregido migrando ambos a iText7 (`copyPagesTo`/`setRotation`), igual que ya hacían Dividir y la contraseña de PDF.
+- Faltan (backlog documentado, RF-PDF-06 a RF-PDF-15): numeración, marca de agua, reordenar/eliminar página, recorte, editar, firma, formularios, comparar, censurar, OCR avanzado.
+- Pendiente: i18n de las 4 pantallas (aún en español fijo, mismo patrón que Seguridad/QR/Estudio antes de corregirse); selector de archivo desde la Biblioteca de la app (hoy solo desde el dispositivo).
 
 ### Seguridad
 - Banner con botón "volver" mal ubicado (reduce tamaño del banner) — sugerido: breadcrumb.

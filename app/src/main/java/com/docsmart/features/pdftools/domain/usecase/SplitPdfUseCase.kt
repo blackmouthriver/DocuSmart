@@ -110,6 +110,6 @@ class SplitPdfUseCase @Inject constructor(
     private fun createOutputFile(name: String): File {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val dir       = File(context.filesDir, "pdftools").apply { mkdirs() }
-        return File(dir, "${name}_$timestamp.pdf")
+        return File(dir, "DocuSmart_${name}_$timestamp.pdf")
     }
 }
