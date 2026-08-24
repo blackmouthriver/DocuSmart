@@ -1,0 +1,12 @@
+title = "DocuSmart gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Archivos de configuración pública documentados como seguros de versionar por su proveedor"
+paths = [
+  '''app/google-services\.json''', # Config de Firebase — Google documenta que es seguro subirla a control de
+                                    # versiones; el riesgo real depende de restringir la API key por
+                                    # paquete+SHA-1 en Google Cloud Console, no de que el archivo esté en el repo.
+]
