@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── Navigation ─────────────────────────────── -->
+    <string name="nav_home">Start</string>
+    <string name="nav_library">Bibliothek</string>
+    <string name="nav_converter">Konvertieren</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <!-- ── Home ───────────────────────────────────── -->
+    <string name="home_title">Deine Dokumente\nan einem Ort</string>
+    <string name="home_subtitle">Öffne, konvertiere und verwalte\ndeine Dateien einfach</string>
+    <string name="home_open">Öffnen</string>
+    <string name="home_convert">Konvertieren</string>
+    <string name="home_quick_access">Schnellzugriff</string>
+    <string name="home_recents">Zuletzt verwendet</string>
+    <string name="home_see_all">Alle anzeigen</string>
+    <string name="home_no_recents">Keine aktuellen Dokumente</string>
+    <string name="home_open_file">Datei öffnen</string>
+    <string name="home_scan">Scannen</string>
+    <string name="home_img_pdf">Bild→PDF</string>
+    <string name="home_security">Sicherheit</string>
+    <string name="home_study">Lernen</string>
+
+    <!-- ── Bibliothek ─────────────────────────────── -->
+    <string name="library_title">Bibliothek</string>
+    <string name="library_subtitle">Alle deine Dokumente</string>
+    <string name="library_search">In der Bibliothek suchen…</string>
+    <string name="library_no_results">Keine Ergebnisse</string>
+    <string name="library_no_documents">Keine Dokumente in dieser Kategorie</string>
+    <string name="library_documents">Dokumente</string>
+    <string name="library_favorites">Favoriten</string>
+
+    <!-- ── Konverter ────────────────────────────────── -->
+    <string name="converter_title">Konverter</string>
+    <string name="converter_subtitle">Konvertiere deine Dokumente ganz einfach</string>
+    <string name="converter_select">Was möchtest du konvertieren?</string>
+    <string name="converter_select_type">Konvertierung auswählen</string>
+    <string name="converter_converting">Wird konvertiert…</string>
+    <string name="converter_success">Konvertierung erfolgreich!</string>
+    <string name="converter_save">In Downloads speichern</string>
+    <string name="converter_share">Teilen</string>
+    <string name="converter_another">Weitere Datei konvertieren</string>
+    <string name="converter_file_name">Dateiname</string>
+    <string name="converter_auto_name">Automatischer Name</string>
+
+    <!-- ── PDF Tools ──────────────────────────────── -->
+    <string name="pdf_tools_title">PDF-Werkzeuge</string>
+    <string name="pdf_tools_subtitle">Verwalte deine PDFs schnell und einfach</string>
+    <string name="pdf_merge">PDFs zusammenführen</string>
+    <string name="pdf_split">PDF teilen</string>
+    <string name="pdf_compress">PDF komprimieren</string>
+    <string name="pdf_rotate">PDF drehen</string>
+    <string name="pdf_processing">Wird verarbeitet…</string>
+    <string name="pdf_success">Vorgang erfolgreich!</string>
+
+    <!-- ── Einstellungen ────────────────────────────────── -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_subtitle">Passe deine Erfahrung an</string>
+    <string name="settings_premium">DocuSmart Premium</string>
+    <string name="settings_premium_subtitle">Alle Funktionen freischalten</string>
+    <string name="settings_language">Sprache</string>
+    <string name="settings_theme">Design</string>
+    <string name="settings_storage">Speicher</string>
+    <string name="settings_storage_subtitle">Erstellte Dateien anzeigen</string>
+    <string name="settings_about">Über die App</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">Sprache auswählen</string>
+    <string name="settings_select_theme">Design auswählen</string>
+    <string name="settings_close">Schließen</string>
+    <string name="settings_language_subtitle">Wähle die Sprache der App</string>
+    <string name="settings_section_personalization">Personalisierung</string>
+    <string name="settings_tutorial">Tutorial ansehen</string>
+    <string name="settings_tutorial_subtitle">Sieh dir die wichtigsten Funktionen an</string>
+    <string name="settings_section_privacy">Datenschutz und Sicherheit</string>
+    <string name="settings_privacy_item">Datenschutz</string>
+    <string name="settings_privacy_item_subtitle">Datenrichtlinie und Berechtigungen</string>
+    <string name="settings_share_app">DocuSmart teilen</string>
+    <string name="settings_share_app_subtitle">Empfiehl die App deinen Kontakten</string>
+    <string name="settings_rate">Im Play Store bewerten</string>
+    <string name="settings_rate_subtitle">Gefällt dir DocuSmart? Hinterlasse uns eine Bewertung!</string>
+    <string name="settings_section_support">Support</string>
+    <string name="settings_help">Hilfe</string>
+    <string name="settings_help_subtitle">Häufig gestellte Fragen</string>
+    <string name="settings_section_system">System</string>
+    <string name="settings_reset">Einstellungen zurücksetzen</string>
+    <string name="settings_reset_subtitle">Auf Standardwerte zurücksetzen</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">Verstanden</string>
+    <string name="settings_storage_conversions">Konvertierungen</string>
+    <string name="settings_storage_total">Gesamt</string>
+    <string name="settings_storage_files_unit">Dateien</string>
+    <string name="settings_storage_clear_cache">Cache leeren</string>
+    <string name="settings_privacy_body">DocuSmart respektiert deine Privatsphäre. Deine Dokumente werden nie auf externe Server hochgeladen. Die gesamte Verarbeitung erfolgt lokal auf deinem Gerät.</string>
+    <string name="settings_privacy_manage_permissions">Systemberechtigungen verwalten</string>
+    <string name="settings_help_q1">Wie konvertiere ich Bilder in PDF?</string>
+    <string name="settings_help_a1">Gehe zu Konvertieren → Bild → wähle deine Bilder aus → tippe auf Konvertieren.</string>
+    <string name="settings_help_q2">Wo werden die Dateien gespeichert?</string>
+    <string name="settings_help_a2">Erstellte Dateien werden im Downloads-Ordner deines Geräts gespeichert.</string>
+    <string name="settings_help_q3">Wie füge ich einen Favoriten hinzu?</string>
+    <string name="settings_help_a3">Tippe auf das Herz-Symbol bei einem Dokument oder nutze das ⋮-Menü.</string>
+    <string name="settings_help_q4">Sind meine Dokumente sicher?</string>
+    <string name="settings_help_a4">Ja. Die gesamte Verarbeitung erfolgt lokal. Keine Datei verlässt dein Gerät.</string>
+    <string name="settings_reset_body">Das Design wird auf Hell zurückgesetzt, die Sprache auf Spanisch, und der Cache wird geleert. Dokumente werden nicht gelöscht. Fortfahren?</string>
+    <string name="settings_reset_confirm">Zurücksetzen</string>
+    <string name="settings_about_dialog_title">Über DocuSmart</string>
+    <string name="settings_about_body">Intelligenter Dokumentenbetrachter und -konverter. Verwalte, konvertiere und organisiere deine Dateien schnell und sicher.</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── Design ──────────────────────────────────── -->
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="theme_system">System</string>
+
+    <!-- ── Scanner ────────────────────────────────── -->
+    <string name="scanner_title">Scanner wird gestartet</string>
+    <string name="scanner_hint">Bereite das Dokument vor und\nrichte die Kamera darauf</string>
+    <string name="scanner_result_title">Gescanntes Dokument</string>
+    <string name="scanner_generate">PDF erstellen</string>
+    <string name="scanner_again">Erneut scannen</string>
+    <string name="scanner_save">In Downloads speichern</string>
+    <string name="scanner_share">PDF teilen</string>
+    <string name="scanner_back">Zurück zum Start</string>
+
+    <!-- ── Viewer ─────────────────────────────────── -->
+    <string name="viewer_error">Fehler beim Öffnen des Dokuments</string>
+    <string name="viewer_back">Zurück</string>
+    <string name="viewer_rendering">Dokument wird gerendert…</string>
+    <string name="viewer_page">Seite %1$d von %2$d</string>
+    <string name="viewer_unsupported">Dieses Format wird vom integrierten Viewer nicht unterstützt.</string>
+    <string name="viewer_open_other">Mit anderer App öffnen</string>
+
+    <!-- ── Allgemein ────────────────────────────────── -->
+    <string name="general_save">Speichern</string>
+    <string name="general_cancel">Abbrechen</string>
+    <string name="general_back">Zurück</string>
+    <string name="general_error">Fehler</string>
+    <string name="general_success">Erfolgreich!</string>
+    <string name="general_loading">Wird geladen…</string>
+    <string name="general_retry">Erneut versuchen</string>
+    <string name="general_share">Teilen</string>
+    <string name="general_delete">Löschen</string>
+    <string name="general_saved_downloads">In Downloads gespeichert</string>
+    <string name="general_new_operation">Neuer Vorgang</string>
+    <string name="general_select_file">Datei auswählen</string>
+
+    <!-- ── PDF Tools Beschreibungen ─────────────────────── -->
+    <string name="pdf_merge_desc">Kombiniert mehrere PDFs zu einer Datei</string>
+    <string name="pdf_split_desc">Extrahiert Seiten aus einem PDF</string>
+    <string name="pdf_compress_desc">Verringert die Dateigröße</string>
+    <string name="pdf_rotate_desc">Dreht die Seiten des Dokuments</string>
+
+    <!-- ── Home leerer Zustand ───────────────────────────── -->
+    <string name="home_open_file_hint">Öffne eine Datei, um sie hier zu sehen</string>
+
+    <!-- ── Converter Kategorien ──────────────────────── -->
+    <string name="converter_category_image">Bild</string>
+    <string name="converter_category_pdf">PDF</string>
+    <string name="converter_category_word">Word</string>
+    <string name="converter_category_excel">Excel</string>
+    <string name="converter_category_ppt">PowerPoint</string>
+    <string name="converter_select_files">Tippe, um %1$s auszuwählen</string>
+    <string name="converter_files_selected">%1$d Datei(en) ausgewählt</string>
+    <string name="converter_formats">Formate: %1$s</string>
+    <string name="converter_to_format">In %1$s konvertieren</string>
+    <string name="converter_file_name_label">Dateiname</string>
+    <string name="converter_file_name_placeholder">Automatischer Name</string>
+    <string name="general_back_action">Zurück</string>
+
+    <string name="splash_tagline">Deine intelligenten Dokumente</string>
+
+    <!-- ── Onboarding ─────────────────────────────────── -->
+    <string name="onboarding_1_title">Willkommen bei DocuSmart</string>
+    <string name="onboarding_1_desc">Dein intelligenter Dokumentenmanager. Öffne, organisiere und konvertiere deine Dateien schnell und sicher.</string>
+    <string name="onboarding_2_title">Konvertiere jedes Format</string>
+    <string name="onboarding_2_desc">PDF, Word, Excel, PowerPoint, Bilder und mehr. Über 17 Konvertierungsarten griffbereit.</string>
+    <string name="onboarding_3_title">Schütze deine Dokumente</string>
+    <string name="onboarding_3_desc">Speichere Dateien in deinem persönlichen Safe mit PIN oder Fingerabdruck. Deine Privatsphäre steht an erster Stelle.</string>
+    <string name="onboarding_4_title">Lernmodus</string>
+    <string name="onboarding_4_desc">Lies mit Text-to-Speech, markiere Absätze, mach Sprachnotizen und nutze den Pomodoro-Timer.</string>
+    <string name="onboarding_skip">Überspringen</string>
+    <string name="onboarding_start">Loslegen!</string>
+    <string name="onboarding_next">Weiter</string>
+
+    <!-- ── Premium ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">Monatlich</string>
+    <string name="premium_plan_annual">Jährlich</string>
+    <string name="premium_plan_lifetime">Lebenslang</string>
+    <string name="premium_period_month">pro Monat</string>
+    <string name="premium_period_year">pro Jahr</string>
+    <string name="premium_period_onetime">einmalige Zahlung</string>
+    <string name="premium_savings_44">44 %% sparen</string>
+    <string name="premium_savings_best_value">Bester Wert</string>
+    <string name="premium_feature_no_ads_title">Keine Werbung</string>
+    <string name="premium_feature_no_ads_desc">Genieße DocuSmart ohne Unterbrechungen</string>
+    <string name="premium_feature_pdf_word_title">PDF zu Word</string>
+    <string name="premium_feature_pdf_word_desc">Konvertiere PDFs in bearbeitbare Dokumente</string>
+    <string name="premium_feature_pdf_excel_title">PDF zu Excel</string>
+    <string name="premium_feature_pdf_excel_desc">Extrahiere Tabellen aus PDFs in Tabellenkalkulationen</string>
+    <string name="premium_feature_pdf_ppt_title">PDF zu PowerPoint</string>
+    <string name="premium_feature_pdf_ppt_desc">Konvertiere Präsentationen ganz einfach</string>
+    <string name="premium_feature_ocr_title">Erweiterte OCR</string>
+    <string name="premium_feature_ocr_desc">Texterkennung in über 50 Sprachen</string>
+    <string name="premium_feature_cloud_title">Cloud-Integration</string>
+    <string name="premium_feature_cloud_desc">Synchronisiere mit Google Drive und Dropbox</string>
+    <string name="premium_feature_compress_title">Erweiterte Komprimierung</string>
+    <string name="premium_feature_compress_desc">Verkleinere PDFs um bis zu 90 %% ohne sichtbaren Qualitätsverlust</string>
+    <string name="premium_feature_unlimited_title">Unbegrenzte Konvertierungen</string>
+    <string name="premium_feature_unlimited_desc">Kein tägliches Konvertierungslimit</string>
+    <string name="premium_you_are_premium">Du bist Premium!</string>
+    <string name="premium_enjoy_unlimited">Genieße alle Funktionen ohne Einschränkungen</string>
+    <string name="premium_processing_purchase">Kauf wird verarbeitet …</string>
+    <string name="premium_get_plan">%1$s holen — %2$s</string>
+    <string name="premium_select_plan">Wähle einen Plan</string>
+    <string name="premium_restore_purchases">Käufe wiederherstellen</string>
+    <string name="premium_continue_free">Mit kostenloser Version fortfahren</string>
+    <string name="premium_terms">Mit dem Abonnement akzeptierst du die Nutzungsbedingungen und die Datenschutzrichtlinie. Das Abo verlängert sich automatisch. Jederzeit kündbar.</string>
+    <string name="premium_active_title">Dein Abo ist aktiv</string>
+    <string name="premium_active_body">Du hast vollen Zugriff auf alle DocuSmart-Premium-Funktionen</string>
+    <string name="premium_continue">Weiter</string>
+    <string name="premium_all_you_get">Das bekommst du alles</string>
+    <string name="premium_choose_plan">Wähle deinen Plan</string>
+    <string name="premium_recommended">⭐ Empfohlen</string>
+    <string name="premium_purchase_error">Der Kauf konnte nicht abgeschlossen werden. Bitte versuche es erneut.</string>
+    <string name="premium_no_purchases_found">Keine vorherigen Käufe gefunden</string>
+
+    <!-- ── Scanner (zusätzlich) ─────────────────────────── -->
+    <string name="scanner_start_error">Der Scanner konnte nicht gestartet werden: %1$s</string>
+
+    <!-- ── Sicherheit ─────────────────────────────────── -->
+    <string name="security_title">Sicherheit</string>
+    <string name="security_subtitle">Schütze deine Dokumente</string>
+    <string name="security_what_to_do">Was möchtest du tun?</string>
+    <string name="security_secure_folder">Sicherer Ordner</string>
+    <string name="security_secure_folder_desc">Speichere geschützte Dateien mit PIN und Biometrie. Nur du hast Zugriff.</string>
+    <string name="security_pin_required">PIN erforderlich</string>
+    <string name="security_pdf_password">PDF-Passwort</string>
+    <string name="security_pdf_password_desc">Füge PDF-Dateien ein Passwort hinzu oder entferne es. Sofortiger Zugriff, ohne PIN.</string>
+    <string name="security_no_pin">Ohne PIN</string>
+    <string name="security_pin_incorrect">Falsche PIN</string>
+    <string name="security_biometric_error">Fehler: %1$s</string>
+    <string name="security_biometric_not_recognized">Biometrie nicht erkannt</string>
+    <string name="security_biometric_title">DocuSmart — Sicherer Ordner</string>
+    <string name="security_biometric_subtitle">Nutze deinen Fingerabdruck oder dein Gesicht für den Zugriff</string>
+    <string name="security_biometric_use_pin">PIN verwenden</string>
+    <string name="security_file_protected_success">Datei erfolgreich geschützt</string>
+    <string name="security_file_protect_error">Datei konnte nicht geschützt werden</string>
+    <string name="security_save_downloads_success">In Downloads gespeichert: %1$s</string>
+    <string name="security_save_downloads_error">Konnte nicht in Downloads gespeichert werden</string>
+    <string name="pdf_pw_read_error">Datei konnte nicht gelesen werden</string>
+    <string name="pdf_pw_empty_file">Die Datei ist leer</string>
+    <string name="pdf_pw_protect_success">PDF erfolgreich geschützt</string>
+    <string name="pdf_pw_protect_generate_error">Die geschützte Datei wurde nicht korrekt erstellt (%1$d Bytes)</string>
+    <string name="pdf_pw_protect_error">PDF konnte nicht geschützt werden: %1$s</string>
+    <string name="pdf_pw_remove_success">Passwort erfolgreich entfernt</string>
+    <string name="pdf_pw_remove_generate_error">Die ungeschützte Datei wurde nicht korrekt erstellt (%1$d Bytes)</string>
+    <string name="pdf_pw_remove_error">PDF konnte nicht verarbeitet werden: %1$s</string>
+    <string name="pdf_pw_wrong_password">Falsches Passwort</string>
+    <string name="pdf_pw_wrong_password_retry">Falsches Passwort. Überprüfe es und versuche es erneut.</string>
+    <string name="security_enter_pin">Gib deine PIN ein</string>
+    <string name="security_setup_pin_title">Richte deine PIN ein</string>
+    <string name="security_setup_pin_desc">Schütze deine Dateien mit einer 4-stelligen PIN</string>
+    <string name="security_configure_pin_button">PIN einrichten</string>
+    <string name="security_use_biometric">Biometrie verwenden</string>
+    <string name="security_delete_desc">Löschen</string>
+    <string name="security_confirm_pin">Bestätige deine PIN</string>
+    <string name="security_create_pin">Erstelle deine PIN</string>
+    <string name="security_confirm_pin_desc">Gib die PIN erneut ein, um zu bestätigen</string>
+    <string name="security_create_pin_desc">Wähle eine 4-stellige PIN, um deinen Ordner zu schützen</string>
+    <string name="security_pins_dont_match">Die PINs stimmen nicht überein</string>
+    <string name="security_files_protected_count">%1$d geschützte Dateien</string>
+    <string name="security_protect_new_file">Neue Datei schützen</string>
+    <string name="security_config_section">Einstellungen</string>
+    <string name="security_change_pin">PIN ändern</string>
+    <string name="security_biometric_unlock">Biometrische Entsperrung</string>
+    <string name="security_protected_files_title">Geschützte Dateien</string>
+    <string name="security_no_protected_files">Keine geschützten Dateien</string>
+    <string name="security_no_protected_files_hint">Tippe auf „Neue Datei schützen“, um Dateien hinzuzufügen</string>
+    <string name="security_restore">Wiederherstellen</string>
+    <string name="security_protect_file_dialog_title">Datei schützen</string>
+    <string name="security_import_source_question">Woher möchtest du die Datei holen?</string>
+    <string name="security_from_device">Vom Gerät</string>
+    <string name="security_browse_system_files">Systemdateien durchsuchen</string>
+    <string name="security_from_library">Aus der DocuSmart-Bibliothek</string>
+    <string name="security_no_library_files">Keine Dateien in der App-Bibliothek</string>
+    <string name="pdf_pw_screen_subtitle">Schütze oder entsperre deine PDFs</string>
+    <string name="pdf_pw_mode_protect_title">PDF schützen</string>
+    <string name="pdf_pw_mode_protect_desc">Füge einer PDF-Datei ein Passwort hinzu. Nur wer das Passwort kennt, kann sie öffnen.</string>
+    <string name="pdf_pw_mode_remove_title">Passwort entfernen</string>
+    <string name="pdf_pw_mode_remove_desc">Entferne den Schutz eines PDFs. Du benötigst das aktuelle Passwort, um es zu entsperren.</string>
+    <string name="pdf_pw_protect_section_title">PDF mit Passwort schützen</string>
+    <string name="pdf_pw_selected_placeholder">PDF ausgewählt</string>
+    <string name="pdf_pw_tap_to_select">Tippe, um ein PDF auszuwählen</string>
+    <string name="pdf_pw_ready_to_protect">PDF bereit zum Schützen</string>
+    <string name="pdf_pw_new_password_label">Neues Passwort</string>
+    <string name="pdf_pw_confirm_password_label">Passwort bestätigen</string>
+    <string name="pdf_pw_passwords_dont_match">Die Passwörter stimmen nicht überein</string>
+    <string name="pdf_pw_protected_success_title">PDF erfolgreich geschützt</string>
+    <string name="pdf_pw_save_downloads_button">In Downloads speichern</string>
+    <string name="pdf_pw_protect_button">PDF schützen</string>
+    <string name="pdf_pw_remove_section_title">PDF-Passwort entfernen</string>
+    <string name="pdf_pw_tap_to_select_protected">Tippe, um ein geschütztes PDF auszuwählen</string>
+    <string name="pdf_pw_ready">PDF bereit</string>
+    <string name="pdf_pw_current_password_label">Aktuelles PDF-Passwort</string>
+    <string name="pdf_pw_current_password_placeholder">Gib das Passwort zum Entsperren ein</string>
+    <string name="pdf_pw_remove_warning">Das resultierende PDF hat kein Passwort mehr und kann von jedem geöffnet werden.</string>
+    <string name="pdf_pw_removed_success_title">Passwort erfolgreich entfernt</string>
+    <string name="pdf_pw_remove_button">Passwort entfernen</string>
+    <string name="pdf_pw_default_document_name">Dokument</string>
+    <string name="scan_result_title">Scan-Ergebnis</string>
+    <string name="scan_result_subtitle_pages">%1$d Seite(n)</string>
+    <string name="scan_result_preview">Vorschau</string>
+    <string name="scan_result_page_content_desc">Seite %1$d</string>
+    <string name="scan_result_filename_label">Dateiname</string>
+    <string name="scan_result_filename_placeholder">Z. B.: Gescanntes_Dokument</string>
+    <string name="scan_result_filename_hint">Wenn leer gelassen, wird automatisch ein Name generiert</string>
+    <string name="scan_result_generating_pdf">PDF wird erstellt …</string>
+    <string name="scan_result_default_name_prefix">Scan_%1$s</string>
+
+    <!-- ── QR ─────────────────────────────────── -->
+    <string name="qr_reader_title">QR-Code lesen</string>
+    <string name="qr_reader_subtitle">Richte die Kamera auf den QR-Code</string>
+    <string name="qr_camera_permission_needed">Für das Scannen von QR-Codes wird Kamerazugriff benötigt</string>
+    <string name="qr_allow_camera_access">Kamerazugriff erlauben</string>
+    <string name="qr_center_in_frame">Zentriere den QR-Code im Rahmen</string>
+    <string name="qr_type_url_detected">URL erkannt</string>
+    <string name="qr_type_image_detected">Bild erkannt</string>
+    <string name="qr_type_document_detected">Dokument erkannt</string>
+    <string name="qr_type_email_detected">E-Mail erkannt</string>
+    <string name="qr_type_phone_detected">Telefonnummer erkannt</string>
+    <string name="qr_type_text_detected">Text erkannt</string>
+    <string name="qr_detected_title">QR-Code erkannt!</string>
+    <string name="qr_image_content_desc">QR-Bild</string>
+    <string name="qr_loading_image">Bild wird geladen …</string>
+    <string name="qr_copied_clipboard">In die Zwischenablage kopiert</string>
+    <string name="qr_open_browser">Im Browser öffnen</string>
+    <string name="qr_copy_url">URL kopieren</string>
+    <string name="qr_open_image">Bild öffnen</string>
+    <string name="qr_copy_link">Link kopieren</string>
+    <string name="qr_open_document">Dokument öffnen</string>
+    <string name="qr_copy_path">Pfad kopieren</string>
+    <string name="qr_send_email">E-Mail senden</string>
+    <string name="qr_copy_email">E-Mail kopieren</string>
+    <string name="qr_call">Anrufen</string>
+    <string name="qr_copy_number">Nummer kopieren</string>
+    <string name="qr_copy_text">Text kopieren</string>
+    <string name="qr_scan_another">Weiteren Code scannen</string>
+    <string name="qr_creator_title">QR-Code erstellen</string>
+    <string name="qr_creator_subtitle">Erstelle einen QR-Code für URLs, Text, Dateien und mehr</string>
+    <string name="qr_chip_url">URL</string>
+    <string name="qr_chip_text">Text</string>
+    <string name="qr_chip_email">E-Mail</string>
+    <string name="qr_chip_phone">Tel</string>
+    <string name="qr_chip_image">Bild</string>
+    <string name="qr_chip_document">Dok</string>
+    <string name="qr_select_image">Bild auswählen</string>
+    <string name="qr_image_selected">Bild ausgewählt ✓</string>
+    <string name="qr_select_document">Dokument auswählen</string>
+    <string name="qr_document_selected">Dokument ausgewählt ✓</string>
+    <string name="qr_label_url">Website-URL</string>
+    <string name="qr_label_text">Nachrichtentext</string>
+    <string name="qr_label_email">E-Mail-Adresse</string>
+    <string name="qr_label_phone">Telefonnummer</string>
+    <string name="qr_placeholder_text">Schreibe deine Nachricht …</string>
+    <string name="qr_protect_password">Mit Passwort schützen</string>
+    <string name="qr_protect_password_desc">Nur wer das Passwort kennt, kann den Inhalt sehen</string>
+    <string name="qr_password_label">Passwort</string>
+    <string name="qr_password_min_chars">Mindestens 4 Zeichen</string>
+    <string name="qr_error_select_image">Wähle ein Bild aus</string>
+    <string name="qr_error_select_document">Wähle ein Dokument aus</string>
+    <string name="qr_error_empty_content">Gib den Inhalt des QR-Codes ein</string>
+    <string name="qr_error_password_short">Das Passwort muss mindestens 4 Zeichen haben</string>
+    <string name="qr_generate">QR erstellen</string>
+    <string name="qr_your_code">Dein QR-Code</string>
+    <string name="qr_generated_content_desc">Erstellter QR-Code</string>
+    <string name="qr_protected_badge">Geschützt</string>
+    <string name="qr_share_chooser_title">QR teilen</string>
+
+    <!-- ── Lernmodus ─────────────────────────────────── -->
+    <string name="study_tab_reading">Lesen</string>
+    <string name="study_tab_notes">Notizen</string>
+    <string name="study_tab_pomodoro">Pomodoro</string>
+    <string name="study_no_document">Kein Dokument</string>
+    <string name="study_title">Lernmodus</string>
+    <string name="study_empty_state_desc">Öffne ein Dokument, um mit dem Lernen zu beginnen</string>
+    <string name="study_reading_document">Dokument wird vorgelesen …</string>
+    <string name="study_paragraphs_highlighted_count">%1$d Absätze · %2$d markiert</string>
+    <string name="study_stop">Stoppen</string>
+    <string name="study_read_all">Alles vorlesen</string>
+    <string name="study_delete_all_notes_title">Alle Notizen löschen</string>
+    <string name="study_delete_all_notes_body">Möchtest du wirklich alle Notizen löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="study_highlighted_paragraphs_count">Markierte Absätze (%1$d)</string>
+    <string name="study_new_note">Neue Notiz</string>
+    <string name="study_note_title_label">Titel der Notiz</string>
+    <string name="study_note_title_placeholder">Z. B.: Schlüsselkonzepte aus Kapitel 3</string>
+    <string name="study_note_content_placeholder">Schreibe oder diktiere deine Notiz …</string>
+    <string name="study_dictate_note">Notiz per Sprache diktieren</string>
+    <string name="study_listening">Ich höre zu … sprich jetzt</string>
+    <string name="study_save_note">Notiz speichern</string>
+    <string name="study_untitled_note">Notiz ohne Titel</string>
+    <string name="study_no_saved_notes">Keine gespeicherten Notizen</string>
+    <string name="study_saved_notes_count">Gespeicherte Notizen (%1$d)</string>
+    <string name="study_delete_all">Alle löschen</string>
+    <string name="study_no_notes_yet">Du hast noch keine gespeicherten Notizen</string>
+    <string name="study_delete_note_desc">Notiz löschen</string>
+    <string name="study_voice_prompt">Sprich, um deine Notiz zu diktieren …</string>
+    <string name="study_break_label">🌿 Pause</string>
+    <string name="study_study_label">📚 Lernen</string>
+    <string name="study_in_progress">läuft</string>
+    <string name="study_paused">pausiert</string>
+    <string name="study_restart">Neustart</string>
+    <string name="study_pause">Pause</string>
+    <string name="study_start">Start</string>
+    <string name="study_pomodoros_completed">Abgeschlossene Pomodoros</string>
+    <string name="study_pomodoros_hint">Alle 4 Pomodoros = lange Pause</string>
+    <string name="study_pomodoro_technique_info">Pomodoro-Technik: 25 Min. Lernen + 5 Min. Pause</string>
+    <string name="study_extract_no_text_found">Kein Text gefunden</string>
+    <string name="study_extract_could_not_open">Datei konnte nicht geöffnet werden</string>
+    <string name="study_extract_could_not_read">Datei konnte nicht gelesen werden</string>
+    <string name="study_extract_pdf_no_text">Dieses PDF enthält keinen extrahierbaren Text. Es könnte ein gescanntes PDF sein.</string>
+    <string name="study_extract_pdf_error">Fehler beim Lesen des PDFs: %1$s</string>
+    <string name="study_extract_generic_error">Fehler: %1$s</string>
+    <string name="study_default_document_name">Dokument</string>
+</resources>

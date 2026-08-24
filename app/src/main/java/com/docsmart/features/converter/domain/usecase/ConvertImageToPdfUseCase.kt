@@ -101,14 +101,13 @@ class ConvertImageToPdfUseCase @Inject constructor(
             ConversionResult.Success(
                 outputFile = outputFile,
                 pageCount  = imageUris.size,
-                fileSizeKb = outputFile.length() / 1024
+                fileSizeKb = (outputFile.length() / 1024).toInt()
             )
 
         } catch (e: Exception) {
             Timber.e(e, "Error en conversión: ${e.message}")
             ConversionResult.Error(
                 message = "Error al convertir: ${e.message ?: "Error desconocido"}",
-                cause   = e
             )
         }
     }

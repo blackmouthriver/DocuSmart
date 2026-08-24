@@ -2,21 +2,21 @@ package com.docsmart.core.ads
 
 object AdConstants {
 
-    // ── IDs de prueba de Google (usar en desarrollo) ──
-    // Al publicar reemplazar con los IDs reales de AdMob
+    // ── Banners ───────────────────────────────────────────────────────────────
+    const val BANNER_HOME_ID       = "ca-app-pub-3940256099942544/6300978111"
+    const val BANNER_LIBRARY_ID    = "ca-app-pub-3940256099942544/6300978111"
+    const val BANNER_TOOLS_ID      = "ca-app-pub-3940256099942544/6300978111"
+    const val BANNER_CONVERTER_ID  = "ca-app-pub-3940256099942544/6300978111"
+    const val BANNER_SETTINGS_ID   = "ca-app-pub-3940256099942544/6300978111"
 
-    // Banner
-    const val BANNER_HOME_ID = "ca-app-pub-3940256099942544/6300978111"
-    const val BANNER_LIBRARY_ID = "ca-app-pub-3940256099942544/6300978111"
-    const val BANNER_TOOLS_ID = "ca-app-pub-3940256099942544/6300978111"
-
-    // Interstitial
+    // ── Interstitial ──────────────────────────────────────────────────────────
     const val INTERSTITIAL_CONVERSION_ID = "ca-app-pub-3940256099942544/1033173712"
 
-    // ── Configuración de frecuencia ───────────────────
-    // Mínimo de conversiones antes de mostrar interstitial
-    const val INTERSTITIAL_MIN_CONVERSIONS = 2
+    // ── Rewarded (nuevo) ──────────────────────────────────────────────────────
+    // ID de prueba de Google para Rewarded Ads
+    const val REWARDED_UNLOCK_ID = "ca-app-pub-3940256099942544/5224354917"
 
-    // Tiempo mínimo entre interstitials (milisegundos)
+    // ── Configuración de frecuencia ───────────────────────────────────────────
+    const val INTERSTITIAL_MIN_CONVERSIONS = 2
     const val INTERSTITIAL_MIN_INTERVAL_MS = 180_000L // 3 minutos
 }

@@ -6,8 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -21,74 +20,89 @@ import timber.log.Timber
 
 @Composable
 fun HomeScreen(
-    onOpenFile: (Uri) -> Unit = {},
-    onConvert: () -> Unit = {},
+    onOpenFile     : (Uri) -> Unit = {},
+    onConvert      : () -> Unit = {},
+    onScan         : () -> Unit = {},
+    onSecurity     : () -> Unit = {},
+    onStudy        : () -> Unit = {},
     onDocumentClick: (String) -> Unit = {},
-    onSeeAll: () -> Unit = {},
-    viewModel: HomeViewModel = hiltViewModel()
+    onSeeAll       : () -> Unit = {},
+    onQr           : () -> Unit = {},
+    onQrReader     : () -> Unit = {},  // ← NUEVO
+    onQrCreator    : () -> Unit = {},  // ← NUEVO
+    viewModel      : HomeViewModel = hiltViewModel()
 ) {
     Timber.d("HomeScreen: iniciando composición")
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        viewModel.loadRecentDocuments()
+    }
+
+    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         val uri = result.data?.data
         Timber.d("filePicker: uri recibida = $uri")
-        if (uri != null) {
-            Timber.d("filePicker: llamando onOpenFile con $uri")
-            onOpenFile(uri)
-        } else {
-            Timber.d("filePicker: uri es NULL, usuario canceló")
+        if (uri != null) onOpenFile(uri)
+    }
+
+    val openFileLauncher = {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
+        filePicker.launch(intent)
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 20.dp, bottom = 100.dp),
+        modifier        = Modifier.fillMaxSize(),
+        contentPadding  = PaddingValues(top = 20.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        item {
-            // ── Home usa su propio HomeBanner especial ─
-            // con botones de acción integrados
-            HomeBanner(
-                onOpenFileClick = {
-                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                        addCategory(Intent.CATEGORY_OPENABLE)
-                        type = "*/*"
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                    }
-                    filePicker.launch(intent)
-                },
-                onConvertClick = onConvert,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
+        if (!isPremium) {
+            item {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_HOME_ID,
+                    adManager = viewModel.adManager,
+                    modifier  = Modifier.padding(horizontal = 20.dp)
+                )
+            }
         }
         item {
-            DocuSmartBannerAd(
-                adUnitId = AdConstants.BANNER_HOME_ID,
-                adManager = viewModel.adManager,
-                modifier = Modifier.padding(horizontal = 20.dp)
+            HomeBanner(
+                onOpenFileClick = openFileLauncher,
+                onConvertClick  = onConvert,
+                modifier        = Modifier.padding(horizontal = 20.dp)
             )
         }
         item {
             QuickAccessGrid(
-                onScanClick = { },
+                onScanClick       = onScan,
                 onImageToPdfClick = onConvert,
-                onSafeBoxClick = { },
-                onStudyModeClick = { },
-                modifier = Modifier.padding(horizontal = 20.dp)
+                onSafeBoxClick    = onSecurity,
+                onStudyModeClick  = onStudy,
+                onQrClick         = onQr,
+                onQrReaderClick   = onQrReader,
+                onQrCreatorClick  = onQrCreator,
+                modifier          = Modifier.padding(horizontal = 20.dp)
             )
         }
         item {
             RecentDocuments(
-                documents = uiState.recentDocuments,
+                documents       = uiState.recentDocuments,
                 onDocumentClick = { doc -> onDocumentClick(doc.id) },
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
-                onSeeAllClick = onSeeAll,
-                modifier = Modifier.padding(horizontal = 20.dp)
+                onSeeAllClick   = onSeeAll,
+                onOpenFileClick = openFileLauncher,
+                onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
+                onConvertClick  = { doc -> onConvert() },
+                onDeleteClick   = { id -> viewModel.removeDocument(id) },
+                modifier        = Modifier.padding(horizontal = 20.dp)
             )
         }
     }

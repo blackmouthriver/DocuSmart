@@ -1,6 +1,5 @@
 package com.docsmart.features.pdftools.presentation
 
-
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -12,12 +11,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
@@ -25,13 +26,14 @@ import com.docsmart.features.pdftools.presentation.components.OutputFileNameFiel
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
-
+import com.docsmart.R
 @Composable
 fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val context    = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     val multiPdfLauncher = rememberLauncherForActivityResult(
@@ -64,35 +66,26 @@ fun PdfToolsScreen(
             contentPadding = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-
-            // ── Header ────────────────────────────────
-            item {
-                Column(
-                    modifier = Modifier.padding(
-                        horizontal = 20.dp,
-                        vertical = 24.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "Herramientas PDF",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Gestiona tus PDFs de forma rápida",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+            // ── Banner AdMob — solo para usuarios free ─
+            if (!isPremium) {
+                item {
+                    DocuSmartBannerAd(
+                        adUnitId  = AdConstants.BANNER_TOOLS_ID,
+                        adManager = viewModel.adManager,
+                        modifier  = Modifier.padding(horizontal = 20.dp)
                     )
                 }
             }
 
-            // ── Banner AdMob ──────────────────────────
+            // ── Banner azul con logo ───────────────────
             item {
-                DocuSmartBannerAd(
-                    adUnitId = AdConstants.BANNER_TOOLS_ID,
-                    adManager = viewModel.adManager,
-                    modifier = Modifier.padding(horizontal = 20.dp)
+                DocuSmartTopBanner(
+                    screenTitle    = stringResource(R.string.pdf_tools_title),
+                    screenSubtitle = stringResource(R.string.pdf_tools_subtitle),
+                    modifier       = Modifier.padding(
+                        horizontal = 20.dp,
+                        vertical   = 24.dp
+                    )
                 )
             }
 
@@ -108,7 +101,6 @@ fun PdfToolsScreen(
 
             // ── Herramienta activa ────────────────────
             if (uiState.selectedTool != PdfTool.NONE) {
-
                 item {
                     TextButton(
                         onClick = { viewModel.reset() },
@@ -143,9 +135,7 @@ fun PdfToolsScreen(
 
                 if (result !is PdfToolResult.Success) {
                     item {
-                        Box(
-                            modifier = Modifier.padding(horizontal = 20.dp)
-                        ) {
+                        Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                             when (uiState.selectedTool) {
                                 PdfTool.MERGE -> MergePdfScreen(
                                     selectedPdfs = uiState.selectedPdfs,

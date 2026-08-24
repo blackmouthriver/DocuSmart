@@ -1,5 +1,6 @@
 package com.docsmart.features.home.presentation.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,7 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
@@ -20,8 +25,8 @@ import com.docsmart.core.ui.theme.SmartBlue
 @Composable
 fun HomeBanner(
     onOpenFileClick: () -> Unit,
-    onConvertClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onConvertClick : () -> Unit,
+    modifier       : Modifier = Modifier
 ) {
     Box(
         modifier = modifier
@@ -34,12 +39,12 @@ fun HomeBanner(
             )
             .padding(20.dp)
     ) {
-        // Círculo decorativo de fondo
+        // ── Círculos decorativos ──────────────────────────────────────────────
         Box(
             modifier = Modifier
-                .size(140.dp)
+                .size(150.dp)
                 .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = (-20).dp)
+                .offset(x = 45.dp, y = (-25).dp)
                 .background(
                     color = Color.White.copy(alpha = 0.07f),
                     shape = MaterialTheme.shapes.extraLarge
@@ -49,69 +54,107 @@ fun HomeBanner(
             modifier = Modifier
                 .size(80.dp)
                 .align(Alignment.BottomEnd)
-                .offset(x = 10.dp, y = 20.dp)
+                .offset(x = 15.dp, y = 25.dp)
                 .background(
                     color = Color.White.copy(alpha = 0.05f),
                     shape = MaterialTheme.shapes.extraLarge
                 )
         )
 
+        // ── Contenido ─────────────────────────────────────────────────────────
         Column {
-            // Saludo
-            Text(
-                text = "DocuSmart",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            // Fila logo + marca
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier              = Modifier.padding(bottom = 12.dp)
+            ) {
+                // Logo
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.18f),
+                            shape = MaterialTheme.shapes.medium
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter            = painterResource(R.drawable.ic_docusmart_logo),
+                        contentDescription = "DocuSmart",
+                        modifier           = Modifier
+                            .size(30.dp)
+                            .padding(2.dp)
+                    )
+                }
+
+                // Nombre de marca
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalAlignment     = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text       = "Docu",
+                            style      = MaterialTheme.typography.labelMedium,
+                            color      = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text       = "Smart",
+                            style      = MaterialTheme.typography.labelMedium,
+                            color      = Color.White.copy(alpha = 0.7f),
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                    Text(
+                        text  = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.5f)
+                    )
+                }
+            }
 
             // Título principal
             Text(
-                text = "Tus documentos\nen un solo lugar",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White
+                text  = stringResource(R.string.home_title),
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
-
             Text(
-                text = "Abre, convierte y gestiona\ntus archivos fácilmente",
+                text  = stringResource(R.string.home_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.75f)
             )
-
             Spacer(modifier = Modifier.height(20.dp))
 
             // Botones de acción
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                // Botón primario
                 Button(
-                    onClick = onOpenFileClick,
-                    modifier = Modifier.weight(1f).height(44.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(
+                    onClick   = onOpenFileClick,
+                    modifier  = Modifier.weight(1f).height(44.dp),
+                    shape     = MaterialTheme.shapes.medium,
+                    colors    = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
-                        contentColor = DocuBlue
+                        contentColor   = DocuBlue
                     ),
                     elevation = ButtonDefaults.buttonElevation(0.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.FolderOpen,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Rounded.FolderOpen, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Abrir",
+                        text  = stringResource(R.string.home_open),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
 
-                // Botón secundario
                 OutlinedButton(
-                    onClick = onConvertClick,
+                    onClick  = onConvertClick,
                     modifier = Modifier.weight(1f).height(44.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.outlinedButtonColors(
+                    shape    = MaterialTheme.shapes.medium,
+                    colors   = ButtonDefaults.outlinedButtonColors(
                         contentColor = Color.White
                     ),
                     border = ButtonDefaults.outlinedButtonBorder.copy(
@@ -120,14 +163,10 @@ fun HomeBanner(
                         )
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.SwapHoriz,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Rounded.SwapHoriz, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Convertir",
+                        text  = stringResource(R.string.home_convert),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

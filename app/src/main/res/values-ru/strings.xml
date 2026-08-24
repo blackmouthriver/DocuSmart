@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── Навигация ─────────────────────────────── -->
+    <string name="nav_home">Главная</string>
+    <string name="nav_library">Библиотека</string>
+    <string name="nav_converter">Конвертер</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">Настройки</string>
+
+    <!-- ── Главная ───────────────────────────────────── -->
+    <string name="home_title">Ваши документы\nв одном месте</string>
+    <string name="home_subtitle">Открывайте, конвертируйте и управляйте\nвашими файлами легко</string>
+    <string name="home_open">Открыть</string>
+    <string name="home_convert">Конвертировать</string>
+    <string name="home_quick_access">Быстрый доступ</string>
+    <string name="home_recents">Недавние</string>
+    <string name="home_see_all">Показать все</string>
+    <string name="home_no_recents">Нет недавних документов</string>
+    <string name="home_open_file">Открыть файл</string>
+    <string name="home_scan">Сканировать</string>
+    <string name="home_img_pdf">Изобр→PDF</string>
+    <string name="home_security">Безопасность</string>
+    <string name="home_study">Учёба</string>
+
+    <!-- ── Библиотека ─────────────────────────────── -->
+    <string name="library_title">Библиотека</string>
+    <string name="library_subtitle">Все ваши документы</string>
+    <string name="library_search">Поиск в библиотеке…</string>
+    <string name="library_no_results">Нет результатов</string>
+    <string name="library_no_documents">В этой категории нет документов</string>
+    <string name="library_documents">документов</string>
+    <string name="library_favorites">Избранное</string>
+
+    <!-- ── Конвертер ────────────────────────────────── -->
+    <string name="converter_title">Конвертер</string>
+    <string name="converter_subtitle">Легко конвертируйте документы</string>
+    <string name="converter_select">Что вы хотите конвертировать?</string>
+    <string name="converter_select_type">Выберите тип конвертации</string>
+    <string name="converter_converting">Конвертация…</string>
+    <string name="converter_success">Конвертация выполнена!</string>
+    <string name="converter_save">Сохранить в Загрузки</string>
+    <string name="converter_share">Поделиться</string>
+    <string name="converter_another">Конвертировать ещё</string>
+    <string name="converter_file_name">Имя файла</string>
+    <string name="converter_auto_name">Автоматическое имя</string>
+
+    <!-- ── Инструменты PDF ──────────────────────────────── -->
+    <string name="pdf_tools_title">Инструменты PDF</string>
+    <string name="pdf_tools_subtitle">Быстрое управление вашими PDF</string>
+    <string name="pdf_merge">Объединить PDF</string>
+    <string name="pdf_split">Разделить PDF</string>
+    <string name="pdf_compress">Сжать PDF</string>
+    <string name="pdf_rotate">Повернуть PDF</string>
+    <string name="pdf_processing">Обработка…</string>
+    <string name="pdf_success">Операция выполнена!</string>
+
+    <!-- ── Настройки ────────────────────────────────── -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_subtitle">Настройте приложение под себя</string>
+    <string name="settings_premium">DocuSmart Premium</string>
+    <string name="settings_premium_subtitle">Откройте все функции</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_storage">Хранилище</string>
+    <string name="settings_storage_subtitle">Просмотр созданных файлов</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">Выбрать язык</string>
+    <string name="settings_select_theme">Выбрать тему</string>
+    <string name="settings_close">Закрыть</string>
+    <string name="settings_language_subtitle">Выберите язык приложения</string>
+    <string name="settings_section_personalization">Персонализация</string>
+    <string name="settings_tutorial">Посмотреть обучение</string>
+    <string name="settings_tutorial_subtitle">Изучите основные функции</string>
+    <string name="settings_section_privacy">Конфиденциальность и безопасность</string>
+    <string name="settings_privacy_item">Конфиденциальность</string>
+    <string name="settings_privacy_item_subtitle">Политика данных и разрешения</string>
+    <string name="settings_share_app">Поделиться DocuSmart</string>
+    <string name="settings_share_app_subtitle">Порекомендуйте приложение друзьям</string>
+    <string name="settings_rate">Оценить в Play Store</string>
+    <string name="settings_rate_subtitle">Нравится DocuSmart? Оставьте отзыв!</string>
+    <string name="settings_section_support">Поддержка</string>
+    <string name="settings_help">Помощь</string>
+    <string name="settings_help_subtitle">Часто задаваемые вопросы</string>
+    <string name="settings_section_system">Система</string>
+    <string name="settings_reset">Сбросить настройки</string>
+    <string name="settings_reset_subtitle">Вернуть значения по умолчанию</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">Понятно</string>
+    <string name="settings_storage_conversions">Конвертации</string>
+    <string name="settings_storage_total">Итого</string>
+    <string name="settings_storage_files_unit">файлов</string>
+    <string name="settings_storage_clear_cache">Очистить кэш</string>
+    <string name="settings_privacy_body">DocuSmart уважает вашу конфиденциальность. Ваши документы никогда не загружаются на внешние серверы. Вся обработка происходит локально на вашем устройстве.</string>
+    <string name="settings_privacy_manage_permissions">Управление разрешениями системы</string>
+    <string name="settings_help_q1">Как конвертировать изображения в PDF?</string>
+    <string name="settings_help_a1">Перейдите в Конвертер → Изображение → выберите изображения → нажмите Конвертировать.</string>
+    <string name="settings_help_q2">Где сохраняются файлы?</string>
+    <string name="settings_help_a2">Созданные файлы сохраняются в папке «Загрузки» вашего устройства.</string>
+    <string name="settings_help_q3">Как добавить в избранное?</string>
+    <string name="settings_help_a3">Нажмите на значок сердца на документе или используйте меню ⋮.</string>
+    <string name="settings_help_q4">Мои документы в безопасности?</string>
+    <string name="settings_help_a4">Да. Вся обработка выполняется локально. Ни один файл не покидает ваше устройство.</string>
+    <string name="settings_reset_body">Тема будет сброшена на светлую, язык — на испанский, а кэш будет очищен. Документы не будут удалены. Продолжить?</string>
+    <string name="settings_reset_confirm">Сбросить</string>
+    <string name="settings_about_dialog_title">О DocuSmart</string>
+    <string name="settings_about_body">Умный просмотрщик и конвертер документов. Управляйте, конвертируйте и организуйте файлы быстро и безопасно.</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── Темы ──────────────────────────────────── -->
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_system">Системная</string>
+
+    <!-- ── Сканер ────────────────────────────────── -->
+    <string name="scanner_title">Запуск сканера</string>
+    <string name="scanner_hint">Подготовьте документ и\nнаведите на него камеру</string>
+    <string name="scanner_result_title">Отсканированный документ</string>
+    <string name="scanner_generate">Создать PDF</string>
+    <string name="scanner_again">Сканировать снова</string>
+    <string name="scanner_save">Сохранить в Загрузки</string>
+    <string name="scanner_share">Поделиться PDF</string>
+    <string name="scanner_back">Вернуться на главную</string>
+
+    <!-- ── Просмотрщик ─────────────────────────────────── -->
+    <string name="viewer_error">Ошибка при открытии документа</string>
+    <string name="viewer_back">Назад</string>
+    <string name="viewer_rendering">Рендеринг документа…</string>
+    <string name="viewer_page">Страница %1$d из %2$d</string>
+    <string name="viewer_unsupported">Этот формат не поддерживается встроенным просмотрщиком.</string>
+    <string name="viewer_open_other">Открыть в другом приложении</string>
+
+    <!-- ── Общее ────────────────────────────────── -->
+    <string name="general_save">Сохранить</string>
+    <string name="general_cancel">Отмена</string>
+    <string name="general_back">Назад</string>
+    <string name="general_error">Ошибка</string>
+    <string name="general_success">Готово!</string>
+    <string name="general_loading">Загрузка…</string>
+    <string name="general_retry">Повторить</string>
+    <string name="general_share">Поделиться</string>
+    <string name="general_delete">Удалить</string>
+    <string name="general_saved_downloads">Сохранено в Загрузки</string>
+    <string name="general_new_operation">Новая операция</string>
+    <string name="general_select_file">Выбрать файл</string>
+
+    <!-- ── Описания инструментов PDF ─────────────────────── -->
+    <string name="pdf_merge_desc">Объединяет несколько PDF в один</string>
+    <string name="pdf_split_desc">Извлекает страницы из PDF</string>
+    <string name="pdf_compress_desc">Уменьшает размер файла</string>
+    <string name="pdf_rotate_desc">Поворачивает страницы документа</string>
+
+    <!-- ── Пустое состояние главной ───────────────────────────── -->
+    <string name="home_open_file_hint">Откройте файл, чтобы увидеть его здесь</string>
+
+    <!-- ── Категории конвертера ──────────────────────── -->
+    <string name="converter_category_image">Изображение</string>
+    <string name="converter_category_pdf">PDF</string>
+    <string name="converter_category_word">Word</string>
+    <string name="converter_category_excel">Excel</string>
+    <string name="converter_category_ppt">PowerPoint</string>
+    <string name="converter_select_files">Нажмите, чтобы выбрать %1$s</string>
+    <string name="converter_files_selected">Выбрано файлов: %1$d</string>
+    <string name="converter_formats">Форматы: %1$s</string>
+    <string name="converter_to_format">Конвертировать в %1$s</string>
+    <string name="converter_file_name_label">Имя файла</string>
+    <string name="converter_file_name_placeholder">Автоматическое имя</string>
+    <string name="general_back_action">Назад</string>
+
+    <string name="splash_tagline">Ваши умные документы</string>
+
+    <!-- ── Онбординг ─────────────────────────────────── -->
+    <string name="onboarding_1_title">Добро пожаловать в DocuSmart</string>
+    <string name="onboarding_1_desc">Ваш умный менеджер документов. Открывайте, организуйте и конвертируйте файлы быстро и безопасно.</string>
+    <string name="onboarding_2_title">Конвертируйте любой формат</string>
+    <string name="onboarding_2_desc">PDF, Word, Excel, PowerPoint, изображения и другое. Более 17 видов конвертации под рукой.</string>
+    <string name="onboarding_3_title">Защитите свои документы</string>
+    <string name="onboarding_3_desc">Храните файлы в личном сейфе с PIN-кодом или отпечатком пальца. Ваша конфиденциальность превыше всего.</string>
+    <string name="onboarding_4_title">Режим учёбы</string>
+    <string name="onboarding_4_desc">Слушайте текст с помощью Text-to-Speech, выделяйте абзацы, делайте голосовые заметки и используйте таймер Помодоро.</string>
+    <string name="onboarding_skip">Пропустить</string>
+    <string name="onboarding_start">Начать!</string>
+    <string name="onboarding_next">Далее</string>
+
+    <!-- ── Premium ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">Ежемесячно</string>
+    <string name="premium_plan_annual">Ежегодно</string>
+    <string name="premium_plan_lifetime">Навсегда</string>
+    <string name="premium_period_month">в месяц</string>
+    <string name="premium_period_year">в год</string>
+    <string name="premium_period_onetime">разовый платёж</string>
+    <string name="premium_savings_44">Экономия 44%%</string>
+    <string name="premium_savings_best_value">Лучшая цена</string>
+    <string name="premium_feature_no_ads_title">Без рекламы</string>
+    <string name="premium_feature_no_ads_desc">Пользуйтесь DocuSmart без прерываний</string>
+    <string name="premium_feature_pdf_word_title">PDF в Word</string>
+    <string name="premium_feature_pdf_word_desc">Конвертируйте PDF в редактируемые документы</string>
+    <string name="premium_feature_pdf_excel_title">PDF в Excel</string>
+    <string name="premium_feature_pdf_excel_desc">Извлекайте таблицы из PDF в электронные таблицы</string>
+    <string name="premium_feature_pdf_ppt_title">PDF в PowerPoint</string>
+    <string name="premium_feature_pdf_ppt_desc">Легко конвертируйте презентации</string>
+    <string name="premium_feature_ocr_title">Расширенное OCR</string>
+    <string name="premium_feature_ocr_desc">Распознавание текста на более чем 50 языках</string>
+    <string name="premium_feature_cloud_title">Облачная интеграция</string>
+    <string name="premium_feature_cloud_desc">Синхронизация с Google Drive и Dropbox</string>
+    <string name="premium_feature_compress_title">Расширенное сжатие</string>
+    <string name="premium_feature_compress_desc">Уменьшайте PDF до 90%% без заметной потери качества</string>
+    <string name="premium_feature_unlimited_title">Неограниченные конвертации</string>
+    <string name="premium_feature_unlimited_desc">Без дневного лимита конвертаций</string>
+    <string name="premium_you_are_premium">Вы Premium!</string>
+    <string name="premium_enjoy_unlimited">Пользуйтесь всеми функциями без ограничений</string>
+    <string name="premium_processing_purchase">Обработка покупки…</string>
+    <string name="premium_get_plan">Получить %1$s — %2$s</string>
+    <string name="premium_select_plan">Выберите план</string>
+    <string name="premium_restore_purchases">Восстановить покупки</string>
+    <string name="premium_continue_free">Продолжить с бесплатной версией</string>
+    <string name="premium_terms">Подписываясь, вы принимаете Условия использования и Политику конфиденциальности. Подписка продлевается автоматически. Отменить можно в любой момент.</string>
+    <string name="premium_active_title">Ваша подписка активна</string>
+    <string name="premium_active_body">У вас есть полный доступ ко всем функциям DocuSmart Premium</string>
+    <string name="premium_continue">Продолжить</string>
+    <string name="premium_all_you_get">Всё, что вы получаете</string>
+    <string name="premium_choose_plan">Выберите план</string>
+    <string name="premium_recommended">⭐ Рекомендуется</string>
+    <string name="premium_purchase_error">Не удалось завершить покупку. Попробуйте снова.</string>
+    <string name="premium_no_purchases_found">Предыдущие покупки не найдены</string>
+
+    <!-- ── Сканер (дополнительно) ─────────────────────────── -->
+    <string name="scanner_start_error">Не удалось запустить сканер: %1$s</string>
+
+    <!-- ── Безопасность ─────────────────────────────────── -->
+    <string name="security_title">Безопасность</string>
+    <string name="security_subtitle">Защитите свои документы</string>
+    <string name="security_what_to_do">Что вы хотите сделать?</string>
+    <string name="security_secure_folder">Защищённая папка</string>
+    <string name="security_secure_folder_desc">Храните защищённые файлы с PIN-кодом и биометрией. Доступ только у вас.</string>
+    <string name="security_pin_required">Требуется PIN</string>
+    <string name="security_pdf_password">Пароль PDF</string>
+    <string name="security_pdf_password_desc">Добавьте или удалите пароль у PDF-файлов. Мгновенный доступ, без PIN.</string>
+    <string name="security_no_pin">Без PIN</string>
+    <string name="security_pin_incorrect">Неверный PIN</string>
+    <string name="security_biometric_error">Ошибка: %1$s</string>
+    <string name="security_biometric_not_recognized">Биометрия не распознана</string>
+    <string name="security_biometric_title">DocuSmart — Защищённая папка</string>
+    <string name="security_biometric_subtitle">Используйте отпечаток пальца или лицо для доступа</string>
+    <string name="security_biometric_use_pin">Использовать PIN</string>
+    <string name="security_file_protected_success">Файл успешно защищён</string>
+    <string name="security_file_protect_error">Не удалось защитить файл</string>
+    <string name="security_save_downloads_success">Сохранено в Загрузки: %1$s</string>
+    <string name="security_save_downloads_error">Не удалось сохранить в Загрузки</string>
+    <string name="pdf_pw_read_error">Не удалось прочитать файл</string>
+    <string name="pdf_pw_empty_file">Файл пуст</string>
+    <string name="pdf_pw_protect_success">PDF успешно защищён</string>
+    <string name="pdf_pw_protect_generate_error">Защищённый файл не был создан корректно (%1$d байт)</string>
+    <string name="pdf_pw_protect_error">Не удалось защитить PDF: %1$s</string>
+    <string name="pdf_pw_remove_success">Пароль успешно удалён</string>
+    <string name="pdf_pw_remove_generate_error">Файл без пароля не был создан корректно (%1$d байт)</string>
+    <string name="pdf_pw_remove_error">Не удалось обработать PDF: %1$s</string>
+    <string name="pdf_pw_wrong_password">Неверный пароль</string>
+    <string name="pdf_pw_wrong_password_retry">Неверный пароль. Проверьте и попробуйте снова.</string>
+    <string name="security_enter_pin">Введите PIN-код</string>
+    <string name="security_setup_pin_title">Настройте PIN-код</string>
+    <string name="security_setup_pin_desc">Защитите файлы 4-значным PIN-кодом</string>
+    <string name="security_configure_pin_button">Настроить PIN</string>
+    <string name="security_use_biometric">Использовать биометрию</string>
+    <string name="security_delete_desc">Удалить</string>
+    <string name="security_confirm_pin">Подтвердите PIN-код</string>
+    <string name="security_create_pin">Создайте PIN-код</string>
+    <string name="security_confirm_pin_desc">Введите PIN-код ещё раз для подтверждения</string>
+    <string name="security_create_pin_desc">Выберите 4-значный PIN-код для защиты папки</string>
+    <string name="security_pins_dont_match">PIN-коды не совпадают</string>
+    <string name="security_files_protected_count">Защищённых файлов: %1$d</string>
+    <string name="security_protect_new_file">Защитить новый файл</string>
+    <string name="security_config_section">Настройки</string>
+    <string name="security_change_pin">Изменить PIN</string>
+    <string name="security_biometric_unlock">Биометрическая разблокировка</string>
+    <string name="security_protected_files_title">Защищённые файлы</string>
+    <string name="security_no_protected_files">Нет защищённых файлов</string>
+    <string name="security_no_protected_files_hint">Нажмите «Защитить новый файл», чтобы добавить файлы</string>
+    <string name="security_restore">Восстановить</string>
+    <string name="security_protect_file_dialog_title">Защитить файл</string>
+    <string name="security_import_source_question">Откуда вы хотите взять файл?</string>
+    <string name="security_from_device">С устройства</string>
+    <string name="security_browse_system_files">Просмотреть системные файлы</string>
+    <string name="security_from_library">Из библиотеки DocuSmart</string>
+    <string name="security_no_library_files">В библиотеке приложения нет файлов</string>
+    <string name="pdf_pw_screen_subtitle">Защитите или разблокируйте свои PDF</string>
+    <string name="pdf_pw_mode_protect_title">Защитить PDF</string>
+    <string name="pdf_pw_mode_protect_desc">Добавьте пароль к PDF-файлу. Открыть его сможет только тот, у кого есть пароль.</string>
+    <string name="pdf_pw_mode_remove_title">Удалить пароль</string>
+    <string name="pdf_pw_mode_remove_desc">Снимите защиту с PDF. Для разблокировки потребуется текущий пароль.</string>
+    <string name="pdf_pw_protect_section_title">Защита PDF паролем</string>
+    <string name="pdf_pw_selected_placeholder">PDF выбран</string>
+    <string name="pdf_pw_tap_to_select">Нажмите, чтобы выбрать PDF</string>
+    <string name="pdf_pw_ready_to_protect">PDF готов к защите</string>
+    <string name="pdf_pw_new_password_label">Новый пароль</string>
+    <string name="pdf_pw_confirm_password_label">Подтвердите пароль</string>
+    <string name="pdf_pw_passwords_dont_match">Пароли не совпадают</string>
+    <string name="pdf_pw_protected_success_title">PDF успешно защищён</string>
+    <string name="pdf_pw_save_downloads_button">Сохранить в Загрузки</string>
+    <string name="pdf_pw_protect_button">Защитить PDF</string>
+    <string name="pdf_pw_remove_section_title">Удаление пароля PDF</string>
+    <string name="pdf_pw_tap_to_select_protected">Нажмите, чтобы выбрать защищённый PDF</string>
+    <string name="pdf_pw_ready">PDF готов</string>
+    <string name="pdf_pw_current_password_label">Текущий пароль PDF</string>
+    <string name="pdf_pw_current_password_placeholder">Введите пароль для разблокировки</string>
+    <string name="pdf_pw_remove_warning">Итоговый PDF не будет иметь пароля, и его сможет открыть кто угодно.</string>
+    <string name="pdf_pw_removed_success_title">Пароль успешно удалён</string>
+    <string name="pdf_pw_remove_button">Удалить пароль</string>
+    <string name="pdf_pw_default_document_name">документ</string>
+    <string name="scan_result_title">Результат сканирования</string>
+    <string name="scan_result_subtitle_pages">Страниц: %1$d</string>
+    <string name="scan_result_preview">Предпросмотр</string>
+    <string name="scan_result_page_content_desc">Страница %1$d</string>
+    <string name="scan_result_filename_label">Имя файла</string>
+    <string name="scan_result_filename_placeholder">Например: Сканированный_документ</string>
+    <string name="scan_result_filename_hint">Если оставить пустым, будет создано автоматическое имя</string>
+    <string name="scan_result_generating_pdf">Создание PDF…</string>
+    <string name="scan_result_default_name_prefix">Скан_%1$s</string>
+
+    <!-- ── QR ─────────────────────────────────── -->
+    <string name="qr_reader_title">Считать QR-код</string>
+    <string name="qr_reader_subtitle">Наведите камеру на QR-код</string>
+    <string name="qr_camera_permission_needed">Для сканирования QR-кодов нужен доступ к камере</string>
+    <string name="qr_allow_camera_access">Разрешить доступ к камере</string>
+    <string name="qr_center_in_frame">Расположите QR-код по центру рамки</string>
+    <string name="qr_type_url_detected">Обнаружена ссылка</string>
+    <string name="qr_type_image_detected">Обнаружено изображение</string>
+    <string name="qr_type_document_detected">Обнаружен документ</string>
+    <string name="qr_type_email_detected">Обнаружен email</string>
+    <string name="qr_type_phone_detected">Обнаружен номер телефона</string>
+    <string name="qr_type_text_detected">Обнаружен текст</string>
+    <string name="qr_detected_title">QR-код обнаружен!</string>
+    <string name="qr_image_content_desc">Изображение QR</string>
+    <string name="qr_loading_image">Загрузка изображения…</string>
+    <string name="qr_copied_clipboard">Скопировано в буфер обмена</string>
+    <string name="qr_open_browser">Открыть в браузере</string>
+    <string name="qr_copy_url">Скопировать ссылку</string>
+    <string name="qr_open_image">Открыть изображение</string>
+    <string name="qr_copy_link">Скопировать ссылку</string>
+    <string name="qr_open_document">Открыть документ</string>
+    <string name="qr_copy_path">Скопировать путь</string>
+    <string name="qr_send_email">Отправить письмо</string>
+    <string name="qr_copy_email">Скопировать email</string>
+    <string name="qr_call">Позвонить</string>
+    <string name="qr_copy_number">Скопировать номер</string>
+    <string name="qr_copy_text">Скопировать текст</string>
+    <string name="qr_scan_another">Сканировать другой код</string>
+    <string name="qr_creator_title">Создать QR-код</string>
+    <string name="qr_creator_subtitle">Создайте QR для ссылок, текста, файлов и другого</string>
+    <string name="qr_chip_url">URL</string>
+    <string name="qr_chip_text">Текст</string>
+    <string name="qr_chip_email">Email</string>
+    <string name="qr_chip_phone">Тел</string>
+    <string name="qr_chip_image">Изображение</string>
+    <string name="qr_chip_document">Док</string>
+    <string name="qr_select_image">Выбрать изображение</string>
+    <string name="qr_image_selected">Изображение выбрано ✓</string>
+    <string name="qr_select_document">Выбрать документ</string>
+    <string name="qr_document_selected">Документ выбран ✓</string>
+    <string name="qr_label_url">URL сайта</string>
+    <string name="qr_label_text">Текст сообщения</string>
+    <string name="qr_label_email">Адрес email</string>
+    <string name="qr_label_phone">Номер телефона</string>
+    <string name="qr_placeholder_text">Введите ваше сообщение…</string>
+    <string name="qr_protect_password">Защитить паролем</string>
+    <string name="qr_protect_password_desc">Только тот, у кого есть пароль, сможет увидеть содержимое</string>
+    <string name="qr_password_label">Пароль</string>
+    <string name="qr_password_min_chars">Минимум 4 символа</string>
+    <string name="qr_error_select_image">Выберите изображение</string>
+    <string name="qr_error_select_document">Выберите документ</string>
+    <string name="qr_error_empty_content">Введите содержимое QR-кода</string>
+    <string name="qr_error_password_short">Пароль должен содержать не менее 4 символов</string>
+    <string name="qr_generate">Создать QR</string>
+    <string name="qr_your_code">Ваш QR-код</string>
+    <string name="qr_generated_content_desc">Созданный QR-код</string>
+    <string name="qr_protected_badge">Защищено</string>
+    <string name="qr_share_chooser_title">Поделиться QR</string>
+
+    <!-- ── Режим учёбы ─────────────────────────────────── -->
+    <string name="study_tab_reading">Чтение</string>
+    <string name="study_tab_notes">Заметки</string>
+    <string name="study_tab_pomodoro">Помодоро</string>
+    <string name="study_no_document">Нет документа</string>
+    <string name="study_title">Режим учёбы</string>
+    <string name="study_empty_state_desc">Откройте документ, чтобы начать изучение</string>
+    <string name="study_reading_document">Чтение документа…</string>
+    <string name="study_paragraphs_highlighted_count">Абзацев: %1$d · выделено: %2$d</string>
+    <string name="study_stop">Остановить</string>
+    <string name="study_read_all">Прочитать всё</string>
+    <string name="study_delete_all_notes_title">Удалить все заметки</string>
+    <string name="study_delete_all_notes_body">Вы уверены, что хотите удалить все заметки? Это действие нельзя отменить.</string>
+    <string name="study_highlighted_paragraphs_count">Выделенные абзацы (%1$d)</string>
+    <string name="study_new_note">Новая заметка</string>
+    <string name="study_note_title_label">Заголовок заметки</string>
+    <string name="study_note_title_placeholder">Например: Ключевые понятия главы 3</string>
+    <string name="study_note_content_placeholder">Напишите или продиктуйте заметку…</string>
+    <string name="study_dictate_note">Надиктовать заметку голосом</string>
+    <string name="study_listening">Слушаю… говорите</string>
+    <string name="study_save_note">Сохранить заметку</string>
+    <string name="study_untitled_note">Заметка без названия</string>
+    <string name="study_no_saved_notes">Нет сохранённых заметок</string>
+    <string name="study_saved_notes_count">Сохранённые заметки (%1$d)</string>
+    <string name="study_delete_all">Удалить все</string>
+    <string name="study_no_notes_yet">У вас пока нет сохранённых заметок</string>
+    <string name="study_delete_note_desc">Удалить заметку</string>
+    <string name="study_voice_prompt">Продиктуйте текст своей заметки…</string>
+    <string name="study_break_label">🌿 Перерыв</string>
+    <string name="study_study_label">📚 Учёба</string>
+    <string name="study_in_progress">выполняется</string>
+    <string name="study_paused">на паузе</string>
+    <string name="study_restart">Заново</string>
+    <string name="study_pause">Пауза</string>
+    <string name="study_start">Начать</string>
+    <string name="study_pomodoros_completed">Завершено помодоро</string>
+    <string name="study_pomodoros_hint">Каждые 4 помодоро = длинный перерыв</string>
+    <string name="study_pomodoro_technique_info">Техника Помодоро: 25 мин учёбы + 5 мин перерыва</string>
+    <string name="study_extract_no_text_found">Текст не найден</string>
+    <string name="study_extract_could_not_open">Не удалось открыть файл</string>
+    <string name="study_extract_could_not_read">Не удалось прочитать файл</string>
+    <string name="study_extract_pdf_no_text">В этом PDF нет извлекаемого текста. Возможно, это отсканированный PDF.</string>
+    <string name="study_extract_pdf_error">Ошибка чтения PDF: %1$s</string>
+    <string name="study_extract_generic_error">Ошибка: %1$s</string>
+    <string name="study_default_document_name">Документ</string>
+</resources>

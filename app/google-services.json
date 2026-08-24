@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "934749189302",
+    "project_id": "docusmart-8904e",
+    "storage_bucket": "docusmart-8904e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:934749189302:android:bd5688825a99c82e8d2217",
+        "android_client_info": {
+          "package_name": "com.docsmart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzW6ewMlcxuzk3qNbZv5Zc8imWRV-ZgLA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

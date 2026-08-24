@@ -11,7 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.*
 
 @Composable
@@ -65,12 +67,12 @@ fun PremiumBanner(
                     modifier = Modifier.size(48.dp)
                 )
                 Text(
-                    text = "¡Eres Premium!",
+                    text = stringResource(R.string.premium_you_are_premium),
                     style = MaterialTheme.typography.headlineMedium,
                     color = Color.White
                 )
                 Text(
-                    text = "Disfruta de todas las funciones sin límites",
+                    text = stringResource(R.string.premium_enjoy_unlimited),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.85f)
                 )
@@ -82,12 +84,12 @@ fun PremiumBanner(
                     modifier = Modifier.size(48.dp)
                 )
                 Text(
-                    text = "DocuSmart Premium",
+                    text = stringResource(R.string.settings_premium),
                     style = MaterialTheme.typography.headlineMedium,
                     color = Color.White
                 )
                 Text(
-                    text = "Desbloquea todas las funciones",
+                    text = stringResource(R.string.settings_premium_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.85f)
                 )

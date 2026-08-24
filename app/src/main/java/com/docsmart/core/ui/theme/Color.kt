@@ -9,9 +9,14 @@ val IndigoAccent    = Color(0xFF4338CA)
 val NavyDark        = Color(0xFF0F172A)
 
 // ── Fondos y superficies ──────────────────────────────
-val BackgroundLight = Color(0xFFF8FAFC)
-val SurfaceWhite    = Color(0xFFFFFFFF)
-val SoftBorder      = Color(0xFFE2E8F0)
+val BackgroundLight  = Color(0xFFF8FAFC)
+val SurfaceWhite     = Color(0xFFFFFFFF)
+val SoftBorder       = Color(0xFFE2E8F0)
+
+// ── Tema Sistema — azul grisáceo intermedio ───────────
+val BackgroundSystem = Color(0xFFEFF4FB)  // Azul muy suave
+val SurfaceSystem    = Color(0xFFE2EAF6)  // Superficies azuladas
+val OutlineSystem    = Color(0xFFB8CBE8)  // Bordes azul grisáceo
 
 // ── Textos ────────────────────────────────────────────
 val SlateGray       = Color(0xFF64748B)

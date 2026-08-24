@@ -1,6 +1,11 @@
 package com.docsmart.features.converter.presentation
 
 import android.app.Activity
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -9,220 +14,657 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartTopBanner
-import com.docsmart.core.ui.components.buttons.DocuSmartPrimaryButton
-import com.docsmart.core.ui.components.buttons.DocuSmartSecondaryButton
+import com.docsmart.core.ui.theme.*
 import com.docsmart.features.converter.domain.model.ConversionResult
+import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.components.ConversionProgress
 import com.docsmart.features.converter.presentation.components.ConversionSuccess
-import com.docsmart.features.converter.presentation.components.ImagePickerSection
 
 @Composable
 fun ConverterScreen(
     viewModel: ConverterViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val isRewardedReady by viewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
-    val activity = context as? Activity
+    val context           = LocalContext.current
+    val activity          = context as? Activity
+
+    val fileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris -> if (uris.isNotEmpty()) viewModel.onFilesSelected(uris) }
+
+    val singleFileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { viewModel.onFilesSelected(listOf(it)) } }
 
     LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
             viewModel.dismissError()
         }
     }
 
     LaunchedEffect(uiState.conversionResult) {
         if (uiState.conversionResult is ConversionResult.Success) {
-            activity?.let {
-                viewModel.adManager.onConversionCompleted(it)
-            }
+            activity?.let { viewModel.adManager.onConversionCompleted(it) }
         }
     }
 
+    // ── Dialog de límite diario ───────────────────────────────────────────────
+    if (uiState.showLimitDialog) {
+        DailyLimitDialog(
+            conversionCount = uiState.conversionCount,
+            conversionLimit = uiState.conversionLimit,
+            isRewardedReady = isRewardedReady,
+            onWatchAd       = { activity?.let { viewModel.watchAdForConversion(it) } },
+            onDismiss       = { viewModel.dismissLimitDialog() },
+            onGetPremium    = { }
+        )
+    }
+
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost   = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                horizontal = 20.dp,
-                vertical = 24.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            modifier            = Modifier.fillMaxSize().padding(innerPadding),
+            contentPadding      = PaddingValues(bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // ── Banner azul con logo ───────────────────
+            // ── AdMob — solo para usuarios free ──────────────────────────────
+            if (!isPremium) {
+                item {
+                    DocuSmartBannerAd(
+                        adUnitId  = AdConstants.BANNER_CONVERTER_ID,
+                        adManager = viewModel.adManager,
+                        modifier  = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+            }
+
+            // ── Banner azul ───────────────────────────────────────────────────
             item {
                 DocuSmartTopBanner(
-                    screenTitle = "Convertidor",
-                    screenSubtitle = "Convierte tus documentos fácilmente"
+                    screenTitle    = stringResource(R.string.converter_title),
+                    screenSubtitle = stringResource(R.string.converter_subtitle),
+                    modifier       = Modifier.padding(horizontal = 20.dp, vertical = 24.dp)
                 )
+            }
+
+            // ── Contador de conversiones (usuarios free) ──────────────────────
+            if (!isPremium) {
+                item {
+                    ConversionLimitIndicator(
+                        count    = uiState.conversionCount,
+                        limit    = uiState.conversionLimit,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             val result = uiState.conversionResult
             if (result is ConversionResult.Success) {
                 item {
                     ConversionSuccess(
-                        result = result,
-                        savedToDownloads = uiState.savedToDownloads,
-                        onConvertAnother = { viewModel.clearAll() },
-                        onSaveToDownloads = { viewModel.saveToDownloads(context) }
+                        result            = result,
+                        savedToDownloads  = uiState.savedToDownloads,
+                        onConvertAnother  = { viewModel.clearAll() },
+                        onSaveToDownloads = { viewModel.saveToDownloads(context) },
+                        modifier          = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+                return@LazyColumn
+            }
+
+            if (uiState.isConverting) {
+                item {
+                    ConversionProgress(
+                        totalImages = uiState.selectedFiles.size,
+                        modifier    = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+                return@LazyColumn
+            }
+
+            if (uiState.selectedType != null) {
+                item {
+                    ConversionDetailCard(
+                        type             = uiState.selectedType!!,
+                        selectedFiles    = uiState.selectedFiles,
+                        fileName         = uiState.fileName,
+                        onFileNameChange = { viewModel.onFileNameChange(it) },
+                        onSelectFiles    = {
+                            val mime = getMimeForType(uiState.selectedType!!)
+                            if (uiState.selectedType == ConversionType.IMAGE_TO_PDF)
+                                fileLauncher.launch(mime)
+                            else
+                                singleFileLauncher.launch(mime)
+                        },
+                        onConvert = { viewModel.convert() },
+                        onBack    = { viewModel.clearAll() },
+                        modifier  = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+                return@LazyColumn
+            }
+
+            item {
+                Text(
+                    text       = stringResource(R.string.converter_select),
+                    style      = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    modifier   = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+
+            val allTypes = ConversionType.entries.toList()
+
+            val imageTypes = allTypes.filter { it.getCategoryForUi() == "Imagen" }
+            if (imageTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "Imagen",
+                        icon           = Icons.Rounded.Image,
+                        color          = ColorImage,
+                        types          = imageTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
                     )
                 }
             }
 
-            if (result !is ConversionResult.Success) {
+            val pdfTypes = allTypes.filter { it.getCategoryForUi() == "PDF" }
+            if (pdfTypes.isNotEmpty()) {
                 item {
-                    ImagePickerSection(
-                        selectedImages = uiState.selectedImages,
-                        onImagesSelected = { viewModel.onImagesSelected(it) },
-                        onRemoveImage = { viewModel.removeImage(it) }
+                    ConversionSection(
+                        title          = "PDF",
+                        icon           = Icons.Rounded.PictureAsPdf,
+                        color          = ColorPdf,
+                        types          = pdfTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
                     )
                 }
+            }
 
-                if (uiState.selectedImages.isNotEmpty()) {
-                    item {
-                        FileNameField(
-                            fileName = uiState.fileName,
-                            onFileNameChange = { viewModel.onFileNameChange(it) }
-                        )
-                    }
-                    item {
-                        if (uiState.isConverting) {
-                            ConversionProgress(
-                                totalImages = uiState.selectedImages.size
-                            )
-                        } else {
-                            ActionButtons(
-                                onConvert = { viewModel.convertToPdf() },
-                                onClear = { viewModel.clearAll() }
-                            )
-                        }
-                    }
+            val wordTypes = allTypes.filter { it.getCategoryForUi() == "Word" }
+            if (wordTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "Word",
+                        icon           = Icons.Rounded.Description,
+                        color          = ColorWord,
+                        types          = wordTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
+                    )
                 }
+            }
 
-                if (uiState.selectedImages.isEmpty()) {
-                    item { TipCard() }
+            val excelTypes = allTypes.filter { it.getCategoryForUi() == "Excel" }
+            if (excelTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "Excel",
+                        icon           = Icons.Rounded.TableChart,
+                        color          = ColorExcel,
+                        types          = excelTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
+                    )
+                }
+            }
+
+            val pptTypes = allTypes.filter { it.getCategoryForUi() == "PowerPoint" }
+            if (pptTypes.isNotEmpty()) {
+                item {
+                    ConversionSection(
+                        title          = "PowerPoint",
+                        icon           = Icons.Rounded.Slideshow,
+                        color          = ColorPowerPoint,
+                        types          = pptTypes,
+                        onTypeSelected = { viewModel.onTypeSelected(it) }
+                    )
                 }
             }
         }
     }
 }
 
+// ── Indicador de límite diario ────────────────────────────────────────────────
 @Composable
-private fun FileNameField(
-    fileName: String,
-    onFileNameChange: (String) -> Unit
+private fun ConversionLimitIndicator(
+    count   : Int,
+    limit   : Int,
+    modifier: Modifier = Modifier
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = "Nombre del archivo",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        OutlinedTextField(
-            value = fileName,
-            onValueChange = onFileNameChange,
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = {
-                Text(
-                    text = "Ej: Contrato_2024",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            trailingIcon = {
-                Text(
-                    text = ".pdf",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp)
-                )
-            },
-            singleLine = true,
-            shape = MaterialTheme.shapes.medium,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-            ),
-            textStyle = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = "Si lo dejas vacío se generará un nombre automático",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    if (count == 0) return
+    val progress = (count.toFloat() / limit).coerceIn(0f, 1f)
+    val color    = when {
+        progress >= 1f   -> MaterialTheme.colorScheme.error
+        progress >= 0.6f -> MaterialTheme.colorScheme.tertiary
+        else             -> MaterialTheme.colorScheme.primary
     }
-}
 
-@Composable
-private fun ActionButtons(
-    onConvert: () -> Unit,
-    onClear: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        DocuSmartPrimaryButton(
-            text = "Convertir a PDF",
-            onClick = onConvert,
-            leadingIcon = Icons.Rounded.PictureAsPdf
-        )
-        DocuSmartSecondaryButton(
-            text = "Limpiar selección",
-            onClick = onClear,
-            leadingIcon = Icons.Rounded.Clear
-        )
-    }
-}
-
-@Composable
-private fun TipCard() {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-                .copy(alpha = 0.5f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        modifier  = modifier.fillMaxWidth(),
+        shape     = MaterialTheme.shapes.medium,
+        colors    = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier
+            modifier              = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Info,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Rounded.SwapHoriz, null,
+                    tint = color, modifier = Modifier.size(16.dp))
                 Text(
-                    text = "Cómo funciona",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    "Conversiones hoy: $count / $limit",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = color
+                )
+            }
+            LinearProgressIndicator(
+                progress   = { progress },
+                modifier   = Modifier
+                    .width(80.dp)
+                    .height(6.dp)
+                    .clip(MaterialTheme.shapes.small),
+                color      = color,
+                trackColor = color.copy(alpha = 0.2f)
+            )
+        }
+    }
+}
+
+// ── Sección por categoría ─────────────────────────────────────────────────────
+@Composable
+private fun ConversionSection(
+    title         : String,
+    icon          : ImageVector,
+    color         : Color,
+    types         : List<ConversionType>,
+    onTypeSelected: (ConversionType) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 24.dp)
+    ) {
+        Row(
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier              = Modifier.padding(bottom = 12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(color.copy(alpha = 0.12f), MaterialTheme.shapes.small),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+            }
+            Text(
+                text       = title,
+                style      = MaterialTheme.typography.titleMedium,
+                color      = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold
+            )
+            HorizontalDivider(
+                modifier  = Modifier.weight(1f),
+                thickness = 0.5.dp,
+                color     = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+        val rows = types.chunked(2)
+        rows.forEach { rowItems ->
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowItems.forEach { type ->
+                    ConversionGridCard(
+                        type     = type,
+                        onClick  = { onTypeSelected(type) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+
+// ── Tarjeta de grilla ─────────────────────────────────────────────────────────
+@Composable
+private fun ConversionGridCard(
+    type    : ConversionType,
+    onClick : () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val (fromColor, fromIcon) = getFormatStyle(type.fromFormat)
+    val (toColor,   toIcon)   = getFormatStyle(type.toFormat)
+
+    Card(
+        modifier  = modifier.height(110.dp).clickable { onClick() },
+        shape     = MaterialTheme.shapes.large,
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            modifier            = Modifier.fillMaxSize().padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(fromColor.copy(alpha = 0.15f), MaterialTheme.shapes.small),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(fromIcon, null, tint = fromColor, modifier = Modifier.size(18.dp))
+                }
+                Icon(Icons.Rounded.ArrowForward, null,
+                    tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(toColor.copy(alpha = 0.15f), MaterialTheme.shapes.small),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(toIcon, null, tint = toColor, modifier = Modifier.size(18.dp))
+                }
+            }
+            Column {
+                Text(
+                    text       = type.label,
+                    style      = MaterialTheme.typography.labelLarge,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
+                    maxLines   = 1
                 )
                 Text(
-                    text = "1. Toca el área para seleccionar imágenes\n" +
-                            "2. Escribe el nombre del archivo (opcional)\n" +
-                            "3. Toca \"Convertir a PDF\"\n" +
-                            "4. Guarda en Descargas o comparte",
-                    style = MaterialTheme.typography.bodySmall,
+                    text  = "${type.fromFormat} → ${type.toFormat}",
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
+}
+
+// ── Detalle de conversión ─────────────────────────────────────────────────────
+@Composable
+private fun ConversionDetailCard(
+    type            : ConversionType,
+    selectedFiles   : List<Uri>,
+    fileName        : String,
+    onFileNameChange: (String) -> Unit,
+    onSelectFiles   : () -> Unit,
+    onConvert       : () -> Unit,
+    onBack          : () -> Unit,
+    modifier        : Modifier = Modifier
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.Rounded.ArrowBackIosNew,
+                    contentDescription = stringResource(R.string.general_back_action),
+                    tint               = MaterialTheme.colorScheme.primary
+                )
+            }
+            Text(
+                text       = type.label,
+                style      = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color      = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        Card(
+            modifier  = Modifier.fillMaxWidth().clickable { onSelectFiles() },
+            shape     = MaterialTheme.shapes.large,
+            colors    = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            ),
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
+            Column(
+                modifier            = Modifier.fillMaxWidth().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(Icons.Rounded.FolderOpen, null,
+                    tint     = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp))
+                Text(
+                    text = if (selectedFiles.isEmpty())
+                        stringResource(R.string.converter_select_files, type.fromFormat)
+                    else
+                        stringResource(R.string.converter_files_selected, selectedFiles.size),
+                    style     = MaterialTheme.typography.bodyMedium,
+                    color     = if (selectedFiles.isEmpty())
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text  = stringResource(
+                        R.string.converter_formats,
+                        type.fromExtensions.joinToString(", ").uppercase()
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        if (selectedFiles.isNotEmpty()) {
+            OutlinedTextField(
+                value         = fileName,
+                onValueChange = onFileNameChange,
+                modifier      = Modifier.fillMaxWidth(),
+                label         = { Text(stringResource(R.string.converter_file_name_label)) },
+                placeholder   = { Text(stringResource(R.string.converter_file_name_placeholder)) },
+                trailingIcon  = {
+                    Text(
+                        text     = ".${type.outputExtension}",
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                },
+                singleLine = true,
+                shape      = MaterialTheme.shapes.medium
+            )
+
+            Button(
+                onClick  = onConvert,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape    = MaterialTheme.shapes.medium,
+                colors   = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(Icons.Rounded.SwapHoriz, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text  = stringResource(R.string.converter_to_format, type.toFormat),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+}
+
+// ── Dialog límite diario ──────────────────────────────────────────────────────
+@Composable
+private fun DailyLimitDialog(
+    conversionCount : Int,
+    conversionLimit : Int,
+    isRewardedReady : Boolean,
+    onWatchAd       : () -> Unit,
+    onDismiss       : () -> Unit,
+    onGetPremium    : () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape            = MaterialTheme.shapes.extraLarge,
+        icon             = {
+            Icon(Icons.Rounded.HourglassEmpty, null,
+                tint     = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp))
+        },
+        title = {
+            Text(
+                "Límite diario alcanzado",
+                style     = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Has usado $conversionCount de $conversionLimit conversiones de hoy.",
+                    style     = MaterialTheme.typography.bodyMedium,
+                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                LinearProgressIndicator(
+                    progress   = { conversionCount.toFloat() / conversionLimit },
+                    modifier   = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(MaterialTheme.shapes.small),
+                    color      = MaterialTheme.colorScheme.error,
+                    trackColor = MaterialTheme.colorScheme.errorContainer
+                )
+                Text(
+                    "El límite se reinicia mañana.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Column(
+                modifier            = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick  = onWatchAd,
+                    enabled  = isRewardedReady,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = MaterialTheme.shapes.medium
+                ) {
+                    Icon(Icons.Rounded.PlayCircle, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (isRewardedReady) "Ver anuncio → +1 conversión"
+                        else "Anuncio no disponible aún"
+                    )
+                }
+                OutlinedButton(
+                    onClick  = onGetPremium,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = MaterialTheme.shapes.medium
+                ) {
+                    Icon(Icons.Rounded.Star, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Obtener Premium → sin límites")
+                }
+                TextButton(
+                    onClick  = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Cancelar") }
+            }
+        },
+        dismissButton = {}
+    )
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+private fun ConversionType.getCategoryForUi(): String = when (this) {
+    ConversionType.IMAGE_TO_PDF,
+    ConversionType.IMAGE_TO_JPG,
+    ConversionType.IMAGE_TO_PNG,
+    ConversionType.IMAGE_TO_WEBP,
+    ConversionType.IMAGE_TO_BMP  -> "Imagen"
+    ConversionType.PDF_TO_IMAGE,
+    ConversionType.PDF_TO_TXT,
+    ConversionType.PDF_TO_WORD,
+    ConversionType.PDF_TO_HTML   -> "PDF"
+    ConversionType.WORD_TO_PDF,
+    ConversionType.WORD_TO_TXT,
+    ConversionType.WORD_TO_HTML  -> "Word"
+    ConversionType.EXCEL_TO_PDF,
+    ConversionType.EXCEL_TO_CSV,
+    ConversionType.EXCEL_TO_HTML -> "Excel"
+    ConversionType.PPT_TO_PDF,
+    ConversionType.PPT_TO_TXT   -> "PowerPoint"
+}
+
+private fun getFormatStyle(format: String): Pair<Color, ImageVector> = when (format.lowercase()) {
+    "pdf"                        -> Pair(ColorPdf,        Icons.Rounded.PictureAsPdf)
+    "imagen","image","jpg","png",
+    "webp","bmp"                 -> Pair(ColorImage,      Icons.Rounded.Image)
+    "word","docx"                -> Pair(ColorWord,       Icons.Rounded.Description)
+    "excel"                      -> Pair(ColorExcel,      Icons.Rounded.TableChart)
+    "powerpoint"                 -> Pair(ColorPowerPoint, Icons.Rounded.Slideshow)
+    "txt","texto","text"         -> Pair(ColorText,       Icons.Rounded.TextSnippet)
+    "csv"                        -> Pair(ColorExcel,      Icons.Rounded.GridOn)
+    "html"                       -> Pair(ColorOcr,        Icons.Rounded.Code)
+    else                         -> Pair(ColorText,       Icons.Rounded.InsertDriveFile)
+}
+
+private fun getMimeForType(type: ConversionType): String = when (type) {
+    ConversionType.IMAGE_TO_PDF,
+    ConversionType.IMAGE_TO_JPG,
+    ConversionType.IMAGE_TO_PNG,
+    ConversionType.IMAGE_TO_WEBP,
+    ConversionType.IMAGE_TO_BMP  -> "image/*"
+    ConversionType.PDF_TO_IMAGE,
+    ConversionType.PDF_TO_TXT,
+    ConversionType.PDF_TO_WORD,
+    ConversionType.PDF_TO_HTML   -> "application/pdf"
+    ConversionType.WORD_TO_PDF,
+    ConversionType.WORD_TO_TXT,
+    ConversionType.WORD_TO_HTML  -> "application/msword"
+    ConversionType.EXCEL_TO_PDF,
+    ConversionType.EXCEL_TO_CSV,
+    ConversionType.EXCEL_TO_HTML -> "*/*"
+    ConversionType.PPT_TO_PDF,
+    ConversionType.PPT_TO_TXT   -> "*/*"
 }

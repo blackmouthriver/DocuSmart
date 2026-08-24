@@ -216,9 +216,12 @@ fun SplitPdfScreen(
 
                     val pageCount = (toPage - fromPage + 1).coerceAtLeast(0)
                     Text(
-                        text = "Se extraerán $pageCount página(s)",
+                        text  = "Se extraerán $pageCount página(s) · Páginas: $fromPage a $toPage",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (fromPage >= toPage)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

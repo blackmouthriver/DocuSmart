@@ -1,52 +1,55 @@
 package com.docsmart.features.premium.domain.model
 
+import androidx.annotation.StringRes
+import com.docsmart.R
+
 data class PremiumPlan(
     val id: String,
-    val title: String,
+    @StringRes val titleRes: Int,
     val price: String,
-    val period: String,
-    val savingsLabel: String? = null,
+    @StringRes val periodRes: Int,
+    @StringRes val savingsLabelRes: Int? = null,
     val isPopular: Boolean = false,
     val productId: String // ID de Play Store Billing
 )
 
 // Funciones premium bloqueadas para usuarios free
 enum class PremiumFeature(
-    val title: String,
-    val description: String,
+    @StringRes val titleRes: Int,
+    @StringRes val descRes: Int,
     val isAvailableFree: Boolean = false
 ) {
     NO_ADS(
-        title = "Sin anuncios",
-        description = "Disfruta DocuSmart sin interrupciones"
+        titleRes = R.string.premium_feature_no_ads_title,
+        descRes  = R.string.premium_feature_no_ads_desc
     ),
     PDF_TO_WORD(
-        title = "PDF a Word",
-        description = "Convierte PDFs a documentos editables"
+        titleRes = R.string.premium_feature_pdf_word_title,
+        descRes  = R.string.premium_feature_pdf_word_desc
     ),
     PDF_TO_EXCEL(
-        title = "PDF a Excel",
-        description = "Extrae tablas de PDFs a hojas de cálculo"
+        titleRes = R.string.premium_feature_pdf_excel_title,
+        descRes  = R.string.premium_feature_pdf_excel_desc
     ),
     PDF_TO_PPT(
-        title = "PDF a PowerPoint",
-        description = "Convierte presentaciones fácilmente"
+        titleRes = R.string.premium_feature_pdf_ppt_title,
+        descRes  = R.string.premium_feature_pdf_ppt_desc
     ),
     ADVANCED_OCR(
-        title = "OCR avanzado",
-        description = "Reconocimiento de texto en 50+ idiomas"
+        titleRes = R.string.premium_feature_ocr_title,
+        descRes  = R.string.premium_feature_ocr_desc
     ),
     CLOUD_SYNC(
-        title = "Nube integrada",
-        description = "Sincroniza con Google Drive y Dropbox"
+        titleRes = R.string.premium_feature_cloud_title,
+        descRes  = R.string.premium_feature_cloud_desc
     ),
     ADVANCED_COMPRESS(
-        title = "Compresión avanzada",
-        description = "Reduce PDFs hasta un 90% sin pérdida visible"
+        titleRes = R.string.premium_feature_compress_title,
+        descRes  = R.string.premium_feature_compress_desc
     ),
     UNLIMITED_CONVERT(
-        title = "Conversiones ilimitadas",
-        description = "Sin límite diario de conversiones",
+        titleRes        = R.string.premium_feature_unlimited_title,
+        descRes         = R.string.premium_feature_unlimited_desc,
         isAvailableFree = true
     )
 }

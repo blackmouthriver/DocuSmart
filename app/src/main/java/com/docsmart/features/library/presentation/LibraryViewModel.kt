@@ -1,101 +1,216 @@
 package com.docsmart.features.library.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.features.library.data.DocumentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
+// Tab de la biblioteca
+enum class LibraryTab { DEVICE, APP_FILES }
+
 data class LibraryUiState(
-    val allDocuments: List<DocumentUiModel> = emptyList(),
-    val filteredDocuments: List<DocumentUiModel> = emptyList(),
-    val favorites: List<DocumentUiModel> = emptyList(),
-    val searchQuery: String = "",
-    val selectedCategory: DocumentType? = null,
-    val isLoading: Boolean = false
+    val allDocuments      : List<DocumentUiModel> = emptyList(),
+    val filteredDocuments : List<DocumentUiModel> = emptyList(),
+    val deviceDocuments   : List<DocumentUiModel> = emptyList(), // ← NUEVO
+    val appDocuments      : List<DocumentUiModel> = emptyList(), // ← NUEVO
+    val favorites         : List<DocumentUiModel> = emptyList(),
+    val searchQuery       : String                = "",
+    val selectedCategory  : DocumentType?         = null,
+    val selectedTab       : LibraryTab            = LibraryTab.DEVICE, // ← NUEVO
+    val isLoading         : Boolean               = false
 )
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
-    val adManager: AdManager
+    val adManager          : AdManager,
+    private val repository : DocumentRepository,
+    private val favoritesRepository: FavoritesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
-    private val mockDocuments = listOf(
-        DocumentUiModel("1",  "Contrato_Servicios_2024.pdf",   DocumentType.PDF,        "2.4 MB", "01/05/2026", true),
-        DocumentUiModel("2",  "Informe_Trimestral.docx",       DocumentType.WORD,       "1.1 MB", "30/04/2026"),
-        DocumentUiModel("3",  "Presupuesto_Q1.xlsx",           DocumentType.EXCEL,      "890 KB", "29/04/2026"),
-        DocumentUiModel("4",  "Presentacion_Clientes.pptx",    DocumentType.POWERPOINT, "5.2 MB", "28/04/2026"),
-        DocumentUiModel("5",  "Foto_Documento.jpg",            DocumentType.IMAGE,      "3.8 MB", "27/04/2026"),
-        DocumentUiModel("6",  "Manual_Usuario.pdf",            DocumentType.PDF,        "4.1 MB", "26/04/2026", true),
-        DocumentUiModel("7",  "Notas_Reunion.txt",             DocumentType.TEXT,       "12 KB",  "25/04/2026"),
-        DocumentUiModel("8",  "Backup_Documentos.zip",         DocumentType.ZIP,        "45 MB",  "24/04/2026"),
-        DocumentUiModel("9",  "Escaneo_Factura.pdf",           DocumentType.OCR,        "1.8 MB", "23/04/2026"),
-        DocumentUiModel("10", "Reporte_Ventas.xlsx",           DocumentType.EXCEL,      "2.2 MB", "22/04/2026", true),
-        DocumentUiModel("11", "Carta_Presentacion.docx",       DocumentType.WORD,       "340 KB", "21/04/2026"),
-        DocumentUiModel("12", "Logo_Empresa.png",              DocumentType.IMAGE,      "890 KB", "20/04/2026")
-    )
+    init { loadDocuments() }
 
-    init {
-        loadDocuments()
+    fun loadDocuments() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val docs = repository.loadAllDocuments()
+
+                // Separar documentos del dispositivo vs generados por la app
+                val deviceDocs = docs.filter { isDeviceDocument(it) }
+                val appDocs    = docs.filter { !isDeviceDocument(it) }
+
+                _uiState.update { state ->
+                    state.copy(
+                        allDocuments      = docs,
+                        deviceDocuments   = deviceDocs,
+                        appDocuments      = appDocs,
+                        filteredDocuments = applyCurrentFilters(
+                            if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                            state
+                        ),
+                        favorites         = docs.filter { it.isFavorite },
+                        isLoading         = false
+                    )
+                }
+                Timber.d("LibraryViewModel: ${docs.size} docs (${deviceDocs.size} dispositivo, ${appDocs.size} app)")
+            } catch (e: Exception) {
+                Timber.e(e, "LibraryViewModel: error cargando documentos")
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
     }
 
-    private fun loadDocuments() {
+    // Un documento es "del dispositivo" si su ID es una content:// URI de MediaStore
+    private fun isDeviceDocument(doc: DocumentUiModel): Boolean =
+        doc.id.startsWith("content://media") ||
+                doc.id.startsWith("content://com.android") ||
+                doc.id.startsWith("content://downloads")
+
+    // ── Tab seleccionado ──────────────────────────────────────────────────────
+    fun onTabSelected(tab: LibraryTab) {
         _uiState.update { state ->
+            val sourceDocs = if (tab == LibraryTab.DEVICE)
+                state.deviceDocuments else state.appDocuments
             state.copy(
-                allDocuments = mockDocuments,
-                filteredDocuments = mockDocuments,
-                favorites = mockDocuments.filter { it.isFavorite }
+                selectedTab       = tab,
+                selectedCategory  = null,   // reset filtro al cambiar tab
+                searchQuery       = "",     // reset búsqueda al cambiar tab
+                filteredDocuments = sourceDocs
             )
         }
     }
 
+    fun toggleFavorite(documentId: String) {
+        viewModelScope.launch {
+            val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
+            val updated = _uiState.value.allDocuments.map { doc ->
+                if (doc.id == documentId) doc.copy(isFavorite = isNowFavorite) else doc
+            }
+            val deviceDocs = updated.filter { isDeviceDocument(it) }
+            val appDocs    = updated.filter { !isDeviceDocument(it) }
+            _uiState.update { state ->
+                state.copy(
+                    allDocuments      = updated,
+                    deviceDocuments   = deviceDocs,
+                    appDocuments      = appDocs,
+                    filteredDocuments = applyCurrentFilters(
+                        if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                        state
+                    ),
+                    favorites         = updated.filter { it.isFavorite }
+                )
+            }
+        }
+    }
+
     fun onSearchQueryChange(query: String) {
-        _uiState.update { state -> state.copy(searchQuery = query) }
-        applyFilters()
+        _uiState.update { state ->
+            val sourceDocs = if (state.selectedTab == LibraryTab.DEVICE)
+                state.deviceDocuments else state.appDocuments
+            val filtered = applyCurrentFilters(sourceDocs, state.copy(searchQuery = query))
+            state.copy(searchQuery = query, filteredDocuments = filtered)
+        }
     }
 
     fun onCategorySelected(type: DocumentType?) {
         _uiState.update { state ->
             val newCategory = if (state.selectedCategory == type) null else type
-            state.copy(selectedCategory = newCategory)
+            val sourceDocs  = if (state.selectedTab == LibraryTab.DEVICE)
+                state.deviceDocuments else state.appDocuments
+            val filtered = applyCurrentFilters(sourceDocs, state.copy(selectedCategory = newCategory))
+            state.copy(selectedCategory = newCategory, filteredDocuments = filtered)
         }
-        applyFilters()
     }
 
-    fun toggleFavorite(documentId: String) {
-        val updated = _uiState.value.allDocuments.map { doc ->
-            if (doc.id == documentId) doc.copy(isFavorite = !doc.isFavorite) else doc
+    fun clearSearch() { onSearchQueryChange("") }
+    fun refresh()     { loadDocuments() }
+
+    private fun applyCurrentFilters(
+        docs : List<DocumentUiModel>,
+        state: LibraryUiState
+    ): List<DocumentUiModel> = docs.filter { doc ->
+        val matchesQuery    = state.searchQuery.isBlank() ||
+                doc.name.contains(state.searchQuery, ignoreCase = true)
+        val matchesCategory = state.selectedCategory == null ||
+                doc.type == state.selectedCategory
+        matchesQuery && matchesCategory
+    }
+
+    fun renameDocument(documentId: String, newName: String) {
+        viewModelScope.launch {
+            try {
+                val isAppFile = !documentId.startsWith("content://")
+                if (isAppFile) {
+                    val file    = java.io.File(documentId)
+                    val newFile = java.io.File(file.parent, newName)
+                    if (file.renameTo(newFile)) {
+                        favoritesRepository.removeAlias(documentId)
+                        loadDocuments()
+                    } else {
+                        favoritesRepository.saveAlias(documentId, newName)
+                        updateNameInState(documentId, newName)
+                    }
+                } else {
+                    favoritesRepository.saveAlias(documentId, newName)
+                    updateNameInState(documentId, newName)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error renombrando documento")
+                favoritesRepository.saveAlias(documentId, newName)
+                updateNameInState(documentId, newName)
+            }
         }
+    }
+
+    private fun updateNameInState(documentId: String, newName: String) {
+        val updated    = _uiState.value.allDocuments.map { doc ->
+            if (doc.id == documentId) doc.copy(name = newName) else doc
+        }
+        val deviceDocs = updated.filter { isDeviceDocument(it) }
+        val appDocs    = updated.filter { !isDeviceDocument(it) }
         _uiState.update { state ->
             state.copy(
-                allDocuments = updated,
-                favorites = updated.filter { it.isFavorite }
+                allDocuments      = updated,
+                deviceDocuments   = deviceDocs,
+                appDocuments      = appDocs,
+                filteredDocuments = applyCurrentFilters(
+                    if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                    state
+                ),
+                favorites         = updated.filter { it.isFavorite }
             )
         }
-        applyFilters()
     }
 
-    private fun applyFilters() {
-        val state = _uiState.value
-        val result = state.allDocuments.filter { doc ->
-            val matchesQuery = state.searchQuery.isBlank() ||
-                    doc.name.contains(state.searchQuery, ignoreCase = true)
-            val matchesCategory = state.selectedCategory == null ||
-                    doc.type == state.selectedCategory
-            matchesQuery && matchesCategory
+    fun removeDocument(documentId: String) {
+        val updated    = _uiState.value.allDocuments.filter { it.id != documentId }
+        val deviceDocs = updated.filter { isDeviceDocument(it) }
+        val appDocs    = updated.filter { !isDeviceDocument(it) }
+        _uiState.update { state ->
+            state.copy(
+                allDocuments      = updated,
+                deviceDocuments   = deviceDocs,
+                appDocuments      = appDocs,
+                filteredDocuments = applyCurrentFilters(
+                    if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                    state
+                ),
+                favorites         = updated.filter { it.isFavorite }
+            )
         }
-        _uiState.update { it.copy(filteredDocuments = result) }
-    }
-
-    fun clearSearch() {
-        onSearchQueryChange("")
     }
 }

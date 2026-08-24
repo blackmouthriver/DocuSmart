@@ -8,9 +8,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.docsmart.R
 import com.docsmart.features.premium.presentation.components.*
 
 @Composable
@@ -54,7 +56,7 @@ fun PremiumScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
-                            contentDescription = "Cerrar",
+                            contentDescription = stringResource(R.string.settings_close),
                             tint = androidx.compose.ui.graphics.Color.White
                         )
                     }
@@ -109,15 +111,18 @@ fun PremiumScreen(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "Procesando compra...",
+                                    text = stringResource(R.string.premium_processing_purchase),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
+                            val purchaseErrorMessage = stringResource(R.string.premium_purchase_error)
+                            val noPurchasesFoundMessage = stringResource(R.string.premium_no_purchases_found)
+
                             // Botón principal de compra
                             Button(
-                                onClick = { viewModel.purchase() },
+                                onClick = { viewModel.purchase(purchaseErrorMessage) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(56.dp),
@@ -132,19 +137,19 @@ fun PremiumScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = uiState.selectedPlan?.let {
-                                        "Obtener ${it.title} — ${it.price}"
-                                    } ?: "Selecciona un plan",
+                                        stringResource(R.string.premium_get_plan, stringResource(it.titleRes), it.price)
+                                    } ?: stringResource(R.string.premium_select_plan),
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
 
                             // Restaurar compras
                             TextButton(
-                                onClick = { viewModel.restorePurchases() },
+                                onClick = { viewModel.restorePurchases(noPurchasesFoundMessage) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "Restaurar compras",
+                                    text = stringResource(R.string.premium_restore_purchases),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -156,7 +161,7 @@ fun PremiumScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "Continuar con versión gratuita",
+                                    text = stringResource(R.string.premium_continue_free),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                         .copy(alpha = 0.7f)
@@ -169,9 +174,7 @@ fun PremiumScreen(
                 // ── Términos ──────────────────────────
                 item {
                     Text(
-                        text = "Al suscribirte aceptas los Términos de Servicio y " +
-                                "la Política de Privacidad. La suscripción se renueva " +
-                                "automáticamente. Cancela cuando quieras.",
+                        text = stringResource(R.string.premium_terms),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                             .copy(alpha = 0.5f),
@@ -204,12 +207,12 @@ private fun PremiumActiveCard(onClose: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Tu suscripción está activa",
+                text = stringResource(R.string.premium_active_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Tienes acceso completo a todas las funciones de DocuSmart Premium",
+                text = stringResource(R.string.premium_active_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
             )
@@ -219,7 +222,7 @@ private fun PremiumActiveCard(onClose: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Continuar",
+                    text = stringResource(R.string.premium_continue),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

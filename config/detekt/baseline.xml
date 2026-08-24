@@ -1,0 +1,463 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:CompressPdfScreen.kt$@Composable fun CompressPdfScreen( selectedPdf: Uri?, quality: Int, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdf: () -&gt; Unit, onQualityChange: (Int) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>CyclomaticComplexMethod:CompressPdfUseCase.kt$CompressPdfUseCase$suspend operator fun invoke( pdfUri : Uri, quality : Int = 60, outputFileName: String? = null ): PdfToolResult</ID>
+    <ID>CyclomaticComplexMethod:ConverterScreen.kt$@Composable fun ConverterScreen( viewModel: ConverterViewModel = hiltViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
+    <ID>CyclomaticComplexMethod:DocuSmartNavGraph.kt$@Composable fun DocuSmartNavGraph( navController : NavHostController, themeManager : ThemeManager, languageManager: LanguageManager )</ID>
+    <ID>CyclomaticComplexMethod:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$suspend operator fun invoke( excelUri: Uri, fileName: String? = null ): ConversionResult</ID>
+    <ID>CyclomaticComplexMethod:PdfPasswordScreen.kt$@Composable private fun ProtectPdfForm( uiState : SecurityUiState, context : android.content.Context, defaultDocumentName: String, onProtect : (Uri, String, String) -&gt; Unit, onCancel : () -&gt; Unit, onSaveToDownloads: (java.io.File) -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:PdfPasswordScreen.kt$@Composable private fun RemovePdfPasswordForm( uiState : SecurityUiState, context : android.content.Context, defaultDocumentName: String, onRemove : (Uri, String, String) -&gt; Unit, onCancel : () -&gt; Unit, onSaveToDownloads: (java.io.File) -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:PdfPasswordUseCase.kt$PdfPasswordUseCase$suspend fun removePassword( context : Context, uri : Uri, password: String, fileName: String, messages: PdfPasswordMessages ): PdfPasswordResult</ID>
+    <ID>CyclomaticComplexMethod:PptToTextUseCase.kt$PptToTextUseCase$suspend operator fun invoke( pptUri : Uri, fileName: String? = null ): ConversionResult</ID>
+    <ID>CyclomaticComplexMethod:QrScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun QrCreatorScreen(onBack: () -&gt; Unit = {})</ID>
+    <ID>CyclomaticComplexMethod:QrScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun QrReaderScreen(onBack: () -&gt; Unit = {})</ID>
+    <ID>CyclomaticComplexMethod:QrScreen.kt$private fun detectQrContentType(value: String): QrContentType</ID>
+    <ID>CyclomaticComplexMethod:RotatePdfScreen.kt$@Composable fun RotatePdfScreen( selectedPdf: Uri?, degrees: Int, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdf: () -&gt; Unit, onDegreesChange: (Int) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>CyclomaticComplexMethod:ScanResultScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ScanResultScreen( scannedUris: List&lt;Uri&gt;, isPdf: Boolean, onBack: () -&gt; Unit, onDone: () -&gt; Unit, converterViewModel: ConverterViewModel = hiltViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:SecurityScreen.kt$@Composable private fun SetupPinScreen( onPinSet: (String) -&gt; Unit, onBack : () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen( themeManager : ThemeManager, languageManager: LanguageManager, onPremiumClick : () -&gt; Unit = {}, onShowOnboarding : () -&gt; Unit = {}, viewModel : SettingsViewModel = hiltViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:StudyScreen.kt$@Composable fun StudyScreen(onBack: () -&gt; Unit = {})</ID>
+    <ID>CyclomaticComplexMethod:StudyScreen.kt$@Composable private fun NotesTab( notes : String, onNotesChange: (String) -&gt; Unit, highlights : Set&lt;Int&gt;, documentText : List&lt;String&gt; )</ID>
+    <ID>CyclomaticComplexMethod:StudyScreen.kt$@Composable private fun ReadingTab( documentText: List&lt;String&gt;, isLoading: Boolean, highlights: Set&lt;Int&gt;, isSpeaking: Boolean, ttsReady: Boolean, currentSpeakingIndex: Int, onToggleHighlight: (Int) -&gt; Unit, onSpeak: (String, Int) -&gt; Unit, onSpeakAll: () -&gt; Unit, onSelectDoc: () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:ViewerScreen.kt$@Composable fun ViewerScreen( documentId: String, onBack : () -&gt; Unit, viewModel : ViewerViewModel = hiltViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:ViewerScreen.kt$@Composable private fun ExcelViewerContent( uri : Uri?, searchQuery: String = "", onTap : () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:ViewerScreen.kt$@Composable private fun PdfViewerContent( uri : Uri?, onPageChanged: (Int, Int) -&gt; Unit, onTap : () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:ViewerScreen.kt$@Composable private fun PptViewerContent( uri : Uri?, searchQuery: String = "", onTap : () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:ViewerScreen.kt$@Composable private fun WordViewerContent( uri : Uri?, searchQuery: String = "", onTap : () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$fun unlockPdfWithPassword(password: String)</ID>
+    <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
+    <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$private fun resolveMimeTypeByExtension(fileName: String): String?</ID>
+    <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$private suspend fun loadFromUri(documentId: String, context: Context)</ID>
+    <ID>EmptyClassBlock:DocumentRepositoryImpl.kt$DocumentRepositoryImpl${ }</ID>
+    <ID>ImplicitDefaultLocale:DocumentRepository.kt$DocumentRepository$String.format("%.1f MB", bytes / (1024.0 * 1024.0))</ID>
+    <ID>ImplicitDefaultLocale:StudyScreen.kt$String.format("%02d:%02d", minutes, seconds)</ID>
+    <ID>LongMethod:CompressPdfScreen.kt$@Composable fun CompressPdfScreen( selectedPdf: Uri?, quality: Int, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdf: () -&gt; Unit, onQualityChange: (Int) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:ConversionSuccess.kt$@Composable fun ConversionSuccess( result: ConversionResult.Success, savedToDownloads: Boolean, onConvertAnother: () -&gt; Unit, onSaveToDownloads: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:ConverterScreen.kt$@Composable fun ConverterScreen( viewModel: ConverterViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:DocuSmartNavGraph.kt$@Composable fun DocuSmartNavGraph( navController : NavHostController, themeManager : ThemeManager, languageManager: LanguageManager )</ID>
+    <ID>LongMethod:MergePdfScreen.kt$@Composable fun MergePdfScreen( selectedPdfs: List&lt;Uri&gt;, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdfs: () -&gt; Unit, onRemovePdf: (Uri) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:PdfPasswordScreen.kt$@Composable private fun ProtectPdfForm( uiState : SecurityUiState, context : android.content.Context, defaultDocumentName: String, onProtect : (Uri, String, String) -&gt; Unit, onCancel : () -&gt; Unit, onSaveToDownloads: (java.io.File) -&gt; Unit )</ID>
+    <ID>LongMethod:PdfPasswordScreen.kt$@Composable private fun RemovePdfPasswordForm( uiState : SecurityUiState, context : android.content.Context, defaultDocumentName: String, onRemove : (Uri, String, String) -&gt; Unit, onCancel : () -&gt; Unit, onSaveToDownloads: (java.io.File) -&gt; Unit )</ID>
+    <ID>LongMethod:PdfToolsScreen.kt$@Composable fun PdfToolsScreen( viewModel: PdfToolsViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:QrScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun QrCreatorScreen(onBack: () -&gt; Unit = {})</ID>
+    <ID>LongMethod:QrScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun QrReaderScreen(onBack: () -&gt; Unit = {})</ID>
+    <ID>LongMethod:RotatePdfScreen.kt$@Composable fun RotatePdfScreen( selectedPdf: Uri?, degrees: Int, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdf: () -&gt; Unit, onDegreesChange: (Int) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:ScanResultScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ScanResultScreen( scannedUris: List&lt;Uri&gt;, isPdf: Boolean, onBack: () -&gt; Unit, onDone: () -&gt; Unit, converterViewModel: ConverterViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:SecurityScreen.kt$@Composable private fun SecureFolderContent( uiState : SecurityUiState, onBack : () -&gt; Unit, onDeleteFile : (java.io.File) -&gt; Unit, onRestoreFile : (java.io.File) -&gt; Unit, onChangePinClick : () -&gt; Unit, onToggleBiometric: () -&gt; Unit, onImportFile : (Uri) -&gt; Unit, onImportLocalFile: (java.io.File) -&gt; Unit )</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( themeManager : ThemeManager, languageManager: LanguageManager, onPremiumClick : () -&gt; Unit = {}, onShowOnboarding : () -&gt; Unit = {}, viewModel : SettingsViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:SplitPdfScreen.kt$@Composable fun SplitPdfScreen( selectedPdf: Uri?, fromPage: Int, toPage: Int, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdf: () -&gt; Unit, onFromPageChange: (Int) -&gt; Unit, onToPageChange: (Int) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:StudyScreen.kt$@Composable fun StudyScreen(onBack: () -&gt; Unit = {})</ID>
+    <ID>LongMethod:StudyScreen.kt$@Composable private fun NotesTab( notes : String, onNotesChange: (String) -&gt; Unit, highlights : Set&lt;Int&gt;, documentText : List&lt;String&gt; )</ID>
+    <ID>LongMethod:StudyScreen.kt$@Composable private fun PomodoroTab( minutes: Int, seconds: Int, isRunning: Boolean, isBreak: Boolean, pomodoroCount: Int, onToggle: () -&gt; Unit, onReset: () -&gt; Unit )</ID>
+    <ID>LongMethod:StudyScreen.kt$@Composable private fun ReadingTab( documentText: List&lt;String&gt;, isLoading: Boolean, highlights: Set&lt;Int&gt;, isSpeaking: Boolean, ttsReady: Boolean, currentSpeakingIndex: Int, onToggleHighlight: (Int) -&gt; Unit, onSpeak: (String, Int) -&gt; Unit, onSpeakAll: () -&gt; Unit, onSelectDoc: () -&gt; Unit )</ID>
+    <ID>LongMethod:ViewerScreen.kt$@Composable fun ViewerScreen( documentId: String, onBack : () -&gt; Unit, viewModel : ViewerViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:ViewerScreen.kt$@Composable private fun PptViewerContent( uri : Uri?, searchQuery: String = "", onTap : () -&gt; Unit )</ID>
+    <ID>LongParameterList:ConverterViewModel.kt$ConverterViewModel$( private val convertImageToPdf: ConvertImageToPdfUseCase, private val pdfToImage : PdfToImageUseCase, private val pdfToText : PdfToTextUseCase, private val pdfToWord : PdfToWordUseCase, private val pdfToHtml : PdfToHtmlUseCase, private val imageFormat : ImageFormatUseCase, private val wordToPdf : WordToPdfUseCase, private val wordToHtml : WordToHtmlUseCase, private val excelToPdf : ExcelToPdfUseCase, private val excelToHtml : ExcelToHtmlUseCase, private val pptToText : PptToTextUseCase, val adManager : AdManager, private val dailyLimitManager: DailyLimitManager // ← NUEVO )</ID>
+    <ID>LoopWithTooManyJumpStatements:DocumentRepository.kt$DocumentRepository$while</ID>
+    <ID>MatchingDeclarationName:CategoryFilter.kt$CategoryOption</ID>
+    <ID>MatchingDeclarationName:DocuSmartBottomBar.kt$BottomNavItem</ID>
+    <ID>MatchingDeclarationName:OnboardingScreen.kt$OnboardingSlide</ID>
+    <ID>MatchingDeclarationName:PdfToolsMenu.kt$PdfToolItem</ID>
+    <ID>MatchingDeclarationName:QuickAccessGrid.kt$QuickAccessItem</ID>
+    <ID>MaxLineLength:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$"s" -&gt; { val idx = vValue.toIntOrNull() ?: -1; if (idx in sharedStrings.indices) sharedStrings[idx] else "" }</ID>
+    <ID>MaxLineLength:ImageFormatUseCase.kt$ImageFormatUseCase$ConversionType.IMAGE_TO_BMP -&gt; Triple(Bitmap.CompressFormat.PNG, "bmp", 100)</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PermissionChecker.PERMISSION_GRANTED</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PermissionChecker.PERMISSION_GRANTED</ID>
+    <ID>MaxLineLength:OnboardingScreen.kt$text = stringResource(if (isLastPage) R.string.onboarding_start else R.string.onboarding_next)</ID>
+    <ID>MaxLineLength:PdfPasswordScreen.kt$text</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)))</ID>
+    <ID>MaxLineLength:QrScreen.kt$QrContentType.DOCUMENT -&gt; Triple(Icons.Rounded.Description, DocuBlue, stringResource(R.string.qr_type_document_detected))</ID>
+    <ID>MaxLineLength:QrScreen.kt$QrContentType.EMAIL -&gt; Triple(Icons.Rounded.Email, DocuBlue, stringResource(R.string.qr_type_email_detected))</ID>
+    <ID>MaxLineLength:QrScreen.kt$QrContentType.IMAGE -&gt; Triple(Icons.Rounded.Image, SuccessGreen,stringResource(R.string.qr_type_image_detected))</ID>
+    <ID>MaxLineLength:QrScreen.kt$QrContentType.PHONE -&gt; Triple(Icons.Rounded.Phone, SuccessGreen,stringResource(R.string.qr_type_phone_detected))</ID>
+    <ID>MaxLineLength:QrScreen.kt$QrContentType.TEXT -&gt; Triple(Icons.Rounded.TextFields, DocuBlue, stringResource(R.string.qr_type_text_detected))</ID>
+    <ID>MaxLineLength:QrScreen.kt$QrContentType.URL -&gt; Triple(Icons.Rounded.Link, DocuBlue, stringResource(R.string.qr_type_url_detected))</ID>
+    <ID>MaxLineLength:QrScreen.kt$onClick = { openDocumentExternally(context, qrResult ?: "", openDocumentLabel) }</ID>
+    <ID>MaxLineLength:ScanResultScreen.kt$contentDescription = stringResource(R.string.scan_result_page_content_desc, index + 1)</ID>
+    <ID>MaxLineLength:SecurityScreen.kt$onImportFile = { uri -&gt; viewModel.importFileToSecure(context, uri, fileProtectedSuccess, fileProtectError) }</ID>
+    <ID>MaxLineLength:SecurityScreen.kt$onImportLocalFile = { file -&gt; viewModel.importLocalFile(file, fileProtectedSuccess, fileProtectError) }</ID>
+    <ID>MaxLineLength:SecurityScreen.kt$text = stringResource(if (hasPin) R.string.security_enter_pin else R.string.security_setup_pin_title)</ID>
+    <ID>MaxLineLength:SecurityScreen.kt$text = stringResource(if (isConfirming) R.string.security_confirm_pin else R.string.security_create_pin)</ID>
+    <ID>MaxLineLength:SecurityScreen.kt$text = { Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error) }</ID>
+    <ID>MaxLineLength:SecurityScreen.kt$title = { Text(stringResource(R.string.security_protect_file_dialog_title), style = MaterialTheme.typography.titleLarge) }</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$else</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$if</ID>
+    <ID>MaxLineLength:StudyScreen.kt$Text(if (isSpeaking) stringResource(R.string.study_stop) else stringResource(R.string.study_read_all))</ID>
+    <ID>MaxLineLength:StudyScreen.kt$text = if (isBreak) stringResource(R.string.study_break_label) else stringResource(R.string.study_study_label)</ID>
+    <ID>MaxLineLength:StudyScreen.kt$text = if (isRunning) stringResource(R.string.study_in_progress) else stringResource(R.string.study_paused)</ID>
+    <ID>MaxLineLength:StudyScreen.kt$text = if (isRunning) stringResource(R.string.study_pause) else stringResource(R.string.study_start)</ID>
+    <ID>MaxLineLength:ViewerScreen.kt$"s" -&gt; { val idx = vValue.toIntOrNull() ?: -1; if (idx &gt;= 0 &amp;&amp; idx &lt; sharedStrings.size) sharedStrings[idx] else "" }</ID>
+    <ID>MaxLineLength:ViewerScreen.kt$android.util.Log.d("ViewerScreen", "document!=null fileUri=$fileUri mime=$mime fileName=$fileName requiresPassword=${uiState.requiresPassword} error=${uiState.error}")</ID>
+    <ID>MaxLineLength:ViewerScreen.kt$val num = entry.name.removePrefix("ppt/slides/slide").removeSuffix(".xml").toIntOrNull() ?: 0</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"1" to DocumentUiModel("1", "Contrato_Servicios_2024.pdf", DocumentType.PDF, "2.4 MB", "01/05/2026", true)</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"10" to DocumentUiModel("10", "Reporte_Ventas.xlsx", DocumentType.EXCEL, "2.2 MB", "22/04/2026", true)</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"11" to DocumentUiModel("11", "Carta_Presentacion.docx", DocumentType.WORD, "340 KB", "21/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"12" to DocumentUiModel("12", "Logo_Empresa.png", DocumentType.IMAGE, "890 KB", "20/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"2" to DocumentUiModel("2", "Informe_Trimestral.docx", DocumentType.WORD, "1.1 MB", "30/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"3" to DocumentUiModel("3", "Presupuesto_Q1.xlsx", DocumentType.EXCEL, "890 KB", "29/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"4" to DocumentUiModel("4", "Presentacion_Clientes.pptx", DocumentType.POWERPOINT, "5.2 MB", "28/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"5" to DocumentUiModel("5", "Foto_Documento.jpg", DocumentType.IMAGE, "3.8 MB", "27/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"6" to DocumentUiModel("6", "Manual_Usuario.pdf", DocumentType.PDF, "4.1 MB", "26/04/2026", true)</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"7" to DocumentUiModel("7", "Notas_Reunion.txt", DocumentType.TEXT, "12 KB", "25/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"8" to DocumentUiModel("8", "Backup_Documentos.zip", DocumentType.ZIP, "45 MB", "24/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"9" to DocumentUiModel("9", "Escaneo_Factura.pdf", DocumentType.OCR, "1.8 MB", "23/04/2026")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$Timber.d("$TAG: PdfDocument excepción → clase=${e.javaClass.simpleName} msg=${e.message} isEncrypted=$isEncrypted")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$Timber.d("$TAG: isPdf ruta absoluta path=$originalId existe=${sourceFile.exists()} size=${sourceFile.length()}")</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$_uiState.update { it.copy(isLoading = false, passwordError = "No se pudo leer el archivo") }</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$uriString.endsWith(".docx", ignoreCase = true) -&gt; "application/vnd.openxmlformats-officedocument.wordprocessingml.document"</ID>
+    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$uriString.endsWith(".xlsx", ignoreCase = true) -&gt; "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"</ID>
+    <ID>NestedBlockDepth:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>NestedBlockDepth:ConverterViewModel.kt$ConverterViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
+    <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadImagesFromMediaStore(): List&lt;DocumentUiModel&gt;</ID>
+    <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadPdfsFromDownloads(): List&lt;DocumentUiModel&gt;</ID>
+    <ID>NestedBlockDepth:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>NestedBlockDepth:PdfToolsViewModel.kt$PdfToolsViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
+    <ID>NestedBlockDepth:QrScreen.kt$private fun saveQrToDownloads(context: Context, file: File)</ID>
+    <ID>NestedBlockDepth:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>NestedBlockDepth:ScanResultScreen.kt$private fun saveFileToDownloads(context: Context, file: File): Boolean</ID>
+    <ID>NestedBlockDepth:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>NestedBlockDepth:StudyScreen.kt$private fun extractPdfText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
+    <ID>NestedBlockDepth:StudyScreen.kt$private fun extractPptText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
+    <ID>NestedBlockDepth:StudyScreen.kt$private fun extractWordText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
+    <ID>NestedBlockDepth:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
+    <ID>NewLineAtEndOfFile:AdBanner.kt$com.docsmart.features.home.presentation.component.AdBanner.kt</ID>
+    <ID>NewLineAtEndOfFile:AdConstants.kt$com.docsmart.core.ads.AdConstants.kt</ID>
+    <ID>NewLineAtEndOfFile:AdManager.kt$com.docsmart.core.ads.AdManager.kt</ID>
+    <ID>NewLineAtEndOfFile:CategoryFilter.kt$com.docsmart.features.library.presentation.components.CategoryFilter.kt</ID>
+    <ID>NewLineAtEndOfFile:Color.kt$com.docsmart.core.ui.theme.Color.kt</ID>
+    <ID>NewLineAtEndOfFile:CompressPdfScreen.kt$com.docsmart.features.pdftools.presentation.components.CompressPdfScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:CompressPdfUseCase.kt$com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:ConversionProgress.kt$com.docsmart.features.converter.presentation.components.ConversionProgress.kt</ID>
+    <ID>NewLineAtEndOfFile:ConversionResult.kt$com.docsmart.features.converter.domain.model.ConversionResult.kt</ID>
+    <ID>NewLineAtEndOfFile:ConversionSuccess.kt$com.docsmart.features.converter.presentation.components.ConversionSuccess.kt</ID>
+    <ID>NewLineAtEndOfFile:ConversionType.kt$com.docsmart.features.converter.domain.model.ConversionType.kt</ID>
+    <ID>NewLineAtEndOfFile:ConvertImageToPdfUseCase.kt$com.docsmart.features.converter.domain.usecase.ConvertImageToPdfUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:ConverterScreen.kt$com.docsmart.features.converter.presentation.ConverterScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:ConverterViewModel.kt$com.docsmart.features.converter.presentation.ConverterViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:DailyLimitManager.kt$com.docsmart.core.ads.DailyLimitManager.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartAnalytics.kt$com.docsmart.core.analytics.DocuSmartAnalytics.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartApplication.kt$com.docsmart.DocuSmartApplication.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartBannerAd.kt$com.docsmart.core.ads.DocuSmartBannerAd.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartButtons.kt$com.docsmart.core.ui.components.buttons.DocuSmartButtons.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartCards.kt$com.docsmart.core.ui.components.cards.DocuSmartCards.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartChip.kt$com.docsmart.core.ui.components.DocuSmartChip.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartDocumentItem.kt$com.docsmart.core.ui.components.DocuSmartDocumentItem.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartNavGraph.kt$com.docsmart.core.navegation.DocuSmartNavGraph.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartSearchBar.kt$com.docsmart.core.ui.components.DocuSmartSearchBar.kt</ID>
+    <ID>NewLineAtEndOfFile:DocuSmartTopBanner.kt$com.docsmart.core.ui.components.DocuSmartTopBanner.kt</ID>
+    <ID>NewLineAtEndOfFile:DocumentListSection.kt$com.docsmart.features.library.presentation.components.DocumentListSection.kt</ID>
+    <ID>NewLineAtEndOfFile:DocumentRepositoryImpl.kt$com.docsmart.features.converter.data.repository.DocumentRepositoryImpl.kt</ID>
+    <ID>NewLineAtEndOfFile:ExampleUnitTest.kt$com.docsmart.app.ExampleUnitTest.kt</ID>
+    <ID>NewLineAtEndOfFile:ExcelToHtmlUseCase.kt$com.docsmart.features.converter.domain.usecase.ExcelToHtmlUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:ExcelToPdfUseCase.kt$com.docsmart.features.converter.domain.usecase.ExcelToPdfUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:FavoritesRepository.kt$com.docsmart.core.data.FavoritesRepository.kt</ID>
+    <ID>NewLineAtEndOfFile:FavoritesSection.kt$com.docsmart.features.library.presentation.components.FavoritesSection.kt</ID>
+    <ID>NewLineAtEndOfFile:HomeBanner.kt$com.docsmart.features.home.presentation.component.HomeBanner.kt</ID>
+    <ID>NewLineAtEndOfFile:HomeScreen.kt$com.docsmart.features.home.presentation.HomeScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:HomeViewModel.kt$com.docsmart.features.converter.presentation.HomeViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:HomeViewModel.kt$com.docsmart.features.home.presentation.HomeViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:ImageFormatUseCase.kt$com.docsmart.features.converter.domain.usecase.ImageFormatUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:ImagePickerSection.kt$com.docsmart.features.converter.presentation.components.ImagePickerSection.kt</ID>
+    <ID>NewLineAtEndOfFile:LanguageManager.kt$com.docsmart.core.ui.LanguageManager.kt</ID>
+    <ID>NewLineAtEndOfFile:LibraryHeader.kt$com.docsmart.features.library.presentation.components.LibraryHeader.kt</ID>
+    <ID>NewLineAtEndOfFile:LibraryScreen.kt$com.docsmart.features.library.presentation.LibraryScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:LibraryViewModel.kt$com.docsmart.features.library.presentation.LibraryViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:MainActivity.kt$com.docsmart.MainActivity.kt</ID>
+    <ID>NewLineAtEndOfFile:MergePdfScreen.kt$com.docsmart.features.pdftools.presentation.components.MergePdfScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:NavRoutes.kt$com.docsmart.core.navegation.NavRoutes.kt</ID>
+    <ID>NewLineAtEndOfFile:OnboardingScreen.kt$com.docsmart.features.onboarding.presentation.OnboardingScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:OutputFileNameField.kt$com.docsmart.features.pdftools.presentation.components.OutputFileNameField.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfPasswordScreen.kt$com.docsmart.features.security.presentation.PdfPasswordScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToHtmlUseCase.kt$com.docsmart.features.converter.domain.usecase.PdfToHtmlUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToImageUseCase.kt$com.docsmart.features.converter.domain.usecase.PdfToImageUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToTextUseCase.kt$com.docsmart.features.converter.domain.usecase.PdfToTextUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToWordUseCase.kt$com.docsmart.features.converter.domain.usecase.PdfToWordUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToolResult.kt$com.docsmart.features.pdftools.domain.model.PdfToolResult.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToolsMenu.kt$com.docsmart.features.pdftools.presentation.components.PdfToolsMenu.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToolsScreen.kt$com.docsmart.features.pdftools.presentation.PdfToolsScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:PdfToolsViewModel.kt$com.docsmart.features.pdftools.presentation.PdfToolsViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:PermissionHandler.kt$com.docsmart.core.permission.PermissionHandler.kt</ID>
+    <ID>NewLineAtEndOfFile:PptToTextUseCase.kt$com.docsmart.features.converter.domain.usecase.PptToTextUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumBanner.kt$com.docsmart.features.premium.presentation.components.PremiumBanner.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumFeatureList.kt$com.docsmart.features.premium.presentation.components.PremiumFeatureList.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumManager.kt$com.docsmart.core.premium.PremiumManager.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumPlan.kt$com.docsmart.features.premium.domain.model.PremiumPlan.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumPlanCards.kt$com.docsmart.features.premium.presentation.components.PremiumPlanCards.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumRepository.kt$com.docsmart.features.premium.data.repository.PremiumRepository.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumScreen.kt$com.docsmart.features.premium.presentation.PremiumScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:PremiumViewModel.kt$com.docsmart.features.premium.presentation.PremiumViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:QuickAccessGrid.kt$com.docsmart.features.home.presentation.component.QuickAccessGrid.kt</ID>
+    <ID>NewLineAtEndOfFile:RecentDocuments.kt$com.docsmart.features.home.presentation.component.RecentDocuments.kt</ID>
+    <ID>NewLineAtEndOfFile:RotatePdfScreen.kt$com.docsmart.features.pdftools.presentation.components.RotatePdfScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:ScanResultScreen.kt$com.docsmart.features.scanner.presentation.ScanResultScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:ScannerScreen.kt$com.docsmart.features.scanner.presentation.ScannerScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:ScannerViewModel.kt$com.docsmart.features.scanner.presentation.ScannerViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:SecurityManager.kt$com.docsmart.core.security.SecurityManager.kt</ID>
+    <ID>NewLineAtEndOfFile:SecurityMenuScreen.kt$com.docsmart.features.security.presentation.SecurityMenuScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:SecurityScreen.kt$com.docsmart.features.security.presentation.SecurityScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:SecurityViewModel.kt$com.docsmart.features.security.presentation.SecurityViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:SettingsScreen.kt$com.docsmart.features.settings.presentation.SettingsScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:Shape.kt$com.docsmart.core.ui.theme.Shape.kt</ID>
+    <ID>NewLineAtEndOfFile:SplashDocuSmartScreen.kt$com.docsmart.features.splash.presentation.SplashDocuSmartScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:SplashMouthBlackScreen.kt$com.docsmart.features.splash.presentation.SplashMouthBlackScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:SplitPdfScreen.kt$com.docsmart.features.pdftools.presentation.components.SplitPdfScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:SplitPdfUseCase.kt$com.docsmart.features.pdftools.domain.usecase.SplitPdfUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:StudyScreen.kt$com.docsmart.features.study.presentation.StudyScreen.kt</ID>
+    <ID>NewLineAtEndOfFile:Theme.kt$com.docsmart.core.ui.theme.Theme.kt</ID>
+    <ID>NewLineAtEndOfFile:ThemeManager.kt$com.docsmart.core.ui.theme.ThemeManager.kt</ID>
+    <ID>NewLineAtEndOfFile:Type.kt$com.docsmart.core.ui.theme.Type.kt</ID>
+    <ID>NewLineAtEndOfFile:ViewerBottomBar.kt$com.docsmart.features.viewer.presentation.components.ViewerBottomBar.kt</ID>
+    <ID>NewLineAtEndOfFile:ViewerTopBar.kt$com.docsmart.features.viewer.presentation.components.ViewerTopBar.kt</ID>
+    <ID>NewLineAtEndOfFile:ViewerViewModel.kt$com.docsmart.features.viewer.presentation.ViewerViewModel.kt</ID>
+    <ID>NewLineAtEndOfFile:WordToHtmlUseCase.kt$com.docsmart.features.converter.domain.usecase.WordToHtmlUseCase.kt</ID>
+    <ID>NewLineAtEndOfFile:WordToPdfUseCase.kt$com.docsmart.features.converter.domain.usecase.WordToPdfUseCase.kt</ID>
+    <ID>PrintStackTrace:SettingsScreen.kt$e</ID>
+    <ID>ReturnCount:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
+    <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
+    <ID>ReturnCount:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
+    <ID>SwallowedException:DocumentListSection.kt$e: Exception</ID>
+    <ID>SwallowedException:FavoritesSection.kt$e: Exception</ID>
+    <ID>SwallowedException:HomeViewModel.kt$HomeViewModel$e: Exception</ID>
+    <ID>SwallowedException:RecentDocuments.kt$e: Exception</ID>
+    <ID>SwallowedException:SecurityViewModel.kt$SecurityViewModel$e: Exception</ID>
+    <ID>SwallowedException:SettingsScreen.kt$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:StudyScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CompressPdfUseCase.kt$CompressPdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConversionSuccess.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConvertImageToPdfUseCase.kt$ConvertImageToPdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ConverterViewModel.kt$ConverterViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocuSmartBannerAd.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocuSmartNavGraph.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocumentListSection.kt$e2: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocumentListSection.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocumentRepository.kt$DocumentRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ExcelToPdfUseCase.kt$ExcelToPdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FavoritesSection.kt$e2: Exception</ID>
+    <ID>TooGenericExceptionCaught:FavoritesSection.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HomeViewModel.kt$HomeViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ImageFormatUseCase.kt$ImageFormatUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LibraryViewModel.kt$LibraryViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MainActivity.kt$MainActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MergePdfUseCase.kt$MergePdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PdfPasswordUseCase.kt$PdfPasswordUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PdfToHtmlUseCase.kt$PdfToHtmlUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PdfToImageUseCase.kt$PdfToImageUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PdfToTextUseCase.kt$PdfToTextUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PdfToWordUseCase.kt$PdfToWordUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PdfToolsViewModel.kt$PdfToolsViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PermissionHandler.kt$PermissionHandler$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PptToTextUseCase.kt$PptToTextUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PremiumManager.kt$PremiumManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:QrScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RecentDocuments.kt$e2: Exception</ID>
+    <ID>TooGenericExceptionCaught:RecentDocuments.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RotatePdfScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RotatePdfUseCase.kt$RotatePdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ScanResultScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SecurityManager.kt$SecurityManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SecurityViewModel.kt$SecurityViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SettingsScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SplitPdfUseCase.kt$SplitPdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:StudyScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e1: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e2: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e3: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$ve: Exception</ID>
+    <ID>TooGenericExceptionCaught:WordToHtmlUseCase.kt$WordToHtmlUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:WordToPdfUseCase.kt$WordToPdfUseCase$e: Exception</ID>
+    <ID>TooManyFunctions:ConverterViewModel.kt$ConverterViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:DocuSmartAnalytics.kt$DocuSmartAnalytics</ID>
+    <ID>TooManyFunctions:LibraryViewModel.kt$LibraryViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:PdfToolsViewModel.kt$PdfToolsViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:QrScreen.kt$com.docsmart.features.scanner.presentation.QrScreen.kt</ID>
+    <ID>TooManyFunctions:SecurityManager.kt$SecurityManager</ID>
+    <ID>TooManyFunctions:SecurityViewModel.kt$SecurityViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:StudyScreen.kt$com.docsmart.features.study.presentation.StudyScreen.kt</ID>
+    <ID>TooManyFunctions:ViewerViewModel.kt$ViewerViewModel : ViewModel</ID>
+    <ID>UnusedParameter:QuickAccessGrid.kt$onQrClick : () -&gt; Unit = {}</ID>
+    <ID>UnusedParameter:SecurityScreen.kt$onPdfPassword: () -&gt; Unit = {}</ID>
+    <ID>UnusedPrivateMember:SettingsScreen.kt$private fun sendSupportEmail(context: Context, isEs: Boolean)</ID>
+    <ID>UnusedPrivateMember:StudyScreen.kt$@Composable private fun ParagraphItem( text: String, index: Int, isHighlighted: Boolean, isSpeaking: Boolean, onToggleHighlight: () -&gt; Unit, onSpeak: () -&gt; Unit )</ID>
+    <ID>UnusedPrivateProperty:ConvertImageToPdfUseCase.kt$ConvertImageToPdfUseCase.Companion$private const val TAG = "ConvertImageToPdf"</ID>
+    <ID>UnusedPrivateProperty:MainActivity.kt$MainActivity$val isSystemDark = isSystemInDarkTheme()</ID>
+    <ID>UnusedPrivateProperty:PdfToolsViewModel.kt$PdfToolsViewModel.Companion$private const val TAG = "PdfToolsViewModel"</ID>
+    <ID>UnusedPrivateProperty:SettingsScreen.kt$var showShareDialog by remember { mutableStateOf(false) }</ID>
+    <ID>WildcardImport:AdBanner.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:AdBanner.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:CategoryFilter.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:CategoryFilter.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:CategoryFilter.kt$import com.docsmart.core.ui.theme.*</ID>
+    <ID>WildcardImport:CompressPdfScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:CompressPdfScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:CompressPdfScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ConversionProgress.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:ConversionProgress.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ConversionProgress.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ConversionProgress.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ConversionSuccess.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ConversionSuccess.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:ConversionSuccess.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ConverterScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ConverterScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:ConverterScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ConverterScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ConverterScreen.kt$import com.docsmart.core.ui.theme.*</ID>
+    <ID>WildcardImport:ConverterViewModel.kt$import com.docsmart.features.converter.domain.usecase.*</ID>
+    <ID>WildcardImport:DocuSmartBannerAd.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocuSmartBannerAd.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DocuSmartBottomBar.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:DocuSmartBottomBar.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DocuSmartButtons.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocuSmartButtons.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DocuSmartCards.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocuSmartCards.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DocuSmartChip.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocuSmartChip.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DocuSmartDocumentItem.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocuSmartDocumentItem.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:DocuSmartDocumentItem.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DocuSmartDocumentItem.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DocuSmartDocumentItem.kt$import com.docsmart.core.ui.theme.*</ID>
+    <ID>WildcardImport:DocuSmartSearchBar.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocuSmartSearchBar.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DocuSmartTopBanner.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocumentListSection.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DocumentListSection.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DocumentListSection.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ExampleUnitTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:FavoritesSection.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:FavoritesSection.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:FavoritesSection.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:HomeBanner.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:HomeBanner.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:HomeScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:HomeScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ImagePickerSection.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ImagePickerSection.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:ImagePickerSection.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:LibraryHeader.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:LibraryHeader.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:LibraryScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:LibraryScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:LibraryScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:LibraryScreen.kt$import com.docsmart.features.library.presentation.components.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:MergePdfScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:MergePdfScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:MergePdfScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:OutputFileNameField.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:OutputFileNameField.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PdfPasswordScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PdfPasswordScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:PdfPasswordScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PdfPasswordScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PdfToolsMenu.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PdfToolsMenu.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:PdfToolsMenu.kt$import com.docsmart.core.ui.theme.*</ID>
+    <ID>WildcardImport:PdfToolsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PdfToolsScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:PdfToolsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PdfToolsScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PremiumBanner.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PremiumBanner.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PremiumBanner.kt$import com.docsmart.core.ui.theme.*</ID>
+    <ID>WildcardImport:PremiumFeatureList.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PremiumFeatureList.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:PremiumFeatureList.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PremiumFeatureList.kt$import com.docsmart.core.ui.theme.*</ID>
+    <ID>WildcardImport:PremiumPlanCards.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PremiumPlanCards.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PremiumScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PremiumScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:PremiumScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PremiumScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PremiumScreen.kt$import com.docsmart.features.premium.presentation.components.*</ID>
+    <ID>WildcardImport:QrScreen.kt$import androidx.camera.core.*</ID>
+    <ID>WildcardImport:QrScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:QrScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:QrScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:QrScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:QuickAccessGrid.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:QuickAccessGrid.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:QuickAccessGrid.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:QuickAccessGrid.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:QuickAccessGrid.kt$import com.docsmart.core.ui.theme.*</ID>
+    <ID>WildcardImport:RecentDocuments.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:RecentDocuments.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:RecentDocuments.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:RotatePdfScreen.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:RotatePdfScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:RotatePdfScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:RotatePdfScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:RotatePdfScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ScanResultScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ScanResultScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:ScanResultScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ScanResultScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ScannerScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ScannerScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:ScannerScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ScannerScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SecurityMenuScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SecurityMenuScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:SecurityMenuScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SecurityScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SecurityScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:SecurityScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SecurityScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SplashDocuSmartScreen.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:SplashDocuSmartScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SplashDocuSmartScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SplashMouthBlackScreen.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:SplashMouthBlackScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SplashMouthBlackScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SplitPdfScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SplitPdfScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:SplitPdfScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:StudyScreen.kt$import androidx.compose.animation.*</ID>
+    <ID>WildcardImport:StudyScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:StudyScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:StudyScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:StudyScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:Theme.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ViewerBottomBar.kt$import androidx.compose.animation.*</ID>
+    <ID>WildcardImport:ViewerBottomBar.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ViewerBottomBar.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ViewerScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ViewerScreen.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:ViewerScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ViewerScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ViewerTopBar.kt$import androidx.compose.animation.*</ID>
+    <ID>WildcardImport:ViewerTopBar.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ViewerTopBar.kt$import androidx.compose.material.icons.rounded.*</ID>
+    <ID>WildcardImport:ViewerTopBar.kt$import androidx.compose.material3.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

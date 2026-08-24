@@ -1,5 +1,6 @@
 package com.docsmart.core.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -10,21 +11,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
 
-// ── Banner azul reutilizable para todas las vistas ────
-// Muestra el logo DS + nombre de la vista con gradiente
-// de marca DocuSmart
 @Composable
 fun DocuSmartTopBanner(
-    screenTitle: String,
+    screenTitle   : String,
     screenSubtitle: String = "",
-    modifier: Modifier = Modifier
+    modifier      : Modifier = Modifier
 ) {
     Box(
         modifier = modifier
@@ -35,14 +34,14 @@ fun DocuSmartTopBanner(
                     colors = listOf(DocuBlue, SmartBlue, IndigoAccent)
                 )
             )
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
-        // ── Círculos decorativos de fondo ─────────────
+        // ── Círculos decorativos ──────────────────────────────────────────────
         Box(
             modifier = Modifier
-                .size(120.dp)
+                .size(130.dp)
                 .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = (-20).dp)
+                .offset(x = 40.dp, y = (-25).dp)
                 .background(
                     color = Color.White.copy(alpha = 0.07f),
                     shape = MaterialTheme.shapes.extraLarge
@@ -50,55 +49,72 @@ fun DocuSmartTopBanner(
         )
         Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(70.dp)
                 .align(Alignment.BottomEnd)
-                .offset(x = 10.dp, y = 20.dp)
+                .offset(x = 15.dp, y = 25.dp)
                 .background(
                     color = Color.White.copy(alpha = 0.05f),
                     shape = MaterialTheme.shapes.extraLarge
                 )
         )
 
+        // ── Contenido principal ───────────────────────────────────────────────
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // ── Logo DS ───────────────────────────────
+            // Logo DocuSmart
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(52.dp)
                     .background(
-                        color = Color.White.copy(alpha = 0.15f),
+                        color = Color.White.copy(alpha = 0.18f),
                         shape = MaterialTheme.shapes.medium
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "DS",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                Image(
+                    painter           = painterResource(R.drawable.ic_docusmart_logo),
+                    contentDescription = "DocuSmart",
+                    modifier          = Modifier
+                        .size(34.dp)
+                        .padding(2.dp)
                 )
             }
 
-            // ── Título y subtítulo ────────────────────
+            // Textos
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                // Marca "DocuSmart" pequeña arriba
+                Row(
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text  = "Docu",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text  = "Smart",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+                // Título de la pantalla
                 Text(
-                    text = "DocuSmart",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.75f)
-                )
-                Text(
-                    text = screenTitle,
-                    style = MaterialTheme.typography.titleLarge,
+                    text       = screenTitle,
+                    style      = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color      = Color.White
                 )
+                // Subtítulo opcional
                 if (screenSubtitle.isNotBlank()) {
                     Text(
-                        text = screenSubtitle,
+                        text  = screenSubtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.75f)
+                        color = Color.White.copy(alpha = 0.72f)
                     )
                 }
             }
