@@ -185,7 +185,7 @@ dependencies {
 
     // ── Firebase BOM ──────────────────────────────────────────────────────────
     implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
-    implementation("com.google.firebase:firebase-analytics:21.3.0")
+    implementation("com.google.firebase:firebase-analytics:23.2.0")
     implementation("com.google.firebase:firebase-crashlytics:18.4.3")
 
     // ── Testing ───────────────────────────────────────────────────────────────
