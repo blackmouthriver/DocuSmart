@@ -49,6 +49,7 @@
     <!-- ── PDF Tools ──────────────────────────────── -->
     <string name="pdf_tools_title">PDF Tools</string>
     <string name="pdf_tools_subtitle">Manage your PDFs quickly</string>
+    <string name="pdf_tools_ad_not_available">The ad isn\'t available. Try again in a few seconds.</string>
     <string name="pdf_merge">Merge PDFs</string>
     <string name="pdf_split">Split PDF</string>
     <string name="pdf_compress">Compress PDF</string>

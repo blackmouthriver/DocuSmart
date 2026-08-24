@@ -49,6 +49,7 @@
     <!-- ── PDF Tools ──────────────────────────────── -->
     <string name="pdf_tools_title">PDF-Werkzeuge</string>
     <string name="pdf_tools_subtitle">Verwalte deine PDFs schnell und einfach</string>
+    <string name="pdf_tools_ad_not_available">Die Anzeige ist nicht verfügbar. Versuche es in ein paar Sekunden erneut.</string>
     <string name="pdf_merge">PDFs zusammenführen</string>
     <string name="pdf_split">PDF teilen</string>
     <string name="pdf_compress">PDF komprimieren</string>

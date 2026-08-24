@@ -49,6 +49,7 @@
     <!-- ── Инструменты PDF ──────────────────────────────── -->
     <string name="pdf_tools_title">Инструменты PDF</string>
     <string name="pdf_tools_subtitle">Быстрое управление вашими PDF</string>
+    <string name="pdf_tools_ad_not_available">Реклама недоступна. Попробуйте снова через несколько секунд.</string>
     <string name="pdf_merge">Объединить PDF</string>
     <string name="pdf_split">Разделить PDF</string>
     <string name="pdf_compress">Сжать PDF</string>
