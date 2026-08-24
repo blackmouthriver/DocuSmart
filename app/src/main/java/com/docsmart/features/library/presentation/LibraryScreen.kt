@@ -39,6 +39,13 @@ fun LibraryScreen(
     var hasPermission   by remember { mutableStateOf(checkStoragePermission(context)) }
     var permissionDenied by remember { mutableStateOf(false) }
 
+    LaunchedEffect(uiState.deleteError) {
+        uiState.deleteError?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.dismissDeleteError()
+        }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->

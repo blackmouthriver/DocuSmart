@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +41,14 @@ fun HomeScreen(
 
     val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val context    = LocalContext.current
+
+    LaunchedEffect(uiState.deleteError) {
+        uiState.deleteError?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.dismissDeleteError()
+        }
+    }
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()

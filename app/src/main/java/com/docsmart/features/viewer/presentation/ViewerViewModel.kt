@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -37,12 +38,15 @@ data class ViewerUiState(
     val mimeType         : String? = null,
     val requiresPassword : Boolean = false,
     val passwordError    : String? = null,
-    val decryptedFile    : File?   = null
+    val decryptedFile    : File?   = null,
+    val pdfSearchMatches : List<Int> = emptyList(), // páginas (1-based) con coincidencias
+    val pdfSearchIndex   : Int     = -1             // índice actual dentro de pdfSearchMatches
 )
 
 @HiltViewModel
 class ViewerViewModel @Inject constructor(
-    private val favoritesRepository: FavoritesRepository
+    private val favoritesRepository: FavoritesRepository,
+    private val searchPdfText: SearchPdfTextUseCase
 ) : ViewModel() {
 
     companion object {
@@ -86,9 +90,12 @@ class ViewerViewModel @Inject constructor(
 
     private suspend fun loadFromUri(documentId: String, context: Context) {
         withContext(Dispatchers.IO) {
+            // uriString es el mismo id que usan Biblioteca/Home como clave de
+            // favoritos/alias (FavoritesRepository) — para rutas absolutas debe
+            // quedar SIN el prefijo "file://", si no los favoritos/alias
+            // marcados desde el Visor no coinciden con los de Biblioteca/Home.
             val uriString = when {
                 documentId.startsWith("content%3A") -> Uri.decode(documentId)
-                documentId.startsWith("/")          -> "file://$documentId"
                 else                                -> documentId
             }
 
@@ -533,6 +540,48 @@ class ViewerViewModel @Inject constructor(
 
     fun toggleControls() {
         _uiState.update { it.copy(showControls = !it.showControls) }
+    }
+
+    // ── Búsqueda dentro de PDF ─────────────────────────────────────────────────
+    // Los PDF se muestran como bitmaps renderizados, así que no hay resaltado
+    // inline como en Word/Excel/Texto: se buscan las páginas con coincidencias
+    // y se navega entre ellas (ver SearchPdfTextUseCase).
+    fun searchInPdf(query: String) {
+        val uri = _uiState.value.fileUri
+        if (uri == null || query.isBlank()) {
+            _uiState.update { it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1) }
+            return
+        }
+        viewModelScope.launch {
+            val matches = searchPdfText(uri, query)
+            _uiState.update {
+                it.copy(
+                    pdfSearchMatches = matches,
+                    pdfSearchIndex   = if (matches.isEmpty()) -1 else 0
+                )
+            }
+        }
+    }
+
+    fun nextPdfSearchResult() {
+        _uiState.update { state ->
+            if (state.pdfSearchMatches.isEmpty()) state
+            else state.copy(pdfSearchIndex = (state.pdfSearchIndex + 1) % state.pdfSearchMatches.size)
+        }
+    }
+
+    fun previousPdfSearchResult() {
+        _uiState.update { state ->
+            if (state.pdfSearchMatches.isEmpty()) state
+            else state.copy(
+                pdfSearchIndex = (state.pdfSearchIndex - 1 + state.pdfSearchMatches.size) %
+                    state.pdfSearchMatches.size
+            )
+        }
+    }
+
+    fun clearPdfSearch() {
+        _uiState.update { it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1) }
     }
 
     fun shareDocument(context: Context) {

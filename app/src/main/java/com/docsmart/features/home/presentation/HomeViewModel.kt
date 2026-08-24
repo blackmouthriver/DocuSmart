@@ -18,7 +18,8 @@ import javax.inject.Inject
 data class HomeUiState(
     val recentDocuments: List<DocumentUiModel> = emptyList(),
     val isLoading: Boolean = false,
-    val userName: String = "Usuario"
+    val userName: String = "Usuario",
+    val deleteError: String? = null
 )
 
 @HiltViewModel
@@ -71,11 +72,23 @@ class HomeViewModel @Inject constructor(
     }
 
     fun removeDocument(documentId: String) {
-        _uiState.update { state ->
-            state.copy(
-                recentDocuments = state.recentDocuments.filter { it.id != documentId }
-            )
+        viewModelScope.launch {
+            val deleted = repository.deleteDocument(documentId)
+            if (!deleted) {
+                _uiState.update { it.copy(deleteError = "No se pudo eliminar el archivo") }
+                return@launch
+            }
+            favoritesRepository.removeAlias(documentId)
+            _uiState.update { state ->
+                state.copy(
+                    recentDocuments = state.recentDocuments.filter { it.id != documentId }
+                )
+            }
         }
+    }
+
+    fun dismissDeleteError() {
+        _uiState.update { it.copy(deleteError = null) }
     }
 
     fun renameDocument(documentId: String, newName: String) {

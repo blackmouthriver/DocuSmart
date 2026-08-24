@@ -51,6 +51,27 @@ class DocumentRepository @Inject constructor(
             }
         }
 
+    /**
+     * Elimina el documento subyacente (archivo de la app o fila de MediaStore),
+     * no solo la entrada en memoria. Devuelve false si no se pudo borrar
+     * (por ejemplo, sin permiso sobre un archivo de MediaStore que la app no
+     * creó) para que quien llama pueda informarlo en vez de dar por hecho
+     * que se eliminó.
+     */
+    suspend fun deleteDocument(documentId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            if (documentId.startsWith("content://")) {
+                context.contentResolver.delete(Uri.parse(documentId), null, null) > 0
+            } else {
+                val file = File(documentId)
+                file.exists() && file.delete()
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error eliminando documento: $documentId")
+            false
+        }
+    }
+
     private fun loadPdfsFromDownloads(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return documents

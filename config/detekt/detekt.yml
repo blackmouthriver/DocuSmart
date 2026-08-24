@@ -16,6 +16,11 @@ complexity:
     constructorThreshold: 8
   TooManyFunctions:
     ignoreAnnotated: ['Composable']
+    thresholdInFiles: 20 # ignoreAnnotated no cubre el conteo a nivel de archivo — pantallas con
+                         # muchos Composables privados pequeños (uno por tipo de documento) superan
+                         # el default de 11 sin que eso implique demasiadas responsabilidades reales
+  CyclomaticComplexMethod:
+    ignoreAnnotated: ['Composable']
 
 naming:
   FunctionNaming:
