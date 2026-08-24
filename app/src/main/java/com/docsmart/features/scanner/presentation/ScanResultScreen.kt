@@ -442,7 +442,15 @@ private suspend fun savePdfUriToDownloads(
             resolver.update(destUri, values, null, null)
             true
         } else {
-            false
+            // Pre-Q (API < 29): sin MediaStore.Downloads, se escribe directo
+            // al directorio público de Descargas (requiere WRITE_EXTERNAL_STORAGE,
+            // ya declarado para este rango de API).
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val destFile = File(dir, "$fileName.pdf")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                destFile.outputStream().use { output -> input.copyTo(output) }
+            } ?: return@withContext false
+            true
         }
     } catch (e: Exception) {
         Timber.e(e, "Error guardando URI en Descargas")

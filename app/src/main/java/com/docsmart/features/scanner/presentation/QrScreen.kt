@@ -56,36 +56,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
 
-// ── Tipos de contenido QR detectado ──────────────────────────────────────────
-private enum class QrContentType {
-    URL, IMAGE, DOCUMENT, EMAIL, PHONE, TEXT
-}
-
-private fun detectQrContentType(value: String): QrContentType = when {
-    value.startsWith("http://") || value.startsWith("https://") -> {
-        val lower = value.lowercase()
-        when {
-            lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
-                    lower.endsWith(".png") || lower.endsWith(".webp") ||
-                    lower.endsWith(".gif") -> QrContentType.IMAGE
-            lower.endsWith(".pdf") || lower.endsWith(".docx") ||
-                    lower.endsWith(".xlsx") || lower.endsWith(".pptx") ||
-                    lower.endsWith(".txt") -> QrContentType.DOCUMENT
-            else -> QrContentType.URL
-        }
-    }
-    value.startsWith("content://") || value.startsWith("file://") -> {
-        val lower = value.lowercase()
-        when {
-            lower.contains(".jpg") || lower.contains(".jpeg") ||
-                    lower.contains(".png") || lower.contains(".webp") -> QrContentType.IMAGE
-            else -> QrContentType.DOCUMENT
-        }
-    }
-    value.startsWith("mailto:") -> QrContentType.EMAIL
-    value.startsWith("tel:")    -> QrContentType.PHONE
-    else                        -> QrContentType.TEXT
-}
+// QrContentType y detectQrContentType viven en QrContentType.kt (mismo paquete).
 
 // ImageProxy.image requiere @ExperimentalGetImage. El checker de lint de AGP 8.7.0 no
 // reconoce esa anotación como marcador de opt-in válido (bug conocido: @OptIn no la silencia),
