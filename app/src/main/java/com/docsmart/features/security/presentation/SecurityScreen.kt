@@ -270,32 +270,42 @@ private fun NumericKeypad(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         keys.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                row.forEach { key ->
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(RoundedCornerShape(32.dp))
-                            .background(
-                                if (key.isNotEmpty()) Color.White.copy(alpha = 0.15f)
-                                else Color.Transparent
-                            )
-                            .clickable(enabled = key.isNotEmpty()) {
-                                if (key == "⌫") onDelete() else onDigit(key)
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (key == "⌫") {
-                            Icon(Icons.Rounded.Backspace, stringResource(R.string.security_delete_desc),
-                                tint = Color.White, modifier = Modifier.size(24.dp))
-                        } else if (key.isNotEmpty()) {
-                            Text(key,
-                                fontSize   = 24.sp,
-                                fontWeight = FontWeight.Medium,
-                                color      = Color.White)
-                        }
-                    }
-                }
+                row.forEach { key -> NumericKeypadKey(key, onDigit, onDelete) }
             }
+        }
+    }
+}
+
+@Composable
+private fun NumericKeypadKey(
+    key     : String,
+    onDigit : (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(64.dp)
+            .clip(RoundedCornerShape(32.dp))
+            .background(
+                if (key.isNotEmpty()) Color.White.copy(alpha = 0.15f)
+                else Color.Transparent
+            )
+            .clickable(enabled = key.isNotEmpty()) {
+                if (key == "⌫") onDelete() else onDigit(key)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            key == "⌫" -> Icon(
+                Icons.Rounded.Backspace, stringResource(R.string.security_delete_desc),
+                tint = Color.White, modifier = Modifier.size(24.dp)
+            )
+            key.isNotEmpty() -> Text(
+                key,
+                fontSize   = 24.sp,
+                fontWeight = FontWeight.Medium,
+                color      = Color.White
+            )
         }
     }
 }

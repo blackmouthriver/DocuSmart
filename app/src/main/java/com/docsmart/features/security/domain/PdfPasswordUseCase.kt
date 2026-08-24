@@ -47,13 +47,8 @@ class PdfPasswordUseCase @Inject constructor() {
     ): PdfPasswordResult = withContext(Dispatchers.IO) {
         try {
             // ── Paso 1: copiar al caché ───────────────────────────────────────
-            val cacheFile = File(context.cacheDir, "temp_protect_${System.currentTimeMillis()}.pdf")
-            val bytesCopied = context.contentResolver.openInputStream(uri)?.use { input ->
-                cacheFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@withContext PdfPasswordResult.Error(messages.readError)
-
-            Timber.d("PdfPasswordUseCase: caché copiado → ${cacheFile.length()} bytes (copiados=$bytesCopied)")
-
+            val cacheFile = copyToCache(context, uri, "protect")
+                ?: return@withContext PdfPasswordResult.Error(messages.readError)
             if (cacheFile.length() == 0L) {
                 cacheFile.delete()
                 return@withContext PdfPasswordResult.Error(messages.emptyFile)
@@ -116,13 +111,8 @@ class PdfPasswordUseCase @Inject constructor() {
     ): PdfPasswordResult = withContext(Dispatchers.IO) {
         try {
             // ── Paso 1: copiar al caché ───────────────────────────────────────
-            val cacheFile = File(context.cacheDir, "temp_remove_${System.currentTimeMillis()}.pdf")
-            val bytesCopied = context.contentResolver.openInputStream(uri)?.use { input ->
-                cacheFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@withContext PdfPasswordResult.Error(messages.readError)
-
-            Timber.d("PdfPasswordUseCase: caché copiado → ${cacheFile.length()} bytes (copiados=$bytesCopied)")
-
+            val cacheFile = copyToCache(context, uri, "remove")
+                ?: return@withContext PdfPasswordResult.Error(messages.readError)
             if (cacheFile.length() == 0L) {
                 cacheFile.delete()
                 return@withContext PdfPasswordResult.Error(messages.emptyFile)
@@ -136,15 +126,8 @@ class PdfPasswordUseCase @Inject constructor() {
             if (outputFile.exists()) outputFile.delete()
 
             // ── Paso 3: desencriptar ──────────────────────────────────────────
-            val userPass  = password.toByteArray()
-            val reader = try {
-                val r = PdfReader(cacheFile.absolutePath, ReaderProperties().setPassword(userPass))
-                r.setUnethicalReading(true)
-                r.setMemorySavingMode(true)
-                r
-            } catch (e: Exception) {
+            val reader = openReaderOrNull(cacheFile, password.toByteArray()) ?: run {
                 cacheFile.delete()
-                Timber.w("PdfPasswordUseCase: contraseña incorrecta → ${e.message}")
                 return@withContext PdfPasswordResult.WrongPassword
             }
 
@@ -170,16 +153,35 @@ class PdfPasswordUseCase @Inject constructor() {
 
         } catch (e: Exception) {
             Timber.e(e, "PdfPasswordUseCase: error quitando contraseña → ${e.javaClass.simpleName}: ${e.message}")
-            val msg = e.message?.lowercase() ?: ""
-            return@withContext if (
-                msg.contains("password") ||
-                msg.contains("decrypt")  ||
-                msg.contains("bad user")
-            ) {
-                PdfPasswordResult.WrongPassword
-            } else {
-                PdfPasswordResult.Error(String.format(messages.removeError, e.message ?: ""))
-            }
+            classifyRemoveError(e, messages)
+        }
+    }
+
+    private fun copyToCache(context: Context, uri: Uri, prefix: String): File? {
+        val cacheFile = File(context.cacheDir, "temp_${prefix}_${System.currentTimeMillis()}.pdf")
+        val bytesCopied = context.contentResolver.openInputStream(uri)?.use { input ->
+            cacheFile.outputStream().use { output -> input.copyTo(output) }
+        } ?: return null
+        Timber.d("PdfPasswordUseCase: caché copiado → ${cacheFile.length()} bytes (copiados=$bytesCopied)")
+        return cacheFile
+    }
+
+    private fun openReaderOrNull(cacheFile: File, userPass: ByteArray): PdfReader? = try {
+        PdfReader(cacheFile.absolutePath, ReaderProperties().setPassword(userPass)).apply {
+            setUnethicalReading(true)
+            setMemorySavingMode(true)
+        }
+    } catch (e: Exception) {
+        Timber.w("PdfPasswordUseCase: contraseña incorrecta → ${e.message}")
+        null
+    }
+
+    private fun classifyRemoveError(e: Exception, messages: PdfPasswordMessages): PdfPasswordResult {
+        val msg = e.message?.lowercase() ?: ""
+        return if (msg.contains("password") || msg.contains("decrypt") || msg.contains("bad user")) {
+            PdfPasswordResult.WrongPassword
+        } else {
+            PdfPasswordResult.Error(String.format(messages.removeError, e.message ?: ""))
         }
     }
 }

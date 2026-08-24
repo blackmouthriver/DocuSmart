@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -43,128 +44,12 @@ fun DocuSmartNavGraph(
         navController    = navController,
         startDestination = NavRoutes.SplashMouthBlack.route
     ) {
-
-        // ── Splash 1: MouthBlack ──────────────────────────────────────────────
-        composable(NavRoutes.SplashMouthBlack.route) {
-            SplashMouthBlackScreen(
-                onFinished = {
-                    navController.navigate(NavRoutes.SplashDocuSmart.route) {
-                        popUpTo(NavRoutes.SplashMouthBlack.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // ── Splash 2: DocuSmart → decide si muestra onboarding ────────────────
-        composable(NavRoutes.SplashDocuSmart.route) {
-            val context = LocalContext.current
-            SplashDocuSmartScreen(
-                onFinished = {
-                    // Primera vez → Onboarding / Ya visto → Home
-                    val destination = if (!hasCompletedOnboarding(context))
-                        NavRoutes.Onboarding.route
-                    else
-                        NavRoutes.Home.route
-
-                    navController.navigate(destination) {
-                        popUpTo(NavRoutes.SplashDocuSmart.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // ── Onboarding (primera vez) ──────────────────────────────────────────
-        composable(NavRoutes.Onboarding.route) {
-            OnboardingScreen(
-                onFinished = {
-                    navController.navigate(NavRoutes.Home.route) {
-                        popUpTo(NavRoutes.Onboarding.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // ── Home ──────────────────────────────────────────────────────────────
-        composable(NavRoutes.Home.route) {
-            val context = LocalContext.current
-            HomeScreen(
-                onOpenFile = { uri ->
-                    try {
-                        val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        context.contentResolver.takePersistableUriPermission(uri, flags)
-                    } catch (e: Exception) {
-                        Timber.e("Error permiso: ${e.message}")
-                    }
-                    navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
-                },
-                onScan      = { navController.navigate(NavRoutes.Scanner.route) },
-                onConvert   = { navController.navigate(NavRoutes.Converter.route) },
-                onSecurity  = { navController.navigate(NavRoutes.Security.route) },
-                onStudy     = { navController.navigate(NavRoutes.Study.route) },
-                onSeeAll    = { navController.navigate(NavRoutes.Library.route) },
-                onQrReader  = { navController.navigate(NavRoutes.QrReader.route) },
-                onQrCreator = { navController.navigate(NavRoutes.QrCreator.route) },
-                onDocumentClick = { documentId ->
-                    navController.navigate(NavRoutes.Viewer.createRoute(documentId))
-                }
-            )
-        }
-
-        // ── Library ───────────────────────────────────────────────────────────
-        composable(NavRoutes.Library.route) {
-            val context = LocalContext.current
-            LibraryScreen(
-                onDocumentClick = { documentId ->
-                    val isUri = documentId.startsWith("content://") ||
-                            documentId.startsWith("file://") ||
-                            documentId.startsWith("/")
-                    if (isUri && documentId.startsWith("content://")) {
-                        try {
-                            val uri = Uri.parse(documentId)
-                            context.contentResolver.takePersistableUriPermission(
-                                uri,
-                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            )
-                        } catch (e: Exception) {
-                            Timber.w("No se pudo persistir permiso: ${e.message}")
-                        }
-                    }
-                    navController.navigate(NavRoutes.Viewer.createRoute(documentId))
-                }
-            )
-        }
-
-        // ── Viewer ────────────────────────────────────────────────────────────
-        composable(
-            route     = NavRoutes.Viewer.route,
-            arguments = listOf(
-                navArgument("documentId") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
-            val encodedId  = backStackEntry.arguments
-                ?.getString("documentId") ?: return@composable
-            val documentId = if (encodedId.startsWith("content%3A"))
-                Uri.decode(encodedId) else encodedId
-            Timber.d("Viewer: documentId final = $documentId")
-            val context = LocalContext.current
-            ViewerScreen(
-                documentId = documentId,
-                onBack     = {
-                    // Siempre intentar finish si el previous destination también es Viewer
-                    val prevRoute = navController.previousBackStackEntry?.destination?.route
-                    Timber.d("Viewer onBack: prevRoute=$prevRoute")
-                    if (prevRoute == null || prevRoute.startsWith("viewer")) {
-                        (context as? android.app.Activity)?.finish()
-                    } else {
-                        navController.popBackStack()
-                    }
-                }
-            )
-        }
+        splashMouthBlackComposable(navController)
+        splashDocuSmartComposable(navController)
+        onboardingComposable(navController)
+        homeComposable(navController)
+        libraryComposable(navController)
+        viewerComposable(navController)
 
         // ── Converter ─────────────────────────────────────────────────────────
         composable(NavRoutes.Converter.route) { ConverterScreen() }
@@ -172,62 +57,15 @@ fun DocuSmartNavGraph(
         // ── PDF Tools ─────────────────────────────────────────────────────────
         composable(NavRoutes.PdfTools.route) { PdfToolsScreen() }
 
-        // ── Settings ──────────────────────────────────────────────────────────
-        composable(NavRoutes.Settings.route) {
-            SettingsScreen(
-                themeManager      = themeManager,
-                languageManager   = languageManager,
-                onPremiumClick    = { navController.navigate(NavRoutes.Premium.route) },
-                onShowOnboarding  = {
-                    navController.navigate(NavRoutes.Onboarding.route) {
-                        popUpTo(NavRoutes.Settings.route) { inclusive = false }
-                    }
-                }
-            )
-        }
+        settingsComposable(navController, themeManager, languageManager)
 
         // ── Premium ───────────────────────────────────────────────────────────
         composable(NavRoutes.Premium.route) {
             PremiumScreen(onClose = { navController.popBackStack() })
         }
 
-        // ── Scanner ───────────────────────────────────────────────────────────
-        composable(NavRoutes.Scanner.route) { backStackEntry ->
-            val scanResultEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(NavRoutes.Scanner.route)
-            }
-            ScannerScreen(
-                onBack = { navController.popBackStack() },
-                onScanComplete = { uris ->
-                    scanResultEntry.savedStateHandle["scanned_uris"] =
-                        uris.map { it.toString() }
-                    scanResultEntry.savedStateHandle["is_pdf"] =
-                        uris.size == 1 && uris.first().toString().endsWith(".pdf")
-                    navController.navigate(NavRoutes.ScanResult.route)
-                }
-            )
-        }
-
-        // ── Scan Result ───────────────────────────────────────────────────────
-        composable(NavRoutes.ScanResult.route) { backStackEntry ->
-            val scannerEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(NavRoutes.Scanner.route)
-            }
-            val uriStrings = scannerEntry.savedStateHandle
-                .get<List<String>>("scanned_uris") ?: emptyList()
-            val isPdf = scannerEntry.savedStateHandle.get<Boolean>("is_pdf") ?: false
-            val uris  = uriStrings.map { Uri.parse(it) }
-            ScanResultScreen(
-                scannedUris = uris,
-                isPdf       = isPdf,
-                onBack      = { navController.popBackStack() },
-                onDone      = {
-                    navController.navigate(NavRoutes.Home.route) {
-                        popUpTo(NavRoutes.Scanner.route) { inclusive = true }
-                    }
-                }
-            )
-        }
+        scannerComposable(navController)
+        scanResultComposable(navController)
 
         // ── Security Menu ─────────────────────────────────────────────────────
         composable(NavRoutes.Security.route) {
@@ -262,5 +100,201 @@ fun DocuSmartNavGraph(
         composable(NavRoutes.QrCreator.route) {
             QrCreatorScreen(onBack = { navController.popBackStack() })
         }
+    }
+}
+
+// ── Splash 1: MouthBlack ────────────────────────────────────────────────────
+private fun NavGraphBuilder.splashMouthBlackComposable(navController: NavHostController) {
+    composable(NavRoutes.SplashMouthBlack.route) {
+        SplashMouthBlackScreen(
+            onFinished = {
+                navController.navigate(NavRoutes.SplashDocuSmart.route) {
+                    popUpTo(NavRoutes.SplashMouthBlack.route) { inclusive = true }
+                }
+            }
+        )
+    }
+}
+
+// ── Splash 2: DocuSmart → decide si muestra onboarding ──────────────────────
+private fun NavGraphBuilder.splashDocuSmartComposable(navController: NavHostController) {
+    composable(NavRoutes.SplashDocuSmart.route) {
+        val context = LocalContext.current
+        SplashDocuSmartScreen(
+            onFinished = {
+                // Primera vez → Onboarding / Ya visto → Home
+                val destination = if (!hasCompletedOnboarding(context))
+                    NavRoutes.Onboarding.route
+                else
+                    NavRoutes.Home.route
+
+                navController.navigate(destination) {
+                    popUpTo(NavRoutes.SplashDocuSmart.route) { inclusive = true }
+                }
+            }
+        )
+    }
+}
+
+// ── Onboarding (primera vez) ─────────────────────────────────────────────────
+private fun NavGraphBuilder.onboardingComposable(navController: NavHostController) {
+    composable(NavRoutes.Onboarding.route) {
+        OnboardingScreen(
+            onFinished = {
+                navController.navigate(NavRoutes.Home.route) {
+                    popUpTo(NavRoutes.Onboarding.route) { inclusive = true }
+                }
+            }
+        )
+    }
+}
+
+// ── Home ──────────────────────────────────────────────────────────────────
+private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
+    composable(NavRoutes.Home.route) {
+        val context = LocalContext.current
+        HomeScreen(
+            onOpenFile = { uri ->
+                try {
+                    val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    context.contentResolver.takePersistableUriPermission(uri, flags)
+                } catch (e: Exception) {
+                    Timber.e("Error permiso: ${e.message}")
+                }
+                navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
+            },
+            onScan      = { navController.navigate(NavRoutes.Scanner.route) },
+            onConvert   = { navController.navigate(NavRoutes.Converter.route) },
+            onSecurity  = { navController.navigate(NavRoutes.Security.route) },
+            onStudy     = { navController.navigate(NavRoutes.Study.route) },
+            onSeeAll    = { navController.navigate(NavRoutes.Library.route) },
+            onQrReader  = { navController.navigate(NavRoutes.QrReader.route) },
+            onQrCreator = { navController.navigate(NavRoutes.QrCreator.route) },
+            onDocumentClick = { documentId ->
+                navController.navigate(NavRoutes.Viewer.createRoute(documentId))
+            }
+        )
+    }
+}
+
+// ── Library ───────────────────────────────────────────────────────────────
+private fun NavGraphBuilder.libraryComposable(navController: NavHostController) {
+    composable(NavRoutes.Library.route) {
+        val context = LocalContext.current
+        LibraryScreen(
+            onDocumentClick = { documentId ->
+                val isUri = documentId.startsWith("content://") ||
+                        documentId.startsWith("file://") ||
+                        documentId.startsWith("/")
+                if (isUri && documentId.startsWith("content://")) {
+                    try {
+                        val uri = Uri.parse(documentId)
+                        context.contentResolver.takePersistableUriPermission(
+                            uri,
+                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    } catch (e: Exception) {
+                        Timber.w("No se pudo persistir permiso: ${e.message}")
+                    }
+                }
+                navController.navigate(NavRoutes.Viewer.createRoute(documentId))
+            }
+        )
+    }
+}
+
+// ── Viewer ────────────────────────────────────────────────────────────────
+private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
+    composable(
+        route     = NavRoutes.Viewer.route,
+        arguments = listOf(
+            navArgument("documentId") {
+                type         = NavType.StringType
+                nullable     = true
+                defaultValue = null
+            }
+        )
+    ) { backStackEntry ->
+        val encodedId  = backStackEntry.arguments
+            ?.getString("documentId") ?: return@composable
+        val documentId = if (encodedId.startsWith("content%3A"))
+            Uri.decode(encodedId) else encodedId
+        Timber.d("Viewer: documentId final = $documentId")
+        val context = LocalContext.current
+        ViewerScreen(
+            documentId = documentId,
+            onBack     = {
+                // Siempre intentar finish si el previous destination también es Viewer
+                val prevRoute = navController.previousBackStackEntry?.destination?.route
+                Timber.d("Viewer onBack: prevRoute=$prevRoute")
+                if (prevRoute == null || prevRoute.startsWith("viewer")) {
+                    (context as? android.app.Activity)?.finish()
+                } else {
+                    navController.popBackStack()
+                }
+            }
+        )
+    }
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+private fun NavGraphBuilder.settingsComposable(
+    navController  : NavHostController,
+    themeManager   : ThemeManager,
+    languageManager: LanguageManager
+) {
+    composable(NavRoutes.Settings.route) {
+        SettingsScreen(
+            themeManager      = themeManager,
+            languageManager   = languageManager,
+            onPremiumClick    = { navController.navigate(NavRoutes.Premium.route) },
+            onShowOnboarding  = {
+                navController.navigate(NavRoutes.Onboarding.route) {
+                    popUpTo(NavRoutes.Settings.route) { inclusive = false }
+                }
+            }
+        )
+    }
+}
+
+// ── Scanner ───────────────────────────────────────────────────────────────
+private fun NavGraphBuilder.scannerComposable(navController: NavHostController) {
+    composable(NavRoutes.Scanner.route) { backStackEntry ->
+        val scanResultEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(NavRoutes.Scanner.route)
+        }
+        ScannerScreen(
+            onBack = { navController.popBackStack() },
+            onScanComplete = { uris ->
+                scanResultEntry.savedStateHandle["scanned_uris"] =
+                    uris.map { it.toString() }
+                scanResultEntry.savedStateHandle["is_pdf"] =
+                    uris.size == 1 && uris.first().toString().endsWith(".pdf")
+                navController.navigate(NavRoutes.ScanResult.route)
+            }
+        )
+    }
+}
+
+// ── Scan Result ───────────────────────────────────────────────────────────
+private fun NavGraphBuilder.scanResultComposable(navController: NavHostController) {
+    composable(NavRoutes.ScanResult.route) { backStackEntry ->
+        val scannerEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(NavRoutes.Scanner.route)
+        }
+        val uriStrings = scannerEntry.savedStateHandle
+            .get<List<String>>("scanned_uris") ?: emptyList()
+        val isPdf = scannerEntry.savedStateHandle.get<Boolean>("is_pdf") ?: false
+        val uris  = uriStrings.map { Uri.parse(it) }
+        ScanResultScreen(
+            scannedUris = uris,
+            isPdf       = isPdf,
+            onBack      = { navController.popBackStack() },
+            onDone      = {
+                navController.navigate(NavRoutes.Home.route) {
+                    popUpTo(NavRoutes.Scanner.route) { inclusive = true }
+                }
+            }
+        )
     }
 }

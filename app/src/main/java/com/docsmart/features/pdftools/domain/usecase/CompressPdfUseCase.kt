@@ -59,38 +59,7 @@ class CompressPdfUseCase @Inject constructor(
 
             Timber.d("$TAG: ${renderer.pageCount} páginas a comprimir")
 
-            val scaleFactor = when {
-                quality >= 80 -> 1.5f
-                quality >= 60 -> 1.2f
-                quality >= 40 -> 0.9f
-                else          -> 0.6f
-            }
-
-            val pdfDocument = android.graphics.pdf.PdfDocument()
-
-            for (i in 0 until renderer.pageCount) {
-                val page   = renderer.openPage(i)
-                val width  = (page.width  * scaleFactor).toInt().coerceAtLeast(1)
-                val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)
-
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                page.close()
-
-                val compressed = recompressBitmap(bitmap, quality)
-
-                val pageInfo = android.graphics.pdf.PdfDocument.PageInfo
-                    .Builder(width, height, i + 1).create()
-                val docPage  = pdfDocument.startPage(pageInfo)
-                docPage.canvas.drawBitmap(compressed, 0f, 0f, null)
-                pdfDocument.finishPage(docPage)
-
-                bitmap.recycle()
-                if (compressed !== bitmap) compressed.recycle()
-
-                Timber.d("$TAG: página ${i + 1} procesada")
-            }
+            val pdfDocument = renderAndCompressPages(renderer, scaleFactorFor(quality), quality)
 
             renderer.close()
             fileDescriptor.close()
@@ -116,9 +85,8 @@ class CompressPdfUseCase @Inject constructor(
 
             Timber.d("$TAG: $originalKb KB → $newKb KB ($reduction%)")
 
-            // ── Si el comprimido es mayor que el original
-            // devolvemos el original con mensaje informativo ──────────────────
-            val finalFile = if (newSize >= originalSize) {
+            val keepOriginal = newSize >= originalSize
+            val finalFile = if (keepOriginal) {
                 Timber.d("$TAG: comprimido mayor que original — usando original")
                 val originalOutput = createOutputFile("${name}_optimizado")
                 cacheFile!!.copyTo(originalOutput, overwrite = true)
@@ -127,15 +95,9 @@ class CompressPdfUseCase @Inject constructor(
                 outputFile
             }
 
-            val finalKb      = finalFile.length() / 1024
-            val finalMessage = if (newSize >= originalSize)
-                "El PDF ya está optimizado · Tamaño: ${originalKb} KB"
-            else
-                "Antes: ${originalKb} KB → Después: ${finalKb} KB · Reducción: $reduction%"
-
             PdfToolResult.Success(
                 outputFile = finalFile,
-                message    = finalMessage
+                message    = resultMessage(keepOriginal, originalKb, finalFile.length() / 1024, reduction)
             )
 
         } catch (e: Exception) {
@@ -147,6 +109,53 @@ class CompressPdfUseCase @Inject constructor(
         } finally {
             cacheFile?.delete()
         }
+    }
+
+    private fun scaleFactorFor(quality: Int) = when {
+        quality >= 80 -> 1.5f
+        quality >= 60 -> 1.2f
+        quality >= 40 -> 0.9f
+        else          -> 0.6f
+    }
+
+    private fun resultMessage(keepOriginal: Boolean, originalKb: Long, finalKb: Long, reduction: Int) =
+        if (keepOriginal)
+            "El PDF ya está optimizado · Tamaño: $originalKb KB"
+        else
+            "Antes: $originalKb KB → Después: $finalKb KB · Reducción: $reduction%"
+
+    private fun renderAndCompressPages(
+        renderer   : PdfRenderer,
+        scaleFactor: Float,
+        quality    : Int
+    ): android.graphics.pdf.PdfDocument {
+        val pdfDocument = android.graphics.pdf.PdfDocument()
+
+        for (i in 0 until renderer.pageCount) {
+            val page   = renderer.openPage(i)
+            val width  = (page.width  * scaleFactor).toInt().coerceAtLeast(1)
+            val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)
+
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            bitmap.eraseColor(android.graphics.Color.WHITE)
+            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            page.close()
+
+            val compressed = recompressBitmap(bitmap, quality)
+
+            val pageInfo = android.graphics.pdf.PdfDocument.PageInfo
+                .Builder(width, height, i + 1).create()
+            val docPage  = pdfDocument.startPage(pageInfo)
+            docPage.canvas.drawBitmap(compressed, 0f, 0f, null)
+            pdfDocument.finishPage(docPage)
+
+            bitmap.recycle()
+            if (compressed !== bitmap) compressed.recycle()
+
+            Timber.d("$TAG: página ${i + 1} procesada")
+        }
+
+        return pdfDocument
     }
 
     private fun recompressBitmap(bitmap: Bitmap, quality: Int): Bitmap {

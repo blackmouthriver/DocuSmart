@@ -42,6 +42,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private const val MIME_PDF = "application/pdf"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanResultScreen(
@@ -371,7 +373,7 @@ private fun shareFile(context: Context, file: File, chooserTitle: String) {
             file
         )
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/pdf"
+            type = MIME_PDF
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
@@ -388,7 +390,7 @@ private fun saveFileToDownloads(context: Context, file: File): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-                put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                put(MediaStore.Downloads.MIME_TYPE, MIME_PDF)
                 put(MediaStore.Downloads.IS_PENDING, 1)
             }
             val resolver = context.contentResolver
@@ -425,7 +427,7 @@ private suspend fun savePdfUriToDownloads(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, "$fileName.pdf")
-                put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                put(MediaStore.Downloads.MIME_TYPE, MIME_PDF)
                 put(MediaStore.Downloads.IS_PENDING, 1)
             }
             val resolver = context.contentResolver

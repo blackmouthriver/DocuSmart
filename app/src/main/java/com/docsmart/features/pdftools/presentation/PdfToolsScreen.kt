@@ -29,6 +29,9 @@ import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
 import com.docsmart.R
+
+private const val MIME_PDF = "application/pdf"
+
 @Composable
 fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = hiltViewModel()
@@ -180,7 +183,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdfs = {
-                                        multiPdfLauncher.launch("application/pdf")
+                                        multiPdfLauncher.launch(MIME_PDF)
                                     },
                                     onRemovePdf = { viewModel.removePdf(it) },
                                     onExecute = { viewModel.execute() }
@@ -195,7 +198,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch("application/pdf")
+                                        singlePdfLauncher.launch(MIME_PDF)
                                     },
                                     onFromPageChange = {
                                         viewModel.onSplitFromPageChange(it)
@@ -214,7 +217,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch("application/pdf")
+                                        singlePdfLauncher.launch(MIME_PDF)
                                     },
                                     onQualityChange = {
                                         viewModel.onCompressionQualityChange(it)
@@ -230,7 +233,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch("application/pdf")
+                                        singlePdfLauncher.launch(MIME_PDF)
                                     },
                                     onDegreesChange = {
                                         viewModel.onRotationDegreesChange(it)

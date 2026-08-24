@@ -606,11 +606,7 @@ private fun ParagraphItem(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                isSpeaking -> DocuBlue.copy(alpha = 0.15f)
-                isHighlighted -> WarningAmber.copy(alpha = 0.15f)
-                else -> MaterialTheme.colorScheme.surface
-            }
+            containerColor = paragraphCardColor(isSpeaking, isHighlighted)
         ),
         elevation = CardDefaults.cardElevation(
             if (isHighlighted || isSpeaking) 4.dp else 1.dp
@@ -643,40 +639,41 @@ private fun ParagraphItem(
 
             // ── Acciones ──────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                // Resaltar
-                IconButton(
-                    onClick = onToggleHighlight,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isHighlighted)
-                            Icons.Rounded.Bookmark
-                        else
-                            Icons.Rounded.BookmarkBorder,
-                        contentDescription = "Resaltar",
-                        tint = if (isHighlighted) WarningAmber
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                // Leer párrafo
-                IconButton(
-                    onClick = onSpeak,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isSpeaking)
-                            Icons.Rounded.VolumeOff
-                        else
-                            Icons.Rounded.VolumeUp,
-                        contentDescription = "Leer",
-                        tint = if (isSpeaking) DocuBlue
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+                HighlightButton(isHighlighted, onToggleHighlight)
+                SpeakButton(isSpeaking, onSpeak)
             }
         }
+    }
+}
+
+@Composable
+private fun paragraphCardColor(isSpeaking: Boolean, isHighlighted: Boolean) = when {
+    isSpeaking -> DocuBlue.copy(alpha = 0.15f)
+    isHighlighted -> WarningAmber.copy(alpha = 0.15f)
+    else -> MaterialTheme.colorScheme.surface
+}
+
+@Composable
+private fun HighlightButton(isHighlighted: Boolean, onToggleHighlight: () -> Unit) {
+    IconButton(onClick = onToggleHighlight, modifier = Modifier.size(28.dp)) {
+        Icon(
+            imageVector = if (isHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+            contentDescription = "Resaltar",
+            tint = if (isHighlighted) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
+@Composable
+private fun SpeakButton(isSpeaking: Boolean, onSpeak: () -> Unit) {
+    IconButton(onClick = onSpeak, modifier = Modifier.size(28.dp)) {
+        Icon(
+            imageVector = if (isSpeaking) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+            contentDescription = "Leer",
+            tint = if (isSpeaking) DocuBlue else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
 
@@ -1092,154 +1089,175 @@ private fun PomodoroTab(
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // ── Indicador tipo ────────────────────────────
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = if (isBreak) SuccessGreen.copy(alpha = 0.15f)
-            else DocuBlue.copy(alpha = 0.15f)
-        ) {
-            Text(
-                text = if (isBreak) stringResource(R.string.study_break_label) else stringResource(R.string.study_study_label),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (isBreak) SuccessGreen else DocuBlue,
-                modifier = Modifier.padding(
-                    horizontal = 20.dp, vertical = 10.dp
-                )
-            )
-        }
+        PomodoroTypeIndicator(isBreak)
+        PomodoroClock(minutes, seconds, isRunning, isBreak)
+        PomodoroControls(isRunning, isBreak, onToggle, onReset)
+        PomodoroCountCard(pomodoroCount)
+        PomodoroInfoCard()
+    }
+}
 
-        // ── Reloj circular ────────────────────────────
-        Box(
-            modifier = Modifier
-                .size(200.dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = if (isBreak)
-                            listOf(SuccessGreen.copy(0.2f), Color.Transparent)
-                        else
-                            listOf(DocuBlue.copy(0.2f), Color.Transparent)
-                    ),
-                    shape = RoundedCornerShape(100.dp)
+@Composable
+private fun PomodoroTypeIndicator(isBreak: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (isBreak) SuccessGreen.copy(alpha = 0.15f)
+        else DocuBlue.copy(alpha = 0.15f)
+    ) {
+        Text(
+            text = if (isBreak) stringResource(R.string.study_break_label) else stringResource(R.string.study_study_label),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (isBreak) SuccessGreen else DocuBlue,
+            modifier = Modifier.padding(
+                horizontal = 20.dp, vertical = 10.dp
+            )
+        )
+    }
+}
+
+@Composable
+private fun PomodoroClock(minutes: Int, seconds: Int, isRunning: Boolean, isBreak: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(200.dp)
+            .background(
+                brush = Brush.radialGradient(
+                    colors = if (isBreak)
+                        listOf(SuccessGreen.copy(0.2f), Color.Transparent)
+                    else
+                        listOf(DocuBlue.copy(0.2f), Color.Transparent)
                 ),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = String.format("%02d:%02d", minutes, seconds),
-                    fontSize = 52.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isBreak) SuccessGreen else DocuBlue
-                )
-                Text(
-                    text = if (isRunning) stringResource(R.string.study_in_progress) else stringResource(R.string.study_paused),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // ── Botones control ───────────────────────────
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            OutlinedButton(
-                onClick = onReset,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.height(52.dp)
-            ) {
-                Icon(Icons.Rounded.Refresh, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.study_restart))
-            }
-
-            Button(
-                onClick = onToggle,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.height(52.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isBreak) SuccessGreen else DocuBlue
-                )
-            ) {
-                Icon(
-                    imageVector = if (isRunning) Icons.Rounded.Pause
-                    else Icons.Rounded.PlayArrow,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = if (isRunning) stringResource(R.string.study_pause) else stringResource(R.string.study_start),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
-
-        // ── Contador de pomodoros ─────────────────────
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                shape = RoundedCornerShape(100.dp)
             ),
-            elevation = CardDefaults.cardElevation(2.dp)
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = String.format("%02d:%02d", minutes, seconds),
+                fontSize = 52.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isBreak) SuccessGreen else DocuBlue
+            )
+            Text(
+                text = if (isRunning) stringResource(R.string.study_in_progress) else stringResource(R.string.study_paused),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun PomodoroControls(
+    isRunning: Boolean,
+    isBreak  : Boolean,
+    onToggle : () -> Unit,
+    onReset  : () -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        OutlinedButton(
+            onClick = onReset,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.height(52.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.EmojiEvents,
-                    contentDescription = null,
-                    tint = WarningAmber,
-                    modifier = Modifier.size(24.dp)
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.study_pomodoros_completed),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.study_pomodoros_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Text(
-                    text = "$pomodoroCount",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = WarningAmber
-                )
-            }
+            Icon(Icons.Rounded.Refresh, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.study_restart))
         }
 
-        // ── Info técnica ──────────────────────────────
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-                    .copy(alpha = 0.3f)
+        Button(
+            onClick = onToggle,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.height(52.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isBreak) SuccessGreen else DocuBlue
             )
         ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+            Icon(
+                imageVector = if (isRunning) Icons.Rounded.Pause
+                else Icons.Rounded.PlayArrow,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = if (isRunning) stringResource(R.string.study_pause) else stringResource(R.string.study_start),
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
+}
+
+@Composable
+private fun PomodoroCountCard(pomodoroCount: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.EmojiEvents,
+                contentDescription = null,
+                tint = WarningAmber,
+                modifier = Modifier.size(24.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.study_pomodoros_completed),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = stringResource(R.string.study_pomodoro_technique_info),
+                    text = stringResource(R.string.study_pomodoros_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            Text(
+                text = "$pomodoroCount",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = WarningAmber
+            )
+        }
+    }
+}
+
+@Composable
+private fun PomodoroInfoCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+                .copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = stringResource(R.string.study_pomodoro_technique_info),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

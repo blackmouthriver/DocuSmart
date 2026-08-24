@@ -129,55 +129,71 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                // Botón Saltar — oculto en última página
-                if (!isLastPage) {
-                    TextButton(onClick = {
-                        markOnboardingCompleted(context)
-                        onFinished()
-                    }) {
-                        Text(
-                            text  = stringResource(R.string.onboarding_skip),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
-                } else {
-                    Spacer(Modifier.width(80.dp))
-                }
+                OnboardingSkipButton(isLastPage, context, onFinished)
+                OnboardingNextButton(isLastPage, context, pagerState, scope, onFinished)
+            }
+        }
+    }
+}
 
-                // Botón Siguiente / Empezar
-                Button(
-                    onClick = {
-                        if (isLastPage) {
-                            markOnboardingCompleted(context)
-                            onFinished()
-                        } else {
-                            scope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                            }
-                        }
-                    },
-                    shape  = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor   = DocuBlue
-                    ),
-                    modifier = Modifier.height(52.dp)
-                ) {
-                    Text(
-                        text       = stringResource(if (isLastPage) R.string.onboarding_start else R.string.onboarding_next),
-                        style      = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (!isLastPage) {
-                        Spacer(Modifier.width(8.dp))
-                        Icon(
-                            Icons.Rounded.ArrowForward, null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+// ── Botón Saltar — oculto en última página ────────────────────────────────────
+@Composable
+private fun OnboardingSkipButton(isLastPage: Boolean, context: Context, onFinished: () -> Unit) {
+    if (!isLastPage) {
+        TextButton(onClick = {
+            markOnboardingCompleted(context)
+            onFinished()
+        }) {
+            Text(
+                text  = stringResource(R.string.onboarding_skip),
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White.copy(alpha = 0.7f)
+            )
+        }
+    } else {
+        Spacer(Modifier.width(80.dp))
+    }
+}
+
+// ── Botón Siguiente / Empezar ──────────────────────────────────────────────────
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun OnboardingNextButton(
+    isLastPage: Boolean,
+    context   : Context,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    scope     : kotlinx.coroutines.CoroutineScope,
+    onFinished: () -> Unit
+) {
+    Button(
+        onClick = {
+            if (isLastPage) {
+                markOnboardingCompleted(context)
+                onFinished()
+            } else {
+                scope.launch {
+                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
                 }
             }
+        },
+        shape  = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.White,
+            contentColor   = DocuBlue
+        ),
+        modifier = Modifier.height(52.dp)
+    ) {
+        Text(
+            text       = stringResource(if (isLastPage) R.string.onboarding_start else R.string.onboarding_next),
+            style      = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+        if (!isLastPage) {
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                Icons.Rounded.ArrowForward, null,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

@@ -18,9 +18,12 @@ complexity:
     constructorThreshold: 8
   TooManyFunctions:
     ignoreAnnotated: ['Composable']
-    thresholdInFiles: 20 # ignoreAnnotated no cubre el conteo a nivel de archivo — pantallas con
+    thresholdInFiles: 26 # ignoreAnnotated no cubre el conteo a nivel de archivo — pantallas con
                          # muchos Composables privados pequeños (uno por tipo de documento) superan
-                         # el default de 11 sin que eso implique demasiadas responsabilidades reales
+                         # el default de 11 sin que eso implique demasiadas responsabilidades reales.
+                         # Subido de 20 a 26 al descomponer ViewerScreen.kt en sub-composables más
+                         # pequeñas para bajar su complejidad cognitiva (hallazgo SonarCloud) — más
+                         # funciones con nombre propio y responsabilidad única, no más complejidad real.
     thresholdInClasses: 15 # managers que trackean varios tipos de recurso en paralelo (ej.
                            # DailyLimitManager: conversiones + 4 herramientas PDF) acumulan
                            # funciones pequeñas y cohesivas, no responsabilidades mezcladas

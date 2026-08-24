@@ -170,41 +170,7 @@ fun DocumentContextMenu(
                 .fillMaxWidth()
                 .padding(bottom = 32.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(document.type.color.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text  = document.type.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = document.type.color
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text     = document.name,
-                        style    = MaterialTheme.typography.titleSmall,
-                        color    = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text  = "${document.size} · ${document.date}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            DocumentContextMenuHeader(document)
 
             HorizontalDivider(
                 modifier  = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
@@ -225,41 +191,90 @@ fun DocumentContextMenu(
                 tint    = if (document.isFavorite) MaterialTheme.colorScheme.error else null,
                 onClick = onFavorite
             )
-            if (onRename != null) {
-                ContextMenuItem(
-                    icon    = Icons.Rounded.DriveFileRenameOutline,
-                    label   = "Renombrar",
-                    onClick = onRename
-                )
-            }
-            if (onConvert != null) {
-                ContextMenuItem(
-                    icon    = Icons.Rounded.SwapHoriz,
-                    label   = "Convertir",
-                    onClick = onConvert
-                )
-            }
-            if (onShare != null) {
-                ContextMenuItem(
-                    icon    = Icons.Rounded.Share,
-                    label   = "Compartir",
-                    onClick = onShare
-                )
-            }
-            if (onDelete != null) {
-                HorizontalDivider(
-                    modifier  = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-                    thickness = 0.5.dp,
-                    color     = MaterialTheme.colorScheme.outlineVariant
-                )
-                ContextMenuItem(
-                    icon    = Icons.Rounded.DeleteOutline,
-                    label   = "Eliminar del historial",
-                    tint    = MaterialTheme.colorScheme.error,
-                    onClick = onDelete
-                )
-            }
+            OptionalContextMenuItems(onRename, onConvert, onShare, onDelete)
         }
+    }
+}
+
+@Composable
+private fun DocumentContextMenuHeader(document: DocumentUiModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(document.type.color.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text  = document.type.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = document.type.color
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text     = document.name,
+                style    = MaterialTheme.typography.titleSmall,
+                color    = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text  = "${document.size} · ${document.date}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun OptionalContextMenuItems(
+    onRename : (() -> Unit)?,
+    onConvert: (() -> Unit)?,
+    onShare  : (() -> Unit)?,
+    onDelete : (() -> Unit)?
+) {
+    if (onRename != null) {
+        ContextMenuItem(
+            icon    = Icons.Rounded.DriveFileRenameOutline,
+            label   = "Renombrar",
+            onClick = onRename
+        )
+    }
+    if (onConvert != null) {
+        ContextMenuItem(
+            icon    = Icons.Rounded.SwapHoriz,
+            label   = "Convertir",
+            onClick = onConvert
+        )
+    }
+    if (onShare != null) {
+        ContextMenuItem(
+            icon    = Icons.Rounded.Share,
+            label   = "Compartir",
+            onClick = onShare
+        )
+    }
+    if (onDelete != null) {
+        HorizontalDivider(
+            modifier  = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            thickness = 0.5.dp,
+            color     = MaterialTheme.colorScheme.outlineVariant
+        )
+        ContextMenuItem(
+            icon    = Icons.Rounded.DeleteOutline,
+            label   = "Eliminar del historial",
+            tint    = MaterialTheme.colorScheme.error,
+            onClick = onDelete
+        )
     }
 }
 

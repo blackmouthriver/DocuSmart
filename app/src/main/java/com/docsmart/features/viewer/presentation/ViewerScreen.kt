@@ -431,6 +431,64 @@ private fun PdfSearchResultBar(
     }
 }
 
+/** Copia el PDF de [uri] al caché de la app y renderiza cada página a un [Bitmap]. */
+private fun renderPdfPagesToBitmaps(uri: Uri, context: android.content.Context): List<Bitmap> {
+    val cacheFile = File(context.cacheDir, "preview_${System.currentTimeMillis()}.pdf")
+    if (!copyPdfUriToCache(uri, context, cacheFile)) {
+        Timber.e("PdfViewer: no se pudo copiar el PDF al caché")
+        return emptyList()
+    }
+    Timber.d("PdfViewer: cacheFile copiado → ${cacheFile.length()}b")
+    return renderCachedPdfPages(cacheFile)
+}
+
+private fun copyPdfUriToCache(uri: Uri, context: android.content.Context, cacheFile: File): Boolean =
+    if (uri.scheme == "file") copyFileSchemeToCache(uri, cacheFile)
+    else copyContentUriToCache(uri, context, cacheFile)
+
+private fun copyFileSchemeToCache(uri: Uri, cacheFile: File): Boolean {
+    val srcFile = uri.path?.let(::File)
+    Timber.d("PdfViewer: file:// path=${uri.path} existe=${srcFile?.exists()} size=${srcFile?.length()}")
+    val valid = srcFile != null && srcFile.exists() && srcFile.length() > 0
+    if (valid) {
+        java.io.FileInputStream(srcFile).use { input ->
+            cacheFile.outputStream().use { output -> input.copyTo(output) }
+        }
+    }
+    return valid
+}
+
+private fun copyContentUriToCache(uri: Uri, context: android.content.Context, cacheFile: File): Boolean = try {
+    context.contentResolver.openInputStream(uri)?.use { input ->
+        cacheFile.outputStream().use { output -> input.copyTo(output) }
+        true
+    } ?: false
+} catch (e: Exception) {
+    Timber.e("PdfViewer: error openInputStream → ${e.message}")
+    false
+}
+
+private fun renderCachedPdfPages(cacheFile: File): List<Bitmap> {
+    val fileDescriptor = ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY)
+    val pdfRenderer = PdfRenderer(fileDescriptor)
+    val bitmaps     = mutableListOf<Bitmap>()
+
+    for (i in 0 until pdfRenderer.pageCount) {
+        val page   = pdfRenderer.openPage(i)
+        val bitmap = Bitmap.createBitmap(
+            page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888
+        )
+        bitmap.eraseColor(android.graphics.Color.WHITE)
+        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+        page.close()
+        bitmaps.add(bitmap)
+    }
+
+    pdfRenderer.close()
+    fileDescriptor.close()
+    return bitmaps
+}
+
 // ── Visor de PDF ──────────────────────────────────────────────────────────────
 @Composable
 private fun PdfViewerContent(
@@ -457,57 +515,7 @@ private fun PdfViewerContent(
         if (uri == null) return@LaunchedEffect
         pages = withContext(Dispatchers.IO) {
             try {
-                val cacheFile = File(context.cacheDir, "preview_${System.currentTimeMillis()}.pdf")
-                val copied = when {
-                    uri.scheme == "file" -> {
-                        val path    = uri.path ?: return@withContext emptyList()
-                        val srcFile = File(path)
-                        Timber.d("PdfViewer: file:// path=$path existe=${srcFile.exists()} size=${srcFile.length()}")
-                        if (srcFile.exists() && srcFile.length() > 0) {
-                            java.io.FileInputStream(srcFile).use { input ->
-                                cacheFile.outputStream().use { output -> input.copyTo(output) }
-                            }
-                            true
-                        } else false
-                    }
-                    else -> {
-                        try {
-                            context.contentResolver.openInputStream(uri)?.use { input ->
-                                cacheFile.outputStream().use { output -> input.copyTo(output) }
-                                true
-                            } ?: false
-                        } catch (e: Exception) {
-                            Timber.e("PdfViewer: error openInputStream → ${e.message}")
-                            false
-                        }
-                    }
-                }
-                if (!copied) {
-                    Timber.e("PdfViewer: no se pudo copiar el PDF al caché")
-                    return@withContext emptyList()
-                }
-                Timber.d("PdfViewer: cacheFile copiado → ${cacheFile.length()}b")
-
-                val fileDescriptor = ParcelFileDescriptor.open(
-                    cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
-                )
-                val pdfRenderer = PdfRenderer(fileDescriptor)
-                val bitmaps     = mutableListOf<Bitmap>()
-
-                for (i in 0 until pdfRenderer.pageCount) {
-                    val page   = pdfRenderer.openPage(i)
-                    val bitmap = Bitmap.createBitmap(
-                        page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888
-                    )
-                    bitmap.eraseColor(android.graphics.Color.WHITE)
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    page.close()
-                    bitmaps.add(bitmap)
-                }
-
-                pdfRenderer.close()
-                fileDescriptor.close()
-                bitmaps
+                renderPdfPagesToBitmaps(uri, context)
             } catch (e: Exception) {
                 Timber.e("Error renderizando PDF: ${e.message}")
                 loadError = true
@@ -1109,58 +1117,66 @@ private fun TextViewerContent(
                 modifier = Modifier.align(Alignment.Center),
                 color    = MaterialTheme.colorScheme.primary
             )
-            else -> Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp)
-            ) {
-                if (searchQuery.isBlank()) {
-                    Text(
-                        text       = text.ifBlank { "El archivo está vacío" },
-                        style      = MaterialTheme.typography.bodyMedium,
-                        fontSize   = 15.sp,
-                        color      = MaterialTheme.colorScheme.onSurface,
-                        lineHeight = 24.sp
-                    )
-                } else {
-                    val lines = text.lines().filter {
-                        it.contains(searchQuery, ignoreCase = true)
-                    }
-                    if (lines.isEmpty()) {
-                        Text(
-                            text  = "Sin resultados para \"$searchQuery\"",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        Text(
-                            text     = "${lines.size} resultado(s):",
-                            style    = MaterialTheme.typography.labelMedium,
-                            color    = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        lines.forEach { line ->
-                            Text(
-                                text       = line,
-                                style      = MaterialTheme.typography.bodyMedium,
-                                fontSize   = 15.sp,
-                                color      = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 24.sp,
-                                modifier   = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                        MaterialTheme.shapes.small
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                            Spacer(Modifier.height(4.dp))
-                        }
-                    }
-                }
-            }
+            else -> TextViewerBody(text, searchQuery)
         }
+    }
+}
+
+@Composable
+private fun TextViewerBody(text: String, searchQuery: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp)
+    ) {
+        if (searchQuery.isBlank()) {
+            Text(
+                text       = text.ifBlank { "El archivo está vacío" },
+                style      = MaterialTheme.typography.bodyMedium,
+                fontSize   = 15.sp,
+                color      = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 24.sp
+            )
+        } else {
+            TextViewerSearchResults(text, searchQuery)
+        }
+    }
+}
+
+@Composable
+private fun TextViewerSearchResults(text: String, searchQuery: String) {
+    val lines = text.lines().filter { it.contains(searchQuery, ignoreCase = true) }
+    if (lines.isEmpty()) {
+        Text(
+            text  = "Sin resultados para \"$searchQuery\"",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        return
+    }
+    Text(
+        text     = "${lines.size} resultado(s):",
+        style    = MaterialTheme.typography.labelMedium,
+        color    = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+    lines.forEach { line ->
+        Text(
+            text       = line,
+            style      = MaterialTheme.typography.bodyMedium,
+            fontSize   = 15.sp,
+            color      = MaterialTheme.colorScheme.onSurface,
+            lineHeight = 24.sp,
+            modifier   = Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    MaterialTheme.shapes.small
+                )
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+        Spacer(Modifier.height(4.dp))
     }
 }
 
@@ -1194,45 +1210,14 @@ private fun PdfPasswordDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text  = "\"$fileName\" está protegido con contraseña.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                OutlinedTextField(
-                    value         = password,
-                    onValueChange = { password = it },
-                    modifier      = Modifier.fillMaxWidth(),
-                    label         = { Text("Contraseña") },
-                    placeholder   = { Text("Ingresa la contraseña") },
-                    visualTransformation = if (showPassword)
-                        androidx.compose.ui.text.input.VisualTransformation.None
-                    else
-                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(
-                                if (showPassword) Icons.Rounded.VisibilityOff
-                                else Icons.Rounded.Visibility,
-                                null
-                            )
-                        }
-                    },
-                    isError    = passwordError != null,
-                    singleLine = true,
-                    shape      = MaterialTheme.shapes.medium
-                )
-
-                passwordError?.let {
-                    Text(
-                        text  = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+            PdfPasswordDialogBody(
+                fileName      = fileName,
+                password      = password,
+                onPasswordChange = { password = it },
+                showPassword  = showPassword,
+                onToggleShowPassword = { showPassword = !showPassword },
+                passwordError = passwordError
+            )
         },
         confirmButton = {
             Button(
@@ -1241,23 +1226,78 @@ private fun PdfPasswordDialog(
                 modifier = Modifier.fillMaxWidth(),
                 shape    = MaterialTheme.shapes.medium
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier    = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color       = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Icon(Icons.Rounded.LockOpen, null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Abrir documento")
-                }
+                PdfPasswordConfirmButtonContent(isLoading)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
     )
+}
+
+@Composable
+private fun PdfPasswordDialogBody(
+    fileName            : String,
+    password            : String,
+    onPasswordChange    : (String) -> Unit,
+    showPassword        : Boolean,
+    onToggleShowPassword: () -> Unit,
+    passwordError       : String?
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text  = "\"$fileName\" está protegido con contraseña.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        OutlinedTextField(
+            value         = password,
+            onValueChange = onPasswordChange,
+            modifier      = Modifier.fillMaxWidth(),
+            label         = { Text("Contraseña") },
+            placeholder   = { Text("Ingresa la contraseña") },
+            visualTransformation = if (showPassword)
+                androidx.compose.ui.text.input.VisualTransformation.None
+            else
+                androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = onToggleShowPassword) {
+                    Icon(
+                        if (showPassword) Icons.Rounded.VisibilityOff
+                        else Icons.Rounded.Visibility,
+                        null
+                    )
+                }
+            },
+            isError    = passwordError != null,
+            singleLine = true,
+            shape      = MaterialTheme.shapes.medium
+        )
+
+        passwordError?.let {
+            Text(
+                text  = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
+@Composable
+private fun PdfPasswordConfirmButtonContent(isLoading: Boolean) {
+    if (isLoading) {
+        CircularProgressIndicator(
+            modifier    = Modifier.size(16.dp),
+            strokeWidth = 2.dp,
+            color       = MaterialTheme.colorScheme.onPrimary
+        )
+    } else {
+        Icon(Icons.Rounded.LockOpen, null, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(8.dp))
+        Text("Abrir documento")
+    }
 }
 // ── Formato no soportado ──────────────────────────────────────────────────────
 @Composable

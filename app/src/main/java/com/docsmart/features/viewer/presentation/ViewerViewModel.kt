@@ -26,6 +26,9 @@ import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
+private const val MIME_PDF  = "application/pdf"
+private const val MIME_JPEG = "image/jpeg"
+
 data class ViewerUiState(
     val document         : DocumentUiModel? = null,
     val currentPage      : Int     = 0,
@@ -71,13 +74,7 @@ class ViewerViewModel @Inject constructor(
                 passwordError    = null
             )}
             try {
-                val isRealUri = documentId.startsWith("content://") ||
-                        documentId.startsWith("file://")  ||
-                        documentId.startsWith("content%3A") ||
-                        documentId.startsWith("/")
-                Timber.d("$TAG: isRealUri=$isRealUri")
-                if (isRealUri) loadFromUri(documentId, context)
-                else           loadFromMock(documentId)
+                loadDocumentOrMock(documentId, context)
             } catch (e: Exception) {
                 Timber.e(e, "$TAG: error inesperado → ${e.javaClass.name}: ${e.message}")
                 _uiState.update { it.copy(
@@ -86,6 +83,18 @@ class ViewerViewModel @Inject constructor(
                 )}
             }
         }
+    }
+
+    private fun isRealUri(documentId: String) =
+        documentId.startsWith("content://") ||
+            documentId.startsWith("file://")  ||
+            documentId.startsWith("content%3A") ||
+            documentId.startsWith("/")
+
+    private suspend fun loadDocumentOrMock(documentId: String, context: Context) {
+        val isReal = isRealUri(documentId)
+        Timber.d("$TAG: isRealUri=$isReal")
+        if (isReal) loadFromUri(documentId, context) else loadFromMock(documentId)
     }
 
     private suspend fun loadFromUri(documentId: String, context: Context) {
@@ -408,7 +417,7 @@ class ViewerViewModel @Inject constructor(
                             passwordError    = null,
                             decryptedFile    = cacheOut,
                             fileUri          = Uri.fromFile(cacheOut),
-                            mimeType         = "application/pdf",
+                            mimeType         = MIME_PDF,
                             error            = null,
                             document         = state.document?.copy()
                         )
@@ -486,14 +495,14 @@ class ViewerViewModel @Inject constructor(
     }
 
     private fun resolveMimeType(uriString: String): String? = when {
-        uriString.contains("image")                                -> "image/jpeg"
-        uriString.endsWith(".pdf",  ignoreCase = true)             -> "application/pdf"
+        uriString.contains("image")                                -> MIME_JPEG
+        uriString.endsWith(".pdf",  ignoreCase = true)             -> MIME_PDF
         uriString.endsWith(".docx", ignoreCase = true)             -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         uriString.endsWith(".doc",  ignoreCase = true)             -> "application/msword"
         uriString.endsWith(".xlsx", ignoreCase = true)             -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         uriString.endsWith(".xls",  ignoreCase = true)             -> "application/vnd.ms-excel"
         uriString.endsWith(".jpg",  ignoreCase = true) ||
-                uriString.endsWith(".jpeg", ignoreCase = true)             -> "image/jpeg"
+                uriString.endsWith(".jpeg", ignoreCase = true)             -> MIME_JPEG
         uriString.endsWith(".png",  ignoreCase = true)             -> "image/png"
         uriString.endsWith(".txt",  ignoreCase = true)             -> "text/plain"
         else                                                       -> null
@@ -502,14 +511,14 @@ class ViewerViewModel @Inject constructor(
     private fun resolveMimeTypeByExtension(fileName: String): String? {
         val ext = fileName.substringAfterLast(".", "").lowercase()
         return when (ext) {
-            "pdf"        -> "application/pdf"
+            "pdf"        -> MIME_PDF
             "docx"       -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             "doc"        -> "application/msword"
             "xlsx"       -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             "xls"        -> "application/vnd.ms-excel"
             "pptx"       -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
             "ppt"        -> "application/vnd.ms-powerpoint"
-            "jpg","jpeg" -> "image/jpeg"
+            "jpg","jpeg" -> MIME_JPEG
             "png"        -> "image/png"
             "webp"       -> "image/webp"
             "gif"        -> "image/gif"
@@ -589,7 +598,7 @@ class ViewerViewModel @Inject constructor(
         val document = state.document ?: return
         try {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = state.mimeType ?: "application/pdf"
+                type = state.mimeType ?: MIME_PDF
                 state.fileUri?.let { uri ->
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

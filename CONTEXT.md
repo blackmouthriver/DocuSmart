@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-24 (migración AGP/Kotlin/KSP/Hilt)
+**Última actualización:** 2026-08-24 (hallazgos SonarCloud: seguridad + mantenibilidad)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -431,6 +431,46 @@ análisis por CI, no el automático) se agregó:
 Pendiente para el usuario: revisar los 42 hallazgos de mantenibilidad y 1 de
 seguridad en el dashboard de SonarCloud — el usuario pidió que Claude los
 revise y corrija los reales en la siguiente sesión de trabajo sobre esto.
+
+### Hallazgos SonarCloud — seguridad + mantenibilidad (2026-08-24)
+Consultados directamente vía API pública de SonarCloud (el proyecto se puso
+en público ese día) tras habilitarse el análisis por CI. Confirmado: 1
+vulnerabilidad, 42 code smells, 0 security hotspots.
+
+- **Seguridad (`xml:S5332`):** `AndroidManifest.xml` no declaraba
+  `android:usesCleartextTraffic` — queda implícitamente habilitado en
+  Android 8/9 (minSdk 26). La app no tiene ningún uso real de HTTP sin TLS
+  (AdMob/Firebase/ML Kit usan HTTPS). Corregido con
+  `android:usesCleartextTraffic="false"` explícito.
+- **5 literales duplicados (`kotlin:S1192`):** el ID de prueba de AdMob
+  (`AdConstants.kt`, 5 banners que temporalmente comparten el mismo ID de
+  prueba — comentado para no perder esa intención) y `"application/pdf"`/
+  `"image/jpeg"` repetidos en `PdfToolsScreen.kt`, `ScanResultScreen.kt` y
+  `ViewerViewModel.kt` — extraídos a constantes locales por archivo.
+- **37 métodos con complejidad cognitiva excesiva (`kotlin:S3776`):** de los
+  moderados (16-29) se refactorizaron 15 — descomposición en sub-funciones/
+  sub-composables sin cambiar comportamiento, en `PptToTextUseCase`,
+  `CompressPdfUseCase`, `WordToHtmlUseCase`, `PdfPasswordUseCase` (además
+  eliminó duplicación real entre `protect()`/`removePassword()`),
+  `DocuSmartNavGraph`, `DocuSmartDocumentItem`, `OnboardingScreen`,
+  `MergePdfScreen`, `ViewerViewModel.loadDocument`, `ViewerScreen`
+  (`TextViewerContent`, `PdfPasswordDialog`, `PdfViewerContent`),
+  `SecurityScreen.NumericKeypad` y `StudyScreen` (`ParagraphItem`,
+  `PomodoroTab`). Al descomponer `ViewerScreen.kt` en más sub-composables
+  se subió `TooManyFunctions.thresholdInFiles` de 20 a 26 en
+  `config/detekt/detekt.yml` (documentado el motivo en el propio archivo).
+  Los 22 casos extremos (complejidad 41-202: `QrScreen.kt` con 202 y 114,
+  `StudyScreen.kt` con 87/66/46, `ViewerScreen.kt` con 73/58/46/41, y otros)
+  **quedan sin tocar, deliberadamente** — decisión del usuario: son
+  Composables de pantalla completa sin descomponer, refactorizarlos implica
+  reescritura sustancial con riesgo real de romper comportamiento visual/de
+  interacción sin Compose UI Testing todavía como red de seguridad (solo
+  hay 77 unit tests). Quedan documentados aquí como backlog priorizado para
+  abordar en una sesión dedicada, idealmente después de agregar Compose UI
+  Testing en los flujos críticos.
+
+Verificado: `assembleDebug` + `lintDebug` + `detekt` + `testDebugUnitTest`
+(77 tests, 0 fallos) en verde.
 
 ### Dependabot + Gitleaks (2026-08-24)
 `.github/dependabot.yml` — actualizaciones semanales de dependencias Gradle
