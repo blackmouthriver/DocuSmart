@@ -10,6 +10,7 @@
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
 - [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md) — Unir, Dividir, Comprimir, Rotar PDF (en refinamiento)
+- [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) — Visor, Biblioteca, Home/Recientes (en refinamiento)
 
 ---
 
@@ -33,7 +34,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   push/PR a `main`/`desarrollo`/`preproductivo`.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 32 tests reales (Seguridad: 23, Herramientas PDF: 8, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 42 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -69,6 +70,23 @@ el código actual. 8 tests nuevos (`SplitPdfUseCaseTest`, `MergePdfUseCaseTest`,
 de agua, reordenar páginas, etc.) documentado como RF-PDF-06 a RF-PDF-15.
 Detalle completo en [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md).
 
+### Módulo Visor + Biblioteca + Home (2026-08-24)
+3 bugs reales corregidos: (1) favoritos/alias no coincidían entre Visor y
+Biblioteca/Home por un id inconsistente (el Visor anteponía `"file://"` a
+rutas absolutas, Biblioteca/Home no) — `FavoritesRepository` en sí ya
+persistía bien, la causa raíz era el id, no la persistencia; (2) la búsqueda
+en el Visor no hacía nada para PDF (el botón aparecía habilitado pero
+`PdfViewerContent` no recibía `searchQuery`) — construido `SearchPdfTextUseCase`
+(extracción de texto por página con iText7) con navegación entre páginas con
+coincidencias; (3) "eliminar" en Biblioteca/Home solo ocultaba el documento
+de la lista en memoria, nunca borraba el archivo real — reaparecía al
+recargar — corregido con `DocumentRepository.deleteDocument()`. 4 hallazgos
+de la QA de mayo confirmados **obsoletos** (ya corregidos antes de esta
+sesión, sin registro de cuándo): favoritos, pestañas dispositivo/app, botón
+"Abrir" de Home, accesos rápidos de Home. 10 tests nuevos
+(`SearchPdfTextUseCaseTest`, `DocumentRepositoryTest`).
+Detalle completo en [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md).
+
 ### Avance por dimensión (estimado 2026-08-24)
 No hay un único "% completado" honesto — depende del eje:
 
@@ -76,8 +94,8 @@ No hay un único "% completado" honesto — depende del eje:
 |---|---|---|
 | Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
 | Funcionalidad core (25 requerimientos) | ~55-60% | ~9 sólidos, ~11 parciales con bugs, ~2-3 sin empezar |
-| Documentación formal (HU con criterios de aceptación) | ~25% | 2 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF) |
-| Pruebas automatizadas | ~8% | 32 tests cubriendo 6 archivos de decenas |
+| Documentación formal (HU con criterios de aceptación) | ~35% | 3 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca) |
+| Pruebas automatizadas | ~10% | 42 tests cubriendo 8 archivos de decenas |
 | Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
@@ -96,9 +114,9 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
   comparar/censurar PDF como diferencial (backlog en `pdf-tools.md`).
 - **Conversión:** PDF → Word editable (killer feature premium), conversión por
   lotes, conversión en segundo plano para archivos grandes.
-- **Visor/Biblioteca:** buscador y favoritos no persisten (mismo patrón de bug
-  que Seguridad: lógica existente mal conectada — revisar con esa hipótesis
-  antes de reescribir); papelera de reciclaje; discriminar archivos app vs. dispositivo.
+- **Visor/Biblioteca:** ya refinado (ver módulo abajo) — pendiente: renombrar/
+  eliminar desde el Visor (RF-VIS-06), resaltado inline de búsqueda en PDF
+  (RF-VIS-08), papelera de reciclaje (RF-VIS-07) (backlog en `visor-biblioteca.md`).
 - **Estudio:** exportar notas, estadísticas de estudio (tiempo leído, pomodoros/semana).
 - **Premium:** conectar Play Billing real y límite diario no-premium (bloqueantes
   para publicar), programa de referidos.
@@ -112,14 +130,14 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 
 | # | Requerimiento | Estado conocido |
 |---|---|---|
-| 1 | Visor universal: Word/Excel/PDF/img/texto, desde dispositivo, link, QR, correo, WhatsApp | Visor de PDF/imagen funciona; Word/Excel/PPT **con inconvenientes** (confirmado en barrido de pruebas) |
+| 1 | Visor universal: Word/Excel/PDF/img/texto, desde dispositivo, link, QR, correo, WhatsApp | Visor de PDF/imagen funciona bien; Word/Excel/PPT con inconvenientes por confirmar (no se tocó en esta pasada). Refinado con HU en [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) |
 | 2 | Conversión: imágenes↔pdf/jpg/png/webp/bmp; pdf↔img/texto/word/html; word↔pdf/texto/html; ppt→pdf/texto | Solo un subconjunto implementado (img→pdf, pdf→img limitado, word→pdf/texto, excel→pdf/csv, ppt→pdf). Falta ampliar todos los combos |
 | 3 | Herramientas PDF: unir, dividir, comprimir, rotar, editar, firmar, marca de agua, numeración, detector de formularios, recortar, ordenar, proteger con contraseña, OCR avanzado | Unir/dividir/comprimir/rotar/proteger implementados y refinados con HU (ver [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md)) — bug de arquitectura en Unir/Rotar corregido hoy (rasterizaban a imagen), "dividir no funciona" confirmado obsoleto con tests. Editar, firmar, marca de agua, numeración, formularios, recortar, ordenar, comparar, censurar, OCR avanzado: **backlog documentado, no implementado** |
-| 4 | Biblioteca con lista navegable, filtro por formato | Implementado, con bugs de favoritos (§5) |
-| 5 | Sub-menú por documento: abrir, favorito, renombrar, compartir, convertir, crear QR; favoritos visibles en biblioteca | Parcial — falta renombrar; favoritos no persisten al salir de la vista |
-| 6 | Buscador en vistas relevantes | Funciona en Biblioteca; **no funciona en el Visor** (bug confirmado) |
-| 7 | Accesos rápidos | Implementados visualmente; varios no llevan a ninguna pantalla real (scanner, seguridad, estudio aislados) |
-| 8 | Acceso directo a abrir/convertir | Implementado (banner Home) |
+| 4 | Biblioteca con lista navegable, filtro por formato | Implementado, incluyendo pestañas dispositivo/app (ya existían, confirmado). Refinado con HU |
+| 5 | Sub-menú por documento: abrir, favorito, renombrar, compartir, convertir, crear QR; favoritos visibles en biblioteca | Favorito ahora consistente entre Visor/Biblioteca/Home (bug de id corregido hoy); falta renombrar/eliminar desde el Visor específicamente (backlog) |
+| 6 | Buscador en vistas relevantes | Funciona en Biblioteca; en el Visor **corregido hoy** — antes el botón aparecía habilitado para PDF pero no hacía nada, ahora busca por página con iText7 y navega entre coincidencias |
+| 7 | Accesos rápidos | **Obsoleto el hallazgo de "aislados"** — confirmado que ya navegan a rutas reales (scanner/seguridad/estudio) |
+| 8 | Acceso directo a abrir/convertir | Implementado (banner Home) — botón "Abrir" confirmado funcional (obsoleto el hallazgo de que no hacía nada) |
 | 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien; falta leer QR con URL/navegación y QR con contraseña compartible |
 | 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); **carpeta segura no bloquea realmente el acceso al archivo por su ruta original** (bug crítico confirmado) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; falta guardar/listar notas (¡ya corregido — ver StudyScreen actual, tiene lista de notas guardadas!) — verificar que el barrido de pruebas quedó desactualizado en este punto |
@@ -155,24 +173,20 @@ Bugs y mejoras identificados por el usuario en pruebas manuales
 antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 
 ### Home
-- Botón "Abrir" del banner no genera ninguna acción.
-- Accesos rápidos de scanner/seguridad/estudio no están atados a ninguna pantalla (aislados).
-- Favorito (corazón) en recientes no persiste al salir de la vista.
-- Botón "Inicio" de la bottom nav deja de responder después de ir a Convertir (a verificar si sigue vigente).
-- Falta logo de marca en el banner azul (estandarizar en todas las vistas).
-
-### Visor
-- Búsqueda no tiene función real.
-- Favorito no persiste.
-- No permite renombrar ni eliminar desde el visor.
-- Margen superior falla, el PDF "se pierde" arriba.
-- Word/Excel/texto/PowerPoint presentan inconvenientes (solo PDF/imagen confiables).
-
-### Biblioteca
-- Favoritos no persisten al salir de la vista.
-- Tarjetas de favoritos con tamaños inconsistentes en el carrusel horizontal.
-- Formatos en carrusel esconden opciones — sugerido: grilla en vez de carrusel.
-- Falta discriminar "archivos creados por la app" vs. "archivos del dispositivo".
+### Home / Visor / Biblioteca — refinado 2026-08-24, ver [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md)
+- ~~Botón "Abrir" del banner no genera ninguna acción.~~ **Obsoleto** — ya lanza `ACTION_OPEN_DOCUMENT` correctamente.
+- ~~Accesos rápidos de scanner/seguridad/estudio no están atados a ninguna pantalla (aislados).~~ **Obsoleto** — ya navegan a rutas reales.
+- ~~Favorito (corazón) en recientes/Biblioteca no persiste al salir de la vista.~~ **Corregido hoy** — causa raíz real: el Visor calculaba el id de favorito con prefijo `"file://"` para rutas absolutas, Biblioteca/Home lo hacían sin prefijo → mismo documento, dos claves distintas. `FavoritesRepository` en sí ya persistía bien.
+- Botón "Inicio" de la bottom nav deja de responder después de ir a Convertir — no verificado, requiere prueba de navegación en vivo.
+- Falta logo de marca en el banner azul (estandarizar en todas las vistas) — pendiente, ticket de UI transversal.
+- ~~Visor: búsqueda no tiene función real.~~ **Corregido hoy** — el botón aparecía habilitado para PDF pero `PdfViewerContent` no recibía `searchQuery`; construido `SearchPdfTextUseCase` (iText7) + navegación entre páginas con coincidencias.
+- **Bug real encontrado hoy (no reportado en la QA):** "eliminar" en Biblioteca/Home solo filtraba la lista en memoria, nunca borraba el archivo real — reaparecía al recargar. Corregido: `DocumentRepository.deleteDocument()` borra de verdad (archivo de la app o `ContentResolver` para MediaStore) y solo se quita de la lista si el borrado fue exitoso.
+- Visor: no permite renombrar ni eliminar desde el visor — confirmado vigente, backlog (RF-VIS-06).
+- Visor: margen superior falla, el PDF "se pierde" arriba — no verificado, requiere prueba visual.
+- Word/Excel/texto/PowerPoint presentan inconvenientes (solo PDF/imagen confiables) — no verificado en esta pasada.
+- ~~Biblioteca: falta discriminar "archivos creados por la app" vs. "archivos del dispositivo".~~ **Obsoleto** — ya implementado (pestañas `LibraryTab.DEVICE`/`APP_FILES`).
+- Tarjetas de favoritos con tamaños inconsistentes en el carrusel horizontal — ajuste visual, no funcional, fuera de alcance de esta pasada.
+- Formatos en carrusel esconden opciones — sugerido: grilla en vez de carrusel — pendiente.
 
 ### Convertidor
 - Muy pocas opciones de conversión por formato (2-3 cuando el requerimiento pide más).
@@ -363,6 +377,9 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   no tenía ningún cambio único, solo una versión vieja ya superada.
   Repo simplificado a **una sola rama larga (`main`) + ramas de feature
   de corta duración por HU**.
+- Tercer módulo refinado (2026-08-24, primero bajo el flujo de ramas por HU):
+  **Visor + Biblioteca + Home**, en rama `feature/visor-biblioteca`. Ver
+  [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md).
 
 ---
 

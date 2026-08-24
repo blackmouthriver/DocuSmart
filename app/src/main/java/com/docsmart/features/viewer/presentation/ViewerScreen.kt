@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +39,7 @@ import com.docsmart.R
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
 import com.docsmart.features.viewer.presentation.components.ViewerTopBar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -133,6 +135,9 @@ fun ViewerScreen(
                         key(fileUri?.toString()) {
                             PdfViewerContent(
                                 uri           = fileUri,
+                                targetPage    = uiState.pdfSearchMatches
+                                    .getOrNull(uiState.pdfSearchIndex)
+                                    ?.minus(1),
                                 onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
                                 onTap         = { viewModel.toggleControls() }
                             )
@@ -188,7 +193,8 @@ fun ViewerScreen(
         // ── TopBar + SearchBar ────────────────────────────────────────────────
         uiState.document?.let { doc ->
             val mime        = (uiState.mimeType ?: "").lowercase()
-            val isTextBased = mime.contains("pdf")        ||
+            val isPdf       = mime.contains("pdf") || doc.name.endsWith(".pdf", ignoreCase = true)
+            val isTextBased = isPdf ||
                     mime.contains("word")       ||
                     mime.contains("text")       ||
                     mime.contains("excel")      ||
@@ -196,6 +202,20 @@ fun ViewerScreen(
                     doc.name.endsWith(".txt")   ||
                     doc.name.endsWith(".md")    ||
                     doc.name.endsWith(".csv")
+
+            // ── Búsqueda en PDF: los otros formatos filtran en línea vía
+            // searchQuery (ver WordViewerContent/ExcelViewerContent/etc.); el
+            // PDF necesita extraer texto por página (SearchPdfTextUseCase), así
+            // que se dispara desde acá con un pequeño debounce.
+            LaunchedEffect(searchQuery, isPdf, uiState.fileUri) {
+                if (!isPdf) return@LaunchedEffect
+                if (searchQuery.isBlank()) {
+                    viewModel.clearPdfSearch()
+                } else {
+                    delay(300)
+                    viewModel.searchInPdf(searchQuery)
+                }
+            }
 
             ViewerTopBar(
                 fileName        = doc.name,
@@ -215,16 +235,28 @@ fun ViewerScreen(
 
             // ── Barra de búsqueda ─────────────────────────────────────────────
             if (showSearch && isTextBased) {
-                SearchBar(
-                    query    = searchQuery,
-                    onQuery  = { searchQuery = it },
-                    onClose  = { showSearch = false; searchQuery = "" },
+                Column(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 56.dp)
                         .statusBarsPadding()
                         .zIndex(10f)
-                )
+                ) {
+                    SearchBar(
+                        query    = searchQuery,
+                        onQuery  = { searchQuery = it },
+                        onClose  = { showSearch = false; searchQuery = "" }
+                    )
+                    if (isPdf) {
+                        PdfSearchResultBar(
+                            matchCount   = uiState.pdfSearchMatches.size,
+                            currentIndex = uiState.pdfSearchIndex,
+                            hasQuery     = searchQuery.isNotBlank(),
+                            onNext       = { viewModel.nextPdfSearchResult() },
+                            onPrevious   = { viewModel.previousPdfSearchResult() }
+                        )
+                    }
+                }
             }
         }
 
@@ -350,10 +382,60 @@ private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
     }
 }
 
+// ── Barra de resultados de búsqueda en PDF ────────────────────────────────────
+@Composable
+private fun PdfSearchResultBar(
+    matchCount  : Int,
+    currentIndex: Int,
+    hasQuery    : Boolean,
+    onNext      : () -> Unit,
+    onPrevious  : () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier        = modifier.fillMaxWidth(),
+        color           = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp
+    ) {
+        Row(
+            modifier              = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = when {
+                    !hasQuery       -> ""
+                    matchCount == 0 -> "Sin resultados"
+                    else            -> "Coincidencia ${currentIndex + 1} de $matchCount"
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row {
+                IconButton(onClick = onPrevious, enabled = matchCount > 0) {
+                    Icon(
+                        Icons.Rounded.KeyboardArrowUp, contentDescription = "Coincidencia anterior",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onNext, enabled = matchCount > 0) {
+                    Icon(
+                        Icons.Rounded.KeyboardArrowDown, contentDescription = "Siguiente coincidencia",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
 // ── Visor de PDF ──────────────────────────────────────────────────────────────
 @Composable
 private fun PdfViewerContent(
     uri          : Uri?,
+    targetPage   : Int?,
     onPageChanged: (Int, Int) -> Unit,
     onTap        : () -> Unit
 ) {
@@ -363,6 +445,13 @@ private fun PdfViewerContent(
     var scale     by remember { mutableFloatStateOf(1f) }
     var offsetX   by remember { mutableFloatStateOf(0f) }
     var offsetY   by remember { mutableFloatStateOf(0f) }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(targetPage, pages.size) {
+        if (targetPage != null && targetPage in pages.indices) {
+            listState.animateScrollToItem(targetPage)
+        }
+    }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
@@ -455,6 +544,7 @@ private fun PdfViewerContent(
     }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .clickable { onTap() }

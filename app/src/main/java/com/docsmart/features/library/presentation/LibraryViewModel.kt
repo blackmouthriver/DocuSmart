@@ -28,7 +28,8 @@ data class LibraryUiState(
     val searchQuery       : String                = "",
     val selectedCategory  : DocumentType?         = null,
     val selectedTab       : LibraryTab            = LibraryTab.DEVICE, // ← NUEVO
-    val isLoading         : Boolean               = false
+    val isLoading         : Boolean               = false,
+    val deleteError       : String?               = null
 )
 
 @HiltViewModel
@@ -197,20 +198,33 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun removeDocument(documentId: String) {
-        val updated    = _uiState.value.allDocuments.filter { it.id != documentId }
-        val deviceDocs = updated.filter { isDeviceDocument(it) }
-        val appDocs    = updated.filter { !isDeviceDocument(it) }
-        _uiState.update { state ->
-            state.copy(
-                allDocuments      = updated,
-                deviceDocuments   = deviceDocs,
-                appDocuments      = appDocs,
-                filteredDocuments = applyCurrentFilters(
-                    if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                    state
-                ),
-                favorites         = updated.filter { it.isFavorite }
-            )
+        viewModelScope.launch {
+            val deleted = repository.deleteDocument(documentId)
+            if (!deleted) {
+                _uiState.update { it.copy(deleteError = "No se pudo eliminar el archivo") }
+                return@launch
+            }
+            favoritesRepository.removeAlias(documentId)
+
+            val updated    = _uiState.value.allDocuments.filter { it.id != documentId }
+            val deviceDocs = updated.filter { isDeviceDocument(it) }
+            val appDocs    = updated.filter { !isDeviceDocument(it) }
+            _uiState.update { state ->
+                state.copy(
+                    allDocuments      = updated,
+                    deviceDocuments   = deviceDocs,
+                    appDocuments      = appDocs,
+                    filteredDocuments = applyCurrentFilters(
+                        if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                        state
+                    ),
+                    favorites         = updated.filter { it.isFavorite }
+                )
+            }
         }
+    }
+
+    fun dismissDeleteError() {
+        _uiState.update { it.copy(deleteError = null) }
     }
 }
