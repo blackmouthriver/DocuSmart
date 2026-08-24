@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.docsmart.R
+import com.docsmart.features.study.domain.SavedNote
+import com.docsmart.features.study.domain.StudyNotesStorage
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
@@ -88,11 +90,13 @@ fun StudyScreen(onBack: () -> Unit = {}) {
         var ttsInstance: TextToSpeech? = null
         ttsInstance = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                val locale = Locale("es", "ES")
-                val result = ttsInstance?.setLanguage(locale)
+                // Antes forzaba español (Locale("es","ES")) sin importar el idioma
+                // configurado — mismo bug que ya se corrigió para el reconocimiento
+                // de voz, pero solo del lado de entrada, no de lectura en voz alta.
+                val result = ttsInstance?.setLanguage(Locale.getDefault())
                 if (result == TextToSpeech.LANG_MISSING_DATA ||
                     result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    ttsInstance?.language = Locale.getDefault()
+                    ttsInstance?.language = Locale("es", "ES")
                 }
                 ttsInstance?.setSpeechRate(0.85f)
                 ttsInstance?.setPitch(1.05f)
@@ -686,51 +690,8 @@ private fun NotesTab(
 ) {
     val context = LocalContext.current
 
-    data class SavedNote(
-        val id      : String,
-        val title   : String,
-        val text    : String,
-        val dateTime: String
-    )
-
-    fun loadNotes(): List<SavedNote> {
-        return try {
-            val prefs = context.getSharedPreferences("study_notes", Context.MODE_PRIVATE)
-            val json  = prefs.getString("notes_list", "[]") ?: "[]"
-            val result = mutableListOf<SavedNote>()
-            val items  = json.removeSurrounding("[", "]").split("},{")
-            items.forEach { item ->
-                val clean = item.removePrefix("{").removeSuffix("}")
-                val map   = mutableMapOf<String, String>()
-                // Parser manual tolerante a comas dentro de valores
-                val regex = Regex(""""([^"]+)":"([^"]*?)"""")
-                regex.findAll(clean).forEach { m ->
-                    map[m.groupValues[1]] = m.groupValues[2]
-                }
-                val id    = map["id"]    ?: return@forEach
-                val title = map["title"] ?: ""
-                val text  = map["text"]  ?: return@forEach
-                val date  = map["date"]  ?: ""
-                result.add(SavedNote(id, title.replace("\\n", "\n"), text.replace("\\n", "\n"), date))
-            }
-            result.reversed()
-        } catch (e: Exception) { emptyList() }
-    }
-
-    fun saveNotes(notes: List<SavedNote>) {
-        try {
-            val prefs = context.getSharedPreferences("study_notes", Context.MODE_PRIVATE)
-            val json  = notes.joinToString(",", "[", "]") { note ->
-                val safeTitle = note.title.replace("\"", "'").replace("\n", "\\n")
-                val safeText  = note.text.replace("\"", "'").replace("\n", "\\n")
-                """{"id":"${note.id}","title":"$safeTitle","text":"$safeText","date":"${note.dateTime}"}"""
-            }
-            prefs.edit().putString("notes_list", json).apply()
-        } catch (e: Exception) { Timber.e(e, "Error guardando notas") }
-    }
-
     // ── Estado ────────────────────────────────────────────────────────────────
-    var savedNotes    by remember { mutableStateOf(loadNotes()) }
+    var savedNotes    by remember { mutableStateOf(StudyNotesStorage.loadNotes(context)) }
     var currentTitle  by remember { mutableStateOf("") }
     var currentNote   by remember { mutableStateOf(notes) }
     var showDeleteAll by remember { mutableStateOf(false) }
@@ -787,7 +748,7 @@ private fun NotesTab(
             text  = { Text(stringResource(R.string.study_delete_all_notes_body)) },
             confirmButton = {
                 TextButton(onClick = {
-                    saveNotes(emptyList())
+                    StudyNotesStorage.saveNotes(context, emptyList())
                     savedNotes    = emptyList()
                     showDeleteAll = false
                 }) { Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error) }
@@ -956,7 +917,7 @@ private fun NotesTab(
                             dateTime = dateFormatter.format(java.util.Date())
                         )
                         val updated = listOf(newNote) + savedNotes
-                        saveNotes(updated)
+                        StudyNotesStorage.saveNotes(context, updated)
                         savedNotes   = updated
                         currentNote  = ""
                         currentTitle = ""
@@ -1070,7 +1031,7 @@ private fun NotesTab(
                                 IconButton(
                                     onClick  = {
                                         val updated = savedNotes.filter { it.id != note.id }
-                                        saveNotes(updated)
+                                        StudyNotesStorage.saveNotes(context, updated)
                                         savedNotes = updated
                                     },
                                     modifier = Modifier.size(28.dp)

@@ -14,6 +14,7 @@
 - [`docs/requirements/conversion.md`](docs/requirements/conversion.md) — 17 combinaciones de conversión (en refinamiento)
 - [`docs/requirements/scanner.md`](docs/requirements/scanner.md) — Escanear documento (ML Kit) + lector/creador de QR (en refinamiento)
 - [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) — Ajustes + Premium/límites de uso (en refinamiento)
+- [`docs/requirements/study.md`](docs/requirements/study.md) — Lectura con voz, notas, Pomodoro (en refinamiento)
 
 ---
 
@@ -38,6 +39,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
 - **Tests:** 72 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
+- **Tests:** 66 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Estudio: 5, ejemplo: 1), 0 fallos. Cobertura aún baja en proporción al total de use cases del proyecto.
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -140,6 +142,23 @@ propio código ("Fase 10 se conecta Play Billing real"), no un bug oculto —
 requiere configuración de Play Console que el usuario debe hacer, así que
 no se implementó en esta pasada. 11 tests nuevos.
 Detalle completo en [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
+### Módulo Estudio (2026-08-24)
+La nota anterior de este documento (§3, requerimiento #11) daba por corregido
+el guardado de notas solo porque la lista existía — al auditar su
+serialización se encontraron 2 bugs reales que nadie había detectado: el
+serializador manual reemplazaba silenciosamente cualquier comilla doble por
+comilla simple en cada guardado (corrupción de datos del usuario), y un
+`.reversed()` de más invertía el orden de las notas al recargar la pantalla.
+Ambos corregidos reemplazando el serializador a mano por `org.json` (parte
+del SDK de Android — se agregó `testImplementation("org.json:json:...")`
+porque el stub de Android para unit tests no implementa `org.json.*`).
+Además, la lectura en voz alta (TTS) forzaba español sin importar el idioma
+del dispositivo — mismo bug ya corregido antes para el reconocimiento de voz
+al dictar, pero que persistía del lado de lectura. `StudyScreen.kt` es la
+única pantalla grande del proyecto sin `ViewModel` (todo el estado vive en
+`remember {}`), documentado como deuda de arquitectura, no corregido en esta
+pasada. 5 tests nuevos.
+Detalle completo en [`docs/requirements/study.md`](docs/requirements/study.md).
 
 ### Avance por dimensión (estimado 2026-08-24)
 No hay un único "% completado" honesto — depende del eje:
@@ -150,6 +169,8 @@ No hay un único "% completado" honesto — depende del eje:
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
 | Documentación formal (HU con criterios de aceptación) | ~75% | 6 formalizados en esta rama (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium) + Estudio en `feature/study` (aún no fusionada) = 7 de ~7-8 módulos |
 | Pruebas automatizadas | ~18% | 72 tests cubriendo 16 archivos de decenas (sin contar los 5 de `feature/study`, aún no fusionada) |
+| Documentación formal (HU con criterios de aceptación) | ~65% | 6 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Estudio) |
+| Pruebas automatizadas | ~16% | 66 tests cubriendo 14 archivos de decenas |
 | Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
@@ -196,6 +217,8 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); **carpeta segura no bloquea realmente el acceso al archivo por su ruta original** (bug crítico confirmado) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; falta guardar/listar notas (¡ya corregido — ver StudyScreen actual, tiene lista de notas guardadas!) — verificar que el barrido de pruebas quedó desactualizado en este punto |
 | 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
+| 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; lista de notas guardadas existe, pero tenía 2 bugs reales de persistencia (corrupción de comillas, orden invertido) corregidos hoy. Refinado con HU en [`docs/requirements/study.md`](docs/requirements/study.md) |
+| 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado (Settings ya conectado a i18n hoy) |
 | 13 | Multilenguaje con default según ubicación geográfica de Play Store | **Pendiente** — hoy el idioma por defecto es fijo (español), falta detectar locale del dispositivo/tienda |
 | 14 | Sección de beneficios plan de pago | Implementado (Premium screen) |
 | 15 | Banner para no-premium, desaparece al pagar | Implementado (AdMob banner condicional) |
@@ -273,9 +296,12 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - **Bug real encontrado hoy (no reportado en la QA):** guardar un documento escaneado en modo "Documento" en Descargas fallaba en silencio en Android 8/9 (`savePdfUriToDownloads` sin implementación pre-Q). Corregido.
 - **Bug real encontrado hoy (no reportado en la QA):** detección de tipo de contenido de QR sensible a mayúsculas — un QR con esquema en mayúsculas (`HTTPS://...`) se clasificaba como texto plano en vez de URL. Corregido.
 
-### Estudio
-- (Documento de mayo indica que faltaba guardado/lista de notas — **el código actual ya tiene lista de notas guardadas**, parece corregido; confirmar con el usuario si ya lo probó en la versión actual).
-- Lectura se ve como texto plano — mejorar presentación visual.
+### Estudio — refinado 2026-08-24, ver [`docs/requirements/study.md`](docs/requirements/study.md)
+- Documento de mayo indica que faltaba guardado/lista de notas — **parcialmente correcto pero incompleto**: la lista de notas guardadas sí existe (título/texto/fecha, guardar/eliminar), pero al auditar su serialización se encontraron 2 bugs reales que nadie había detectado (ver abajo).
+- **Bug real encontrado hoy (no reportado en la QA):** el serializador manual de notas reemplazaba silenciosamente cualquier comilla doble por comilla simple en cada guardado — corrompía el contenido de las notas del usuario. Corregido reemplazando el serializador a mano por `org.json` (parte del SDK de Android).
+- **Bug real encontrado hoy (no reportado en la QA):** el orden de las notas se invertía al recargar la pantalla de Estudio (quedaban más vieja primero, no más nueva primero). Corregido quitando un `.reversed()` de más.
+- **Bug real encontrado hoy (no reportado en la QA):** la lectura en voz alta (TTS) forzaba español sin importar el idioma configurado del dispositivo — mismo bug ya corregido antes para el reconocimiento de voz al dictar notas, pero que persistía del lado de lectura. Corregido.
+- Lectura se ve como texto plano — mejorar presentación visual (no abordado, es visual no funcional).
 
 ### Ajustes + Premium — refinado 2026-08-24, ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md)
 - **Bug real encontrado hoy (no reportado en la QA):** "Restablecer configuración" forzaba español sin importar el idioma del dispositivo. Corregido con `LanguageManager.deviceDefaultLanguage()`.
@@ -464,6 +490,11 @@ capturas puntuales si se necesita referencia visual exacta de una pantalla.)*
   dos tocan las secciones compartidas de `CONTEXT.md` (lista de specs,
   tabla de avance, contador de tests) — al fusionar la segunda probablemente
   haga falta resolver un conflicto simple en este archivo.
+- Sexto módulo refinado (2026-08-24): **Estudio**, en rama `feature/study`.
+  Corrupción silenciosa de comillas en notas guardadas + orden invertido al
+  recargar + TTS forzando español — los 3 corregidos. `StudyScreen.kt` queda
+  documentado como deuda de arquitectura (única pantalla grande sin
+  ViewModel). Ver [`docs/requirements/study.md`](docs/requirements/study.md).
 
 ---
 
