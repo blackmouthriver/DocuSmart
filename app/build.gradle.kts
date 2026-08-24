@@ -137,17 +137,17 @@ dependencies {
     implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
 
     // ── Apache POI ────────────────────────────────────────────────────────────
-    implementation("org.apache.poi:poi:5.2.3") {
+    implementation("org.apache.poi:poi:5.5.1") {
         exclude(group = "com.github.virtuald")
         exclude(group = "org.junit.jupiter")
         exclude(group = "com.zaxxer")
     }
-    implementation("org.apache.poi:poi-ooxml:5.2.3") {
+    implementation("org.apache.poi:poi-ooxml:5.5.1") {
         exclude(group = "com.github.virtuald")
         exclude(group = "org.junit.jupiter")
         exclude(group = "com.zaxxer")
     }
-    implementation("org.apache.poi:poi-scratchpad:5.2.3") {
+    implementation("org.apache.poi:poi-scratchpad:5.5.1") {
         exclude(group = "com.github.virtuald")
         exclude(group = "org.junit.jupiter")
         exclude(group = "com.zaxxer")
