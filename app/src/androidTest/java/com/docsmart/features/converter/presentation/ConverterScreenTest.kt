@@ -1,0 +1,125 @@
+package com.docsmart.features.converter.presentation
+
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.net.Uri
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
+import com.docsmart.core.ads.AdManager
+import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.features.converter.domain.model.ConversionType
+import com.docsmart.features.converter.domain.usecase.ImageFormatUseCase
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.Rule
+import org.junit.Test
+import java.io.File
+
+/**
+ * Flujo crítico #2 del manual de marca (junto con ViewerScreenTest): "abrir
+ * o convertir un documento en menos de 3 toques". Cubre justo el terreno
+ * donde se encontró y corrigió antes en esta sesión un crash real
+ * (WEBP_LOSSLESS en Android 8-10, en ImageFormatUseCase) — por eso
+ * ImageFormatUseCase NO se mockea acá, se usa la instancia real, para que
+ * esta prueba dé protección de regresión de verdad ante ese bug, no solo
+ * contra un mock.
+ *
+ * El selector de archivos del sistema es un proceso externo — no se puede
+ * conducir con Compose UI Testing. Se simula seleccionando un archivo real
+ * llamando a onFilesSelected() directo (mismo principio que ViewerScreenTest
+ * resolviendo documentId sin ContentResolver real); el resto del flujo
+ * (elegir formato, tocar "Convertir", ver el resultado) sí se conduce por
+ * la UI real.
+ */
+class ConverterScreenTest {
+
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    private fun buildViewModel(): ConverterViewModel {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+
+        // Los 3 StateFlow<Boolean> de AdManager se leen directo en Composables
+        // de anuncios (ej. DocuSmartBannerAd) -- un mock relajado sin stub
+        // explícito para cada uno causa un ClassCastException al intentar
+        // leer el proxy de MockK como Boolean primitivo.
+        val adManager = mockk<AdManager>(relaxed = true)
+        every { adManager.isPremium } returns MutableStateFlow(false)
+        every { adManager.isInitialized } returns MutableStateFlow(true)
+        every { adManager.isRewardedReady } returns MutableStateFlow(false)
+
+        // canConvert() en un mock relajado devuelve false por defecto -- sin
+        // esto, convert() muestra el diálogo de límite diario en vez de
+        // convertir de verdad.
+        val dailyLimitManager = mockk<DailyLimitManager>(relaxed = true)
+        every { dailyLimitManager.canConvert() } returns true
+
+        return ConverterViewModel(
+            convertImageToPdf = mockk(relaxed = true),
+            pdfToImage        = mockk(relaxed = true),
+            pdfToText         = mockk(relaxed = true),
+            pdfToWord         = mockk(relaxed = true),
+            pdfToHtml         = mockk(relaxed = true),
+            imageFormat       = ImageFormatUseCase(appContext), // real, no mock
+            wordToPdf         = mockk(relaxed = true),
+            wordToText        = mockk(relaxed = true),
+            wordToHtml        = mockk(relaxed = true),
+            excelToPdf        = mockk(relaxed = true),
+            excelToCsv        = mockk(relaxed = true),
+            excelToHtml       = mockk(relaxed = true),
+            pptToPdf          = mockk(relaxed = true),
+            pptToText         = mockk(relaxed = true),
+            adManager         = adManager,
+            dailyLimitManager = dailyLimitManager
+        )
+    }
+
+    // Imagen real de prueba en cacheDir -- ImageFormatUseCase la lee vía
+    // ContentResolver igual que con un archivo elegido por el usuario.
+    private fun createTestImageFile(): Uri {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val bitmap = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(Color.RED)
+        val file = File(appContext.cacheDir, "converter_test_${System.currentTimeMillis()}.png")
+        file.outputStream().use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+        return Uri.fromFile(file)
+    }
+
+    @Test
+    fun convertirImagenAWebp_muestraResultadoExitoso() {
+        val viewModel = buildViewModel()
+        val imageUri = createTestImageFile()
+
+        composeRule.setContent {
+            ConverterScreen(viewModel = viewModel)
+        }
+
+        composeRule.runOnUiThread {
+            // Orden real de la UI: elegir el tipo primero, el picker de
+            // archivos se abre después para ese tipo específico --
+            // onTypeSelected() limpia selectedFiles a propósito.
+            viewModel.onTypeSelected(ConversionType.IMAGE_TO_WEBP)
+            viewModel.onFilesSelected(listOf(imageUri))
+        }
+        composeRule.waitForIdle()
+
+        // "Imagen → WebP" (ConversionType.label) y "Convertir a WebP"
+        // (converter_to_format) son los textos reales renderizados hoy --
+        // ninguno de los dos pasa por stringResource() (hallazgo de i18n
+        // aparte, documentado en docs/requirements/conversion.md).
+        composeRule.onNodeWithText("Convertir a WebP").performClick()
+
+        // La conversión real corre en un dispositivo de 8x8 px -- rápida,
+        // pero es E/S real (comprimir + escribir a disco), así que se
+        // espera con margen en vez de asumir que ya terminó tras waitForIdle().
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("¡Conversión exitosa!")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+}

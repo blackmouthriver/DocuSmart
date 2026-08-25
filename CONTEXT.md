@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (Play Billing real conectado — RF-PREM-05)
+**Última actualización:** 2026-08-25 (Compose UI Testing flujo #2 — conversión)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -40,7 +40,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 92 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 9, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 86 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
+- **Tests:** 93 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 10, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 86 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real; 2 son **Compose UI Testing** instrumentadas contra dispositivo real (`ViewerScreenTest`, `ConverterScreenTest` — flujos #1 y #2 del manual de marca). Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** Room desde 2026-08-25, primera tabla (`document_history`,
   historial de documentos abiertos — ver §2 "Historial de documentos
   abiertos" y `docs/requirements/visor-biblioteca.md` §8). Favoritos/idioma/
@@ -113,6 +113,16 @@ opciones de conversión" resultó obsoleto en cuanto a cantidad (17
 combinaciones ya declaradas); el problema real era el enrutamiento y el bug
 de xmlbeans. 12 tests nuevos.
 Detalle completo en [`docs/requirements/conversion.md`](docs/requirements/conversion.md).
+
+**Compose UI Testing — flujo #2 (2026-08-25):** `ConverterScreenTest` cubre
+Imagen→WebP con `ImageFormatUseCase` real (no mockeado), protegiendo de
+verdad contra el crash de WEBP_LOSSLESS ya corregido. Dos hallazgos de i18n
+sin corregir (backlog): `ConversionType.label` y el texto de éxito en
+`ConversionSuccess.kt` están en español fijo, fuera de `stringResource()`.
+De paso se encontró y corrigió una causa de inestabilidad al correr varias
+pruebas de Compose UI juntas en el dispositivo real (animaciones del
+sistema activas → `IllegalStateException: No compose hierarchies found`).
+Detalle en [`docs/requirements/conversion.md` §7](docs/requirements/conversion.md).
 
 ### Módulo Escáner (2026-08-24)
 Módulo con menos deuda real de lo que sugería la QA de mayo: la mayoría de
