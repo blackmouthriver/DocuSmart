@@ -103,6 +103,20 @@ jobs:
       - name: Permiso de ejecución para gradlew
         run: chmod +x ./gradlew
 
+      # Compilar ANTES de arrancar el emulador, no durante -- el runner
+      # tiene solo 2 vCPU en total. Tercer intento real falló con el
+      # emulador colgado (ERROR | detected a hanging thread 'QEMU2 CPU0
+      # thread'/'QEMU2 main loop') justo mientras corría
+      # connectedDebugAndroidTest, porque ese script compila Kotlin/dex al
+      # vuelo con el emulador ya corriendo, compitiendo por los mismos 2
+      # núcleos. Compilando acá, con el emulador todavía apagado,
+      # connectedDebugAndroidTest más adelante encuentra casi todo
+      # up-to-date y solo necesita instalar los APKs y correr la
+      # instrumentación -- mucho más liviano en CPU con el emulador ya
+      # activo.
+      - name: Compilar APKs de debug y de test
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+
       # KVM da aceleración por hardware al emulador en los runners Linux
       # hospedados por GitHub -- sin esto el emulador corre por software y
       # es demasiado lento para un job de CI.
