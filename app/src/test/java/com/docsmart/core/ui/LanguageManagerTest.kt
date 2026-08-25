@@ -16,7 +16,8 @@ import java.util.Locale
  * Cubre el bug real encontrado en Ajustes (docs/requirements/settings-premium.md):
  * "Restablecer configuración" forzaba español sin importar el idioma
  * configurado del dispositivo — mismo tipo de bug ya corregido en TTS y
- * reconocimiento de voz (Modo Estudio).
+ * reconocimiento de voz (Modo Estudio). También cubre RF-SET-06: el idioma
+ * por defecto de una instalación nueva debe seguir la misma señal.
  */
 class LanguageManagerTest {
 
@@ -55,6 +56,47 @@ class LanguageManagerTest {
         Locale.setDefault(Locale("en", "US"))
 
         assertEquals(AppLanguage.ENGLISH, manager.deviceDefaultLanguage())
+    }
+
+    // ── RF-SET-06: idioma por defecto en una instalación nueva ───────────────
+    // currentLanguage se calcula al construir LanguageManager (loadLanguage()
+    // en el inicializador), así que el locale del dispositivo debe fijarse
+    // ANTES de construir el manager de cada uno de estos tests, no en el
+    // `manager` compartido de @BeforeEach.
+
+    @Test
+    fun `instalacion nueva usa el idioma del dispositivo si esta soportado`() {
+        Locale.setDefault(Locale("de"))
+        val context = mockk<Context>()
+        every { context.getSharedPreferences(any(), any()) } returns fakeSharedPreferences()
+
+        val fresh = LanguageManager(context)
+
+        assertEquals(AppLanguage.GERMAN, fresh.currentLanguage.value)
+    }
+
+    @Test
+    fun `instalacion nueva cae a espanol si el idioma del dispositivo no esta soportado`() {
+        Locale.setDefault(Locale("ja"))
+        val context = mockk<Context>()
+        every { context.getSharedPreferences(any(), any()) } returns fakeSharedPreferences()
+
+        val fresh = LanguageManager(context)
+
+        assertEquals(AppLanguage.SPANISH, fresh.currentLanguage.value)
+    }
+
+    @Test
+    fun `un idioma ya guardado no se pisa con el idioma del dispositivo`() {
+        Locale.setDefault(Locale("de"))
+        val context = mockk<Context>()
+        val prefs   = fakeSharedPreferences()
+        prefs.edit().putString("language", AppLanguage.RUSSIAN.code).apply()
+        every { context.getSharedPreferences(any(), any()) } returns prefs
+
+        val fresh = LanguageManager(context)
+
+        assertEquals(AppLanguage.RUSSIAN, fresh.currentLanguage.value)
     }
 
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────

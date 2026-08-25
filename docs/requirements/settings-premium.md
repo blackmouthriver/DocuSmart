@@ -12,8 +12,10 @@ español sin importar el idioma del dispositivo (mismo tipo de bug ya
 corregido en TTS/reconocimiento de voz de Modo Estudio). La compra
 simulada de Premium es un placeholder ya documentado en el propio código
 ("Fase 10 se conecta Play Billing real") — no es un bug oculto, es trabajo
-pendiente conocido y no se implementó en esta pasada (ver §7). 11 tests
-nuevos.
+pendiente conocido y no se implementó en esta pasada (ver §7). **RF-SET-06
+resuelto 2026-08-24:** el idioma por defecto de una instalación nueva ahora
+también usa el idioma del dispositivo (antes solo se aplicaba en el flujo de
+restablecer). 14 tests nuevos.
 **Código relacionado:** `features/settings/**`, `features/premium/**`,
 `core/ads/DailyLimitManager.kt`, `core/premium/PremiumManager.kt`,
 `core/ui/LanguageManager.kt`, `core/ui/components/DailyLimitDialog.kt` (nuevo,
@@ -47,7 +49,7 @@ Dos módulos relacionados por la monetización freemium:
 
 ### Backlog — no implementado
 - **RF-PREM-05** Conectar Play Billing real (comprar/restaurar compras) — hoy simulado con un `delay()` y un flag local, ya documentado en el código como pendiente de "Fase 10". Requiere configuración de productos en Play Console antes de poder implementarse.
-- **RF-SET-06** Detección de idioma por defecto según geografía de Play Store (requerimiento #13 original) — distinto de RF-SET-05: esto es sobre qué idioma ve un usuario que **nunca** ha abierto la app, no sobre qué pasa al restablecer configuración ya usada.
+- **RF-SET-06** ✅ Detección de idioma por defecto para un usuario que **nunca** ha abierto la app (requerimiento #13 original) — distinto de RF-SET-05, que es sobre qué pasa al restablecer configuración ya usada. Resuelto 2026-08-24 usando el idioma del dispositivo (no geografía de Play Store, que no es verificable desde el cliente — ver discusión en §8).
 - **RF-SET-07** Personalización de colores/tema por el usuario (requerimiento #19 original).
 
 ---
@@ -92,7 +94,7 @@ Dos módulos relacionados por la monetización freemium:
 | Bug / hallazgo | HU que lo cubre | Estado |
 |---|---|---|
 | Requerimiento #16 "Límite de uso de herramientas para no-premium" — CONTEXT.md lo marcaba como "Pendiente" | HU-PREM-01 | ✅ Corregido — la lógica ya existía sin usar; se conectó a `PdfToolsViewModel` con el mismo patrón que ya usaba Conversión. Se extrajo `DailyLimitDialog` a un componente compartido (antes vivía duplicado y privado en `ConverterScreen.kt`). |
-| **Bug real encontrado hoy (no reportado en la QA):** "Restablecer configuración" en Ajustes forzaba español sin importar el idioma del dispositivo. | HU-SET-01 | ✅ Corregido — nuevo `LanguageManager.deviceDefaultLanguage()`, usado solo en el flujo de restablecer (no se tocó el idioma por defecto de una instalación nueva, que sigue siendo backlog explícito, RF-SET-06). |
+| **Bug real encontrado hoy (no reportado en la QA):** "Restablecer configuración" en Ajustes forzaba español sin importar el idioma del dispositivo. | HU-SET-01 | ✅ Corregido — nuevo `LanguageManager.deviceDefaultLanguage()`. **Extendido 2026-08-24 (RF-SET-06):** `loadLanguage()` ahora también usa `deviceDefaultLanguage()` como respaldo cuando no hay idioma guardado (instalación nueva) — antes ese caso quedaba fijo en español. |
 | "Restaurar compras / cancelar suscripción" simulado, falta Play Billing real | RF-PREM-05 (backlog) | Confirmado como placeholder ya documentado en el código (`// En Fase 10 se conecta con Play Billing`) — no es un bug oculto, requiere configuración de Play Console que no se puede hacer desde código. No implementado en esta pasada. |
 | "Falta personalización de colores/estilos por el usuario" | RF-SET-07 (backlog) | Confirmado vigente, sin implementar. |
 | Almacenamiento (mostrar uso + borrar caché) | RF-SET-03 | Confirmado funcionando correctamente — cuenta y tamaño reales, borrado real. |
@@ -105,7 +107,7 @@ Dos módulos relacionados por la monetización freemium:
 | # | Cobertura | Estado |
 |---|---|---|
 | 1 | `DailyLimitManagerTest` — límite de conversiones alcanzado, extra por anuncio aumenta el límite, límite de herramienta PDF alcanzado, contadores independientes por herramienta, extra de herramienta PDF por anuncio, conteo por herramienta. | ✅ 8 tests, en verde |
-| 2 | `LanguageManagerTest` — idioma del dispositivo soportado se detecta correctamente, idioma no soportado cae a español, reconoce inglés explícitamente con variante regional (`en-US`). | ✅ 3 tests, en verde |
+| 2 | `LanguageManagerTest` — idioma del dispositivo soportado se detecta correctamente, idioma no soportado cae a español, reconoce inglés explícitamente con variante regional (`en-US`), instalación nueva usa el idioma del dispositivo (RF-SET-06), instalación nueva con idioma no soportado cae a español, un idioma ya guardado no se pisa con el del dispositivo. | ✅ 6 tests, en verde |
 | 3 | `PremiumManager`/`PremiumViewModel` — no cubiertos; `simulatePurchase`/`restorePurchases` son placeholders que se reemplazarán por completo al conectar Play Billing real (RF-PREM-05), así que no se priorizó cubrirlos con tests que quedarían obsoletos pronto. | Pendiente hasta que se implemente Play Billing real. |
 
 ---
@@ -115,5 +117,5 @@ Dos módulos relacionados por la monetización freemium:
 | Pregunta | Notas |
 |---|---|
 | ¿Cuándo se aborda Play Billing real (RF-PREM-05)? | Requiere que el usuario configure los productos (`com.docsmart.premium.monthly/annual/lifetime`, ya declarados en `PremiumRepository`) en Play Console antes de poder integrarlo — no es algo que se pueda avanzar solo desde el código. |
-| ¿Detección de idioma por geografía de Play Store (RF-SET-06) es prioridad, o basta con que el dispositivo decida (como ya corregido en HU-SET-01)? | Usar el idioma del dispositivo es el estándar de facto en apps Android y ya se corrigió para el flujo de restablecer; extenderlo también al primer inicio (sin depender de geografía de Play Store, que no es algo verificable desde el cliente) sería el siguiente paso natural si se decide abordar #13. |
+| ¿Detección de idioma por geografía de Play Store (RF-SET-06) es prioridad, o basta con que el dispositivo decida (como ya corregido en HU-SET-01)? | Resuelto 2026-08-24: se extendió el idioma del dispositivo también al primer inicio (`loadLanguage()`), sin depender de geografía de Play Store — no es algo verificable desde el cliente, y el idioma del dispositivo es el estándar de facto en apps Android. |
 | ¿Personalización de colores (RF-SET-07) es prioridad frente a otros pendientes del roadmap? | Sin refinar, mencionado como mejora en `CONTEXT.md`. |

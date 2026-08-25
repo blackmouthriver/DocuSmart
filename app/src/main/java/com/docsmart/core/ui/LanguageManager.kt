@@ -48,7 +48,9 @@ class LanguageManager @Inject constructor(
 
     /**
      * Idioma del dispositivo si es uno de los soportados, o español si no lo
-     * es. Usado por "Restablecer configuración" en Ajustes — antes forzaba
+     * es. Usado por "Restablecer configuración" en Ajustes y, desde RF-SET-06,
+     * también como valor por defecto en una instalación nueva sin idioma
+     * guardado todavía (ver loadLanguage()) — antes ambos casos forzaban
      * español sin importar el idioma configurado del dispositivo, mismo tipo
      * de bug ya corregido en TTS y reconocimiento de voz (Modo Estudio).
      */
@@ -63,8 +65,14 @@ class LanguageManager @Inject constructor(
         return context.createConfigurationContext(config)
     }
 
+    // RF-SET-06: en una instalación nueva (sin idioma guardado todavía) el
+    // idioma por defecto debe ser el del dispositivo, no español fijo — misma
+    // señal que ya usa deviceDefaultLanguage() para "Restablecer configuración"
+    // (RNF-SET-01). Detección geográfica real de Play Store no es verificable
+    // desde el cliente, así que se usa el idioma del dispositivo como estándar
+    // de facto.
     private fun loadLanguage(): AppLanguage {
-        val saved = prefs.getString("language", AppLanguage.SPANISH.code)
-        return AppLanguage.entries.find { it.code == saved } ?: AppLanguage.SPANISH
+        val saved = prefs.getString("language", null)
+        return AppLanguage.entries.find { it.code == saved } ?: deviceDefaultLanguage()
     }
 }

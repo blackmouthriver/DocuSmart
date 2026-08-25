@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-24 (limpieza de lint + bug de i18n en barra inferior + endurecimiento de carpeta segura)
+**Última actualización:** 2026-08-24 (limpieza de lint + bug de i18n en barra inferior + endurecimiento de carpeta segura + idioma por defecto en instalación nueva)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -39,7 +39,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 78 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa en `main` ya fusionado. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
+- **Tests:** 81 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa en `main` ya fusionado. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -216,7 +216,7 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); carpeta segura **corregida y endurecida** — copia y elimina el original al proteger, y avisa explícitamente si el borrado no fue posible en vez de reportar éxito falso (RNF-SEC-01, corregido 2026-08-24) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; lista de notas guardadas existe, pero tenía 2 bugs reales de persistencia (corrupción de comillas, orden invertido) corregidos hoy. Refinado con HU en [`docs/requirements/study.md`](docs/requirements/study.md) |
 | 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
-| 13 | Multilenguaje con default según ubicación geográfica de Play Store | **Pendiente** — hoy el idioma por defecto es fijo (español), falta detectar locale del dispositivo/tienda |
+| 13 | Multilenguaje con default según ubicación geográfica de Play Store | **Resuelto 2026-08-24** con el idioma del dispositivo (no geografía de Play Store, que no es verificable desde el cliente) — antes el idioma por defecto de una instalación nueva era fijo en español. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) RF-SET-06 |
 | 14 | Sección de beneficios plan de pago | Implementado (Premium screen) |
 | 15 | Banner para no-premium, desaparece al pagar | Implementado (AdMob banner condicional) |
 | 16 | Límite de uso de herramientas para no-premium | **Corregido hoy** — la lógica ya existía (`DailyLimitManager`) pero no estaba conectada a Herramientas PDF; ya funciona igual que en Conversión (5 conversiones + 3 usos por herramienta PDF al día, con anuncio recompensado para +1) |
@@ -302,7 +302,7 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 ### Ajustes + Premium — refinado 2026-08-24, ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md)
 - **Bug real encontrado hoy (no reportado en la QA):** "Restablecer configuración" forzaba español sin importar el idioma del dispositivo. Corregido con `LanguageManager.deviceDefaultLanguage()`.
 - **Hueco real encontrado hoy (requerimiento #16, no un bug de QA pero sí de código):** el límite diario de uso gratis para Herramientas PDF existía por completo en `DailyLimitManager` pero nunca se llamaba desde `PdfToolsViewModel` — no tenía ningún efecto real. Corregido.
-- Idioma: falta detección geográfica automática al primer inicio y más idiomas (agregar portugués, alemán, ruso, japonés, coreano, mandarín, italiano, francés — **es/en/de/pt/ru ya están, faltan ja/ko/zh/it/fr para el pedido completo**) — backlog, no abordado en esta pasada (distinto del bug de "restablecer" ya corregido).
+- ~~Idioma: falta detección automática al primer inicio.~~ **Resuelto 2026-08-24** — `loadLanguage()` ahora usa el idioma del dispositivo como respaldo cuando no hay ninguno guardado (RF-SET-06). Sigue pendiente ampliar el catálogo de idiomas (agregar japonés, coreano, mandarín, italiano, francés — **es/en/de/pt/ru ya están, faltan ja/ko/zh/it/fr para el pedido completo**) — backlog, no abordado en esta pasada.
 - Falta personalización de colores/estilos por el usuario (banner, botones, iconos, nav bar) — backlog.
 - Compra Premium simulada — confirmado como placeholder ya documentado en el código ("Fase 10 se conecta Play Billing real"), requiere configuración de Play Console, no implementado en esta pasada.
 
@@ -402,6 +402,20 @@ como documentos separados.
 | V2.0 | Resumen en voz TTS | Baja |
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
+
+### Idioma por defecto en instalación nueva — RF-SET-06 (2026-08-24)
+Requerimiento #13 original ("multilenguaje con default según ubicación
+geográfica de Play Store"). La geografía real de Play Store no es
+verificable desde el cliente, así que se usa la señal estándar de facto en
+Android: el idioma del dispositivo. `LanguageManager.deviceDefaultLanguage()`
+ya existía y ya se usaba para "Restablecer configuración" (HU-SET-01) — el
+hueco real era que `loadLanguage()` (el valor inicial de `currentLanguage`,
+usado en una instalación nueva sin idioma guardado todavía) seguía
+devolviendo español fijo por el propio default de
+`prefs.getString("language", AppLanguage.SPANISH.code)`. Cambiado a usar
+`deviceDefaultLanguage()` como respaldo cuando no hay nada guardado; un
+idioma ya elegido explícitamente (incluido español) no se toca. 3 tests
+nuevos en `LanguageManagerTest`.
 
 ### Endurecimiento de Carpeta Segura (2026-08-24)
 Al retomar "la carpeta segura no bloquea el archivo" se confirmó que el bug
