@@ -131,10 +131,21 @@ ya se justifica.
 - Acción usada: `reactivecircus/android-emulator-runner@v2` (la estándar
   de la comunidad para este caso, verificada contra su documentación
   oficial antes de escribir el workflow, no asumida de memoria).
-- **Sin verificar aún en un run real de GitHub Actions** — el YAML se
-  validó estructuralmente (sin tabs, indentación consistente) pero no se
-  ha corrido todavía; falta confirmar en el primer push/PR que el emulador
-  arranca y las 6 pruebas pasan igual que en el dispositivo real.
+- **Primer intento real (push a `main`, 2026-08-25) falló:**
+  `FATAL | Not enough space to create userdata partition. Available:
+  6097.70 MB at /home/runner/.android/avd/test.avd, need 7372.80 MB` —
+  el runner `ubuntu-latest` no trae suficiente espacio libre de fábrica
+  para el AVD, problema conocido y documentado de la comunidad (nada que
+  ver con KVM ni con las pruebas en sí). Corregido agregando un paso
+  **"Liberar espacio en disco"** (`jlumbroso/free-disk-space@main`) antes
+  de crear el AVD, con `android: false` a propósito — ese input borraría
+  el SDK de Android preinstalado que el job `build` de este mismo
+  workflow ya usa sin pasos extra, y que este job también necesita para
+  `connectedDebugAndroidTest`; liberar solo .NET/Haskell/paquetes
+  grandes/imágenes Docker/swap/caché de herramientas alcanza de sobra
+  para cubrir el ~1.3 GB que faltaba.
+- Segundo intento en verificación tras el fix de espacio en disco (ver
+  §2 de `CONTEXT.md` para el resultado final una vez confirmado).
 
 ---
 
