@@ -10,9 +10,13 @@ no hacía nada; "eliminar" no borraba el archivo real, solo lo ocultaba de la
 lista hasta el siguiente refresh). 4 hallazgos de la QA de mayo confirmados
 **obsoletos** (favoritos de Biblioteca/Home, tab dispositivo/app, botón
 "Abrir", accesos rápidos de Home) — ya estaban corregidos antes de esta
-sesión, sin registro de cuándo. 10 tests nuevos.
+sesión, sin registro de cuándo. **RF-VIS-09 agregado 2026-08-25:** primera
+tabla Room del proyecto (`document_history`) — "Recientes" en Home ahora
+refleja cuándo se abrió realmente cada documento, no su fecha de
+modificación en disco. 15 tests nuevos (10 + 5 de esta pasada).
 **Código relacionado:** `features/viewer/**`, `features/library/**`,
-`features/home/**`, `core/data/FavoritesRepository.kt`.
+`features/home/**`, `core/data/FavoritesRepository.kt`, `core/data/db/**`
+(nuevo).
 
 ---
 
@@ -36,6 +40,7 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 - **RF-VIS-03** El sistema debe permitir renombrar un documento desde Biblioteca/Home (ya implementado); el Visor no ofrece esta acción (ver backlog, RF-VIS-06).
 - **RF-VIS-04** El sistema debe permitir eliminar un documento desde Biblioteca/Home, y la eliminación debe ser real (el archivo deja de existir), no solo ocultarlo de la lista.
 - **RF-VIS-05** La Biblioteca debe separar los documentos del dispositivo de los generados por la app en pestañas distintas.
+- **RF-VIS-09** ✅ "Recientes" en Home debe reflejar los documentos que el usuario realmente abrió más recientemente en el Visor, no solo la fecha de modificación del archivo en disco. Resuelto 2026-08-25 con una tabla Room (`document_history`) — ver §8.
 
 ### Backlog — no implementado
 - **RF-VIS-06** Renombrar y eliminar un documento directamente desde el Visor (hoy la barra superior solo tiene volver/buscar/favorito/compartir).
@@ -102,6 +107,19 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 
 ---
 
+### HU-VIS-05 — Recientes según uso real, no fecha de archivo
+
+**Como** usuario que abre documentos con frecuencia,
+**quiero** que "Recientes" en Home muestre lo que abrí hace poco,
+**para** no tener que buscarlo si no lo edité recientemente.
+
+- **AC1** Dado que abro un documento en el Visor, cuando vuelvo a Home, entonces aparece primero en "Recientes", sin importar su fecha de modificación en disco.
+- **AC2** Dado que desbloqueo un PDF protegido con contraseña, cuando el desbloqueo es exitoso, entonces también cuenta como "abierto" para Recientes (ver contraejemplo: solo mostrar el diálogo de contraseña sin desbloquear no cuenta).
+- **AC3** Dado que es una instalación nueva sin historial todavía, cuando entro a Home, entonces "Recientes" se completa con los documentos más recientes por fecha de archivo (mismo comportamiento que antes de esta HU) — nunca queda vacío solo por falta de historial.
+- **AC4** Dado que un documento del historial fue borrado desde fuera de la app, cuando cargo Recientes, entonces ese id se descarta silenciosamente y se completa con otro documento — no aparece un hueco ni un error.
+
+---
+
 ## 5. Bugs de QA a corregir (trazabilidad)
 
 | Bug (barrido de pruebas v1.0 / mejoras pendientes v1.0.1) | HU que lo cubre | Estado |
@@ -116,6 +134,7 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 | Visor: margen superior falla, el PDF "se pierde" arriba | — | No verificado — requiere prueba visual en dispositivo/emulador, no se pudo confirmar ni descartar por lectura de código. |
 | Biblioteca: tarjetas de favoritos con tamaños inconsistentes en el carrusel | — | Fuera de alcance de esta pasada (ajuste visual, no funcional). |
 | Home: botón "Inicio" de la bottom nav deja de responder tras ir a Convertir | — | No verificado — requiere prueba de navegación en vivo, no se pudo confirmar ni descartar por lectura de código. |
+| "Recientes" en Home era solo `loadAllDocuments().take(5)` — un documento abierto hoy pero sin modificar no aparecía como reciente | HU-VIS-05 | ✅ Resuelto 2026-08-25 con `document_history` (Room) — ver §8. |
 
 ---
 
@@ -124,19 +143,54 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 | # | Cobertura | Estado |
 |---|---|---|
 | 1 | `SearchPdfTextUseCaseTest` — coincidencias en la página correcta, sin distinguir mayúsculas, varias páginas con coincidencia, sin coincidencias, query en blanco no toca el archivo. | ✅ 5 tests, en verde |
-| 2 | `DocumentRepositoryTest` — borra archivo de la app, archivo inexistente → false, borra vía `ContentResolver`, `ContentResolver` no pudo borrar → false, excepción de permisos → false (no propaga). | ✅ 5 tests, en verde |
-| 3 | `LibraryViewModel`/`HomeViewModel`/`ViewerViewModel` — no cubiertos (ViewModels con `StateFlow` + Hilt, requieren fixture más elaborado); la lógica de negocio que antes vivía implícita en ellos (borrado real, id consistente) ya quedó cubierta en el use case/repositorio subyacente. | Pendiente si se necesita cobertura de transiciones de estado. |
+| 2 | `DocumentRepositoryTest` — borra archivo de la app, archivo inexistente → false, borra vía `ContentResolver`, `ContentResolver` no pudo borrar → false, excepción de permisos → false (no propaga), borrado exitoso también limpia el historial, y 4 tests de `mergeHistoryWithDocuments` (orden por historial, ids obsoletos se descartan, fallback completa el resto, sin historial se comporta como antes). | ✅ 10 tests, en verde |
+| 3 | `LibraryViewModel`/`HomeViewModel`/`ViewerViewModel` — no cubiertos (ViewModels con `StateFlow` + Hilt, requieren fixture más elaborado); la lógica de negocio que antes vivía implícita en ellos (borrado real, id consistente, fusión de historial) ya quedó cubierta en el use case/repositorio subyacente. | Pendiente si se necesita cobertura de transiciones de estado. |
 
 Todos los tests nuevos generan PDFs reales con iText7 o usan archivos
 temporales reales (`Files.createTempDirectory`), mismo patrón que
 `security.md` y `pdf-tools.md` — no mocks del contenido de archivos.
+`mergeHistoryWithDocuments()` es lógica pura (sin I/O), separada
+justamente para poder testearla con listas comunes sin mockear
+Room/MediaStore — un `DocumentHistoryDao` fake respaldado por un mapa cubre
+el resto (mismo patrón que `fakeSharedPreferences()` en `security.md`).
 
 ---
 
-## 7. Preguntas abiertas
+## 8. Historial de documentos abiertos (Room) — 2026-08-25
+
+Primera tabla Room del proyecto. Antes no había base de datos — todo vivía
+en `SharedPreferences`/DataStore (`CONTEXT.md` §2).
+
+- **`document_history`** (`core/data/db/DocumentHistoryEntry.kt`): `documentId`
+  (mismo id que Biblioteca/Home/Favoritos — RNF-VIS-02) como clave primaria,
+  `lastOpenedAt` (epoch millis).
+- **`ViewerViewModel`** registra la apertura en dos puntos: al publicar un
+  documento cargado normalmente (`publishLoadedDocument`), y al desbloquear
+  exitosamente un PDF protegido (`unlockPdfWithPassword`) — mostrar el
+  diálogo de contraseña sin desbloquear **no** cuenta como apertura.
+- **`DocumentRepository.loadRecentlyOpened(limit)`** cruza el historial con
+  `loadAllDocuments()`: usa el orden del historial primero, descarta ids que
+  ya no existen en disco, y completa los cupos restantes con los documentos
+  más recientes por fecha de archivo (mismo comportamiento que antes de esta
+  HU) para que una instalación nueva sin historial no muestre una lista
+  vacía.
+- Alcance de esta pasada: solo Home (`recentDocuments`). Biblioteca no tiene
+  hoy una sección "últimos abiertos" separada de sus pestañas
+  Dispositivo/App — el inventario de pantallas (`CONTEXT.md` §9) la
+  menciona como pendiente; con `loadRecentlyOpened()` ya construido, agregarla
+  ahí es una extensión directa si se decide priorizarla.
+- No se migró la persistencia de favoritos/idioma/tema/premium a Room — esas
+  son preferencias simples, DataStore/SharedPreferences sigue siendo lo
+  correcto ahí; Room solo tiene sentido para datos relacionales/consultables
+  como este historial.
+
+---
+
+## 9. Preguntas abiertas
 
 | Pregunta | Notas |
 |---|---|
 | ¿Vale la pena renombrar/eliminar desde el Visor (RF-VIS-06), o basta con hacerlo desde Biblioteca/Home? | La mayoría de apps similares lo ofrecen en ambos lugares; queda pendiente de prioridad. |
-| ¿Papelera de reciclaje (RF-VIS-07) antes o después de las demás funcionalidades del backlog de Herramientas PDF? | Depende de cuánto valor le da el usuario a poder deshacer un borrado. |
+| ¿Papelera de reciclaje (RF-VIS-07) antes o después de las demás funcionalidades del backlog de Herramientas PDF? | Depende de cuánto valor le da el usuario a poder deshacer un borrado. Si se aborda, puede reusar `core/data/db/` (nueva tabla `trash_entries`). |
 | Los 2 hallazgos "no verificados" de la tabla de bugs (margen del PDF, bottom nav tras Convertir) — ¿siguen reproduciéndose en la versión actual? | Requieren prueba manual en dispositivo/emulador; no se pudieron confirmar ni descartar solo leyendo el código. |
+| ¿Extender "últimos abiertos" también a una sección de Biblioteca (ya mencionada en el inventario de pantallas)? | `loadRecentlyOpened()` ya está construido y probado — agregarlo a Biblioteca es sobre todo trabajo de UI, no de datos. |

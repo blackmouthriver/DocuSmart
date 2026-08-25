@@ -38,11 +38,13 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                // DocumentRepository ya aplica isFavorite desde FavoritesRepository
-                val docs = repository.loadAllDocuments()
+                // DocumentRepository ya aplica isFavorite desde FavoritesRepository.
+                // loadRecentlyOpened refleja uso real (RF-VIS/HOME), no solo la
+                // fecha de modificación del archivo.
+                val docs = repository.loadRecentlyOpened(limit = 5)
                 _uiState.update { state ->
                     state.copy(
-                        recentDocuments = docs.take(5),
+                        recentDocuments = docs,
                         isLoading = false
                     )
                 }

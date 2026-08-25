@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-24 (limpieza de lint + bug de i18n en barra inferior + endurecimiento de carpeta segura + idioma por defecto en instalación nueva)
+**Última actualización:** 2026-08-25 (Room: historial real de "Recientes" en Home)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -39,9 +39,12 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 81 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa en `main` ya fusionado. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
-- **Base de datos:** no hay — todo en SharedPreferences/DataStore.
-  Biblioteca/historial no están indexados de forma estructurada.
+- **Tests:** 86 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 15, Conversión: 9, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
+- **Base de datos:** Room desde 2026-08-25, primera tabla (`document_history`,
+  historial de documentos abiertos — ver §2 "Historial de documentos
+  abiertos" y `docs/requirements/visor-biblioteca.md` §8). Favoritos/idioma/
+  tema/premium siguen en SharedPreferences/DataStore, deliberadamente — son
+  preferencias simples, no datos relacionales.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
   formal pero con capa `data/` inconsistente entre features.
 - **Commits recientes:** estabilización de build + i18n (`ec095f7`), CI +
@@ -403,6 +406,37 @@ como documentos separados.
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
 
+### Room: historial real de "Recientes" en Home — RF-VIS-09 (2026-08-25)
+Primera tabla Room del proyecto. Antes "Recientes" en Home era literalmente
+`loadAllDocuments().take(5)` — un documento abierto hoy pero sin modificar
+no aparecía como reciente, porque el orden venía de la fecha de
+modificación del archivo, no de uso real.
+
+- Nueva tabla `document_history` (`core/data/db/`): `documentId` (mismo id
+  que Biblioteca/Home/Favoritos) + `lastOpenedAt`. Primer `@Module` de Hilt
+  del proyecto — todo lo demás usa `@Inject constructor` directo, pero
+  `Room.databaseBuilder()` necesita un builder explícito.
+- `ViewerViewModel` registra la apertura al publicar un documento cargado
+  (no en el mock de demo) y al desbloquear exitosamente un PDF protegido —
+  mostrar el diálogo de contraseña sin desbloquear no cuenta.
+- `DocumentRepository.loadRecentlyOpened(limit)` cruza el historial con el
+  escaneo de archivos existente: prioriza el orden del historial, descarta
+  ids de archivos ya borrados/movidos, y completa los cupos restantes con
+  los más recientes por fecha de archivo — así una instalación nueva sin
+  historial no se queda con Recientes vacío (mismo comportamiento que
+  antes). La lógica de fusión se extrajo a una función pura
+  (`mergeHistoryWithDocuments`) específicamente para poder testearla sin
+  mockear Room/MediaStore.
+- Room 2.8.4 (KSP, no KAPT) — se evaluó Room 3.0 pero está en alpha desde
+  marzo 2026 bajo coordenadas nuevas (`androidx.room3`); se prefirió la
+  serie 2.x estable dado que es la primera tabla del proyecto.
+- Alcance de esta pasada: solo Home. Biblioteca no tiene todavía una
+  sección "últimos abiertos" propia (mencionada en el inventario de
+  pantallas, §9) — con `loadRecentlyOpened()` ya construido, agregarla ahí
+  es directo si se prioriza. Detalle completo en
+  [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) §8.
+- 5 tests nuevos en `DocumentRepositoryTest`.
+
 ### Idioma por defecto en instalación nueva — RF-SET-06 (2026-08-24)
 Requerimiento #13 original ("multilenguaje con default según ubicación
 geográfica de Play Store"). La geografía real de Play Store no es
@@ -475,16 +509,16 @@ Verificado en verde: `assembleDebug` + `detekt` + `testDebugUnitTest` (77
 tests, 0 fallos) + `lintDebug` (0 errores, 122 warnings restantes — sobre
 todo `UseKtx`, `UseTomlInstead` y actualizaciones de dependencia, backlog de
 bajo riesgo, no abordado en esta pasada). Commiteado en rama
-`feature/lint-cleanup`, sin push ni merge a `main` todavía — pendiente de
-que el usuario decida.
+`feature/lint-cleanup` y fusionado a `main` el mismo día (sin push todavía).
 
 ### Roadmap técnico (definido en esta sesión, complementario)
 Fase 0 (estabilización) ✅ completada. Fase 1 (CI básico) ✅ completada.
 Fase 2 (Dependabot + Gitleaks) ✅ completada 2026-08-24, rama
 `feature/dependabot-gitleaks`. Fase 3 (SonarCloud + cobertura) ✅ completada
-2026-08-24, rama `feature/sonarcloud-coverage` — ver detalle abajo. Siguen:
-Room para biblioteca/historial, pruebas de integración/sistema, Compose UI
-Testing en flujos críticos, despliegue y publicación.
+2026-08-24, rama `feature/sonarcloud-coverage` — ver detalle abajo. Room
+para biblioteca/historial ✅ completado 2026-08-25 (alcance: historial de
+"Recientes" en Home — ver más abajo). Siguen: pruebas de integración/
+sistema, Compose UI Testing en flujos críticos, despliegue y publicación.
 
 ### SonarCloud + cobertura JaCoCo (2026-08-24)
 El usuario creó la cuenta SonarCloud y conectó el repo (`blackmouthriver` /

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import com.docsmart.core.data.FavoritesRepository
+import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,8 +22,48 @@ import javax.inject.Singleton
 @Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val favoritesRepository: FavoritesRepository  // ← NUEVO
+    private val favoritesRepository: FavoritesRepository,  // ← NUEVO
+    private val documentHistoryDao: DocumentHistoryDao
 ) {
+    // Buffer sobre el límite pedido: algunos ids del historial pueden
+    // apuntar a archivos que ya no existen (borrados/movidos fuera de la
+    // app) y se descartan al cruzar con loadAllDocuments().
+    private companion object {
+        const val HISTORY_QUERY_BUFFER = 20
+    }
+
+    /**
+     * RF-VIS/HOME: "recientes" según uso real (cuándo se abrió el documento
+     * en el Visor), no la fecha de modificación del archivo — antes
+     * Home mostraba simplemente loadAllDocuments().take(limit), así que un
+     * PDF abierto hoy pero sin modificar no aparecía como reciente.
+     * Si el historial no alcanza para llenar `limit` (instalación nueva,
+     * pocos documentos abiertos), se completa con los más recientes por
+     * fecha de archivo, igual que el comportamiento anterior.
+     */
+    suspend fun loadRecentlyOpened(limit: Int): List<DocumentUiModel> = withContext(Dispatchers.IO) {
+        val all = loadAllDocuments()
+        val recentIds = documentHistoryDao.recentDocumentIds(limit + HISTORY_QUERY_BUFFER)
+        mergeHistoryWithDocuments(all, recentIds, limit)
+    }
+
+    // Lógica pura, sin I/O — separada para poder testearla directo con
+    // listas comunes, sin mockear MediaStore/ContentResolver/Room.
+    internal fun mergeHistoryWithDocuments(
+        all: List<DocumentUiModel>,
+        recentIds: List<String>,
+        limit: Int
+    ): List<DocumentUiModel> {
+        val byId = all.associateBy { it.id }
+        val fromHistory = recentIds.mapNotNull { byId[it] }
+
+        if (fromHistory.size >= limit) return fromHistory.take(limit)
+
+        val alreadyIncluded = fromHistory.map { it.id }.toSet()
+        val fallback = all.filter { it.id !in alreadyIncluded }
+        return (fromHistory + fallback).take(limit)
+    }
+
     suspend fun loadAllDocuments(): List<DocumentUiModel> =
         withContext(Dispatchers.IO) {
             try {
@@ -60,12 +101,14 @@ class DocumentRepository @Inject constructor(
      */
     suspend fun deleteDocument(documentId: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            if (documentId.startsWith("content://")) {
+            val deleted = if (documentId.startsWith("content://")) {
                 context.contentResolver.delete(Uri.parse(documentId), null, null) > 0
             } else {
                 val file = File(documentId)
                 file.exists() && file.delete()
             }
+            if (deleted) documentHistoryDao.remove(documentId)
+            deleted
         } catch (e: Exception) {
             Timber.e(e, "Error eliminando documento: $documentId")
             false

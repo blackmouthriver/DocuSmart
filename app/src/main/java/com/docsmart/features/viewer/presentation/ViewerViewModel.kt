@@ -7,6 +7,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.data.FavoritesRepository
+import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
@@ -50,7 +52,8 @@ data class ViewerUiState(
 @HiltViewModel
 class ViewerViewModel @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
-    private val searchPdfText: SearchPdfTextUseCase
+    private val searchPdfText: SearchPdfTextUseCase,
+    private val documentHistoryDao: DocumentHistoryDao
 ) : ViewModel() {
 
     companion object {
@@ -171,7 +174,7 @@ class ViewerViewModel @Inject constructor(
         }
     }
 
-    private fun publishLoadedDocument(uriString: String, uri: Uri, mimeType: String, fileName: String) {
+    private suspend fun publishLoadedDocument(uriString: String, uri: Uri, mimeType: String, fileName: String) {
         val documentType = detectDocumentType(mimeType)
         val isFavorite   = favoritesRepository.isFavorite(uriString)
         val document = DocumentUiModel(
@@ -192,7 +195,31 @@ class ViewerViewModel @Inject constructor(
                 error      = null
             )
         }
+        recordHistoryOpen(uriString)
     }
+
+    // RF-VIS/HOME: registra el acceso real para que "recientes" en Home
+    // refleje uso, no solo la fecha de modificación del archivo.
+    private suspend fun recordHistoryOpen(documentId: String) {
+        documentHistoryDao.recordOpen(DocumentHistoryEntry(documentId, System.currentTimeMillis()))
+    }
+
+    // Último recurso de unlockPdfWithPassword si copyPagesTo y PdfDocument
+    // directo fallan — extraído para mantener la función principal corta.
+    private fun tryStampingUnlock(cacheIn: File, cacheOut: File, readerProps: ReaderProperties): Boolean =
+        try {
+            if (cacheOut.exists()) cacheOut.delete()
+            val r3     = PdfReader(cacheIn.absolutePath, readerProps)
+            r3.setUnethicalReading(true)
+            val stamps = com.itextpdf.kernel.pdf.StampingProperties()
+            val doc3   = PdfDocument(r3, PdfWriter(cacheOut.absolutePath, WriterProperties()), stamps)
+            doc3.close()
+            Timber.d("$TAG: Intento 3 StampingProperties → ${cacheOut.length()}b")
+            cacheOut.exists() && cacheOut.length() > 100L
+        } catch (e3: Exception) {
+            Timber.w("$TAG: Intento 3 falló → ${e3.message}")
+            false
+        }
 
     private fun isPdfPasswordProtected(
         uri       : Uri,
@@ -387,20 +414,7 @@ class ViewerViewModel @Inject constructor(
                     }
 
                     // ── Intento 3: StampingProperties sin appendMode ──────────
-                    if (!success) {
-                        try {
-                            if (cacheOut.exists()) cacheOut.delete()
-                            val r3     = PdfReader(cacheIn.absolutePath, readerProps)
-                            r3.setUnethicalReading(true)
-                            val stamps = com.itextpdf.kernel.pdf.StampingProperties()
-                            val doc3   = PdfDocument(r3, PdfWriter(cacheOut.absolutePath, WriterProperties()), stamps)
-                            doc3.close()
-                            Timber.d("$TAG: Intento 3 StampingProperties → ${cacheOut.length()}b")
-                            success = cacheOut.exists() && cacheOut.length() > 100L
-                        } catch (e3: Exception) {
-                            Timber.w("$TAG: Intento 3 falló → ${e3.message}")
-                        }
-                    }
+                    if (!success) success = tryStampingUnlock(cacheIn, cacheOut, readerProps)
 
                     cacheIn.delete()
 
@@ -414,6 +428,8 @@ class ViewerViewModel @Inject constructor(
                     }
 
                     Timber.d("$TAG: PDF desbloqueado exitosamente → ${cacheOut.length()}b")
+                    // Id ya publicado en el estado, no originalId crudo (pueden diferir)
+                    recordHistoryOpen(_uiState.value.document?.id ?: originalId)
                     _uiState.update { state ->
                         state.copy(
                             isLoading        = false,
