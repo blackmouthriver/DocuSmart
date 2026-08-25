@@ -156,8 +156,22 @@ ya se justifica.
   sobra sin tocarlo) y mover el paso completo al principio del job, antes
   de instalar JDK/Gradle/SDK de Android, para no depender del orden de
   flags para evitar este mismo error en el futuro.
-- Tercer intento en verificación tras ambos fixes (ver §2 de `CONTEXT.md`
-  para el resultado final una vez confirmado).
+- **Tercer intento real llegó hasta correr las pruebas y ahí se colgó el
+  emulador:** `ERROR | detected a hanging thread 'QEMU2 CPU0
+  thread'/'QEMU2 main loop'` justo durante `compileDebugKotlin`/
+  `mergeExtDexDebugAndroidTest` del script `connectedDebugAndroidTest`.
+  Causa: el runner solo tiene 2 vCPU en total, y ese script compila
+  Kotlin/dex al vuelo con el emulador ya corriendo (que también pide 2
+  núcleos) — compiten por los mismos 2 núcleos físicos y el emulador se
+  queda sin CPU el tiempo suficiente para colgarse. Corregido agregando un
+  paso **"Compilar APKs de debug y de test"**
+  (`assembleDebug assembleDebugAndroidTest`) *antes* de arrancar el
+  emulador — así, cuando `connectedDebugAndroidTest` corre más adelante
+  con el emulador ya activo, encuentra casi todo up-to-date y solo
+  necesita instalar los APKs y correr la instrumentación, mucho más
+  liviano en CPU.
+- Cuarto intento en verificación tras los tres fixes (ver §2 de
+  `CONTEXT.md` para el resultado final una vez confirmado).
 
 ---
 
