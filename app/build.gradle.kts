@@ -13,6 +13,12 @@ plugins {
 configurations.all {
     resolutionStrategy {
         force("androidx.databinding:databinding-common:8.7.0")
+        // androidx.test.ext:junit:1.3.0 (androidTest, agregado para Compose UI
+        // Testing) exige concurrent-futures 1.2.0+, pero la resolución
+        // "consistente" de AGP entre el classpath de la app y el de
+        // androidTest lo dejaba fijo en 1.1.0. Se fuerza 1.2.0 en ambos para
+        // que sigan siendo consistentes.
+        force("androidx.concurrent:concurrent-futures:1.2.0")
     }
     exclude(group = "org.jetbrains", module = "annotations-java5")
 }
@@ -92,6 +98,10 @@ android {
                 "META-INF/LICENSE.txt",
                 "META-INF/NOTICE",
                 "META-INF/NOTICE.txt",
+                // *.md en vez de listar LICENSE.md/LICENSE-notice.md/etc. una
+                // por una: junit-jupiter (transitivo vía androidTest) trae
+                // varios archivos de este tipo que chocan entre sí.
+                "META-INF/*.md",
                 "META-INF/*.kotlin_module",
                 "META-INF/versions/9/previous-compilation-data.bin"
             )
@@ -279,6 +289,11 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.manifest)
+    // ── Compose UI Testing (instrumentado — corre en dispositivo/emulador) ────
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // mockk-android, no mockk: mockear en el dispositivo necesita soporte
+    // dexmaker/bytebuddy-android, distinto del mockk de test/ (JVM).
+    androidTestImplementation("io.mockk:mockk-android:1.13.13")
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 

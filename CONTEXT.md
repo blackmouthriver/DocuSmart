@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (primera prueba de integración: `DocumentHistoryDao` contra SQLite real)
+**Última actualización:** 2026-08-25 (primera prueba de Compose UI: flujo "abrir documento", encontró bug real de carga de anuncios)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -311,6 +311,7 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 
 ### General / transversal
 - Banner de anuncios: ubicarlo consistente (arriba antes del banner azul, o abajo cerca de la nav bar) en todas las vistas, y ocultarlo por completo para usuarios premium.
+- Carga de anuncios no perezosa: `AdManager.initialize()` carga interstitial + video recompensado de inmediato al arrancar la app (hallazgo de `sentinel_report.json`, mayo). Confirmado 2026-08-25 que no es solo un tema de rendimiento — en el emulador de pruebas, esa carga inicializó el decoder de video y crasheó el proceso completo. Cargar bajo demanda (justo antes de mostrar el anuncio) evitaría ambos problemas.
 - Estandarizar el banner azul (logo + título) en todas las pantallas.
 
 ---
@@ -405,6 +406,40 @@ como documentos separados.
 | V2.0 | Resumen en voz TTS | Baja |
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
+
+### Primera prueba de Compose UI: abrir documento (2026-08-25)
+Instrumentada (dispositivo/emulador, no en CI todavía — decisión del
+usuario: agregar un emulador a GitHub Actions es más lento/complejo, mejor
+evaluarlo con más pruebas de este tipo). `ViewerScreenTest` cubre el flujo
+#1 del manual de marca ("abrir un documento en menos de 3 toques"), sin
+infraestructura de Hilt — `ViewerScreen` ya acepta `viewModel` como
+parámetro, así que se le pasa uno construido a mano con `mockk`, mismo
+patrón que los unit tests.
+
+**Bug real encontrado al hacer correr esta prueba, no por lectura de
+código:** `DocuSmartApplication.onCreate()` llama a
+`AdManager.initialize()` sin condición — carga un interstitial y un video
+recompensado de inmediato en cada arranque de la app. Es exactamente el
+hallazgo ya señalado en `sentinel_report.json` de mayo ("Ad loading is
+triggered immediately upon initialization"), nunca corregido. Bajo
+instrumentación esto hace que cualquier prueba de UI dispare una carga de
+anuncio real, inicializando el decoder de video del emulador — en este
+entorno **crasheaba el proceso completo de la app** (crash nativo en el
+códec de video). Corregido evitando la inicialización de anuncios cuando la
+app corre bajo instrumentación (detectado por la presencia de Espresso en
+el classpath — `ActivityManager.isRunningInUserTestHarness()` es solo para
+Firebase Test Lab, Google lo documenta explícitamente como no válido para
+`connectedAndroidTest` local). Sin impacto en producción: la detección solo
+es verdadera bajo test. El problema de fondo (anuncios no cargan de forma
+perezosa) sigue como backlog — ahora con evidencia de que puede causar
+inestabilidad real, no solo demorar el arranque.
+
+Requirió resolver dos problemas de Gradle nuevos: un conflicto de
+"consistent resolution" de AGP entre el classpath de la app y el de
+`androidTest` (forzado `concurrent-futures:1.2.0`), y archivos
+`META-INF/*.md` duplicados entre JARs de test (excluidos con comodín).
+Detalle completo en
+[`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) §9.
 
 ### Primera prueba de integración: Room contra SQLite real (2026-08-25)
 Todos los tests hasta ahora eran unitarios puros (lógica con fakes/mocks,
@@ -551,8 +586,11 @@ para biblioteca/historial ✅ completado 2026-08-25 (alcance: historial de
 "Recientes" en Home — ver más abajo). Pruebas de integración ✅ iniciadas
 2026-08-25 (`DocumentHistoryDaoTest` contra SQLite real — ver más abajo);
 queda por definir si se necesita más cobertura de integración además de
-Room, o pasar directo a pruebas de sistema. Siguen: Compose UI Testing en
-flujos críticos, despliegue y publicación.
+Room, o pasar directo a pruebas de sistema. Compose UI Testing ✅ iniciado
+2026-08-25 (`ViewerScreenTest`, flujo "abrir documento" — ver más abajo),
+solo local por ahora (decisión del usuario: sin emulador en CI todavía).
+Siguen: más flujos de Compose UI Testing si se prioriza, despliegue y
+publicación.
 
 ### SonarCloud + cobertura JaCoCo (2026-08-24)
 El usuario creó la cuenta SonarCloud y conectó el repo (`blackmouthriver` /

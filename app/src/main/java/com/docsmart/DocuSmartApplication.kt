@@ -34,6 +34,23 @@ class DocuSmartApplication : Application() {
         } else {
             emptyList()
         }
+        // AdManager.initialize() carga un interstitial Y un video recompensado
+        // de inmediato (hallazgo ya señalado en sentinel_report.json: "Ad
+        // loading is triggered immediately upon initialization"). Bajo
+        // instrumentación (connectedAndroidTest), eso hace que cualquier
+        // prueba de UI dispare una carga de anuncio real e inicialice el
+        // decoder de video del emulador — encontrado porque crasheaba el
+        // proceso durante ViewerScreenTest.
+        // ActivityManager.isRunningInUserTestHarness() NO sirve para esto —
+        // Google documenta explícitamente que es solo para Test Harness Mode
+        // (Firebase Test Lab), no para connectedAndroidTest normal. Se
+        // detecta en cambio si Espresso está en el classpath: solo ocurre
+        // cuando el APK de androidTest se mezcla al correr instrumentado.
+        if (isRunningUnderInstrumentation()) {
+            Timber.d("DocuSmartApplication: corriendo bajo test, se omite inicialización de anuncios")
+            return
+        }
+
         MobileAds.setRequestConfiguration(
             RequestConfiguration.Builder()
                 .setTestDeviceIds(testDeviceIds)
@@ -43,4 +60,14 @@ class DocuSmartApplication : Application() {
             adManager.initialize()
         }
     }
+
+    private fun isRunningUnderInstrumentation(): Boolean =
+        try {
+            Class.forName("androidx.test.espresso.Espresso")
+            true
+        } catch (_: ClassNotFoundException) {
+            // Esperado en producción: Espresso solo está en el classpath
+            // cuando el APK de androidTest se mezcla al correr instrumentado.
+            false
+        }
 }

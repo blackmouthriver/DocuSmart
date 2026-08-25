@@ -15,7 +15,12 @@ tabla Room del proyecto (`document_history`) — "Recientes" en Home ahora
 refleja cuándo se abrió realmente cada documento, no su fecha de
 modificación en disco. Incluye la **primera prueba de integración del
 proyecto** contra SQLite real (§8.1), que encontró un bug real en el uso de
-`@Upsert`. 21 tests nuevos (10 + 5 + 6 de esta pasada).
+`@Upsert`, y la **primera prueba de Compose UI** (§9), que encontró que
+`AdManager.initialize()` cargaba anuncios (incluido video recompensado) sin
+condición alguna al arrancar la app, crasheando el proceso bajo
+instrumentación — corregido solo para el caso de test, sin tocar el
+comportamiento real de anuncios. 21 tests nuevos (10 + 5 + 6, más 2 pruebas
+instrumentadas aparte de este conteo).
 **Código relacionado:** `features/viewer/**`, `features/library/**`,
 `features/home/**`, `core/data/FavoritesRepository.kt`, `core/data/db/**`
 (nuevo).
@@ -218,7 +223,58 @@ orden real, conflictos de clave primaria reales.
 
 ---
 
-## 9. Preguntas abiertas
+## 9. Compose UI Testing — flujo #1: abrir documento (2026-08-25)
+
+Primera prueba de Compose UI del proyecto. Instrumentada (corre en
+dispositivo/emulador local, no en CI todavía — decisión explícita del
+usuario: agregar un emulador a GitHub Actions es más lento/complejo,
+mejor evaluarlo cuando haya más pruebas de este tipo). JUnit4 por
+herramental de Google (`createAndroidComposeRule`), no JUnit5 como el
+resto del proyecto — son mundos separados (`androidTest/` vs `test/`).
+
+- **`ViewerScreenTest`** cubre el flujo #1 del manual de marca ("abrir un
+  documento en menos de 3 toques"): abrir un documento muestra su nombre en
+  la barra superior, y tocar el ícono de favorito llama a
+  `toggleFavorite()` con el id correcto.
+- Sin infraestructura de Hilt: `ViewerScreen(documentId, onBack, viewModel)`
+  ya acepta `viewModel` como parámetro (default `hiltViewModel()`) — en el
+  test se pasa un `ViewerViewModel` construido a mano con `mockk`, mismo
+  patrón que los unit tests. `documentId = "1"` resuelve por la vía mock
+  interna del ViewModel (`getMockDocument`), sin tocar archivos ni
+  `ContentResolver` reales.
+- **Bug real encontrado al hacer correr esta prueba (no relacionado con el
+  test en sí):** `DocuSmartApplication.onCreate()` llama a
+  `AdManager.initialize()` sin condición alguna, que carga un interstitial
+  **y un video recompensado** de inmediato — exactamente el hallazgo ya
+  señalado en `sentinel_report.json` de mayo ("Ad loading is triggered
+  immediately upon initialization"), nunca corregido hasta ahora. Bajo
+  instrumentación esto hace que *cualquier* prueba de UI dispare una carga
+  de anuncio real, inicializando el decoder de video del emulador — en este
+  entorno, eso crasheaba el proceso de la app (crash nativo en el códec de
+  video, no una excepción Java). Corregido evitando la inicialización de
+  anuncios cuando la app corre bajo instrumentación (detectado por la
+  presencia de Espresso en el classpath, ya que
+  `ActivityManager.isRunningInUserTestHarness()` es solo para Firebase Test
+  Lab, no para `connectedAndroidTest` local — Google lo documenta
+  explícitamente). **Sin impacto en producción:** la detección solo es
+  verdadera cuando el APK de test se mezcla al instrumentar; el
+  comportamiento real de carga de anuncios para usuarios no cambió. El
+  problema de fondo (carga de anuncios no perezosa) sigue como backlog,
+  ahora con evidencia concreta de que puede causar inestabilidad, no solo
+  demorar el arranque.
+- Requirió resolver dos problemas de configuración de Gradle nuevos para el
+  proyecto: un conflicto de "consistent resolution" de AGP entre el
+  classpath de la app y el de `androidTest` (`concurrent-futures` fijo en
+  1.1.0 vs 1.2.0 exigido por `androidx.test.ext:junit:1.3.0`, forzado a
+  1.2.0), y archivos `META-INF/*.md` duplicados entre JARs de test
+  (excluidos con patrón comodín en vez de listarlos uno por uno).
+- Dependencias nuevas: `androidx.compose.ui:ui-test-junit4` y
+  `io.mockk:mockk-android` (variante de mockk para instrumentación, no la
+  de `test/`).
+
+---
+
+## 10. Preguntas abiertas
 
 | Pregunta | Notas |
 |---|---|
