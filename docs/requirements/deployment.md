@@ -144,8 +144,20 @@ ya se justifica.
   `connectedDebugAndroidTest`; liberar solo .NET/Haskell/paquetes
   grandes/imágenes Docker/swap/caché de herramientas alcanza de sobra
   para cubrir el ~1.3 GB que faltaba.
-- Segundo intento en verificación tras el fix de espacio en disco (ver
-  §2 de `CONTEXT.md` para el resultado final una vez confirmado).
+- **Segundo intento real falló distinto:** `sdkmanager --licenses` fallaba
+  casi al instante, con el mismo `android: false` puesto. Causa: el paso
+  de liberar espacio corría *después* de "JDK 17" con `tool-cache: true`
+  activado — ese input borra `$AGENT_TOOLSDIRECTORY`
+  (`/opt/hostedtoolcache`), que es justo donde `actions/setup-java` acaba
+  de instalar el JDK 17 que queda como `JAVA_HOME`; sin ese JDK,
+  `sdkmanager` (que es una herramienta Java) no podía correr. Corregido
+  con dos cambios: `tool-cache: false` (su valor por defecto — con
+  dotnet/haskell/large-packages/docker-images/swap-storage alcanza de
+  sobra sin tocarlo) y mover el paso completo al principio del job, antes
+  de instalar JDK/Gradle/SDK de Android, para no depender del orden de
+  flags para evitar este mismo error en el futuro.
+- Tercer intento en verificación tras ambos fixes (ver §2 de `CONTEXT.md`
+  para el resultado final una vez confirmado).
 
 ---
 

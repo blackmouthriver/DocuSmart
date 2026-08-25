@@ -61,6 +61,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      # Primer paso a propósito, antes de instalar JDK/Gradle/SDK de Android
+      # -- el runner ubuntu-latest no trae suficiente espacio libre para
+      # crear la partición userdata del AVD (primer intento real de este
+      # job falló con "FATAL | Not enough space to create userdata
+      # partition. Available: 6097.70 MB ... need 7372.80 MB", faltaba
+      # ~1.3 GB). `android: false` deja intacto el SDK de Android
+      # preinstalado -- lo sigue usando el job `build` de este mismo
+      # workflow para compilar sin pasos extra, y este job también lo
+      # necesita para connectedDebugAndroidTest. `tool-cache: false` (su
+      # default) también a propósito -- con true borra
+      # $AGENT_TOOLSDIRECTORY (/opt/hostedtoolcache); un segundo intento con
+      # este paso corriendo DESPUÉS de "JDK 17" falló porque borraba ahí
+      # mismo el JDK que setup-java acababa de instalar, y sdkmanager
+      # --licenses ya no encontraba java. Corrido primero, antes de que
+      # exista nada en hostedtoolcache que perder, evita depender de este
+      # orden de flags para no repetir el mismo error.
+      - name: Liberar espacio en disco
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Checkout
         uses: actions/checkout@v7
 
@@ -84,24 +111,6 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-
-      # El runner ubuntu-latest no trae suficiente espacio libre para crear
-      # la partición userdata del AVD -- primer intento de este job falló con
-      # "FATAL | Not enough space to create userdata partition. Available:
-      # 6097.70 MB ... need 7372.80 MB" (faltaba ~1.3 GB). `android: false`
-      # deja intacto el SDK de Android preinstalado -- lo sigue usando el
-      # job `build` de este mismo workflow para compilar sin pasos extra, y
-      # este job también lo necesita para connectedDebugAndroidTest.
-      - name: Liberar espacio en disco
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: false
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
 
       # API 34 (Android 14) iguala la versión del dispositivo real usado
       # para verificar estos mismos flujos en desarrollo (motorola edge 30
