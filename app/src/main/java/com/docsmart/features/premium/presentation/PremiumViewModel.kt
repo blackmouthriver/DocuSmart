@@ -1,13 +1,15 @@
 package com.docsmart.features.premium.presentation
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.core.billing.BillingManager
+import com.docsmart.core.billing.PurchaseResult
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.features.premium.data.repository.PremiumRepository
 import com.docsmart.features.premium.domain.model.PremiumFeature
 import com.docsmart.features.premium.domain.model.PremiumPlan
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,15 +30,27 @@ data class PremiumUiState(
 @HiltViewModel
 class PremiumViewModel @Inject constructor(
     private val premiumManager: PremiumManager,
-    private val premiumRepository: PremiumRepository
+    private val premiumRepository: PremiumRepository,
+    private val billingManager: BillingManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PremiumUiState())
     val uiState: StateFlow<PremiumUiState> = _uiState.asStateFlow()
 
+    // Mensajes localizados capturados en el momento de la acción (purchase()/
+    // restorePurchases()) — Play Billing responde de forma asíncrona vía
+    // billingManager.purchaseResult, y para entonces ya no hay stringResource()
+    // disponible directamente (el ViewModel no es @Composable).
+    private var purchaseErrorMessage    = ""
+    private var pendingMessage          = ""
+    private var noPurchasesFoundMessage = ""
+    private var restoreSuccessMessage   = ""
+
     init {
         loadPlans()
         observePremiumStatus()
+        observePrices()
+        observePurchaseResult()
     }
 
     private fun loadPlans() {
@@ -57,49 +71,80 @@ class PremiumViewModel @Inject constructor(
         }
     }
 
-    fun selectPlan(plan: PremiumPlan) {
-        _uiState.update { it.copy(selectedPlan = plan) }
-    }
-
-    // ── Simular compra (en Fase 10 se conecta Play Billing real) ──
-    fun purchase(purchaseErrorMessage: String) {
-        val plan = _uiState.value.selectedPlan ?: return
+    // Sobrescribe el precio fijo de PremiumRepository con el precio real y
+    // localizado que devuelve Play Billing, en cuanto esté disponible.
+    private fun observePrices() {
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(isPurchasing = true, errorMessage = null)
-            }
-
-            // Simula latencia de red
-            delay(1500)
-
-            val success = premiumManager.simulatePurchase(plan.id)
-
-            _uiState.update { state ->
-                if (success) {
-                    state.copy(
-                        isPurchasing = false,
-                        purchaseSuccess = true,
-                        isPremium = true
-                    )
-                } else {
-                    state.copy(
-                        isPurchasing = false,
-                        errorMessage = purchaseErrorMessage
-                    )
+            billingManager.formattedPrices.collect { prices ->
+                if (prices.isEmpty()) return@collect
+                _uiState.update { state ->
+                    state.copy(plans = state.plans.map { plan ->
+                        prices[plan.productId]?.takeIf { it.isNotBlank() }
+                            ?.let { plan.copy(price = it) } ?: plan
+                    })
                 }
             }
         }
     }
 
-    fun restorePurchases(noPurchasesFoundMessage: String) {
+    private fun observePurchaseResult() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isPurchasing = true) }
-            delay(1000)
-            // En Fase 10 se conecta con Play Billing para restaurar
+            billingManager.purchaseResult.collect { result ->
+                _uiState.update { state ->
+                    when (result) {
+                        is PurchaseResult.Success -> state.copy(
+                            isPurchasing = false, purchaseSuccess = true, errorMessage = null
+                        )
+                        is PurchaseResult.Cancelled -> state.copy(isPurchasing = false)
+                        is PurchaseResult.Pending -> state.copy(
+                            isPurchasing = false, errorMessage = pendingMessage
+                        )
+                        is PurchaseResult.NoPurchasesToRestore -> state.copy(
+                            isPurchasing = false, errorMessage = noPurchasesFoundMessage
+                        )
+                        is PurchaseResult.Error -> state.copy(
+                            isPurchasing = false,
+                            errorMessage = purchaseErrorMessage.ifBlank { result.debugMessage }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun selectPlan(plan: PremiumPlan) {
+        _uiState.update { it.copy(selectedPlan = plan) }
+    }
+
+    fun purchase(activity: Activity, purchaseErrorMessage: String, pendingMessage: String) {
+        val plan = _uiState.value.selectedPlan ?: return
+        this.purchaseErrorMessage = purchaseErrorMessage
+        this.pendingMessage = pendingMessage
+
+        _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
+        val launched = billingManager.launchPurchase(activity, plan.productId)
+        if (!launched) {
+            _uiState.update { it.copy(isPurchasing = false, errorMessage = purchaseErrorMessage) }
+        }
+        // Si se lanzó, isPurchasing se resuelve cuando llegue purchaseResult.
+    }
+
+    fun restorePurchases(noPurchasesFoundMessage: String, restoreSuccessMessage: String) {
+        this.noPurchasesFoundMessage = noPurchasesFoundMessage
+        this.restoreSuccessMessage = restoreSuccessMessage
+        _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
+        viewModelScope.launch {
+            billingManager.restorePurchases()
+            // premiumManager.isPremium.value (no _uiState.value.isPremium):
+            // se lee directo del StateFlow para evitar una carrera con el
+            // colector de observePremiumStatus(), que corre en otra
+            // corrutina y podría no haber procesado la actualización todavía.
+            val wasRestored = premiumManager.isPremium.value
             _uiState.update { state ->
                 state.copy(
                     isPurchasing = false,
-                    errorMessage = noPurchasesFoundMessage
+                    errorMessage = if (wasRestored) restoreSuccessMessage else noPurchasesFoundMessage,
+                    purchaseSuccess = wasRestored
                 )
             }
         }

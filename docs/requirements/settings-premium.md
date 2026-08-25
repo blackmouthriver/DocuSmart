@@ -9,17 +9,19 @@ Herramientas PDF (requerimiento #16) existía por completo en
 `DailyLimitManager` pero nunca se llamaba desde `PdfToolsViewModel`, así que
 nunca se aplicaba en la práctica; y "Restablecer configuración" forzaba
 español sin importar el idioma del dispositivo (mismo tipo de bug ya
-corregido en TTS/reconocimiento de voz de Modo Estudio). La compra
-simulada de Premium es un placeholder ya documentado en el propio código
-("Fase 10 se conecta Play Billing real") — no es un bug oculto, es trabajo
-pendiente conocido y no se implementó en esta pasada (ver §7). **RF-SET-06
+corregido en TTS/reconocimiento de voz de Modo Estudio). **RF-SET-06
 resuelto 2026-08-24:** el idioma por defecto de una instalación nueva ahora
 también usa el idioma del dispositivo (antes solo se aplicaba en el flujo de
-restablecer). 14 tests nuevos.
+restablecer). **RF-PREM-05 resuelto 2026-08-25:** Play Billing real
+conectado (`core/billing/BillingManager.kt`), reemplazando el placeholder
+`simulatePurchase()` — ver §8 para el detalle y las limitaciones reales
+(no verificable de punta a punta hasta que existan productos en Play
+Console). 14 tests nuevos (sin cambios por RF-PREM-05 — ver justificación
+en §8).
 **Código relacionado:** `features/settings/**`, `features/premium/**`,
 `core/ads/DailyLimitManager.kt`, `core/premium/PremiumManager.kt`,
-`core/ui/LanguageManager.kt`, `core/ui/components/DailyLimitDialog.kt` (nuevo,
-compartido con Conversión).
+`core/billing/BillingManager.kt` (nuevo), `core/ui/LanguageManager.kt`,
+`core/ui/components/DailyLimitDialog.kt` (compartido con Conversión).
 
 ---
 
@@ -48,8 +50,8 @@ Dos módulos relacionados por la monetización freemium:
 - **RF-PREM-04** El sistema debe ocultar los banners de anuncios y los límites de uso para usuarios Premium.
 
 ### Backlog — no implementado
-- **RF-PREM-05** Conectar Play Billing real (comprar/restaurar compras) — hoy simulado con un `delay()` y un flag local, ya documentado en el código como pendiente de "Fase 10". Requiere configuración de productos en Play Console antes de poder implementarse.
-- **RF-SET-06** ✅ Detección de idioma por defecto para un usuario que **nunca** ha abierto la app (requerimiento #13 original) — distinto de RF-SET-05, que es sobre qué pasa al restablecer configuración ya usada. Resuelto 2026-08-24 usando el idioma del dispositivo (no geografía de Play Store, que no es verificable desde el cliente — ver discusión en §8).
+- **RF-PREM-05** ✅ Conectar Play Billing real (comprar/restaurar compras) — antes simulado con un `delay()` y un flag local. Resuelto 2026-08-25, ver §8 para el detalle y las limitaciones reales.
+- **RF-SET-06** ✅ Detección de idioma por defecto para un usuario que **nunca** ha abierto la app (requerimiento #13 original) — distinto de RF-SET-05, que es sobre qué pasa al restablecer configuración ya usada. Resuelto 2026-08-24 usando el idioma del dispositivo (no geografía de Play Store, que no es verificable desde el cliente).
 - **RF-SET-07** Personalización de colores/tema por el usuario (requerimiento #19 original).
 
 ---
@@ -58,7 +60,8 @@ Dos módulos relacionados por la monetización freemium:
 
 - **RNF-SET-01 (consistencia de idioma):** ninguna funcionalidad de la app debe forzar un idioma fijo cuando existe una señal razonable del idioma preferido del usuario (idioma configurado de la app, o si no hay ninguno, idioma del dispositivo) — mismo lineamiento que ya aplica a TTS y reconocimiento de voz en Modo Estudio.
 - **RNF-PREM-01 (límites por recurso, no globales):** cada herramienta PDF (unir/dividir/comprimir/rotar) debe tener su propio contador diario independiente — usar mucho una herramienta no debe agotar el límite de las demás.
-- **RNF-PREM-02 (transparencia del placeholder de billing):** mientras no exista Play Billing real, el código debe dejar explícito que la compra es simulada (comentario/nombre de función), para que no se confunda con una integración real ya hecha — ya cumplido (`simulatePurchase`, comentario "Fase 10").
+- ~~**RNF-PREM-02** (transparencia del placeholder de billing)~~ — obsoleto desde RF-PREM-05: ya no hay placeholder, `BillingManager` conecta Play Billing real.
+- **RNF-PREM-03 (no verificable sin Play Console):** `BillingManager` puede compilar y conectarse correctamente a Play Billing sin que eso implique que las compras funcionan de punta a punta — requiere que los 3 productos existan en Play Console y la app esté subida a una pista de prueba. No asumir que "compila" significa "probado".
 
 ---
 
@@ -95,7 +98,7 @@ Dos módulos relacionados por la monetización freemium:
 |---|---|---|
 | Requerimiento #16 "Límite de uso de herramientas para no-premium" — CONTEXT.md lo marcaba como "Pendiente" | HU-PREM-01 | ✅ Corregido — la lógica ya existía sin usar; se conectó a `PdfToolsViewModel` con el mismo patrón que ya usaba Conversión. Se extrajo `DailyLimitDialog` a un componente compartido (antes vivía duplicado y privado en `ConverterScreen.kt`). |
 | **Bug real encontrado hoy (no reportado en la QA):** "Restablecer configuración" en Ajustes forzaba español sin importar el idioma del dispositivo. | HU-SET-01 | ✅ Corregido — nuevo `LanguageManager.deviceDefaultLanguage()`. **Extendido 2026-08-24 (RF-SET-06):** `loadLanguage()` ahora también usa `deviceDefaultLanguage()` como respaldo cuando no hay idioma guardado (instalación nueva) — antes ese caso quedaba fijo en español. |
-| "Restaurar compras / cancelar suscripción" simulado, falta Play Billing real | RF-PREM-05 (backlog) | Confirmado como placeholder ya documentado en el código (`// En Fase 10 se conecta con Play Billing`) — no es un bug oculto, requiere configuración de Play Console que no se puede hacer desde código. No implementado en esta pasada. |
+| "Restaurar compras / cancelar suscripción" simulado, falta Play Billing real | RF-PREM-05 | ✅ Resuelto 2026-08-25 — `BillingManager` conecta Play Billing real (comprar, restaurar, precios localizados). Ver §8 para limitaciones reales (no verificable de punta a punta sin productos en Play Console). |
 | "Falta personalización de colores/estilos por el usuario" | RF-SET-07 (backlog) | Confirmado vigente, sin implementar. |
 | Almacenamiento (mostrar uso + borrar caché) | RF-SET-03 | Confirmado funcionando correctamente — cuenta y tamaño reales, borrado real. |
 | Ayuda, privacidad, acerca de, compartir, calificar | — | Confirmados funcionando correctamente (intents reales, URLs reales con el package name real). |
@@ -108,14 +111,58 @@ Dos módulos relacionados por la monetización freemium:
 |---|---|---|
 | 1 | `DailyLimitManagerTest` — límite de conversiones alcanzado, extra por anuncio aumenta el límite, límite de herramienta PDF alcanzado, contadores independientes por herramienta, extra de herramienta PDF por anuncio, conteo por herramienta. | ✅ 8 tests, en verde |
 | 2 | `LanguageManagerTest` — idioma del dispositivo soportado se detecta correctamente, idioma no soportado cae a español, reconoce inglés explícitamente con variante regional (`en-US`), instalación nueva usa el idioma del dispositivo (RF-SET-06), instalación nueva con idioma no soportado cae a español, un idioma ya guardado no se pisa con el del dispositivo. | ✅ 6 tests, en verde |
-| 3 | `PremiumManager`/`PremiumViewModel` — no cubiertos; `simulatePurchase`/`restorePurchases` son placeholders que se reemplazarán por completo al conectar Play Billing real (RF-PREM-05), así que no se priorizó cubrirlos con tests que quedarían obsoletos pronto. | Pendiente hasta que se implemente Play Billing real. |
+| 3 | `PremiumManager`/`PremiumViewModel`/`BillingManager` — no cubiertos. `BillingManager` envuelve `BillingClient` (clase del framework, no fácilmente mockeable sin infraestructura de instrumentación pesada) — mismo criterio ya aplicado a `AdManager`, que tampoco tiene tests. | Sin cubrir, consistente con el resto de wrappers de SDKs de terceros del proyecto. |
 
 ---
 
-## 7. Preguntas abiertas
+## 8. Play Billing real — RF-PREM-05 (2026-08-25)
+
+Reemplaza `PremiumManager.simulatePurchase()` (eliminado) por
+`core/billing/BillingManager.kt`, usando Play Billing Library 9.1.0.
+
+- **Productos:** `com.docsmart.premium.monthly`/`annual` (suscripción,
+  `ProductType.SUBS`) y `com.docsmart.premium.lifetime` (compra única,
+  `ProductType.INAPP`) — mismos IDs que ya declaraba `PremiumRepository`
+  desde antes, ahora sí conectados a Play Billing real.
+- **Flujo:** conecta al iniciar (`startConnection`), consulta
+  `ProductDetails` reales de los 3 productos (reemplaza el precio fijo
+  `"$2.99"` hardcodeado en `PremiumRepository` por el precio real y
+  localizado que devuelve Play Store, en cuanto está disponible), y
+  restaura compras existentes automáticamente.
+- **Restaurar compras:** `restorePurchases()` ahora consulta de verdad
+  (`queryPurchasesAsync` para `SUBS` e `INAPP`) en vez de simular "no se
+  encontraron compras" siempre.
+- **Confirmación de compra (`acknowledgePurchase`):** obligatoria dentro de
+  3 días o Google reembolsa automáticamente — implementada para ambos tipos
+  de producto.
+- **NO implementado a propósito — verificación server-side:** no se valida
+  la firma de la compra contra la clave pública de licencias de Play
+  Console (RSA). Esa clave solo existe una vez que la app se crea en Play
+  Console, y el proyecto no tiene backend propio para verificar del lado
+  del servidor (arquitectura documentada: "solo Firebase gestionado", ver
+  `CONTEXT.md` §1). Se confía en el resultado de `BillingClient` +
+  `PurchaseState` — razonable para una app de un solo desarrollador sin
+  backend, pero vale la pena revisar si el volumen de fraude lo justifica
+  más adelante.
+- **No verificable de punta a punta todavía:** `queryProductDetails()` no
+  encuentra nada hasta que los 3 productos existan en Play Console
+  (Monetizar → Productos), lo cual requiere que la app ya esté subida al
+  menos a una pista de prueba (ver `docs/requirements/deployment.md`). El
+  código compila y se conecta correctamente a Play Billing, pero la compra
+  real todavía no se probó de punta a punta — no asumir que "compila"
+  significa "funciona".
+- **Sin tests nuevos:** `BillingManager` envuelve `BillingClient` (clase de
+  framework, no mockeable sin infraestructura pesada) — mismo criterio ya
+  aplicado a `AdManager` en este proyecto, que tampoco tiene tests.
+- Verificado en verde: `assembleDebug`/`bundleRelease` + `detekt` +
+  `testDebugUnitTest` (92 tests, 0 fallos) + `lintDebug` (0 errores).
+
+---
+
+## 9. Preguntas abiertas
 
 | Pregunta | Notas |
 |---|---|
-| ¿Cuándo se aborda Play Billing real (RF-PREM-05)? | Requiere que el usuario configure los productos (`com.docsmart.premium.monthly/annual/lifetime`, ya declarados en `PremiumRepository`) en Play Console antes de poder integrarlo — no es algo que se pueda avanzar solo desde el código. |
+| Play Billing real (RF-PREM-05) ya está conectado en código — ¿cuándo se crean los 3 productos en Play Console para poder probarlo de punta a punta? | Requiere que la app ya esté subida al menos a una pista de prueba (ver `docs/requirements/deployment.md`) antes de poder crear los productos y probar una compra real. |
 | ¿Detección de idioma por geografía de Play Store (RF-SET-06) es prioridad, o basta con que el dispositivo decida (como ya corregido en HU-SET-01)? | Resuelto 2026-08-24: se extendió el idioma del dispositivo también al primer inicio (`loadLanguage()`), sin depender de geografía de Play Store — no es algo verificable desde el cliente, y el idioma del dispositivo es el estándar de facto en apps Android. |
 | ¿Personalización de colores (RF-SET-07) es prioridad frente a otros pendientes del roadmap? | Sin refinar, mencionado como mejora en `CONTEXT.md`. |

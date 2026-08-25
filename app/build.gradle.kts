@@ -268,6 +268,9 @@ dependencies {
     // ── AdMob ─────────────────────────────────────────────────────────────────
     implementation("com.google.android.gms:play-services-ads:23.3.0")
 
+    // ── Play Billing (Premium: mensual/anual/lifetime) ───────────────────────
+    implementation(libs.billing.ktx)
+
     // ── Timber ────────────────────────────────────────────────────────────────
     implementation("com.jakewharton.timber:timber:5.0.1")
 

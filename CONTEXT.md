@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (política de privacidad + formulario de seguridad de datos, basados en inventario real del código)
+**Última actualización:** 2026-08-25 (Play Billing real conectado — RF-PREM-05)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -144,7 +144,9 @@ reconocimiento de voz (Modo Estudio) — corregido con
 (requerimiento #18) se confirmó como placeholder ya documentado en el
 propio código ("Fase 10 se conecta Play Billing real"), no un bug oculto —
 requiere configuración de Play Console que el usuario debe hacer, así que
-no se implementó en esta pasada. 11 tests nuevos.
+no se implementó en esta pasada. 11 tests nuevos. **Actualización
+2026-08-25: RF-PREM-05 resuelto** — ver más abajo, sección "Play Billing
+real conectado".
 Detalle completo en [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md).
 
 ### Módulo Estudio (2026-08-24)
@@ -174,7 +176,7 @@ No hay un único "% completado" honesto — depende del eje:
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
 | Documentación formal (HU con criterios de aceptación) | ~85% | 7 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium, Estudio) |
 | Pruebas automatizadas | ~19% | 77 tests cubriendo 17 archivos de decenas |
-| Listo para publicar en Play Store | ~50% | firma de release + CI de build firmado ✅, política de privacidad publicada + formulario de seguridad de datos preparados ✅ (2026-08-25, https://sites.google.com/view/docusmart-privacidad/inicio ); falta la primera subida manual a Play Console (obligatoria, no automatizable), billing real, límites premium, ads de producción reales (hoy AdMob App ID es el de prueba) |
+| Listo para publicar en Play Store | ~60% | firma de release + CI de build firmado ✅, política de privacidad publicada + formulario de seguridad de datos preparados ✅, Play Billing real conectado ✅ (2026-08-25, https://sites.google.com/view/docusmart-privacidad/inicio ); falta la primera subida manual a Play Console (obligatoria, no automatizable — y necesaria para poder probar Billing de punta a punta), ads de producción reales (hoy AdMob App ID es el de prueba), SDK de consentimiento de anuncios (UMP) |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
 de código faltante — es que lo que falta (bugs en funciones centrales, billing
@@ -196,8 +198,7 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
   eliminar desde el Visor (RF-VIS-06), resaltado inline de búsqueda en PDF
   (RF-VIS-08), papelera de reciclaje (RF-VIS-07) (backlog en `visor-biblioteca.md`).
 - **Estudio:** exportar notas, estadísticas de estudio (tiempo leído, pomodoros/semana).
-- **Premium:** conectar Play Billing real y límite diario no-premium (bloqueantes
-  para publicar), programa de referidos.
+- **Premium:** ~~conectar Play Billing real~~ ✅ 2026-08-25 (ver más abajo); límite diario no-premium ya estaba conectado (RF-PREM-02); pendiente: programa de referidos.
 - **Transversal:** estandarizar banner azul en todas las vistas (pedido repetido
   en QA), accesibilidad (TalkBack, fuentes dinámicas), completar idiomas
   pendientes (ja/ko/zh/it/fr).
@@ -225,7 +226,7 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 15 | Banner para no-premium, desaparece al pagar | Implementado (AdMob banner condicional) |
 | 16 | Límite de uso de herramientas para no-premium | **Corregido hoy** — la lógica ya existía (`DailyLimitManager`) pero no estaba conectada a Herramientas PDF; ya funciona igual que en Conversión (5 conversiones + 3 usos por herramienta PDF al día, con anuncio recompensado para +1) |
 | 17 | Mínima opción de uso garantizada sin pago | Resuelto junto con el #16 — 3 usos gratis por herramienta PDF, 5 conversiones/día |
-| 18 | Restaurar compras / cancelar suscripción | Restaurar existe (simulado); falta conectar a Play Billing real — confirmado como placeholder ya documentado en el código, no un bug oculto (backlog RF-PREM-05) |
+| 18 | Restaurar compras / cancelar suscripción | **Resuelto 2026-08-25** — `BillingManager` conecta Play Billing real (RF-PREM-05); restaurar consulta compras reales vía `queryPurchasesAsync`. No verificable de punta a punta hasta crear los productos en Play Console (ver `docs/requirements/deployment.md`) |
 | 19 | Tema personalizable (colores, texto, iconos) por el usuario | **No implementado** — hoy solo claro/oscuro/sistema |
 | 20 | Mostrar almacenamiento usado + caché, con confirmación al borrar | Implementado en Settings (diálogo de almacenamiento) |
 | 21 | Restablecer configuración por defecto | Implementado |
@@ -308,7 +309,7 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - **Hueco real encontrado hoy (requerimiento #16, no un bug de QA pero sí de código):** el límite diario de uso gratis para Herramientas PDF existía por completo en `DailyLimitManager` pero nunca se llamaba desde `PdfToolsViewModel` — no tenía ningún efecto real. Corregido.
 - ~~Idioma: falta detección automática al primer inicio.~~ **Resuelto 2026-08-24** — `loadLanguage()` ahora usa el idioma del dispositivo como respaldo cuando no hay ninguno guardado (RF-SET-06). Sigue pendiente ampliar el catálogo de idiomas (agregar japonés, coreano, mandarín, italiano, francés — **es/en/de/pt/ru ya están, faltan ja/ko/zh/it/fr para el pedido completo**) — backlog, no abordado en esta pasada.
 - Falta personalización de colores/estilos por el usuario (banner, botones, iconos, nav bar) — backlog.
-- Compra Premium simulada — confirmado como placeholder ya documentado en el código ("Fase 10 se conecta Play Billing real"), requiere configuración de Play Console, no implementado en esta pasada.
+- ~~Compra Premium simulada.~~ **Resuelto 2026-08-25** — Play Billing real conectado (`BillingManager`), ver sección dedicada más abajo.
 
 ### General / transversal
 - Banner de anuncios: ubicarlo consistente (arriba antes del banner azul, o abajo cerca de la nav bar) en todas las vistas, y ocultarlo por completo para usuarios premium.
@@ -407,6 +408,46 @@ como documentos separados.
 | V2.0 | Resumen en voz TTS | Baja |
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
+
+### Play Billing real conectado — RF-PREM-05 (2026-08-25)
+Reemplaza `PremiumManager.simulatePurchase()` (eliminado) por
+`core/billing/BillingManager.kt`, usando Play Billing Library 9.1.0 —
+versión mayor nueva (v9), con cambios de API respecto a v6/v7 (verificado
+contra la guía oficial vigente antes de escribir código, no supuesto de
+memoria).
+
+- Productos: `com.docsmart.premium.monthly`/`annual` (`ProductType.SUBS`) y
+  `com.docsmart.premium.lifetime` (`ProductType.INAPP`) — mismos IDs que ya
+  declaraba `PremiumRepository` desde antes, ahora sí conectados de verdad.
+- Reemplaza el precio fijo hardcodeado (`"$2.99"`) por el precio real y
+  localizado que devuelve Play Store en cuanto está disponible.
+- `restorePurchases()` consulta compras reales (`queryPurchasesAsync`) en
+  vez de simular "no se encontraron compras" siempre.
+- Confirmación de compra (`acknowledgePurchase`) implementada para ambos
+  tipos de producto — obligatoria dentro de 3 días o Google reembolsa
+  automáticamente.
+- **Decisión deliberada, no un descuido:** no se valida la firma de la
+  compra contra la clave pública de licencias de Play Console (RSA) — esa
+  clave solo existe una vez que la app se crea en Play Console, y el
+  proyecto no tiene backend propio para verificar server-side. Se confía en
+  `BillingClient` + `PurchaseState`, razonable para una app de un solo
+  desarrollador sin backend.
+- **No verificable de punta a punta todavía:** los 3 productos no existen
+  en Play Console, así que `queryProductDetails()` no encuentra nada hasta
+  que la app se suba al menos a una pista de prueba. El código compila y se
+  conecta correctamente a Play Billing, pero la compra real no se probó de
+  punta a punta.
+- Sin tests nuevos: `BillingManager` envuelve `BillingClient` (clase de
+  framework, no mockeable sin infraestructura pesada) — mismo criterio ya
+  aplicado a `AdManager`, que tampoco tiene tests.
+- De paso, se extrajo `Context.findActivity()` a
+  `core/ui/util/ActivityUtils.kt` — mismo patrón de desenvolver
+  `ContextWrapper` que ya usaba `SecurityScreen`, ahora reutilizable (lo usa
+  `PremiumScreen` para `launchBillingFlow`, que necesita el `Activity` real).
+- Verificado en verde: `assembleDebug`/`bundleRelease` (AAB firmado
+  regenerado sin problemas de R8 nuevos) + `detekt` + `testDebugUnitTest`
+  (92 tests, 0 fallos) + `lintDebug` (0 errores). Detalle completo en
+  [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) §8.
 
 ### Política de privacidad + formulario de seguridad de datos (2026-08-25)
 Basado en inventario real del código, no en suposiciones: se revisó
@@ -656,13 +697,19 @@ queda por definir si se necesita más cobertura de integración además de
 Room, o pasar directo a pruebas de sistema. Compose UI Testing ✅ iniciado
 2026-08-25 (`ViewerScreenTest`, flujo "abrir documento" — ver más abajo),
 solo local por ahora (decisión del usuario: sin emulador en CI todavía).
-Despliegue/publicación ✅ iniciado 2026-08-25: firma de release configurada
-y verificada, CI de build firmado listo (`.github/workflows/release.yml`)
-— ver [`docs/requirements/deployment.md`](docs/requirements/deployment.md).
-Pendiente del usuario: configurar los secrets de GitHub, respaldar el
-keystore, y hacer la primera subida manual a Play Console (no
-automatizable). Siguen: más flujos de Compose UI Testing si se prioriza,
-billing real, política de privacidad, formulario de seguridad de datos.
+Despliegue/publicación, avance sustancial 2026-08-25: firma de release
+verificada (`bundleRelease` genera un AAB firmado, probado de punta a punta
+instalándolo en un emulador vía `bundletool`), CI de build firmado
+funcionando (tag `v1.0.0` corrido en verde en GitHub Actions), secrets de
+GitHub configurados por el usuario, keystore respaldado por el usuario,
+política de privacidad publicada, formulario de seguridad de datos
+preparado, y Play Billing real conectado — ver
+[`docs/requirements/deployment.md`](docs/requirements/deployment.md) y
+[`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) §8.
+Único bloqueante real que queda para publicar: la primera subida manual a
+Play Console (no automatizable por Google). Siguen: más flujos de Compose
+UI Testing si se prioriza, SDK de consentimiento de anuncios (UMP), AdMob
+App ID real.
 
 ### SonarCloud + cobertura JaCoCo (2026-08-24)
 El usuario creó la cuenta SonarCloud y conectó el repo (`blackmouthriver` /

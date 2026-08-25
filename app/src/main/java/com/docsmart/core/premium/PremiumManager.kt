@@ -41,21 +41,6 @@ class PremiumManager @Inject constructor(
         Timber.d("PremiumManager: premium desactivado")
     }
 
-    fun simulatePurchase(planId: String): Boolean {
-        return try {
-            Timber.d("PremiumManager: simulando compra — planId=$planId")
-            activatePremium()
-            Timber.d("PremiumManager: compra simulada exitosa")
-            true
-        } catch (e: Exception) {
-            // ── Fix Sentinel MEDIUM: exception sin logging ─────
-            // Antes: el catch silenciaba el error completamente
-            // Ahora: Timber registra el error para debugging
-            Timber.e(e, "PremiumManager: error en simulatePurchase — ${e.message}")
-            false
-        }
-    }
-
     private fun loadPremiumStatus(): Boolean {
         return prefs.getBoolean("is_premium", false)
     }

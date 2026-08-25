@@ -1,5 +1,6 @@
 package com.docsmart.features.premium.presentation
 
+import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -8,12 +9,27 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ui.util.findActivity
 import com.docsmart.features.premium.presentation.components.*
+import timber.log.Timber
+
+// Extraído para no engordar el cuerpo de PremiumScreen (detekt: LongMethod).
+private fun onPurchaseClick(
+    activity: Activity?,
+    viewModel: PremiumViewModel,
+    purchaseErrorMessage: String,
+    purchasePendingMessage: String
+): () -> Unit = {
+    activity?.let {
+        viewModel.purchase(it, purchaseErrorMessage, purchasePendingMessage)
+    } ?: Timber.e("PremiumScreen: Activity es null, no se puede iniciar la compra")
+}
 
 @Composable
 fun PremiumScreen(
@@ -22,6 +38,10 @@ fun PremiumScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    // launchBillingFlow necesita el Activity real, no el Context envuelto
+    // que entrega LocalContext.
+    val activity = remember(context) { context.findActivity() }
 
     // Muestra errores
     LaunchedEffect(uiState.errorMessage) {
@@ -95,80 +115,7 @@ fun PremiumScreen(
 
                 // ── Botón de compra ───────────────────
                 item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        if (uiState.isPurchasing) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                CircularProgressIndicator(
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = stringResource(R.string.premium_processing_purchase),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        } else {
-                            val purchaseErrorMessage = stringResource(R.string.premium_purchase_error)
-                            val noPurchasesFoundMessage = stringResource(R.string.premium_no_purchases_found)
-
-                            // Botón principal de compra
-                            Button(
-                                onClick = { viewModel.purchase(purchaseErrorMessage) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = MaterialTheme.shapes.medium,
-                                enabled = uiState.selectedPlan != null
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Star,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = uiState.selectedPlan?.let {
-                                        stringResource(R.string.premium_get_plan, stringResource(it.titleRes), it.price)
-                                    } ?: stringResource(R.string.premium_select_plan),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            }
-
-                            // Restaurar compras
-                            TextButton(
-                                onClick = { viewModel.restorePurchases(noPurchasesFoundMessage) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.premium_restore_purchases),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            // Continuar gratis
-                            TextButton(
-                                onClick = onClose,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.premium_continue_free),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        .copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-                    }
+                    PurchaseActionsSection(uiState, viewModel, activity, onClose)
                 }
 
                 // ── Términos ──────────────────────────
@@ -182,6 +129,79 @@ fun PremiumScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+// ── Botón de compra / restaurar / continuar gratis ────
+// Extraído de PremiumScreen para mantenerla corta (detekt: LongMethod).
+@Composable
+private fun PurchaseActionsSection(
+    uiState: PremiumUiState,
+    viewModel: PremiumViewModel,
+    activity: Activity?,
+    onClose: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (uiState.isPurchasing) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = stringResource(R.string.premium_processing_purchase),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            return
+        }
+
+        val purchaseErrorMessage = stringResource(R.string.premium_purchase_error)
+        val purchasePendingMessage = stringResource(R.string.premium_purchase_pending)
+        val noPurchasesFoundMessage = stringResource(R.string.premium_no_purchases_found)
+        val restoreSuccessMessage = stringResource(R.string.premium_restore_success)
+
+        Button(
+            onClick = onPurchaseClick(activity, viewModel, purchaseErrorMessage, purchasePendingMessage),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = MaterialTheme.shapes.medium,
+            enabled = uiState.selectedPlan != null
+        ) {
+            Icon(Icons.Rounded.Star, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = uiState.selectedPlan?.let {
+                    stringResource(R.string.premium_get_plan, stringResource(it.titleRes), it.price)
+                } ?: stringResource(R.string.premium_select_plan),
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+
+        TextButton(
+            onClick = { viewModel.restorePurchases(noPurchasesFoundMessage, restoreSuccessMessage) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.premium_restore_purchases),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = stringResource(R.string.premium_continue_free),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
         }
     }
 }

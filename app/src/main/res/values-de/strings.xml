@@ -195,6 +195,8 @@
     <string name="premium_recommended">⭐ Empfohlen</string>
     <string name="premium_purchase_error">Der Kauf konnte nicht abgeschlossen werden. Bitte versuche es erneut.</string>
     <string name="premium_no_purchases_found">Keine vorherigen Käufe gefunden</string>
+    <string name="premium_purchase_pending">Dein Kauf wartet auf Bestätigung (z. B. Barzahlung). Er wird automatisch aktiviert, sobald er abgeschlossen ist.</string>
+    <string name="premium_restore_success">Kauf wiederhergestellt — du hast jetzt Premium</string>
 
     <!-- ── Scanner (zusätzlich) ─────────────────────────── -->
     <string name="scanner_start_error">Der Scanner konnte nicht gestartet werden: %1$s</string>
