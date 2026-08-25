@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (Compose UI Testing flujo #3 — PIN de Carpeta Segura)
+**Última actualización:** 2026-08-25 (Compose UI Testing en CI con emulador)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -37,7 +37,11 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   baseline (457 hallazgos previos suprimidos), CI en GitHub Actions
   (`.github/workflows/ci.yml`) corriendo build+lint+detekt+tests en cada
   push/PR a `main` (simplificado tras la limpieza de ramas), más
-  Dependabot y escaneo de secretos con Gitleaks.
+  Dependabot y escaneo de secretos con Gitleaks. Desde 2026-08-25, un
+  segundo job (`instrumented-tests`) corre los 3 flujos de Compose UI
+  Testing contra un emulador con aceleración KVM en el mismo workflow —
+  aún sin verificar en un run real de GitHub Actions, ver
+  `docs/requirements/deployment.md` §3.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
 - **Tests:** 95 tests reales (Seguridad: 26, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 10, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 86 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real; 3 son **Compose UI Testing** instrumentadas contra dispositivo real (`ViewerScreenTest`, `ConverterScreenTest`, `SecurityScreenTest` — flujos #1, #2 y #3). Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
