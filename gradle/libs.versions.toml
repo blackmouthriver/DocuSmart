@@ -1,6 +1,6 @@
 # gradle/libs.versions.toml
 [versions]
-agp = "8.13.2"
+agp = "9.3.2"
 kotlin = "2.2.21"
 compose-bom = "2024.11.00"
 core-ktx = "1.15.0"
