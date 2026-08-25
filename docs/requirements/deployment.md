@@ -64,7 +64,7 @@ persista de forma segura por ti.
 
 Se activa con un tag `v*` (ej. `v1.0.0`) o manualmente
 (`workflow_dispatch`). Construye el AAB firmado y lo deja como artefacto
-descargable del workflow — **no publica a Play Console todavía** (ver §3).
+descargable del workflow — **no publica a Play Console todavía** (ver §4).
 
 ### Secrets de GitHub necesarios (configurar una sola vez)
 
@@ -97,18 +97,59 @@ Actions → el run correspondiente → Artifacts.
 
 ---
 
-## 3. Camino a la primera publicación (checklist)
+## 3. CI: Compose UI Testing en emulador (`.github/workflows/ci.yml`, 2026-08-25)
+
+Job nuevo `instrumented-tests`, corre en paralelo al job `build` existente
+(mismos triggers: push/PR a `main`, `workflow_dispatch`). Ejecuta
+`connectedDebugAndroidTest` — los 3 flujos críticos de Compose UI Testing
+(abrir documento, conversión, PIN de Carpeta Segura) — contra un emulador
+Android en el propio runner, no contra el dispositivo físico usado hasta
+ahora en desarrollo. Decisión explícita de este proyecto de no montar esto
+antes: "agregar un emulador a GitHub Actions es más lento/complejo, mejor
+evaluarlo cuando haya más pruebas de este tipo" (ver
+`visor-biblioteca.md` §9) — con 3 flujos ya en verde localmente, el costo
+ya se justifica.
+
+- **Aceleración por hardware (KVM):** los runners Linux hospedados por
+  GitHub (`ubuntu-latest`, 2 vCPU, gratis) soportan KVM desde 2023; sin el
+  paso de habilitar permisos de grupo KVM el emulador correría por software
+  y sería demasiado lento para un job de CI. `arch: x86_64` es obligatorio
+  para esto — es la única arquitectura acelerada por KVM en estos runners
+  (no `arm64-v8a`, aunque el minSdk/compileSdk del proyecto lo soportarían
+  en un dispositivo real).
+- **API 34 (Android 14), `google_apis`:** iguala la versión real usada para
+  verificar estos mismos flujos en desarrollo (motorola edge 30 neo).
+- **`disable-animations: true`** en el job de pruebas reproduce en el
+  emulador el fix de flakiness ya encontrado en el dispositivo real (ver
+  `conversion.md` §7): con animaciones activas, correr varias pruebas de
+  Compose UI seguidas falla de forma intermitente con
+  `IllegalStateException: No compose hierarchies found`.
+- **Cache de AVD** (`actions/cache` sobre `~/.android/avd/*` y
+  `~/.android/adb*`, clave fija `avd-34-google_apis-x86_64`) evita
+  descargar y arrancar el emulador desde cero en cada corrida — sin esto,
+  cada push pagaría el costo completo de crear el AVD.
+- Acción usada: `reactivecircus/android-emulator-runner@v2` (la estándar
+  de la comunidad para este caso, verificada contra su documentación
+  oficial antes de escribir el workflow, no asumida de memoria).
+- **Sin verificar aún en un run real de GitHub Actions** — el YAML se
+  validó estructuralmente (sin tabs, indentación consistente) pero no se
+  ha corrido todavía; falta confirmar en el primer push/PR que el emulador
+  arranca y las 6 pruebas pasan igual que en el dispositivo real.
+
+---
+
+## 4. Camino a la primera publicación (checklist)
 
 1. ~~Firma de release configurada~~ ✅ (esta sesión).
 2. ~~Política de privacidad publicada y formulario de seguridad de datos
-   preparado~~ ✅ (esta sesión, ver §4) — falta solo cargar las respuestas
+   preparado~~ ✅ (esta sesión, ver §5) — falta solo cargar las respuestas
    en Play Console.
 3. **Subida manual inicial a Play Console** — pendiente del usuario. Google
    no permite crear la primera versión de una app por API; tiene que
    hacerse una vez desde la consola web:
    - Crear la ficha de la app en Play Console (nombre, categoría, etc.).
-   - Completar el **formulario de seguridad de datos** con las respuestas de §4.2.
-   - Enlazar la **política de privacidad** (§4.1) en la ficha.
+   - Completar el **formulario de seguridad de datos** con las respuestas de §5.2.
+   - Enlazar la **política de privacidad** (§5.1) en la ficha.
    - Subir `app-release.aab` (generado localmente o descargado del workflow)
      a una pista interna o cerrada primero, no directo a producción.
 4. **Cuenta de servicio de Play Console** — una vez que la app ya tiene al
@@ -120,18 +161,19 @@ Actions → el run correspondiente → Artifacts.
    plugin `com.github.triplet.play` a `app/build.gradle.kts`, un secret
    `PLAY_SERVICE_ACCOUNT_JSON`, y un paso en `release.yml` que suba el AAB a
    una pista (empezar por `internal`, no `production`).
-6. **Play Billing real** — pendiente, backlog aparte (ver
-   `CONTEXT.md` §2, requerimiento #18). También depende de que la app ya
-   exista en Play Console con un perfil de pagos configurado.
+6. ~~Play Billing real~~ ✅ código conectado (RF-PREM-05, ver
+   `settings-premium.md` §8) — pendiente solo de que la app exista en Play
+   Console con un perfil de pagos configurado para poder probar compras
+   reales (bloqueado por el punto 3, no por código).
 
 ---
 
-## 4. Política de privacidad y formulario de seguridad de datos (2026-08-25)
+## 5. Política de privacidad y formulario de seguridad de datos (2026-08-25)
 
-Basado en inventario real del código, no en suposiciones — ver §4.3 para el
+Basado en inventario real del código, no en suposiciones — ver §5.3 para el
 detalle de qué se revisó.
 
-### 4.1 Política de privacidad
+### 5.1 Política de privacidad
 
 - **Publicada:** https://sites.google.com/view/docusmart-privacidad/inicio
   — es la URL que va en Play Console.
@@ -146,7 +188,7 @@ detalle de qué se revisó.
   retomar más adelante si cambia la situación de GitHub.
 - Correo de contacto: `jblackmouthr@gmail.com` (decisión del usuario).
 - **No es asesoría legal:** el texto se basa en un inventario técnico
-  exhaustivo del código (ver §4.3), pero para una app que va a monetizar con
+  exhaustivo del código (ver §5.3), pero para una app que va a monetizar con
   anuncios y eventualmente compras, vale la pena que alguien con criterio
   legal le eche un vistazo antes de publicar, sobre todo si en el futuro se
   agregan más categorías de datos.
@@ -154,7 +196,7 @@ detalle de qué se revisó.
   desbloquea la publicación; traducir la política es una mejora aparte, no
   bloqueante.
 
-### 4.2 Formulario de seguridad de datos de Play Console
+### 5.2 Formulario de seguridad de datos de Play Console
 
 Respuestas para copiar directamente en Play Console → Política de la app →
 Seguridad de los datos. La app **cifra todo el tráfico** (`usesCleartextTraffic
@@ -165,7 +207,7 @@ borrado de datos** vía el correo de contacto de la política.
 |---|---|---|
 | Ubicación (aproximada/precisa) | No | — |
 | Información personal (nombre, email, ID de usuario, etc.) | No | Sin cuentas, sin login (no hay Firebase Auth) |
-| Información financiera | No (todavía) | `simulatePurchase()` es un stub local — revisar esta fila cuando se conecte Play Billing real (ver §3) |
+| Información financiera | **Sí** | Play Billing real ya conectado (RF-PREM-05, ver `settings-premium.md` §8) — la compra la procesa Google Play, DocuSmart no recibe ni almacena datos de tarjeta/pago, solo el resultado de la transacción. |
 | Salud y estado físico | No | — |
 | Mensajes | No | — |
 | **Fotos y videos** | **No** | La app *accede* a fotos/documentos que el usuario elige (permiso de medios), pero no se transmiten a ningún servidor — se procesan 100% en el dispositivo. Play Console cuenta "recolectado" como transmitido fuera del dispositivo, no como accedido localmente. |
@@ -178,7 +220,7 @@ borrado de datos** vía el correo de contacto de la política.
 | **Identificadores del dispositivo u otros** | **Sí** | Advertising ID, usado por Google AdMob. Propósito: **Publicidad**. Compartido con: Google (AdMob). |
 | **Audio** | **No** | El dictado de notas usa `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` (un Intent estándar de Android) — delega en la app de reconocimiento de voz del sistema; DocuSmart nunca captura ni procesa el audio directamente, solo recibe el texto resultante. Mismo principio que un selector de archivos del sistema. |
 
-### 4.3 Cómo se armó este inventario (para que quede trazable)
+### 5.3 Cómo se armó este inventario (para que quede trazable)
 
 Revisado directamente en el código, no supuesto:
 - `AndroidManifest.xml` completo (permisos declarados y su alcance por versión de Android).
@@ -198,7 +240,7 @@ activar anuncios reales en producción, no solo antes de publicar.
 
 ---
 
-## 5. Otros pendientes menores antes de la primera subida
+## 6. Otros pendientes menores antes de la primera subida
 
 - **`versionCode`/`versionName`** siguen en `1`/`1.0.0` — ajustar antes de
   la primera subida real si corresponde.
@@ -206,4 +248,4 @@ activar anuncios reales en producción, no solo antes de publicar.
   de versión de Android soportada vigente al momento de publicar; verificar
   el requisito actual antes de subir.
 - **AdMob App ID de prueba** en `AndroidManifest.xml` — reemplazar por el
-  real antes de publicar (ver hallazgo en §4.3).
+  real antes de publicar (ver hallazgo en §5.3).
