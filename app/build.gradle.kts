@@ -1,4 +1,18 @@
 import com.android.build.api.variant.HasUnitTest
+import java.util.Properties
+
+// Firma de release: valores reales en keystore.properties (gitignored, ver
+// keystore.properties.example) — en CI se escribe desde secrets antes del
+// build. Si no existe (checkout limpio de un colaborador, o CI corriendo
+// tareas que no son de release), releaseSigningConfig queda null y el build
+// type release simplemente no queda firmado para Play Store — no rompe
+// assembleDebug ni el resto de las tareas normales.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val releaseSigningProps = if (keystorePropertiesFile.exists()) {
+    Properties().apply { load(keystorePropertiesFile.inputStream()) }
+} else {
+    null
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -36,6 +50,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigningProps != null) {
+            create("release") {
+                storeFile     = rootProject.file(releaseSigningProps.getProperty("storeFile"))
+                storePassword = releaseSigningProps.getProperty("storePassword")
+                keyAlias      = releaseSigningProps.getProperty("keyAlias")
+                keyPassword   = releaseSigningProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
@@ -51,6 +76,9 @@ android {
             )
             manifestPlaceholders["firebaseAnalyticsDeactivated"] = false
             manifestPlaceholders["firebaseCrashlyticsEnabled"]   = true
+            if (releaseSigningProps != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

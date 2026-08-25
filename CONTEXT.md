@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (primera prueba de Compose UI: flujo "abrir documento", encontró bug real de carga de anuncios)
+**Última actualización:** 2026-08-25 (firma de release + CI/CD de build firmado, punto de partida hacia la primera publicación)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -15,6 +15,7 @@
 - [`docs/requirements/scanner.md`](docs/requirements/scanner.md) — Escanear documento (ML Kit) + lector/creador de QR (en refinamiento)
 - [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) — Ajustes + Premium/límites de uso (en refinamiento)
 - [`docs/requirements/study.md`](docs/requirements/study.md) — Lectura con voz, notas, Pomodoro (en refinamiento)
+- [`docs/requirements/deployment.md`](docs/requirements/deployment.md) — Firma de release, CI/CD, camino a la primera publicación (en progreso)
 
 ---
 
@@ -173,7 +174,7 @@ No hay un único "% completado" honesto — depende del eje:
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
 | Documentación formal (HU con criterios de aceptación) | ~85% | 7 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium, Estudio) |
 | Pruebas automatizadas | ~19% | 77 tests cubriendo 17 archivos de decenas |
-| Listo para publicar en Play Store | ~30% | falta billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
+| Listo para publicar en Play Store | ~35% | firma de release + CI de build firmado ✅ (2026-08-25); falta la primera subida manual a Play Console (obligatoria, no automatizable), billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
 de código faltante — es que lo que falta (bugs en funciones centrales, billing
@@ -407,6 +408,44 @@ como documentos separados.
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
 
+### Firma de release + CI/CD de build firmado (2026-08-25)
+Primer paso concreto hacia publicar en Play Store. El usuario aclaró que ya
+tiene cuenta de Google Play Console pero nunca subió ninguna app — esto
+importa porque **Google no permite automatizar la primera subida de una app
+nueva por API**, tiene que hacerse una vez desde la consola web. El plan se
+ajustó a: dejar la firma y el CI de construcción listos para esa primera
+subida manual, y la automatización de publicaciones (Gradle Play Publisher)
+queda como el paso siguiente natural una vez exista al menos una versión
+subida y una cuenta de servicio creada en Play Console.
+
+- Keystore nuevo generado con `keytool` (PKCS12, RSA 2048, válido hasta
+  2054) — decisión del usuario, confirmada explícitamente antes de generar
+  nada dado lo irreversible de perder la clave. Vive en `keystore/`
+  (gitignored), contraseñas en `keystore.properties` (gitignored,
+  `keystore.properties.example` committeado como plantilla).
+- `signingConfigs.release` en `app/build.gradle.kts` lee ese archivo si
+  existe, sin romper el build para colaboradores/CI que no lo tengan.
+- Verificado localmente: `./gradlew bundleRelease` genera un AAB firmado,
+  confirmado con `jarsigner -verify`.
+- **2 problemas reales encontrados al verificar** (nadie había corrido un
+  build de release en este proyecto hasta ahora): `-Xmx2048m` no alcanzaba
+  para R8/lint del build de release (subido a 4096m), y R8 fallaba por
+  clases "faltantes" de dependencias opcionales de Apache POI/commons-compress
+  (log4j2, slf4j, osgi, zstd/xz) que nunca se cargan en runtime en
+  Android — agregadas reglas `-dontwarn` en `proguard-rules.pro`.
+- `.github/workflows/release.yml` nuevo: construye y firma el AAB en cada
+  tag `v*`, lo deja como artefacto descargable — no publica a Play Console
+  todavía. Requiere 4 secrets de GitHub que el usuario debe configurar él
+  mismo (instrucciones en el doc, no se comparten valores de secretos por
+  chat).
+- Pendiente explícito del usuario, no delegable: respaldar el keystore y
+  las contraseñas en un lugar seguro propio — si se pierden, no se puede
+  volver a generar el mismo ni actualizar la app una vez publicada con esa
+  firma.
+- Detalle completo, checklist de publicación, y lo que falta (billing,
+  política de privacidad, formulario de seguridad de datos) en
+  [`docs/requirements/deployment.md`](docs/requirements/deployment.md).
+
 ### Primera prueba de Compose UI: abrir documento (2026-08-25)
 Instrumentada (dispositivo/emulador, no en CI todavía — decisión del
 usuario: agregar un emulador a GitHub Actions es más lento/complejo, mejor
@@ -589,8 +628,13 @@ queda por definir si se necesita más cobertura de integración además de
 Room, o pasar directo a pruebas de sistema. Compose UI Testing ✅ iniciado
 2026-08-25 (`ViewerScreenTest`, flujo "abrir documento" — ver más abajo),
 solo local por ahora (decisión del usuario: sin emulador en CI todavía).
-Siguen: más flujos de Compose UI Testing si se prioriza, despliegue y
-publicación.
+Despliegue/publicación ✅ iniciado 2026-08-25: firma de release configurada
+y verificada, CI de build firmado listo (`.github/workflows/release.yml`)
+— ver [`docs/requirements/deployment.md`](docs/requirements/deployment.md).
+Pendiente del usuario: configurar los secrets de GitHub, respaldar el
+keystore, y hacer la primera subida manual a Play Console (no
+automatizable). Siguen: más flujos de Compose UI Testing si se prioriza,
+billing real, política de privacidad, formulario de seguridad de datos.
 
 ### SonarCloud + cobertura JaCoCo (2026-08-24)
 El usuario creó la cuenta SonarCloud y conectó el repo (`blackmouthriver` /

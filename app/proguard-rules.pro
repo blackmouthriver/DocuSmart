@@ -26,6 +26,19 @@
 -keep class org.openxmlformats.schemas.** { *; }
 -dontwarn org.openxmlformats.schemas.**
 
+# Dependencias opcionales de POI/commons-compress (log4j2, slf4j, osgi,
+# zstd/xz, anotaciones bnd/findbugs) — nunca se cargan en runtime en Android,
+# solo se referencian bajo try/catch ClassNotFoundException. R8 en modo
+# estricto falla si no se le avisa explícitamente que puede ignorarlas.
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.apache.commons.compress.**
+-dontwarn org.slf4j.**
+-dontwarn org.tukaani.xz.**
+-dontwarn org.osgi.**
+-dontwarn aQute.bnd.**
+-dontwarn edu.umd.cs.findbugs.annotations.**
+-dontwarn com.github.luben.zstd.**
+
 # ZXing
 -keep class com.google.zxing.** { *; }
 -dontwarn com.google.zxing.**

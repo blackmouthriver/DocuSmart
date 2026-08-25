@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firma de release — NUNCA versionar el keystore ni sus contraseñas.
+/keystore/
+keystore.properties
