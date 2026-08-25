@@ -100,16 +100,15 @@ Actions → el run correspondiente → Artifacts.
 ## 3. Camino a la primera publicación (checklist)
 
 1. ~~Firma de release configurada~~ ✅ (esta sesión).
-2. ~~Política de privacidad + formulario de seguridad de datos preparados~~ ✅
-   (esta sesión, ver §4) — falta solo que actives GitHub Pages (una vez) y
-   cargues las respuestas en Play Console.
+2. ~~Política de privacidad publicada y formulario de seguridad de datos
+   preparado~~ ✅ (esta sesión, ver §4) — falta solo cargar las respuestas
+   en Play Console.
 3. **Subida manual inicial a Play Console** — pendiente del usuario. Google
    no permite crear la primera versión de una app por API; tiene que
    hacerse una vez desde la consola web:
    - Crear la ficha de la app en Play Console (nombre, categoría, etc.).
    - Completar el **formulario de seguridad de datos** con las respuestas de §4.2.
-   - Enlazar la **política de privacidad** (§4.1) en la ficha, una vez que
-     Pages esté activo y la URL responda.
+   - Enlazar la **política de privacidad** (§4.1) en la ficha.
    - Subir `app-release.aab` (generado localmente o descargado del workflow)
      a una pista interna o cerrada primero, no directo a producción.
 4. **Cuenta de servicio de Play Console** — una vez que la app ya tiene al
@@ -134,19 +133,18 @@ detalle de qué se revisó.
 
 ### 4.1 Política de privacidad
 
-- Redactada en `legal/privacy-policy.html`, pensada para publicarse vía
-  GitHub Pages (`.github/workflows/pages.yml`, se activa con cualquier push
-  a `legal/**`).
-- **Carpeta separada de `docs/`** a propósito: `docs/requirements/` tiene
-  specs internas (hallazgos de seguridad, bugs, decisiones de producto) que
-  no deben quedar servidas como sitio web público.
+- **Publicada:** https://sites.google.com/view/docusmart-privacidad/inicio
+  — es la URL que va en Play Console.
+- Redactada originalmente en `legal/privacy-policy.html` (queda en el repo
+  como fuente/respaldo del texto, en una carpeta separada de `docs/` a
+  propósito: `docs/requirements/` tiene specs internas que no deben quedar
+  servidas como sitio público). Publicación final vía **Google Sites**, no
+  GitHub Pages — GitHub pedía plan pago para Pages en este repo (razón no
+  confirmada, probablemente visibilidad del repo), así que se optó por la
+  alternativa gratuita sin fricción. `.github/workflows/pages.yml` queda en
+  el repo sin uso por ahora — no hace daño dejarlo, se puede borrar o
+  retomar más adelante si cambia la situación de GitHub.
 - Correo de contacto: `jblackmouthr@gmail.com` (decisión del usuario).
-- **Pendiente de tu parte, no delegable:** activar Pages una sola vez —
-  Settings del repo → Pages → Source: "GitHub Actions" (no "Deploy from a
-  branch"). Sin este paso el workflow corre pero no hay dónde servir el
-  resultado. Una vez activo, la URL queda en
-  `https://blackmouthriver.github.io/DocuSmart/privacy-policy.html` — es la
-  que se pega en Play Console.
 - **No es asesoría legal:** el texto se basa en un inventario técnico
   exhaustivo del código (ver §4.3), pero para una app que va a monetizar con
   anuncios y eventualmente compras, vale la pena que alguien con criterio
