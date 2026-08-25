@@ -1,25 +1,40 @@
 package com.docsmart.core.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.docsmart.R
 import com.docsmart.core.navegation.NavRoutes
 
 data class BottomNavItem(
-    val label: String,
+    @StringRes val labelRes: Int,
     val route: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 )
 
+// Los labels se resuelven con stringResource() dentro del Composable (ver
+// abajo) — bottomNavItems es una lista de nivel de módulo, sin contexto de
+// composición, así que no puede resolver el string aquí directamente.
 private val bottomNavItems = listOf(
-    BottomNavItem("Inicio",     NavRoutes.Home.route,      Icons.Rounded.Home,         Icons.Rounded.Home),
-    BottomNavItem("Biblioteca", NavRoutes.Library.route,   Icons.Rounded.LibraryBooks, Icons.Rounded.LibraryBooks),
-    BottomNavItem("Convertir",  NavRoutes.Converter.route, Icons.Rounded.SwapHoriz,    Icons.Rounded.SwapHoriz),
-    BottomNavItem("PDF",        NavRoutes.PdfTools.route,  Icons.Rounded.PictureAsPdf, Icons.Rounded.PictureAsPdf),
-    BottomNavItem("Ajustes",    NavRoutes.Settings.route,  Icons.Rounded.Settings,     Icons.Rounded.Settings)
+    BottomNavItem(R.string.nav_home, NavRoutes.Home.route, Icons.Rounded.Home, Icons.Rounded.Home),
+    BottomNavItem(
+        R.string.nav_library, NavRoutes.Library.route,
+        Icons.Rounded.LibraryBooks, Icons.Rounded.LibraryBooks
+    ),
+    BottomNavItem(
+        R.string.nav_converter, NavRoutes.Converter.route,
+        Icons.Rounded.SwapHoriz, Icons.Rounded.SwapHoriz
+    ),
+    BottomNavItem(
+        R.string.nav_pdf, NavRoutes.PdfTools.route,
+        Icons.Rounded.PictureAsPdf, Icons.Rounded.PictureAsPdf
+    ),
+    BottomNavItem(R.string.nav_settings, NavRoutes.Settings.route, Icons.Rounded.Settings, Icons.Rounded.Settings)
 )
 
 // ── Solo mostrar en rutas principales ────────────────
@@ -41,6 +56,7 @@ fun DocuSmartBottomBar(
     NavigationBar {
         bottomNavItems.forEach { item ->
             val isSelected = currentRoute == item.route
+            val label = stringResource(item.labelRes)
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
@@ -50,10 +66,10 @@ fun DocuSmartBottomBar(
                     Icon(
                         imageVector = if (isSelected) item.selectedIcon
                         else item.unselectedIcon,
-                        contentDescription = item.label
+                        contentDescription = label
                     )
                 },
-                label = { Text(text = item.label) }
+                label = { Text(text = label) }
             )
         }
     }

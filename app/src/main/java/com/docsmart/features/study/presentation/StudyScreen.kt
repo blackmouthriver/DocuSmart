@@ -1134,7 +1134,11 @@ private fun PomodoroClock(minutes: Int, seconds: Int, isRunning: Boolean, isBrea
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = String.format("%02d:%02d", minutes, seconds),
+                // Solo dígitos 0-9 (sin sensibilidad real de locale) — se evita
+                // String.format(Locale.getDefault(), ...) porque llamarlo dentro de
+                // un @Composable no es observable ante un cambio de idioma en runtime
+                // (lint: NonObservableLocale).
+                text = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}",
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isBreak) SuccessGreen else DocuBlue

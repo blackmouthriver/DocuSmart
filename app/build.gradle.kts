@@ -65,6 +65,16 @@ android {
         disable += "NullSafeMutableLiveData"
     }
 
+    bundle {
+        // LanguageManager cambia el idioma manualmente en runtime (independiente
+        // del idioma del dispositivo). Si Play Store reparte el AAB con split por
+        // idioma (comportamiento por defecto), un usuario podría no tener
+        // instalados los recursos del idioma que elige dentro de la app.
+        language {
+            enableSplit = false
+        }
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true

@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-24 (hallazgos SonarCloud: seguridad + mantenibilidad)
+**Última actualización:** 2026-08-24 (limpieza de lint + bug de i18n en barra inferior)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -402,6 +402,48 @@ como documentos separados.
 | V2.0 | Resumen en voz TTS | Baja |
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
+
+### Limpieza de lint + i18n de la barra inferior (2026-08-24, rama `feature/lint-cleanup`)
+Verificado con corrida limpia (`--rerun-tasks`) tras toda la sesión anterior:
+lint bajó a 0 errores / 162 warnings (no 115 errores como se pensó al inicio
+de esta sesión — el primer conteo salió inflado, muy probablemente por
+Android Studio corriendo su propio análisis en paralelo y pisando el reporte
+a mitad de la corrida). De esos 162 warnings, esta rama corrige:
+- 36 strings confirmados sin uso real (verificado con grep contra el código
+  actual antes de borrar, no solo confiando en lint) — eliminados de los 5
+  idiomas.
+- **Bug real encontrado al investigar por qué `nav_home`/`nav_library`/etc.
+  aparecían "sin uso":** `DocuSmartBottomBar.kt` tenía las 5 etiquetas de la
+  barra de navegación inferior hardcodeadas en español ("Inicio",
+  "Biblioteca"...) en vez de `stringResource()` — la barra inferior nunca se
+  traducía sin importar el idioma elegido. Corregido: `BottomNavItem` ahora
+  guarda `@StringRes val labelRes: Int` en vez del label ya resuelto (la
+  lista es `private val` de nivel de módulo, sin contexto de composición, así
+  que no puede llamar `stringResource()` directamente ahí) y se resuelve
+  dentro del `@Composable`. Se restauraron las 5 claves `nav_*` en los 5
+  idiomas (habían sido borradas por error en el primer paso de limpieza,
+  antes de encontrar este bug).
+- `String.format` sin locale expĺicito en `DocumentRepository.formatSize()`
+  (corregido con `Locale.getDefault()`, no es un Composable) y en el timer de
+  `StudyScreen` (**no** se usó `Locale.getDefault()` ahí — lint marcó
+  `NonObservableLocale` porque leer el locale dentro de un `@Composable` no
+  es reactivo a cambios de idioma en runtime; se reemplazó `String.format`
+  por `padStart(2, '0')`, ya que el timer solo tiene dígitos 0-9 sin
+  sensibilidad real de locale).
+- `AppBundleLocaleChanges`: `LanguageManager` cambia idioma manualmente en
+  runtime, pero el AAB por defecto reparte el bundle con split por idioma —
+  un usuario podía quedarse sin los recursos del idioma que elige dentro de
+  la app. Desactivado `bundle { language { enableSplit = false } }`.
+- `StaticFieldLeak` en `ViewerViewModel.pendingContext`: falso positivo (ya
+  guardaba `applicationContext`, no la Activity) — documentado con
+  `@SuppressLint` explicando por qué, sin cambiar el comportamiento.
+
+Verificado en verde: `assembleDebug` + `detekt` + `testDebugUnitTest` (77
+tests, 0 fallos) + `lintDebug` (0 errores, 122 warnings restantes — sobre
+todo `UseKtx`, `UseTomlInstead` y actualizaciones de dependencia, backlog de
+bajo riesgo, no abordado en esta pasada). Commiteado en rama
+`feature/lint-cleanup`, sin push ni merge a `main` todavía — pendiente de
+que el usuario decida.
 
 ### Roadmap técnico (definido en esta sesión, complementario)
 Fase 0 (estabilización) ✅ completada. Fase 1 (CI básico) ✅ completada.

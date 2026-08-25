@@ -1,5 +1,6 @@
 package com.docsmart.features.viewer.presentation
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -60,7 +61,11 @@ class ViewerViewModel @Inject constructor(
     val uiState: StateFlow<ViewerUiState> = _uiState.asStateFlow()
 
     private var pendingDocumentId: String  = ""
-    private var pendingContext   : Context? = null
+
+    // Se guarda applicationContext (no la Activity), por eso no hay fuga real
+    // pese a lo que reporta el detector StaticFieldLeak de lint.
+    @SuppressLint("StaticFieldLeak")
+    private var pendingContext: Context? = null
 
     fun loadDocument(documentId: String, context: Context) {
         pendingDocumentId = documentId

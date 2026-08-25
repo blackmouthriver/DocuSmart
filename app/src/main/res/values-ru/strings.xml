@@ -15,10 +15,6 @@
     <string name="home_open">Открыть</string>
     <string name="home_convert">Конвертировать</string>
     <string name="home_quick_access">Быстрый доступ</string>
-    <string name="home_recents">Недавние</string>
-    <string name="home_see_all">Показать все</string>
-    <string name="home_no_recents">Нет недавних документов</string>
-    <string name="home_open_file">Открыть файл</string>
     <string name="home_scan">Сканировать</string>
     <string name="home_img_pdf">Изобр→PDF</string>
     <string name="home_security">Безопасность</string>
@@ -26,25 +22,14 @@
 
     <!-- ── Библиотека ─────────────────────────────── -->
     <string name="library_title">Библиотека</string>
-    <string name="library_subtitle">Все ваши документы</string>
     <string name="library_search">Поиск в библиотеке…</string>
-    <string name="library_no_results">Нет результатов</string>
-    <string name="library_no_documents">В этой категории нет документов</string>
     <string name="library_documents">документов</string>
-    <string name="library_favorites">Избранное</string>
 
     <!-- ── Конвертер ────────────────────────────────── -->
     <string name="converter_title">Конвертер</string>
     <string name="converter_subtitle">Легко конвертируйте документы</string>
     <string name="converter_select">Что вы хотите конвертировать?</string>
-    <string name="converter_select_type">Выберите тип конвертации</string>
-    <string name="converter_converting">Конвертация…</string>
-    <string name="converter_success">Конвертация выполнена!</string>
     <string name="converter_save">Сохранить в Загрузки</string>
-    <string name="converter_share">Поделиться</string>
-    <string name="converter_another">Конвертировать ещё</string>
-    <string name="converter_file_name">Имя файла</string>
-    <string name="converter_auto_name">Автоматическое имя</string>
 
     <!-- ── Инструменты PDF ──────────────────────────────── -->
     <string name="pdf_tools_title">Инструменты PDF</string>
@@ -54,8 +39,6 @@
     <string name="pdf_split">Разделить PDF</string>
     <string name="pdf_compress">Сжать PDF</string>
     <string name="pdf_rotate">Повернуть PDF</string>
-    <string name="pdf_processing">Обработка…</string>
-    <string name="pdf_success">Операция выполнена!</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -121,7 +104,6 @@
     <string name="scanner_result_title">Отсканированный документ</string>
     <string name="scanner_generate">Создать PDF</string>
     <string name="scanner_again">Сканировать снова</string>
-    <string name="scanner_save">Сохранить в Загрузки</string>
     <string name="scanner_share">Поделиться PDF</string>
     <string name="scanner_back">Вернуться на главную</string>
 
@@ -129,7 +111,6 @@
     <string name="viewer_error">Ошибка при открытии документа</string>
     <string name="viewer_back">Назад</string>
     <string name="viewer_rendering">Рендеринг документа…</string>
-    <string name="viewer_page">Страница %1$d из %2$d</string>
     <string name="viewer_unsupported">Этот формат не поддерживается встроенным просмотрщиком.</string>
     <string name="viewer_open_other">Открыть в другом приложении</string>
 
@@ -137,15 +118,9 @@
     <string name="general_save">Сохранить</string>
     <string name="general_cancel">Отмена</string>
     <string name="general_back">Назад</string>
-    <string name="general_error">Ошибка</string>
-    <string name="general_success">Готово!</string>
-    <string name="general_loading">Загрузка…</string>
-    <string name="general_retry">Повторить</string>
     <string name="general_share">Поделиться</string>
     <string name="general_delete">Удалить</string>
     <string name="general_saved_downloads">Сохранено в Загрузки</string>
-    <string name="general_new_operation">Новая операция</string>
-    <string name="general_select_file">Выбрать файл</string>
 
     <!-- ── Описания инструментов PDF ─────────────────────── -->
     <string name="pdf_merge_desc">Объединяет несколько PDF в один</string>
@@ -154,14 +129,8 @@
     <string name="pdf_rotate_desc">Поворачивает страницы документа</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
-    <string name="home_open_file_hint">Откройте файл, чтобы увидеть его здесь</string>
 
     <!-- ── Категории конвертера ──────────────────────── -->
-    <string name="converter_category_image">Изображение</string>
-    <string name="converter_category_pdf">PDF</string>
-    <string name="converter_category_word">Word</string>
-    <string name="converter_category_excel">Excel</string>
-    <string name="converter_category_ppt">PowerPoint</string>
     <string name="converter_select_files">Нажмите, чтобы выбрать %1$s</string>
     <string name="converter_files_selected">Выбрано файлов: %1$d</string>
     <string name="converter_formats">Форматы: %1$s</string>

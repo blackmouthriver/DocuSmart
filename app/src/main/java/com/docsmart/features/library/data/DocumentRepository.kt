@@ -249,7 +249,7 @@ class DocumentRepository @Inject constructor(
     private fun formatSize(bytes: Long): String = when {
         bytes < 1024         -> "$bytes B"
         bytes < 1024 * 1024  -> "${bytes / 1024} KB"
-        else                 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+        else                 -> String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
     }
 
     private fun formatDate(ms: Long): String =

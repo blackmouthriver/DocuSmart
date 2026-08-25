@@ -15,10 +15,6 @@
     <string name="home_open">Öffnen</string>
     <string name="home_convert">Konvertieren</string>
     <string name="home_quick_access">Schnellzugriff</string>
-    <string name="home_recents">Zuletzt verwendet</string>
-    <string name="home_see_all">Alle anzeigen</string>
-    <string name="home_no_recents">Keine aktuellen Dokumente</string>
-    <string name="home_open_file">Datei öffnen</string>
     <string name="home_scan">Scannen</string>
     <string name="home_img_pdf">Bild→PDF</string>
     <string name="home_security">Sicherheit</string>
@@ -26,25 +22,14 @@
 
     <!-- ── Bibliothek ─────────────────────────────── -->
     <string name="library_title">Bibliothek</string>
-    <string name="library_subtitle">Alle deine Dokumente</string>
     <string name="library_search">In der Bibliothek suchen…</string>
-    <string name="library_no_results">Keine Ergebnisse</string>
-    <string name="library_no_documents">Keine Dokumente in dieser Kategorie</string>
     <string name="library_documents">Dokumente</string>
-    <string name="library_favorites">Favoriten</string>
 
     <!-- ── Konverter ────────────────────────────────── -->
     <string name="converter_title">Konverter</string>
     <string name="converter_subtitle">Konvertiere deine Dokumente ganz einfach</string>
     <string name="converter_select">Was möchtest du konvertieren?</string>
-    <string name="converter_select_type">Konvertierung auswählen</string>
-    <string name="converter_converting">Wird konvertiert…</string>
-    <string name="converter_success">Konvertierung erfolgreich!</string>
     <string name="converter_save">In Downloads speichern</string>
-    <string name="converter_share">Teilen</string>
-    <string name="converter_another">Weitere Datei konvertieren</string>
-    <string name="converter_file_name">Dateiname</string>
-    <string name="converter_auto_name">Automatischer Name</string>
 
     <!-- ── PDF Tools ──────────────────────────────── -->
     <string name="pdf_tools_title">PDF-Werkzeuge</string>
@@ -54,8 +39,6 @@
     <string name="pdf_split">PDF teilen</string>
     <string name="pdf_compress">PDF komprimieren</string>
     <string name="pdf_rotate">PDF drehen</string>
-    <string name="pdf_processing">Wird verarbeitet…</string>
-    <string name="pdf_success">Vorgang erfolgreich!</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -121,7 +104,6 @@
     <string name="scanner_result_title">Gescanntes Dokument</string>
     <string name="scanner_generate">PDF erstellen</string>
     <string name="scanner_again">Erneut scannen</string>
-    <string name="scanner_save">In Downloads speichern</string>
     <string name="scanner_share">PDF teilen</string>
     <string name="scanner_back">Zurück zum Start</string>
 
@@ -129,7 +111,6 @@
     <string name="viewer_error">Fehler beim Öffnen des Dokuments</string>
     <string name="viewer_back">Zurück</string>
     <string name="viewer_rendering">Dokument wird gerendert…</string>
-    <string name="viewer_page">Seite %1$d von %2$d</string>
     <string name="viewer_unsupported">Dieses Format wird vom integrierten Viewer nicht unterstützt.</string>
     <string name="viewer_open_other">Mit anderer App öffnen</string>
 
@@ -137,15 +118,9 @@
     <string name="general_save">Speichern</string>
     <string name="general_cancel">Abbrechen</string>
     <string name="general_back">Zurück</string>
-    <string name="general_error">Fehler</string>
-    <string name="general_success">Erfolgreich!</string>
-    <string name="general_loading">Wird geladen…</string>
-    <string name="general_retry">Erneut versuchen</string>
     <string name="general_share">Teilen</string>
     <string name="general_delete">Löschen</string>
     <string name="general_saved_downloads">In Downloads gespeichert</string>
-    <string name="general_new_operation">Neuer Vorgang</string>
-    <string name="general_select_file">Datei auswählen</string>
 
     <!-- ── PDF Tools Beschreibungen ─────────────────────── -->
     <string name="pdf_merge_desc">Kombiniert mehrere PDFs zu einer Datei</string>
@@ -154,14 +129,8 @@
     <string name="pdf_rotate_desc">Dreht die Seiten des Dokuments</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
-    <string name="home_open_file_hint">Öffne eine Datei, um sie hier zu sehen</string>
 
     <!-- ── Converter Kategorien ──────────────────────── -->
-    <string name="converter_category_image">Bild</string>
-    <string name="converter_category_pdf">PDF</string>
-    <string name="converter_category_word">Word</string>
-    <string name="converter_category_excel">Excel</string>
-    <string name="converter_category_ppt">PowerPoint</string>
     <string name="converter_select_files">Tippe, um %1$s auszuwählen</string>
     <string name="converter_files_selected">%1$d Datei(en) ausgewählt</string>
     <string name="converter_formats">Formate: %1$s</string>
