@@ -192,7 +192,44 @@ ejemplo, 0 fallos.
 
 ---
 
-## 7. Preguntas resueltas (2026-08-24)
+## 7. Compose UI Testing — flujo #3: desbloqueo con PIN (2026-08-25)
+
+Tercera prueba de Compose UI del proyecto (ver también
+[`visor-biblioteca.md` §9](visor-biblioteca.md#9-compose-ui-testing--flujo-1-abrir-documento-2026-08-25)
+y [`conversion.md` §7](conversion.md#7-compose-ui-testing--flujo-2-conversión-2026-08-25)).
+Misma infraestructura: JUnit4/`createAndroidComposeRule`, instrumentada
+contra dispositivo real, sin Hilt.
+
+- **`SecurityScreenTest`** cubre el desbloqueo de la Carpeta Segura con PIN:
+  PIN correcto lleva a `SecurityScreenState.UNLOCKED` (se ve "Carpeta
+  Segura"), PIN incorrecto muestra "PIN incorrecto" en pantalla y no
+  desbloquea.
+- **`SecurityManager` no se mockea** — a diferencia de `AdManager`/
+  `DailyLimitManager` en los flujos #1 y #2, aquí se usa la instancia real
+  (misma decisión que ya se tomó con `ImageFormatUseCase` en el flujo #2):
+  es una clase concreta simple (hash SHA-256 + SharedPreferences), y
+  mockearla habría probado el ViewModel/UI sin dar ninguna protección de
+  regresión real sobre RF-SEC-01/02 (configurar/verificar PIN). El
+  `Context` real de instrumentación se envuelve en un `ContextWrapper`
+  propio (`IsolatedPrefsContext`) que solo redefine `getSharedPreferences()`
+  y `getFilesDir()`, para que el PIN de prueba no toque el
+  `docusmart_security` real del dispositivo (el mismo que usa la app
+  instalada) — todo lo demás, incluyendo `BiometricManager.from(context)`
+  dentro de `isBiometricAvailable()`, sigue siendo el `Context` real por
+  delegación de `ContextWrapper`.
+- **Intentado primero y descartado:** `spyk(realContext)` de MockK, para
+  interceptar los mismos dos métodos sin escribir una clase nueva. Falla en
+  dispositivo real con `MockKException: Can't instantiate proxy for class
+  android.app.ContextImpl` — es una clase final del framework que el
+  agente de mocking inline de MockK no puede interceptar (a diferencia de
+  clases de la propia app, donde `mockk`/`spyk` sí funcionan sobre
+  clases finales gracias a `mockk-android`). `ContextWrapper` es la vía
+  estándar de Android para este caso y no depende de ningún framework de
+  mocking.
+
+---
+
+## 8. Preguntas resueltas (2026-08-24)
 
 | Pregunta | Decisión |
 |---|---|
@@ -203,6 +240,6 @@ ejemplo, 0 fallos.
 | Longitud mínima de contraseña de PDF | 4 caracteres, igual que QR (RF-SEC-10) |
 | QR protegido leído fuera de DocuSmart | Muestra texto cifrado en bruto, sin indicador adicional (comportamiento esperado) |
 
-## 8. Preguntas abiertas
+## 9. Preguntas abiertas
 
 Ninguna pendiente por ahora — todas las decisiones de producto para este módulo quedaron resueltas en §7.

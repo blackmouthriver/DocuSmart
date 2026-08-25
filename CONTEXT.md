@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (Compose UI Testing flujo #2 — conversión)
+**Última actualización:** 2026-08-25 (Compose UI Testing flujo #3 — PIN de Carpeta Segura)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -40,7 +40,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 93 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 10, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 86 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real; 2 son **Compose UI Testing** instrumentadas contra dispositivo real (`ViewerScreenTest`, `ConverterScreenTest` — flujos #1 y #2 del manual de marca). Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
+- **Tests:** 95 tests reales (Seguridad: 26, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 10, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 86 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real; 3 son **Compose UI Testing** instrumentadas contra dispositivo real (`ViewerScreenTest`, `ConverterScreenTest`, `SecurityScreenTest` — flujos #1, #2 y #3). Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** Room desde 2026-08-25, primera tabla (`document_history`,
   historial de documentos abiertos — ver §2 "Historial de documentos
   abiertos" y `docs/requirements/visor-biblioteca.md` §8). Favoritos/idioma/
@@ -65,6 +65,13 @@ lectura de QR protegido (antes no existía UI para desbloquear, solo el
 cifrado al crear). Primeros tests unitarios reales del proyecto: 24 tests
 (JUnit5 + MockK), `QrCryptoTest`, `SecurityManagerTest`, `PdfPasswordUseCaseTest`.
 Detalle completo en [`docs/requirements/security.md`](docs/requirements/security.md).
+
+**Compose UI Testing — flujo #3 (2026-08-25):** `SecurityScreenTest` cubre
+el desbloqueo de la Carpeta Segura con PIN (correcto → desbloquea,
+incorrecto → muestra error), usando `SecurityManager` real (no mockeado)
+envuelto en un `ContextWrapper` propio para aislar el PIN de prueba del
+`docusmart_security` real del dispositivo. Detalle en
+[`docs/requirements/security.md` §7](docs/requirements/security.md).
 
 ### Módulo Herramientas PDF (2026-08-24)
 Bug de arquitectura corregido: Unir y Rotar rasterizaban cada página a bitmap
