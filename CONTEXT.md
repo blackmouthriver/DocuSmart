@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (firma de release + CI/CD de build firmado, punto de partida hacia la primera publicación)
+**Última actualización:** 2026-08-25 (política de privacidad + formulario de seguridad de datos, basados en inventario real del código)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -174,7 +174,7 @@ No hay un único "% completado" honesto — depende del eje:
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
 | Documentación formal (HU con criterios de aceptación) | ~85% | 7 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium, Estudio) |
 | Pruebas automatizadas | ~19% | 77 tests cubriendo 17 archivos de decenas |
-| Listo para publicar en Play Store | ~35% | firma de release + CI de build firmado ✅ (2026-08-25); falta la primera subida manual a Play Console (obligatoria, no automatizable), billing real, política de privacidad, formulario de seguridad de datos, límites premium, ads de producción |
+| Listo para publicar en Play Store | ~45% | firma de release + CI de build firmado ✅, política de privacidad + formulario de seguridad de datos preparados ✅ (2026-08-25); falta activar GitHub Pages, la primera subida manual a Play Console (obligatoria, no automatizable), billing real, límites premium, ads de producción reales (hoy AdMob App ID es el de prueba) |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
 de código faltante — es que lo que falta (bugs en funciones centrales, billing
@@ -407,6 +407,34 @@ como documentos separados.
 | V2.0 | Resumen en voz TTS | Baja |
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
+
+### Política de privacidad + formulario de seguridad de datos (2026-08-25)
+Basado en inventario real del código, no en suposiciones: se revisó
+`AndroidManifest.xml` completo, los 15 eventos reales de
+`DocuSmartAnalytics.kt` uno por uno, se buscó `FirebaseAuth`/claves custom
+de Crashlytics/SDK de consentimiento de Google (UMP) en todo el proyecto, y
+se confirmó cómo funciona el dictado de voz en `StudyScreen.kt`.
+
+- `legal/privacy-policy.html` — carpeta separada de `docs/` a propósito:
+  `docs/requirements/` tiene specs internas (hallazgos de seguridad, bugs)
+  que no deben quedar servidas como sitio público. Se publica vía
+  `.github/workflows/pages.yml` (GitHub Pages, source = GitHub Actions).
+  Correo de contacto: `jblackmouthr@gmail.com` (decisión del usuario).
+- Formulario de seguridad de datos de Play Console: respuestas listas para
+  copiar en `docs/requirements/deployment.md` §4.2. Conclusión clave:
+  fotos/videos/documentos se **acceden** localmente pero no se **recolectan**
+  (nunca se transmiten fuera del dispositivo) — Play Console distingue
+  ambas cosas. Sí se recolectan: actividad en la app (Analytics), logs de
+  fallas (Crashlytics), Advertising ID (AdMob).
+- **Hallazgo real, sin abordar en esta pasada:** no hay SDK de consentimiento
+  (Google UMP) implementado — necesario antes de mostrar anuncios
+  personalizados a usuarios de la UE/Reino Unido (exigencia de Google, no
+  solo buena práctica).
+- **Hallazgo ya conocido, confirmado de nuevo:** el AdMob App ID en el
+  manifest sigue siendo el de prueba público de Google, no uno real.
+- Pendiente del usuario, no delegable: activar GitHub Pages una vez
+  (Settings → Pages → Source: GitHub Actions) para que la URL de la
+  política responda.
 
 ### Firma de release + CI/CD de build firmado (2026-08-25)
 Primer paso concreto hacia publicar en Play Store. El usuario aclaró que ya

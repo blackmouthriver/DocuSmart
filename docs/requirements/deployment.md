@@ -100,41 +100,112 @@ Actions → el run correspondiente → Artifacts.
 ## 3. Camino a la primera publicación (checklist)
 
 1. ~~Firma de release configurada~~ ✅ (esta sesión).
-2. **Subida manual inicial a Play Console** — pendiente del usuario. Google
+2. ~~Política de privacidad + formulario de seguridad de datos preparados~~ ✅
+   (esta sesión, ver §4) — falta solo que actives GitHub Pages (una vez) y
+   cargues las respuestas en Play Console.
+3. **Subida manual inicial a Play Console** — pendiente del usuario. Google
    no permite crear la primera versión de una app por API; tiene que
    hacerse una vez desde la consola web:
    - Crear la ficha de la app en Play Console (nombre, categoría, etc.).
-   - Completar el **formulario de seguridad de datos** (qué datos recolecta
-     la app — pendiente, ver §4).
-   - Publicar la **política de privacidad** en una URL accesible (pendiente,
-     ver §4) y enlazarla en la ficha.
+   - Completar el **formulario de seguridad de datos** con las respuestas de §4.2.
+   - Enlazar la **política de privacidad** (§4.1) en la ficha, una vez que
+     Pages esté activo y la URL responda.
    - Subir `app-release.aab` (generado localmente o descargado del workflow)
      a una pista interna o cerrada primero, no directo a producción.
-3. **Cuenta de servicio de Play Console** — una vez que la app ya tiene al
+4. **Cuenta de servicio de Play Console** — una vez que la app ya tiene al
    menos una versión subida, se puede crear una cuenta de servicio
    (Play Console → Configuración → Acceso a la API) para automatizar
    subidas futuras vía Gradle Play Publisher. No tiene sentido crearla antes
    — no hay nada que actualizar todavía.
-4. **Automatizar publicaciones futuras** (después del punto 3): agregar el
+5. **Automatizar publicaciones futuras** (después del punto 4): agregar el
    plugin `com.github.triplet.play` a `app/build.gradle.kts`, un secret
    `PLAY_SERVICE_ACCOUNT_JSON`, y un paso en `release.yml` que suba el AAB a
    una pista (empezar por `internal`, no `production`).
-5. **Play Billing real** — pendiente, backlog aparte (ver
+6. **Play Billing real** — pendiente, backlog aparte (ver
    `CONTEXT.md` §2, requerimiento #18). También depende de que la app ya
    exista en Play Console con un perfil de pagos configurado.
 
 ---
 
-## 4. Pendiente — no abordado en esta pasada
+## 4. Política de privacidad y formulario de seguridad de datos (2026-08-25)
 
-- **Política de privacidad:** falta redactar y publicar en una URL. Se
-  puede armar a partir de los datos reales que la app recolecta (Firebase
-  Analytics/Crashlytics, AdMob, permisos de cámara/almacenamiento/media).
-- **Formulario de seguridad de datos de Play Console:** falta preparar las
-  respuestas (qué se recolecta, con qué propósito, si se comparte con
-  terceros) para que el usuario las cargue en la consola.
+Basado en inventario real del código, no en suposiciones — ver §4.3 para el
+detalle de qué se revisó.
+
+### 4.1 Política de privacidad
+
+- Redactada en `legal/privacy-policy.html`, pensada para publicarse vía
+  GitHub Pages (`.github/workflows/pages.yml`, se activa con cualquier push
+  a `legal/**`).
+- **Carpeta separada de `docs/`** a propósito: `docs/requirements/` tiene
+  specs internas (hallazgos de seguridad, bugs, decisiones de producto) que
+  no deben quedar servidas como sitio web público.
+- Correo de contacto: `jblackmouthr@gmail.com` (decisión del usuario).
+- **Pendiente de tu parte, no delegable:** activar Pages una sola vez —
+  Settings del repo → Pages → Source: "GitHub Actions" (no "Deploy from a
+  branch"). Sin este paso el workflow corre pero no hay dónde servir el
+  resultado. Una vez activo, la URL queda en
+  `https://blackmouthriver.github.io/DocuSmart/privacy-policy.html` — es la
+  que se pega en Play Console.
+- **No es asesoría legal:** el texto se basa en un inventario técnico
+  exhaustivo del código (ver §4.3), pero para una app que va a monetizar con
+  anuncios y eventualmente compras, vale la pena que alguien con criterio
+  legal le eche un vistazo antes de publicar, sobre todo si en el futuro se
+  agregan más categorías de datos.
+- Solo en español por ahora — la app soporta 5 idiomas, pero la URL única ya
+  desbloquea la publicación; traducir la política es una mejora aparte, no
+  bloqueante.
+
+### 4.2 Formulario de seguridad de datos de Play Console
+
+Respuestas para copiar directamente en Play Console → Política de la app →
+Seguridad de los datos. La app **cifra todo el tráfico** (`usesCleartextTraffic
+= false`, corregido en la limpieza de SonarCloud) y **permite solicitar
+borrado de datos** vía el correo de contacto de la política.
+
+| Categoría (Play Console) | ¿Se recolecta? | Detalle |
+|---|---|---|
+| Ubicación (aproximada/precisa) | No | — |
+| Información personal (nombre, email, ID de usuario, etc.) | No | Sin cuentas, sin login (no hay Firebase Auth) |
+| Información financiera | No (todavía) | `simulatePurchase()` es un stub local — revisar esta fila cuando se conecte Play Billing real (ver §3) |
+| Salud y estado físico | No | — |
+| Mensajes | No | — |
+| **Fotos y videos** | **No** | La app *accede* a fotos/documentos que el usuario elige (permiso de medios), pero no se transmiten a ningún servidor — se procesan 100% en el dispositivo. Play Console cuenta "recolectado" como transmitido fuera del dispositivo, no como accedido localmente. |
+| **Archivos y documentos** | **No** | Misma razón — conversión/visualización/protección con contraseña corren local (iText7, Apache POI, en el propio dispositivo). |
+| Calendario | No | — |
+| Contactos | No | — |
+| **Actividad en la app** | **Sí** | Eventos de uso (pantalla vista, tipo de conversión iniciada, herramienta PDF usada, páginas escaneadas, etc.) vía Firebase Analytics — nunca el contenido real de un documento/nota/QR, solo categorías. Propósito: **Analytics**. Compartido con: Google (Firebase). |
+| Navegación web | No | — |
+| **Info. de la app y rendimiento** | **Sí** | Logs de fallas (stack trace, modelo de dispositivo, versión de Android/app) vía Firebase Crashlytics. Propósito: **Analytics** (diagnóstico). Compartido con: Google (Firebase). |
+| **Identificadores del dispositivo u otros** | **Sí** | Advertising ID, usado por Google AdMob. Propósito: **Publicidad**. Compartido con: Google (AdMob). |
+| **Audio** | **No** | El dictado de notas usa `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` (un Intent estándar de Android) — delega en la app de reconocimiento de voz del sistema; DocuSmart nunca captura ni procesa el audio directamente, solo recibe el texto resultante. Mismo principio que un selector de archivos del sistema. |
+
+### 4.3 Cómo se armó este inventario (para que quede trazable)
+
+Revisado directamente en el código, no supuesto:
+- `AndroidManifest.xml` completo (permisos declarados y su alcance por versión de Android).
+- `DocuSmartAnalytics.kt` — los 15 eventos reales que se envían a Firebase, uno por uno, confirmando que ninguno incluye contenido de archivos/notas/QR, solo metadatos categóricos.
+- Búsqueda de `FirebaseAuth`/`firebase.auth` en todo el proyecto → no hay, confirmado que no existen cuentas de usuario.
+- Búsqueda de `setCustomKey`/Crashlytics → no hay claves custom agregadas, solo el reporte estándar de Firebase.
+- Búsqueda de `ConsentInformation`/`UserMessagingPlatform` (SDK de consentimiento de Google) → **no está implementado** (ver hallazgo abajo).
+- `StudyScreen.kt` — confirmado que el dictado de voz usa `RecognizerIntent` (delega al sistema), no un `SpeechRecognizer` propio ni un servicio de voz en la nube contratado por la app.
+- `AndroidManifest.xml` → el AdMob App ID configurado es **el ID de prueba público de Google** (`ca-app-pub-3940256099942544~...`), no uno real — ya venía comentado como pendiente ("reemplazar con el tuyo al publicar").
+
+**Hallazgo real, no abordado en esta pasada:** no hay SDK de consentimiento
+(Google UMP) implementado. Si se van a mostrar anuncios personalizados a
+usuarios en la Unión Europea/Reino Unido, Google exige recolectar
+consentimiento explícito antes (política de consentimiento de UE de
+Google/GDPR) — hoy la app no lo pide. Vale la pena resolverlo antes de
+activar anuncios reales en producción, no solo antes de publicar.
+
+---
+
+## 5. Otros pendientes menores antes de la primera subida
+
 - **`versionCode`/`versionName`** siguen en `1`/`1.0.0` — ajustar antes de
   la primera subida real si corresponde.
 - **`targetSdk = 35`** — Play Console exige mantenerse dentro de la ventana
   de versión de Android soportada vigente al momento de publicar; verificar
   el requisito actual antes de subir.
+- **AdMob App ID de prueba** en `AndroidManifest.xml` — reemplazar por el
+  real antes de publicar (ver hallazgo en §4.3).
