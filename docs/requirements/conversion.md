@@ -126,7 +126,54 @@ dependencia, igual que hubiera fallado la app real.
 
 ---
 
-## 7. Preguntas abiertas
+## 7. Compose UI Testing — flujo #2: conversión (2026-08-25)
+
+Segunda prueba de Compose UI del proyecto (ver también
+[`visor-biblioteca.md` §9](visor-biblioteca.md#9-compose-ui-testing--flujo-1-abrir-documento-2026-08-25),
+flujo #1 "abrir documento"). Misma infraestructura: JUnit4/`createAndroidComposeRule`,
+instrumentada contra dispositivo real, sin Hilt (ViewModel construido a mano con `mockk`).
+
+- **`ConverterScreenTest`** cubre el flujo #2 del manual de marca ("abrir o
+  convertir un documento en menos de 3 toques"): elegir Imagen→WebP, tocar
+  "Convertir a WebP" y ver el mensaje de éxito. A propósito **no mockea**
+  `ImageFormatUseCase` — usa la instancia real, para dar protección de
+  regresión de verdad sobre el crash de WEBP_LOSSLESS en Android 8-10
+  corregido antes en esta sesión (mockearlo habría probado el ViewModel,
+  pero no el bug real).
+- El selector de archivos del sistema es un proceso externo, no conducible
+  por Compose UI Testing: se simula llamando a `onFilesSelected()` directo
+  con la URI de una imagen real de prueba (mismo principio que
+  `ViewerScreenTest` resolviendo `documentId` sin `ContentResolver` real).
+  El resto del flujo (elegir tipo, tocar "Convertir", ver el resultado) sí
+  se conduce por la UI real.
+- **Hallazgo real al construir la prueba:** `onTypeSelected()` limpia
+  `selectedFiles` a propósito (coincide con el flujo real: primero se
+  elige el formato, después se abre el picker) — el test debe llamar
+  `onTypeSelected()` antes de `onFilesSelected()`, no al revés.
+- **Hallazgo de i18n (no corregido, backlog):** tanto `ConversionType.label`
+  (ej. `"Imagen → WebP"`) como el texto `"¡Conversión exitosa!"` en
+  `ConversionSuccess.kt` están en español fijo, sin pasar por
+  `stringResource()` — mismo patrón de bug que ya se corrigió en las 7
+  pantallas listadas en `CONTEXT.md` §2 "i18n", pero estos dos casos
+  quedaron fuera de esa limpieza porque están en un modelo de dominio y un
+  componente compartido, no en una pantalla completa. El test usa estos
+  literales porque reflejan el comportamiento real actual, no el deseado.
+- **Bug de entorno de prueba encontrado y corregido (no del código de la
+  app):** al correr la suite completa de `connectedDebugAndroidTest` (los
+  dos flujos juntos, no cada uno filtrado por separado), ambas pruebas de
+  Compose fallaban de forma intermitente con
+  `IllegalStateException: No compose hierarchies found in the app`. Causa:
+  las animaciones del dispositivo real (`window_animation_scale`,
+  `transition_animation_scale`, `animator_duration_scale`) estaban en
+  `1.0`; Google documenta esto como causa conocida de inestabilidad al
+  correr varias pruebas de Compose/Espresso seguidas en un dispositivo
+  físico. Corregido con `adb shell settings put global <escala> 0` en las
+  tres. Suite completa (4 pruebas) verificada en verde varias veces
+  seguidas tras el cambio.
+
+---
+
+## 8. Preguntas abiertas
 
 | Pregunta | Notas |
 |---|---|
