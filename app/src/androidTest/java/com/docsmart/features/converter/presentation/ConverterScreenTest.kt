@@ -106,7 +106,18 @@ class ConverterScreenTest {
             viewModel.onTypeSelected(ConversionType.IMAGE_TO_WEBP)
             viewModel.onFilesSelected(listOf(imageUri))
         }
-        composeRule.waitForIdle()
+        // waitForIdle() no alcanza acá -- corriendo en el emulador de CI
+        // (más lento/con render por software que el dispositivo real usado
+        // en desarrollo), la recomposición tras mutar el ViewModel desde
+        // runOnUiThread a veces todavía no había dibujado el botón cuando
+        // waitForIdle() retornaba, y el test fallaba con "Failed to inject
+        // touch input... could not find node". Se espera explícitamente a
+        // que el nodo exista antes de tocarlo, mismo patrón que ya se usa
+        // más abajo para "¡Conversión exitosa!".
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Convertir a WebP")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
 
         // "Imagen → WebP" (ConversionType.label) y "Convertir a WebP"
         // (converter_to_format) son los textos reales renderizados hoy --
