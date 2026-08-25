@@ -13,7 +13,9 @@ lista hasta el siguiente refresh). 4 hallazgos de la QA de mayo confirmados
 sesión, sin registro de cuándo. **RF-VIS-09 agregado 2026-08-25:** primera
 tabla Room del proyecto (`document_history`) — "Recientes" en Home ahora
 refleja cuándo se abrió realmente cada documento, no su fecha de
-modificación en disco. 15 tests nuevos (10 + 5 de esta pasada).
+modificación en disco. Incluye la **primera prueba de integración del
+proyecto** contra SQLite real (§8.1), que encontró un bug real en el uso de
+`@Upsert`. 21 tests nuevos (10 + 5 + 6 de esta pasada).
 **Código relacionado:** `features/viewer/**`, `features/library/**`,
 `features/home/**`, `core/data/FavoritesRepository.kt`, `core/data/db/**`
 (nuevo).
@@ -145,6 +147,7 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 | 1 | `SearchPdfTextUseCaseTest` — coincidencias en la página correcta, sin distinguir mayúsculas, varias páginas con coincidencia, sin coincidencias, query en blanco no toca el archivo. | ✅ 5 tests, en verde |
 | 2 | `DocumentRepositoryTest` — borra archivo de la app, archivo inexistente → false, borra vía `ContentResolver`, `ContentResolver` no pudo borrar → false, excepción de permisos → false (no propaga), borrado exitoso también limpia el historial, y 4 tests de `mergeHistoryWithDocuments` (orden por historial, ids obsoletos se descartan, fallback completa el resto, sin historial se comporta como antes). | ✅ 10 tests, en verde |
 | 3 | `LibraryViewModel`/`HomeViewModel`/`ViewerViewModel` — no cubiertos (ViewModels con `StateFlow` + Hilt, requieren fixture más elaborado); la lógica de negocio que antes vivía implícita en ellos (borrado real, id consistente, fusión de historial) ya quedó cubierta en el use case/repositorio subyacente. | Pendiente si se necesita cobertura de transiciones de estado. |
+| 4 | `DocumentHistoryDaoTest` (**primera prueba de integración del proyecto** — ver §8.1) — inserta, upsert no duplica y actualiza la fecha, orden descendente por fecha, respeta el límite, `remove` funciona y no falla con un id inexistente. Corre contra SQLite real (`BundledSQLiteDriver`), no un fake. | ✅ 6 tests, en verde |
 
 Todos los tests nuevos generan PDFs reales con iText7 o usan archivos
 temporales reales (`Files.createTempDirectory`), mismo patrón que
@@ -153,6 +156,7 @@ temporales reales (`Files.createTempDirectory`), mismo patrón que
 justamente para poder testearla con listas comunes sin mockear
 Room/MediaStore — un `DocumentHistoryDao` fake respaldado por un mapa cubre
 el resto (mismo patrón que `fakeSharedPreferences()` en `security.md`).
+El propio DAO sí se prueba contra SQLite real, no el fake — ver §8.1.
 
 ---
 
@@ -183,6 +187,34 @@ en `SharedPreferences`/DataStore (`CONTEXT.md` §2).
   son preferencias simples, DataStore/SharedPreferences sigue siendo lo
   correcto ahí; Room solo tiene sentido para datos relacionales/consultables
   como este historial.
+
+### 8.1 Primera prueba de integración del proyecto (2026-08-25)
+
+Todos los tests hasta ahora eran unitarios puros — lógica de negocio con
+fakes/mocks, sin tocar frameworks reales. `DocumentHistoryDaoTest` corre
+contra **SQLite real** vía `BundledSQLiteDriver` (`androidx.sqlite`), no un
+fake en memoria — verifica el DAO que Room genera de verdad: SQL real,
+orden real, conflictos de clave primaria reales.
+
+- Sin Robolectric ni emulador: recomendación oficial de Google para probar
+  Room en la JVM (su propia guía desaconseja explícitamente Robolectric para
+  esto), y consistente con la filosofía ya establecida en este proyecto de
+  evitar Robolectric/instrumentación cuando se puede probar la lógica real
+  de otra forma (ver `isBiometricAvailable()` en `security.md`).
+- Requiere sustituir la variante Android de `sqlite-bundled` por su
+  variante `-jvm` solo en el classpath de test (bloque `androidComponents`
+  en `app/build.gradle.kts`) — el artefacto Android no trae los binarios
+  nativos que necesita la JVM del test unitario.
+- **Hallazgo real durante esta prueba:** `DocumentHistoryDao.recordOpen()`
+  usaba `@Upsert` (Room genera internamente un insert, y si choca con la
+  clave primaria, un update en un segundo paso) — la excepción de conflicto
+  no se tradujo bien contra `BundledSQLiteDriver`, y quedó como
+  `android.database.SQLException` sin causa legible en vez de resolverse en
+  un update silencioso. Cambiado a `@Insert(onConflict = OnConflictStrategy.REPLACE)`
+  (`INSERT OR REPLACE`, una sola sentencia SQL) — equivalente para esta
+  entidad de 2 columnas, y sin ese problema. Sin esta prueba de integración
+  contra SQLite real, el DAO fake de `DocumentRepositoryTest` nunca habría
+  detectado este bug.
 
 ---
 

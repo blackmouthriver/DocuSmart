@@ -1,13 +1,20 @@
 package com.docsmart.core.data.db
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Upsert
 
 @Dao
 interface DocumentHistoryDao {
 
-    @Upsert
+    // INSERT OR REPLACE en vez de @Upsert: para esta entidad de 2 columnas
+    // es equivalente (reemplaza la fila completa por documentId), con SQL
+    // generado más simple. @Upsert (insert + catch conflicto + update en dos
+    // pasos) no tradujo bien la excepción de conflicto con
+    // BundledSQLiteDriver en las pruebas de integración — quedó como
+    // android.database.SQLException sin causa legible.
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun recordOpen(entry: DocumentHistoryEntry)
 
     // limit mayor al pedido por el llamador a propósito: algunos ids del

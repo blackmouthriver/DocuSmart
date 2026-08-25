@@ -1,3 +1,5 @@
+import com.android.build.api.variant.HasUnitTest
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -101,6 +103,23 @@ android {
     }
 }
 
+// Pruebas de integración de Room (DocumentHistoryDaoTest) usan
+// BundledSQLiteDriver para correr contra SQLite real en la JVM, sin
+// Robolectric ni un emulador (recomendación oficial de Google, que además
+// desaconseja Robolectric explícitamente para esto). El artefacto Android de
+// sqlite-bundled no trae los binarios nativos que necesita la JVM del test
+// unitario — se sustituye por su variante -jvm solo en el classpath de test.
+androidComponents {
+    onVariants { variant ->
+        (variant as? HasUnitTest)?.unitTest?.let { unitTest ->
+            unitTest.runtimeConfiguration.resolutionStrategy.dependencySubstitution {
+                substitute(module("androidx.sqlite:sqlite-bundled"))
+                    .using(module("androidx.sqlite:sqlite-bundled-jvm:${libs.versions.sqlite.get()}"))
+            }
+        }
+    }
+}
+
 detekt {
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
     baseline = file("$rootDir/config/detekt/baseline.xml")
@@ -180,6 +199,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    // Driver real de SQLite para pruebas de integración de Room en la JVM
+    // (ver sustitución de variante -jvm más arriba en androidComponents).
+    testImplementation(libs.androidx.sqlite.bundled)
 
     // ── iText7 ────────────────────────────────────────────────────────────────
     implementation("com.itextpdf:itext7-core:7.2.5") {

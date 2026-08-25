@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (Room: historial real de "Recientes" en Home)
+**Última actualización:** 2026-08-25 (primera prueba de integración: `DocumentHistoryDao` contra SQLite real)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -39,7 +39,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 86 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 15, Conversión: 9, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
+- **Tests:** 92 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 9, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 86 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** Room desde 2026-08-25, primera tabla (`document_history`,
   historial de documentos abiertos — ver §2 "Historial de documentos
   abiertos" y `docs/requirements/visor-biblioteca.md` §8). Favoritos/idioma/
@@ -406,6 +406,37 @@ como documentos separados.
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
 
+### Primera prueba de integración: Room contra SQLite real (2026-08-25)
+Todos los tests hasta ahora eran unitarios puros (lógica con fakes/mocks,
+sin frameworks reales). `DocumentHistoryDaoTest` corre contra **SQLite
+real** vía `BundledSQLiteDriver` (`androidx.sqlite`, no un fake) — verifica
+el DAO que Room genera de verdad, no solo la lógica que se le agregó
+encima.
+
+- Sin Robolectric ni emulador: es la recomendación oficial de Google para
+  probar Room en la JVM (su propia guía desaconseja Robolectric
+  explícitamente para esto) — consistente con la filosofía ya establecida
+  en este proyecto de evitar Robolectric/instrumentación cuando se puede
+  probar la lógica real de otra forma.
+- Requirió un bloque `androidComponents { onVariants { ... } }` en
+  `app/build.gradle.kts` para sustituir la variante Android de
+  `androidx.sqlite:sqlite-bundled` por su variante `-jvm` solo en el
+  classpath de test — el artefacto Android no trae los binarios nativos que
+  necesita la JVM del test unitario.
+- **Bug real encontrado por esta prueba, no por lectura de código:**
+  `DocumentHistoryDao.recordOpen()` usaba `@Upsert` — Room genera
+  internamente un insert y, si choca con la clave primaria, un update en un
+  segundo paso; esa excepción de conflicto no se tradujo bien contra
+  `BundledSQLiteDriver` y quedó como `android.database.SQLException` sin
+  causa legible en vez de resolverse en silencio. Cambiado a
+  `@Insert(onConflict = OnConflictStrategy.REPLACE)` — una sola sentencia
+  SQL, equivalente para esta entidad de 2 columnas. El DAO fake usado en
+  `DocumentRepositoryTest` nunca podría haber encontrado este bug porque no
+  ejecuta SQL real — exactamente la razón de ser de una prueba de
+  integración. Detalle completo en
+  [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) §8.1.
+- 6 tests nuevos.
+
 ### Room: historial real de "Recientes" en Home — RF-VIS-09 (2026-08-25)
 Primera tabla Room del proyecto. Antes "Recientes" en Home era literalmente
 `loadAllDocuments().take(5)` — un documento abierto hoy pero sin modificar
@@ -517,8 +548,11 @@ Fase 2 (Dependabot + Gitleaks) ✅ completada 2026-08-24, rama
 `feature/dependabot-gitleaks`. Fase 3 (SonarCloud + cobertura) ✅ completada
 2026-08-24, rama `feature/sonarcloud-coverage` — ver detalle abajo. Room
 para biblioteca/historial ✅ completado 2026-08-25 (alcance: historial de
-"Recientes" en Home — ver más abajo). Siguen: pruebas de integración/
-sistema, Compose UI Testing en flujos críticos, despliegue y publicación.
+"Recientes" en Home — ver más abajo). Pruebas de integración ✅ iniciadas
+2026-08-25 (`DocumentHistoryDaoTest` contra SQLite real — ver más abajo);
+queda por definir si se necesita más cobertura de integración además de
+Room, o pasar directo a pruebas de sistema. Siguen: Compose UI Testing en
+flujos críticos, despliegue y publicación.
 
 ### SonarCloud + cobertura JaCoCo (2026-08-24)
 El usuario creó la cuenta SonarCloud y conectó el repo (`blackmouthriver` /

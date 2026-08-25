@@ -15,6 +15,7 @@ coil = "2.7.0"
 foundation = "1.11.0"
 compiler = "3.2.0-alpha11"
 room = "2.8.4"
+sqlite = "2.7.0"
 detekt = "1.23.7"
 sonarqube = "7.4.0.8496"
 
@@ -43,6 +44,7 @@ androidx-compiler = { group = "androidx.databinding", name = "compiler", version
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-sqlite-bundled = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
