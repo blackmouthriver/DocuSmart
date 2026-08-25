@@ -11,6 +11,8 @@ import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class SecureMoveResult(val success: Boolean, val originalDeleted: Boolean)
+
 @Singleton
 class SecurityManager @Inject constructor(
     @ApplicationContext private val context: Context
@@ -78,16 +80,25 @@ class SecurityManager @Inject constructor(
             ?: emptyList()
     }
 
-    fun moveToSecure(file: File): Boolean {
+    // RNF-SEC-01: File.delete() puede fallar sin lanzar excepción (devuelve
+    // false) — antes se ignoraba el resultado y siempre se reportaba éxito,
+    // aunque el original hubiera quedado accesible en su ubicación. Ahora se
+    // propaga para que el llamador pueda avisar en vez de fallar en silencio,
+    // igual que ya hacía importFileToSecure() para Uris de SAF.
+    fun moveToSecure(file: File): SecureMoveResult {
         return try {
             val dest = File(secureFolder, file.name)
             file.copyTo(dest, overwrite = true)
-            file.delete()
-            Timber.d("SecurityManager: archivo movido a carpeta segura: ${file.name}")
-            true
+            val originalDeleted = file.delete()
+            if (originalDeleted) {
+                Timber.d("SecurityManager: archivo movido a carpeta segura: ${file.name}")
+            } else {
+                Timber.w("SecurityManager: archivo copiado pero no se pudo eliminar el original: ${file.name}")
+            }
+            SecureMoveResult(success = true, originalDeleted = originalDeleted)
         } catch (e: Exception) {
             Timber.e(e, "Error moviendo archivo a carpeta segura")
-            false
+            SecureMoveResult(success = false, originalDeleted = false)
         }
     }
 

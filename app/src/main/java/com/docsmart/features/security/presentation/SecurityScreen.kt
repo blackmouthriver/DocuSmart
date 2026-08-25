@@ -128,7 +128,11 @@ fun SecurityScreen(
                                 fileProtectedSuccess, fileProtectError, fileProtectedOriginalKept
                             )
                         },
-                        onImportLocalFile = { file -> viewModel.importLocalFile(file, fileProtectedSuccess, fileProtectError) }
+                        onImportLocalFile = { file ->
+                            viewModel.importLocalFile(
+                                file, fileProtectedSuccess, fileProtectError, fileProtectedOriginalKept
+                            )
+                        }
                     )
                 }
             }

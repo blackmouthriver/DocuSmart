@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-24 (limpieza de lint + bug de i18n en barra inferior)
+**Última actualización:** 2026-08-24 (limpieza de lint + bug de i18n en barra inferior + endurecimiento de carpeta segura)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -39,7 +39,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Dependabot y escaneo de secretos con Gitleaks.
 - **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
   fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
-- **Tests:** 77 tests reales (Seguridad: 23, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa en `main` ya fusionado. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
+- **Tests:** 78 tests reales (Seguridad: 24, Herramientas PDF: 8, Visor+Biblioteca: 10, Conversión: 9, Escáner: 10, Ajustes+Premium: 11, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa en `main` ya fusionado. Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** no hay — todo en SharedPreferences/DataStore.
   Biblioteca/historial no están indexados de forma estructurada.
 - **Arquitectura:** Clean Architecture por feature (`domain`/`presentation`),
@@ -213,7 +213,7 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | 7 | Accesos rápidos | **Obsoleto el hallazgo de "aislados"** — confirmado que ya navegan a rutas reales (scanner/seguridad/estudio) |
 | 8 | Acceso directo a abrir/convertir | Implementado (banner Home) — botón "Abrir" confirmado funcional (obsoleto el hallazgo de que no hacía nada) |
 | 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien (delega captura a Google ML Kit); leer QR con URL/navegación y QR con contraseña ya estaban implementados (hallazgo obsoleto). Refinado con HU en [`docs/requirements/scanner.md`](docs/requirements/scanner.md) |
-| 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); **carpeta segura no bloquea realmente el acceso al archivo por su ruta original** (bug crítico confirmado) |
+| 10 | Seguridad: contraseña para PDF y QR, carpeta segura con PIN/huella | Contraseña PDF implementada hoy (i18n); carpeta segura **corregida y endurecida** — copia y elimina el original al proteger, y avisa explícitamente si el borrado no fue posible en vez de reportar éxito falso (RNF-SEC-01, corregido 2026-08-24) |
 | 11 | Modo estudio: lectura (con voz), notas (texto y voz), Pomodoro | Implementado y ya i18n; lista de notas guardadas existe, pero tenía 2 bugs reales de persistencia (corrupción de comillas, orden invertido) corregidos hoy. Refinado con HU en [`docs/requirements/study.md`](docs/requirements/study.md) |
 | 12 | Ajustes: idioma, tema, almacenamiento, privacidad, tutorial, ayuda, compartir, calificar, restablecer, acerca de, premium | Implementado y refinado con HU — "restablecer" forzaba español sin importar el dispositivo, corregido. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) |
 | 13 | Multilenguaje con default según ubicación geográfica de Play Store | **Pendiente** — hoy el idioma por defecto es fijo (español), falta detectar locale del dispositivo/tienda |
@@ -280,7 +280,7 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 ### Seguridad
 - Banner con botón "volver" mal ubicado (reduce tamaño del banner) — sugerido: breadcrumb.
 - Falta logo corporativo en el banner.
-- **Bug crítico:** un archivo "protegido" sigue siendo accesible directamente desde su ruta original — la protección no bloquea el acceso real.
+- ~~**Bug crítico:** un archivo "protegido" sigue siendo accesible directamente desde su ruta original.~~ **Corregido** (causa raíz: `moveToSecure()` no se llamaba desde el ViewModel) **y endurecido 2026-08-24** — `moveToSecure()` ahora también propaga si el borrado del original realmente ocurrió (antes reportaba éxito aunque `File.delete()` fallara), y la UI avisa en ese caso en vez de mentir. Ver [`docs/requirements/security.md`](docs/requirements/security.md).
 - Selector de archivo a proteger no ofrece elegir desde la biblioteca de la app, solo desde el dispositivo.
 - Falta opción explícita de encriptar/quitar contraseña de archivo individual.
 
@@ -402,6 +402,25 @@ como documentos separados.
 | V2.0 | Resumen en voz TTS | Baja |
 | V2.0 | Agenda inteligente (detección de fechas) | Baja |
 | V2.0 | Mapas conceptuales | Baja |
+
+### Endurecimiento de Carpeta Segura (2026-08-24)
+Al retomar "la carpeta segura no bloquea el archivo" se confirmó que el bug
+original **ya estaba corregido** (`moveToSecure()` ya se llamaba desde
+`SecurityViewModel`) — pero §3 y §5 de este mismo documento seguían
+listándolo como abierto, contradiciendo la sección de auditoría de más
+arriba (desincronización entre secciones, ya corregida). Al leer el código
+para confirmar el estado real se encontró un hueco genuino, ya anticipado
+por el propio RNF-SEC-01/AC2 de [`security.md`](docs/requirements/security.md)
+pero no implementado del todo: `SecurityManager.moveToSecure()` llamaba a
+`File.delete()` sin comprobar su resultado, y siempre devolvía éxito aunque
+el borrado hubiera fallado silenciosamente (`File.delete()` no lanza
+excepción al fallar, solo devuelve `false`) — el original podía quedar
+accesible en su ubicación sin que el usuario se enterara. La vía de
+importación por `Uri`/SAF (`importFileToSecure`) ya manejaba esto
+correctamente; ahora `importLocalFile()` sigue el mismo patrón. 1 test nuevo
+(`SecurityManagerTest`, caso "no existe el original" — no se agregó un caso
+de "el borrado falla tras copiar bien" a nivel de filesystem real porque
+forzarlo de forma confiable difiere entre Windows y Linux/CI).
 
 ### Limpieza de lint + i18n de la barra inferior (2026-08-24, rama `feature/lint-cleanup`)
 Verificado con corrida limpia (`--rerun-tasks`) tras toda la sesión anterior:

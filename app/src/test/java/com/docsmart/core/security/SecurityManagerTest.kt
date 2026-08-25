@@ -96,13 +96,28 @@ class SecurityManagerTest {
     fun `moveToSecure copia el archivo a la carpeta segura y elimina el original`() {
         val original = File(filesDir, "documento.pdf").apply { writeText("contenido de prueba") }
 
-        val moved = securityManager.moveToSecure(original)
+        val result = securityManager.moveToSecure(original)
 
-        assertTrue(moved)
+        assertTrue(result.success)
+        assertTrue(result.originalDeleted, "RNF-SEC-01: debe reportar si el original se pudo eliminar")
         assertFalse(original.exists(), "el archivo original debe eliminarse tras protegerlo")
         val secureFile = File(securityManager.secureFolder, "documento.pdf")
         assertTrue(secureFile.exists())
         assertEquals("contenido de prueba", secureFile.readText())
+    }
+
+    @Test
+    fun `moveToSecure falla limpiamente si el archivo original no existe`() {
+        // No se puede forzar de forma confiable y multiplataforma que
+        // File#delete() falle tras una copia exitosa (el comportamiento de
+        // permisos difiere entre Windows y Linux/CI) — este test cubre la
+        // otra vía real de fallo: el archivo desaparece antes de copiarlo.
+        val inexistente = File(filesDir, "no_existe.pdf")
+
+        val result = securityManager.moveToSecure(inexistente)
+
+        assertFalse(result.success)
+        assertFalse(result.originalDeleted)
     }
 
     @Test

@@ -4,8 +4,12 @@
 > biometría), Contraseña de PDF, y QR protegido con contraseña.
 > Decisiones de producto confirmadas con el usuario el 2026-08-24.
 
-**Estado:** bug crítico de borrado de original corregido; QR migrado a AES-256/GCM
-con flujo de lectura construido; 23 tests unitarios reales (SecurityManager,
+**Estado:** bug crítico de borrado de original corregido, y endurecido el
+2026-08-24 (RNF-SEC-01): `moveToSecure()` ignoraba el resultado real de
+`File.delete()` y siempre reportaba éxito aunque el original hubiera quedado
+en su ubicación — ahora propaga el resultado y la UI avisa igual que ya
+hacía la vía de importación por `Uri`/SAF. QR migrado a AES-256/GCM con flujo
+de lectura construido; 24 tests unitarios reales (SecurityManager,
 PdfPasswordUseCase, QrCrypto), todos en verde. Pendiente: auto-bloqueo
 (RF-SEC-08), restablecer PIN con borrado (RF-SEC-09), tests de ViewModels.
 **Código relacionado:** `features/security/**`, `features/scanner/presentation/QrScreen.kt`,
@@ -165,7 +169,7 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 
 | Bug (barrido de pruebas / mejoras pendientes v1.0.1) | HU que lo cubre | Estado |
 |---|---|---|
-| Archivo "protegido" sigue accesible desde su ruta original — **causa raíz confirmada:** `SecurityManager.moveToSecure(file)` ya copiaba y borraba el original correctamente, pero `SecurityViewModel.importLocalFile()`/`importFileToSecure()` no lo usaban. | HU-SEC-04 | ✅ Corregido — `importLocalFile()` ahora usa `moveToSecure()`; `importFileToSecure()` copia el `Uri` y llama a `DocumentsContract.deleteDocument()`, con aviso si el proveedor no permite borrar (RNF-SEC-01). Picker cambiado de `GetContent()` a `OpenDocument()` para soportar el borrado. |
+| Archivo "protegido" sigue accesible desde su ruta original — **causa raíz confirmada:** `SecurityManager.moveToSecure(file)` ya copiaba y borraba el original correctamente, pero `SecurityViewModel.importLocalFile()`/`importFileToSecure()` no lo usaban. | HU-SEC-04 | ✅ Corregido — `importLocalFile()` ahora usa `moveToSecure()`; `importFileToSecure()` copia el `Uri` y llama a `DocumentsContract.deleteDocument()`, con aviso si el proveedor no permite borrar (RNF-SEC-01). Picker cambiado de `GetContent()` a `OpenDocument()` para soportar el borrado. **Endurecido 2026-08-24:** `moveToSecure()` ignoraba el resultado de `File.delete()` (podía devolver éxito con el original todavía en su ubicación) — ahora `importLocalFile()` también avisa con `fileProtectedOriginalKept` si el borrado falla, igual que la vía por `Uri`. |
 | Selector de archivo a proteger no ofrece elegir desde la biblioteca de la app | HU-SEC-04 (AC3) | Ya existía (`onImportLocalFile`) |
 | Banner de Seguridad con el botón "volver" mal ubicado, reduce el tamaño del banner | Fuera de alcance de este doc — ticket de UI aparte | Pendiente |
 | Falta logo corporativo en el banner de Seguridad | Ticket de UI aparte (estandarización de banners, ya anotado en CONTEXT.md §5) | Pendiente |
@@ -178,12 +182,12 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 | # | Cobertura | Estado |
 |---|---|---|
 | 1 | `PdfPasswordUseCaseTest` — proteger exitoso, archivo no legible, archivo vacío, quitar contraseña exitoso, contraseña incorrecta → `WrongPassword`. Usa PDFs reales generados con iText7 en memoria, no mocks del cifrado. | ✅ 5 tests, en verde |
-| 2 | `SecurityManagerTest` — PIN (`setPin`/`verifyPin`/`hasPin`/`clearPin`), biometría (preferencia), `moveToSecure` (copia + borra original), `moveFromSecure`, `deleteSecureFile`, `getSecureFiles` (orden), `getSecureFolderSize`. `isBiometricAvailable()` queda fuera (requiere Robolectric/instrumentación por `PackageManager`). | ✅ 12 tests, en verde |
+| 2 | `SecurityManagerTest` — PIN (`setPin`/`verifyPin`/`hasPin`/`clearPin`), biometría (preferencia), `moveToSecure` (copia + borra original, y fallo limpio si el original no existe), `moveFromSecure`, `deleteSecureFile`, `getSecureFiles` (orden), `getSecureFolderSize`. `isBiometricAvailable()` queda fuera (requiere Robolectric/instrumentación por `PackageManager`). No se agregó un test de "copia OK pero borrado falla" a nivel de filesystem real: forzarlo de forma confiable difiere entre Windows (dev) y Linux (CI) — la lógica de honestidad del resultado sí queda cubierta por el test de "no existe". | ✅ 13 tests, en verde |
 | 3 | `QrCryptoTest` — round-trip cifrado/descifrado, contraseña incorrecta → `null`, datos corruptos → `null` (no excepción), no-determinismo del cifrado (salt/IV), texto largo/Unicode. | ✅ 6 tests, en verde |
 | 4 | `SecurityViewModelTest` — transiciones de `SecurityScreenState`, manejo de `error`/`successMessage`, auto-bloqueo simulando `ON_STOP` (una vez implementado RF-SEC-08). | Pendiente |
 
 Herramientas: JUnit5 + MockK + Turbine, configurado en `app/build.gradle.kts`
-(`testOptions.unitTests.all { useJUnitPlatform() }`). 23 tests nuevos + 1 de
+(`testOptions.unitTests.all { useJUnitPlatform() }`). 24 tests nuevos + 1 de
 ejemplo, 0 fallos.
 
 ---

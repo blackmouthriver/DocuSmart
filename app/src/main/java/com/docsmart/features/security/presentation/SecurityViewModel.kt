@@ -145,18 +145,22 @@ class SecurityViewModel @Inject constructor(
     }
 
     // RF-SEC-05: proteger un archivo debe copiarlo a la carpeta segura Y eliminar
-    // el original de su ubicación — moveToSecure() ya hace ambas cosas.
-    fun importLocalFile(file: File, successMessage: String, errorMessage: String) {
+    // el original de su ubicación — moveToSecure() ya hace ambas cosas. RNF-SEC-01:
+    // si el original no se pudo eliminar, se avisa en vez de reportar éxito pleno
+    // (mismo patrón que importFileToSecure() para Uris de SAF).
+    fun importLocalFile(
+        file: File, successMessage: String, errorMessage: String, originalKeptMessage: String
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
-            val moved = securityManager.moveToSecure(file)
-            if (moved) {
+            val result = securityManager.moveToSecure(file)
+            if (result.success) {
                 val secureFiles = securityManager.getSecureFiles()
                 val appFiles    = loadAppFiles()
                 _uiState.update {
                     it.copy(
                         secureFiles    = secureFiles,
                         appFiles       = appFiles,
-                        successMessage = successMessage
+                        successMessage = if (result.originalDeleted) successMessage else originalKeptMessage
                     )
                 }
             } else {
