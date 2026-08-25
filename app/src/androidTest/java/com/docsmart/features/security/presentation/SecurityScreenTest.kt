@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
@@ -82,14 +83,25 @@ class SecurityScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("1").performClick()
-        composeRule.onNodeWithText("2").performClick()
-        composeRule.onNodeWithText("3").performClick()
-        composeRule.onNodeWithText("4").performClick()
         composeRule.waitForIdle()
+        composeRule.onNodeWithText("2").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("3").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("4").performClick()
 
         // "Carpeta Segura" (security_secure_folder) solo se muestra en
-        // SecurityScreenState.UNLOCKED -- confirma que el PIN correcto
-        // desbloqueó de verdad, no solo que no crasheó.
+        // SecurityScreenState.UNLOCKED, tras unlockAndLoadFiles() -- que
+        // corre en Dispatchers.IO, no en el hilo de Compose.
+        // waitForIdle() no espera esa corrutina; en el emulador de CI
+        // (más lento que el dispositivo real usado en desarrollo) la
+        // aserción llegaba antes de que terminara, y fallaba con "is not
+        // displayed" en vez de fallar por un PIN mal verificado. Se espera
+        // explícitamente a que el texto exista.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Carpeta Segura")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Carpeta Segura").assertIsDisplayed()
     }
 
@@ -106,11 +118,17 @@ class SecurityScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("9").performClick()
-        composeRule.onNodeWithText("9").performClick()
-        composeRule.onNodeWithText("9").performClick()
+        composeRule.waitForIdle()
         composeRule.onNodeWithText("9").performClick()
         composeRule.waitForIdle()
+        composeRule.onNodeWithText("9").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("9").performClick()
 
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("PIN incorrecto")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("PIN incorrecto").assertIsDisplayed()
     }
 

@@ -170,7 +170,26 @@ ya se justifica.
   con el emulador ya activo, encuentra casi todo up-to-date y solo
   necesita instalar los APKs y correr la instrumentación, mucho más
   liviano en CPU.
-- Cuarto intento en verificación tras los tres fixes (ver §2 de
+- **Cuarto intento real llegó hasta correr las 6 pruebas y 3 fallaron —
+  esta vez sí, un bug real de los tests, no del entorno de CI.**
+  `ConverterScreenTest.convertirImagenAWebp_muestraResultadoExitoso` y las
+  dos de `SecurityScreenTest` fallaban con "could not find node"/"is not
+  displayed" justo en la aserción final. Causa: ambos tests usaban
+  `waitForIdle()` antes de tocar/afirmar sobre un nodo, en vez del patrón
+  `waitUntil` con polling que el propio `ConverterScreenTest` ya usaba
+  correctamente más abajo para "¡Conversión exitosa!" — `waitForIdle()`
+  sincroniza el frame de Compose, no corrutinas en `Dispatchers.IO`
+  (`unlockAndLoadFiles()` en `SecurityViewModel`) ni garantiza que la
+  recomposición tras mutar el ViewModel desde `runOnUiThread` ya se haya
+  dibujado. En el dispositivo real (más rápido, con GPU real en vez de
+  `swiftshader` por software) esa carrera casi siempre se ganaba; en el
+  emulador de CI, no. Corregido reemplazando esos `waitForIdle()` por
+  `waitUntil` con polling explícito sobre el nodo esperado, y agregando un
+  `waitForIdle()` entre cada toque individual del teclado numérico en
+  `SecurityScreenTest` como red de seguridad adicional. Verificado en
+  verde en el dispositivo real (`connectedDebugAndroidTest` + suite JVM
+  completa) antes de reintentar en CI.
+- Quinto intento en verificación tras los cuatro fixes (ver §2 de
   `CONTEXT.md` para el resultado final una vez confirmado).
 
 ---
