@@ -103,90 +103,89 @@ class ViewerViewModel @Inject constructor(
             // favoritos/alias (FavoritesRepository) — para rutas absolutas debe
             // quedar SIN el prefijo "file://", si no los favoritos/alias
             // marcados desde el Visor no coinciden con los de Biblioteca/Home.
-            val uriString = when {
-                documentId.startsWith("content%3A") -> Uri.decode(documentId)
-                else                                -> documentId
-            }
-
-            val uri = if (documentId.startsWith("/")) {
-                Uri.fromFile(File(documentId))
-            } else {
-                Uri.parse(uriString)
-            }
-
-            val rawName  = resolveFileName(uriString, context)
-            val fileName = favoritesRepository.getAlias(uriString) ?: rawName
-
-            val mimeType: String = run {
-                val fromResolver  = try {
-                    context.contentResolver.getType(uri)
-                } catch (e: Exception) { null }
-                val fromExtension = resolveMimeTypeByExtension(fileName)
-                    ?: resolveMimeType(uriString)
-                when {
-                    fromResolver == null                        -> fromExtension ?: "application/octet-stream"
-                    fromResolver == "application/octet-stream" -> fromExtension ?: fromResolver
-                    fromResolver.contains("*")                 -> fromExtension ?: fromResolver
-                    else                                       -> fromResolver
-                }
-            }
+            val uriString = resolveUriString(documentId)
+            val uri        = resolveUri(documentId, uriString)
+            val rawName    = resolveFileName(uriString, context)
+            val fileName   = favoritesRepository.getAlias(uriString) ?: rawName
+            val mimeType   = resolveDisplayMimeType(uri, fileName, uriString, context)
 
             Timber.d("$TAG: uri=$uri mimeType=$mimeType fileName=$fileName")
 
-            val isPdf = mimeType.contains("pdf") ||
-                    fileName.endsWith(".pdf", ignoreCase = true)
-
-            if (isPdf) {
-                val isProtected = isPdfPasswordProtected(uri, context, documentId)
-                Timber.d("$TAG: isPdf=$isPdf isProtected=$isProtected")
-
-                if (isProtected) {
-                    val isFavorite = favoritesRepository.isFavorite(uriString)
-                    val document   = DocumentUiModel(
-                        id         = uriString,
-                        name       = fileName,
-                        type       = DocumentType.PDF,
-                        size       = "",
-                        date       = "",
-                        isFavorite = isFavorite
-                    )
-                    _uiState.update { state ->
-                        state.copy(
-                            document         = document,
-                            fileUri          = uri,
-                            mimeType         = mimeType,
-                            isFavorite       = isFavorite,
-                            isLoading        = false,
-                            requiresPassword = true,
-                            error            = null
-                        )
-                    }
-                    return@withContext
-                }
+            val isPdf = mimeType.contains("pdf") || fileName.endsWith(".pdf", ignoreCase = true)
+            if (isPdf && isPdfPasswordProtected(uri, context, documentId)) {
+                Timber.d("$TAG: isPdf=$isPdf isProtected=true")
+                publishPasswordProtectedPdf(uriString, uri, mimeType, fileName)
+                return@withContext
             }
 
-            val documentType = detectDocumentType(mimeType)
-            val isFavorite   = favoritesRepository.isFavorite(uriString)
+            publishLoadedDocument(uriString, uri, mimeType, fileName)
+        }
+    }
 
-            val document = DocumentUiModel(
-                id         = uriString,
-                name       = fileName,
-                type       = documentType,
-                size       = "",
-                date       = "",
-                isFavorite = isFavorite
+    private fun resolveUriString(documentId: String) = when {
+        documentId.startsWith("content%3A") -> Uri.decode(documentId)
+        else                                -> documentId
+    }
+
+    private fun resolveUri(documentId: String, uriString: String) =
+        if (documentId.startsWith("/")) Uri.fromFile(File(documentId)) else Uri.parse(uriString)
+
+    private fun resolveDisplayMimeType(uri: Uri, fileName: String, uriString: String, context: Context): String {
+        val fromResolver = try {
+            context.contentResolver.getType(uri)
+        } catch (e: Exception) { null }
+        val fromExtension = resolveMimeTypeByExtension(fileName) ?: resolveMimeType(uriString)
+        return when {
+            fromResolver == null                        -> fromExtension ?: "application/octet-stream"
+            fromResolver == "application/octet-stream" -> fromExtension ?: fromResolver
+            fromResolver.contains("*")                 -> fromExtension ?: fromResolver
+            else                                       -> fromResolver
+        }
+    }
+
+    private fun publishPasswordProtectedPdf(uriString: String, uri: Uri, mimeType: String, fileName: String) {
+        val isFavorite = favoritesRepository.isFavorite(uriString)
+        val document   = DocumentUiModel(
+            id         = uriString,
+            name       = fileName,
+            type       = DocumentType.PDF,
+            size       = "",
+            date       = "",
+            isFavorite = isFavorite
+        )
+        _uiState.update { state ->
+            state.copy(
+                document         = document,
+                fileUri          = uri,
+                mimeType         = mimeType,
+                isFavorite       = isFavorite,
+                isLoading        = false,
+                requiresPassword = true,
+                error            = null
             )
+        }
+    }
 
-            _uiState.update { state ->
-                state.copy(
-                    document   = document,
-                    fileUri    = uri,
-                    mimeType   = mimeType,
-                    isFavorite = isFavorite,
-                    isLoading  = false,
-                    error      = null
-                )
-            }
+    private fun publishLoadedDocument(uriString: String, uri: Uri, mimeType: String, fileName: String) {
+        val documentType = detectDocumentType(mimeType)
+        val isFavorite   = favoritesRepository.isFavorite(uriString)
+        val document = DocumentUiModel(
+            id         = uriString,
+            name       = fileName,
+            type       = documentType,
+            size       = "",
+            date       = "",
+            isFavorite = isFavorite
+        )
+        _uiState.update { state ->
+            state.copy(
+                document   = document,
+                fileUri    = uri,
+                mimeType   = mimeType,
+                isFavorite = isFavorite,
+                isLoading  = false,
+                error      = null
+            )
         }
     }
 

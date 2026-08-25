@@ -453,7 +453,12 @@ vulnerabilidad, 42 code smells, 0 security hotspots.
   `CompressPdfUseCase`, `WordToHtmlUseCase`, `PdfPasswordUseCase` (además
   eliminó duplicación real entre `protect()`/`removePassword()`),
   `DocuSmartNavGraph`, `DocuSmartDocumentItem`, `OnboardingScreen`,
-  `MergePdfScreen`, `ViewerViewModel.loadDocument`, `ViewerScreen`
+  `MergePdfScreen`, `ViewerViewModel` (`loadDocument` y, en una segunda
+  pasada tras verificar contra el dashboard real de SonarCloud,
+  `loadFromUri` — el hallazgo original apuntaba a esta última, no a
+  `loadDocument`; el número de línea del reporte cayó dentro del cuerpo de
+  `loadDocument` por coincidencia visual, lección para no asumir la función
+  solo por la línea sin confirmar con la firma exacta), `ViewerScreen`
   (`TextViewerContent`, `PdfPasswordDialog`, `PdfViewerContent`),
   `SecurityScreen.NumericKeypad` y `StudyScreen` (`ParagraphItem`,
   `PomodoroTab`). Al descomponer `ViewerScreen.kt` en más sub-composables
@@ -469,8 +474,11 @@ vulnerabilidad, 42 code smells, 0 security hotspots.
   abordar en una sesión dedicada, idealmente después de agregar Compose UI
   Testing en los flujos críticos.
 
-Verificado: `assembleDebug` + `lintDebug` + `detekt` + `testDebugUnitTest`
-(77 tests, 0 fallos) en verde.
+Verificado en dos rondas: `assembleDebug` + `lintDebug` + `detekt` +
+`testDebugUnitTest` (77 tests, 0 fallos) en verde, y confirmado contra el
+dashboard real de SonarCloud tras cada push — la primera ronda bajó de 43
+a 24 hallazgos abiertos (23 code smells de complejidad + 0 vulnerabilidades
++ 0 duplicados), la segunda corrigió el `loadFromUri` que se había pasado.
 
 ### Dependabot + Gitleaks (2026-08-24)
 `.github/dependabot.yml` — actualizaciones semanales de dependencias Gradle
