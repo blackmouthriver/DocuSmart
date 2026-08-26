@@ -4,6 +4,11 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -11,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.security.SecurityManager
+import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.features.security.domain.PdfPasswordUseCase
 import io.mockk.Runs
 import io.mockk.every
@@ -78,7 +84,27 @@ class SecurityScreenTest {
         composeRule.runOnUiThread { viewModel.goToLocked() }
 
         composeRule.setContent {
-            SecurityScreen(viewModel = viewModel)
+            // Fuerza español -- "Carpeta Segura"/"PIN incorrecto" vienen de
+            // stringResource(), y el emulador de CI arranca en inglés por
+            // defecto (ver com.docsmart.core.ui.test.forceLocale).
+            val baseContext = LocalContext.current
+            val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
+            // LocalContext ya no encadena de vuelta a la Activity real
+            // (createConfigurationContext() no es un ContextWrapper) --
+            // SecureFolderContent usa rememberLauncherForActivityResult()
+            // para el picker de archivos (visible tras desbloquear), que se
+            // resuelve vía LocalActivityResultRegistryOwner/
+            // LocalOnBackPressedDispatcherOwner, no encadenando desde
+            // LocalContext. Sin re-proveerlos apuntando a la Activity real,
+            // se rompe con "No ActivityResultRegistryOwner was provided" al
+            // componer la pantalla ya desbloqueada.
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+            ) {
+                SecurityScreen(viewModel = viewModel)
+            }
         }
         composeRule.waitForIdle()
 
@@ -113,7 +139,27 @@ class SecurityScreenTest {
         composeRule.runOnUiThread { viewModel.goToLocked() }
 
         composeRule.setContent {
-            SecurityScreen(viewModel = viewModel)
+            // Fuerza español -- "Carpeta Segura"/"PIN incorrecto" vienen de
+            // stringResource(), y el emulador de CI arranca en inglés por
+            // defecto (ver com.docsmart.core.ui.test.forceLocale).
+            val baseContext = LocalContext.current
+            val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
+            // LocalContext ya no encadena de vuelta a la Activity real
+            // (createConfigurationContext() no es un ContextWrapper) --
+            // SecureFolderContent usa rememberLauncherForActivityResult()
+            // para el picker de archivos (visible tras desbloquear), que se
+            // resuelve vía LocalActivityResultRegistryOwner/
+            // LocalOnBackPressedDispatcherOwner, no encadenando desde
+            // LocalContext. Sin re-proveerlos apuntando a la Activity real,
+            // se rompe con "No ActivityResultRegistryOwner was provided" al
+            // componer la pantalla ya desbloqueada.
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+            ) {
+                SecurityScreen(viewModel = viewModel)
+            }
         }
         composeRule.waitForIdle()
 
