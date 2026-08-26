@@ -98,7 +98,7 @@ class SecurityScreenTest {
         // aserción llegaba antes de que terminara, y fallaba con "is not
         // displayed" en vez de fallar por un PIN mal verificado. Se espera
         // explícitamente a que el texto exista.
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 20_000) {
             composeRule.onAllNodesWithText("Carpeta Segura")
                 .fetchSemanticsNodes().isNotEmpty()
         }
@@ -125,7 +125,7 @@ class SecurityScreenTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("9").performClick()
 
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 20_000) {
             composeRule.onAllNodesWithText("PIN incorrecto")
                 .fetchSemanticsNodes().isNotEmpty()
         }

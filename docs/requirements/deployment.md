@@ -189,7 +189,15 @@ ya se justifica.
   `SecurityScreenTest` como red de seguridad adicional. Verificado en
   verde en el dispositivo real (`connectedDebugAndroidTest` + suite JVM
   completa) antes de reintentar en CI.
-- Quinto intento en verificación tras los cuatro fixes (ver §2 de
+- **Quinto intento real: el `waitUntil` ya no fallaba al instante, pero se
+  agotaba a los 10s** con `ComposeTimeoutException: Condition still not
+  satisfied after 10000 ms` en los mismos 3 tests — confirma que el fix
+  anterior (carrera corregida) era correcto, pero 10s de margen no
+  alcanzan en el emulador de CI (`swiftshader` por software, 2 vCPU).
+  Corregido subiendo esos `timeoutMillis` de 10 000 a 20 000 en los 3
+  `waitUntil` de `ConverterScreenTest`/`SecurityScreenTest`. Verificado de
+  nuevo en verde en el dispositivo real antes de reintentar.
+- Sexto intento en verificación tras los cinco fixes (ver §2 de
   `CONTEXT.md` para el resultado final una vez confirmado).
 
 ---
