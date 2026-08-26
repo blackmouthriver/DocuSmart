@@ -224,13 +224,9 @@ corregidos.
 - Paridad de claves verificada tras el cambio: las 5 versiones de
   `strings.xml` (es/en/de/pt/ru) siguen teniendo exactamente el mismo
   conjunto de nombres de recurso.
-- **Sin verificar en el dispositivo real** — el cable USB se desconectó a
-  mitad de sesión y no volvió a reconectar; verificado solo con
-  `testDebugUnitTest`/`detekt`/`lintDebug`/`compileDebugAndroidTestKotlin`
-  en verde (compila limpio, incluyendo el source set `androidTest`).
-  Pendiente correr `connectedDebugAndroidTest` en el dispositivo real (o
-  esperar al próximo push a `main`, que ya lo corre en CI) antes de dar
-  esto por completamente cerrado.
+- Verificado en verde: `testDebugUnitTest`/`detekt`/`lintDebug` y
+  `connectedDebugAndroidTest` (6 pruebas) en el dispositivo real, una vez
+  reconectado el cable USB.
 
 ---
 

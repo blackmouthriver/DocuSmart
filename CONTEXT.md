@@ -143,9 +143,8 @@ más grave que el de i18n: `ConversionSuccess` es el componente de éxito de
 las 17 conversiones, pero el ícono/MIME type/texto de botones asumían
 siempre PDF o imagen — mostrando datos equivocados para las ~12
 conversiones que no producen ninguno de los dos (Excel→CSV, Word→HTML,
-etc.). Sin verificar aún en el dispositivo real (cable USB desconectado a
-mitad de sesión); sí verificado con `testDebugUnitTest`/`detekt`/
-`lintDebug`/compilación del source set `androidTest`. Detalle en
+etc.). Verificado en verde: `testDebugUnitTest`/`detekt`/`lintDebug` y
+`connectedDebugAndroidTest` (6 pruebas) en el dispositivo real. Detalle en
 [`docs/requirements/conversion.md` §8](docs/requirements/conversion.md).
 
 ### Módulo Escáner (2026-08-24)
