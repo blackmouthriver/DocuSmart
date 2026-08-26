@@ -184,10 +184,10 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 | 1 | `PdfPasswordUseCaseTest` — proteger exitoso, archivo no legible, archivo vacío, quitar contraseña exitoso, contraseña incorrecta → `WrongPassword`. Usa PDFs reales generados con iText7 en memoria, no mocks del cifrado. | ✅ 5 tests, en verde |
 | 2 | `SecurityManagerTest` — PIN (`setPin`/`verifyPin`/`hasPin`/`clearPin`), biometría (preferencia), `moveToSecure` (copia + borra original, y fallo limpio si el original no existe), `moveFromSecure`, `deleteSecureFile`, `getSecureFiles` (orden), `getSecureFolderSize`. `isBiometricAvailable()` queda fuera (requiere Robolectric/instrumentación por `PackageManager`). No se agregó un test de "copia OK pero borrado falla" a nivel de filesystem real: forzarlo de forma confiable difiere entre Windows (dev) y Linux (CI) — la lógica de honestidad del resultado sí queda cubierta por el test de "no existe". | ✅ 13 tests, en verde |
 | 3 | `QrCryptoTest` — round-trip cifrado/descifrado, contraseña incorrecta → `null`, datos corruptos → `null` (no excepción), no-determinismo del cifrado (salt/IV), texto largo/Unicode. | ✅ 6 tests, en verde |
-| 4 | `SecurityViewModelTest` — transiciones de `SecurityScreenState`, manejo de `error`/`successMessage`, auto-bloqueo simulando `ON_STOP` (una vez implementado RF-SEC-08). | Pendiente |
+| 4 | `SecurityViewModelTest` (2026-08-26) — transiciones de `SecurityScreenState` (`goToSetupPin`/`goToLocked`/`verifyPin` correcto e incorrecto/`setupPin` exitoso y fallido), manejo de `error`/`successMessage` (`importLocalFile` en sus 3 ramas, `dismissError`/`dismissSuccess`), `protectPdfWithPassword`/`removePdfPassword` (Success/Error/WrongPassword), `deleteFile`/`restoreFile`/`reloadFiles`, `toggleBiometric`. `authenticateWithBiometric()`, `savePdfToDownloads()` e `importFileToSecure()` quedan fuera (instancian `BiometricPrompt`/`ContentValues`/`MediaStore`/`ContentResolver` reales, requieren Robolectric/instrumentación — mismo motivo que ya excluye `isBiometricAvailable()` en `SecurityManagerTest`). El auto-bloqueo por `ON_STOP` sigue sin cubrirse: **RF-SEC-08 no está implementado** (verificado con `grep` — no hay ningún `DefaultLifecycleObserver`/manejo de `ON_STOP` en el feature), así que no hay nada que probar todavía; queda en backlog junto con la implementación misma. **Hallazgo real:** si `SecurityManager.setPin()` devuelve `false`, `setupPin()` no hace nada — ni error, ni cambio de estado; el usuario no se entera de que falló. No corregido (fuera del alcance de "escribir el test"), documentado como backlog. | ✅ 20 tests, en verde |
 
 Herramientas: JUnit5 + MockK + Turbine, configurado en `app/build.gradle.kts`
-(`testOptions.unitTests.all { useJUnitPlatform() }`). 24 tests nuevos + 1 de
+(`testOptions.unitTests.all { useJUnitPlatform() }`). 44 tests nuevos + 1 de
 ejemplo, 0 fallos.
 
 ---
@@ -243,3 +243,20 @@ contra dispositivo real, sin Hilt.
 ## 9. Preguntas abiertas
 
 Ninguna pendiente por ahora — todas las decisiones de producto para este módulo quedaron resueltas en §7.
+
+## 10. Hallazgos de `SecurityViewModelTest` (2026-08-26)
+
+- **RF-SEC-08 (auto-bloqueo al pasar a segundo plano) no está implementado.**
+  Verificado con `grep` en todo el feature: no hay ningún
+  `DefaultLifecycleObserver`, manejo de `ON_STOP`/`ON_PAUSE`, ni llamada
+  automática a `goToLocked()` — solo se llama manualmente desde el botón
+  "Volver" de la pantalla de cambiar PIN. La app queda desbloqueada
+  indefinidamente en segundo plano hasta que el usuario cierra la app o
+  navega manualmente hacia atrás. Pendiente de implementar antes de poder
+  escribir la parte de auto-bloqueo del test (§6, ítem 4).
+- **`setupPin()` falla en silencio.** Si `SecurityManager.setPin()` devuelve
+  `false` (ej. error de `SharedPreferences`), el `ViewModel` no actualiza
+  `error` ni cambia `screenState` — el usuario se queda mirando el teclado
+  numérico sin ninguna indicación de que su PIN no se guardó. No corregido
+  (fuera del alcance de "escribir el test"), documentado acá para que quede
+  registrado antes de la primera publicación.
