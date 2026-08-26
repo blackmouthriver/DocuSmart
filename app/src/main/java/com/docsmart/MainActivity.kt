@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.docsmart.core.ads.AdManager
@@ -27,7 +28,16 @@ import com.docsmart.core.ui.components.DocuSmartBottomBar
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.DocuSmartTheme
 import com.docsmart.core.ui.theme.ThemeManager
+import com.docsmart.core.ui.util.isRunningUnderInstrumentation
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
+import com.google.android.ump.ConsentDebugSettings
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
 import javax.inject.Inject
@@ -41,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var languageManager: LanguageManager
 
     private var externalFileUri: Uri? = null
+    private var adsInitialized  = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -68,6 +79,7 @@ class MainActivity : AppCompatActivity() {
         externalFileUri = resolveExternalIntent(intent)
         requestStoragePermissions()
         enableEdgeToEdge()
+        requestAdsConsentThenInitializeAds()
 
         setContent {
             val currentTheme by themeManager.currentTheme.collectAsState()
@@ -193,6 +205,71 @@ class MainActivity : AppCompatActivity() {
         }
         if (permissions.isNotEmpty()) {
             permissionLauncher.launch(permissions.toTypedArray())
+        }
+    }
+
+    // ── UMP: consentimiento de anuncios (UE/Reino Unido) ──────────────────────
+    // AdManager.initialize() ya NO se dispara desde DocuSmartApplication --
+    // requestConsentInfoUpdate() necesita una Activity real para poder
+    // mostrar el formulario de consentimiento (por eso vive acá, no en
+    // Application.onCreate()). canRequestAds() es falso hasta que se resuelve
+    // esta llamada (con o sin formulario mostrado), así que MobileAds no se
+    // inicializa hasta entonces -- nunca antes.
+    private fun requestAdsConsentThenInitializeAds() {
+        if (isRunningUnderInstrumentation()) return
+
+        val debugSettings = if (BuildConfig.DEBUG) {
+            ConsentDebugSettings.Builder(this)
+                .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                // Sin registrar el dispositivo como debug device, la
+                // simulación de geografía EEA no toma efecto en un
+                // dispositivo real (confirmado: sin este ID, canRequestAds()
+                // resolvía como si no aplicara GDPR, ignorando el override).
+                // Mismo ID que ya se usaba para AdMob en testDeviceIds
+                // -- UMP logueó exactamente este mismo hash al iniciar.
+                .addTestDeviceHashedId("EB3ECF44CF3E05437B137D30F852213B")
+                .build()
+        } else null
+
+        val paramsBuilder = ConsentRequestParameters.Builder()
+        debugSettings?.let { paramsBuilder.setConsentDebugSettings(it) }
+        val params = paramsBuilder.build()
+
+        val consentInformation = UserMessagingPlatform.getConsentInformation(this)
+        consentInformation.requestConsentInfoUpdate(
+            this,
+            params,
+            {
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) { formError ->
+                    if (formError != null) {
+                        Timber.w("UMP: error mostrando formulario de consentimiento — ${formError.message}")
+                    }
+                    initializeAdsIfAllowed(consentInformation)
+                }
+            },
+            { requestConsentError ->
+                Timber.w("UMP: error actualizando info de consentimiento — ${requestConsentError.message}")
+                initializeAdsIfAllowed(consentInformation)
+            }
+        )
+    }
+
+    private fun initializeAdsIfAllowed(consentInformation: ConsentInformation) {
+        if (adsInitialized || !consentInformation.canRequestAds()) return
+        adsInitialized = true
+
+        val testDeviceIds = if (BuildConfig.DEBUG) {
+            listOf("EB3ECF44CF3E05437B137D30F852213B")
+        } else {
+            emptyList()
+        }
+        MobileAds.setRequestConfiguration(
+            RequestConfiguration.Builder()
+                .setTestDeviceIds(testDeviceIds)
+                .build()
+        )
+        lifecycleScope.launch(Dispatchers.IO) {
+            adManager.initialize()
         }
     }
 }

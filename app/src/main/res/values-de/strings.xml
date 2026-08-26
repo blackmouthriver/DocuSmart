@@ -61,6 +61,8 @@
     <string name="settings_section_privacy">Datenschutz und Sicherheit</string>
     <string name="settings_privacy_item">Datenschutz</string>
     <string name="settings_privacy_item_subtitle">Datenrichtlinie und Berechtigungen</string>
+    <string name="settings_ads_privacy_options">Werbeeinwilligung</string>
+    <string name="settings_ads_privacy_options_subtitle">Ändern Sie Ihre Datenschutzeinstellungen für Werbung</string>
     <string name="settings_share_app">DocuSmart teilen</string>
     <string name="settings_share_app_subtitle">Empfiehl die App deinen Kontakten</string>
     <string name="settings_rate">Im Play Store bewerten</string>

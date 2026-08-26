@@ -342,16 +342,16 @@ Revisado directamente en el código, no supuesto:
 - `DocuSmartAnalytics.kt` — los 15 eventos reales que se envían a Firebase, uno por uno, confirmando que ninguno incluye contenido de archivos/notas/QR, solo metadatos categóricos.
 - Búsqueda de `FirebaseAuth`/`firebase.auth` en todo el proyecto → no hay, confirmado que no existen cuentas de usuario.
 - Búsqueda de `setCustomKey`/Crashlytics → no hay claves custom agregadas, solo el reporte estándar de Firebase.
-- Búsqueda de `ConsentInformation`/`UserMessagingPlatform` (SDK de consentimiento de Google) → **no está implementado** (ver hallazgo abajo).
+- Búsqueda de `ConsentInformation`/`UserMessagingPlatform` (SDK de consentimiento de Google) → **implementado 2026-08-26**, ver `settings-premium.md` §9.
 - `StudyScreen.kt` — confirmado que el dictado de voz usa `RecognizerIntent` (delega al sistema), no un `SpeechRecognizer` propio ni un servicio de voz en la nube contratado por la app.
 - `AndroidManifest.xml` → el AdMob App ID configurado es **el ID de prueba público de Google** (`ca-app-pub-3940256099942544~...`), no uno real — ya venía comentado como pendiente ("reemplazar con el tuyo al publicar").
 
-**Hallazgo real, no abordado en esta pasada:** no hay SDK de consentimiento
-(Google UMP) implementado. Si se van a mostrar anuncios personalizados a
-usuarios en la Unión Europea/Reino Unido, Google exige recolectar
-consentimiento explícito antes (política de consentimiento de UE de
-Google/GDPR) — hoy la app no lo pide. Vale la pena resolverlo antes de
-activar anuncios reales en producción, no solo antes de publicar.
+**Hallazgo corregido (2026-08-26):** no había SDK de consentimiento (Google
+UMP) implementado. Si se muestran anuncios personalizados a usuarios en la
+Unión Europea/Reino Unido, Google exige recolectar consentimiento
+explícito antes (política de consentimiento de UE de Google/GDPR) — la app
+no lo pedía. Implementado y verificado en el dispositivo real, ver
+`settings-premium.md` §9.
 
 ---
 

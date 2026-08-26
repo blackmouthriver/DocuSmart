@@ -61,6 +61,8 @@
     <string name="settings_section_privacy">Конфиденциальность и безопасность</string>
     <string name="settings_privacy_item">Конфиденциальность</string>
     <string name="settings_privacy_item_subtitle">Политика данных и разрешения</string>
+    <string name="settings_ads_privacy_options">Согласие на рекламу</string>
+    <string name="settings_ads_privacy_options_subtitle">Измените настройки конфиденциальности для рекламы</string>
     <string name="settings_share_app">Поделиться DocuSmart</string>
     <string name="settings_share_app_subtitle">Порекомендуйте приложение друзьям</string>
     <string name="settings_rate">Оценить в Play Store</string>

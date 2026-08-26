@@ -229,7 +229,7 @@ No hay un único "% completado" honesto — depende del eje:
 | Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
 | Documentación formal (HU con criterios de aceptación) | ~85% | 7 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium, Estudio) |
 | Pruebas automatizadas | ~19% | 77 tests cubriendo 17 archivos de decenas |
-| Listo para publicar en Play Store | ~60% | firma de release + CI de build firmado ✅, política de privacidad publicada + formulario de seguridad de datos preparados ✅, Play Billing real conectado ✅ (2026-08-25, https://sites.google.com/view/docusmart-privacidad/inicio ); falta la primera subida manual a Play Console (obligatoria, no automatizable — y necesaria para poder probar Billing de punta a punta), ads de producción reales (hoy AdMob App ID es el de prueba), SDK de consentimiento de anuncios (UMP) |
+| Listo para publicar en Play Store | ~65% | firma de release + CI de build firmado ✅, política de privacidad publicada + formulario de seguridad de datos preparados ✅, Play Billing real conectado ✅, SDK de consentimiento de anuncios (UMP) implementado y verificado ✅ (2026-08-26, ver `settings-premium.md` §9); falta la primera subida manual a Play Console (obligatoria, no automatizable — y necesaria para poder probar Billing de punta a punta) y ads de producción reales (hoy AdMob App ID sigue siendo el de prueba) |
 
 **Estimado global "producto listo para producción": ~35-40%.** No es un problema
 de código faltante — es que lo que falta (bugs en funciones centrales, billing
@@ -523,10 +523,10 @@ se confirmó cómo funciona el dictado de voz en `StudyScreen.kt`.
   (nunca se transmiten fuera del dispositivo) — Play Console distingue
   ambas cosas. Sí se recolectan: actividad en la app (Analytics), logs de
   fallas (Crashlytics), Advertising ID (AdMob).
-- **Hallazgo real, sin abordar en esta pasada:** no hay SDK de consentimiento
-  (Google UMP) implementado — necesario antes de mostrar anuncios
-  personalizados a usuarios de la UE/Reino Unido (exigencia de Google, no
-  solo buena práctica).
+- **Hallazgo — implementado 2026-08-26:** no había SDK de consentimiento
+  (Google UMP), necesario antes de mostrar anuncios personalizados a
+  usuarios de la UE/Reino Unido (exigencia de Google, no solo buena
+  práctica). Ver detalle en `docs/requirements/settings-premium.md` §9.
 - **Hallazgo ya conocido, confirmado de nuevo:** el AdMob App ID en el
   manifest sigue siendo el de prueba público de Google, no uno real.
 
