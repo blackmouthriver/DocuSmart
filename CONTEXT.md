@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-26 (SecurityViewModelTest — 20 tests nuevos)
+**Última actualización:** 2026-08-26 (RF-SEC-08 — auto-bloqueo en segundo plano)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -46,7 +46,7 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   pantallas con texto fijo ya conectadas a `stringResource()`, más
   `ConversionType`/`ConversionSuccess.kt` (2026-08-26, ver módulo
   Conversión abajo).
-- **Tests:** 115 tests reales (Seguridad: 46, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 10, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 106 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real; 3 son **Compose UI Testing** instrumentadas contra dispositivo real (`ViewerScreenTest`, `ConverterScreenTest`, `SecurityScreenTest` — flujos #1, #2 y #3). Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
+- **Tests:** 117 tests reales (Seguridad: 48, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 10, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 106 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real; 3 son **Compose UI Testing** instrumentadas contra dispositivo real (`ViewerScreenTest`, `ConverterScreenTest`, `SecurityScreenTest` — flujos #1, #2 y #3). Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** Room desde 2026-08-25, primera tabla (`document_history`,
   historial de documentos abiertos — ver §2 "Historial de documentos
   abiertos" y `docs/requirements/visor-biblioteca.md` §8). Favoritos/idioma/
@@ -81,12 +81,23 @@ envuelto en un `ContextWrapper` propio para aislar el PIN de prueba del
 
 **`SecurityViewModelTest` (2026-08-26):** 20 tests nuevos — transiciones de
 `SecurityScreenState`, `error`/`successMessage`, PIN password, archivos,
-biometría. Dos hallazgos: **RF-SEC-08 (auto-bloqueo al pasar a segundo
-plano) no está implementado** (verificado con `grep`, cero código de
-lifecycle en el feature); y `setupPin()` falla en silencio si
-`SecurityManager.setPin()` devuelve `false` (ni error ni cambio de
-estado). Ninguno corregido, ambos documentados en
+biometría. Dos hallazgos: RF-SEC-08 (auto-bloqueo al pasar a segundo
+plano) no estaba implementado (verificado con `grep`, cero código de
+lifecycle en el feature — **implementado el mismo día, ver abajo**); y
+`setupPin()` falla en silencio si `SecurityManager.setPin()` devuelve
+`false` (ni error ni cambio de estado, sin corregir, backlog). Detalle en
 [`docs/requirements/security.md` §10](docs/requirements/security.md).
+
+**RF-SEC-08 — auto-bloqueo al pasar a segundo plano (2026-08-26):**
+`SecurityViewModel.lockIfUnlocked()` + `DisposableEffect` en
+`SecurityScreen.kt` sobre `ProcessLifecycleOwner` (no
+`LocalLifecycleOwner` — la Activity no declara `configChanges`, así que
+rotar la pantalla también dispara `ON_STOP` de esa Activity;
+`ProcessLifecycleOwner` sí distingue eso de un backgrounding real).
+Verificado manualmente en el dispositivo real: backgrounding real bloquea
+correctamente, rotar la pantalla no bloquea de más. 2 tests unitarios
+nuevos. Detalle en
+[`docs/requirements/security.md` §11](docs/requirements/security.md).
 
 ### Módulo Herramientas PDF (2026-08-24)
 Bug de arquitectura corregido: Unir y Rotar rasterizaban cada página a bitmap

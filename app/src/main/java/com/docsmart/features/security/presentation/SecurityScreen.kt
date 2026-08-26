@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.DocuBlue
@@ -53,6 +56,22 @@ fun SecurityScreen(
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // RF-SEC-08: bloquear la Carpeta Segura cuando la app pasa a segundo
+    // plano. ProcessLifecycleOwner a propósito, no LocalLifecycleOwner --
+    // la Activity no declara android:configChanges, así que rotar la
+    // pantalla también dispara ON_STOP/ON_START de esa Activity;
+    // ProcessLifecycleOwner sí distingue eso de un backgrounding real (no
+    // despacha ON_STOP si una nueva Activity arranca enseguida por un
+    // cambio de configuración).
+    DisposableEffect(Unit) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) viewModel.lockIfUnlocked()
+        }
+        val processLifecycle = ProcessLifecycleOwner.get().lifecycle
+        processLifecycle.addObserver(observer)
+        onDispose { processLifecycle.removeObserver(observer) }
+    }
 
     val incorrectPinMessage    = stringResource(R.string.security_pin_incorrect)
     val biometricPromptTitle   = stringResource(R.string.security_biometric_title)

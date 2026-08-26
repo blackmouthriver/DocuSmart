@@ -146,6 +146,34 @@ class SecurityViewModelTest {
     }
 
     @Test
+    fun `lockIfUnlocked bloquea cuando el estado es UNLOCKED (RF-SEC-08)`() = runTest {
+        every { securityManager.verifyPin("1234") } returns true
+
+        val viewModel = buildViewModel()
+        viewModel.uiState.test {
+            awaitItem() // estado inicial (LOCKED)
+            viewModel.verifyPin("1234", "PIN incorrecto")
+            assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
+
+            viewModel.lockIfUnlocked()
+
+            assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
+        }
+    }
+
+    @Test
+    fun `lockIfUnlocked no hace nada si el estado no es UNLOCKED`() {
+        // No debe descartar un PIN a medio configurar (SETUP_PIN) solo
+        // porque la app pasó un instante a segundo plano.
+        val viewModel = buildViewModel()
+        viewModel.goToSetupPin()
+
+        viewModel.lockIfUnlocked()
+
+        assertEquals(SecurityScreenState.SETUP_PIN, viewModel.uiState.value.screenState)
+    }
+
+    @Test
     fun `verifyPin con PIN correcto desbloquea y carga los archivos seguros`() = runTest {
         every { securityManager.verifyPin("1234") } returns true
         val secureFile = File(secureFolder, "documento.pdf").apply { writeText("x") }
