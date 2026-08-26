@@ -61,6 +61,8 @@
     <string name="settings_section_privacy">Privacidad y seguridad</string>
     <string name="settings_privacy_item">Privacidad</string>
     <string name="settings_privacy_item_subtitle">Política de datos y permisos</string>
+    <string name="settings_ads_privacy_options">Consentimiento de anuncios</string>
+    <string name="settings_ads_privacy_options_subtitle">Cambia tus preferencias de privacidad para anuncios</string>
     <string name="settings_share_app">Compartir DocuSmart</string>
     <string name="settings_share_app_subtitle">Recomienda la app a tus contactos</string>
     <string name="settings_rate">Valorar en Play Store</string>

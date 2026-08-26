@@ -159,7 +159,73 @@ Reemplaza `PremiumManager.simulatePurchase()` (eliminado) por
 
 ---
 
-## 9. Preguntas abiertas
+## 9. UMP — consentimiento de anuncios UE/Reino Unido (2026-08-26)
+
+Hallazgo de `deployment.md` §5.3 (auditoría de datos, 2026-08-25): no había
+ningún SDK de consentimiento (Google UMP) implementado — requisito de
+Google/GDPR antes de mostrar anuncios personalizados a usuarios en la
+Unión Europea/Reino Unido.
+
+- **Dependencia nueva:** `com.google.android.ump:user-messaging-platform:4.0.0`
+  — artefacto **separado** de `play-services-ads` (no viene incluido),
+  versión verificada contra el índice real de Google Maven
+  (`dl.google.com/android/maven2`) antes de fijarla, no asumida de la
+  documentación de terceros.
+- **Se movió la inicialización de anuncios de `DocuSmartApplication` a
+  `MainActivity`.** `requestConsentInfoUpdate()` necesita una `Activity`
+  real para poder mostrar el formulario de consentimiento — no se puede
+  hacer desde `Application.onCreate()`, que no tiene ninguna Activity
+  todavía. `MobileAds.initialize()`/`AdManager.initialize()` ahora solo se
+  disparan **después** de que `ConsentInformation.canRequestAds()` sea
+  verdadero (con o sin formulario mostrado, según si el usuario está en
+  una región que lo requiere).
+- **Guard de instrumentación reutilizado:** la función
+  `isRunningUnderInstrumentation()` (antes privada en
+  `DocuSmartApplication`, ya existía desde la sesión de Compose UI
+  Testing) se movió a `core/ui/util/InstrumentationUtils.kt` para
+  reutilizarla también en `MainActivity` — mismo motivo de siempre: evitar
+  que `connectedAndroidTest` dispare una llamada de red real de
+  consentimiento/anuncios.
+- **Punto de acceso a "Opciones de privacidad" en Ajustes** — exigido por
+  la política de UMP: no basta con mostrar el formulario una sola vez al
+  abrir la app, tiene que haber una forma de cambiar la decisión después.
+  Nuevo ítem condicional en `SettingsScreen.kt` (sección Privacidad),
+  visible solo si `consentInformation.privacyOptionsRequirementStatus ==
+  REQUIRED`, que abre `UserMessagingPlatform.showPrivacyOptionsForm(...)`.
+- **Verificado de punta a punta en el dispositivo real** (motorola edge 30
+  neo), los dos escenarios reales:
+  1. **Geografía real (fuera de UE/Reino Unido):** `IABTCF_gdprApplies: 0`
+     en el log de UMP — no se requiere consentimiento, no se muestra
+     ningún formulario, los anuncios se inicializan de inmediato
+     (`AdManager: MobileAds inicializado ✅`, interstitial y rewarded
+     cargados).
+  2. **Geografía UE simulada** (`ConsentDebugSettings.DebugGeography
+     .DEBUG_GEOGRAPHY_EEA`, solo en `BuildConfig.DEBUG`, con
+     `addTestDeviceHashedId("EB3ECF44CF3E05437B137D30F852213B")` — mismo
+     hash que ya se usaba para AdMob, confirmado en el propio log de UMP
+     al arrancar: "Use new ConsentDebugSettings.Builder()
+     .addTestDeviceHashedId(...)" imprimió exactamente ese valor):
+     `IABTCF_gdprApplies: 1`, el formulario real de consentimiento
+     ("Publisher Test Ads asks for your consent...") se muestra
+     correctamente, y los anuncios **no** se inicializan hasta después de
+     tocar "Consent" (confirmado por orden de timestamps en logcat: el
+     registro `CONSENT_SIGNAL_SUFFICIENT` sale 0.08s antes de
+     `AdManager: iniciando MobileAds`).
+  Sin la simulación de geografía EEA registrada (sin
+  `addTestDeviceHashedId`), el override **no** tomaba efecto en un
+  dispositivo real — confirmado con el primer intento, que resolvió
+  `IABTCF_gdprApplies: 0` a pesar de tener `setDebugGeography(EEA)`
+  puesto; necesario documentarlo para no repetir la confusión.
+- Verificado también: `connectedDebugAndroidTest` (6 pruebas, sin
+  regresión) y `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+- **Sin test automatizado** — el flujo de UMP depende de red real
+  (`requestConsentInfoUpdate`) y de una `Activity` real mostrando un
+  `WebView` del formulario; se optó por la verificación manual de arriba,
+  igual que con RF-SEC-08 (`security.md` §11).
+
+---
+
+## 10. Preguntas abiertas
 
 | Pregunta | Notas |
 |---|---|

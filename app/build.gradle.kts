@@ -270,6 +270,11 @@ dependencies {
 
     // ── AdMob ─────────────────────────────────────────────────────────────────
     implementation("com.google.android.gms:play-services-ads:23.3.0")
+    // UMP (User Messaging Platform) -- consentimiento de anuncios UE/Reino
+    // Unido (RF pendiente, ver docs/requirements/settings-premium.md). Es un
+    // artefacto separado, NO viene incluido en play-services-ads -- versión
+    // verificada contra el índice real de Google Maven antes de fijarla acá.
+    implementation("com.google.android.ump:user-messaging-platform:4.0.0")
 
     // ── Play Billing (Premium: mensual/anual/lifetime) ───────────────────────
     implementation(libs.billing.ktx)

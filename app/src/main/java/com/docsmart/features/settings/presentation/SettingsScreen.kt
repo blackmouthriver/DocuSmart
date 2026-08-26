@@ -28,7 +28,11 @@ import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.core.ui.theme.ThemeManager
+import com.docsmart.core.ui.util.findActivity
 import com.docsmart.features.onboarding.presentation.resetOnboarding
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.UserMessagingPlatform
+import timber.log.Timber
 
 @Composable
 fun SettingsScreen(
@@ -58,6 +62,17 @@ fun SettingsScreen(
     var showHelpDialog     by remember { mutableStateOf(false) }
     var showResetDialog    by remember { mutableStateOf(false) }
     var showShareDialog    by remember { mutableStateOf(false) }
+
+    // ── UMP: solo mostrar la entrada de consentimiento de anuncios si Google
+    // determinó que hace falta un punto de acceso (usuarios en UE/Reino
+    // Unido) -- exigido por la política de UMP, no basta con mostrar el
+    // formulario una sola vez al abrir la app.
+    var showAdsPrivacyOption by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        showAdsPrivacyOption = UserMessagingPlatform.getConsentInformation(context)
+            .privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+    }
 
     // ── Diálogo: Idioma ───────────────────────────────────────────────────────
     if (showLanguageDialog) {
@@ -500,6 +515,24 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.settings_privacy_item_subtitle),
                 onClick  = { showPrivacyDialog = true }
             )
+        }
+        if (showAdsPrivacyOption) {
+            item {
+                SettingsItem(
+                    icon     = Icons.Rounded.Campaign,
+                    title    = stringResource(R.string.settings_ads_privacy_options),
+                    subtitle = stringResource(R.string.settings_ads_privacy_options_subtitle),
+                    onClick  = {
+                        context.findActivity()?.let { activity ->
+                            UserMessagingPlatform.showPrivacyOptionsForm(activity) { formError ->
+                                if (formError != null) {
+                                    Timber.w("UMP: error mostrando opciones de privacidad — ${formError.message}")
+                                }
+                            }
+                        }
+                    }
+                )
+            }
         }
 
         // ── Sección: Compartir ────────────────────────────────────────────────
