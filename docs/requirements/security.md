@@ -37,7 +37,7 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 - **RF-SEC-05** Al proteger un archivo, el sistema debe copiarlo al almacenamiento de la Carpeta Segura y **eliminar el archivo original** de su ubicación de origen (ver RNF-SEC-01 sobre limitaciones de permisos).
 - **RF-SEC-06** El sistema debe permitir restaurar un archivo desde la Carpeta Segura hacia el almacenamiento general de la app (`converted/`).
 - **RF-SEC-07** El sistema debe permitir eliminar permanentemente un archivo de la Carpeta Segura.
-- **RF-SEC-08** El sistema debe bloquear automáticamente la Carpeta Segura (exigir PIN/biometría de nuevo) cuando la app pasa a segundo plano.
+- **RF-SEC-08** ✅ El sistema debe bloquear automáticamente la Carpeta Segura (exigir PIN/biometría de nuevo) cuando la app pasa a segundo plano. Implementado 2026-08-26, ver §11.
 - **RF-SEC-09** El sistema debe permitir restablecer el PIN desde Ajustes → Seguridad. Al restablecer, el sistema debe **eliminar todos los archivos** actualmente en la Carpeta Segura y advertir de esto antes de confirmar.
 
 ### Contraseña de PDF
@@ -184,10 +184,10 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 | 1 | `PdfPasswordUseCaseTest` — proteger exitoso, archivo no legible, archivo vacío, quitar contraseña exitoso, contraseña incorrecta → `WrongPassword`. Usa PDFs reales generados con iText7 en memoria, no mocks del cifrado. | ✅ 5 tests, en verde |
 | 2 | `SecurityManagerTest` — PIN (`setPin`/`verifyPin`/`hasPin`/`clearPin`), biometría (preferencia), `moveToSecure` (copia + borra original, y fallo limpio si el original no existe), `moveFromSecure`, `deleteSecureFile`, `getSecureFiles` (orden), `getSecureFolderSize`. `isBiometricAvailable()` queda fuera (requiere Robolectric/instrumentación por `PackageManager`). No se agregó un test de "copia OK pero borrado falla" a nivel de filesystem real: forzarlo de forma confiable difiere entre Windows (dev) y Linux (CI) — la lógica de honestidad del resultado sí queda cubierta por el test de "no existe". | ✅ 13 tests, en verde |
 | 3 | `QrCryptoTest` — round-trip cifrado/descifrado, contraseña incorrecta → `null`, datos corruptos → `null` (no excepción), no-determinismo del cifrado (salt/IV), texto largo/Unicode. | ✅ 6 tests, en verde |
-| 4 | `SecurityViewModelTest` (2026-08-26) — transiciones de `SecurityScreenState` (`goToSetupPin`/`goToLocked`/`verifyPin` correcto e incorrecto/`setupPin` exitoso y fallido), manejo de `error`/`successMessage` (`importLocalFile` en sus 3 ramas, `dismissError`/`dismissSuccess`), `protectPdfWithPassword`/`removePdfPassword` (Success/Error/WrongPassword), `deleteFile`/`restoreFile`/`reloadFiles`, `toggleBiometric`. `authenticateWithBiometric()`, `savePdfToDownloads()` e `importFileToSecure()` quedan fuera (instancian `BiometricPrompt`/`ContentValues`/`MediaStore`/`ContentResolver` reales, requieren Robolectric/instrumentación — mismo motivo que ya excluye `isBiometricAvailable()` en `SecurityManagerTest`). El auto-bloqueo por `ON_STOP` sigue sin cubrirse: **RF-SEC-08 no está implementado** (verificado con `grep` — no hay ningún `DefaultLifecycleObserver`/manejo de `ON_STOP` en el feature), así que no hay nada que probar todavía; queda en backlog junto con la implementación misma. **Hallazgo real:** si `SecurityManager.setPin()` devuelve `false`, `setupPin()` no hace nada — ni error, ni cambio de estado; el usuario no se entera de que falló. No corregido (fuera del alcance de "escribir el test"), documentado como backlog. | ✅ 20 tests, en verde |
+| 4 | `SecurityViewModelTest` (2026-08-26) — transiciones de `SecurityScreenState` (`goToSetupPin`/`goToLocked`/`verifyPin` correcto e incorrecto/`setupPin` exitoso y fallido), manejo de `error`/`successMessage` (`importLocalFile` en sus 3 ramas, `dismissError`/`dismissSuccess`), `protectPdfWithPassword`/`removePdfPassword` (Success/Error/WrongPassword), `deleteFile`/`restoreFile`/`reloadFiles`, `toggleBiometric`, `lockIfUnlocked` (RF-SEC-08, ver §11). `authenticateWithBiometric()`, `savePdfToDownloads()` e `importFileToSecure()` quedan fuera (instancian `BiometricPrompt`/`ContentValues`/`MediaStore`/`ContentResolver` reales, requieren Robolectric/instrumentación — mismo motivo que ya excluye `isBiometricAvailable()` en `SecurityManagerTest`). El disparador real de `lockIfUnlocked()` (el `DisposableEffect` sobre `ProcessLifecycleOwner` en `SecurityScreen.kt`) no tiene test automatizado — verificado manualmente en el dispositivo real en su lugar (§11). **Hallazgo real:** si `SecurityManager.setPin()` devuelve `false`, `setupPin()` no hace nada — ni error, ni cambio de estado; el usuario no se entera de que falló. No corregido (fuera del alcance de "escribir el test"), documentado como backlog. | ✅ 22 tests, en verde |
 
 Herramientas: JUnit5 + MockK + Turbine, configurado en `app/build.gradle.kts`
-(`testOptions.unitTests.all { useJUnitPlatform() }`). 44 tests nuevos + 1 de
+(`testOptions.unitTests.all { useJUnitPlatform() }`). 46 tests nuevos + 1 de
 ejemplo, 0 fallos.
 
 ---
@@ -246,17 +246,58 @@ Ninguna pendiente por ahora — todas las decisiones de producto para este módu
 
 ## 10. Hallazgos de `SecurityViewModelTest` (2026-08-26)
 
-- **RF-SEC-08 (auto-bloqueo al pasar a segundo plano) no está implementado.**
-  Verificado con `grep` en todo el feature: no hay ningún
-  `DefaultLifecycleObserver`, manejo de `ON_STOP`/`ON_PAUSE`, ni llamada
-  automática a `goToLocked()` — solo se llama manualmente desde el botón
-  "Volver" de la pantalla de cambiar PIN. La app queda desbloqueada
-  indefinidamente en segundo plano hasta que el usuario cierra la app o
-  navega manualmente hacia atrás. Pendiente de implementar antes de poder
-  escribir la parte de auto-bloqueo del test (§6, ítem 4).
+- **RF-SEC-08 (auto-bloqueo al pasar a segundo plano) — implementado
+  (2026-08-26).** Verificado con `grep` en todo el feature que no había
+  ningún `DefaultLifecycleObserver`, manejo de `ON_STOP`/`ON_PAUSE`, ni
+  llamada automática a `goToLocked()` — solo se llamaba manualmente desde
+  el botón "Volver" de la pantalla de cambiar PIN. La app quedaba
+  desbloqueada indefinidamente en segundo plano hasta que el usuario
+  cerraba la app o navegaba manualmente hacia atrás. Ver §11 para el
+  detalle de la implementación.
 - **`setupPin()` falla en silencio.** Si `SecurityManager.setPin()` devuelve
   `false` (ej. error de `SharedPreferences`), el `ViewModel` no actualiza
   `error` ni cambia `screenState` — el usuario se queda mirando el teclado
   numérico sin ninguna indicación de que su PIN no se guardó. No corregido
   (fuera del alcance de "escribir el test"), documentado acá para que quede
   registrado antes de la primera publicación.
+
+## 11. RF-SEC-08 — auto-bloqueo al pasar a segundo plano (2026-08-26)
+
+- **`SecurityViewModel.lockIfUnlocked()`** (nuevo) — vuelve a `LOCKED` solo
+  si el estado actual es `UNLOCKED`; no toca `SETUP_PIN` a propósito (si el
+  usuario está a mitad de configurar un PIN nuevo y recibe una
+  notificación, no queremos descartar ese flujo — los dígitos tecleados
+  viven en estado local del Composable, no en el ViewModel, así que no
+  tocar `screenState` los preserva al volver). 2 tests unitarios nuevos en
+  `SecurityViewModelTest`.
+- **`SecurityScreen.kt`** — `DisposableEffect` que registra un
+  `LifecycleEventObserver` sobre `ProcessLifecycleOwner.get().lifecycle` y
+  llama `viewModel.lockIfUnlocked()` en `ON_STOP`.
+  **`ProcessLifecycleOwner`, no `LocalLifecycleOwner`, a propósito:** la
+  `Activity` del proyecto no declara `android:configChanges`, así que
+  rotar la pantalla también dispara `ON_STOP`/`ON_START` de esa instancia
+  de `Activity` (se destruye y recrea) — usar `LocalLifecycleOwner`
+  habría bloqueado la Carpeta Segura en cada rotación, no solo al pasar a
+  segundo plano de verdad. `ProcessLifecycleOwner` distingue ambos casos
+  (no despacha `ON_STOP` si una nueva `Activity` arranca enseguida por un
+  cambio de configuración) — verificado que es la recomendación oficial
+  vigente antes de escribir el código, no asumida de memoria. Nueva
+  dependencia `androidx.lifecycle:lifecycle-process` (mismo `lifecycle =
+  "2.8.7"` ya usado en el resto del proyecto).
+- **Verificado manualmente en el dispositivo real, los dos escenarios que
+  motivaron la elección:**
+  1. Configurar PIN → desbloqueada → botón Home (segundo plano) → volver a
+     abrir la app → pide PIN de nuevo (no muestra la carpeta directo).
+     PIN correcto vuelve a desbloquear con normalidad.
+  2. Desbloqueada → rotar a horizontal y de vuelta a vertical → sigue
+     mostrando la carpeta desbloqueada, **no** pide PIN de nuevo.
+- Verificado también: `connectedDebugAndroidTest` (6 pruebas, sin
+  regresión en `SecurityScreenTest`/`ConverterScreenTest`/
+  `ViewerScreenTest`) y `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+- **No cubierto por un test automatizado** — simular una transición real
+  de `ProcessLifecycleOwner` desde un test de Compose UI (vs. desde la
+  Activity individual de la prueba) es frágil/no directo con las
+  herramientas actuales del proyecto; se optó por verificación manual en
+  el dispositivo real (arriba) en vez de forzar un test automatizado poco
+  confiable. La lógica pura (`lockIfUnlocked()`) sí queda cubierta por
+  unit tests.

@@ -310,6 +310,18 @@ class SecurityViewModel @Inject constructor(
     fun dismissError()   { _uiState.update { it.copy(error = null) } }
     fun goToSetupPin()   { _uiState.update { it.copy(screenState = SecurityScreenState.SETUP_PIN) } }
     fun goToLocked()     { _uiState.update { it.copy(screenState = SecurityScreenState.LOCKED, error = null) } }
+
+    // RF-SEC-08: bloquear automáticamente la Carpeta Segura cuando la app pasa
+    // a segundo plano. Solo actúa si está UNLOCKED a propósito -- si el
+    // usuario está a mitad de configurar un PIN nuevo (SETUP_PIN) y recibe
+    // una notificación, no queremos descartar ese flujo; los dígitos ya
+    // tecleados viven en estado local del Composable, no acá, así que no
+    // tocar screenState los preserva al volver.
+    fun lockIfUnlocked() {
+        if (_uiState.value.screenState == SecurityScreenState.UNLOCKED) {
+            _uiState.update { it.copy(screenState = SecurityScreenState.LOCKED, error = null) }
+        }
+    }
     fun reloadFiles()    {
         viewModelScope.launch(Dispatchers.IO) {
             val files = securityManager.getSecureFiles()

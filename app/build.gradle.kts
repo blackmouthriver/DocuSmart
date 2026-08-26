@@ -221,6 +221,9 @@ dependencies {
 
     // ── Lifecycle / ViewModel ─────────────────────────────────────────────────
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // ProcessLifecycleOwner (RF-SEC-08: auto-bloqueo de Carpeta Segura al
+    // pasar a segundo plano) -- artefacto separado de lifecycle-runtime-ktx.
+    implementation(libs.androidx.lifecycle.process)
 
     // ── Hilt ──────────────────────────────────────────────────────────────────
     implementation(libs.hilt.android)
