@@ -2,6 +2,7 @@ package com.docsmart.features.converter.presentation.components
 
 import android.content.Context
 import android.content.Intent
+import android.webkit.MimeTypeMap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -10,9 +11,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.docsmart.R
+import com.docsmart.core.ui.theme.ColorExcel
+import com.docsmart.core.ui.theme.ColorImage
+import com.docsmart.core.ui.theme.ColorOcr
+import com.docsmart.core.ui.theme.ColorPdf
+import com.docsmart.core.ui.theme.ColorPowerPoint
+import com.docsmart.core.ui.theme.ColorText
+import com.docsmart.core.ui.theme.ColorWord
 import com.docsmart.features.converter.domain.model.ConversionResult
 import timber.log.Timber
 import java.io.File
@@ -26,6 +38,8 @@ fun ConversionSuccess(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val shareLabel = stringResource(R.string.converter_share)
+    val (fileIcon, fileColor) = formatIconForExtension(result.outputFile.extension)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -62,7 +76,7 @@ fun ConversionSuccess(
 
             // ── Título ────────────────────────────────
             Text(
-                text = "¡Conversión exitosa!",
+                text = stringResource(R.string.converter_success_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -87,9 +101,9 @@ fun ConversionSuccess(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.PictureAsPdf,
+                            imageVector = fileIcon,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
+                            tint = fileColor,
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
@@ -99,7 +113,10 @@ fun ConversionSuccess(
                         )
                     }
                     Text(
-                        text = "${result.pageCount} página(s)  ·  ${result.fileSizeKb} KB",
+                        text = stringResource(
+                            R.string.converter_success_page_count_size,
+                            result.pageCount, result.fileSizeKb
+                        ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -119,7 +136,7 @@ fun ConversionSuccess(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Guardado en Descargas",
+                        text = stringResource(R.string.converter_saved_to_downloads),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -149,14 +166,14 @@ fun ConversionSuccess(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Guardar en Descargas",
+                            text = stringResource(R.string.converter_save),
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
                 }
 
                 OutlinedButton(
-                    onClick = { shareFile(context, result.outputFile) },
+                    onClick = { shareFile(context, result.outputFile, shareLabel) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
@@ -169,7 +186,7 @@ fun ConversionSuccess(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Compartir PDF",
+                        text = shareLabel,
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -185,7 +202,7 @@ fun ConversionSuccess(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Convertir otra imagen",
+                        text = stringResource(R.string.converter_convert_another),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -194,11 +211,29 @@ fun ConversionSuccess(
     }
 }
 
+// ── Ícono/color por extensión real del archivo de salida ──────────────────
+// ConversionSuccess se reutiliza para las 17 conversiones (no solo
+// PDF/imagen) -- antes el ícono, el MIME type al compartir y el texto de
+// los botones asumían PDF/imagen a propósito fijo, mostrando el ícono y
+// el MIME equivocados para el resto (Excel→CSV, Word→HTML, PPT→Texto...).
+private fun formatIconForExtension(extension: String): Pair<ImageVector, Color> =
+    when (extension.lowercase()) {
+        "pdf"                         -> Icons.Rounded.PictureAsPdf   to ColorPdf
+        "jpg", "jpeg", "png",
+        "webp", "bmp"                 -> Icons.Rounded.Image          to ColorImage
+        "doc", "docx"                 -> Icons.Rounded.Description    to ColorWord
+        "xls", "xlsx", "csv"          -> Icons.Rounded.TableChart     to ColorExcel
+        "ppt", "pptx"                 -> Icons.Rounded.Slideshow      to ColorPowerPoint
+        "txt"                         -> Icons.Rounded.TextSnippet    to ColorText
+        "html"                        -> Icons.Rounded.Code           to ColorOcr
+        else                          -> Icons.Rounded.InsertDriveFile to ColorText
+    }
+
 // ── Fix Sentinel: manejo de errores en FileProvider ───
 // Antes: si el archivo no existía o FileProvider fallaba
 // la app crasheaba sin mensaje al usuario
 // Ahora: captura la excepción y loguea con Timber
-private fun shareFile(context: Context, file: File) {
+private fun shareFile(context: Context, file: File, shareLabel: String) {
     try {
         // ── Verificar que el archivo existe antes de compartir
         if (!file.exists()) {
@@ -212,15 +247,18 @@ private fun shareFile(context: Context, file: File) {
             file
         )
 
+        val mimeType = MimeTypeMap.getSingleton()
+            .getMimeTypeFromExtension(file.extension.lowercase()) ?: "*/*"
+
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/pdf"
+            type = mimeType
             putExtra(Intent.EXTRA_STREAM, uri)
             // ── Permisos explícitos para el receptor ──
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
 
-        context.startActivity(Intent.createChooser(intent, "Compartir PDF"))
+        context.startActivity(Intent.createChooser(intent, shareLabel))
         Timber.d("shareFile: compartiendo ${file.name}")
 
     } catch (e: IllegalArgumentException) {

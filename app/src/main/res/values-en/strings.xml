@@ -136,6 +136,12 @@
     <string name="converter_to_format">Convert to %1$s</string>
     <string name="converter_file_name_label">File name</string>
     <string name="converter_file_name_placeholder">Auto name</string>
+    <string name="format_name_image">Image</string>
+    <string name="converter_success_title">Conversion successful!</string>
+    <string name="converter_success_page_count_size">%1$d page(s) · %2$d KB</string>
+    <string name="converter_saved_to_downloads">Saved to Downloads</string>
+    <string name="converter_share">Share file</string>
+    <string name="converter_convert_another">Convert another file</string>
     <string name="general_back_action">Back</string>
 
     <string name="splash_tagline">Your smart documents</string>

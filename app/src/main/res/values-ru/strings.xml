@@ -137,6 +137,12 @@
     <string name="converter_to_format">Конвертировать в %1$s</string>
     <string name="converter_file_name_label">Имя файла</string>
     <string name="converter_file_name_placeholder">Автоматическое имя</string>
+    <string name="format_name_image">Изображение</string>
+    <string name="converter_success_title">Конвертация выполнена!</string>
+    <string name="converter_success_page_count_size">Страниц: %1$d · %2$d КБ</string>
+    <string name="converter_saved_to_downloads">Сохранено в Загрузки</string>
+    <string name="converter_share">Поделиться файлом</string>
+    <string name="converter_convert_another">Конвертировать другой файл</string>
     <string name="general_back_action">Назад</string>
 
     <string name="splash_tagline">Ваши умные документы</string>

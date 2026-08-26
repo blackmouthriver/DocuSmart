@@ -405,14 +405,14 @@ private fun ConversionGridCard(
             }
             Column {
                 Text(
-                    text       = type.label,
+                    text       = type.localizedLabel(),
                     style      = MaterialTheme.typography.labelLarge,
                     color      = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                     maxLines   = 1
                 )
                 Text(
-                    text  = "${type.fromFormat} → ${type.toFormat}",
+                    text  = type.localizedLabel(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -446,7 +446,7 @@ private fun ConversionDetailCard(
                 )
             }
             Text(
-                text       = type.label,
+                text       = type.localizedLabel(),
                 style      = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color      = MaterialTheme.colorScheme.onSurface
@@ -471,7 +471,7 @@ private fun ConversionDetailCard(
                     modifier = Modifier.size(40.dp))
                 Text(
                     text = if (selectedFiles.isEmpty())
-                        stringResource(R.string.converter_select_files, type.fromFormat)
+                        stringResource(R.string.converter_select_files, type.localizedFromFormat())
                     else
                         stringResource(R.string.converter_files_selected, selectedFiles.size),
                     style     = MaterialTheme.typography.bodyMedium,
@@ -520,7 +520,7 @@ private fun ConversionDetailCard(
                 Icon(Icons.Rounded.SwapHoriz, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text  = stringResource(R.string.converter_to_format, type.toFormat),
+                    text  = stringResource(R.string.converter_to_format, type.localizedToFormat()),
                     style = MaterialTheme.typography.labelLarge
                 )
             }
@@ -561,6 +561,26 @@ private fun getFormatStyle(format: String): Pair<Color, ImageVector> = when (for
     "html"                       -> Pair(ColorOcr,        Icons.Rounded.Code)
     else                         -> Pair(ColorText,       Icons.Rounded.InsertDriveFile)
 }
+
+// ── Localización de ConversionType ────────────────────────────────────────
+// fromFormat/toFormat son claves internas fijas (usadas también por
+// getFormatStyle() para elegir color/ícono) -- "PDF", "Word", "Excel",
+// "PowerPoint" y las extensiones (JPG, WebP, TXT, HTML, CSV...) son
+// nombres propios/abreviaturas iguales en los 5 idiomas del proyecto, así
+// que no necesitan traducción. La única palabra real es "Imagen".
+@Composable
+private fun localizedFormatName(format: String): String =
+    if (format == "Imagen") stringResource(R.string.format_name_image) else format
+
+@Composable
+private fun ConversionType.localizedFromFormat(): String = localizedFormatName(fromFormat)
+
+@Composable
+private fun ConversionType.localizedToFormat(): String = localizedFormatName(toFormat)
+
+@Composable
+private fun ConversionType.localizedLabel(): String =
+    "${localizedFromFormat()} → ${localizedToFormat()}"
 
 private fun getMimeForType(type: ConversionType): String = when (type) {
     ConversionType.IMAGE_TO_PDF,
