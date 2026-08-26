@@ -197,7 +197,24 @@ ya se justifica.
   Corregido subiendo esos `timeoutMillis` de 10 000 a 20 000 en los 3
   `waitUntil` de `ConverterScreenTest`/`SecurityScreenTest`. Verificado de
   nuevo en verde en el dispositivo real antes de reintentar.
-- Sexto intento en verificación tras los cinco fixes (ver §2 de
+- **Sexto intento real: seguía agotando el `waitUntil`, ahora a los 20s
+  también** — subir el timeout no cambiaba nada, señal de que no era un
+  problema de velocidad sino de que la condición nunca se cumplía. Causa
+  real encontrada: el emulador arranca en **inglés** por defecto (system
+  image `google_apis`), y los 3 tests buscan literales en **español**
+  ("Carpeta Segura", "PIN incorrecto", "Convertir a WebP" — este último sí
+  pasa por `stringResource(R.string.converter_to_format, ...)`, la nota
+  del código que decía lo contrario estaba equivocada). El proyecto no
+  tiene una carpeta `values-es/` propia — el español vive en `values/`
+  (el fallback por defecto) — así que cualquier locale que no sea inglés/
+  alemán/portugués/ruso (los 4 que sí tienen carpeta dedicada) cae en
+  español de todas formas. Corregido agregando
+  `adb shell settings put system system_locales es-ES` (más el broadcast
+  `LOCALE_CHANGED`) al principio del script del paso de pruebas, antes de
+  `connectedDebugAndroidTest` — mismo mecanismo que usa internamente el
+  selector de idioma de Android (`Settings.System.SYSTEM_LOCALES`), no
+  requiere reiniciar el emulador.
+- Séptimo intento en verificación tras los seis fixes (ver §2 de
   `CONTEXT.md` para el resultado final una vez confirmado).
 
 ---

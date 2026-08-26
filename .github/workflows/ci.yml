@@ -168,7 +168,19 @@ jobs:
           emulator-boot-timeout: 600
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -camera-back none
-          script: ./gradlew connectedDebugAndroidTest --no-daemon
+          # El emulador arranca en inglés por defecto (system image
+          # google_apis) -- los 3 tests que dependen de texto real
+          # (ConverterScreenTest, ambos de SecurityScreenTest) buscan
+          # literales en español ("Carpeta Segura", "PIN incorrecto",
+          # "Convertir a WebP" vía stringResource(converter_to_format)) y
+          # nunca los encontraban, sin importar cuánto se subiera el
+          # timeoutMillis del waitUntil -- no era lentitud, era locale.
+          # Forzar es-ES antes de correr los tests iguala el idioma real
+          # del dispositivo usado en desarrollo.
+          script: |
+            adb shell settings put system system_locales es-ES
+            adb shell am broadcast -a android.intent.action.LOCALE_CHANGED
+            ./gradlew connectedDebugAndroidTest --no-daemon
 
       - name: Publicar reporte de pruebas instrumentadas
         if: always()
