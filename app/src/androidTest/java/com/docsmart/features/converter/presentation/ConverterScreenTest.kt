@@ -4,6 +4,11 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -11,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.domain.usecase.ImageFormatUseCase
 import io.mockk.every
@@ -96,7 +102,28 @@ class ConverterScreenTest {
         val imageUri = createTestImageFile()
 
         composeRule.setContent {
-            ConverterScreen(viewModel = viewModel)
+            // Fuerza español -- "Convertir a WebP" viene de
+            // stringResource(R.string.converter_to_format, ...), y el
+            // emulador de CI arranca en inglés por defecto (ver
+            // com.docsmart.core.ui.test.forceLocale).
+            val baseContext = LocalContext.current
+            val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
+            // LocalContext ya no encadena de vuelta a la Activity real
+            // (createConfigurationContext() no es un ContextWrapper) --
+            // ConverterScreen usa rememberLauncherForActivityResult() para
+            // el picker de archivos, que se resuelve a través de
+            // LocalActivityResultRegistryOwner/LocalOnBackPressedDispatcherOwner,
+            // no cadena arriba desde LocalContext. Sin re-proveer esos dos
+            // apuntando a la Activity real, se rompe con "No
+            // ActivityResultRegistryOwner was provided" al componer, aunque
+            // el test nunca abra el picker de verdad.
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+            ) {
+                ConverterScreen(viewModel = viewModel)
+            }
         }
 
         composeRule.runOnUiThread {

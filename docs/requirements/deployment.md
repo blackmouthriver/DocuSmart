@@ -208,13 +208,47 @@ ya se justifica.
   tiene una carpeta `values-es/` propia — el español vive en `values/`
   (el fallback por defecto) — así que cualquier locale que no sea inglés/
   alemán/portugués/ruso (los 4 que sí tienen carpeta dedicada) cae en
-  español de todas formas. Corregido agregando
-  `adb shell settings put system system_locales es-ES` (más el broadcast
-  `LOCALE_CHANGED`) al principio del script del paso de pruebas, antes de
-  `connectedDebugAndroidTest` — mismo mecanismo que usa internamente el
-  selector de idioma de Android (`Settings.System.SYSTEM_LOCALES`), no
-  requiere reiniciar el emulador.
-- Séptimo intento en verificación tras los seis fixes (ver §2 de
+  español de todas formas. Primer intento de arreglo: agregar
+  `adb shell settings put system system_locales es-ES` +
+  `am broadcast -a android.intent.action.LOCALE_CHANGED` al script del
+  paso de pruebas, antes de `connectedDebugAndroidTest`.
+- **Séptimo intento real: ese primer arreglo de locale falló distinto**
+  — `am broadcast` con `LOCALE_CHANGED` es un broadcast protegido del
+  sistema; `shell` (uid 2000) no tiene permiso para enviarlo
+  (`SecurityException: Permission Denial`), ni siquiera con `adb root`
+  (tampoco funciona en un emulador `google_apis` normal: "adbd cannot run
+  as root in production builds" en algunas imágenes). Probado también
+  `cmd locale set-app-locales <paquete> --locales es-ES` (locale por-app,
+  sin necesitar broadcast ni root) — este sí funciona, confirmado en un
+  emulador local API 34 `google_apis` idéntico al de CI, pero AGP
+  reinstala/desinstala la app entre cada corrida de
+  `connectedDebugAndroidTest` (parte de su limpieza automática), borrando
+  el override antes de que el siguiente intento de fijarlo desde CI
+  pudiera sobrevivir. **Se abandonó el enfoque de tocar el locale del
+  sistema operativo/emulador desde CI** — demasiado frágil para lo que
+  se necesitaba.
+- **Fix definitivo: forzar el locale a nivel de código del test, no del
+  SO.** `com.docsmart.core.ui.test.forceLocale()` (nuevo,
+  `app/src/androidTest/.../core/ui/test/LocaleTestUtils.kt`) crea un
+  `Context` con `Configuration.setLocale(es-ES)` vía
+  `createConfigurationContext()`, provisto solo dentro del `setContent {}`
+  de `ConverterScreenTest`/`SecurityScreenTest` con
+  `CompositionLocalProvider(LocalContext provides ...)`. Determinístico en
+  cualquier dispositivo/emulador/API, sin depender de nada del entorno de
+  CI. **Efecto secundario encontrado al aplicarlo:** `LocalContext` dejó
+  de encadenar de vuelta a la `Activity` real (`createConfigurationContext()`
+  no es un `ContextWrapper`, a diferencia de `IsolatedPrefsContext` en
+  `SecurityScreenTest`), y `rememberLauncherForActivityResult()` (usado
+  por el picker de archivos en ambas pantallas) se resuelve por
+  `LocalActivityResultRegistryOwner`/`LocalOnBackPressedDispatcherOwner`,
+  no por `LocalContext` — sin re-proveer esos dos apuntando a
+  `composeRule.activity`, fallaba con "No ActivityResultRegistryOwner was
+  provided" al componer, aunque el test nunca abriera el picker de
+  verdad. Corregido re-proveyendo ambos junto con `LocalContext`.
+  Verificado en verde en un emulador local API 34 `google_apis` (idéntico
+  al de CI) y en el dispositivo real, más la suite JVM completa, antes de
+  reintentar en CI.
+- Octavo intento en verificación tras todos los fixes (ver §2 de
   `CONTEXT.md` para el resultado final una vez confirmado).
 
 ---
