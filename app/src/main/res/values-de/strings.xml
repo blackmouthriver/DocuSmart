@@ -137,6 +137,12 @@
     <string name="converter_to_format">In %1$s konvertieren</string>
     <string name="converter_file_name_label">Dateiname</string>
     <string name="converter_file_name_placeholder">Automatischer Name</string>
+    <string name="format_name_image">Bild</string>
+    <string name="converter_success_title">Konvertierung erfolgreich!</string>
+    <string name="converter_success_page_count_size">%1$d Seite(n) · %2$d KB</string>
+    <string name="converter_saved_to_downloads">In Downloads gespeichert</string>
+    <string name="converter_share">Datei teilen</string>
+    <string name="converter_convert_another">Weitere Datei konvertieren</string>
     <string name="general_back_action">Zurück</string>
 
     <string name="splash_tagline">Deine intelligenten Dokumente</string>

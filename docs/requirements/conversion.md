@@ -150,14 +150,16 @@ instrumentada contra dispositivo real, sin Hilt (ViewModel construido a mano con
   `selectedFiles` a propósito (coincide con el flujo real: primero se
   elige el formato, después se abre el picker) — el test debe llamar
   `onTypeSelected()` antes de `onFilesSelected()`, no al revés.
-- **Hallazgo de i18n (no corregido, backlog):** tanto `ConversionType.label`
-  (ej. `"Imagen → WebP"`) como el texto `"¡Conversión exitosa!"` en
-  `ConversionSuccess.kt` están en español fijo, sin pasar por
-  `stringResource()` — mismo patrón de bug que ya se corrigió en las 7
-  pantallas listadas en `CONTEXT.md` §2 "i18n", pero estos dos casos
-  quedaron fuera de esa limpieza porque están en un modelo de dominio y un
-  componente compartido, no en una pantalla completa. El test usa estos
-  literales porque reflejan el comportamiento real actual, no el deseado.
+- **Hallazgo de i18n — corregido (2026-08-26):** tanto `ConversionType.label`
+  (ej. `"Imagen → WebP"`) como todo el texto de `ConversionSuccess.kt`
+  estaban en español fijo, sin pasar por `stringResource()` — mismo patrón
+  de bug que ya se corrigió en las 7 pantallas listadas en `CONTEXT.md` §2
+  "i18n", pero estos dos casos habían quedado fuera de esa limpieza porque
+  están en un modelo de dominio y un componente compartido, no en una
+  pantalla completa. Detalle completo del fix en la sección "i18n del
+  Convertidor" más abajo. El test sigue usando el literal español porque
+  `ConverterScreenTest` fuerza `es-ES` con `forceLocale()` (ver
+  `security.md` §7), así que el texto renderizado sigue siendo el mismo.
 - **Bug de entorno de prueba encontrado y corregido (no del código de la
   app):** al correr la suite completa de `connectedDebugAndroidTest` (los
   dos flujos juntos, no cada uno filtrado por separado), ambas pruebas de
@@ -173,7 +175,62 @@ instrumentada contra dispositivo real, sin Hilt (ViewModel construido a mano con
 
 ---
 
-## 8. Preguntas abiertas
+## 8. i18n del Convertidor (2026-08-26)
+
+Dos hallazgos de i18n encontrados durante Compose UI Testing (§7), ambos
+corregidos.
+
+- **`ConversionType.label`** — campo del enum con 17 valores hardcodeados
+  en español (`"Imagen → WebP"`, `"PDF → Word"`, etc.), usado en 2
+  pantallas (`ConverterScreen.kt`). Un enum de dominio no puede llamar
+  `stringResource()` en su constructor (no hay `@Composable` scope al
+  cargar la clase), así que en vez de guardar el texto final se guardan
+  claves internas fijas (`fromFormat`/`toFormat`, ej. `"Imagen"`, `"PDF"`,
+  `"WebP"`) — las mismas que ya usaba `getFormatStyle()` para elegir
+  color/ícono, sin tocar. El campo `label` se eliminó del todo (quedaba
+  muerto en cuanto se localizó `fromFormat`/`toFormat` en el punto de uso).
+  De esas claves, **solo `"Imagen"` es una palabra real que necesita
+  traducción** — el resto (`PDF`, `Word`, `Excel`, `PowerPoint`, `WebP`,
+  `JPG`, `PNG`, `BMP`, `TXT`, `HTML`, `CSV`) son nombres propios/
+  abreviaturas de formato, iguales en los 5 idiomas del proyecto. Nuevo
+  recurso `format_name_image` + helpers `@Composable` en
+  `ConverterScreen.kt` (`localizedFromFormat()`/`localizedToFormat()`/
+  `localizedLabel()`) que traducen solo esa palabra y dejan todo lo demás
+  igual. También corregidos 2 sitios que ya llamaban `stringResource()`
+  pero pasándole el valor crudo sin localizar
+  (`converter_select_files`/`converter_to_format` recibiendo
+  `type.fromFormat`/`type.toFormat` directo — "Convertir a Imagen" nunca
+  se traducía, aunque la plantilla sí).
+- **`ConversionSuccess.kt`** — 6 strings en español fijo (título, conteo de
+  páginas/tamaño, confirmación de guardado, 3 botones). Nuevos recursos:
+  `converter_success_title`, `converter_success_page_count_size`,
+  `converter_saved_to_downloads`, `converter_share`,
+  `converter_convert_another`; `converter_save` ya existía y solo hacía
+  falta usarlo ahí (estaba duplicado como literal).
+  **Bug funcional encontrado de paso, más grave que el de i18n:**
+  `ConversionSuccess` es el componente de éxito de **las 17** conversiones
+  (no solo PDF/imagen — se ve desde `ConverterScreen.kt:126`, un solo
+  punto de uso para todos los `ConversionResult.Success`), pero el ícono
+  (`Icons.Rounded.PictureAsPdf` fijo), el MIME type al compartir
+  (`"application/pdf"` fijo) y el texto de los botones ("Compartir PDF",
+  "Convertir otra imagen") asumían siempre PDF/imagen — mostrando ícono y
+  MIME equivocados, y compartiendo con el MIME type incorrecto, para las
+  ~12 conversiones que no producen PDF ni imagen (Excel→CSV, Word→HTML,
+  PPT→Texto, etc.). Corregido derivando ícono/color y MIME type de la
+  extensión real de `result.outputFile` (`formatIconForExtension()` +
+  `MimeTypeMap`), y generalizando el texto de los botones
+  ("Compartir archivo"/"Convertir otro archivo", ya no específico a
+  PDF/imagen).
+- Paridad de claves verificada tras el cambio: las 5 versiones de
+  `strings.xml` (es/en/de/pt/ru) siguen teniendo exactamente el mismo
+  conjunto de nombres de recurso.
+- Verificado en verde: `testDebugUnitTest`/`detekt`/`lintDebug` y
+  `connectedDebugAndroidTest` (6 pruebas) en el dispositivo real, una vez
+  reconectado el cable USB.
+
+---
+
+## 9. Preguntas abiertas
 
 | Pregunta | Notas |
 |---|---|

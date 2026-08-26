@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-25 (Compose UI Testing en CI con emulador)
+**Última actualización:** 2026-08-26 (i18n del Convertidor corregida)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -42,8 +42,10 @@ sprint backlog, cronograma, roles) — ver [§7](#7-entregables-académicos-pend
   Testing contra un emulador con aceleración KVM en el mismo workflow —
   aún sin verificar en un run real de GitHub Actions, ver
   `docs/requirements/deployment.md` §3.
-- **i18n:** 384 claves de string × 5 idiomas, las 7 pantallas con texto
-  fijo ya conectadas a `stringResource()`. Verificado con paridad exacta.
+- **i18n:** claves de string × 5 idiomas (paridad exacta verificada), las 7
+  pantallas con texto fijo ya conectadas a `stringResource()`, más
+  `ConversionType`/`ConversionSuccess.kt` (2026-08-26, ver módulo
+  Conversión abajo).
 - **Tests:** 95 tests reales (Seguridad: 26, Herramientas PDF: 8, Visor+Biblioteca: 21, Conversión: 10, Escáner: 10, Ajustes+Premium: 14, Estudio: 5, ejemplo: 1), 0 fallos, verificado corriendo la suite completa. 86 son unitarios puros; 1 clase (`DocumentHistoryDaoTest`, 6 tests) es la primera **prueba de integración** del proyecto, contra SQLite real; 3 son **Compose UI Testing** instrumentadas contra dispositivo real (`ViewerScreenTest`, `ConverterScreenTest`, `SecurityScreenTest` — flujos #1, #2 y #3). Cobertura aún baja en proporción al total de use cases del proyecto (~4.4% de líneas, ver §8 SonarCloud).
 - **Base de datos:** Room desde 2026-08-25, primera tabla (`document_history`,
   historial de documentos abiertos — ver §2 "Historial de documentos
@@ -127,13 +129,23 @@ Detalle completo en [`docs/requirements/conversion.md`](docs/requirements/conver
 
 **Compose UI Testing — flujo #2 (2026-08-25):** `ConverterScreenTest` cubre
 Imagen→WebP con `ImageFormatUseCase` real (no mockeado), protegiendo de
-verdad contra el crash de WEBP_LOSSLESS ya corregido. Dos hallazgos de i18n
-sin corregir (backlog): `ConversionType.label` y el texto de éxito en
-`ConversionSuccess.kt` están en español fijo, fuera de `stringResource()`.
-De paso se encontró y corrigió una causa de inestabilidad al correr varias
-pruebas de Compose UI juntas en el dispositivo real (animaciones del
-sistema activas → `IllegalStateException: No compose hierarchies found`).
+verdad contra el crash de WEBP_LOSSLESS ya corregido. De paso se encontró y
+corrigió una causa de inestabilidad al correr varias pruebas de Compose UI
+juntas en el dispositivo real (animaciones del sistema activas →
+`IllegalStateException: No compose hierarchies found`).
 Detalle en [`docs/requirements/conversion.md` §7](docs/requirements/conversion.md).
+
+**i18n del Convertidor — corregido (2026-08-26):** `ConversionType.label`
+(campo hardcodeado en español, eliminado del enum) y todo el texto de
+`ConversionSuccess.kt` ya pasan por `stringResource()`, con las 5 versiones
+de `strings.xml` en paridad exacta. De paso se corrigió un bug funcional
+más grave que el de i18n: `ConversionSuccess` es el componente de éxito de
+las 17 conversiones, pero el ícono/MIME type/texto de botones asumían
+siempre PDF o imagen — mostrando datos equivocados para las ~12
+conversiones que no producen ninguno de los dos (Excel→CSV, Word→HTML,
+etc.). Verificado en verde: `testDebugUnitTest`/`detekt`/`lintDebug` y
+`connectedDebugAndroidTest` (6 pruebas) en el dispositivo real. Detalle en
+[`docs/requirements/conversion.md` §8](docs/requirements/conversion.md).
 
 ### Módulo Escáner (2026-08-24)
 Módulo con menos deuda real de lo que sugería la QA de mayo: la mayoría de

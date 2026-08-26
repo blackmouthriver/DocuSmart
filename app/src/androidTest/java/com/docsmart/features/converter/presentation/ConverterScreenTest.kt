@@ -148,10 +148,11 @@ class ConverterScreenTest {
                 .fetchSemanticsNodes().isNotEmpty()
         }
 
-        // "Imagen → WebP" (ConversionType.label) y "Convertir a WebP"
-        // (converter_to_format) son los textos reales renderizados hoy --
-        // ninguno de los dos pasa por stringResource() (hallazgo de i18n
-        // aparte, documentado en docs/requirements/conversion.md).
+        // "Convertir a WebP" (converter_to_format) es el texto real
+        // renderizado en español gracias a forceLocale() (ver setContent{}
+        // arriba) -- el hallazgo de i18n original (ConversionType.label
+        // hardcodeado, converter_to_format recibiendo type.toFormat sin
+        // localizar) ya se corrigió, ver docs/requirements/conversion.md.
         composeRule.onNodeWithText("Convertir a WebP").performClick()
 
         // La conversión real corre en un dispositivo de 8x8 px -- rápida,
