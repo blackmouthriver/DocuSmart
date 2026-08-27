@@ -77,7 +77,7 @@ class SecurityScreenTest {
     @Test
     fun ingresarPinCorrecto_desbloqueaYMuestraCarpetaSegura() {
         val viewModel = buildViewModel()
-        composeRule.runOnUiThread { viewModel.setupPin("1234") }
+        composeRule.runOnUiThread { viewModel.setupPin("1234", "no debería mostrarse") }
         composeRule.waitForIdle()
         // setupPin() ya desbloquea -- se vuelve a bloquear para probar el
         // desbloqueo real con PIN por la UI, en vez de solo por el ViewModel.
@@ -134,7 +134,7 @@ class SecurityScreenTest {
     @Test
     fun ingresarPinIncorrecto_muestraMensajeDeError() {
         val viewModel = buildViewModel()
-        composeRule.runOnUiThread { viewModel.setupPin("1234") }
+        composeRule.runOnUiThread { viewModel.setupPin("1234", "no debería mostrarse") }
         composeRule.waitForIdle()
         composeRule.runOnUiThread { viewModel.goToLocked() }
 

@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-26 (RF-SEC-08 — auto-bloqueo en segundo plano)
+**Última actualización:** 2026-08-27 (setupPin ya no falla en silencio)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -84,9 +84,20 @@ envuelto en un `ContextWrapper` propio para aislar el PIN de prueba del
 biometría. Dos hallazgos: RF-SEC-08 (auto-bloqueo al pasar a segundo
 plano) no estaba implementado (verificado con `grep`, cero código de
 lifecycle en el feature — **implementado el mismo día, ver abajo**); y
-`setupPin()` falla en silencio si `SecurityManager.setPin()` devuelve
-`false` (ni error ni cambio de estado, sin corregir, backlog). Detalle en
+`setupPin()` fallaba en silencio si `SecurityManager.setPin()` devolvía
+`false` (ni error ni cambio de estado — **corregido 2026-08-27, ver
+abajo**). Detalle en
 [`docs/requirements/security.md` §10](docs/requirements/security.md).
+
+**`setupPin()` deja de fallar en silencio (2026-08-27):**
+`SecurityViewModel.setupPin(pin, errorMessage)` ahora avisa vía
+`uiState.error` cuando `SecurityManager.setPin()` devuelve `false`, y
+`SetupPinScreen` (antes sin conexión al error del ViewModel) lo muestra y
+deja reintentar sin volver a teclear el PIN completo. Verificado en el
+dispositivo real que el camino exitoso no cambió; el camino de fallo
+queda cubierto por el test unitario (no se pudo forzar de forma realista
+en el dispositivo). Detalle en
+[`docs/requirements/security.md` §12](docs/requirements/security.md).
 
 **RF-SEC-08 — auto-bloqueo al pasar a segundo plano (2026-08-26):**
 `SecurityViewModel.lockIfUnlocked()` + `DisposableEffect` en
