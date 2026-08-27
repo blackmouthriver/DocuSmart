@@ -250,6 +250,7 @@
     <string name="security_confirm_pin_desc">Digite o PIN novamente para confirmar</string>
     <string name="security_create_pin_desc">Escolha um PIN de 4 dígitos para proteger sua pasta</string>
     <string name="security_pins_dont_match">Os PINs não coincidem</string>
+    <string name="security_setup_pin_error">Não foi possível salvar o PIN. Tente novamente.</string>
     <string name="security_files_protected_count">%1$d arquivos protegidos</string>
     <string name="security_protect_new_file">Proteger novo arquivo</string>
     <string name="security_config_section">Configurações</string>

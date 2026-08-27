@@ -250,6 +250,7 @@
     <string name="security_confirm_pin_desc">Введите PIN-код ещё раз для подтверждения</string>
     <string name="security_create_pin_desc">Выберите 4-значный PIN-код для защиты папки</string>
     <string name="security_pins_dont_match">PIN-коды не совпадают</string>
+    <string name="security_setup_pin_error">Не удалось сохранить PIN-код. Попробуйте снова.</string>
     <string name="security_files_protected_count">Защищённых файлов: %1$d</string>
     <string name="security_protect_new_file">Защитить новый файл</string>
     <string name="security_config_section">Настройки</string>

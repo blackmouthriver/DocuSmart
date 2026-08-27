@@ -212,7 +212,7 @@ class SecurityViewModelTest {
         viewModel.uiState.test {
             assertFalse(awaitItem().hasPin)
 
-            viewModel.setupPin("1234")
+            viewModel.setupPin("1234", "no debería mostrarse")
 
             assertTrue(awaitItem().hasPin)
             assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
@@ -220,20 +220,20 @@ class SecurityViewModelTest {
     }
 
     @Test
-    fun `setupPin fallido no cambia hasPin ni el estado de pantalla`() {
-        // Hallazgo: si SecurityManager.setPin() devuelve false, el ViewModel
-        // no hace nada -- ni error, ni cambio de estado. El usuario no se
-        // entera de que falló. No corregido a propósito (fuera del alcance
-        // de "escribir el test"), documentado como backlog en security.md.
+    fun `setupPin fallido muestra error y no cambia hasPin ni el estado de pantalla`() {
+        // Corregido 2026-08-26 (ver security.md §10): antes, si
+        // SecurityManager.setPin() devolvía false, el ViewModel no hacía
+        // nada -- ni error, ni cambio de estado. El usuario no se enteraba
+        // de que falló.
         every { securityManager.setPin("1234") } returns false
 
         val viewModel = buildViewModel()
-        viewModel.setupPin("1234")
+        viewModel.setupPin("1234", "No se pudo guardar el PIN")
 
         val state = viewModel.uiState.value
         assertFalse(state.hasPin)
         assertEquals(SecurityScreenState.LOCKED, state.screenState)
-        assertNull(state.error)
+        assertEquals("No se pudo guardar el PIN", state.error)
     }
 
     // ── error / successMessage ────────────────────────────────────────────────

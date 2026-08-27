@@ -250,6 +250,7 @@
     <string name="security_confirm_pin_desc">Gib die PIN erneut ein, um zu bestätigen</string>
     <string name="security_create_pin_desc">Wähle eine 4-stellige PIN, um deinen Ordner zu schützen</string>
     <string name="security_pins_dont_match">Die PINs stimmen nicht überein</string>
+    <string name="security_setup_pin_error">PIN konnte nicht gespeichert werden. Bitte versuche es erneut.</string>
     <string name="security_files_protected_count">%1$d geschützte Dateien</string>
     <string name="security_protect_new_file">Neue Datei schützen</string>
     <string name="security_config_section">Einstellungen</string>

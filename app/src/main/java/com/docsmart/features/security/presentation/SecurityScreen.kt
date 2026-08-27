@@ -74,6 +74,7 @@ fun SecurityScreen(
     }
 
     val incorrectPinMessage    = stringResource(R.string.security_pin_incorrect)
+    val setupPinErrorMessage   = stringResource(R.string.security_setup_pin_error)
     val biometricPromptTitle   = stringResource(R.string.security_biometric_title)
     val biometricPromptSubtitle = stringResource(R.string.security_biometric_subtitle)
     val usePinLabel            = stringResource(R.string.security_biometric_use_pin)
@@ -129,8 +130,10 @@ fun SecurityScreen(
                 }
                 SecurityScreenState.SETUP_PIN -> {
                     SetupPinScreen(
-                        onPinSet = { pin -> viewModel.setupPin(pin) },
-                        onBack   = { viewModel.goToLocked() }
+                        onPinSet          = { pin -> viewModel.setupPin(pin, setupPinErrorMessage) },
+                        onBack            = { viewModel.goToLocked() },
+                        externalError     = uiState.error,
+                        onExternalErrorShown = { viewModel.dismissError() }
                     )
                 }
                 SecurityScreenState.UNLOCKED -> {
@@ -337,7 +340,9 @@ private fun NumericKeypadKey(
 @Composable
 private fun SetupPinScreen(
     onPinSet: (String) -> Unit,
-    onBack  : () -> Unit
+    onBack  : () -> Unit,
+    externalError        : String? = null,
+    onExternalErrorShown : () -> Unit = {}
 ) {
     var pin         = remember { mutableStateOf("") }
     var confirmPin  = remember { mutableStateOf("") }
@@ -345,6 +350,20 @@ private fun SetupPinScreen(
     var error        by remember { mutableStateOf<String?>(null) }
     val pinLength    = 4
     val pinsDontMatchMessage = stringResource(R.string.security_pins_dont_match)
+
+    // Hallazgo real corregido (2026-08-26, ver security.md §10): si
+    // SecurityManager.setPin() falla (ej. error de SharedPreferences), el
+    // ViewModel ahora sí avisa vía uiState.error -- antes no pasaba nada y
+    // el usuario se quedaba mirando el teclado sin saber que su PIN no se
+    // guardó. Se limpia confirmPin para que pueda reintentar sin tener que
+    // volver a escribir el PIN completo desde cero.
+    LaunchedEffect(externalError) {
+        if (externalError != null) {
+            error = externalError
+            confirmPin.value = ""
+            onExternalErrorShown()
+        }
+    }
 
     Box(
         modifier = Modifier

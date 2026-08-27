@@ -73,11 +73,16 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    fun setupPin(pin: String) {
+    fun setupPin(pin: String, errorMessage: String) {
         val success = securityManager.setPin(pin)
         if (success) {
-            _uiState.update { it.copy(hasPin = true) }
+            _uiState.update { it.copy(hasPin = true, error = null) }
             unlockAndLoadFiles()
+        } else {
+            // Hallazgo real (2026-08-26, ver security.md §10): antes esto no
+            // hacía nada -- el usuario se quedaba mirando el teclado sin
+            // ninguna indicación de que su PIN no se guardó.
+            _uiState.update { it.copy(error = errorMessage) }
         }
     }
 

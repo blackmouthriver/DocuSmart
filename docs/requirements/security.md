@@ -254,12 +254,11 @@ Ninguna pendiente por ahora — todas las decisiones de producto para este módu
   desbloqueada indefinidamente en segundo plano hasta que el usuario
   cerraba la app o navegaba manualmente hacia atrás. Ver §11 para el
   detalle de la implementación.
-- **`setupPin()` falla en silencio.** Si `SecurityManager.setPin()` devuelve
-  `false` (ej. error de `SharedPreferences`), el `ViewModel` no actualiza
-  `error` ni cambia `screenState` — el usuario se queda mirando el teclado
-  numérico sin ninguna indicación de que su PIN no se guardó. No corregido
-  (fuera del alcance de "escribir el test"), documentado acá para que quede
-  registrado antes de la primera publicación.
+- **`setupPin()` fallaba en silencio — corregido (2026-08-27).** Si
+  `SecurityManager.setPin()` devolvía `false` (ej. error de
+  `SharedPreferences`), el `ViewModel` no actualizaba `error` ni cambiaba
+  `screenState` — el usuario se quedaba mirando el teclado numérico sin
+  ninguna indicación de que su PIN no se guardó. Ver §12 para el detalle.
 
 ## 11. RF-SEC-08 — auto-bloqueo al pasar a segundo plano (2026-08-26)
 
@@ -301,3 +300,38 @@ Ninguna pendiente por ahora — todas las decisiones de producto para este módu
   el dispositivo real (arriba) en vez de forzar un test automatizado poco
   confiable. La lógica pura (`lockIfUnlocked()`) sí queda cubierta por
   unit tests.
+
+---
+
+## 12. `setupPin()` deja de fallar en silencio (2026-08-27)
+
+Hallazgo de `SecurityViewModelTest` (§10): si `SecurityManager.setPin()`
+devolvía `false`, el `ViewModel` no hacía nada — ni error, ni cambio de
+estado. El usuario se quedaba mirando el teclado numérico tras confirmar
+su PIN sin ninguna indicación de que no se guardó.
+
+- **`SecurityViewModel.setupPin(pin, errorMessage)`** — ahora recibe un
+  mensaje de error (mismo patrón que `verifyPin(pin, incorrectPinMessage)`,
+  resuelto vía `stringResource()` en la capa de presentación) y actualiza
+  `uiState.error` cuando `setPin()` devuelve `false`. Nuevo recurso
+  `security_setup_pin_error` en los 5 idiomas.
+- **`SetupPinScreen` (antes sin ninguna conexión al `uiState.error` del
+  ViewModel)** — nuevo parámetro `externalError`, mostrado con el mismo
+  `Text` que ya usaba el error local de "los PINs no coinciden". Un
+  `LaunchedEffect(externalError)` limpia `confirmPin` para que el usuario
+  pueda reintentar sin volver a teclear el PIN completo desde cero (mismo
+  comportamiento que ya tenía el caso de "PINs no coinciden"), y avisa al
+  ViewModel (`viewModel.dismissError()`) para no repetir el mensaje si el
+  Composable se recompone por otra razón.
+- Actualizados los 2 tests unitarios de `setupPin` en
+  `SecurityViewModelTest` y los 2 sitios que llamaban `setupPin(pin)` en
+  `SecurityScreenTest` a la nueva firma de 2 argumentos.
+- **Verificado en el dispositivo real:** el camino exitoso (PIN configurado
+  correctamente) sigue funcionando exactamente igual que antes — el nuevo
+  `LaunchedEffect` no interfiere cuando `externalError` es `null`. El
+  camino de fallo (`setPin()` devolviendo `false`) no se pudo forzar de
+  forma realista en el dispositivo real sin modificar código a propósito
+  para simular el fallo; queda cubierto por el test unitario
+  correspondiente, no por verificación manual.
+- Verificado también: `connectedDebugAndroidTest` (6 pruebas, sin
+  regresión) y `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
