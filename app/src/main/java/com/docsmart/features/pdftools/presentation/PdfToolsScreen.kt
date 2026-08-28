@@ -22,6 +22,7 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DailyLimitDialog
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
@@ -29,6 +30,7 @@ import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
+import com.docsmart.features.pdftools.presentation.components.ComparePdfScreen
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
@@ -98,6 +100,18 @@ fun PdfToolsScreen(
     val reorderGenerateError   = stringResource(R.string.pdf_reorder_pages_generate_error)
     val reorderSuccess         = stringResource(R.string.pdf_reorder_pages_success)
     val reorderGenericError    = stringResource(R.string.pdf_reorder_pages_error)
+    val compareReadErrorA      = stringResource(R.string.pdf_compare_read_error_a)
+    val compareReadErrorB      = stringResource(R.string.pdf_compare_read_error_b)
+    val compareGenerateError   = stringResource(R.string.pdf_compare_generate_error)
+    val compareIdentical       = stringResource(R.string.pdf_compare_identical)
+    val compareDifferencesFound = stringResource(R.string.pdf_compare_differences_found)
+    val compareGenericError    = stringResource(R.string.pdf_compare_error)
+    val compareReportTitle       = stringResource(R.string.pdf_compare_report_title)
+    val compareReportPageHeader   = stringResource(R.string.pdf_compare_report_page_header)
+    val compareReportPageOnlyInA   = stringResource(R.string.pdf_compare_report_page_only_in_a)
+    val compareReportPageOnlyInB    = stringResource(R.string.pdf_compare_report_page_only_in_b)
+    val compareReportOnlyInALine     = stringResource(R.string.pdf_compare_report_only_in_a_line)
+    val compareReportOnlyInBLine      = stringResource(R.string.pdf_compare_report_only_in_b_line)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -153,6 +167,20 @@ fun PdfToolsScreen(
                 generateError   = reorderGenerateError,
                 success         = reorderSuccess,
                 genericError    = reorderGenericError
+            ),
+            compare = ComparePdfMessages(
+                readErrorA         = compareReadErrorA,
+                readErrorB         = compareReadErrorB,
+                generateError      = compareGenerateError,
+                identical          = compareIdentical,
+                differencesFound   = compareDifferencesFound,
+                genericError       = compareGenericError,
+                reportTitle        = compareReportTitle,
+                reportPageHeader   = compareReportPageHeader,
+                reportPageOnlyInA  = compareReportPageOnlyInA,
+                reportPageOnlyInB  = compareReportPageOnlyInB,
+                reportOnlyInALine  = compareReportOnlyInALine,
+                reportOnlyInBLine  = compareReportOnlyInBLine
             )
         )
     }
@@ -167,6 +195,18 @@ fun PdfToolsScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let { viewModel.onPdfsSelected(listOf(it)) }
+    }
+
+    val comparePdfALauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.onComparePdfASelected(it) }
+    }
+
+    val comparePdfBLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.onComparePdfBSelected(it) }
     }
 
     LaunchedEffect(uiState.errorMessage) {
@@ -409,6 +449,22 @@ fun PdfToolsScreen(
                                     },
                                     onRemovePage = {
                                         viewModel.onRemovePage(it)
+                                    },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.COMPARE -> ComparePdfScreen(
+                                    pdfA = uiState.comparePdfA,
+                                    pdfB = uiState.comparePdfB,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdfA = {
+                                        comparePdfALauncher.launch(MIME_PDF)
+                                    },
+                                    onSelectPdfB = {
+                                        comparePdfBLauncher.launch(MIME_PDF)
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )

@@ -13,9 +13,11 @@ texto en español fijo en este módulo. **RF-PDF-06 (Numerar páginas)
 implementado 2026-08-28, ver §10** — primera funcionalidad nueva del
 backlog. **RF-PDF-07 (Marca de agua) implementado 2026-08-28, ver §11.**
 **RF-PDF-08 (Reordenar/eliminar páginas) implementado 2026-08-28, ver §12**
-— cierra las 3 funcionalidades de prioridad "alta" del backlog. Pendiente:
-RF-PDF-09 a RF-PDF-15 (todas prioridad media/baja), y selección de archivo
-desde la Biblioteca de la app (ver §5).
+— cierra las 3 funcionalidades de prioridad "alta" del backlog. **RF-PDF-13
+(Comparar dos PDFs) implementado 2026-08-28, ver §13** — primera de las 2
+funcionalidades de prioridad "media". Pendiente: RF-PDF-09 a RF-PDF-12 y
+RF-PDF-14/15 (prioridad media/baja restante), y selección de archivo desde
+la Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
 ---
@@ -35,8 +37,12 @@ el requerimiento #3 original que todavía no existe:
    páginas.
 7. **Reordenar páginas** — vista de miniaturas arrastrable para cambiar el
    orden y/o eliminar páginas individuales.
-8. *(Backlog, no implementado)* recortar, editar contenido, firma digital,
-   formularios, comparar dos PDFs, censurar contenido, OCR avanzado.
+8. **Comparar PDFs** — compara el texto de cada página de dos PDFs y genera
+   un reporte con las diferencias encontradas (páginas que solo existen en
+   uno de los dos documentos, líneas de texto presentes en uno pero no en
+   el otro).
+9. *(Backlog, no implementado)* recortar, editar contenido, firma digital,
+   formularios, censurar contenido, OCR avanzado.
 
 ---
 
@@ -51,19 +57,19 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-06** Numerar páginas (pie de página con número, formato configurable). **✅ Implementado 2026-08-28, ver §10.**
 - **RF-PDF-07** Marca de agua de texto sobre todas las páginas. **✅ Implementado 2026-08-28, ver §11.**
 - **RF-PDF-08** Reordenar y/o eliminar páginas individuales (vista de miniaturas arrastrable). **✅ Implementado 2026-08-28, ver §12.**
+- **RF-PDF-13** Comparar dos versiones de un PDF y resaltar diferencias. **✅ Implementado 2026-08-28, ver §13.**
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
 - **RF-PDF-09** Recortar (crop) márgenes de página.
 - **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes).
 - **RF-PDF-11** Firma digital de PDF.
 - **RF-PDF-12** Detección y relleno de formularios PDF.
-- **RF-PDF-13** Comparar dos versiones de un PDF y resaltar diferencias.
 - **RF-PDF-14** Censurar (redactar) contenido sensible de forma irreversible.
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
 Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido)
-— **las 3 funcionalidades de prioridad "alta" ya están implementadas**
-(RF-PDF-06/07/08): **media** → RF-PDF-13, RF-PDF-14 ·
+— **las 3 funcionalidades de prioridad "alta" y la primera de "media" ya
+están implementadas** (RF-PDF-06/07/08/13): **media** → RF-PDF-14 ·
 **baja/futuro** → RF-PDF-09, RF-PDF-10, RF-PDF-11, RF-PDF-12, RF-PDF-15
 (requieren más superficie de UI o licenciamiento adicional de iText7 para
 firma/formularios avanzados).
@@ -72,8 +78,8 @@ firma/formularios avanzados).
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 7 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 8 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -158,12 +164,26 @@ firma/formularios avanzados).
 - **AC2** Dado que marco una página para eliminar, cuando confirmo, entonces el resultado no la incluye.
 - **AC3 (protección contra vaciar el PDF)** Dado que solo queda una página en la lista, cuando intento eliminarla, entonces el botón de eliminar queda deshabilitado — el resultado siempre debe conservar al menos una página.
 
+### HU-PDF-08 — Comparar dos PDFs
+*(Implementado 2026-08-28 — ver §13. HU redactada de nuevo, no existía en el
+backlog original de HU-PDF-01 a 07 porque RF-PDF-13 se agregó después como
+mejora sugerida — ver §2.)*
+
+**Como** usuario que recibió una nueva versión de un documento,
+**quiero** comparar dos PDFs y ver en qué páginas cambiaron,
+**para** no tener que leer el documento completo de nuevo buscando qué se modificó.
+
+- **AC1** Dado que selecciono un Documento A y un Documento B, cuando confirmo comparar, entonces obtengo un reporte en PDF que indica cuántas páginas tienen diferencias sobre el total.
+- **AC2** Dado que una página tiene texto distinto entre A y B, cuando reviso el reporte, entonces veo, para esa página, qué líneas aparecen solo en A y cuáles solo en B.
+- **AC3** Dado que uno de los dos documentos tiene más páginas que el otro, cuando reviso el reporte, entonces las páginas que no tienen contraparte se marcan explícitamente como existentes solo en A o solo en B, en vez de compararse contra "nada" silenciosamente.
+- **AC4** Dado que los dos documentos son idénticos, cuando confirmo comparar, entonces el resultado indica "Los dos documentos son idénticos" en vez de un reporte vacío sin explicación.
+
 ---
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 7 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 8 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -177,7 +197,7 @@ firma/formularios avanzados).
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). El resto → RF-PDF-09 a RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). El resto → RF-PDF-09 a RF-PDF-12 y RF-PDF-14/15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -192,6 +212,7 @@ firma/formularios avanzados).
 | 5 | `NumberPagesUseCaseTest` — cada uno de los 3 formatos escribe el texto correcto en cada página (verificado extrayendo el texto real del PDF de salida con `PdfTextExtractor`, no solo el conteo de páginas), el total de páginas se conserva, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 6 | `WatermarkPdfUseCaseTest` — el texto de marca de agua queda escrito como texto real extraíble en cada página (pese a estar rotado/semitransparente), el total de páginas se conserva, texto vacío → Error sin tocar el archivo, texto largo no lanza excepción (se ajusta el tamaño de fuente), archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 7 | `ReorderPagesUseCaseTest` — reordenar sin eliminar refleja el nuevo orden (verificado leyendo el **contenido** de cada página resultante, no solo el conteo — el PDF de prueba tiene una etiqueta de texto distinta por página), omitir una página de la lista la elimina, reordenar y eliminar a la vez produce el resultado combinado correcto, lista de orden vacía → Error, archivo no-PDF → Error. | ✅ 5 tests, en verde |
+| 8 | `ComparePdfUseCaseTest` — documentos idénticos → mensaje "identical" sin diferencias, una línea distinta en una página compartida aparece en el reporte generado y se cuenta como página distinta, una página que solo existe en un documento se marca como tal (no se cuenta como idéntica ni se compara contra texto vacío), stream nulo al leer A → Error de lectura A, stream nulo al leer B → Error de lectura B. | ✅ 5 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -541,4 +562,121 @@ formulario con campos/chips como las 3 anteriores.
   archivo descargado y verificado directamente: 2 páginas, "Page two"
   primero y "Page one" segundo, "Page three" ausente — coincide
   exactamente con la reordenación y eliminación realizadas en pantalla.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 13. RF-PDF-13/HU-PDF-08 — Comparar dos PDFs (2026-08-28)
+
+Primera funcionalidad de prioridad "media" del backlog, y la primera que
+recibe **dos** PDFs de entrada en vez de uno — mismo patrón de dos
+selectores que ya usa Unir para múltiples archivos, pero acá son
+exactamente dos slots con roles fijos (Documento A / Documento B), no una
+lista abierta. También es la primera herramienta cuyo archivo de salida
+**no es una versión modificada de un PDF de entrada**, sino un documento
+nuevo (un reporte) sintetizado a partir de lo que se encontró al comparar
+— ver la nota de RNF-PDF-01 en §3 sobre por qué esta herramienta queda
+fuera de ese requerimiento.
+
+- **Decisión de diseño — comparación de texto, no píxel a píxel:** "resaltar
+  diferencias" se interpretó como comparación de **contenido de texto** por
+  página (`PdfTextExtractor`, el mismo mecanismo que ya usan Modo
+  Estudio/Buscar), no como diff visual de imágenes renderizadas. Se eligió
+  así por tres razones: (1) no exige que ambos PDFs tengan el mismo
+  tamaño/DPI de página para poder compararse, (2) el resultado (el reporte)
+  puede ser texto real, no una imagen superpuesta con highlights — más
+  liviano y compartible, (3) evita añadir una dependencia de
+  procesamiento de imágenes solo para esta herramienta. La desventaja
+  aceptada: cambios puramente visuales sin cambio de texto (una imagen
+  reemplazada por otra del mismo tamaño, por ejemplo) no se detectan — se
+  documenta como limitación conocida, no como bug.
+- **`ComparePdfUseCase.kt`** (nuevo) —
+  - Extrae el texto de cada página de ambos PDFs (`PdfTextExtractor`) hasta
+    el máximo de páginas de los dos documentos; una página que no existe en
+    uno de los dos (`totalPages` distintos) se marca como "solo existe en
+    el Documento A/B" en vez de compararse contra texto vacío.
+  - Para una página presente en ambos, separa el texto en líneas
+    (`trim()` + filtra vacías) y calcula, vía diferencia de conjuntos
+    (`Set.filter { it !in otro }`), qué líneas aparecen solo en A y cuáles
+    solo en B — un diff por conjunto, no un diff ordenado tipo
+    Myers/LCS: no detecta líneas *movidas* de posición, solo líneas
+    *presentes en uno y ausentes en el otro*, decisión deliberada para
+    mantener el algoritmo simple y testeable dado el alcance de la
+    funcionalidad (un reporte de diferencias, no un editor de diff visual
+    línea por línea).
+  - Genera el reporte con la API de alto nivel `com.itextpdf.layout.Document`
+    /`Paragraph` — primera vez que este módulo la usa (las 7 herramientas
+    anteriores escriben con `PdfCanvas`, de bajo nivel, porque dibujan
+    sobre páginas *existentes*; acá no hay página existente sobre la cual
+    dibujar, se sintetiza un documento nuevo de cero, y `layout.Document`
+    da paginación/wrap automático gratis, algo que no hacía falta antes).
+  - Mensaje de resultado: "Los dos documentos son idénticos" si 0 páginas
+    difieren, o "N de M páginas tienen diferencias" en caso contrario — AC4
+    de HU-PDF-08.
+- **`ComparePdfScreen.kt`** (nuevo) — dos `CompareSelectZone` (Documento A /
+  Documento B), cada una con su propio callback de selección; el botón de
+  ejecutar solo se habilita cuando ambos están seleccionados. Escrito con
+  imports explícitos y sub-composables desde el inicio (lección ya aplicada
+  en Marca de agua, §11).
+- **`PdfTool.COMPARE`** (nuevo valor de enum), con estado propio en
+  `PdfToolsUiState` (`comparePdfA: Uri?`, `comparePdfB: Uri?` — campos
+  separados de `selectedPdfs`, no reutilizados, porque las otras 7
+  herramientas tratan `selectedPdfs` como una lista de un solo rol; forzar
+  el mismo campo a guardar "posición 0 = A, posición 1 = B" habría sido más
+  frágil que dos campos con nombre propio) y dos acciones nuevas en el
+  ViewModel (`onComparePdfASelected`/`onComparePdfBSelected`). `execute()`
+  ajustó su guardarraíl inicial (antes solo `selectedPdfs.isEmpty()`) para
+  reconocer que Comparar valida sus dos campos propios en vez de
+  `selectedPdfs`. Nueva entrada de menú con ícono
+  `Icons.Rounded.CompareArrows` y color `ColorPowerPoint` (octavo color
+  distinto de los 7 ya usados).
+- **`DailyLimitManager`:** mismo procedimiento preventivo que las 3
+  funcionalidades anteriores (§10/§11/§12) — se agregó `KEY_COMPARE` y su
+  `case` **antes** de escribir el resto del feature, con su test de
+  regresión correspondiente.
+- **5 tests unitarios nuevos** (`ComparePdfUseCaseTest`) — documentos
+  idénticos → mensaje "identical"; una línea distinta en una página
+  compartida aparece en el reporte generado (verificado extrayendo el
+  texto real del PDF de salida con `PdfTextExtractor`, no solo el mensaje)
+  y se cuenta en el total de páginas distintas; una página que solo existe
+  en un documento se marca como tal en el reporte y se cuenta como
+  distinta (no como idéntica); stream nulo al leer A/B (`openInputStream`
+  devuelve `null`) → `Error` con el mensaje específico de lectura A/B —
+  cubre los 4 casos límite de la HU (AC1–AC4).
+- **detekt:** los mismos 3 hallazgos de boilerplate ya vistos en las 7
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico —
+  detekt deduplica por firma de clase, así que un solo `<ID>` cubre los 2
+  `catch (e: Exception)` de este archivo, uno en `invoke()` y otro en
+  `copyUriToCache()`) más 2 hallazgos genuinamente nuevos que se
+  corrigieron de verdad en vez de baselinearse: `ReturnCount` en
+  `buildPageDiff` (3 returns tempranos → reescrito como una sola expresión
+  `when`) y `MaxLineLength` en 4 líneas (extracción de texto por página y
+  la propia definición de `buildPageDiff`, envueltas en bloques `if`
+  multilínea). También se corrigieron 2 `MaxLineLength` reales en
+  `PdfToolsViewModel.kt` (`onComparePdfASelected`/`onComparePdfBSelected`).
+- **Detalle de compilación no evidente:** el primer intento de la rama
+  `PdfTool.COMPARE` dentro de `runTool()` usaba
+  `state.comparePdfA ?: return null` como argumento — pero `runTool()` es
+  una función de **cuerpo de expresión** (`= when (...) { ... }`), y Kotlin
+  prohíbe `return` dentro de una función de cuerpo de expresión ("Returns
+  are prohibited in functions with expression body"). Se corrigió
+  reestructurando la rama como un bloque que calcula `pdfA`/`pdfB` en
+  variables locales y usa un `if/else` como última expresión del bloque
+  (valor `null` en el `else`) en vez de un `return` temprano — sigue siendo
+  una función de expresión, sin convertirla a cuerpo de bloque solo por
+  esta rama.
+- **Verificado end-to-end en el dispositivo real (app en español):** dos
+  PDFs de prueba generados con contenido conocido (Documento A: 3 páginas
+  — "LINEA COMPARTIDA", "TEXTO SOLO EN A", "PAGINA EXTRA SOLO EN A";
+  Documento B: 2 páginas — "LINEA COMPARTIDA", "TEXTO SOLO EN B") subidos
+  vía `adb push` → seleccionados como Documento A/B en la pantalla →
+  ejecutado → mensaje de resultado "2 de 3 páginas tienen diferencias"
+  (coincide exactamente con lo esperado: página 1 idéntica no cuenta,
+  página 2 difiere en texto, página 3 solo existe en A) → guardado en
+  Descargas → archivo descargado y leído directamente: el reporte generado
+  contiene "Página 2 / Solo en A: TEXTO SOLO EN A / Solo en B: TEXTO SOLO
+  EN B" y "Página 3 / Esta página solo existe en el Documento A", con la
+  página 1 (idéntica) correctamente omitida del reporte — coincide
+  exactamente con el contenido real de los dos PDFs de prueba.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

@@ -42,6 +42,7 @@
     <string name="pdf_number_pages">Нумерация страниц</string>
     <string name="pdf_watermark">Водяной знак</string>
     <string name="pdf_reorder_pages">Изменить порядок страниц</string>
+    <string name="pdf_compare">Сравнить PDF</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -135,6 +136,7 @@
     <string name="pdf_number_pages_desc">Добавляет нумерацию в нижнем колонтитуле</string>
     <string name="pdf_watermark_desc">Накладывает текст на документ</string>
     <string name="pdf_reorder_pages_desc">Перетащите или удалите отдельные страницы</string>
+    <string name="pdf_compare_desc">Найдите различия между двумя версиями</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -278,6 +280,26 @@
     <string name="pdf_reorder_pages_generate_error">Ошибка при создании PDF с изменённым порядком страниц.</string>
     <string name="pdf_reorder_pages_success">PDF успешно обновлён — %1$d страниц</string>
     <string name="pdf_reorder_pages_error">Ошибка при изменении порядка страниц: %1$s</string>
+
+    <!-- ── Comparar PDFs ── -->
+    <string name="pdf_compare_subtitle">Выберите два PDF-файла, чтобы сравнить их содержимое</string>
+    <string name="pdf_compare_document_a">Документ A</string>
+    <string name="pdf_compare_document_b">Документ B</string>
+    <string name="pdf_compare_ready">PDF готов к сравнению</string>
+    <string name="pdf_compare_progress">Сравнение документов…</string>
+    <string name="pdf_compare_execute">Сравнить PDF</string>
+    <string name="pdf_compare_read_error_a">Не удалось прочитать Документ A. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_compare_read_error_b">Не удалось прочитать Документ B. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_compare_generate_error">Ошибка при создании отчёта о сравнении.</string>
+    <string name="pdf_compare_identical">Оба документа идентичны</string>
+    <string name="pdf_compare_differences_found">Различия найдены на %1$d из %2$d страниц</string>
+    <string name="pdf_compare_error">Ошибка при сравнении PDF: %1$s</string>
+    <string name="pdf_compare_report_title">Отчёт о сравнении</string>
+    <string name="pdf_compare_report_page_header">Страница %1$d</string>
+    <string name="pdf_compare_report_page_only_in_a">Эта страница существует только в Документе A</string>
+    <string name="pdf_compare_report_page_only_in_b">Эта страница существует только в Документе B</string>
+    <string name="pdf_compare_report_only_in_a_line">Только в A: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">Только в B: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

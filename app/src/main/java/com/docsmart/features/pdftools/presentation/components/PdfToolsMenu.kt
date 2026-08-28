@@ -71,6 +71,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_reorder_pages,
         descriptionRes = R.string.pdf_reorder_pages_desc,
         color = SlateGray
+    ),
+    PdfToolItem(
+        tool = PdfTool.COMPARE,
+        icon = Icons.Rounded.CompareArrows,
+        titleRes = R.string.pdf_compare,
+        descriptionRes = R.string.pdf_compare_desc,
+        color = ColorPowerPoint
     )
 )
 

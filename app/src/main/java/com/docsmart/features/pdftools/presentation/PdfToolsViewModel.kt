@@ -14,6 +14,8 @@ import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
+import com.docsmart.features.pdftools.domain.usecase.ComparePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
@@ -41,7 +43,7 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE
 }
 
 data class PdfToolMessages(
@@ -51,7 +53,8 @@ data class PdfToolMessages(
     val rotate       : RotatePdfMessages,
     val numberPages  : NumberPagesMessages,
     val watermark    : WatermarkMessages,
-    val reorderPages : ReorderPagesMessages
+    val reorderPages : ReorderPagesMessages,
+    val compare      : ComparePdfMessages
 )
 
 data class PdfToolsUiState(
@@ -69,6 +72,8 @@ data class PdfToolsUiState(
     val pageNumberFormat: PageNumberFormat = PageNumberFormat.PAGE_OF_TOTAL,
     val watermarkText: String = "",
     val pageOrder: List<Int> = emptyList(),
+    val comparePdfA: Uri? = null,
+    val comparePdfB: Uri? = null,
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -84,6 +89,7 @@ class PdfToolsViewModel @Inject constructor(
     private val numberPagesPdf: NumberPagesUseCase,
     private val watermarkPdf: WatermarkPdfUseCase,
     private val reorderPagesPdf: ReorderPagesUseCase,
+    private val comparePdf: ComparePdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -210,9 +216,32 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
+    fun onComparePdfASelected(uri: Uri) {
+        _uiState.update {
+            it.copy(
+                comparePdfA = uri, result = null, errorMessage = null,
+                savedToDownloads = false, outputFileName = ""
+            )
+        }
+    }
+
+    fun onComparePdfBSelected(uri: Uri) {
+        _uiState.update {
+            it.copy(
+                comparePdfB = uri, result = null, errorMessage = null,
+                savedToDownloads = false, outputFileName = ""
+            )
+        }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
-        if (state.selectedPdfs.isEmpty() || state.selectedTool == PdfTool.NONE) return
+        val hasSelection = if (state.selectedTool == PdfTool.COMPARE) {
+            state.comparePdfA != null && state.comparePdfB != null
+        } else {
+            state.selectedPdfs.isNotEmpty()
+        }
+        if (!hasSelection || state.selectedTool == PdfTool.NONE) return
 
         if (!adManager.isPremium.value && !dailyLimitManager.canUsePdfTool(state.selectedTool.name)) {
             _uiState.update { it.copy(showLimitDialog = true) }
@@ -303,6 +332,15 @@ class PdfToolsViewModel @Inject constructor(
             outputFileName = customName,
             messages = messages.reorderPages
         )
+        PdfTool.COMPARE -> {
+            val pdfA = state.comparePdfA
+            val pdfB = state.comparePdfB
+            if (pdfA != null && pdfB != null) {
+                comparePdf(pdfUriA = pdfA, pdfUriB = pdfB, outputFileName = customName, messages = messages.compare)
+            } else {
+                null
+            }
+        }
         PdfTool.NONE -> null
     }
 

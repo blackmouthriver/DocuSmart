@@ -116,6 +116,7 @@
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$_uiState.update { it.copy(isLoading = false, passwordError = "No se pudo leer el archivo") }</ID>
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$uriString.endsWith(".docx", ignoreCase = true) -&gt; "application/vnd.openxmlformats-officedocument.wordprocessingml.document"</ID>
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$uriString.endsWith(".xlsx", ignoreCase = true) -&gt; "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"</ID>
+    <ID>NestedBlockDepth:ComparePdfUseCase.kt$ComparePdfUseCase$private fun copyUriToCache(uri: Uri, prefix: String): File?</ID>
     <ID>NestedBlockDepth:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:ConverterViewModel.kt$ConverterViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadImagesFromMediaStore(): List&lt;DocumentUiModel&gt;</ID>
@@ -225,6 +226,7 @@
     <ID>NewLineAtEndOfFile:WordToHtmlUseCase.kt$com.docsmart.features.converter.domain.usecase.WordToHtmlUseCase.kt</ID>
     <ID>NewLineAtEndOfFile:WordToPdfUseCase.kt$com.docsmart.features.converter.domain.usecase.WordToPdfUseCase.kt</ID>
     <ID>PrintStackTrace:SettingsScreen.kt$e</ID>
+    <ID>ReturnCount:ComparePdfUseCase.kt$ComparePdfUseCase$private fun copyUriToCache(uri: Uri, prefix: String): File?</ID>
     <ID>ReturnCount:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
@@ -243,6 +245,7 @@
     <ID>SwallowedException:SettingsScreen.kt$e: ActivityNotFoundException</ID>
     <ID>SwallowedException:StudyScreen.kt$e: Exception</ID>
     <ID>SwallowedException:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ComparePdfUseCase.kt$ComparePdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:CompressPdfUseCase.kt$CompressPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ConversionSuccess.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ConvertImageToPdfUseCase.kt$ConvertImageToPdfUseCase$e: Exception</ID>

@@ -42,6 +42,7 @@
     <string name="pdf_number_pages">Number pages</string>
     <string name="pdf_watermark">Watermark</string>
     <string name="pdf_reorder_pages">Reorder pages</string>
+    <string name="pdf_compare">Compare PDFs</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -135,6 +136,7 @@
     <string name="pdf_number_pages_desc">Add page numbers in the footer</string>
     <string name="pdf_watermark_desc">Overlay a text watermark on the document</string>
     <string name="pdf_reorder_pages_desc">Drag or delete individual pages</string>
+    <string name="pdf_compare_desc">Find the differences between two versions</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -278,6 +280,26 @@
     <string name="pdf_reorder_pages_generate_error">Error generating the reordered PDF.</string>
     <string name="pdf_reorder_pages_success">PDF updated successfully — %1$d pages</string>
     <string name="pdf_reorder_pages_error">Error reordering pages: %1$s</string>
+
+    <!-- ── Comparar PDFs ── -->
+    <string name="pdf_compare_subtitle">Select two PDFs to compare their content</string>
+    <string name="pdf_compare_document_a">Document A</string>
+    <string name="pdf_compare_document_b">Document B</string>
+    <string name="pdf_compare_ready">PDF ready to compare</string>
+    <string name="pdf_compare_progress">Comparing documents…</string>
+    <string name="pdf_compare_execute">Compare PDFs</string>
+    <string name="pdf_compare_read_error_a">Could not read Document A. Make sure it is a valid file.</string>
+    <string name="pdf_compare_read_error_b">Could not read Document B. Make sure it is a valid file.</string>
+    <string name="pdf_compare_generate_error">Error generating the comparison report.</string>
+    <string name="pdf_compare_identical">The two documents are identical</string>
+    <string name="pdf_compare_differences_found">%1$d of %2$d pages have differences</string>
+    <string name="pdf_compare_error">Error comparing PDFs: %1$s</string>
+    <string name="pdf_compare_report_title">Comparison report</string>
+    <string name="pdf_compare_report_page_header">Page %1$d</string>
+    <string name="pdf_compare_report_page_only_in_a">This page only exists in Document A</string>
+    <string name="pdf_compare_report_page_only_in_b">This page only exists in Document B</string>
+    <string name="pdf_compare_report_only_in_a_line">Only in A: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">Only in B: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->
