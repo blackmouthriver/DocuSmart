@@ -19,6 +19,16 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+data class CompressPdfMessages(
+    val readError       : String,
+    val emptyFile       : String,
+    val noPages         : String,
+    val generateError   : String,
+    val alreadyOptimized: String, // formato: %1$d KB
+    val success          : String, // formato: %1$d antes KB, %2$d después KB, %3$d reducción%
+    val genericError     : String  // formato: %1$s mensaje de excepción
+)
+
 class CompressPdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
@@ -29,19 +39,18 @@ class CompressPdfUseCase @Inject constructor(
     suspend operator fun invoke(
         pdfUri        : Uri,
         quality       : Int = 60,
-        outputFileName: String? = null
+        outputFileName: String? = null,
+        messages      : CompressPdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
         try {
             Timber.d("$TAG: iniciando compresión — calidad: $quality")
 
             cacheFile = copyUriToCache(pdfUri)
-                ?: return@withContext PdfToolResult.Error(
-                    "No se pudo leer el archivo. Verifica que sea un PDF válido."
-                )
+                ?: return@withContext PdfToolResult.Error(messages.readError)
 
             if (cacheFile.length() == 0L)
-                return@withContext PdfToolResult.Error("El archivo PDF está vacío o corrupto.")
+                return@withContext PdfToolResult.Error(messages.emptyFile)
 
             val originalSize = cacheFile.length()
             Timber.d("$TAG: tamaño original = ${originalSize / 1024} KB")
@@ -54,7 +63,7 @@ class CompressPdfUseCase @Inject constructor(
             if (renderer.pageCount == 0) {
                 renderer.close()
                 fileDescriptor.close()
-                return@withContext PdfToolResult.Error("El PDF no contiene páginas.")
+                return@withContext PdfToolResult.Error(messages.noPages)
             }
 
             Timber.d("$TAG: ${renderer.pageCount} páginas a comprimir")
@@ -74,7 +83,7 @@ class CompressPdfUseCase @Inject constructor(
             pdfDocument.close()
 
             if (outputFile.length() == 0L)
-                return@withContext PdfToolResult.Error("Error al generar el PDF comprimido.")
+                return@withContext PdfToolResult.Error(messages.generateError)
 
             val newSize    = outputFile.length()
             val originalKb = originalSize / 1024
@@ -97,13 +106,15 @@ class CompressPdfUseCase @Inject constructor(
 
             PdfToolResult.Success(
                 outputFile = finalFile,
-                message    = resultMessage(keepOriginal, originalKb, finalFile.length() / 1024, reduction)
+                message    = resultMessage(
+                    messages, keepOriginal, originalKb, finalFile.length() / 1024, reduction
+                )
             )
 
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al comprimir: ${e.message}")
             PdfToolResult.Error(
-                message = "Error al comprimir: ${e.message ?: "Error desconocido"}",
+                message = String.format(messages.genericError, e.message ?: ""),
                 cause   = e
             )
         } finally {
@@ -118,11 +129,14 @@ class CompressPdfUseCase @Inject constructor(
         else          -> 0.6f
     }
 
-    private fun resultMessage(keepOriginal: Boolean, originalKb: Long, finalKb: Long, reduction: Int) =
+    private fun resultMessage(
+        messages: CompressPdfMessages, keepOriginal: Boolean,
+        originalKb: Long, finalKb: Long, reduction: Int
+    ) =
         if (keepOriginal)
-            "El PDF ya está optimizado · Tamaño: $originalKb KB"
+            String.format(messages.alreadyOptimized, originalKb)
         else
-            "Antes: $originalKb KB → Después: $finalKb KB · Reducción: $reduction%"
+            String.format(messages.success, originalKb, finalKb, reduction)
 
     private fun renderAndCompressPages(
         renderer   : PdfRenderer,

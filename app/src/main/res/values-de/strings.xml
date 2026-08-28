@@ -130,6 +130,101 @@
     <string name="pdf_compress_desc">Verringert die Dateigröße</string>
     <string name="pdf_rotate_desc">Dreht die Seiten des Dokuments</string>
 
+    <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
+    <string name="daily_limit_title">Tageslimit erreicht</string>
+    <string name="daily_limit_body">Du hast heute %1$d von %2$d %3$s verwendet.</string>
+    <string name="daily_limit_resets_tomorrow">Das Limit wird morgen zurückgesetzt.</string>
+    <string name="daily_limit_watch_ad">Anzeige ansehen → +1 Nutzung</string>
+    <string name="daily_limit_ad_not_ready">Anzeige noch nicht verfügbar</string>
+    <string name="daily_limit_get_premium">Premium holen → keine Limits</string>
+    <string name="pdf_tools_daily_limit_label">Nutzungen dieses Werkzeugs</string>
+    <string name="converter_daily_limit_label">Konvertierungen</string>
+
+    <!-- ── PDF-Werkzeuge: Hauptbildschirm und Ergebniskarte ── -->
+    <string name="pdf_tools_back_to_tools">Zurück zu den Werkzeugen</string>
+    <string name="pdf_tools_usage_today">Nutzungen heute: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">In Downloads speichern</string>
+    <string name="pdf_tools_share">PDF teilen</string>
+    <string name="pdf_tools_share_error">Die Datei konnte nicht geteilt werden</string>
+    <string name="pdf_tools_save_error">Konnte nicht in Downloads gespeichert werden</string>
+    <string name="pdf_tools_new_operation">Neue Aktion</string>
+    <string name="pdf_tools_default_filename">datei.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">PDF auswählen</string>
+    <string name="pdf_tools_filename_label">Name der Ausgabedatei</string>
+    <string name="pdf_tools_filename_placeholder">Z. B.: Zusammengefuehrte_Dokumente</string>
+    <string name="pdf_tools_filename_hint">Wenn leer gelassen, wird automatisch ein Name erzeugt</string>
+
+    <!-- ── PDFs zusammenführen ── -->
+    <string name="pdf_merge_subtitle">Wähle 2 oder mehr PDFs, um sie zu einem zusammenzuführen</string>
+    <string name="pdf_merge_select_prompt">Tippen, um PDFs auszuwählen</string>
+    <string name="pdf_merge_add_more">Weitere PDFs hinzufügen</string>
+    <string name="pdf_merge_order_hint">Die PDFs werden in der angezeigten Reihenfolge zusammengeführt</string>
+    <string name="pdf_merge_remove_desc">Entfernen</string>
+    <string name="pdf_merge_file_fallback">Datei %1$d</string>
+    <string name="pdf_merge_progress">%1$d PDFs werden zusammengeführt…</string>
+    <string name="pdf_merge_select_at_least_2">Wähle mindestens 2 PDFs aus</string>
+    <string name="pdf_merge_execute">%1$d PDFs zusammenführen</string>
+    <string name="pdf_merge_min_pdfs_error">Wähle mindestens 2 PDFs zum Zusammenführen aus</string>
+    <string name="pdf_merge_read_error">Es konnte keine Seite der ausgewählten PDFs gelesen werden.</string>
+    <string name="pdf_merge_generate_error">Fehler beim Erstellen des zusammengeführten PDFs.</string>
+    <string name="pdf_merge_success">PDFs erfolgreich zusammengeführt — %1$d Dateien, %2$d Seiten</string>
+    <string name="pdf_merge_error">Fehler beim Zusammenführen der PDFs: %1$s</string>
+
+    <!-- ── PDF teilen ── -->
+    <string name="pdf_split_subtitle">Extrahiere einen Seitenbereich aus deinem PDF</string>
+    <string name="pdf_split_selected">PDF ausgewählt</string>
+    <string name="pdf_split_range_title">Zu extrahierender Seitenbereich</string>
+    <string name="pdf_split_from_page">Von Seite</string>
+    <string name="pdf_split_to_page">Bis Seite</string>
+    <string name="pdf_split_summary">%1$d Seite(n) werden extrahiert · Seiten: %2$d bis %3$d</string>
+    <string name="pdf_split_progress">PDF wird geteilt…</string>
+    <string name="pdf_split_read_error">Das PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_split_no_pages">Das PDF hat keine Seiten.</string>
+    <string name="pdf_split_range_too_small">Der Bereich muss mindestens 2 Seiten umfassen. Das PDF hat %1$d Seiten.</string>
+    <string name="pdf_split_generate_error">Fehler beim Erstellen des geteilten PDFs.</string>
+    <string name="pdf_split_success">PDF geteilt: %1$d Seite(n) extrahiert · %2$d KB</string>
+    <string name="pdf_split_error">Fehler beim Teilen: %1$s</string>
+
+    <!-- ── PDF komprimieren ── -->
+    <string name="pdf_compress_subtitle">Verkleinere dein PDF und behalte die Lesbarkeit bei</string>
+    <string name="pdf_compress_ready">PDF bereit zur Komprimierung</string>
+    <string name="pdf_compress_level_title">Komprimierungsstufe</string>
+    <string name="pdf_compress_level_high_quality">Hohe Qualität</string>
+    <string name="pdf_compress_level_balanced">Ausgewogen</string>
+    <string name="pdf_compress_level_high_compression">Hohe Komprimierung</string>
+    <string name="pdf_compress_level_max_compression">Maximale Komprimierung</string>
+    <string name="pdf_compress_smaller">Kleiner</string>
+    <string name="pdf_compress_better_quality">Bessere Qualität</string>
+    <string name="pdf_compress_reduction_10_20">Geschätzte Reduzierung: 10-20%</string>
+    <string name="pdf_compress_reduction_30_50">Geschätzte Reduzierung: 30-50%</string>
+    <string name="pdf_compress_reduction_50_70">Geschätzte Reduzierung: 50-70%</string>
+    <string name="pdf_compress_reduction_70_85">Geschätzte Reduzierung: 70-85%</string>
+    <string name="pdf_compress_progress">PDF wird komprimiert…</string>
+    <string name="pdf_compress_read_error">Die Datei konnte nicht gelesen werden. Stelle sicher, dass es ein gültiges PDF ist.</string>
+    <string name="pdf_compress_empty_file">Die PDF-Datei ist leer oder beschädigt.</string>
+    <string name="pdf_compress_no_pages">Das PDF enthält keine Seiten.</string>
+    <string name="pdf_compress_generate_error">Fehler beim Erstellen des komprimierten PDFs.</string>
+    <string name="pdf_compress_already_optimized">Das PDF ist bereits optimiert · Größe: %1$d KB</string>
+    <string name="pdf_compress_success">Vorher: %1$d KB → Nachher: %2$d KB · Reduzierung: %3$d%%</string>
+    <string name="pdf_compress_error">Fehler beim Komprimieren: %1$s</string>
+
+    <!-- ── PDF drehen ── -->
+    <string name="pdf_rotate_subtitle">Dreht alle Seiten des Dokuments</string>
+    <string name="pdf_rotate_ready">PDF bereit zum Drehen</string>
+    <string name="pdf_rotate_preview_title">Vorschau und Drehwinkel</string>
+    <string name="pdf_rotate_preview_placeholder">Wähle ein PDF\naus, um die Vorschau zu sehen</string>
+    <string name="pdf_rotate_loading_preview">Vorschau wird geladen…</string>
+    <string name="pdf_rotate_preview_desc">Gedrehte Vorschau</string>
+    <string name="pdf_rotate_angle_90">90°-Drehung im Uhrzeigersinn</string>
+    <string name="pdf_rotate_angle_180">Halbe Drehung (auf dem Kopf)</string>
+    <string name="pdf_rotate_angle_270">90°-Drehung gegen den Uhrzeigersinn</string>
+    <string name="pdf_rotate_progress">PDF wird um %1$d° gedreht…</string>
+    <string name="pdf_rotate_execute">PDF um %1$d° drehen</string>
+    <string name="pdf_rotate_read_error">Das PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_rotate_generate_error">Fehler beim Erstellen des gedrehten PDFs.</string>
+    <string name="pdf_rotate_success">PDF erfolgreich um %1$d° gedreht</string>
+    <string name="pdf_rotate_error">Fehler beim Drehen des PDFs: %1$s</string>
+
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 
     <!-- ── Converter Kategorien ──────────────────────── -->

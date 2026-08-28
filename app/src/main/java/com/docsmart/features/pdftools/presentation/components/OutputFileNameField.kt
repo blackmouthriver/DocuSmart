@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 
 @Composable
 fun OutputFileNameField(
@@ -17,7 +19,7 @@ fun OutputFileNameField(
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            text = "Nombre del archivo de salida",
+            text = stringResource(R.string.pdf_tools_filename_label),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -27,7 +29,7 @@ fun OutputFileNameField(
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = "Ej: Documentos_Unidos",
+                    text = stringResource(R.string.pdf_tools_filename_placeholder),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -51,7 +53,7 @@ fun OutputFileNameField(
             textStyle = MaterialTheme.typography.bodyMedium
         )
         Text(
-            text = "Si lo dejas vacío se generará un nombre automático",
+            text = stringResource(R.string.pdf_tools_filename_hint),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

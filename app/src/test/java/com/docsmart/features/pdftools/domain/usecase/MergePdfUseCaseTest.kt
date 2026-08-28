@@ -34,6 +34,12 @@ class MergePdfUseCaseTest {
     private lateinit var context: Context
     private lateinit var useCase: MergePdfUseCase
 
+    private val messages = MergePdfMessages(
+        minPdfsError = "minPdfsError", readError = "readError",
+        generateError = "generateError", success = "success %1\$d %2\$d",
+        genericError = "genericError %1\$s"
+    )
+
     @BeforeEach
     fun setUp() {
         cacheDir = Files.createTempDirectory("docsmart_merge_cache_").toFile()
@@ -59,7 +65,7 @@ class MergePdfUseCaseTest {
         every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
         every { context.contentResolver } returns resolver
 
-        val result = useCase(listOf(uriA, uriB))
+        val result = useCase(listOf(uriA, uriB), messages = messages)
 
         assertTrue(result is PdfToolResult.Success)
         assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
@@ -67,7 +73,7 @@ class MergePdfUseCaseTest {
 
     @Test
     fun `merge con menos de 2 PDFs devuelve Error sin tocar el sistema de archivos`() = runTest {
-        val result = useCase(listOf(mockk<Uri>()))
+        val result = useCase(listOf(mockk<Uri>()), messages = messages)
 
         assertTrue(result is PdfToolResult.Error)
     }

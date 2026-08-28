@@ -33,6 +33,12 @@ class SplitPdfUseCaseTest {
     private lateinit var context: Context
     private lateinit var useCase: SplitPdfUseCase
 
+    private val messages = SplitPdfMessages(
+        readError = "readError", noPages = "noPages",
+        rangeTooSmall = "rangeTooSmall %1\$d", generateError = "generateError",
+        success = "success %1\$d %2\$d", genericError = "genericError %1\$s"
+    )
+
     @BeforeEach
     fun setUp() {
         cacheDir = Files.createTempDirectory("docsmart_split_cache_").toFile()
@@ -53,7 +59,7 @@ class SplitPdfUseCaseTest {
     fun `split extrae solo el rango pedido, no el documento completo`() = runTest {
         stubResolver(createTestPdf(pages = 5))
 
-        val result = useCase(mockk<Uri>(), fromPage = 2, toPage = 4)
+        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 2, toPage = 4)
 
         assertTrue(result is PdfToolResult.Success)
         val outputFile = (result as PdfToolResult.Success).outputFile
@@ -64,7 +70,7 @@ class SplitPdfUseCaseTest {
     fun `split con rango completo produce el mismo numero de paginas que el original`() = runTest {
         stubResolver(createTestPdf(pages = 5))
 
-        val result = useCase(mockk<Uri>(), fromPage = 1, toPage = 5)
+        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 1, toPage = 5)
 
         assertTrue(result is PdfToolResult.Success)
         assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
@@ -74,7 +80,7 @@ class SplitPdfUseCaseTest {
     fun `split con rango fuera de limites se ajusta al total de paginas`() = runTest {
         stubResolver(createTestPdf(pages = 3))
 
-        val result = useCase(mockk<Uri>(), fromPage = 2, toPage = 999)
+        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 2, toPage = 999)
 
         assertTrue(result is PdfToolResult.Success)
         assertEquals(2, pageCountOf((result as PdfToolResult.Success).outputFile))
@@ -84,7 +90,7 @@ class SplitPdfUseCaseTest {
     fun `split de un archivo que no es un PDF valido devuelve Error`() = runTest {
         stubResolver("esto no es un pdf".toByteArray())
 
-        val result = useCase(mockk<Uri>(), fromPage = 1, toPage = 2)
+        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 1, toPage = 2)
 
         assertTrue(result is PdfToolResult.Error)
     }

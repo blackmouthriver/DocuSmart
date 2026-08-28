@@ -130,6 +130,101 @@
     <string name="pdf_compress_desc">Уменьшает размер файла</string>
     <string name="pdf_rotate_desc">Поворачивает страницы документа</string>
 
+    <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
+    <string name="daily_limit_title">Дневной лимит достигнут</string>
+    <string name="daily_limit_body">Сегодня вы использовали %1$d из %2$d (%3$s).</string>
+    <string name="daily_limit_resets_tomorrow">Лимит обновится завтра.</string>
+    <string name="daily_limit_watch_ad">Посмотреть рекламу → +1 использование</string>
+    <string name="daily_limit_ad_not_ready">Реклама пока недоступна</string>
+    <string name="daily_limit_get_premium">Получить Premium → без ограничений</string>
+    <string name="pdf_tools_daily_limit_label">использований этого инструмента</string>
+    <string name="converter_daily_limit_label">конвертаций</string>
+
+    <!-- ── Инструменты PDF: главный экран и карточка результата ── -->
+    <string name="pdf_tools_back_to_tools">Назад к инструментам</string>
+    <string name="pdf_tools_usage_today">Использований сегодня: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">Сохранить в Загрузки</string>
+    <string name="pdf_tools_share">Поделиться PDF</string>
+    <string name="pdf_tools_share_error">Не удалось поделиться файлом</string>
+    <string name="pdf_tools_save_error">Не удалось сохранить в Загрузки</string>
+    <string name="pdf_tools_new_operation">Новая операция</string>
+    <string name="pdf_tools_default_filename">файл.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">Выбрать PDF</string>
+    <string name="pdf_tools_filename_label">Имя выходного файла</string>
+    <string name="pdf_tools_filename_placeholder">Напр.: Объединённые_документы</string>
+    <string name="pdf_tools_filename_hint">Если оставить пустым, имя будет создано автоматически</string>
+
+    <!-- ── Объединение PDF ── -->
+    <string name="pdf_merge_subtitle">Выберите 2 или более PDF, чтобы объединить их в один</string>
+    <string name="pdf_merge_select_prompt">Нажмите, чтобы выбрать PDF</string>
+    <string name="pdf_merge_add_more">Добавить ещё PDF</string>
+    <string name="pdf_merge_order_hint">PDF будут объединены в показанном порядке</string>
+    <string name="pdf_merge_remove_desc">Убрать</string>
+    <string name="pdf_merge_file_fallback">Файл %1$d</string>
+    <string name="pdf_merge_progress">Объединение %1$d PDF…</string>
+    <string name="pdf_merge_select_at_least_2">Выберите не менее 2 PDF</string>
+    <string name="pdf_merge_execute">Объединить %1$d PDF</string>
+    <string name="pdf_merge_min_pdfs_error">Выберите не менее 2 PDF для объединения</string>
+    <string name="pdf_merge_read_error">Не удалось прочитать ни одной страницы из выбранных PDF.</string>
+    <string name="pdf_merge_generate_error">Ошибка при создании объединённого PDF.</string>
+    <string name="pdf_merge_success">PDF успешно объединены — %1$d файлов, %2$d страниц</string>
+    <string name="pdf_merge_error">Ошибка при объединении PDF: %1$s</string>
+
+    <!-- ── Разделение PDF ── -->
+    <string name="pdf_split_subtitle">Извлеките диапазон страниц из вашего PDF</string>
+    <string name="pdf_split_selected">PDF выбран</string>
+    <string name="pdf_split_range_title">Диапазон страниц для извлечения</string>
+    <string name="pdf_split_from_page">С страницы</string>
+    <string name="pdf_split_to_page">По страницу</string>
+    <string name="pdf_split_summary">Будет извлечено страниц: %1$d · Страницы: %2$d–%3$d</string>
+    <string name="pdf_split_progress">Разделение PDF…</string>
+    <string name="pdf_split_read_error">Не удалось прочитать PDF. Убедитесь, что это корректный файл.</string>
+    <string name="pdf_split_no_pages">В PDF нет страниц.</string>
+    <string name="pdf_split_range_too_small">Диапазон должен включать не менее 2 страниц. В PDF %1$d страниц.</string>
+    <string name="pdf_split_generate_error">Ошибка при создании разделённого PDF.</string>
+    <string name="pdf_split_success">PDF разделён: извлечено страниц %1$d · %2$d КБ</string>
+    <string name="pdf_split_error">Ошибка при разделении: %1$s</string>
+
+    <!-- ── Сжатие PDF ── -->
+    <string name="pdf_compress_subtitle">Уменьшите размер PDF, сохранив читаемость</string>
+    <string name="pdf_compress_ready">PDF готов к сжатию</string>
+    <string name="pdf_compress_level_title">Уровень сжатия</string>
+    <string name="pdf_compress_level_high_quality">Высокое качество</string>
+    <string name="pdf_compress_level_balanced">Сбалансировано</string>
+    <string name="pdf_compress_level_high_compression">Сильное сжатие</string>
+    <string name="pdf_compress_level_max_compression">Максимальное сжатие</string>
+    <string name="pdf_compress_smaller">Меньше размер</string>
+    <string name="pdf_compress_better_quality">Лучше качество</string>
+    <string name="pdf_compress_reduction_10_20">Ожидаемое уменьшение: 10–20%</string>
+    <string name="pdf_compress_reduction_30_50">Ожидаемое уменьшение: 30–50%</string>
+    <string name="pdf_compress_reduction_50_70">Ожидаемое уменьшение: 50–70%</string>
+    <string name="pdf_compress_reduction_70_85">Ожидаемое уменьшение: 70–85%</string>
+    <string name="pdf_compress_progress">Сжатие PDF…</string>
+    <string name="pdf_compress_read_error">Не удалось прочитать файл. Убедитесь, что это корректный PDF.</string>
+    <string name="pdf_compress_empty_file">Файл PDF пуст или повреждён.</string>
+    <string name="pdf_compress_no_pages">В PDF нет страниц.</string>
+    <string name="pdf_compress_generate_error">Ошибка при создании сжатого PDF.</string>
+    <string name="pdf_compress_already_optimized">PDF уже оптимизирован · Размер: %1$d КБ</string>
+    <string name="pdf_compress_success">До: %1$d КБ → После: %2$d КБ · Уменьшение: %3$d%%</string>
+    <string name="pdf_compress_error">Ошибка при сжатии: %1$s</string>
+
+    <!-- ── Поворот PDF ── -->
+    <string name="pdf_rotate_subtitle">Поворачивает все страницы документа</string>
+    <string name="pdf_rotate_ready">PDF готов к повороту</string>
+    <string name="pdf_rotate_preview_title">Предпросмотр и угол поворота</string>
+    <string name="pdf_rotate_preview_placeholder">Выберите PDF,\nчтобы увидеть предпросмотр</string>
+    <string name="pdf_rotate_loading_preview">Загрузка предпросмотра…</string>
+    <string name="pdf_rotate_preview_desc">Повёрнутый предпросмотр</string>
+    <string name="pdf_rotate_angle_90">Поворот на 90° по часовой стрелке</string>
+    <string name="pdf_rotate_angle_180">Поворот на пол-оборота (вверх ногами)</string>
+    <string name="pdf_rotate_angle_270">Поворот на 90° против часовой стрелки</string>
+    <string name="pdf_rotate_progress">Поворот PDF на %1$d°…</string>
+    <string name="pdf_rotate_execute">Повернуть PDF на %1$d°</string>
+    <string name="pdf_rotate_read_error">Не удалось прочитать PDF. Убедитесь, что это корректный файл.</string>
+    <string name="pdf_rotate_generate_error">Ошибка при создании повёрнутого PDF.</string>
+    <string name="pdf_rotate_success">PDF успешно повёрнут на %1$d°</string>
+    <string name="pdf_rotate_error">Ошибка при повороте PDF: %1$s</string>
+
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 
     <!-- ── Категории конвертера ──────────────────────── -->

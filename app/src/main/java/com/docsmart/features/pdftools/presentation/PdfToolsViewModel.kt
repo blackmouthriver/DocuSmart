@@ -14,9 +14,13 @@ import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +36,13 @@ import javax.inject.Inject
 enum class PdfTool {
     NONE, MERGE, SPLIT, COMPRESS, ROTATE
 }
+
+data class PdfToolMessages(
+    val merge   : MergePdfMessages,
+    val split   : SplitPdfMessages,
+    val compress: CompressPdfMessages,
+    val rotate  : RotatePdfMessages
+)
 
 data class PdfToolsUiState(
     val selectedTool: PdfTool = PdfTool.NONE,
@@ -152,7 +163,7 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(rotationDegrees = degrees) }
     }
 
-    fun execute() {
+    fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         if (state.selectedPdfs.isEmpty() || state.selectedTool == PdfTool.NONE) return
 
@@ -176,23 +187,27 @@ class PdfToolsViewModel @Inject constructor(
             val result = when (state.selectedTool) {
                 PdfTool.MERGE -> mergePdf(
                     pdfUris = state.selectedPdfs,
-                    outputFileName = customName
+                    outputFileName = customName,
+                    messages = messages.merge
                 )
                 PdfTool.SPLIT -> splitPdf(
                     pdfUri = state.selectedPdfs.first(),
                     fromPage = state.splitFromPage,
                     toPage = state.splitToPage,
-                    outputFileName = customName
+                    outputFileName = customName,
+                    messages = messages.split
                 )
                 PdfTool.COMPRESS -> compressPdf(
                     pdfUri = state.selectedPdfs.first(),
                     quality = state.compressionQuality,
-                    outputFileName = customName
+                    outputFileName = customName,
+                    messages = messages.compress
                 )
                 PdfTool.ROTATE -> rotatePdf(
                     pdfUri = state.selectedPdfs.first(),
                     degrees = state.rotationDegrees,
-                    outputFileName = customName
+                    outputFileName = customName,
+                    messages = messages.rotate
                 )
                 PdfTool.NONE -> return@launch
             }
@@ -216,7 +231,7 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun shareResult(context: Context) {
+    fun shareResult(context: Context, chooserTitle: String, errorMessage: String) {
         val result = _uiState.value.result as? PdfToolResult.Success ?: return
         try {
             val uri = FileProvider.getUriForFile(
@@ -230,23 +245,23 @@ class PdfToolsViewModel @Inject constructor(
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(
-                Intent.createChooser(intent, "Compartir PDF")
+                Intent.createChooser(intent, chooserTitle)
             )
         } catch (e: Exception) {
             Timber.e("Error compartiendo: ${e.message}")
             _uiState.update {
-                it.copy(errorMessage = "No se pudo compartir el archivo")
+                it.copy(errorMessage = errorMessage)
             }
         }
     }
 
-    fun saveToDownloads(context: Context) {
+    fun saveToDownloads(context: Context, errorMessage: String) {
         val result = _uiState.value.result as? PdfToolResult.Success ?: return
         viewModelScope.launch {
             val saved = copyToDownloads(context, result.outputFile)
             _uiState.update { state ->
                 if (saved) state.copy(savedToDownloads = true)
-                else state.copy(errorMessage = "No se pudo guardar en Descargas")
+                else state.copy(errorMessage = errorMessage)
             }
         }
     }

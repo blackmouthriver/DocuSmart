@@ -22,6 +22,10 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DailyLimitDialog
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
+import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
+import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
@@ -43,6 +47,69 @@ fun PdfToolsScreen(
     val activity   = context as? Activity
     val snackbarHostState = remember { SnackbarHostState() }
     val adNotAvailableMessage = stringResource(R.string.pdf_tools_ad_not_available)
+    val shareChooserTitle = stringResource(R.string.pdf_tools_share)
+    val shareErrorMessage = stringResource(R.string.pdf_tools_share_error)
+    val saveErrorMessage  = stringResource(R.string.pdf_tools_save_error)
+    // ── Mensajes de los 4 use cases, resueltos acá (stringResource() no puede
+    // llamarse dentro de remember{}, @DisallowComposableCalls) y empaquetados
+    // sin recalcular en cada recomposición ──────────────────────────────────
+    val mergeMinPdfsError    = stringResource(R.string.pdf_merge_min_pdfs_error)
+    val mergeReadError       = stringResource(R.string.pdf_merge_read_error)
+    val mergeGenerateError   = stringResource(R.string.pdf_merge_generate_error)
+    val mergeSuccess         = stringResource(R.string.pdf_merge_success)
+    val mergeGenericError    = stringResource(R.string.pdf_merge_error)
+    val splitReadError       = stringResource(R.string.pdf_split_read_error)
+    val splitNoPages         = stringResource(R.string.pdf_split_no_pages)
+    val splitRangeTooSmall   = stringResource(R.string.pdf_split_range_too_small)
+    val splitGenerateError   = stringResource(R.string.pdf_split_generate_error)
+    val splitSuccess         = stringResource(R.string.pdf_split_success)
+    val splitGenericError    = stringResource(R.string.pdf_split_error)
+    val compressReadError        = stringResource(R.string.pdf_compress_read_error)
+    val compressEmptyFile        = stringResource(R.string.pdf_compress_empty_file)
+    val compressNoPages          = stringResource(R.string.pdf_compress_no_pages)
+    val compressGenerateError    = stringResource(R.string.pdf_compress_generate_error)
+    val compressAlreadyOptimized = stringResource(R.string.pdf_compress_already_optimized)
+    val compressSuccess          = stringResource(R.string.pdf_compress_success)
+    val compressGenericError     = stringResource(R.string.pdf_compress_error)
+    val rotateReadError      = stringResource(R.string.pdf_rotate_read_error)
+    val rotateGenerateError  = stringResource(R.string.pdf_rotate_generate_error)
+    val rotateSuccess        = stringResource(R.string.pdf_rotate_success)
+    val rotateGenericError   = stringResource(R.string.pdf_rotate_error)
+
+    val pdfToolMessages = remember {
+        PdfToolMessages(
+            merge = MergePdfMessages(
+                minPdfsError  = mergeMinPdfsError,
+                readError     = mergeReadError,
+                generateError = mergeGenerateError,
+                success       = mergeSuccess,
+                genericError  = mergeGenericError
+            ),
+            split = SplitPdfMessages(
+                readError     = splitReadError,
+                noPages       = splitNoPages,
+                rangeTooSmall = splitRangeTooSmall,
+                generateError = splitGenerateError,
+                success       = splitSuccess,
+                genericError  = splitGenericError
+            ),
+            compress = CompressPdfMessages(
+                readError        = compressReadError,
+                emptyFile        = compressEmptyFile,
+                noPages          = compressNoPages,
+                generateError    = compressGenerateError,
+                alreadyOptimized = compressAlreadyOptimized,
+                success          = compressSuccess,
+                genericError     = compressGenericError
+            ),
+            rotate = RotatePdfMessages(
+                readError     = rotateReadError,
+                generateError = rotateGenerateError,
+                success       = rotateSuccess,
+                genericError  = rotateGenericError
+            )
+        )
+    }
 
     val multiPdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -68,7 +135,7 @@ fun PdfToolsScreen(
         DailyLimitDialog(
             usedCount       = uiState.toolUseCount,
             limit           = uiState.toolUseLimit,
-            itemLabelPlural = "usos de esta herramienta",
+            itemLabelPlural = stringResource(R.string.pdf_tools_daily_limit_label),
             isRewardedReady = isRewardedReady,
             onWatchAd       = {
                 activity?.let { viewModel.watchAdForTool(it, adNotAvailableMessage) }
@@ -136,7 +203,7 @@ fun PdfToolsScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Volver a herramientas",
+                            text = stringResource(R.string.pdf_tools_back_to_tools),
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
@@ -146,7 +213,10 @@ fun PdfToolsScreen(
                 if (!isPremium && uiState.toolUseCount > 0) {
                     item {
                         Text(
-                            text = "Usos hoy: ${uiState.toolUseCount} / ${uiState.toolUseLimit}",
+                            text = stringResource(
+                                R.string.pdf_tools_usage_today,
+                                uiState.toolUseCount, uiState.toolUseLimit
+                            ),
                             style = MaterialTheme.typography.labelMedium,
                             color = if (uiState.toolUseCount >= uiState.toolUseLimit)
                                 MaterialTheme.colorScheme.error
@@ -163,8 +233,10 @@ fun PdfToolsScreen(
                         ToolSuccessCard(
                             result = result,
                             savedToDownloads = uiState.savedToDownloads,
-                            onShareClick = { viewModel.shareResult(context) },
-                            onSaveClick = { viewModel.saveToDownloads(context) },
+                            onShareClick = {
+                                viewModel.shareResult(context, shareChooserTitle, shareErrorMessage)
+                            },
+                            onSaveClick = { viewModel.saveToDownloads(context, saveErrorMessage) },
                             onNewOperation = { viewModel.reset() },
                             modifier = Modifier.padding(horizontal = 20.dp)
                         )
@@ -186,7 +258,7 @@ fun PdfToolsScreen(
                                         multiPdfLauncher.launch(MIME_PDF)
                                     },
                                     onRemovePdf = { viewModel.removePdf(it) },
-                                    onExecute = { viewModel.execute() }
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 PdfTool.SPLIT -> SplitPdfScreen(
                                     selectedPdf = uiState.selectedPdfs.firstOrNull(),
@@ -206,7 +278,7 @@ fun PdfToolsScreen(
                                     onToPageChange = {
                                         viewModel.onSplitToPageChange(it)
                                     },
-                                    onExecute = { viewModel.execute() }
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 PdfTool.COMPRESS -> CompressPdfScreen(
                                     selectedPdf = uiState.selectedPdfs.firstOrNull(),
@@ -222,7 +294,7 @@ fun PdfToolsScreen(
                                     onQualityChange = {
                                         viewModel.onCompressionQualityChange(it)
                                     },
-                                    onExecute = { viewModel.execute() }
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 PdfTool.ROTATE -> RotatePdfScreen(
                                     selectedPdf = uiState.selectedPdfs.firstOrNull(),
@@ -238,7 +310,7 @@ fun PdfToolsScreen(
                                     onDegreesChange = {
                                         viewModel.onRotationDegreesChange(it)
                                     },
-                                    onExecute = { viewModel.execute() }
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 else -> {}
                             }
@@ -334,7 +406,7 @@ private fun ToolSuccessCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Guardado en Descargas",
+                        text = stringResource(R.string.general_saved_downloads),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -360,7 +432,7 @@ private fun ToolSuccessCard(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Guardar en Descargas",
+                            text = stringResource(R.string.pdf_tools_save_to_downloads),
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
@@ -380,7 +452,7 @@ private fun ToolSuccessCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Compartir PDF",
+                        text = stringResource(R.string.pdf_tools_share),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -396,7 +468,7 @@ private fun ToolSuccessCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Nueva operación",
+                        text = stringResource(R.string.pdf_tools_new_operation),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

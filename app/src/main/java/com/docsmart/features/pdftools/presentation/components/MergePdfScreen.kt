@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 
 @Composable
 fun MergePdfScreen(
@@ -32,12 +34,12 @@ fun MergePdfScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "Unir PDFs",
+                text = stringResource(R.string.pdf_merge),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Selecciona 2 o más PDFs para combinarlos en uno solo",
+                text = stringResource(R.string.pdf_merge_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -61,7 +63,7 @@ fun MergePdfScreen(
                     modifier = Modifier.size(14.dp)
                 )
                 Text(
-                    text = "Los PDFs se unirán en el orden mostrado",
+                    text = stringResource(R.string.pdf_merge_order_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -111,7 +113,9 @@ private fun MergePdfSelectZone(isEmpty: Boolean, onSelectPdfs: () -> Unit) {
                 modifier = Modifier.size(24.dp)
             )
             Text(
-                text = if (isEmpty) "Toca para seleccionar PDFs" else "Agregar más PDFs",
+                text = stringResource(
+                    if (isEmpty) R.string.pdf_merge_select_prompt else R.string.pdf_merge_add_more
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -176,7 +180,7 @@ private fun SelectedPdfRow(index: Int, uri: Uri, onRemovePdf: (Uri) -> Unit) {
         Text(
             text = uri.lastPathSegment
                 ?.substringAfterLast("/")
-                ?: "Archivo ${index + 1}",
+                ?: stringResource(R.string.pdf_merge_file_fallback, index + 1),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
@@ -189,7 +193,7 @@ private fun SelectedPdfRow(index: Int, uri: Uri, onRemovePdf: (Uri) -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Rounded.Close,
-                contentDescription = "Quitar",
+                contentDescription = stringResource(R.string.pdf_merge_remove_desc),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
@@ -210,7 +214,7 @@ private fun MergePdfProgress(count: Int) {
             trackColor = MaterialTheme.colorScheme.primaryContainer
         )
         Text(
-            text = "Uniendo $count PDFs...",
+            text = stringResource(R.string.pdf_merge_progress, count),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -234,7 +238,8 @@ private fun MergePdfExecuteButton(count: Int, onExecute: () -> Unit) {
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = if (count < 2) "Selecciona al menos 2 PDFs" else "Unir $count PDFs",
+            text = if (count < 2) stringResource(R.string.pdf_merge_select_at_least_2)
+                   else stringResource(R.string.pdf_merge_execute, count),
             style = MaterialTheme.typography.labelLarge
         )
     }

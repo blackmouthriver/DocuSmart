@@ -16,6 +16,15 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+data class SplitPdfMessages(
+    val readError    : String,
+    val noPages      : String,
+    val rangeTooSmall: String, // formato: %1$d total de páginas
+    val generateError: String,
+    val success       : String, // formato: %1$d páginas, %2$d KB
+    val genericError  : String  // formato: %1$s mensaje de excepción
+)
+
 class SplitPdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
@@ -27,14 +36,13 @@ class SplitPdfUseCase @Inject constructor(
         pdfUri        : Uri,
         fromPage      : Int,
         toPage        : Int,
-        outputFileName: String? = null
+        outputFileName: String? = null,
+        messages      : SplitPdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
-                ?: return@withContext PdfToolResult.Error(
-                    "No se pudo leer el PDF. Verifica que sea un archivo válido."
-                )
+                ?: return@withContext PdfToolResult.Error(messages.readError)
 
             val reader     = PdfReader(cacheFile)
             val sourcePdf  = PdfDocument(reader)
@@ -44,7 +52,7 @@ class SplitPdfUseCase @Inject constructor(
 
             if (totalPages == 0) {
                 sourcePdf.close()
-                return@withContext PdfToolResult.Error("El PDF no tiene páginas.")
+                return@withContext PdfToolResult.Error(messages.noPages)
             }
 
             val startPage = fromPage.coerceIn(1, totalPages)
@@ -53,7 +61,7 @@ class SplitPdfUseCase @Inject constructor(
             if (startPage == endPage && totalPages > 1) {
                 sourcePdf.close()
                 return@withContext PdfToolResult.Error(
-                    "El rango debe incluir al menos 2 páginas. El PDF tiene $totalPages páginas."
+                    String.format(messages.rangeTooSmall, totalPages)
                 )
             }
 
@@ -71,19 +79,19 @@ class SplitPdfUseCase @Inject constructor(
             sourcePdf.close()
 
             if (outputFile.length() == 0L)
-                return@withContext PdfToolResult.Error("Error al generar el PDF dividido.")
+                return@withContext PdfToolResult.Error(messages.generateError)
 
             val sizeKb = outputFile.length() / 1024
             Timber.d("$TAG: split exitoso — $pagesExtracted páginas, $sizeKb KB")
 
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message    = "PDF dividido: $pagesExtracted página(s) extraídas · $sizeKb KB"
+                message    = String.format(messages.success, pagesExtracted, sizeKb)
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al dividir PDF")
             PdfToolResult.Error(
-                message = "Error al dividir: ${e.message ?: "Error desconocido"}",
+                message = String.format(messages.genericError, e.message ?: ""),
                 cause   = e
             )
         } finally {

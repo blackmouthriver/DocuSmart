@@ -130,6 +130,101 @@
     <string name="pdf_compress_desc">Reduce el tamaño del archivo</string>
     <string name="pdf_rotate_desc">Rota las páginas del documento</string>
 
+    <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
+    <string name="daily_limit_title">Límite diario alcanzado</string>
+    <string name="daily_limit_body">Has usado %1$d de %2$d %3$s de hoy.</string>
+    <string name="daily_limit_resets_tomorrow">El límite se reinicia mañana.</string>
+    <string name="daily_limit_watch_ad">Ver anuncio → +1 uso</string>
+    <string name="daily_limit_ad_not_ready">Anuncio no disponible aún</string>
+    <string name="daily_limit_get_premium">Obtener Premium → sin límites</string>
+    <string name="pdf_tools_daily_limit_label">usos de esta herramienta</string>
+    <string name="converter_daily_limit_label">conversiones</string>
+
+    <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
+    <string name="pdf_tools_back_to_tools">Volver a herramientas</string>
+    <string name="pdf_tools_usage_today">Usos hoy: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">Guardar en Descargas</string>
+    <string name="pdf_tools_share">Compartir PDF</string>
+    <string name="pdf_tools_share_error">No se pudo compartir el archivo</string>
+    <string name="pdf_tools_save_error">No se pudo guardar en Descargas</string>
+    <string name="pdf_tools_new_operation">Nueva operación</string>
+    <string name="pdf_tools_default_filename">archivo.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">Seleccionar PDF</string>
+    <string name="pdf_tools_filename_label">Nombre del archivo de salida</string>
+    <string name="pdf_tools_filename_placeholder">Ej: Documentos_Unidos</string>
+    <string name="pdf_tools_filename_hint">Si lo dejas vacío se generará un nombre automático</string>
+
+    <!-- ── Unir PDFs ── -->
+    <string name="pdf_merge_subtitle">Selecciona 2 o más PDFs para combinarlos en uno solo</string>
+    <string name="pdf_merge_select_prompt">Toca para seleccionar PDFs</string>
+    <string name="pdf_merge_add_more">Agregar más PDFs</string>
+    <string name="pdf_merge_order_hint">Los PDFs se unirán en el orden mostrado</string>
+    <string name="pdf_merge_remove_desc">Quitar</string>
+    <string name="pdf_merge_file_fallback">Archivo %1$d</string>
+    <string name="pdf_merge_progress">Uniendo %1$d PDFs…</string>
+    <string name="pdf_merge_select_at_least_2">Selecciona al menos 2 PDFs</string>
+    <string name="pdf_merge_execute">Unir %1$d PDFs</string>
+    <string name="pdf_merge_min_pdfs_error">Selecciona al menos 2 PDFs para unir</string>
+    <string name="pdf_merge_read_error">No se pudo leer ninguna página de los PDFs seleccionados.</string>
+    <string name="pdf_merge_generate_error">Error al generar el PDF combinado.</string>
+    <string name="pdf_merge_success">PDFs unidos correctamente — %1$d archivos, %2$d páginas</string>
+    <string name="pdf_merge_error">Error al unir PDFs: %1$s</string>
+
+    <!-- ── Dividir PDF ── -->
+    <string name="pdf_split_subtitle">Extrae un rango de páginas de tu PDF</string>
+    <string name="pdf_split_selected">PDF seleccionado</string>
+    <string name="pdf_split_range_title">Rango de páginas a extraer</string>
+    <string name="pdf_split_from_page">Desde página</string>
+    <string name="pdf_split_to_page">Hasta página</string>
+    <string name="pdf_split_summary">Se extraerán %1$d página(s) · Páginas: %2$d a %3$d</string>
+    <string name="pdf_split_progress">Dividiendo PDF…</string>
+    <string name="pdf_split_read_error">No se pudo leer el PDF. Verifica que sea un archivo válido.</string>
+    <string name="pdf_split_no_pages">El PDF no tiene páginas.</string>
+    <string name="pdf_split_range_too_small">El rango debe incluir al menos 2 páginas. El PDF tiene %1$d páginas.</string>
+    <string name="pdf_split_generate_error">Error al generar el PDF dividido.</string>
+    <string name="pdf_split_success">PDF dividido: %1$d página(s) extraídas · %2$d KB</string>
+    <string name="pdf_split_error">Error al dividir: %1$s</string>
+
+    <!-- ── Comprimir PDF ── -->
+    <string name="pdf_compress_subtitle">Reduce el tamaño de tu PDF manteniendo la legibilidad</string>
+    <string name="pdf_compress_ready">PDF listo para comprimir</string>
+    <string name="pdf_compress_level_title">Nivel de compresión</string>
+    <string name="pdf_compress_level_high_quality">Alta calidad</string>
+    <string name="pdf_compress_level_balanced">Balanceado</string>
+    <string name="pdf_compress_level_high_compression">Alta compresión</string>
+    <string name="pdf_compress_level_max_compression">Máxima compresión</string>
+    <string name="pdf_compress_smaller">Más pequeño</string>
+    <string name="pdf_compress_better_quality">Mejor calidad</string>
+    <string name="pdf_compress_reduction_10_20">Reducción estimada: 10-20%</string>
+    <string name="pdf_compress_reduction_30_50">Reducción estimada: 30-50%</string>
+    <string name="pdf_compress_reduction_50_70">Reducción estimada: 50-70%</string>
+    <string name="pdf_compress_reduction_70_85">Reducción estimada: 70-85%</string>
+    <string name="pdf_compress_progress">Comprimiendo PDF…</string>
+    <string name="pdf_compress_read_error">No se pudo leer el archivo. Verifica que sea un PDF válido.</string>
+    <string name="pdf_compress_empty_file">El archivo PDF está vacío o corrupto.</string>
+    <string name="pdf_compress_no_pages">El PDF no contiene páginas.</string>
+    <string name="pdf_compress_generate_error">Error al generar el PDF comprimido.</string>
+    <string name="pdf_compress_already_optimized">El PDF ya está optimizado · Tamaño: %1$d KB</string>
+    <string name="pdf_compress_success">Antes: %1$d KB → Después: %2$d KB · Reducción: %3$d%%</string>
+    <string name="pdf_compress_error">Error al comprimir: %1$s</string>
+
+    <!-- ── Rotar PDF ── -->
+    <string name="pdf_rotate_subtitle">Rota todas las páginas del documento</string>
+    <string name="pdf_rotate_ready">PDF listo para rotar</string>
+    <string name="pdf_rotate_preview_title">Vista previa y ángulo de rotación</string>
+    <string name="pdf_rotate_preview_placeholder">Selecciona un PDF\npara ver la vista previa</string>
+    <string name="pdf_rotate_loading_preview">Cargando vista previa…</string>
+    <string name="pdf_rotate_preview_desc">Vista previa rotada</string>
+    <string name="pdf_rotate_angle_90">Rotación 90° en sentido horario</string>
+    <string name="pdf_rotate_angle_180">Rotación de media vuelta (boca abajo)</string>
+    <string name="pdf_rotate_angle_270">Rotación 90° en sentido antihorario</string>
+    <string name="pdf_rotate_progress">Rotando PDF %1$d°…</string>
+    <string name="pdf_rotate_execute">Rotar PDF %1$d°</string>
+    <string name="pdf_rotate_read_error">No se pudo leer el PDF. Verifica que sea un archivo válido.</string>
+    <string name="pdf_rotate_generate_error">Error al generar el PDF rotado.</string>
+    <string name="pdf_rotate_success">PDF rotado %1$d° correctamente</string>
+    <string name="pdf_rotate_error">Error al rotar PDF: %1$s</string>
+
     <!-- ── Home empty state ───────────────────────────── -->
 
     <!-- ── Converter categorías ──────────────────────── -->
