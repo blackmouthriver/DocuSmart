@@ -16,6 +16,13 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+data class RotatePdfMessages(
+    val readError    : String,
+    val generateError: String,
+    val success       : String, // formato: %1$d grados
+    val genericError  : String  // formato: %1$s mensaje de excepción
+)
+
 class RotatePdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
@@ -32,14 +39,13 @@ class RotatePdfUseCase @Inject constructor(
     suspend operator fun invoke(
         pdfUri: Uri,
         degrees: Int = 90,
-        outputFileName: String? = null
+        outputFileName: String? = null,
+        messages: RotatePdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
-                ?: return@withContext PdfToolResult.Error(
-                    "No se pudo leer el PDF. Verifica que sea un archivo válido."
-                )
+                ?: return@withContext PdfToolResult.Error(messages.readError)
 
             val outputFile = createOutputFile(outputFileName ?: "Rotated_${degrees}deg")
 
@@ -53,18 +59,18 @@ class RotatePdfUseCase @Inject constructor(
             }
 
             if (outputFile.length() == 0L) {
-                return@withContext PdfToolResult.Error("Error al generar el PDF rotado.")
+                return@withContext PdfToolResult.Error(messages.generateError)
             }
 
             Timber.d("$TAG: rotación exitosa ${degrees}° — ${outputFile.length() / 1024} KB")
 
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message = "PDF rotado ${degrees}° correctamente"
+                message = String.format(messages.success, degrees)
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al rotar PDF")
-            PdfToolResult.Error("Error al rotar PDF: ${e.message ?: "Error desconocido"}", e)
+            PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()
         }

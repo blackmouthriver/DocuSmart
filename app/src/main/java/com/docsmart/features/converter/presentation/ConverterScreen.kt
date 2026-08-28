@@ -72,7 +72,7 @@ fun ConverterScreen(
         DailyLimitDialog(
             usedCount       = uiState.conversionCount,
             limit           = uiState.conversionLimit,
-            itemLabelPlural = "conversiones",
+            itemLabelPlural = stringResource(R.string.converter_daily_limit_label),
             isRewardedReady = isRewardedReady,
             onWatchAd       = { activity?.let { viewModel.watchAdForConversion(it) } },
             onDismiss       = { viewModel.dismissLimitDialog() },

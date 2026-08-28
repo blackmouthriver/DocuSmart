@@ -8,8 +8,10 @@
 cada página a imagen, destruyendo el texto seleccionable); "Dividir no
 funciona" de la QA de mayo confirmado como **obsoleto** mediante tests reales
 sobre PDFs generados con iText7; 8 tests unitarios nuevos, todos en verde.
-Pendiente: i18n de las 4 pantallas (aún en español fijo, ver §5), y todas las
-funcionalidades nuevas listadas en §2 como backlog.
+**i18n de las 4 pantallas completado 2026-08-28 (ver §9)** — ya no queda
+texto en español fijo en este módulo. Pendiente: todas las funcionalidades
+nuevas listadas en §2 como backlog, y selección de archivo desde la
+Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
 ---
@@ -140,7 +142,7 @@ firma/formularios avanzados).
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
-- **i18n:** de las 4 pantallas de Herramientas PDF, solo `PdfToolsScreen.kt` tiene 2 strings conectados a `stringResource()` (título/subtítulo del banner); el resto (menú, las 4 sub-pantallas, `ToolSuccessCard`, y los mensajes de error/éxito de los 4 use cases) sigue en español fijo — mismo patrón que Seguridad/QR/Estudio antes de i18n. No se abordó en esta sesión por ser un trabajo mecánico grande sin bug funcional asociado; queda como siguiente paso natural cuando se retome este módulo.
+- **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
 - **Selector de archivo:** las 4 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
@@ -180,4 +182,72 @@ páginas y la rotación se verifican leyendo el archivo de salida real.
 |---|---|
 | ¿Prioridad real dentro del backlog (§2)? | Se propuso alta/media/baja por esfuerzo-valor; confirmar con el usuario antes de implementar la siguiente tanda. |
 | ¿Vale la pena un modo "comprimir conservando texto" (solo recomprimir imágenes embebidas)? | Depende de si el caso de uso principal son PDFs escaneados (ya son imagen, no pierden nada) o documentos de texto exportados (sí perderían selección de texto). |
-| ¿Selección de archivo desde la Biblioteca de la app, no solo desde el dispositivo? | Mismo patrón ya resuelto para Seguridad (HU-SEC-04 AC3); replicar aquí cuando se aborde i18n/UI de este módulo. |
+| ¿Selección de archivo desde la Biblioteca de la app, no solo desde el dispositivo? | Mismo patrón ya resuelto para Seguridad (HU-SEC-04 AC3); i18n ya no es un bloqueante (ver §9), queda pendiente como mejora de UI aparte. |
+
+---
+
+## 9. i18n de las 4 pantallas (2026-08-28)
+
+Última pieza en español fijo del módulo (§5). Cubre: `PdfToolsMenu.kt` ya
+estaba conectado a `stringResource()` desde antes — el resto no lo estaba.
+
+- **`PdfToolsScreen.kt`** (menú/tarjeta de resultado), **`MergePdfScreen.kt`**,
+  **`SplitPdfScreen.kt`**, **`CompressPdfScreen.kt`**, **`RotatePdfScreen.kt`**,
+  **`OutputFileNameField.kt`** — todo el texto visible migrado a
+  `stringResource()`. Los textos puramente numéricos sin significado
+  lingüístico (`"$quality%"`, `"$X KB"`) se dejaron como estaban, mismo
+  criterio ya usado en Seguridad.
+- **`DailyLimitDialog.kt`** (compartido con Conversor, `core/ui/components/`)
+  — estaba 100% en español fijo pese a renderizarse también dentro de
+  Herramientas PDF; se localizó completo en el mismo cambio en vez de dejar
+  el diálogo de límite diario como el único punto no traducido de la
+  pantalla. `ConverterScreen.kt` también se actualizó (una línea,
+  `itemLabelPlural`) para no dejar la mitad del mismo diálogo sin traducir.
+- **Mensajes de los 4 use cases** (`MergePdfUseCase`, `SplitPdfUseCase`,
+  `CompressPdfUseCase`, `RotatePdfUseCase`) — mismo patrón que
+  `PdfPasswordMessages` (`security.md`): cada uno gana una `data class
+  *Messages` con los textos de error/éxito, resueltos vía `stringResource()`
+  en la capa de Compose y pasados al use case, en vez de que el use case
+  llame `context.getString()` directamente. Se eligió este patrón (no el más
+  directo de usar el `Context` ya inyectado en cada use case) por dos
+  razones: consistencia con el precedente ya establecido en
+  `PdfPasswordUseCase`, y porque mantiene los tests unitarios en JVM puro sin
+  necesitar Robolectric para resolver recursos Android.
+- `PdfToolsViewModel.execute()` ahora recibe un `PdfToolMessages` (bundle de
+  los 4 anteriores); `shareResult()`/`saveToDownloads()` ahora reciben el
+  título del selector de compartir y el mensaje de error como parámetros en
+  vez de tenerlos hardcodeados.
+- **Hallazgo real corregido en el camino:** los nuevos strings de reducción
+  estimada de Comprimir (`pdf_compress_reduction_*`) se escribieron primero
+  con `%%` (patrón copiado de `premium_savings_44`, que ya tenía el mismo
+  problema sin detectar) pero se renderizan vía `stringResource(id)` **sin**
+  argumentos de formato — Android solo colapsa `%%` a `%` cuando el string
+  realmente pasa por `String.format()`. Sin argumentos, `%%` se mostraba
+  literal en pantalla ("Reducción estimada: 30-50%%"). Detectado al
+  verificar visualmente en el dispositivo real (no por los tests, que no
+  cubren el layer de Compose) y corregido a `%` simple en los 5 idiomas. El
+  `premium_savings_44` original con el mismo bug queda fuera de alcance de
+  este documento — se dejó como tarea aparte para el módulo de Premium.
+- **83 strings nuevos** en los 5 idiomas (`values`/-en/-de/-pt/-ru), paridad
+  de claves verificada con `diff` tras cada edición.
+- Los 3 tests unitarios existentes (`MergePdfUseCaseTest`,
+  `SplitPdfUseCaseTest`, `RotatePdfUseCaseTest`) se actualizaron para pasar
+  un objeto de mensajes de prueba (mismo patrón que `PdfPasswordUseCaseTest`)
+  — sin cambios de cobertura, solo de firma.
+- **Verificado end-to-end en el dispositivo real, con la app en ruso** (para
+  confirmar un idioma no romance, no solo revisar que compile): las 4
+  pantallas del menú y sus formularios, más una operación real completa de
+  Rotar (PDF de prueba subido vía `adb push`, seleccionado desde el selector
+  del sistema, rotado 90°) — el mensaje de éxito, el contador de usos
+  diarios, y los 3 botones de la tarjeta de resultado (incluyendo "Guardado
+  en Descargas" tras confirmar el guardado) se mostraron correctamente
+  formateados en ruso, confirmando que el nuevo flujo
+  ViewModel → use case → `String.format()` funciona en producción y no solo
+  en los tests unitarios (que usan plantillas de prueba, no el texto real de
+  `strings.xml`).
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde. El
+  primer intento falló en lint (`LocalContextGetResourceValueCall`) por
+  resolver los mensajes con `context.getString()` dentro de un bloque
+  `remember { }` — corregido resolviendo los `stringResource()` fuera del
+  `remember` (no puede llamarse un `@Composable` dentro de
+  `@DisallowComposableCalls`) y empaquetando los valores ya resueltos.

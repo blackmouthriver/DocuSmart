@@ -20,8 +20,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.WarningAmber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -107,12 +109,12 @@ fun RotatePdfScreen(
         // ── Título ────────────────────────────────────
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "Rotar PDF",
+                text = stringResource(R.string.pdf_rotate),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Rota todas las páginas del documento",
+                text = stringResource(R.string.pdf_rotate_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -159,10 +161,10 @@ fun RotatePdfScreen(
                 )
                 Column {
                     Text(
-                        text = if (selectedPdf != null)
-                            "PDF listo para rotar"
-                        else
-                            "Seleccionar PDF",
+                        text = stringResource(
+                            if (selectedPdf != null) R.string.pdf_rotate_ready
+                            else R.string.pdf_tools_select_pdf_prompt
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (selectedPdf != null)
                             WarningAmber
@@ -172,7 +174,7 @@ fun RotatePdfScreen(
                     if (selectedPdf != null) {
                         Text(
                             text = selectedPdf.lastPathSegment
-                                ?.substringAfterLast("/") ?: "archivo.pdf",
+                                ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -195,7 +197,7 @@ fun RotatePdfScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Vista previa y ángulo de rotación",
+                    text = stringResource(R.string.pdf_rotate_preview_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth()
@@ -225,7 +227,7 @@ fun RotatePdfScreen(
                                     modifier = Modifier.size(48.dp)
                                 )
                                 Text(
-                                    text = "Selecciona un PDF\npara ver la vista previa",
+                                    text = stringResource(R.string.pdf_rotate_preview_placeholder),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
@@ -244,7 +246,7 @@ fun RotatePdfScreen(
                                     color = WarningAmber
                                 )
                                 Text(
-                                    text = "Cargando vista previa...",
+                                    text = stringResource(R.string.pdf_rotate_loading_preview),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -255,7 +257,7 @@ fun RotatePdfScreen(
                         else -> {
                             Image(
                                 bitmap = previewBitmap!!.asImageBitmap(),
-                                contentDescription = "Vista previa rotada",
+                                contentDescription = stringResource(R.string.pdf_rotate_preview_desc),
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -301,9 +303,9 @@ fun RotatePdfScreen(
                 // ── Descripción del ángulo ────────────
                 Text(
                     text = when (degrees) {
-                        90  -> "Rotación 90° en sentido horario"
-                        180 -> "Rotación de media vuelta (boca abajo)"
-                        270 -> "Rotación 90° en sentido antihorario"
+                        90  -> stringResource(R.string.pdf_rotate_angle_90)
+                        180 -> stringResource(R.string.pdf_rotate_angle_180)
+                        270 -> stringResource(R.string.pdf_rotate_angle_270)
                         else -> ""
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -335,7 +337,7 @@ fun RotatePdfScreen(
                     trackColor = WarningAmber.copy(alpha = 0.2f)
                 )
                 Text(
-                    text = "Rotando PDF ${degrees}°...",
+                    text = stringResource(R.string.pdf_rotate_progress, degrees),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -360,7 +362,7 @@ fun RotatePdfScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Rotar PDF ${degrees}°",
+                    text = stringResource(R.string.pdf_rotate_execute, degrees),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

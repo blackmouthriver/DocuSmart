@@ -12,7 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.SuccessGreen
 
 @Composable
@@ -33,12 +35,12 @@ fun CompressPdfScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "Comprimir PDF",
+                text = stringResource(R.string.pdf_compress),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Reduce el tamaño de tu PDF manteniendo la legibilidad",
+                text = stringResource(R.string.pdf_compress_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -85,10 +87,10 @@ fun CompressPdfScreen(
                 )
                 Column {
                     Text(
-                        text = if (selectedPdf != null)
-                            "PDF listo para comprimir"
-                        else
-                            "Seleccionar PDF",
+                        text = stringResource(
+                            if (selectedPdf != null) R.string.pdf_compress_ready
+                            else R.string.pdf_tools_select_pdf_prompt
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (selectedPdf != null)
                             SuccessGreen
@@ -98,7 +100,7 @@ fun CompressPdfScreen(
                     if (selectedPdf != null) {
                         Text(
                             text = selectedPdf.lastPathSegment
-                                ?.substringAfterLast("/") ?: "archivo.pdf",
+                                ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -125,16 +127,21 @@ fun CompressPdfScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Nivel de compresión",
+                        text = stringResource(R.string.pdf_compress_level_title),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    val (levelText, levelColor) = when {
-                        quality >= 80 -> "Alta calidad" to SuccessGreen
-                        quality >= 60 -> "Balanceado" to MaterialTheme.colorScheme.primary
-                        quality >= 40 -> "Alta compresión" to MaterialTheme.colorScheme.tertiary
-                        else -> "Máxima compresión" to MaterialTheme.colorScheme.error
+                    val (levelTextRes, levelColor) = when {
+                        quality >= 80 -> R.string.pdf_compress_level_high_quality to
+                            SuccessGreen
+                        quality >= 60 -> R.string.pdf_compress_level_balanced to
+                            MaterialTheme.colorScheme.primary
+                        quality >= 40 -> R.string.pdf_compress_level_high_compression to
+                            MaterialTheme.colorScheme.tertiary
+                        else -> R.string.pdf_compress_level_max_compression to
+                            MaterialTheme.colorScheme.error
                     }
+                    val levelText = stringResource(levelTextRes)
                     Surface(
                         shape = MaterialTheme.shapes.extraSmall,
                         color = levelColor.copy(alpha = 0.15f)
@@ -166,7 +173,7 @@ fun CompressPdfScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Más pequeño",
+                        text = stringResource(R.string.pdf_compress_smaller),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -176,7 +183,7 @@ fun CompressPdfScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Mejor calidad",
+                        text = stringResource(R.string.pdf_compress_better_quality),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -194,12 +201,14 @@ fun CompressPdfScreen(
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = when {
-                            quality >= 80 -> "Reducción estimada: 10-20%"
-                            quality >= 60 -> "Reducción estimada: 30-50%"
-                            quality >= 40 -> "Reducción estimada: 50-70%"
-                            else -> "Reducción estimada: 70-85%"
-                        },
+                        text = stringResource(
+                            when {
+                                quality >= 80 -> R.string.pdf_compress_reduction_10_20
+                                quality >= 60 -> R.string.pdf_compress_reduction_30_50
+                                quality >= 40 -> R.string.pdf_compress_reduction_50_70
+                                else -> R.string.pdf_compress_reduction_70_85
+                            }
+                        ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -228,7 +237,7 @@ fun CompressPdfScreen(
                     trackColor = SuccessGreen.copy(alpha = 0.2f)
                 )
                 Text(
-                    text = "Comprimiendo PDF...",
+                    text = stringResource(R.string.pdf_compress_progress),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -253,7 +262,7 @@ fun CompressPdfScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Comprimir PDF",
+                    text = stringResource(R.string.pdf_compress),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

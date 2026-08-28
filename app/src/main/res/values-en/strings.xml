@@ -130,6 +130,101 @@
     <string name="pdf_compress_desc">Reduce the file size</string>
     <string name="pdf_rotate_desc">Rotate document pages</string>
 
+    <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
+    <string name="daily_limit_title">Daily limit reached</string>
+    <string name="daily_limit_body">You\'ve used %1$d of %2$d %3$s today.</string>
+    <string name="daily_limit_resets_tomorrow">The limit resets tomorrow.</string>
+    <string name="daily_limit_watch_ad">Watch ad → +1 use</string>
+    <string name="daily_limit_ad_not_ready">Ad not available yet</string>
+    <string name="daily_limit_get_premium">Get Premium → no limits</string>
+    <string name="pdf_tools_daily_limit_label">uses of this tool</string>
+    <string name="converter_daily_limit_label">conversions</string>
+
+    <!-- ── PDF Tools: main screen and result card ── -->
+    <string name="pdf_tools_back_to_tools">Back to tools</string>
+    <string name="pdf_tools_usage_today">Uses today: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">Save to Downloads</string>
+    <string name="pdf_tools_share">Share PDF</string>
+    <string name="pdf_tools_share_error">Couldn\'t share the file</string>
+    <string name="pdf_tools_save_error">Couldn\'t save to Downloads</string>
+    <string name="pdf_tools_new_operation">New operation</string>
+    <string name="pdf_tools_default_filename">file.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">Select PDF</string>
+    <string name="pdf_tools_filename_label">Output file name</string>
+    <string name="pdf_tools_filename_placeholder">E.g.: Merged_Documents</string>
+    <string name="pdf_tools_filename_hint">If left empty, an automatic name will be generated</string>
+
+    <!-- ── Merge PDFs ── -->
+    <string name="pdf_merge_subtitle">Select 2 or more PDFs to combine them into one</string>
+    <string name="pdf_merge_select_prompt">Tap to select PDFs</string>
+    <string name="pdf_merge_add_more">Add more PDFs</string>
+    <string name="pdf_merge_order_hint">The PDFs will be merged in the order shown</string>
+    <string name="pdf_merge_remove_desc">Remove</string>
+    <string name="pdf_merge_file_fallback">File %1$d</string>
+    <string name="pdf_merge_progress">Merging %1$d PDFs…</string>
+    <string name="pdf_merge_select_at_least_2">Select at least 2 PDFs</string>
+    <string name="pdf_merge_execute">Merge %1$d PDFs</string>
+    <string name="pdf_merge_min_pdfs_error">Select at least 2 PDFs to merge</string>
+    <string name="pdf_merge_read_error">Couldn\'t read any page from the selected PDFs.</string>
+    <string name="pdf_merge_generate_error">Error generating the merged PDF.</string>
+    <string name="pdf_merge_success">PDFs merged successfully — %1$d files, %2$d pages</string>
+    <string name="pdf_merge_error">Error merging PDFs: %1$s</string>
+
+    <!-- ── Split PDF ── -->
+    <string name="pdf_split_subtitle">Extract a range of pages from your PDF</string>
+    <string name="pdf_split_selected">PDF selected</string>
+    <string name="pdf_split_range_title">Page range to extract</string>
+    <string name="pdf_split_from_page">From page</string>
+    <string name="pdf_split_to_page">To page</string>
+    <string name="pdf_split_summary">%1$d page(s) will be extracted · Pages: %2$d to %3$d</string>
+    <string name="pdf_split_progress">Splitting PDF…</string>
+    <string name="pdf_split_read_error">Couldn\'t read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_split_no_pages">The PDF has no pages.</string>
+    <string name="pdf_split_range_too_small">The range must include at least 2 pages. The PDF has %1$d pages.</string>
+    <string name="pdf_split_generate_error">Error generating the split PDF.</string>
+    <string name="pdf_split_success">PDF split: %1$d page(s) extracted · %2$d KB</string>
+    <string name="pdf_split_error">Error splitting: %1$s</string>
+
+    <!-- ── Compress PDF ── -->
+    <string name="pdf_compress_subtitle">Reduce your PDF\'s size while keeping it readable</string>
+    <string name="pdf_compress_ready">PDF ready to compress</string>
+    <string name="pdf_compress_level_title">Compression level</string>
+    <string name="pdf_compress_level_high_quality">High quality</string>
+    <string name="pdf_compress_level_balanced">Balanced</string>
+    <string name="pdf_compress_level_high_compression">High compression</string>
+    <string name="pdf_compress_level_max_compression">Maximum compression</string>
+    <string name="pdf_compress_smaller">Smaller</string>
+    <string name="pdf_compress_better_quality">Better quality</string>
+    <string name="pdf_compress_reduction_10_20">Estimated reduction: 10-20%</string>
+    <string name="pdf_compress_reduction_30_50">Estimated reduction: 30-50%</string>
+    <string name="pdf_compress_reduction_50_70">Estimated reduction: 50-70%</string>
+    <string name="pdf_compress_reduction_70_85">Estimated reduction: 70-85%</string>
+    <string name="pdf_compress_progress">Compressing PDF…</string>
+    <string name="pdf_compress_read_error">Couldn\'t read the file. Make sure it\'s a valid PDF.</string>
+    <string name="pdf_compress_empty_file">The PDF file is empty or corrupted.</string>
+    <string name="pdf_compress_no_pages">The PDF has no pages.</string>
+    <string name="pdf_compress_generate_error">Error generating the compressed PDF.</string>
+    <string name="pdf_compress_already_optimized">The PDF is already optimized · Size: %1$d KB</string>
+    <string name="pdf_compress_success">Before: %1$d KB → After: %2$d KB · Reduction: %3$d%%</string>
+    <string name="pdf_compress_error">Error compressing: %1$s</string>
+
+    <!-- ── Rotate PDF ── -->
+    <string name="pdf_rotate_subtitle">Rotate all pages of the document</string>
+    <string name="pdf_rotate_ready">PDF ready to rotate</string>
+    <string name="pdf_rotate_preview_title">Preview and rotation angle</string>
+    <string name="pdf_rotate_preview_placeholder">Select a PDF\nto see the preview</string>
+    <string name="pdf_rotate_loading_preview">Loading preview…</string>
+    <string name="pdf_rotate_preview_desc">Rotated preview</string>
+    <string name="pdf_rotate_angle_90">90° clockwise rotation</string>
+    <string name="pdf_rotate_angle_180">Half-turn rotation (upside down)</string>
+    <string name="pdf_rotate_angle_270">90° counterclockwise rotation</string>
+    <string name="pdf_rotate_progress">Rotating PDF %1$d°…</string>
+    <string name="pdf_rotate_execute">Rotate PDF %1$d°</string>
+    <string name="pdf_rotate_read_error">Couldn\'t read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_rotate_generate_error">Error generating the rotated PDF.</string>
+    <string name="pdf_rotate_success">PDF rotated %1$d° successfully</string>
+    <string name="pdf_rotate_error">Error rotating PDF: %1$s</string>
+
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->
     <string name="converter_select_files">Tap to select %1$s</string>

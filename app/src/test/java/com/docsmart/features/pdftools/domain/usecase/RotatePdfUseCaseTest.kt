@@ -33,6 +33,11 @@ class RotatePdfUseCaseTest {
     private lateinit var context: Context
     private lateinit var useCase: RotatePdfUseCase
 
+    private val messages = RotatePdfMessages(
+        readError = "readError", generateError = "generateError",
+        success = "success %1\$d", genericError = "genericError %1\$s"
+    )
+
     @BeforeEach
     fun setUp() {
         cacheDir = Files.createTempDirectory("docsmart_rotate_cache_").toFile()
@@ -53,7 +58,7 @@ class RotatePdfUseCaseTest {
     fun `rotar 90 grados escribe la rotacion en todas las paginas`() = runTest {
         stubResolver(createTestPdf(pages = 3))
 
-        val result = useCase(mockk<Uri>(), degrees = 90)
+        val result = useCase(mockk<Uri>(), degrees = 90, messages = messages)
 
         assertTrue(result is PdfToolResult.Success)
         val rotations = pageRotationsOf((result as PdfToolResult.Success).outputFile)
@@ -64,7 +69,7 @@ class RotatePdfUseCaseTest {
     fun `rotar 270 grados sobre una pagina ya rotada 180 acumula 90`() = runTest {
         stubResolver(createTestPdf(pages = 1, initialRotation = 180))
 
-        val result = useCase(mockk<Uri>(), degrees = 270)
+        val result = useCase(mockk<Uri>(), degrees = 270, messages = messages)
 
         assertTrue(result is PdfToolResult.Success)
         assertEquals(listOf(90), pageRotationsOf((result as PdfToolResult.Success).outputFile))

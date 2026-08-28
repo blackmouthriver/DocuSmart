@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 
 @Composable
 fun SplitPdfScreen(
@@ -35,12 +37,12 @@ fun SplitPdfScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "Dividir PDF",
+                text = stringResource(R.string.pdf_split),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Extrae un rango de páginas de tu PDF",
+                text = stringResource(R.string.pdf_split_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -84,17 +86,17 @@ fun SplitPdfScreen(
                 )
                 Column {
                     Text(
-                        text = if (selectedPdf != null)
-                            "PDF seleccionado"
-                        else
-                            "Seleccionar PDF",
+                        text = stringResource(
+                            if (selectedPdf != null) R.string.pdf_split_selected
+                            else R.string.pdf_tools_select_pdf_prompt
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     if (selectedPdf != null) {
                         Text(
                             text = selectedPdf.lastPathSegment
-                                ?.substringAfterLast("/") ?: "archivo.pdf",
+                                ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -117,7 +119,7 @@ fun SplitPdfScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Rango de páginas a extraer",
+                        text = stringResource(R.string.pdf_split_range_title),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -131,7 +133,7 @@ fun SplitPdfScreen(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "Desde página",
+                                text = stringResource(R.string.pdf_split_from_page),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -175,7 +177,7 @@ fun SplitPdfScreen(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "Hasta página",
+                                text = stringResource(R.string.pdf_split_to_page),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -216,7 +218,7 @@ fun SplitPdfScreen(
 
                     val pageCount = (toPage - fromPage + 1).coerceAtLeast(0)
                     Text(
-                        text  = "Se extraerán $pageCount página(s) · Páginas: $fromPage a $toPage",
+                        text  = stringResource(R.string.pdf_split_summary, pageCount, fromPage, toPage),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (fromPage >= toPage)
                             MaterialTheme.colorScheme.error
@@ -246,7 +248,7 @@ fun SplitPdfScreen(
                     trackColor = MaterialTheme.colorScheme.primaryContainer
                 )
                 Text(
-                    text = "Dividiendo PDF...",
+                    text = stringResource(R.string.pdf_split_progress),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -267,7 +269,7 @@ fun SplitPdfScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Dividir PDF",
+                    text = stringResource(R.string.pdf_split),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

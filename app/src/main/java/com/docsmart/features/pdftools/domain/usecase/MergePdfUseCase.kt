@@ -16,6 +16,14 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+data class MergePdfMessages(
+    val minPdfsError : String,
+    val readError    : String,
+    val generateError: String,
+    val success       : String, // formato: %1$d archivos, %2$d páginas
+    val genericError  : String  // formato: %1$s mensaje de excepción
+)
+
 class MergePdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
@@ -29,10 +37,11 @@ class MergePdfUseCase @Inject constructor(
      */
     suspend operator fun invoke(
         pdfUris: List<Uri>,
-        outputFileName: String? = null
+        outputFileName: String? = null,
+        messages: MergePdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         if (pdfUris.size < 2) {
-            return@withContext PdfToolResult.Error("Selecciona al menos 2 PDFs para unir")
+            return@withContext PdfToolResult.Error(messages.minPdfsError)
         }
 
         val cacheFiles = mutableListOf<File>()
@@ -60,24 +69,22 @@ class MergePdfUseCase @Inject constructor(
 
             if (totalPages == 0) {
                 outputFile.delete()
-                return@withContext PdfToolResult.Error(
-                    "No se pudo leer ninguna página de los PDFs seleccionados."
-                )
+                return@withContext PdfToolResult.Error(messages.readError)
             }
 
             if (outputFile.length() == 0L) {
-                return@withContext PdfToolResult.Error("Error al generar el PDF combinado.")
+                return@withContext PdfToolResult.Error(messages.generateError)
             }
 
             Timber.d("$TAG: merge exitoso — $totalPages páginas, ${outputFile.length() / 1024} KB")
 
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message = "PDFs unidos correctamente — ${cacheFiles.size} archivos, $totalPages páginas"
+                message = String.format(messages.success, cacheFiles.size, totalPages)
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al unir PDFs")
-            PdfToolResult.Error("Error al unir PDFs: ${e.message ?: "Error desconocido"}", e)
+            PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFiles.forEach { it.delete() }
         }

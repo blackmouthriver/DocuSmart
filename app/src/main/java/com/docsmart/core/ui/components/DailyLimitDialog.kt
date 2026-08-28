@@ -23,8 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 
 /**
  * Diálogo de límite diario alcanzado, compartido entre Conversión y
@@ -50,7 +52,7 @@ fun DailyLimitDialog(
         },
         title = {
             Text(
-                "Límite diario alcanzado",
+                stringResource(R.string.daily_limit_title),
                 style     = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center
             )
@@ -61,7 +63,7 @@ fun DailyLimitDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Has usado $usedCount de $limit $itemLabelPlural de hoy.",
+                    stringResource(R.string.daily_limit_body, usedCount, limit, itemLabelPlural),
                     style     = MaterialTheme.typography.bodyMedium,
                     color     = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -76,7 +78,7 @@ fun DailyLimitDialog(
                     trackColor = MaterialTheme.colorScheme.errorContainer
                 )
                 Text(
-                    "El límite se reinicia mañana.",
+                    stringResource(R.string.daily_limit_resets_tomorrow),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -96,8 +98,10 @@ fun DailyLimitDialog(
                     Icon(Icons.Rounded.PlayCircle, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        if (isRewardedReady) "Ver anuncio → +1 uso"
-                        else "Anuncio no disponible aún"
+                        stringResource(
+                            if (isRewardedReady) R.string.daily_limit_watch_ad
+                            else R.string.daily_limit_ad_not_ready
+                        )
                     )
                 }
                 OutlinedButton(
@@ -107,12 +111,12 @@ fun DailyLimitDialog(
                 ) {
                     Icon(Icons.Rounded.Star, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Obtener Premium → sin límites")
+                    Text(stringResource(R.string.daily_limit_get_premium))
                 }
                 TextButton(
                     onClick  = onDismiss,
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Cancelar") }
+                ) { Text(stringResource(R.string.general_cancel)) }
             }
         },
         dismissButton = {}
