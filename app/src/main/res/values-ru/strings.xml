@@ -41,6 +41,7 @@
     <string name="pdf_rotate">Повернуть PDF</string>
     <string name="pdf_number_pages">Нумерация страниц</string>
     <string name="pdf_watermark">Водяной знак</string>
+    <string name="pdf_reorder_pages">Изменить порядок страниц</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -133,6 +134,7 @@
     <string name="pdf_rotate_desc">Поворачивает страницы документа</string>
     <string name="pdf_number_pages_desc">Добавляет нумерацию в нижнем колонтитуле</string>
     <string name="pdf_watermark_desc">Накладывает текст на документ</string>
+    <string name="pdf_reorder_pages_desc">Перетащите или удалите отдельные страницы</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -262,6 +264,20 @@
     <string name="pdf_watermark_generate_error">Ошибка при создании PDF с водяным знаком.</string>
     <string name="pdf_watermark_success">Водяной знак успешно нанесён — %1$d страниц</string>
     <string name="pdf_watermark_error">Ошибка при нанесении водяного знака: %1$s</string>
+
+    <!-- ── Изменить порядок страниц ── -->
+    <string name="pdf_reorder_pages_subtitle">Перетаскивайте миниатюры, чтобы изменить порядок или удалить страницы</string>
+    <string name="pdf_reorder_pages_ready">PDF готов к изменению порядка</string>
+    <string name="pdf_reorder_pages_hint">Удерживайте значок перетаскивания, чтобы переместить страницу на другую позицию</string>
+    <string name="pdf_reorder_pages_page_label">Страница %1$d</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">Перетащить для изменения порядка</string>
+    <string name="pdf_reorder_pages_progress">Сохранение нового порядка…</string>
+    <string name="pdf_reorder_pages_execute">Сохранить изменения</string>
+    <string name="pdf_reorder_pages_empty_order_error">Нужно оставить хотя бы одну страницу</string>
+    <string name="pdf_reorder_pages_read_error">Не удалось прочитать PDF. Убедитесь, что это корректный файл.</string>
+    <string name="pdf_reorder_pages_generate_error">Ошибка при создании PDF с изменённым порядком страниц.</string>
+    <string name="pdf_reorder_pages_success">PDF успешно обновлён — %1$d страниц</string>
+    <string name="pdf_reorder_pages_error">Ошибка при изменении порядка страниц: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

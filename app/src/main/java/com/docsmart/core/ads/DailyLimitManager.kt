@@ -27,6 +27,7 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_ROTATE        = "count_rotate"
         private const val KEY_NUMBER_PAGES  = "count_number_pages"
         private const val KEY_WATERMARK     = "count_watermark"
+        private const val KEY_REORDER_PAGES = "count_reorder_pages"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
         private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
 
@@ -56,6 +57,7 @@ class DailyLimitManager @Inject constructor(
                 .putInt(KEY_ROTATE,         0)
                 .putInt(KEY_NUMBER_PAGES,   0)
                 .putInt(KEY_WATERMARK,      0)
+                .putInt(KEY_REORDER_PAGES,  0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
                 .putInt(KEY_EXTRA_PDF_TOOLS, 0)
                 .apply()
@@ -144,6 +146,7 @@ class DailyLimitManager @Inject constructor(
         "ROTATE"        -> KEY_ROTATE
         "NUMBER_PAGES"  -> KEY_NUMBER_PAGES
         "WATERMARK"     -> KEY_WATERMARK
+        "REORDER_PAGES" -> KEY_REORDER_PAGES
         else            -> KEY_CONVERSIONS
     }
 }
