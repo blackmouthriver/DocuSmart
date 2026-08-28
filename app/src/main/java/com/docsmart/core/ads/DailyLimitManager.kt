@@ -31,6 +31,7 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_COMPARE       = "count_compare"
         private const val KEY_REDACT        = "count_redact"
         private const val KEY_CROP          = "count_crop"
+        private const val KEY_EDIT_TEXT      = "count_edit_text"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
         private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
 
@@ -64,6 +65,7 @@ class DailyLimitManager @Inject constructor(
                 .putInt(KEY_COMPARE,        0)
                 .putInt(KEY_REDACT,         0)
                 .putInt(KEY_CROP,           0)
+                .putInt(KEY_EDIT_TEXT,      0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
                 .putInt(KEY_EXTRA_PDF_TOOLS, 0)
                 .apply()
@@ -156,6 +158,7 @@ class DailyLimitManager @Inject constructor(
         "COMPARE"       -> KEY_COMPARE
         "REDACT"        -> KEY_REDACT
         "CROP"          -> KEY_CROP
+        "EDIT_TEXT"     -> KEY_EDIT_TEXT
         else            -> KEY_CONVERSIONS
     }
 }

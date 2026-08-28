@@ -45,6 +45,7 @@
     <string name="pdf_compare">Comparar PDFs</string>
     <string name="pdf_redact">Censurar conteúdo</string>
     <string name="pdf_crop">Cortar páginas</string>
+    <string name="pdf_edit_text">Editar texto</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -141,6 +142,7 @@
     <string name="pdf_compare_desc">Encontre as diferenças entre duas versões</string>
     <string name="pdf_redact_desc">Remove texto e imagens sensíveis de forma irreversível</string>
     <string name="pdf_crop_desc">Remove a margem excedente de cada página</string>
+    <string name="pdf_edit_text_desc">Busca e substitui texto existente no documento</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -341,6 +343,24 @@
     <string name="pdf_crop_generate_error">Erro ao gerar o PDF cortado.</string>
     <string name="pdf_crop_success">PDF cortado com sucesso — %1$d%% de margem</string>
     <string name="pdf_crop_error">Erro ao cortar PDF: %1$s</string>
+
+    <!-- ── Editar texto ── -->
+    <string name="pdf_edit_text_subtitle">Digite o texto a buscar e o texto de substituição</string>
+    <string name="pdf_edit_text_ready">PDF pronto para editar</string>
+    <string name="pdf_edit_text_search_label">Buscar</string>
+    <string name="pdf_edit_text_search_placeholder">Texto a buscar</string>
+    <string name="pdf_edit_text_replace_label">Substituir por</string>
+    <string name="pdf_edit_text_replace_placeholder">Texto de substituição (deixe vazio para remover)</string>
+    <string name="pdf_edit_text_hint">A busca não diferencia maiúsculas de minúsculas e substitui todas as ocorrências</string>
+    <string name="pdf_edit_text_execute">Aplicar alterações</string>
+    <string name="pdf_edit_text_progress">Editando texto…</string>
+    <string name="pdf_edit_text_empty_search_error">Digite o texto que deseja buscar</string>
+    <string name="pdf_edit_text_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_edit_text_no_pages">O PDF não tem páginas.</string>
+    <string name="pdf_edit_text_no_matches_error">Esse texto não foi encontrado no documento</string>
+    <string name="pdf_edit_text_generate_error">Erro ao gerar o PDF editado.</string>
+    <string name="pdf_edit_text_success">%1$d ocorrências substituídas com sucesso</string>
+    <string name="pdf_edit_text_error">Erro ao editar o PDF: %1$s</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 

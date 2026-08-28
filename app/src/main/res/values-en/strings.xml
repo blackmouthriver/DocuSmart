@@ -45,6 +45,7 @@
     <string name="pdf_compare">Compare PDFs</string>
     <string name="pdf_redact">Censor content</string>
     <string name="pdf_crop">Crop pages</string>
+    <string name="pdf_edit_text">Edit text</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -141,6 +142,7 @@
     <string name="pdf_compare_desc">Find the differences between two versions</string>
     <string name="pdf_redact_desc">Permanently remove sensitive text and images</string>
     <string name="pdf_crop_desc">Trim the extra margin from each page</string>
+    <string name="pdf_edit_text_desc">Search and replace existing text in the document</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -341,6 +343,24 @@
     <string name="pdf_crop_generate_error">Error generating the cropped PDF.</string>
     <string name="pdf_crop_success">PDF cropped successfully — %1$d%% margin</string>
     <string name="pdf_crop_error">Error cropping PDF: %1$s</string>
+
+    <!-- ── Editar texto ── -->
+    <string name="pdf_edit_text_subtitle">Enter the text to search for and the replacement text</string>
+    <string name="pdf_edit_text_ready">PDF ready to edit</string>
+    <string name="pdf_edit_text_search_label">Search</string>
+    <string name="pdf_edit_text_search_placeholder">Text to search for</string>
+    <string name="pdf_edit_text_replace_label">Replace with</string>
+    <string name="pdf_edit_text_replace_placeholder">Replacement text (leave empty to remove)</string>
+    <string name="pdf_edit_text_hint">The search is case-insensitive and replaces every occurrence</string>
+    <string name="pdf_edit_text_execute">Apply changes</string>
+    <string name="pdf_edit_text_progress">Editing text…</string>
+    <string name="pdf_edit_text_empty_search_error">Enter the text you want to search for</string>
+    <string name="pdf_edit_text_read_error">Could not read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_edit_text_no_pages">The PDF has no pages.</string>
+    <string name="pdf_edit_text_no_matches_error">That text was not found in the document</string>
+    <string name="pdf_edit_text_generate_error">Error generating the edited PDF.</string>
+    <string name="pdf_edit_text_success">%1$d occurrences replaced successfully</string>
+    <string name="pdf_edit_text_error">Error editing PDF: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->

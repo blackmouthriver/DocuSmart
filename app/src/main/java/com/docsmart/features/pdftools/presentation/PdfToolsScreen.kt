@@ -25,6 +25,7 @@ import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
@@ -35,6 +36,7 @@ import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.presentation.components.ComparePdfScreen
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.CropPdfScreen
+import com.docsmart.features.pdftools.presentation.components.EditTextPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
@@ -127,6 +129,13 @@ fun PdfToolsScreen(
     val cropGenerateError  = stringResource(R.string.pdf_crop_generate_error)
     val cropSuccess        = stringResource(R.string.pdf_crop_success)
     val cropGenericError   = stringResource(R.string.pdf_crop_error)
+    val editTextEmptySearchError = stringResource(R.string.pdf_edit_text_empty_search_error)
+    val editTextReadError        = stringResource(R.string.pdf_edit_text_read_error)
+    val editTextNoPages          = stringResource(R.string.pdf_edit_text_no_pages)
+    val editTextNoMatchesError   = stringResource(R.string.pdf_edit_text_no_matches_error)
+    val editTextGenerateError    = stringResource(R.string.pdf_edit_text_generate_error)
+    val editTextSuccess          = stringResource(R.string.pdf_edit_text_success)
+    val editTextGenericError     = stringResource(R.string.pdf_edit_text_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -211,6 +220,15 @@ fun PdfToolsScreen(
                 generateError = cropGenerateError,
                 success       = cropSuccess,
                 genericError  = cropGenericError
+            ),
+            editText = EditTextPdfMessages(
+                emptySearchError = editTextEmptySearchError,
+                readError        = editTextReadError,
+                noPages          = editTextNoPages,
+                noMatchesError   = editTextNoMatchesError,
+                generateError    = editTextGenerateError,
+                success          = editTextSuccess,
+                genericError     = editTextGenericError
             )
         )
     }
@@ -537,6 +555,26 @@ fun PdfToolsScreen(
                                     },
                                     onMarginChange = {
                                         viewModel.onCropMarginChange(it)
+                                    },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.EDIT_TEXT -> EditTextPdfScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    searchText = uiState.editSearchText,
+                                    replaceText = uiState.editReplaceText,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onSearchTextChange = {
+                                        viewModel.onEditSearchTextChange(it)
+                                    },
+                                    onReplaceTextChange = {
+                                        viewModel.onEditReplaceTextChange(it)
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )

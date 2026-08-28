@@ -45,6 +45,7 @@
     <string name="pdf_compare">Comparar PDFs</string>
     <string name="pdf_redact">Censurar contenido</string>
     <string name="pdf_crop">Recortar páginas</string>
+    <string name="pdf_edit_text">Editar texto</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -141,6 +142,7 @@
     <string name="pdf_compare_desc">Encuentra las diferencias entre dos versiones</string>
     <string name="pdf_redact_desc">Elimina texto e imágenes sensibles de forma irreversible</string>
     <string name="pdf_crop_desc">Elimina el margen sobrante de cada página</string>
+    <string name="pdf_edit_text_desc">Busca y reemplaza texto existente en el documento</string>
 
     <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
     <string name="daily_limit_title">Límite diario alcanzado</string>
@@ -341,6 +343,24 @@
     <string name="pdf_crop_generate_error">Error al generar el PDF recortado.</string>
     <string name="pdf_crop_success">PDF recortado correctamente — %1$d%% de margen</string>
     <string name="pdf_crop_error">Error al recortar PDF: %1$s</string>
+
+    <!-- ── Editar texto ── -->
+    <string name="pdf_edit_text_subtitle">Escribe el texto a buscar y el texto de reemplazo</string>
+    <string name="pdf_edit_text_ready">PDF listo para editar</string>
+    <string name="pdf_edit_text_search_label">Buscar</string>
+    <string name="pdf_edit_text_search_placeholder">Texto a buscar</string>
+    <string name="pdf_edit_text_replace_label">Reemplazar con</string>
+    <string name="pdf_edit_text_replace_placeholder">Texto de reemplazo (vacío para eliminar)</string>
+    <string name="pdf_edit_text_hint">El texto se busca sin distinguir mayúsculas/minúsculas y se reemplaza en todas sus apariciones</string>
+    <string name="pdf_edit_text_execute">Aplicar cambios</string>
+    <string name="pdf_edit_text_progress">Editando texto…</string>
+    <string name="pdf_edit_text_empty_search_error">Escribe el texto que quieres buscar</string>
+    <string name="pdf_edit_text_read_error">No se pudo leer el PDF. Verifica que sea un archivo válido.</string>
+    <string name="pdf_edit_text_no_pages">El PDF no tiene páginas.</string>
+    <string name="pdf_edit_text_no_matches_error">No se encontró ese texto en el documento</string>
+    <string name="pdf_edit_text_generate_error">Error al generar el PDF editado.</string>
+    <string name="pdf_edit_text_success">%1$d ocurrencias reemplazadas correctamente</string>
+    <string name="pdf_edit_text_error">Error al editar el PDF: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 
