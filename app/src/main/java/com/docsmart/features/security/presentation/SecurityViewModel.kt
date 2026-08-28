@@ -311,6 +311,24 @@ class SecurityViewModel @Inject constructor(
         _uiState.update { it.copy(isBiometricEnabled = newValue) }
     }
 
+    // RF-SEC-09/HU-SEC-06: restablecer PIN desde la pantalla bloqueada para
+    // quien lo olvidó -- borra permanentemente todos los archivos de la
+    // Carpeta Segura y lleva al flujo de "Crear PIN" (HU-SEC-01). La
+    // confirmación/advertencia vive en la UI, aquí solo se ejecuta.
+    fun resetPin() {
+        viewModelScope.launch(Dispatchers.IO) {
+            securityManager.resetPinAndWipeFiles()
+            _uiState.update {
+                it.copy(
+                    screenState = SecurityScreenState.SETUP_PIN,
+                    hasPin      = false,
+                    secureFiles = emptyList(),
+                    error       = null
+                )
+            }
+        }
+    }
+
     fun dismissSuccess() { _uiState.update { it.copy(successMessage = null) } }
     fun dismissError()   { _uiState.update { it.copy(error = null) } }
     fun goToSetupPin()   { _uiState.update { it.copy(screenState = SecurityScreenState.SETUP_PIN) } }

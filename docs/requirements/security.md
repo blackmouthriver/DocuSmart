@@ -9,9 +9,11 @@
 `File.delete()` y siempre reportaba éxito aunque el original hubiera quedado
 en su ubicación — ahora propaga el resultado y la UI avisa igual que ya
 hacía la vía de importación por `Uri`/SAF. QR migrado a AES-256/GCM con flujo
-de lectura construido; 24 tests unitarios reales (SecurityManager,
-PdfPasswordUseCase, QrCrypto), todos en verde. Pendiente: auto-bloqueo
-(RF-SEC-08), restablecer PIN con borrado (RF-SEC-09), tests de ViewModels.
+de lectura construido. Auto-bloqueo (RF-SEC-08), `setupPin()` sin fallo
+silencioso, y restablecer PIN con borrado (RF-SEC-09) ya implementados y
+verificados en dispositivo real — ver §11, §12, §13. Todos los RF de este
+módulo están implementados; el backlog restante es de pruebas automatizadas
+(cobertura de escenarios difíciles de forzar en dispositivo real).
 **Código relacionado:** `features/security/**`, `features/scanner/presentation/QrScreen.kt`,
 `features/scanner/domain/QrCrypto.kt` (nuevo).
 
@@ -38,7 +40,7 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 - **RF-SEC-06** El sistema debe permitir restaurar un archivo desde la Carpeta Segura hacia el almacenamiento general de la app (`converted/`).
 - **RF-SEC-07** El sistema debe permitir eliminar permanentemente un archivo de la Carpeta Segura.
 - **RF-SEC-08** ✅ El sistema debe bloquear automáticamente la Carpeta Segura (exigir PIN/biometría de nuevo) cuando la app pasa a segundo plano. Implementado 2026-08-26, ver §11.
-- **RF-SEC-09** El sistema debe permitir restablecer el PIN desde Ajustes → Seguridad. Al restablecer, el sistema debe **eliminar todos los archivos** actualmente en la Carpeta Segura y advertir de esto antes de confirmar.
+- **RF-SEC-09** El sistema debe permitir restablecer el PIN desde Ajustes → Seguridad. Al restablecer, el sistema debe **eliminar todos los archivos** actualmente en la Carpeta Segura y advertir de esto antes de confirmar. **✅ Implementado 2026-08-27, ver §13.**
 
 ### Contraseña de PDF
 - **RF-SEC-10** El sistema debe permitir agregar una contraseña a un archivo PDF (cifrado AES-128, ya implementado con iText7), con una longitud mínima de 4 caracteres.
@@ -113,6 +115,8 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 - **AC3** Dado que comparto un archivo desde dentro de la Carpeta Segura (se abre la hoja de compartir del sistema), cuando vuelvo de compartir, entonces la Carpeta Segura **no** se bloquea (es una transición esperada, no una salida real).
 
 ### HU-SEC-06 — Restablecer PIN con pérdida de archivos
+*(Implementado 2026-08-27 — ver §13.)*
+
 **Como** usuario que olvidó su PIN,
 **quiero** poder restablecerlo desde Ajustes,
 **para** volver a usar la Carpeta Segura, aceptando que pierdo los archivos actuales.
@@ -182,9 +186,9 @@ Tres capacidades independientes que comparten la misma "sección Seguridad":
 | # | Cobertura | Estado |
 |---|---|---|
 | 1 | `PdfPasswordUseCaseTest` — proteger exitoso, archivo no legible, archivo vacío, quitar contraseña exitoso, contraseña incorrecta → `WrongPassword`. Usa PDFs reales generados con iText7 en memoria, no mocks del cifrado. | ✅ 5 tests, en verde |
-| 2 | `SecurityManagerTest` — PIN (`setPin`/`verifyPin`/`hasPin`/`clearPin`), biometría (preferencia), `moveToSecure` (copia + borra original, y fallo limpio si el original no existe), `moveFromSecure`, `deleteSecureFile`, `getSecureFiles` (orden), `getSecureFolderSize`. `isBiometricAvailable()` queda fuera (requiere Robolectric/instrumentación por `PackageManager`). No se agregó un test de "copia OK pero borrado falla" a nivel de filesystem real: forzarlo de forma confiable difiere entre Windows (dev) y Linux (CI) — la lógica de honestidad del resultado sí queda cubierta por el test de "no existe". | ✅ 13 tests, en verde |
+| 2 | `SecurityManagerTest` — PIN (`setPin`/`verifyPin`/`hasPin`/`clearPin`/`resetPinAndWipeFiles`, ver §13), biometría (preferencia), `moveToSecure` (copia + borra original, y fallo limpio si el original no existe), `moveFromSecure`, `deleteSecureFile`, `getSecureFiles` (orden), `getSecureFolderSize`. `isBiometricAvailable()` queda fuera (requiere Robolectric/instrumentación por `PackageManager`). No se agregó un test de "copia OK pero borrado falla" a nivel de filesystem real: forzarlo de forma confiable difiere entre Windows (dev) y Linux (CI) — la lógica de honestidad del resultado sí queda cubierta por el test de "no existe". | ✅ 14 tests, en verde |
 | 3 | `QrCryptoTest` — round-trip cifrado/descifrado, contraseña incorrecta → `null`, datos corruptos → `null` (no excepción), no-determinismo del cifrado (salt/IV), texto largo/Unicode. | ✅ 6 tests, en verde |
-| 4 | `SecurityViewModelTest` (2026-08-26) — transiciones de `SecurityScreenState` (`goToSetupPin`/`goToLocked`/`verifyPin` correcto e incorrecto/`setupPin` exitoso y fallido), manejo de `error`/`successMessage` (`importLocalFile` en sus 3 ramas, `dismissError`/`dismissSuccess`), `protectPdfWithPassword`/`removePdfPassword` (Success/Error/WrongPassword), `deleteFile`/`restoreFile`/`reloadFiles`, `toggleBiometric`, `lockIfUnlocked` (RF-SEC-08, ver §11). `authenticateWithBiometric()`, `savePdfToDownloads()` e `importFileToSecure()` quedan fuera (instancian `BiometricPrompt`/`ContentValues`/`MediaStore`/`ContentResolver` reales, requieren Robolectric/instrumentación — mismo motivo que ya excluye `isBiometricAvailable()` en `SecurityManagerTest`). El disparador real de `lockIfUnlocked()` (el `DisposableEffect` sobre `ProcessLifecycleOwner` en `SecurityScreen.kt`) no tiene test automatizado — verificado manualmente en el dispositivo real en su lugar (§11). **Hallazgo real:** si `SecurityManager.setPin()` devuelve `false`, `setupPin()` no hace nada — ni error, ni cambio de estado; el usuario no se entera de que falló. No corregido (fuera del alcance de "escribir el test"), documentado como backlog. | ✅ 22 tests, en verde |
+| 4 | `SecurityViewModelTest` (2026-08-26, ampliado 2026-08-27) — transiciones de `SecurityScreenState` (`goToSetupPin`/`goToLocked`/`verifyPin` correcto e incorrecto/`setupPin` exitoso y fallido), manejo de `error`/`successMessage` (`importLocalFile` en sus 3 ramas, `dismissError`/`dismissSuccess`), `protectPdfWithPassword`/`removePdfPassword` (Success/Error/WrongPassword), `deleteFile`/`restoreFile`/`reloadFiles`, `toggleBiometric`, `lockIfUnlocked` (RF-SEC-08, ver §11), `resetPin` (RF-SEC-09, ver §13). `authenticateWithBiometric()`, `savePdfToDownloads()` e `importFileToSecure()` quedan fuera (instancian `BiometricPrompt`/`ContentValues`/`MediaStore`/`ContentResolver` reales, requieren Robolectric/instrumentación — mismo motivo que ya excluye `isBiometricAvailable()` en `SecurityManagerTest`). El disparador real de `lockIfUnlocked()` (el `DisposableEffect` sobre `ProcessLifecycleOwner` en `SecurityScreen.kt`) no tiene test automatizado — verificado manualmente en el dispositivo real en su lugar (§11). | ✅ 23 tests, en verde |
 
 Herramientas: JUnit5 + MockK + Turbine, configurado en `app/build.gradle.kts`
 (`testOptions.unitTests.all { useJUnitPlatform() }`). 46 tests nuevos + 1 de
@@ -335,3 +339,45 @@ su PIN sin ninguna indicación de que no se guardó.
   correspondiente, no por verificación manual.
 - Verificado también: `connectedDebugAndroidTest` (6 pruebas, sin
   regresión) y `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 13. RF-SEC-09/HU-SEC-06 — Restablecer PIN con pérdida de archivos (2026-08-27)
+
+Único mecanismo de "recuperación" de PIN permitido por diseño (RNF-SEC-02):
+restablecer implica perder los archivos protegidos, no hay recuperación sin
+pérdida. El punto de entrada tenía que quedar en la pantalla **bloqueada**,
+no dentro de "Configuración" de la Carpeta Segura ya desbloqueada — un
+usuario que olvidó su PIN por definición no puede llegar a esa segunda
+pantalla.
+
+- **`SecurityManager.resetPinAndWipeFiles()`** (nuevo) — borra todos los
+  archivos de `secureFolder` y llama a `clearPin()` existente.
+- **`SecurityViewModel.resetPin()`** (nuevo) — llama al método anterior en
+  `Dispatchers.IO` y actualiza `uiState` a `screenState = SETUP_PIN`,
+  `hasPin = false`, `secureFiles = emptyList()`, llevando directo al flujo
+  de "Crear PIN" (HU-SEC-01, AC2).
+- **`PinUnlockScreen` (pantalla `LOCKED`)** — nuevo enlace "¿Olvidaste tu
+  PIN?" bajo el teclado numérico (solo visible cuando `hasPin`, igual que el
+  resto de esa rama). Al tocarlo se muestra un `AlertDialog` de advertencia
+  explícita ("Se eliminarán todos los archivos de tu Carpeta Segura. Esta
+  acción no se puede deshacer.", AC1) con "Cancelar"/"Restablecer y borrar"
+  antes de ejecutar — no actúa directo al primer toque.
+- Nuevos recursos en los 5 idiomas: `security_forgot_pin`,
+  `security_reset_pin_dialog_title`, `security_reset_pin_dialog_body`,
+  `security_reset_pin_confirm`. Paridad de claves verificada con `diff`
+  entre los 5 `strings.xml`.
+- Tests unitarios nuevos: `SecurityManagerTest` (`resetPinAndWipeFiles`
+  elimina PIN y archivos) y `SecurityViewModelTest` (`resetPin` simula el
+  caso real — desbloqueado con archivos, auto-bloqueado por RF-SEC-08, y
+  solo entonces restablecido — y verifica que `secureFiles`/`hasPin` se
+  limpian igual aunque el estado ya fuera `LOCKED`).
+- **Verificado end-to-end en el dispositivo real:** PIN configurado →
+  archivo colocado directamente en `files/secure/` vía `run-as` (para no
+  depender del selector de archivos del sistema) → carpeta bloqueada →
+  "¿Olvidaste tu PIN?" → diálogo de advertencia → "Restablecer y borrar" →
+  la app navega a "Crea tu PIN" → confirmado por fuera de la app que
+  `files/secure/` quedó vacío y que `pin_hash` desapareció de
+  `shared_prefs/docusmart_security.xml` → se configuró un PIN nuevo sin
+  problema, aterrizando en la Carpeta Segura vacía (0 archivos protegidos).
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

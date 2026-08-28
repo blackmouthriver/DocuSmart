@@ -174,6 +174,36 @@ class SecurityViewModelTest {
     }
 
     @Test
+    fun `resetPin llama a SecurityManager, limpia secureFiles y hasPin, y pasa a SETUP_PIN (RF-SEC-09)`() = runTest {
+        // Simula el caso real: el usuario estuvo desbloqueado (secureFiles con
+        // datos), luego RF-SEC-08 lo bloqueó automáticamente -- secureFiles
+        // sigue en el estado aunque la pantalla ya sea LOCKED. resetPin() debe
+        // limpiarlo igual, no solo cuando arranca vacío.
+        every { securityManager.hasPin() } returns true
+        every { securityManager.verifyPin("1234") } returns true
+        val secureFile = File(secureFolder, "documento.pdf").apply { writeText("x") }
+        every { securityManager.getSecureFiles() } returns listOf(secureFile)
+
+        val viewModel = buildViewModel()
+        viewModel.uiState.test {
+            assertTrue(awaitItem().hasPin) // LOCKED inicial, con PIN ya configurado
+            viewModel.verifyPin("1234", "PIN incorrecto")
+            assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
+            viewModel.lockIfUnlocked()
+            assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
+
+            viewModel.resetPin()
+
+            val reset = awaitItem()
+            assertEquals(SecurityScreenState.SETUP_PIN, reset.screenState)
+            assertFalse(reset.hasPin)
+            assertTrue(reset.secureFiles.isEmpty())
+            assertNull(reset.error)
+        }
+        verify { securityManager.resetPinAndWipeFiles() }
+    }
+
+    @Test
     fun `verifyPin con PIN correcto desbloquea y carga los archivos seguros`() = runTest {
         every { securityManager.verifyPin("1234") } returns true
         val secureFile = File(secureFolder, "documento.pdf").apply { writeText("x") }

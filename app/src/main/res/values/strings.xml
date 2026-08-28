@@ -251,6 +251,10 @@
     <string name="security_create_pin_desc">Elige un PIN de 4 dígitos para proteger tu carpeta</string>
     <string name="security_pins_dont_match">Los PINs no coinciden</string>
     <string name="security_setup_pin_error">No se pudo guardar el PIN. Intenta de nuevo.</string>
+    <string name="security_forgot_pin">¿Olvidaste tu PIN?</string>
+    <string name="security_reset_pin_dialog_title">Restablecer PIN</string>
+    <string name="security_reset_pin_dialog_body">Se eliminarán todos los archivos de tu Carpeta Segura. Esta acción no se puede deshacer.</string>
+    <string name="security_reset_pin_confirm">Restablecer y borrar</string>
     <string name="security_files_protected_count">%1$d archivos protegidos</string>
     <string name="security_protect_new_file">Proteger nuevo archivo</string>
     <string name="security_config_section">Configuración</string>

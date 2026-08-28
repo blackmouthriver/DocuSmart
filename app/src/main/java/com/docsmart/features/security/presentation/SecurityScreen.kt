@@ -125,6 +125,7 @@ fun SecurityScreen(
                             } ?: Timber.e("FragmentActivity es null")
                         },
                         onSetupPin = { viewModel.goToSetupPin() },
+                        onResetPin = { viewModel.resetPin() },
                         onBack     = onBack
                     )
                 }
@@ -172,10 +173,42 @@ private fun PinUnlockScreen(
     onPinEntered         : (String) -> Unit,
     onBiometricClick     : () -> Unit,
     onSetupPin           : () -> Unit,
+    onResetPin           : () -> Unit,
     onBack               : () -> Unit
 ) {
     var pin = remember { mutableStateOf("") }
     val pinLength = 4
+    var showResetConfirm by remember { mutableStateOf(false) }
+
+    // RF-SEC-09/HU-SEC-06: única vía de "recuperación" -- restablecer borra
+    // todos los archivos protegidos, por eso se advierte explícitamente
+    // antes de ejecutar (AC1) en vez de actuar directo al tocar el enlace.
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            shape = MaterialTheme.shapes.large,
+            title = { Text(stringResource(R.string.security_reset_pin_dialog_title),
+                style = MaterialTheme.typography.titleLarge) },
+            text  = { Text(stringResource(R.string.security_reset_pin_dialog_body),
+                style = MaterialTheme.typography.bodyMedium) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResetConfirm = false
+                    onResetPin()
+                }) {
+                    Text(
+                        text  = stringResource(R.string.security_reset_pin_confirm),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) {
+                    Text(stringResource(R.string.general_cancel))
+                }
+            }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -275,6 +308,14 @@ private fun PinUnlockScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.security_use_biometric), color = Color.White)
                     }
+                }
+
+                TextButton(onClick = { showResetConfirm = true }) {
+                    Text(
+                        text  = stringResource(R.string.security_forgot_pin),
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
