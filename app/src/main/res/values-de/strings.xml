@@ -42,6 +42,7 @@
     <string name="pdf_number_pages">Seiten nummerieren</string>
     <string name="pdf_watermark">Wasserzeichen</string>
     <string name="pdf_reorder_pages">Seiten neu anordnen</string>
+    <string name="pdf_compare">PDFs vergleichen</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -135,6 +136,7 @@
     <string name="pdf_number_pages_desc">Fügt Seitenzahlen in der Fußzeile hinzu</string>
     <string name="pdf_watermark_desc">Legt einen Textwasserzeichen über das Dokument</string>
     <string name="pdf_reorder_pages_desc">Einzelne Seiten verschieben oder löschen</string>
+    <string name="pdf_compare_desc">Findet die Unterschiede zwischen zwei Versionen</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -278,6 +280,26 @@
     <string name="pdf_reorder_pages_generate_error">Fehler beim Erstellen des neu angeordneten PDFs.</string>
     <string name="pdf_reorder_pages_success">PDF erfolgreich aktualisiert — %1$d Seiten</string>
     <string name="pdf_reorder_pages_error">Fehler beim Neuanordnen der Seiten: %1$s</string>
+
+    <!-- ── Comparar PDFs ── -->
+    <string name="pdf_compare_subtitle">Wähle zwei PDFs aus, um ihren Inhalt zu vergleichen</string>
+    <string name="pdf_compare_document_a">Dokument A</string>
+    <string name="pdf_compare_document_b">Dokument B</string>
+    <string name="pdf_compare_ready">PDF bereit zum Vergleichen</string>
+    <string name="pdf_compare_progress">Dokumente werden verglichen…</string>
+    <string name="pdf_compare_execute">PDFs vergleichen</string>
+    <string name="pdf_compare_read_error_a">Dokument A konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_compare_read_error_b">Dokument B konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_compare_generate_error">Fehler beim Erstellen des Vergleichsberichts.</string>
+    <string name="pdf_compare_identical">Die beiden Dokumente sind identisch</string>
+    <string name="pdf_compare_differences_found">%1$d von %2$d Seiten weisen Unterschiede auf</string>
+    <string name="pdf_compare_error">Fehler beim Vergleichen der PDFs: %1$s</string>
+    <string name="pdf_compare_report_title">Vergleichsbericht</string>
+    <string name="pdf_compare_report_page_header">Seite %1$d</string>
+    <string name="pdf_compare_report_page_only_in_a">Diese Seite existiert nur in Dokument A</string>
+    <string name="pdf_compare_report_page_only_in_b">Diese Seite existiert nur in Dokument B</string>
+    <string name="pdf_compare_report_only_in_a_line">Nur in A: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">Nur in B: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

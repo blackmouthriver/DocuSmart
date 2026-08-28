@@ -139,6 +139,20 @@ class DailyLimitManagerTest {
         assertEquals(0, manager.getConversionCount())
     }
 
+    // RF-PDF-13: mismo tipo de hallazgo que NUMBER_PAGES/WATERMARK/REORDER_PAGES
+    // (ver arriba) -- fija de entrada que COMPARE tiene su propio contador antes
+    // de que pueda repetirse el mismo bug.
+    @Test
+    fun `COMPARE tiene su propio contador, independiente de conversiones y otras herramientas`() {
+        repeat(DailyLimitManager.LIMIT_PDF_TOOLS) { manager.registerPdfTool("COMPARE") }
+
+        assertFalse(manager.canUsePdfTool("COMPARE"))
+        assertTrue(manager.canUsePdfTool("MERGE"))
+        assertTrue(manager.canUsePdfTool("REORDER_PAGES"))
+        assertTrue(manager.canConvert())
+        assertEquals(0, manager.getConversionCount())
+    }
+
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────
 
     private fun fakeSharedPreferences(): SharedPreferences {

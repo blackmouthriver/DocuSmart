@@ -42,6 +42,7 @@
     <string name="pdf_number_pages">Numerar páginas</string>
     <string name="pdf_watermark">Marca de agua</string>
     <string name="pdf_reorder_pages">Reordenar páginas</string>
+    <string name="pdf_compare">Comparar PDFs</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -135,6 +136,7 @@
     <string name="pdf_number_pages_desc">Agrega numeración en el pie de página</string>
     <string name="pdf_watermark_desc">Superpone un texto sobre el documento</string>
     <string name="pdf_reorder_pages_desc">Arrastra o elimina páginas individuales</string>
+    <string name="pdf_compare_desc">Encuentra las diferencias entre dos versiones</string>
 
     <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
     <string name="daily_limit_title">Límite diario alcanzado</string>
@@ -278,6 +280,26 @@
     <string name="pdf_reorder_pages_generate_error">Error al generar el PDF reordenado.</string>
     <string name="pdf_reorder_pages_success">PDF actualizado correctamente — %1$d páginas</string>
     <string name="pdf_reorder_pages_error">Error al reordenar páginas: %1$s</string>
+
+    <!-- ── Comparar PDFs ── -->
+    <string name="pdf_compare_subtitle">Selecciona dos PDFs para comparar su contenido</string>
+    <string name="pdf_compare_document_a">Documento A</string>
+    <string name="pdf_compare_document_b">Documento B</string>
+    <string name="pdf_compare_ready">PDF listo para comparar</string>
+    <string name="pdf_compare_progress">Comparando documentos…</string>
+    <string name="pdf_compare_execute">Comparar PDFs</string>
+    <string name="pdf_compare_read_error_a">No se pudo leer el Documento A. Verifica que sea un archivo válido.</string>
+    <string name="pdf_compare_read_error_b">No se pudo leer el Documento B. Verifica que sea un archivo válido.</string>
+    <string name="pdf_compare_generate_error">Error al generar el reporte de comparación.</string>
+    <string name="pdf_compare_identical">Los dos documentos son idénticos</string>
+    <string name="pdf_compare_differences_found">%1$d de %2$d páginas tienen diferencias</string>
+    <string name="pdf_compare_error">Error al comparar PDFs: %1$s</string>
+    <string name="pdf_compare_report_title">Reporte de comparación</string>
+    <string name="pdf_compare_report_page_header">Página %1$d</string>
+    <string name="pdf_compare_report_page_only_in_a">Esta página solo existe en el Documento A</string>
+    <string name="pdf_compare_report_page_only_in_b">Esta página solo existe en el Documento B</string>
+    <string name="pdf_compare_report_only_in_a_line">Solo en A: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">Solo en B: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 
