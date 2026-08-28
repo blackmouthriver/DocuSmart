@@ -44,6 +44,7 @@
     <string name="pdf_reorder_pages">Reorder pages</string>
     <string name="pdf_compare">Compare PDFs</string>
     <string name="pdf_redact">Censor content</string>
+    <string name="pdf_crop">Crop pages</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -139,6 +140,7 @@
     <string name="pdf_reorder_pages_desc">Drag or delete individual pages</string>
     <string name="pdf_compare_desc">Find the differences between two versions</string>
     <string name="pdf_redact_desc">Permanently remove sensitive text and images</string>
+    <string name="pdf_crop_desc">Trim the extra margin from each page</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -323,6 +325,22 @@
     <string name="pdf_redact_generate_error">Error generating the censored PDF.</string>
     <string name="pdf_redact_success">%1$d zones successfully censored</string>
     <string name="pdf_redact_error">Error censoring PDF: %1$s</string>
+
+    <!-- ── Recortar páginas ── -->
+    <string name="pdf_crop_subtitle">Adjust the margin to crop and preview the result</string>
+    <string name="pdf_crop_ready">PDF ready to crop</string>
+    <string name="pdf_crop_preview_title">Preview</string>
+    <string name="pdf_crop_preview_placeholder">Select a PDF to see the preview</string>
+    <string name="pdf_crop_loading_preview">Loading preview…</string>
+    <string name="pdf_crop_preview_desc">Cropped preview</string>
+    <string name="pdf_crop_margin_label">Margin to crop: %1$d%%</string>
+    <string name="pdf_crop_execute">Crop PDF</string>
+    <string name="pdf_crop_progress">Cropping pages…</string>
+    <string name="pdf_crop_read_error">Could not read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_crop_no_pages">The PDF has no pages.</string>
+    <string name="pdf_crop_generate_error">Error generating the cropped PDF.</string>
+    <string name="pdf_crop_success">PDF cropped successfully — %1$d%% margin</string>
+    <string name="pdf_crop_error">Error cropping PDF: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->

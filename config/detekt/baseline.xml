@@ -119,6 +119,7 @@
     <ID>NestedBlockDepth:ComparePdfUseCase.kt$ComparePdfUseCase$private fun copyUriToCache(uri: Uri, prefix: String): File?</ID>
     <ID>NestedBlockDepth:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:ConverterViewModel.kt$ConverterViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
+    <ID>NestedBlockDepth:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadImagesFromMediaStore(): List&lt;DocumentUiModel&gt;</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadPdfsFromDownloads(): List&lt;DocumentUiModel&gt;</ID>
     <ID>NestedBlockDepth:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -230,6 +231,7 @@
     <ID>ReturnCount:ComparePdfUseCase.kt$ComparePdfUseCase$private fun copyUriToCache(uri: Uri, prefix: String): File?</ID>
     <ID>ReturnCount:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
+    <ID>ReturnCount:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
     <ID>ReturnCount:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -252,6 +254,8 @@
     <ID>TooGenericExceptionCaught:ConversionSuccess.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ConvertImageToPdfUseCase.kt$ConvertImageToPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ConverterViewModel.kt$ConverterViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CropPdfScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CropPdfUseCase.kt$CropPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocuSmartBannerAd.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocuSmartNavGraph.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocumentListSection.kt$e2: Exception</ID>

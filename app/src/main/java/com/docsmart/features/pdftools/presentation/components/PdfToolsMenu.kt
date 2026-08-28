@@ -85,6 +85,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_redact,
         descriptionRes = R.string.pdf_redact_desc,
         color = ErrorRed
+    ),
+    PdfToolItem(
+        tool = PdfTool.CROP,
+        icon = Icons.Rounded.Crop,
+        titleRes = R.string.pdf_crop,
+        descriptionRes = R.string.pdf_crop_desc,
+        color = PremiumGold
     )
 )
 

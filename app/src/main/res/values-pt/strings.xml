@@ -44,6 +44,7 @@
     <string name="pdf_reorder_pages">Reordenar páginas</string>
     <string name="pdf_compare">Comparar PDFs</string>
     <string name="pdf_redact">Censurar conteúdo</string>
+    <string name="pdf_crop">Cortar páginas</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -139,6 +140,7 @@
     <string name="pdf_reorder_pages_desc">Arraste ou exclua páginas individuais</string>
     <string name="pdf_compare_desc">Encontre as diferenças entre duas versões</string>
     <string name="pdf_redact_desc">Remove texto e imagens sensíveis de forma irreversível</string>
+    <string name="pdf_crop_desc">Remove a margem excedente de cada página</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -323,6 +325,22 @@
     <string name="pdf_redact_generate_error">Erro ao gerar o PDF censurado.</string>
     <string name="pdf_redact_success">%1$d áreas censuradas com sucesso</string>
     <string name="pdf_redact_error">Erro ao censurar PDF: %1$s</string>
+
+    <!-- ── Recortar páginas ── -->
+    <string name="pdf_crop_subtitle">Ajuste a margem a cortar e pré-visualize o resultado</string>
+    <string name="pdf_crop_ready">PDF pronto para cortar</string>
+    <string name="pdf_crop_preview_title">Pré-visualização</string>
+    <string name="pdf_crop_preview_placeholder">Selecione um PDF para ver a pré-visualização</string>
+    <string name="pdf_crop_loading_preview">Carregando pré-visualização…</string>
+    <string name="pdf_crop_preview_desc">Pré-visualização cortada</string>
+    <string name="pdf_crop_margin_label">Margem a cortar: %1$d%%</string>
+    <string name="pdf_crop_execute">Cortar PDF</string>
+    <string name="pdf_crop_progress">Cortando páginas…</string>
+    <string name="pdf_crop_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_crop_no_pages">O PDF não tem páginas.</string>
+    <string name="pdf_crop_generate_error">Erro ao gerar o PDF cortado.</string>
+    <string name="pdf_crop_success">PDF cortado com sucesso — %1$d%% de margem</string>
+    <string name="pdf_crop_error">Erro ao cortar PDF: %1$s</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 

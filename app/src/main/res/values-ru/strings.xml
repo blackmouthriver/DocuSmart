@@ -44,6 +44,7 @@
     <string name="pdf_reorder_pages">Изменить порядок страниц</string>
     <string name="pdf_compare">Сравнить PDF</string>
     <string name="pdf_redact">Скрыть содержимое</string>
+    <string name="pdf_crop">Обрезать страницы</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -139,6 +140,7 @@
     <string name="pdf_reorder_pages_desc">Перетащите или удалите отдельные страницы</string>
     <string name="pdf_compare_desc">Найдите различия между двумя версиями</string>
     <string name="pdf_redact_desc">Безвозвратно удаляет конфиденциальный текст и изображения</string>
+    <string name="pdf_crop_desc">Удаляет лишние поля на каждой странице</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -323,6 +325,22 @@
     <string name="pdf_redact_generate_error">Ошибка при создании PDF со скрытым содержимым.</string>
     <string name="pdf_redact_success">Успешно скрыто зон: %1$d</string>
     <string name="pdf_redact_error">Ошибка при скрытии содержимого PDF: %1$s</string>
+
+    <!-- ── Recortar páginas ── -->
+    <string name="pdf_crop_subtitle">Настройте поле для обрезки и просмотрите результат</string>
+    <string name="pdf_crop_ready">PDF готов к обрезке</string>
+    <string name="pdf_crop_preview_title">Предпросмотр</string>
+    <string name="pdf_crop_preview_placeholder">Выберите PDF, чтобы увидеть предпросмотр</string>
+    <string name="pdf_crop_loading_preview">Загрузка предпросмотра…</string>
+    <string name="pdf_crop_preview_desc">Обрезанный предпросмотр</string>
+    <string name="pdf_crop_margin_label">Поле для обрезки: %1$d%%</string>
+    <string name="pdf_crop_execute">Обрезать PDF</string>
+    <string name="pdf_crop_progress">Обрезка страниц…</string>
+    <string name="pdf_crop_read_error">Не удалось прочитать PDF. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_crop_no_pages">В PDF нет страниц.</string>
+    <string name="pdf_crop_generate_error">Ошибка при создании обрезанного PDF.</string>
+    <string name="pdf_crop_success">PDF успешно обрезан — поле %1$d%%</string>
+    <string name="pdf_crop_error">Ошибка при обрезке PDF: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

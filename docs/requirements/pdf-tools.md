@@ -17,9 +17,10 @@ backlog. **RF-PDF-07 (Marca de agua) implementado 2026-08-28, ver §11.**
 (Comparar dos PDFs) implementado 2026-08-28, ver §13** — primera de las 2
 funcionalidades de prioridad "media". **RF-PDF-14 (Censurar contenido)
 implementado 2026-08-28, ver §14** — cierra las 2 funcionalidades de
-prioridad "media". Pendiente: RF-PDF-09 a RF-PDF-12 y RF-PDF-15 (todas
-prioridad "baja/futuro"), y selección de archivo desde la Biblioteca de la
-app (ver §5).
+prioridad "media". **RF-PDF-09 (Recortar márgenes) implementado
+2026-08-28, ver §15** — primera funcionalidad de prioridad "baja/futuro".
+Pendiente: RF-PDF-10 a RF-PDF-12 y RF-PDF-15, y selección de archivo desde
+la Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
 ---
@@ -46,7 +47,9 @@ el requerimiento #3 original que todavía no existe:
 9. **Censurar contenido** — el usuario dibuja rectángulos sobre las zonas
    sensibles de cada página; el contenido dentro de esas zonas se elimina
    de forma irreversible del PDF (no un rectángulo negro visual encima).
-10. *(Backlog, no implementado)* recortar, editar contenido, firma digital,
+10. **Recortar páginas** — quita un margen uniforme (0–40%) de los 4 lados
+    de cada página, con vista previa en vivo del resultado.
+11. *(Backlog, no implementado)* editar contenido, firma digital,
     formularios, OCR avanzado.
 
 ---
@@ -64,26 +67,27 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-08** Reordenar y/o eliminar páginas individuales (vista de miniaturas arrastrable). **✅ Implementado 2026-08-28, ver §12.**
 - **RF-PDF-13** Comparar dos versiones de un PDF y resaltar diferencias. **✅ Implementado 2026-08-28, ver §13.**
 - **RF-PDF-14** Censurar (redactar) contenido sensible de forma irreversible. **✅ Implementado 2026-08-28, ver §14.**
+- **RF-PDF-09** Recortar (crop) márgenes de página. **✅ Implementado 2026-08-28, ver §15.**
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-09** Recortar (crop) márgenes de página.
 - **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes).
 - **RF-PDF-11** Firma digital de PDF.
 - **RF-PDF-12** Detección y relleno de formularios PDF.
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
 Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido)
-— **las 3 funcionalidades de prioridad "alta" y las 2 de "media" ya están
-implementadas** (RF-PDF-06/07/08/13/14): **baja/futuro** → RF-PDF-09,
-RF-PDF-10, RF-PDF-11, RF-PDF-12, RF-PDF-15 (requieren más superficie de UI
-o licenciamiento adicional de iText7 para firma/formularios avanzados).
+— **las 3 funcionalidades de prioridad "alta", las 2 de "media" y la
+primera de "baja/futuro" ya están implementadas** (RF-PDF-06/07/08/13/14/09):
+quedan RF-PDF-10, RF-PDF-11, RF-PDF-12, RF-PDF-15 (requieren más superficie
+de UI o licenciamiento adicional de iText7 para firma/formularios
+avanzados).
 
 ---
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 9 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 10 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -197,12 +201,25 @@ zonas antes de compartirlo,
 - **AC3** Dado que marco zonas en varias páginas de un mismo PDF, cuando confirmo censurar, entonces todas esas zonas quedan eliminadas en una sola operación sobre el archivo de salida.
 - **AC4** Dado que no he marcado ninguna zona, cuando intento censurar, entonces el botón permanece deshabilitado (o, a nivel de use case, se devuelve un error) y no se genera ningún archivo.
 
+### HU-PDF-10 — Recortar el margen de un PDF
+*(Implementado 2026-08-28 — ver §15. HU redactada de nuevo, mismo motivo
+que HU-PDF-08/09: RF-PDF-09 se agregó después como mejora sugerida —
+ver §2.)*
+
+**Como** usuario con un PDF escaneado con márgenes blancos excesivos,
+**quiero** recortar un porcentaje uniforme de margen en cada página,
+**para** aprovechar mejor la pantalla al leerlo y reducir espacio desperdiciado.
+
+- **AC1** Dado que ajusto el control de margen y veo la vista previa, cuando el valor cambia, entonces la vista previa refleja en vivo cuánto se recortaría de la página.
+- **AC2** Dado que confirmo recortar con un margen del N%, cuando reviso el PDF resultante, entonces cada página es más pequeña en esa proporción y el contenido de texto original se conserva (no se pierde ni se rasteriza).
+- **AC3 (protección contra un margen inválido)** Dado que intento fijar un margen mayor al máximo permitido, cuando confirmo, entonces el sistema lo ajusta al máximo (40%) en vez de generar un rectángulo de página inválido o vacío.
+
 ---
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 9 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 10 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -216,7 +233,7 @@ zonas antes de compartirlo,
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). El resto → RF-PDF-09 a RF-PDF-12 y RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). El resto → RF-PDF-10 a RF-PDF-12 y RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -233,6 +250,7 @@ zonas antes de compartirlo,
 | 7 | `ReorderPagesUseCaseTest` — reordenar sin eliminar refleja el nuevo orden (verificado leyendo el **contenido** de cada página resultante, no solo el conteo — el PDF de prueba tiene una etiqueta de texto distinta por página), omitir una página de la lista la elimina, reordenar y eliminar a la vez produce el resultado combinado correcto, lista de orden vacía → Error, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 8 | `ComparePdfUseCaseTest` — documentos idénticos → mensaje "identical" sin diferencias, una línea distinta en una página compartida aparece en el reporte generado y se cuenta como página distinta, una página que solo existe en un documento se marca como tal (no se cuenta como idéntica ni se compara contra texto vacío), stream nulo al leer A → Error de lectura A, stream nulo al leer B → Error de lectura B. | ✅ 5 tests, en verde |
 | 9 | `RedactPdfUseCaseTest` — censurar la franja donde está el texto "secreto" lo elimina de la extracción del PDF de salida mientras el texto "público" en otra zona de la misma página se conserva intacto (verificado con `PdfTextExtractor`, no solo el mensaje — la prueba que demuestra que la censura es real y no un rectángulo visual), sin zonas marcadas → Error sin tocar el archivo, una zona en una página fuera de rango se ignora sin fallar, el mensaje de éxito informa el número de zonas censuradas, archivo no-PDF → Error. | ✅ 5 tests, en verde |
+| 10 | `CropPdfUseCaseTest` — recortar con margen del 10% reduce el tamaño de página proporcionalmente (verificado leyendo el `pageSize` real del PDF de salida, no solo el mensaje), el texto de la página sigue siendo extraíble tras recortar (no se toca el content stream), margen de 0% no cambia el tamaño de la página, un margen fuera de rango se ajusta al máximo permitido (40%) sin generar un rectángulo inválido, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -815,4 +833,85 @@ dependencia nueva de iText7 desde que el módulo existe.
   resultante, mientras "PUBLICO VISIBLE" se conserva intacto — coincide
   exactamente con la zona marcada en pantalla y confirma en el dispositivo
   real el mismo comportamiento validado por los tests unitarios.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 15. RF-PDF-09/HU-PDF-10 — Recortar páginas (2026-08-28)
+
+Primera funcionalidad de prioridad "baja/futuro" del backlog, y la más
+simple de las últimas 4 (Comparar, Censurar, Recortar) — no requiere
+dependencias nuevas, comparación de texto entre documentos, ni un editor
+de dibujo libre, solo ajustar el tamaño declarado de cada página.
+
+- **`CropPdfUseCase.kt`** (nuevo) — recibe `marginPercent: Int` (0–40,
+  ajustado con `coerceIn` si llega fuera de rango) y aplica el mismo
+  porcentaje a los 4 lados de cada página. Por cada página, calcula el
+  nuevo rectángulo a partir de `PdfPage.getPageSize()` real (no asume un
+  tamaño fijo tipo LETTER/A4 — funciona igual con cualquier tamaño de
+  página de origen) y llama `page.setMediaBox(rect)` **y**
+  `page.setCropBox(rect)` — fijar ambos es necesario porque algunos
+  lectores priorizan `CropBox` sobre `MediaBox` cuando ambos existen; si
+  solo se hubiera cambiado uno de los dos, el recorte podría no verse
+  reflejado en todos los visores. Mismo principio que RF-PDF-04 (Rotar):
+  no se reescribe el content stream, solo un metadato de tamaño de página,
+  así que el texto/vectores originales quedan completamente intactos
+  (RNF-PDF-01, ver nota añadida en §3).
+- **`CropPdfScreen.kt`** (nuevo) — reutiliza el patrón de `Slider` ya
+  establecido por Comprimir (`CompressPdfScreen.kt`, calidad 20–100) en
+  vez de introducir un control nuevo. La vista previa es interactiva de
+  verdad, no solo un mensaje de "esto se va a recortar": al cambiar el
+  selector de PDF se carga **una vez** el bitmap completo de la primera
+  página vía `PdfRenderer` (mismo mecanismo que Rotar/Recortar/Censurar),
+  y cada movimiento del slider recorta ese mismo bitmap en memoria
+  (`Bitmap.createBitmap(original, x, y, width, height)`, `remember(bitmap,
+  marginPercent)`) sin volver a tocar el archivo ni relanzar I/O — el
+  usuario ve el efecto del margen en tiempo real mientras arrastra.
+  Escrito con imports explícitos y sub-composables (`CropSelectZone`,
+  `CropPreviewCard`) desde el inicio, lección ya aplicada en Marca de
+  agua/Comparar/Censurar — aun así el primer intento excedió el límite de
+  `LongMethod` de detekt (238 líneas en un solo composable) por no haber
+  extraído los sub-composables *de entrada*; se corrigió extrayéndolos
+  antes de continuar, no baselineando el hallazgo.
+- **`PdfTool.CROP`** (nuevo valor de enum), con un único campo de estado
+  nuevo en `PdfToolsUiState` (`cropMarginPercent: Int = 10`) — no necesita
+  reset en `onPdfsSelected()` porque no depende del PDF seleccionado,
+  mismo criterio ya aplicado a `rotationDegrees`/`compressionQuality`.
+  Reutiliza `selectedPdfs`/`singlePdfLauncher` (un solo archivo de
+  entrada). Nueva entrada de menú con ícono `Icons.Rounded.Crop` y color
+  `PremiumGold` (décimo color distinto de los 9 ya usados).
+- **`DailyLimitManager`:** mismo procedimiento preventivo que las 5
+  funcionalidades anteriores (§10/§11/§12/§13/§14) — se agregó `KEY_CROP`
+  y su `case` **antes** de escribir el resto del feature, con su test de
+  regresión correspondiente.
+- **5 tests unitarios nuevos** (`CropPdfUseCaseTest`) — un PDF de prueba en
+  tamaño LETTER fijado explícitamente (`PageSize.LETTER`, no el tamaño por
+  defecto de iText7 — el primer intento asumió LETTER implícito y falló
+  porque la versión de iText7 usada por el proyecto por defecto genera A4)
+  verifica que un margen del 10% reduce el ancho/alto de página en
+  exactamente 20% (10% de cada lado), que el texto de la página sigue
+  siendo extraíble tras recortar, que 0% de margen no altera el tamaño de
+  página, que un margen de 90% se ajusta a 40% sin producir un rectángulo
+  de ancho/alto negativo, y que un archivo no-PDF devuelve `Error`.
+- **detekt:** los mismos 3 hallazgos de boilerplate ya vistos en las 9
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico en
+  `CropPdfUseCase.kt` y en la carga de vista previa de `CropPdfScreen.kt`,
+  mismo patrón exacto ya baselineado para
+  `ReorderPagesScreen.kt`/`RedactPdfScreen.kt$e: Exception`) más un
+  `LongMethod` real (ver arriba), corregido de verdad extrayendo
+  sub-composables en vez de baselinearse.
+- **Verificado end-to-end en el dispositivo real (app en español):**
+  reutilizado el mismo PDF de prueba de la verificación de Censurar
+  (`RedactTest.pdf`, "SECRETO CONFIDENCIAL" cerca del borde superior,
+  "PUBLICO VISIBLE" cerca del borde inferior) → seleccionado en la
+  pantalla de Recortar → la vista previa mostró en vivo el recorte
+  aplicándose sobre el bitmap conforme se movía el slider (confirmando que
+  el recorte de vista previa en memoria funciona sin recargar el PDF) →
+  ajustado a 19% de margen → ejecutado → mensaje de éxito "PDF recortado
+  correctamente — 19% de margen" → guardado en Descargas → archivo
+  descargado: "SECRETO CONFIDENCIAL", que estaba muy cerca del borde
+  superior recortado, ya no aparece en el contenido visible del PDF
+  resultante — coincide con el efecto esperado del recorte aplicado en
+  pantalla.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

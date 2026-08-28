@@ -24,6 +24,7 @@ import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
@@ -33,6 +34,7 @@ import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.presentation.components.ComparePdfScreen
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
+import com.docsmart.features.pdftools.presentation.components.CropPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
@@ -120,6 +122,11 @@ fun PdfToolsScreen(
     val redactGenerateError   = stringResource(R.string.pdf_redact_generate_error)
     val redactSuccess         = stringResource(R.string.pdf_redact_success)
     val redactGenericError    = stringResource(R.string.pdf_redact_error)
+    val cropReadError      = stringResource(R.string.pdf_crop_read_error)
+    val cropNoPages        = stringResource(R.string.pdf_crop_no_pages)
+    val cropGenerateError  = stringResource(R.string.pdf_crop_generate_error)
+    val cropSuccess        = stringResource(R.string.pdf_crop_success)
+    val cropGenericError   = stringResource(R.string.pdf_crop_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -197,6 +204,13 @@ fun PdfToolsScreen(
                 generateError   = redactGenerateError,
                 success         = redactSuccess,
                 genericError    = redactGenericError
+            ),
+            crop = CropPdfMessages(
+                readError     = cropReadError,
+                noPages       = cropNoPages,
+                generateError = cropGenerateError,
+                success       = cropSuccess,
+                genericError  = cropGenericError
             )
         )
     }
@@ -508,6 +522,22 @@ fun PdfToolsScreen(
                                     },
                                     onUndoLastRect = { viewModel.onUndoLastRedactionRect() },
                                     onClearRects = { viewModel.onClearRedactionRects() },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.CROP -> CropPdfScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    marginPercent = uiState.cropMarginPercent,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onMarginChange = {
+                                        viewModel.onCropMarginChange(it)
+                                    },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 else -> {}
