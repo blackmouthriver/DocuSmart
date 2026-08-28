@@ -245,7 +245,7 @@ dependencies {
     testImplementation(libs.androidx.sqlite.bundled)
 
     // ── iText7 ────────────────────────────────────────────────────────────────
-    implementation("com.itextpdf:itext7-core:7.2.5") {
+    implementation("com.itextpdf:itext7-core:9.7.1") {
         exclude(group = "org.bouncycastle")
     }
     // Módulo pdfCleanup — RF-PDF-14 (censurar contenido de forma irreversible):
