@@ -131,6 +131,7 @@
     <ID>NestedBlockDepth:StudyScreen.kt$private fun extractPptText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
     <ID>NestedBlockDepth:StudyScreen.kt$private fun extractWordText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
     <ID>NestedBlockDepth:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
+    <ID>NestedBlockDepth:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NewLineAtEndOfFile:AdBanner.kt$com.docsmart.features.home.presentation.component.AdBanner.kt</ID>
     <ID>NewLineAtEndOfFile:AdConstants.kt$com.docsmart.core.ads.AdConstants.kt</ID>
     <ID>NewLineAtEndOfFile:AdManager.kt$com.docsmart.core.ads.AdManager.kt</ID>
@@ -231,6 +232,7 @@
     <ID>ReturnCount:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
+    <ID>ReturnCount:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>SwallowedException:DocumentListSection.kt$e: Exception</ID>
     <ID>SwallowedException:FavoritesSection.kt$e: Exception</ID>
     <ID>SwallowedException:HomeViewModel.kt$HomeViewModel$e: Exception</ID>
@@ -284,6 +286,7 @@
     <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e3: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$ve: Exception</ID>
+    <ID>TooGenericExceptionCaught:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:WordToHtmlUseCase.kt$WordToHtmlUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:WordToPdfUseCase.kt$WordToPdfUseCase$e: Exception</ID>
     <ID>TooManyFunctions:ConverterViewModel.kt$ConverterViewModel : ViewModel</ID>

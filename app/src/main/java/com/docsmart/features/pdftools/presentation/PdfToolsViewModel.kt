@@ -25,6 +25,8 @@ import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
+import com.docsmart.features.pdftools.domain.usecase.WatermarkPdfUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +39,7 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK
 }
 
 data class PdfToolMessages(
@@ -45,7 +47,8 @@ data class PdfToolMessages(
     val split       : SplitPdfMessages,
     val compress    : CompressPdfMessages,
     val rotate      : RotatePdfMessages,
-    val numberPages : NumberPagesMessages
+    val numberPages : NumberPagesMessages,
+    val watermark   : WatermarkMessages
 )
 
 data class PdfToolsUiState(
@@ -61,6 +64,7 @@ data class PdfToolsUiState(
     val compressionQuality: Int = 60,
     val rotationDegrees: Int = 90,
     val pageNumberFormat: PageNumberFormat = PageNumberFormat.PAGE_OF_TOTAL,
+    val watermarkText: String = "",
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -74,6 +78,7 @@ class PdfToolsViewModel @Inject constructor(
     private val compressPdf: CompressPdfUseCase,
     private val rotatePdf: RotatePdfUseCase,
     private val numberPagesPdf: NumberPagesUseCase,
+    private val watermarkPdf: WatermarkPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -173,6 +178,10 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(pageNumberFormat = format) }
     }
 
+    fun onWatermarkTextChange(text: String) {
+        _uiState.update { it.copy(watermarkText = text) }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         if (state.selectedPdfs.isEmpty() || state.selectedTool == PdfTool.NONE) return
@@ -224,6 +233,12 @@ class PdfToolsViewModel @Inject constructor(
                     format = state.pageNumberFormat,
                     outputFileName = customName,
                     messages = messages.numberPages
+                )
+                PdfTool.WATERMARK -> watermarkPdf(
+                    pdfUri = state.selectedPdfs.first(),
+                    watermarkText = state.watermarkText,
+                    outputFileName = customName,
+                    messages = messages.watermark
                 )
                 PdfTool.NONE -> return@launch
             }

@@ -57,6 +57,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_number_pages,
         descriptionRes = R.string.pdf_number_pages_desc,
         color = IndigoAccent
+    ),
+    PdfToolItem(
+        tool = PdfTool.WATERMARK,
+        icon = Icons.Rounded.BrandingWatermark,
+        titleRes = R.string.pdf_watermark,
+        descriptionRes = R.string.pdf_watermark_desc,
+        color = ColorImage
     )
 )
 

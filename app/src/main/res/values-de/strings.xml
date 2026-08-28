@@ -40,6 +40,7 @@
     <string name="pdf_compress">PDF komprimieren</string>
     <string name="pdf_rotate">PDF drehen</string>
     <string name="pdf_number_pages">Seiten nummerieren</string>
+    <string name="pdf_watermark">Wasserzeichen</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -131,6 +132,7 @@
     <string name="pdf_compress_desc">Verringert die Dateigröße</string>
     <string name="pdf_rotate_desc">Dreht die Seiten des Dokuments</string>
     <string name="pdf_number_pages_desc">Fügt Seitenzahlen in der Fußzeile hinzu</string>
+    <string name="pdf_watermark_desc">Legt einen Textwasserzeichen über das Dokument</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -245,6 +247,21 @@
     <string name="pdf_number_pages_success">PDF erfolgreich nummeriert — %1$d Seiten</string>
     <string name="pdf_number_pages_error">Fehler beim Nummerieren der Seiten: %1$s</string>
     <string name="pdf_number_pages_footer_template">Seite %1$d von %2$d</string>
+
+    <!-- ── Wasserzeichen ── -->
+    <string name="pdf_watermark_subtitle">Legt einen diagonalen, halbtransparenten Text über jede Seite</string>
+    <string name="pdf_watermark_ready">PDF bereit für Wasserzeichen</string>
+    <string name="pdf_watermark_text_label">Text des Wasserzeichens</string>
+    <string name="pdf_watermark_text_placeholder">Z. B.: VERTRAULICH</string>
+    <string name="pdf_watermark_hint">Der Text erscheint diagonal und halbtransparent auf jeder Seite</string>
+    <string name="pdf_watermark_progress">Wasserzeichen wird angewendet…</string>
+    <string name="pdf_watermark_execute">Wasserzeichen anwenden</string>
+    <string name="pdf_watermark_empty_text_error">Gib einen Text für das Wasserzeichen ein</string>
+    <string name="pdf_watermark_read_error">Das PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_watermark_no_pages">Das PDF hat keine Seiten.</string>
+    <string name="pdf_watermark_generate_error">Fehler beim Erstellen des PDFs mit Wasserzeichen.</string>
+    <string name="pdf_watermark_success">Wasserzeichen erfolgreich angewendet — %1$d Seiten</string>
+    <string name="pdf_watermark_error">Fehler beim Anwenden des Wasserzeichens: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

@@ -111,6 +111,20 @@ class DailyLimitManagerTest {
         assertEquals(0, manager.getConversionCount())
     }
 
+    // RF-PDF-07: mismo tipo de hallazgo que NUMBER_PAGES (ver arriba) --
+    // fija de entrada que WATERMARK tiene su propio contador antes de que
+    // pueda repetirse el mismo bug.
+    @Test
+    fun `WATERMARK tiene su propio contador, independiente de conversiones y otras herramientas`() {
+        repeat(DailyLimitManager.LIMIT_PDF_TOOLS) { manager.registerPdfTool("WATERMARK") }
+
+        assertFalse(manager.canUsePdfTool("WATERMARK"))
+        assertTrue(manager.canUsePdfTool("MERGE"))
+        assertTrue(manager.canUsePdfTool("NUMBER_PAGES"))
+        assertTrue(manager.canConvert())
+        assertEquals(0, manager.getConversionCount())
+    }
+
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────
 
     private fun fakeSharedPreferences(): SharedPreferences {

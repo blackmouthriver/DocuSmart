@@ -27,6 +27,7 @@ import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
@@ -34,6 +35,7 @@ import com.docsmart.features.pdftools.presentation.components.OutputFileNameFiel
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
+import com.docsmart.features.pdftools.presentation.components.WatermarkPdfScreen
 import com.docsmart.R
 
 private const val MIME_PDF = "application/pdf"
@@ -83,6 +85,12 @@ fun PdfToolsScreen(
     val numberPagesSuccess          = stringResource(R.string.pdf_number_pages_success)
     val numberPagesGenericError     = stringResource(R.string.pdf_number_pages_error)
     val numberPagesTemplate         = stringResource(R.string.pdf_number_pages_footer_template)
+    val watermarkEmptyTextError = stringResource(R.string.pdf_watermark_empty_text_error)
+    val watermarkReadError      = stringResource(R.string.pdf_watermark_read_error)
+    val watermarkNoPages        = stringResource(R.string.pdf_watermark_no_pages)
+    val watermarkGenerateError  = stringResource(R.string.pdf_watermark_generate_error)
+    val watermarkSuccess        = stringResource(R.string.pdf_watermark_success)
+    val watermarkGenericError   = stringResource(R.string.pdf_watermark_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -123,6 +131,14 @@ fun PdfToolsScreen(
                 success             = numberPagesSuccess,
                 genericError        = numberPagesGenericError,
                 pageOfTotalTemplate = numberPagesTemplate
+            ),
+            watermark = WatermarkMessages(
+                emptyTextError = watermarkEmptyTextError,
+                readError      = watermarkReadError,
+                noPages        = watermarkNoPages,
+                generateError  = watermarkGenerateError,
+                success        = watermarkSuccess,
+                genericError   = watermarkGenericError
             )
         )
     }
@@ -341,6 +357,22 @@ fun PdfToolsScreen(
                                     },
                                     onFormatChange = {
                                         viewModel.onPageNumberFormatChange(it)
+                                    },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.WATERMARK -> WatermarkPdfScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    watermarkText = uiState.watermarkText,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onWatermarkTextChange = {
+                                        viewModel.onWatermarkTextChange(it)
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
