@@ -44,6 +44,7 @@
     <string name="pdf_reorder_pages">Seiten neu anordnen</string>
     <string name="pdf_compare">PDFs vergleichen</string>
     <string name="pdf_redact">Inhalt schwärzen</string>
+    <string name="pdf_crop">Seiten zuschneiden</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -139,6 +140,7 @@
     <string name="pdf_reorder_pages_desc">Einzelne Seiten verschieben oder löschen</string>
     <string name="pdf_compare_desc">Findet die Unterschiede zwischen zwei Versionen</string>
     <string name="pdf_redact_desc">Entfernt sensiblen Text und Bilder dauerhaft</string>
+    <string name="pdf_crop_desc">Entfernt den überschüssigen Rand jeder Seite</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -323,6 +325,22 @@
     <string name="pdf_redact_generate_error">Fehler beim Erstellen des geschwärzten PDFs.</string>
     <string name="pdf_redact_success">%1$d Bereiche erfolgreich geschwärzt</string>
     <string name="pdf_redact_error">Fehler beim Schwärzen des PDFs: %1$s</string>
+
+    <!-- ── Recortar páginas ── -->
+    <string name="pdf_crop_subtitle">Passe den zuzuschneidenden Rand an und sieh dir die Vorschau an</string>
+    <string name="pdf_crop_ready">PDF bereit zum Zuschneiden</string>
+    <string name="pdf_crop_preview_title">Vorschau</string>
+    <string name="pdf_crop_preview_placeholder">Wähle ein PDF aus, um die Vorschau zu sehen</string>
+    <string name="pdf_crop_loading_preview">Vorschau wird geladen…</string>
+    <string name="pdf_crop_preview_desc">Zugeschnittene Vorschau</string>
+    <string name="pdf_crop_margin_label">Zuzuschneidender Rand: %1$d%%</string>
+    <string name="pdf_crop_execute">PDF zuschneiden</string>
+    <string name="pdf_crop_progress">Seiten werden zugeschnitten…</string>
+    <string name="pdf_crop_read_error">PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_crop_no_pages">Das PDF hat keine Seiten.</string>
+    <string name="pdf_crop_generate_error">Fehler beim Erstellen des zugeschnittenen PDFs.</string>
+    <string name="pdf_crop_success">PDF erfolgreich zugeschnitten — %1$d%% Rand</string>
+    <string name="pdf_crop_error">Fehler beim Zuschneiden des PDFs: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

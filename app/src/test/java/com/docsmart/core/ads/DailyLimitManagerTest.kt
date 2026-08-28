@@ -167,6 +167,20 @@ class DailyLimitManagerTest {
         assertEquals(0, manager.getConversionCount())
     }
 
+    // RF-PDF-09: mismo tipo de hallazgo que NUMBER_PAGES/WATERMARK/REORDER_PAGES/
+    // COMPARE/REDACT (ver arriba) -- fija de entrada que CROP tiene su propio
+    // contador antes de que pueda repetirse el mismo bug.
+    @Test
+    fun `CROP tiene su propio contador, independiente de conversiones y otras herramientas`() {
+        repeat(DailyLimitManager.LIMIT_PDF_TOOLS) { manager.registerPdfTool("CROP") }
+
+        assertFalse(manager.canUsePdfTool("CROP"))
+        assertTrue(manager.canUsePdfTool("MERGE"))
+        assertTrue(manager.canUsePdfTool("REDACT"))
+        assertTrue(manager.canConvert())
+        assertEquals(0, manager.getConversionCount())
+    }
+
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────
 
     private fun fakeSharedPreferences(): SharedPreferences {

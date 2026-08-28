@@ -18,6 +18,8 @@ import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.ComparePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.CropPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
@@ -46,7 +48,7 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT, CROP
 }
 
 data class PdfToolMessages(
@@ -58,7 +60,8 @@ data class PdfToolMessages(
     val watermark    : WatermarkMessages,
     val reorderPages : ReorderPagesMessages,
     val compare      : ComparePdfMessages,
-    val redact       : RedactPdfMessages
+    val redact       : RedactPdfMessages,
+    val crop         : CropPdfMessages
 )
 
 data class PdfToolsUiState(
@@ -81,6 +84,7 @@ data class PdfToolsUiState(
     val redactionRects: List<RedactionRect> = emptyList(),
     val redactionCurrentPage: Int = 1,
     val redactionTotalPages: Int = 1,
+    val cropMarginPercent: Int = 10,
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -98,6 +102,7 @@ class PdfToolsViewModel @Inject constructor(
     private val reorderPagesPdf: ReorderPagesUseCase,
     private val comparePdf: ComparePdfUseCase,
     private val redactPdf: RedactPdfUseCase,
+    private val cropPdf: CropPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -265,6 +270,10 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(redactionRects = emptyList()) }
     }
 
+    fun onCropMarginChange(percent: Int) {
+        _uiState.update { it.copy(cropMarginPercent = percent.coerceIn(0, 40)) }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         val hasSelection = if (state.selectedTool == PdfTool.COMPARE) {
@@ -377,6 +386,12 @@ class PdfToolsViewModel @Inject constructor(
             rects = state.redactionRects,
             outputFileName = customName,
             messages = messages.redact
+        )
+        PdfTool.CROP -> cropPdf(
+            pdfUri = state.selectedPdfs.first(),
+            marginPercent = state.cropMarginPercent,
+            outputFileName = customName,
+            messages = messages.crop
         )
         PdfTool.NONE -> null
     }
