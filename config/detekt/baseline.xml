@@ -124,6 +124,7 @@
     <ID>NestedBlockDepth:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:PdfToolsViewModel.kt$PdfToolsViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
     <ID>NestedBlockDepth:QrScreen.kt$private fun saveQrToDownloads(context: Context, file: File)</ID>
+    <ID>NestedBlockDepth:ReorderPagesUseCase.kt$ReorderPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:ScanResultScreen.kt$private fun saveFileToDownloads(context: Context, file: File): Boolean</ID>
     <ID>NestedBlockDepth:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -229,6 +230,7 @@
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
     <ID>ReturnCount:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:ReorderPagesUseCase.kt$ReorderPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
@@ -272,6 +274,8 @@
     <ID>TooGenericExceptionCaught:QrScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:RecentDocuments.kt$e2: Exception</ID>
     <ID>TooGenericExceptionCaught:RecentDocuments.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReorderPagesScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReorderPagesUseCase.kt$ReorderPagesUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:RotatePdfScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:RotatePdfUseCase.kt$RotatePdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ScanResultScreen.kt$e: Exception</ID>

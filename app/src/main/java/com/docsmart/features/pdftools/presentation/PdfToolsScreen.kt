@@ -25,6 +25,7 @@ import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
+import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
@@ -33,6 +34,7 @@ import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
+import com.docsmart.features.pdftools.presentation.components.ReorderPagesScreen
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
 import com.docsmart.features.pdftools.presentation.components.WatermarkPdfScreen
@@ -91,6 +93,11 @@ fun PdfToolsScreen(
     val watermarkGenerateError  = stringResource(R.string.pdf_watermark_generate_error)
     val watermarkSuccess        = stringResource(R.string.pdf_watermark_success)
     val watermarkGenericError   = stringResource(R.string.pdf_watermark_error)
+    val reorderEmptyOrderError = stringResource(R.string.pdf_reorder_pages_empty_order_error)
+    val reorderReadError       = stringResource(R.string.pdf_reorder_pages_read_error)
+    val reorderGenerateError   = stringResource(R.string.pdf_reorder_pages_generate_error)
+    val reorderSuccess         = stringResource(R.string.pdf_reorder_pages_success)
+    val reorderGenericError    = stringResource(R.string.pdf_reorder_pages_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -139,6 +146,13 @@ fun PdfToolsScreen(
                 generateError  = watermarkGenerateError,
                 success        = watermarkSuccess,
                 genericError   = watermarkGenericError
+            ),
+            reorderPages = ReorderPagesMessages(
+                emptyOrderError = reorderEmptyOrderError,
+                readError       = reorderReadError,
+                generateError   = reorderGenerateError,
+                success         = reorderSuccess,
+                genericError    = reorderGenericError
             )
         )
     }
@@ -373,6 +387,28 @@ fun PdfToolsScreen(
                                     },
                                     onWatermarkTextChange = {
                                         viewModel.onWatermarkTextChange(it)
+                                    },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.REORDER_PAGES -> ReorderPagesScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    pageOrder = uiState.pageOrder,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onPagesLoaded = {
+                                        viewModel.onPagesLoaded(it)
+                                    },
+                                    onReorder = { from, to ->
+                                        viewModel.onReorderPage(from, to)
+                                    },
+                                    onRemovePage = {
+                                        viewModel.onRemovePage(it)
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )

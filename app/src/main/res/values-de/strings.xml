@@ -41,6 +41,7 @@
     <string name="pdf_rotate">PDF drehen</string>
     <string name="pdf_number_pages">Seiten nummerieren</string>
     <string name="pdf_watermark">Wasserzeichen</string>
+    <string name="pdf_reorder_pages">Seiten neu anordnen</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -133,6 +134,7 @@
     <string name="pdf_rotate_desc">Dreht die Seiten des Dokuments</string>
     <string name="pdf_number_pages_desc">Fügt Seitenzahlen in der Fußzeile hinzu</string>
     <string name="pdf_watermark_desc">Legt einen Textwasserzeichen über das Dokument</string>
+    <string name="pdf_reorder_pages_desc">Einzelne Seiten verschieben oder löschen</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -262,6 +264,20 @@
     <string name="pdf_watermark_generate_error">Fehler beim Erstellen des PDFs mit Wasserzeichen.</string>
     <string name="pdf_watermark_success">Wasserzeichen erfolgreich angewendet — %1$d Seiten</string>
     <string name="pdf_watermark_error">Fehler beim Anwenden des Wasserzeichens: %1$s</string>
+
+    <!-- ── Seiten neu anordnen ── -->
+    <string name="pdf_reorder_pages_subtitle">Ziehe die Miniaturansichten, um Seiten neu anzuordnen oder zu löschen</string>
+    <string name="pdf_reorder_pages_ready">PDF bereit zum Neuanordnen</string>
+    <string name="pdf_reorder_pages_hint">Halte das Ziehsymbol gedrückt, um eine Seite an eine andere Position zu verschieben</string>
+    <string name="pdf_reorder_pages_page_label">Seite %1$d</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">Zum Neuanordnen ziehen</string>
+    <string name="pdf_reorder_pages_progress">Neue Reihenfolge wird gespeichert…</string>
+    <string name="pdf_reorder_pages_execute">Änderungen speichern</string>
+    <string name="pdf_reorder_pages_empty_order_error">Du musst mindestens eine Seite behalten</string>
+    <string name="pdf_reorder_pages_read_error">Das PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_reorder_pages_generate_error">Fehler beim Erstellen des neu angeordneten PDFs.</string>
+    <string name="pdf_reorder_pages_success">PDF erfolgreich aktualisiert — %1$d Seiten</string>
+    <string name="pdf_reorder_pages_error">Fehler beim Neuanordnen der Seiten: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

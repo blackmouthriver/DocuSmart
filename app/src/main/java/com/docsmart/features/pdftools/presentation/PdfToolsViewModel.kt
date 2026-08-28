@@ -21,6 +21,8 @@ import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesUseCase
 import com.docsmart.features.pdftools.domain.usecase.PageNumberFormat
+import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
+import com.docsmart.features.pdftools.domain.usecase.ReorderPagesUseCase
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
@@ -39,16 +41,17 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES
 }
 
 data class PdfToolMessages(
-    val merge       : MergePdfMessages,
-    val split       : SplitPdfMessages,
-    val compress    : CompressPdfMessages,
-    val rotate      : RotatePdfMessages,
-    val numberPages : NumberPagesMessages,
-    val watermark   : WatermarkMessages
+    val merge        : MergePdfMessages,
+    val split        : SplitPdfMessages,
+    val compress     : CompressPdfMessages,
+    val rotate       : RotatePdfMessages,
+    val numberPages  : NumberPagesMessages,
+    val watermark    : WatermarkMessages,
+    val reorderPages : ReorderPagesMessages
 )
 
 data class PdfToolsUiState(
@@ -65,6 +68,7 @@ data class PdfToolsUiState(
     val rotationDegrees: Int = 90,
     val pageNumberFormat: PageNumberFormat = PageNumberFormat.PAGE_OF_TOTAL,
     val watermarkText: String = "",
+    val pageOrder: List<Int> = emptyList(),
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -79,6 +83,7 @@ class PdfToolsViewModel @Inject constructor(
     private val rotatePdf: RotatePdfUseCase,
     private val numberPagesPdf: NumberPagesUseCase,
     private val watermarkPdf: WatermarkPdfUseCase,
+    private val reorderPagesPdf: ReorderPagesUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -127,7 +132,8 @@ class PdfToolsViewModel @Inject constructor(
                 result = null,
                 errorMessage = null,
                 savedToDownloads = false,
-                outputFileName = ""
+                outputFileName = "",
+                pageOrder = emptyList()
             )
         }
     }
@@ -182,6 +188,28 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(watermarkText = text) }
     }
 
+    fun onPagesLoaded(totalPages: Int) {
+        _uiState.update { it.copy(pageOrder = (1..totalPages).toList()) }
+    }
+
+    fun onReorderPage(from: Int, to: Int) {
+        _uiState.update { state ->
+            val order = state.pageOrder
+            if (from !in order.indices || to !in order.indices) return@update state
+            val reordered = order.toMutableList()
+            val moved = reordered.removeAt(from)
+            reordered.add(to, moved)
+            state.copy(pageOrder = reordered)
+        }
+    }
+
+    fun onRemovePage(pageNumber: Int) {
+        _uiState.update { state ->
+            if (state.pageOrder.size <= 1) state
+            else state.copy(pageOrder = state.pageOrder.filter { it != pageNumber })
+        }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         if (state.selectedPdfs.isEmpty() || state.selectedTool == PdfTool.NONE) return
@@ -203,45 +231,7 @@ class PdfToolsViewModel @Inject constructor(
                 )
             }
 
-            val result = when (state.selectedTool) {
-                PdfTool.MERGE -> mergePdf(
-                    pdfUris = state.selectedPdfs,
-                    outputFileName = customName,
-                    messages = messages.merge
-                )
-                PdfTool.SPLIT -> splitPdf(
-                    pdfUri = state.selectedPdfs.first(),
-                    fromPage = state.splitFromPage,
-                    toPage = state.splitToPage,
-                    outputFileName = customName,
-                    messages = messages.split
-                )
-                PdfTool.COMPRESS -> compressPdf(
-                    pdfUri = state.selectedPdfs.first(),
-                    quality = state.compressionQuality,
-                    outputFileName = customName,
-                    messages = messages.compress
-                )
-                PdfTool.ROTATE -> rotatePdf(
-                    pdfUri = state.selectedPdfs.first(),
-                    degrees = state.rotationDegrees,
-                    outputFileName = customName,
-                    messages = messages.rotate
-                )
-                PdfTool.NUMBER_PAGES -> numberPagesPdf(
-                    pdfUri = state.selectedPdfs.first(),
-                    format = state.pageNumberFormat,
-                    outputFileName = customName,
-                    messages = messages.numberPages
-                )
-                PdfTool.WATERMARK -> watermarkPdf(
-                    pdfUri = state.selectedPdfs.first(),
-                    watermarkText = state.watermarkText,
-                    outputFileName = customName,
-                    messages = messages.watermark
-                )
-                PdfTool.NONE -> return@launch
-            }
+            val result = runTool(state, customName, messages) ?: return@launch
 
             Timber.d("Resultado: $result")
 
@@ -260,6 +250,60 @@ class PdfToolsViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    // Extraído de execute() para mantener su complejidad ciclomática bajo el
+    // umbral de detekt (15) -- este dispatcher crece un caso por cada
+    // herramienta nueva del backlog (RF-PDF-06/07/08...) y ya lo había
+    // superado con la séptima.
+    private suspend fun runTool(
+        state: PdfToolsUiState,
+        customName: String?,
+        messages: PdfToolMessages
+    ): PdfToolResult? = when (state.selectedTool) {
+        PdfTool.MERGE -> mergePdf(
+            pdfUris = state.selectedPdfs,
+            outputFileName = customName,
+            messages = messages.merge
+        )
+        PdfTool.SPLIT -> splitPdf(
+            pdfUri = state.selectedPdfs.first(),
+            fromPage = state.splitFromPage,
+            toPage = state.splitToPage,
+            outputFileName = customName,
+            messages = messages.split
+        )
+        PdfTool.COMPRESS -> compressPdf(
+            pdfUri = state.selectedPdfs.first(),
+            quality = state.compressionQuality,
+            outputFileName = customName,
+            messages = messages.compress
+        )
+        PdfTool.ROTATE -> rotatePdf(
+            pdfUri = state.selectedPdfs.first(),
+            degrees = state.rotationDegrees,
+            outputFileName = customName,
+            messages = messages.rotate
+        )
+        PdfTool.NUMBER_PAGES -> numberPagesPdf(
+            pdfUri = state.selectedPdfs.first(),
+            format = state.pageNumberFormat,
+            outputFileName = customName,
+            messages = messages.numberPages
+        )
+        PdfTool.WATERMARK -> watermarkPdf(
+            pdfUri = state.selectedPdfs.first(),
+            watermarkText = state.watermarkText,
+            outputFileName = customName,
+            messages = messages.watermark
+        )
+        PdfTool.REORDER_PAGES -> reorderPagesPdf(
+            pdfUri = state.selectedPdfs.first(),
+            pageOrder = state.pageOrder,
+            outputFileName = customName,
+            messages = messages.reorderPages
+        )
+        PdfTool.NONE -> null
     }
 
     fun shareResult(context: Context, chooserTitle: String, errorMessage: String) {

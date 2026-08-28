@@ -12,8 +12,10 @@ sobre PDFs generados con iText7; 8 tests unitarios nuevos, todos en verde.
 texto en español fijo en este módulo. **RF-PDF-06 (Numerar páginas)
 implementado 2026-08-28, ver §10** — primera funcionalidad nueva del
 backlog. **RF-PDF-07 (Marca de agua) implementado 2026-08-28, ver §11.**
-Pendiente: RF-PDF-08 a RF-PDF-15, y selección de archivo desde la
-Biblioteca de la app (ver §5).
+**RF-PDF-08 (Reordenar/eliminar páginas) implementado 2026-08-28, ver §12**
+— cierra las 3 funcionalidades de prioridad "alta" del backlog. Pendiente:
+RF-PDF-09 a RF-PDF-15 (todas prioridad media/baja), y selección de archivo
+desde la Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
 ---
@@ -31,9 +33,10 @@ el requerimiento #3 original que todavía no existe:
    número/total, o "Página X de N").
 6. **Marca de agua** — texto diagonal y semitransparente sobre todas las
    páginas.
-7. *(Backlog, no implementado)* reordenar/eliminar
-   páginas individuales, recortar, editar contenido, firma digital, formularios,
-   comparar dos PDFs, censurar contenido, OCR avanzado.
+7. **Reordenar páginas** — vista de miniaturas arrastrable para cambiar el
+   orden y/o eliminar páginas individuales.
+8. *(Backlog, no implementado)* recortar, editar contenido, firma digital,
+   formularios, comparar dos PDFs, censurar contenido, OCR avanzado.
 
 ---
 
@@ -47,9 +50,9 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-05** Tras cualquier operación exitosa, el sistema debe mostrar el nombre y tamaño del archivo resultante, y ofrecer guardarlo en Descargas o compartirlo directamente.
 - **RF-PDF-06** Numerar páginas (pie de página con número, formato configurable). **✅ Implementado 2026-08-28, ver §10.**
 - **RF-PDF-07** Marca de agua de texto sobre todas las páginas. **✅ Implementado 2026-08-28, ver §11.**
+- **RF-PDF-08** Reordenar y/o eliminar páginas individuales (vista de miniaturas arrastrable). **✅ Implementado 2026-08-28, ver §12.**
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-08** Reordenar y/o eliminar páginas individuales (vista de miniaturas arrastrable).
 - **RF-PDF-09** Recortar (crop) márgenes de página.
 - **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes).
 - **RF-PDF-11** Firma digital de PDF.
@@ -58,8 +61,9 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-14** Censurar (redactar) contenido sensible de forma irreversible.
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
-Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido):
-**alta** → RF-PDF-08 · **media** → RF-PDF-13, RF-PDF-14 ·
+Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido)
+— **las 3 funcionalidades de prioridad "alta" ya están implementadas**
+(RF-PDF-06/07/08): **media** → RF-PDF-13, RF-PDF-14 ·
 **baja/futuro** → RF-PDF-09, RF-PDF-10, RF-PDF-11, RF-PDF-12, RF-PDF-15
 (requieren más superficie de UI o licenciamiento adicional de iText7 para
 firma/formularios avanzados).
@@ -68,8 +72,8 @@ firma/formularios avanzados).
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas y Marca de agua deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 5 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real, no como imagen superpuesta, desde su implementación inicial). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 6 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 7 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -143,20 +147,23 @@ firma/formularios avanzados).
 - **AC2 (implícito, mismo criterio que RF-PDF-04 AC3)** Dado que el resultado se abre en cualquier lector, cuando reviso el contenido, entonces el texto de la marca de agua y el contenido original siguen siendo texto real, no una imagen superpuesta.
 - **AC3 (validación de entrada)** Dado que intento aplicar la marca de agua sin escribir texto, cuando confirmo, entonces el botón permanece deshabilitado (o, a nivel de use case, se devuelve un error) y no se genera ningún archivo.
 
-### HU-PDF-07 — Reordenar y eliminar páginas *(backlog, no implementado)*
+### HU-PDF-07 — Reordenar y eliminar páginas
+*(Implementado 2026-08-28 — ver §12.)*
+
 **Como** usuario que necesita ajustar el orden de un PDF,
 **quiero** ver miniaturas de las páginas y arrastrarlas o eliminarlas,
 **para** corregir el documento sin herramientas externas.
 
 - **AC1** Dado que abro la vista de miniaturas de un PDF, cuando arrastro una página a otra posición, entonces el PDF resultante refleja el nuevo orden.
 - **AC2** Dado que marco una página para eliminar, cuando confirmo, entonces el resultado no la incluye.
+- **AC3 (protección contra vaciar el PDF)** Dado que solo queda una página en la lista, cuando intento eliminarla, entonces el botón de eliminar queda deshabilitado — el resultado siempre debe conservar al menos una página.
 
 ---
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 6 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 7 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -170,7 +177,7 @@ firma/formularios avanzados).
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). El resto → RF-PDF-08 a RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). El resto → RF-PDF-09 a RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -184,6 +191,7 @@ firma/formularios avanzados).
 | 4 | `CompressPdfUseCase` — no cubierto (usa `android.graphics.pdf.PdfRenderer`, requiere Robolectric/instrumentación; mismo límite que ya aplicaba a Compress y a la vista previa de Rotate). | Pendiente |
 | 5 | `NumberPagesUseCaseTest` — cada uno de los 3 formatos escribe el texto correcto en cada página (verificado extrayendo el texto real del PDF de salida con `PdfTextExtractor`, no solo el conteo de páginas), el total de páginas se conserva, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 6 | `WatermarkPdfUseCaseTest` — el texto de marca de agua queda escrito como texto real extraíble en cada página (pese a estar rotado/semitransparente), el total de páginas se conserva, texto vacío → Error sin tocar el archivo, texto largo no lanza excepción (se ajusta el tamaño de fuente), archivo no-PDF → Error. | ✅ 5 tests, en verde |
+| 7 | `ReorderPagesUseCaseTest` — reordenar sin eliminar refleja el nuevo orden (verificado leyendo el **contenido** de cada página resultante, no solo el conteo — el PDF de prueba tiene una etiqueta de texto distinta por página), omitir una página de la lista la elimina, reordenar y eliminar a la vez produce el resultado combinado correcto, lista de orden vacía → Error, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -422,4 +430,115 @@ herramientas existentes.
   diagonal, semitransparente y centrado, con el contenido original de
   cada página ("Page one"/"Page two"/"Page three") intacto — coincide
   exactamente con HU-PDF-06 AC1.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 12. RF-PDF-08/HU-PDF-07 — Reordenar y eliminar páginas (2026-08-28)
+
+Tercera y última funcionalidad de prioridad "alta" del backlog, y la más
+compleja de UI del módulo — la única que requiere miniaturas reales
+renderizadas del PDF y una interacción de arrastre en vivo, no solo un
+formulario con campos/chips como las 3 anteriores.
+
+- **`ReorderPagesUseCase.kt`** (nuevo) — recibe **una sola lista**
+  `pageOrder: List<Int>` con los números de página 1-based del PDF
+  *original*, ya en el orden final deseado; una página del original que no
+  aparezca en la lista queda eliminada del resultado. Este diseño resuelve
+  reordenar (AC1) y eliminar (AC2) en una sola operación/parámetro en vez
+  de necesitar dos conceptos separados — más simple de razonar y de testear
+  que mantener "orden" y "páginas a eliminar" como dos listas
+  independientes que podrían desincronizarse. Usa `copyPagesTo` página por
+  página (mismo principio que Unir), **no rasteriza** el archivo final
+  (RNF-PDF-01) aunque sí rasteriza las miniaturas de la vista previa (ver
+  abajo) — son cosas distintas: la miniatura es solo para mostrar en
+  pantalla, el archivo que genera el use case nunca pasa por un bitmap.
+- **`ReorderPagesScreen.kt`** (nuevo, la pieza más grande de las 3
+  funcionalidades nuevas) —
+  - **Miniaturas:** al seleccionar un PDF, un `LaunchedEffect` copia el
+    `Uri` a caché y usa `android.graphics.pdf.PdfRenderer` para generar un
+    `Bitmap` reducido (220px de ancho, escalado proporcional) por cada
+    página — mismo mecanismo que ya usaba la vista previa de Rotar
+    (`RotatePdfScreen.kt`), extendido de 1 página a todas. Vive en la capa
+    de Compose, no en el use case, por la misma razón que la vista previa
+    de Rotar: `PdfRenderer`/`Bitmap` son clases de framework Android no
+    testeables en JVM puro sin Robolectric.
+  - **Arrastre en vivo:** cada fila tiene un ícono de arrastre
+    (`Icons.Rounded.DragHandle`) con su propio `Modifier.pointerInput` +
+    `detectDragGestures` — deliberadamente **sin** long-press previo
+    (`detectDragGestures`, no `...AfterLongPress`): al ser un ícono
+    dedicado y pequeño, no compite con el scroll vertical de la lista como
+    lo haría si el gesto viviera en la fila completa, así que no hace
+    falta el paso extra de mantener presionado para "armar" el arrastre.
+    El desplazamiento vertical acumulado se compara contra una altura de
+    fila fija (88dp→px) para decidir cuándo cruzar el umbral y disparar un
+    swap con la página vecina, reponiendo el offset visual para que el
+    dedo y el ítem no se desincronicen durante arrastres largos.
+    **Detalle de Compose no evidente:** `pointerInput(key)` no reinicia su
+    corrutina mientras `key` no cambie, así que durante un arrastre
+    continuo el cierre (`closure`) que lee `pageOrder` seguía siendo el de
+    *antes* de empezar a arrastrar si no se corrige — un arrastre de varios
+    pasos habría operado sobre una lista desactualizada a partir del
+    segundo swap. Se resuelve con `rememberUpdatedState(pageOrder)`, el
+    mecanismo estándar de Compose para este problema exacto.
+  - **Eliminar:** ícono de papelera por fila, deshabilitado cuando solo
+    queda 1 página (AC3, ver §4) — mismo guardarraíl que ya tiene el use
+    case (`emptyOrderError`), así que la protección existe en dos capas.
+  - Sin vista previa de "cómo queda el PDF final" más allá de las propias
+    miniaturas reordenables — no hace falta una vista previa aparte, la
+    lista de miniaturas *es* la vista previa en este caso, a diferencia de
+    Numerar páginas/Marca de agua donde el resultado no es visualmente
+    obvio antes de generarlo.
+- **`PdfTool.REORDER_PAGES`** (nuevo valor de enum), con estado propio en
+  `PdfToolsUiState.pageOrder: List<Int>` (vacío hasta que se cargan las
+  miniaturas, inicializado a `1..totalPages` vía `onPagesLoaded()`,
+  mutado por `onReorderPage(from, to)`/`onRemovePage(pageNumber)`) y nueva
+  entrada de menú con ícono `Icons.Rounded.Reorder` y color `SlateGray`
+  (séptimo color distinto de los 6 ya usados).
+- **`DailyLimitManager`:** mismo procedimiento preventivo que Marca de agua
+  (§11) — se agregó `KEY_REORDER_PAGES` y su `case` **antes** de escribir
+  el resto del feature, con su test de regresión correspondiente.
+- **Refactor real motivado por detekt, no boilerplate:**
+  `PdfToolsViewModel.execute()` superó el umbral de complejidad ciclomática
+  (15) al agregar la séptima rama del `when` de despacho por herramienta —
+  a diferencia de los hallazgos de `copyUriToCache` (boilerplate idéntico
+  ya aceptado en 6 archivos hermanos, ver abajo), este **sí** se corrigió
+  de verdad: se extrajo el `when` completo a una función privada nueva
+  `runTool(state, customName, messages): PdfToolResult?`, dejando
+  `execute()` solo con las validaciones previas (PDF seleccionado, límite
+  diario) y el manejo de `uiState` — su complejidad baja considerablemente
+  y `runTool()` queda con la complejidad inherente de despachar por tipo de
+  herramienta (~8), bien por debajo del umbral. Este dispatcher va a seguir
+  creciendo con cada herramienta nueva del backlog restante, así que vale
+  la pena mantenerlo separado desde ahora.
+- **5 tests unitarios nuevos** (`ReorderPagesUseCaseTest`) — el PDF de
+  prueba lleva una etiqueta de texto distinta por página ("PAGINA_1",
+  "PAGINA_2"...) para poder verificar no solo el conteo de páginas del
+  resultado sino que el **contenido correcto** terminó en cada posición
+  tras reordenar y/o eliminar (con `PdfTextExtractor`, mismo enfoque que
+  Numerar páginas/Marca de agua) — cubre reordenar solo, eliminar solo,
+  ambos combinados, lista vacía → Error, y archivo no-PDF → Error.
+- **detekt:** los 4 hallazgos de boilerplate ya vistos en las 6
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico) más un
+  `PrintStackTrace` real en la carga de miniaturas (`e.printStackTrace()`
+  en vez de `Timber.e()`, único hallazgo de este tipo en las 3
+  funcionalidades nuevas) — el `PrintStackTrace` y el
+  `CyclomaticComplexMethod` de `execute()` (ver arriba) se corrigieron de
+  verdad; los 4 de boilerplate se añadieron al baseline a mano, mismo
+  procedimiento que §10/§11.
+- **Verificado end-to-end en el dispositivo real (app en español),
+  incluyendo el gesto de arrastre real, no solo taps:** PDF de 3 páginas
+  real subido vía `adb push` → seleccionado → las 3 miniaturas cargaron
+  correctamente (contenido visible en cada una) → `adb shell input swipe`
+  simulando mantener presionado el ícono de arrastre de la página 1 y
+  moverlo verticalmente hasta pasar las páginas 2 y 3 → el orden en
+  pantalla cambió en vivo a Página 2, Página 3, Página 1 (confirmando que
+  el swap en vivo y `rememberUpdatedState` funcionan correctamente en un
+  arrastre de varios pasos, no solo de uno) → se eliminó la página 3 desde
+  su ícono de papelera → se ejecutó la operación → mensaje de éxito "PDF
+  actualizado correctamente — 2 páginas" → guardado en Descargas →
+  archivo descargado y verificado directamente: 2 páginas, "Page two"
+  primero y "Page one" segundo, "Page three" ausente — coincide
+  exactamente con la reordenación y eliminación realizadas en pantalla.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

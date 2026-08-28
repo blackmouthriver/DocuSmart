@@ -64,6 +64,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_watermark,
         descriptionRes = R.string.pdf_watermark_desc,
         color = ColorImage
+    ),
+    PdfToolItem(
+        tool = PdfTool.REORDER_PAGES,
+        icon = Icons.Rounded.Reorder,
+        titleRes = R.string.pdf_reorder_pages,
+        descriptionRes = R.string.pdf_reorder_pages_desc,
+        color = SlateGray
     )
 )
 

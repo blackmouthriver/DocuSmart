@@ -41,6 +41,7 @@
     <string name="pdf_rotate">Girar PDF</string>
     <string name="pdf_number_pages">Numerar páginas</string>
     <string name="pdf_watermark">Marca d\'água</string>
+    <string name="pdf_reorder_pages">Reordenar páginas</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -133,6 +134,7 @@
     <string name="pdf_rotate_desc">Gira as páginas do documento</string>
     <string name="pdf_number_pages_desc">Adiciona numeração no rodapé</string>
     <string name="pdf_watermark_desc">Sobrepõe um texto ao documento</string>
+    <string name="pdf_reorder_pages_desc">Arraste ou exclua páginas individuais</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -262,6 +264,20 @@
     <string name="pdf_watermark_generate_error">Erro ao gerar o PDF com marca d\'água.</string>
     <string name="pdf_watermark_success">Marca d\'água aplicada com sucesso — %1$d páginas</string>
     <string name="pdf_watermark_error">Erro ao aplicar marca d\'água: %1$s</string>
+
+    <!-- ── Reordenar páginas ── -->
+    <string name="pdf_reorder_pages_subtitle">Arraste as miniaturas para reordenar ou excluir páginas</string>
+    <string name="pdf_reorder_pages_ready">PDF pronto para reordenar</string>
+    <string name="pdf_reorder_pages_hint">Mantenha pressionado o ícone de arrastar para mover uma página para outra posição</string>
+    <string name="pdf_reorder_pages_page_label">Página %1$d</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">Arrastar para reordenar</string>
+    <string name="pdf_reorder_pages_progress">Salvando a nova ordem…</string>
+    <string name="pdf_reorder_pages_execute">Salvar alterações</string>
+    <string name="pdf_reorder_pages_empty_order_error">Você deve manter pelo menos uma página</string>
+    <string name="pdf_reorder_pages_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_reorder_pages_generate_error">Erro ao gerar o PDF reordenado.</string>
+    <string name="pdf_reorder_pages_success">PDF atualizado com sucesso — %1$d páginas</string>
+    <string name="pdf_reorder_pages_error">Erro ao reordenar páginas: %1$s</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 

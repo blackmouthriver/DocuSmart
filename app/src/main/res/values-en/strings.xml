@@ -41,6 +41,7 @@
     <string name="pdf_rotate">Rotate PDF</string>
     <string name="pdf_number_pages">Number pages</string>
     <string name="pdf_watermark">Watermark</string>
+    <string name="pdf_reorder_pages">Reorder pages</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -133,6 +134,7 @@
     <string name="pdf_rotate_desc">Rotate document pages</string>
     <string name="pdf_number_pages_desc">Add page numbers in the footer</string>
     <string name="pdf_watermark_desc">Overlay a text watermark on the document</string>
+    <string name="pdf_reorder_pages_desc">Drag or delete individual pages</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -262,6 +264,20 @@
     <string name="pdf_watermark_generate_error">Error generating the watermarked PDF.</string>
     <string name="pdf_watermark_success">Watermark applied successfully — %1$d pages</string>
     <string name="pdf_watermark_error">Error applying watermark: %1$s</string>
+
+    <!-- ── Reorder pages ── -->
+    <string name="pdf_reorder_pages_subtitle">Drag the thumbnails to reorder or delete pages</string>
+    <string name="pdf_reorder_pages_ready">PDF ready to reorder</string>
+    <string name="pdf_reorder_pages_hint">Press and hold the drag handle to move a page to another position</string>
+    <string name="pdf_reorder_pages_page_label">Page %1$d</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">Drag to reorder</string>
+    <string name="pdf_reorder_pages_progress">Saving the new order…</string>
+    <string name="pdf_reorder_pages_execute">Save changes</string>
+    <string name="pdf_reorder_pages_empty_order_error">You must keep at least one page</string>
+    <string name="pdf_reorder_pages_read_error">Couldn\'t read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_reorder_pages_generate_error">Error generating the reordered PDF.</string>
+    <string name="pdf_reorder_pages_success">PDF updated successfully — %1$d pages</string>
+    <string name="pdf_reorder_pages_error">Error reordering pages: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->
