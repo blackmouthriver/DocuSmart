@@ -43,6 +43,7 @@
     <string name="pdf_watermark">Marca de agua</string>
     <string name="pdf_reorder_pages">Reordenar páginas</string>
     <string name="pdf_compare">Comparar PDFs</string>
+    <string name="pdf_redact">Censurar contenido</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -137,6 +138,7 @@
     <string name="pdf_watermark_desc">Superpone un texto sobre el documento</string>
     <string name="pdf_reorder_pages_desc">Arrastra o elimina páginas individuales</string>
     <string name="pdf_compare_desc">Encuentra las diferencias entre dos versiones</string>
+    <string name="pdf_redact_desc">Elimina texto e imágenes sensibles de forma irreversible</string>
 
     <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
     <string name="daily_limit_title">Límite diario alcanzado</string>
@@ -300,6 +302,27 @@
     <string name="pdf_compare_report_page_only_in_b">Esta página solo existe en el Documento B</string>
     <string name="pdf_compare_report_only_in_a_line">Solo en A: %1$s</string>
     <string name="pdf_compare_report_only_in_b_line">Solo en B: %1$s</string>
+
+    <!-- ── Censurar contenido ── -->
+    <string name="pdf_redact_subtitle">Dibuja rectángulos sobre las zonas que quieres censurar</string>
+    <string name="pdf_redact_ready">PDF listo para censurar</string>
+    <string name="pdf_redact_page_indicator">Página %1$d de %2$d</string>
+    <string name="pdf_redact_prev_page">Página anterior</string>
+    <string name="pdf_redact_next_page">Página siguiente</string>
+    <string name="pdf_redact_loading_preview">Cargando vista previa…</string>
+    <string name="pdf_redact_preview_desc">Vista previa de la página</string>
+    <string name="pdf_redact_draw_hint">Arrastra sobre la vista previa para marcar una zona a censurar</string>
+    <string name="pdf_redact_zones_marked">%1$d zonas marcadas</string>
+    <string name="pdf_redact_undo">Deshacer</string>
+    <string name="pdf_redact_clear_all">Borrar todo</string>
+    <string name="pdf_redact_execute">Censurar PDF</string>
+    <string name="pdf_redact_progress">Censurando contenido…</string>
+    <string name="pdf_redact_empty_rects_error">Marca al menos una zona para censurar</string>
+    <string name="pdf_redact_read_error">No se pudo leer el PDF. Verifica que sea un archivo válido.</string>
+    <string name="pdf_redact_no_pages">El PDF no tiene páginas.</string>
+    <string name="pdf_redact_generate_error">Error al generar el PDF censurado.</string>
+    <string name="pdf_redact_success">%1$d zonas censuradas correctamente</string>
+    <string name="pdf_redact_error">Error al censurar PDF: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 

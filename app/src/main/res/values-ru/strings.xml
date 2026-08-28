@@ -43,6 +43,7 @@
     <string name="pdf_watermark">Водяной знак</string>
     <string name="pdf_reorder_pages">Изменить порядок страниц</string>
     <string name="pdf_compare">Сравнить PDF</string>
+    <string name="pdf_redact">Скрыть содержимое</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -137,6 +138,7 @@
     <string name="pdf_watermark_desc">Накладывает текст на документ</string>
     <string name="pdf_reorder_pages_desc">Перетащите или удалите отдельные страницы</string>
     <string name="pdf_compare_desc">Найдите различия между двумя версиями</string>
+    <string name="pdf_redact_desc">Безвозвратно удаляет конфиденциальный текст и изображения</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -300,6 +302,27 @@
     <string name="pdf_compare_report_page_only_in_b">Эта страница существует только в Документе B</string>
     <string name="pdf_compare_report_only_in_a_line">Только в A: %1$s</string>
     <string name="pdf_compare_report_only_in_b_line">Только в B: %1$s</string>
+
+    <!-- ── Censurar contenido ── -->
+    <string name="pdf_redact_subtitle">Нарисуйте прямоугольники над областями, которые хотите скрыть</string>
+    <string name="pdf_redact_ready">PDF готов к редактированию</string>
+    <string name="pdf_redact_page_indicator">Страница %1$d из %2$d</string>
+    <string name="pdf_redact_prev_page">Предыдущая страница</string>
+    <string name="pdf_redact_next_page">Следующая страница</string>
+    <string name="pdf_redact_loading_preview">Загрузка предпросмотра…</string>
+    <string name="pdf_redact_preview_desc">Предпросмотр страницы</string>
+    <string name="pdf_redact_draw_hint">Проведите по предпросмотру, чтобы отметить область для скрытия</string>
+    <string name="pdf_redact_zones_marked">Отмечено зон: %1$d</string>
+    <string name="pdf_redact_undo">Отменить</string>
+    <string name="pdf_redact_clear_all">Очистить всё</string>
+    <string name="pdf_redact_execute">Скрыть в PDF</string>
+    <string name="pdf_redact_progress">Скрытие содержимого…</string>
+    <string name="pdf_redact_empty_rects_error">Отметьте хотя бы одну область для скрытия</string>
+    <string name="pdf_redact_read_error">Не удалось прочитать PDF. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_redact_no_pages">В PDF нет страниц.</string>
+    <string name="pdf_redact_generate_error">Ошибка при создании PDF со скрытым содержимым.</string>
+    <string name="pdf_redact_success">Успешно скрыто зон: %1$d</string>
+    <string name="pdf_redact_error">Ошибка при скрытии содержимого PDF: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

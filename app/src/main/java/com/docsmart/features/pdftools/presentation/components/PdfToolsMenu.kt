@@ -78,6 +78,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_compare,
         descriptionRes = R.string.pdf_compare_desc,
         color = ColorPowerPoint
+    ),
+    PdfToolItem(
+        tool = PdfTool.REDACT,
+        icon = Icons.Rounded.VisibilityOff,
+        titleRes = R.string.pdf_redact,
+        descriptionRes = R.string.pdf_redact_desc,
+        color = ErrorRed
     )
 )
 
