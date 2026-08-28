@@ -76,6 +76,22 @@ class SecurityManagerTest {
         assertFalse(securityManager.verifyPin("1234"))
     }
 
+    @Test
+    fun `resetPinAndWipeFiles elimina el PIN y todos los archivos de la carpeta segura`() {
+        securityManager.setPin("1234")
+        val fileA = File(filesDir, "a.pdf").apply { writeText("a") }
+        val fileB = File(filesDir, "b.pdf").apply { writeText("b") }
+        securityManager.moveToSecure(fileA)
+        securityManager.moveToSecure(fileB)
+        assertEquals(2, securityManager.getSecureFiles().size)
+
+        securityManager.resetPinAndWipeFiles()
+
+        assertFalse(securityManager.hasPin())
+        assertFalse(securityManager.verifyPin("1234"))
+        assertTrue(securityManager.getSecureFiles().isEmpty())
+    }
+
     // ── Biometría (preferencia, no disponibilidad del sensor) ────────────────
 
     @Test

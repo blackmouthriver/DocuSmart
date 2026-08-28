@@ -50,6 +50,15 @@ class SecurityManager @Inject constructor(
         Timber.d("SecurityManager: PIN eliminado")
     }
 
+    // RF-SEC-09/HU-SEC-06: único mecanismo de "recuperación" de PIN permitido
+    // -- restablecer implica perder los archivos protegidos (RNF-SEC-02, es
+    // una decisión de seguridad deliberada, no hay recuperación sin pérdida).
+    fun resetPinAndWipeFiles() {
+        secureFolder.listFiles()?.forEach { it.delete() }
+        clearPin()
+        Timber.d("SecurityManager: PIN restablecido y carpeta segura vaciada")
+    }
+
     private fun hashPin(pin: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
         val hash = digest.digest(pin.toByteArray())
