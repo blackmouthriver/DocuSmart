@@ -11,7 +11,8 @@ sobre PDFs generados con iText7; 8 tests unitarios nuevos, todos en verde.
 **i18n de las 4 pantallas completado 2026-08-28 (ver §9)** — ya no queda
 texto en español fijo en este módulo. **RF-PDF-06 (Numerar páginas)
 implementado 2026-08-28, ver §10** — primera funcionalidad nueva del
-backlog. Pendiente: RF-PDF-07 a RF-PDF-15, y selección de archivo desde la
+backlog. **RF-PDF-07 (Marca de agua) implementado 2026-08-28, ver §11.**
+Pendiente: RF-PDF-08 a RF-PDF-15, y selección de archivo desde la
 Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
@@ -28,7 +29,9 @@ el requerimiento #3 original que todavía no existe:
 4. **Rotar** — rotar todas las páginas 90°/180°/270°.
 5. **Numerar páginas** — pie de página con formato configurable (número solo,
    número/total, o "Página X de N").
-6. *(Backlog, no implementado)* marca de agua, reordenar/eliminar
+6. **Marca de agua** — texto diagonal y semitransparente sobre todas las
+   páginas.
+7. *(Backlog, no implementado)* reordenar/eliminar
    páginas individuales, recortar, editar contenido, firma digital, formularios,
    comparar dos PDFs, censurar contenido, OCR avanzado.
 
@@ -43,9 +46,9 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-04** El sistema debe permitir rotar todas las páginas de un PDF 90°, 180° o 270°, conservando el contenido original (texto/vectores).
 - **RF-PDF-05** Tras cualquier operación exitosa, el sistema debe mostrar el nombre y tamaño del archivo resultante, y ofrecer guardarlo en Descargas o compartirlo directamente.
 - **RF-PDF-06** Numerar páginas (pie de página con número, formato configurable). **✅ Implementado 2026-08-28, ver §10.**
+- **RF-PDF-07** Marca de agua de texto sobre todas las páginas. **✅ Implementado 2026-08-28, ver §11.**
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-07** Marca de agua de texto sobre todas las páginas.
 - **RF-PDF-08** Reordenar y/o eliminar páginas individuales (vista de miniaturas arrastrable).
 - **RF-PDF-09** Recortar (crop) márgenes de página.
 - **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes).
@@ -56,7 +59,7 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
 Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido):
-**alta** → RF-PDF-07, RF-PDF-08 · **media** → RF-PDF-13, RF-PDF-14 ·
+**alta** → RF-PDF-08 · **media** → RF-PDF-13, RF-PDF-14 ·
 **baja/futuro** → RF-PDF-09, RF-PDF-10, RF-PDF-11, RF-PDF-12, RF-PDF-15
 (requieren más superficie de UI o licenciamiento adicional de iText7 para
 firma/formularios avanzados).
@@ -65,8 +68,8 @@ firma/formularios avanzados).
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar y Numerar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 4 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas escribe el pie de página como texto real, no como imagen superpuesta, desde su implementación inicial). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 5 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas y Marca de agua deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 5 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real, no como imagen superpuesta, desde su implementación inicial). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 6 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -129,12 +132,16 @@ firma/formularios avanzados).
 - **AC1** Dado que activo "Numerar páginas", cuando confirmo, entonces cada página del resultado muestra su número en el pie, en el formato "Página X de N".
 - **AC2 (ampliado, no pedido explícitamente por la HU original pero implementado como "formato configurable" de RF-PDF-06)** Dado que el formato de numeración es configurable, cuando elijo "Número" o "Núm. / Total" en vez del formato por defecto, entonces el pie de página usa ese formato en las N páginas.
 
-### HU-PDF-06 — Marca de agua *(backlog, no implementado)*
+### HU-PDF-06 — Marca de agua
+*(Implementado 2026-08-28 — ver §11.)*
+
 **Como** usuario que comparte un borrador o documento confidencial,
 **quiero** superponer un texto de marca de agua,
 **para** dejar claro el estado o la propiedad del documento.
 
 - **AC1** Dado que escribo un texto de marca de agua y confirmo, cuando se genera el resultado, entonces el texto aparece superpuesto (diagonal, semitransparente) en todas las páginas.
+- **AC2 (implícito, mismo criterio que RF-PDF-04 AC3)** Dado que el resultado se abre en cualquier lector, cuando reviso el contenido, entonces el texto de la marca de agua y el contenido original siguen siendo texto real, no una imagen superpuesta.
+- **AC3 (validación de entrada)** Dado que intento aplicar la marca de agua sin escribir texto, cuando confirmo, entonces el botón permanece deshabilitado (o, a nivel de use case, se devuelve un error) y no se genera ningún archivo.
 
 ### HU-PDF-07 — Reordenar y eliminar páginas *(backlog, no implementado)*
 **Como** usuario que necesita ajustar el orden de un PDF,
@@ -149,7 +156,7 @@ firma/formularios avanzados).
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 5 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 6 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -163,7 +170,7 @@ firma/formularios avanzados).
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). El resto → RF-PDF-07 a RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). El resto → RF-PDF-08 a RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -176,6 +183,7 @@ firma/formularios avanzados).
 | 3 | `RotatePdfUseCaseTest` — 90° se escribe en todas las páginas, rotación acumulada sobre una página ya rotada (180°+270°=90°). | ✅ 2 tests, en verde |
 | 4 | `CompressPdfUseCase` — no cubierto (usa `android.graphics.pdf.PdfRenderer`, requiere Robolectric/instrumentación; mismo límite que ya aplicaba a Compress y a la vista previa de Rotate). | Pendiente |
 | 5 | `NumberPagesUseCaseTest` — cada uno de los 3 formatos escribe el texto correcto en cada página (verificado extrayendo el texto real del PDF de salida con `PdfTextExtractor`, no solo el conteo de páginas), el total de páginas se conserva, archivo no-PDF → Error. | ✅ 5 tests, en verde |
+| 6 | `WatermarkPdfUseCaseTest` — el texto de marca de agua queda escrito como texto real extraíble en cada página (pese a estar rotado/semitransparente), el total de páginas se conserva, texto vacío → Error sin tocar el archivo, texto largo no lanza excepción (se ajusta el tamaño de fuente), archivo no-PDF → Error. | ✅ 5 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -335,4 +343,83 @@ herramientas originales).
   lleva "Página 1 de 3"/"Página 2 de 3"/"Página 3 de 3" en el pie, con el
   contenido original de cada página ("Page one"/"Page two"/"Page three")
   intacto.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 11. RF-PDF-07/HU-PDF-06 — Marca de agua (2026-08-28)
+
+Segunda funcionalidad nueva del backlog (prioridad "alta" sugerida en §2,
+junto con Numerar páginas). Mismo patrón arquitectónico que las 5
+herramientas existentes.
+
+- **`WatermarkPdfUseCase.kt`** (nuevo) — superpone el texto en diagonal
+  (45°) y semitransparente (opacidad 0.15, `PdfExtGState.setFillOpacity()`)
+  sobre cada página, escrito directamente con `PdfCanvas`/`setTextMatrix()`
+  (matriz de rotación manual, ya que a diferencia de Numerar páginas esto
+  no tiene un helper de alto nivel equivalente a
+  `Canvas.showTextAligned()` que soporte rotación+opacidad juntas de forma
+  simple) — **no rasteriza** (RNF-PDF-01), el contenido original y el
+  texto de la marca quedan ambos como texto real seleccionable/buscable
+  (verificado con `PdfTextExtractor` en los tests, pese a la rotación).
+  Centrado en la página vía el ancho del texto (`font.getWidth()`) y
+  trigonometría básica (`cos`/`sin` de 45°) para las coordenadas de
+  inicio.
+  - **Auto-ajuste de tamaño de fuente:** el texto de marca de agua es
+    libre (no un formato fijo como Numerar páginas), así que puede ser
+    arbitrariamente largo. Se parte de 40pt y, si el texto a ese tamaño
+    superaría 1.3× el ancho de la página, se reduce proporcionalmente
+    (mínimo 8pt) para evitar que quede completamente ilegible o corte de
+    forma extrema — sin este ajuste, un texto largo con fuente fija
+    podría desbordar mucho más allá de la página.
+- **`WatermarkPdfScreen.kt`** (nuevo) — selector de PDF, campo de texto
+  libre (`OutlinedTextField`, mismo estilo visual que
+  `OutputFileNameField`) para el texto de la marca de agua, y una nota de
+  ayuda explicando el comportamiento (diagonal, semitransparente) en vez
+  de una vista previa en vivo — mismo criterio que Numerar páginas: una
+  vista previa real requeriría duplicar la lógica de renderizado del use
+  case. El botón de ejecutar queda deshabilitado tanto sin PDF
+  seleccionado como con el texto vacío (`watermarkText.isNotBlank()`),
+  igual que el use case también valida y devuelve `Error` si igual se
+  invoca con texto en blanco — doble validación (UI + dominio), mismo
+  patrón que "Selecciona al menos 2 PDFs" en Unir.
+  - **Escrito con imports explícitos y composables separados desde el
+    inicio** (`WatermarkSelectZone`, `WatermarkTextCard`) — a diferencia
+    de `NumberPagesScreen.kt` (§10), que necesitó una segunda pasada tras
+    fallar detekt por `WildcardImport`/`LongMethod`, esta pantalla se
+    escribió ya con la lección aplicada y pasó detekt a la primera.
+- **`PdfTool.WATERMARK`** (nuevo valor de enum), wireado en
+  `PdfToolsViewModel` (`watermarkText` en `PdfToolsUiState`,
+  `onWatermarkTextChange()`, rama nueva en `execute()`) y
+  `PdfToolsScreen.kt` (nueva entrada de menú con ícono
+  `Icons.Rounded.BrandingWatermark` y color `ColorImage`, sexto color
+  distinto de los 5 ya usados).
+- **Bug de `DailyLimitManager` evitado de entrada, no encontrado después:**
+  tras el hallazgo real de Numerar páginas (§10, `NUMBER_PAGES` caía en el
+  `else -> KEY_CONVERSIONS` por faltar su `case`), se agregó
+  `KEY_WATERMARK` y su `case` en `getPdfToolKey()` **antes** de escribir
+  el resto del feature, no después — con su propio test de regresión en
+  `DailyLimitManagerTest` (mismo patrón que el de `NUMBER_PAGES`).
+- **5 tests unitarios nuevos** (`WatermarkPdfUseCaseTest`) — verifican con
+  `PdfTextExtractor` que el texto de marca de agua es extraíble en cada
+  página pese a la rotación/opacidad, que el total de páginas se
+  conserva, que un texto vacío/en blanco devuelve `Error` sin tocar el
+  sistema de archivos, que un texto largo no lanza excepción (ejercita el
+  ajuste de tamaño de fuente), y que un archivo no-PDF devuelve `Error`.
+- **detekt:** mismos 4 hallazgos de boilerplate ya vistos en las 5
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico x2 que
+  colapsan en 1 entrada de baseline) — agregados a mano al baseline en las
+  posiciones alfabéticas correctas, mismo procedimiento que §10 (no
+  `./gradlew detektBaseline`). La pantalla, a diferencia de la de Numerar
+  páginas, no aportó hallazgos nuevos (ver nota arriba).
+- **Verificado end-to-end en el dispositivo real (app en español):** PDF
+  de 3 páginas real subido vía `adb push` → seleccionado desde el
+  selector del sistema → texto "CONFIDENCIAL" escrito en el campo → marca
+  de agua aplicada → mensaje de éxito "Marca de agua aplicada
+  correctamente — 3 páginas" → guardado en Descargas → archivo descargado
+  y verificado directamente: las 3 páginas muestran "CONFIDENCIAL" en
+  diagonal, semitransparente y centrado, con el contenido original de
+  cada página ("Page one"/"Page two"/"Page three") intacto — coincide
+  exactamente con HU-PDF-06 AC1.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

@@ -40,6 +40,7 @@
     <string name="pdf_compress">Comprimir PDF</string>
     <string name="pdf_rotate">Girar PDF</string>
     <string name="pdf_number_pages">Numerar páginas</string>
+    <string name="pdf_watermark">Marca d\'água</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -131,6 +132,7 @@
     <string name="pdf_compress_desc">Reduz o tamanho do arquivo</string>
     <string name="pdf_rotate_desc">Gira as páginas do documento</string>
     <string name="pdf_number_pages_desc">Adiciona numeração no rodapé</string>
+    <string name="pdf_watermark_desc">Sobrepõe um texto ao documento</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -245,6 +247,21 @@
     <string name="pdf_number_pages_success">PDF numerado com sucesso — %1$d páginas</string>
     <string name="pdf_number_pages_error">Erro ao numerar páginas: %1$s</string>
     <string name="pdf_number_pages_footer_template">Página %1$d de %2$d</string>
+
+    <!-- ── Marca d'água ── -->
+    <string name="pdf_watermark_subtitle">Sobrepõe um texto diagonal e semitransparente em cada página</string>
+    <string name="pdf_watermark_ready">PDF pronto para marcar</string>
+    <string name="pdf_watermark_text_label">Texto da marca d\'água</string>
+    <string name="pdf_watermark_text_placeholder">Ex: CONFIDENCIAL</string>
+    <string name="pdf_watermark_hint">O texto aparecerá na diagonal e semitransparente em cada página</string>
+    <string name="pdf_watermark_progress">Aplicando marca d\'água…</string>
+    <string name="pdf_watermark_execute">Aplicar marca d\'água</string>
+    <string name="pdf_watermark_empty_text_error">Escreva um texto para a marca d\'água</string>
+    <string name="pdf_watermark_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_watermark_no_pages">O PDF não tem páginas.</string>
+    <string name="pdf_watermark_generate_error">Erro ao gerar o PDF com marca d\'água.</string>
+    <string name="pdf_watermark_success">Marca d\'água aplicada com sucesso — %1$d páginas</string>
+    <string name="pdf_watermark_error">Erro ao aplicar marca d\'água: %1$s</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 

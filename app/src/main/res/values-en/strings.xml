@@ -40,6 +40,7 @@
     <string name="pdf_compress">Compress PDF</string>
     <string name="pdf_rotate">Rotate PDF</string>
     <string name="pdf_number_pages">Number pages</string>
+    <string name="pdf_watermark">Watermark</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -131,6 +132,7 @@
     <string name="pdf_compress_desc">Reduce the file size</string>
     <string name="pdf_rotate_desc">Rotate document pages</string>
     <string name="pdf_number_pages_desc">Add page numbers in the footer</string>
+    <string name="pdf_watermark_desc">Overlay a text watermark on the document</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -245,6 +247,21 @@
     <string name="pdf_number_pages_success">PDF numbered successfully — %1$d pages</string>
     <string name="pdf_number_pages_error">Error numbering pages: %1$s</string>
     <string name="pdf_number_pages_footer_template">Page %1$d of %2$d</string>
+
+    <!-- ── Watermark ── -->
+    <string name="pdf_watermark_subtitle">Overlay a diagonal, semi-transparent text on every page</string>
+    <string name="pdf_watermark_ready">PDF ready to watermark</string>
+    <string name="pdf_watermark_text_label">Watermark text</string>
+    <string name="pdf_watermark_text_placeholder">E.g.: CONFIDENTIAL</string>
+    <string name="pdf_watermark_hint">The text will appear diagonally and semi-transparent on every page</string>
+    <string name="pdf_watermark_progress">Applying watermark…</string>
+    <string name="pdf_watermark_execute">Apply watermark</string>
+    <string name="pdf_watermark_empty_text_error">Enter a watermark text</string>
+    <string name="pdf_watermark_read_error">Couldn\'t read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_watermark_no_pages">The PDF has no pages.</string>
+    <string name="pdf_watermark_generate_error">Error generating the watermarked PDF.</string>
+    <string name="pdf_watermark_success">Watermark applied successfully — %1$d pages</string>
+    <string name="pdf_watermark_error">Error applying watermark: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->
