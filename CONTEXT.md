@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-27 (setupPin ya no falla en silencio)
+**Última actualización:** 2026-08-27 (auditoría completa de avance por HU/RF, ver §2)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -231,21 +231,25 @@ al dictar, pero que persistía del lado de lectura. `StudyScreen.kt` es la
 pasada. 5 tests nuevos.
 Detalle completo en [`docs/requirements/study.md`](docs/requirements/study.md).
 
-### Avance por dimensión (estimado 2026-08-24)
-No hay un único "% completado" honesto — depende del eje:
+### Avance por dimensión (actualizado 2026-08-27, auditoría completa de los 8 docs de requerimientos)
+No hay un único "% completado" honesto — depende del eje. Recalculado contando
+cada RF-XXX de los 8 módulos uno por uno (77 RF en total sobre los 7 módulos de
+producto), no una estimación aproximada como la versión anterior (2026-08-24).
 
 | Dimensión | Avance | Nota |
 |---|---|---|
-| Infraestructura y calidad base | ~90% | build estable, CI, i18n completo, 1er módulo con HU+tests |
-| Funcionalidad core (25 requerimientos) | ~60-65% | ~11 sólidos, ~9 parciales con bugs, ~2-3 sin empezar |
-| Documentación formal (HU con criterios de aceptación) | ~85% | 7 de ~7-8 módulos formalizados (Seguridad, Herramientas PDF, Visor+Biblioteca, Conversión, Escáner, Ajustes+Premium, Estudio) |
-| Pruebas automatizadas | ~19% | 77 tests cubriendo 17 archivos de decenas |
-| Listo para publicar en Play Store | ~65% | firma de release + CI de build firmado ✅, política de privacidad publicada + formulario de seguridad de datos preparados ✅, Play Billing real conectado ✅, SDK de consentimiento de anuncios (UMP) implementado y verificado ✅ (2026-08-26, ver `settings-premium.md` §9); falta la primera subida manual a Play Console (obligatoria, no automatizable — y necesaria para poder probar Billing de punta a punta) y ads de producción reales (hoy AdMob App ID sigue siendo el de prueba) |
+| Infraestructura y calidad base | ~94% | build estable, CI con emulador real corriendo los 3 flujos de Compose UI Testing (8 intentos para dejarlo estable, ver `deployment.md` §3), i18n completo, RF-SEC-08 (lifecycle) y UMP (consentimiento) implementados |
+| Funcionalidad core (77 RF catalogados en los 7 módulos de producto) | ~70% (54/77) | Seguridad 14/15, Ajustes+Premium 11/12, Escáner 5/7, Visor+Biblioteca 6/9, Conversión 6/9, Estudio 7/10, Herramientas PDF 5/15 (el módulo con más backlog: numeración, marca de agua, reordenar, firma, formularios, comparar, censurar, OCR — todas features avanzadas, no bugs) |
+| Documentación formal (HU con criterios de aceptación) | ~90% | 8 de 8 módulos con specs propias (los 7 de producto + deployment); todas con tabla de bugs de QA trazada como corregido/obsoleto/backlog |
+| Pruebas automatizadas | ~26% | 117 tests (era 77 el 2026-08-24): primera prueba de integración real (Room/SQLite), primeros 3 flujos de Compose UI Testing contra dispositivo real y CI con emulador, primer test de ViewModel (`SecurityViewModelTest`, 22 tests) — crecimiento más cualitativo (tipos de prueba nuevos) que solo cuantitativo |
+| Listo para publicar en Play Store | ~80% | Todo lo que dependía de código ya está: firma de release + CI de build firmado, política de privacidad + formulario de seguridad de datos, Play Billing real conectado, UMP (consentimiento de anuncios) verificado de punta a punta en dispositivo real. Lo que falta ya no es ingeniería: la primera subida manual a Play Console (obligatoria, no automatizable, tuya), el AdMob App ID real (tuyo, ver instrucciones más abajo), y ajustar `versionCode`/`versionName` (hoy `1`/`1.0.0`, placeholder) antes de subir |
 
-**Estimado global "producto listo para producción": ~35-40%.** No es un problema
-de código faltante — es que lo que falta (bugs en funciones centrales, billing
-simulado, casi sin red de pruebas) es justo lo que separa un prototipo funcional
-de un producto publicable.
+**Estimado global "producto listo para producción": ~48-52%** (era ~35-40% el
+2026-08-24). La brecha ya no es tanto "bugs en funciones centrales" (la mayoría
+de los módulos base están sólidos y probados) sino: (a) features avanzadas de
+las HU sin empezar — sobre todo en Herramientas PDF — y (b) los 3 pasos que
+solo tú puedes dar para publicar (subida a Play Console, AdMob real, respaldo
+del keystore).
 
 ### Mejoras y funcionalidades candidatas a agregar a las HU
 Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
