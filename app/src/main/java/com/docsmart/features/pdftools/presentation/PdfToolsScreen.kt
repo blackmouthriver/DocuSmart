@@ -24,10 +24,12 @@ import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
+import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
+import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
@@ -75,6 +77,12 @@ fun PdfToolsScreen(
     val rotateGenerateError  = stringResource(R.string.pdf_rotate_generate_error)
     val rotateSuccess        = stringResource(R.string.pdf_rotate_success)
     val rotateGenericError   = stringResource(R.string.pdf_rotate_error)
+    val numberPagesReadError        = stringResource(R.string.pdf_number_pages_read_error)
+    val numberPagesNoPages          = stringResource(R.string.pdf_number_pages_no_pages)
+    val numberPagesGenerateError    = stringResource(R.string.pdf_number_pages_generate_error)
+    val numberPagesSuccess          = stringResource(R.string.pdf_number_pages_success)
+    val numberPagesGenericError     = stringResource(R.string.pdf_number_pages_error)
+    val numberPagesTemplate         = stringResource(R.string.pdf_number_pages_footer_template)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -107,6 +115,14 @@ fun PdfToolsScreen(
                 generateError = rotateGenerateError,
                 success       = rotateSuccess,
                 genericError  = rotateGenericError
+            ),
+            numberPages = NumberPagesMessages(
+                readError           = numberPagesReadError,
+                noPages             = numberPagesNoPages,
+                generateError       = numberPagesGenerateError,
+                success             = numberPagesSuccess,
+                genericError        = numberPagesGenericError,
+                pageOfTotalTemplate = numberPagesTemplate
             )
         )
     }
@@ -309,6 +325,22 @@ fun PdfToolsScreen(
                                     },
                                     onDegreesChange = {
                                         viewModel.onRotationDegreesChange(it)
+                                    },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.NUMBER_PAGES -> NumberPagesScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    format = uiState.pageNumberFormat,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onFormatChange = {
+                                        viewModel.onPageNumberFormatChange(it)
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )

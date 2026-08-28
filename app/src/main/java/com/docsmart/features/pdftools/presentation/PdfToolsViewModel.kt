@@ -18,6 +18,9 @@ import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
+import com.docsmart.features.pdftools.domain.usecase.NumberPagesUseCase
+import com.docsmart.features.pdftools.domain.usecase.PageNumberFormat
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
@@ -34,14 +37,15 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES
 }
 
 data class PdfToolMessages(
-    val merge   : MergePdfMessages,
-    val split   : SplitPdfMessages,
-    val compress: CompressPdfMessages,
-    val rotate  : RotatePdfMessages
+    val merge       : MergePdfMessages,
+    val split       : SplitPdfMessages,
+    val compress    : CompressPdfMessages,
+    val rotate      : RotatePdfMessages,
+    val numberPages : NumberPagesMessages
 )
 
 data class PdfToolsUiState(
@@ -56,6 +60,7 @@ data class PdfToolsUiState(
     val splitToPage: Int = 2,
     val compressionQuality: Int = 60,
     val rotationDegrees: Int = 90,
+    val pageNumberFormat: PageNumberFormat = PageNumberFormat.PAGE_OF_TOTAL,
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -68,6 +73,7 @@ class PdfToolsViewModel @Inject constructor(
     private val splitPdf: SplitPdfUseCase,
     private val compressPdf: CompressPdfUseCase,
     private val rotatePdf: RotatePdfUseCase,
+    private val numberPagesPdf: NumberPagesUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -163,6 +169,10 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(rotationDegrees = degrees) }
     }
 
+    fun onPageNumberFormatChange(format: PageNumberFormat) {
+        _uiState.update { it.copy(pageNumberFormat = format) }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         if (state.selectedPdfs.isEmpty() || state.selectedTool == PdfTool.NONE) return
@@ -208,6 +218,12 @@ class PdfToolsViewModel @Inject constructor(
                     degrees = state.rotationDegrees,
                     outputFileName = customName,
                     messages = messages.rotate
+                )
+                PdfTool.NUMBER_PAGES -> numberPagesPdf(
+                    pdfUri = state.selectedPdfs.first(),
+                    format = state.pageNumberFormat,
+                    outputFileName = customName,
+                    messages = messages.numberPages
                 )
                 PdfTool.NONE -> return@launch
             }
