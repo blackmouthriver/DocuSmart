@@ -39,6 +39,7 @@
     <string name="pdf_split">Split PDF</string>
     <string name="pdf_compress">Compress PDF</string>
     <string name="pdf_rotate">Rotate PDF</string>
+    <string name="pdf_number_pages">Number pages</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -129,6 +130,7 @@
     <string name="pdf_split_desc">Extract pages from a PDF</string>
     <string name="pdf_compress_desc">Reduce the file size</string>
     <string name="pdf_rotate_desc">Rotate document pages</string>
+    <string name="pdf_number_pages_desc">Add page numbers in the footer</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -224,6 +226,25 @@
     <string name="pdf_rotate_generate_error">Error generating the rotated PDF.</string>
     <string name="pdf_rotate_success">PDF rotated %1$d° successfully</string>
     <string name="pdf_rotate_error">Error rotating PDF: %1$s</string>
+
+    <!-- ── Number pages ── -->
+    <string name="pdf_number_pages_subtitle">Add the page number to the footer of each page</string>
+    <string name="pdf_number_pages_ready">PDF ready to number</string>
+    <string name="pdf_number_pages_format_title">Numbering format</string>
+    <string name="pdf_number_pages_format_number_only">Number</string>
+    <string name="pdf_number_pages_format_number_of_total">No. / Total</string>
+    <string name="pdf_number_pages_format_page_of_total">Page X</string>
+    <string name="pdf_number_pages_example_number_only">Example: 3</string>
+    <string name="pdf_number_pages_example_number_of_total">Example: 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">Example: Page 3 of 10</string>
+    <string name="pdf_number_pages_progress">Numbering pages…</string>
+    <string name="pdf_number_pages_execute">Number pages</string>
+    <string name="pdf_number_pages_read_error">Couldn\'t read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_number_pages_no_pages">The PDF has no pages.</string>
+    <string name="pdf_number_pages_generate_error">Error generating the numbered PDF.</string>
+    <string name="pdf_number_pages_success">PDF numbered successfully — %1$d pages</string>
+    <string name="pdf_number_pages_error">Error numbering pages: %1$s</string>
+    <string name="pdf_number_pages_footer_template">Page %1$d of %2$d</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->

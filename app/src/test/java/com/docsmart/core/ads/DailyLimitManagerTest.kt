@@ -96,6 +96,21 @@ class DailyLimitManagerTest {
         assertEquals(0, manager.getPdfToolCount("SPLIT"))
     }
 
+    // RF-PDF-06: NUMBER_PAGES cayó al principio en la rama `else` de
+    // `getPdfToolKey()` (sin case propio), lo que hacía que compartiera
+    // contador con `KEY_CONVERSIONS` del Conversor -- usar "Numerar
+    // páginas" habría consumido el límite diario de conversiones en vez
+    // del propio. Este test fija que tiene su contador independiente.
+    @Test
+    fun `NUMBER_PAGES tiene su propio contador, independiente de conversiones y otras herramientas`() {
+        repeat(DailyLimitManager.LIMIT_PDF_TOOLS) { manager.registerPdfTool("NUMBER_PAGES") }
+
+        assertFalse(manager.canUsePdfTool("NUMBER_PAGES"))
+        assertTrue(manager.canUsePdfTool("MERGE"))
+        assertTrue(manager.canConvert())
+        assertEquals(0, manager.getConversionCount())
+    }
+
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────
 
     private fun fakeSharedPreferences(): SharedPreferences {

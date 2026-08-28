@@ -25,6 +25,7 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_SPLIT         = "count_split"
         private const val KEY_COMPRESS      = "count_compress"
         private const val KEY_ROTATE        = "count_rotate"
+        private const val KEY_NUMBER_PAGES  = "count_number_pages"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
         private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
 
@@ -52,6 +53,7 @@ class DailyLimitManager @Inject constructor(
                 .putInt(KEY_SPLIT,          0)
                 .putInt(KEY_COMPRESS,       0)
                 .putInt(KEY_ROTATE,         0)
+                .putInt(KEY_NUMBER_PAGES,   0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
                 .putInt(KEY_EXTRA_PDF_TOOLS, 0)
                 .apply()
@@ -134,10 +136,11 @@ class DailyLimitManager @Inject constructor(
     }
 
     private fun getPdfToolKey(toolKey: String): String = when (toolKey) {
-        "MERGE"    -> KEY_MERGE
-        "SPLIT"    -> KEY_SPLIT
-        "COMPRESS" -> KEY_COMPRESS
-        "ROTATE"   -> KEY_ROTATE
-        else       -> KEY_CONVERSIONS
+        "MERGE"         -> KEY_MERGE
+        "SPLIT"         -> KEY_SPLIT
+        "COMPRESS"      -> KEY_COMPRESS
+        "ROTATE"        -> KEY_ROTATE
+        "NUMBER_PAGES"  -> KEY_NUMBER_PAGES
+        else            -> KEY_CONVERSIONS
     }
 }

@@ -9,8 +9,9 @@ cada página a imagen, destruyendo el texto seleccionable); "Dividir no
 funciona" de la QA de mayo confirmado como **obsoleto** mediante tests reales
 sobre PDFs generados con iText7; 8 tests unitarios nuevos, todos en verde.
 **i18n de las 4 pantallas completado 2026-08-28 (ver §9)** — ya no queda
-texto en español fijo en este módulo. Pendiente: todas las funcionalidades
-nuevas listadas en §2 como backlog, y selección de archivo desde la
+texto en español fijo en este módulo. **RF-PDF-06 (Numerar páginas)
+implementado 2026-08-28, ver §10** — primera funcionalidad nueva del
+backlog. Pendiente: RF-PDF-07 a RF-PDF-15, y selección de archivo desde la
 Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
@@ -25,7 +26,9 @@ el requerimiento #3 original que todavía no existe:
 2. **Dividir** — extraer un rango de páginas a un PDF nuevo.
 3. **Comprimir** — reducir el tamaño del archivo.
 4. **Rotar** — rotar todas las páginas 90°/180°/270°.
-5. *(Backlog, no implementado)* numerar páginas, marca de agua, reordenar/eliminar
+5. **Numerar páginas** — pie de página con formato configurable (número solo,
+   número/total, o "Página X de N").
+6. *(Backlog, no implementado)* marca de agua, reordenar/eliminar
    páginas individuales, recortar, editar contenido, firma digital, formularios,
    comparar dos PDFs, censurar contenido, OCR avanzado.
 
@@ -39,9 +42,9 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-03** El sistema debe permitir comprimir un PDF con un nivel de calidad seleccionable (20–100), informando el tamaño antes/después y el porcentaje de reducción.
 - **RF-PDF-04** El sistema debe permitir rotar todas las páginas de un PDF 90°, 180° o 270°, conservando el contenido original (texto/vectores).
 - **RF-PDF-05** Tras cualquier operación exitosa, el sistema debe mostrar el nombre y tamaño del archivo resultante, y ofrecer guardarlo en Descargas o compartirlo directamente.
+- **RF-PDF-06** Numerar páginas (pie de página con número, formato configurable). **✅ Implementado 2026-08-28, ver §10.**
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-06** Numerar páginas (pie de página con número, formato configurable).
 - **RF-PDF-07** Marca de agua de texto sobre todas las páginas.
 - **RF-PDF-08** Reordenar y/o eliminar páginas individuales (vista de miniaturas arrastrable).
 - **RF-PDF-09** Recortar (crop) márgenes de página.
@@ -52,8 +55,8 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-14** Censurar (redactar) contenido sensible de forma irreversible.
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
-Prioridad sugerida dentro del backlog (esfuerzo vs. valor percibido):
-**alta** → RF-PDF-06, RF-PDF-07, RF-PDF-08 · **media** → RF-PDF-13, RF-PDF-14 ·
+Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido):
+**alta** → RF-PDF-07, RF-PDF-08 · **media** → RF-PDF-13, RF-PDF-14 ·
 **baja/futuro** → RF-PDF-09, RF-PDF-10, RF-PDF-11, RF-PDF-12, RF-PDF-15
 (requieren más superficie de UI o licenciamiento adicional de iText7 para
 firma/formularios avanzados).
@@ -62,8 +65,8 @@ firma/formularios avanzados).
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir y Rotar deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido hoy** para las 3 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido hoy** en las 4 herramientas (antes solo Unir y Rotar lo tenían).
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar y Numerar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 4 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas escribe el pie de página como texto real, no como imagen superpuesta, desde su implementación inicial). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 5 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -116,12 +119,15 @@ firma/formularios avanzados).
 
 *(Corrige deuda técnica: la versión anterior rasterizaba cada página y aplicaba la rotación con una matriz manual sobre el bitmap; ahora usa `PdfPage.setRotation()`, el metadato estándar de PDF que cualquier lector respeta de forma nativa.)*
 
-### HU-PDF-05 — Numerar páginas *(backlog, no implementado)*
+### HU-PDF-05 — Numerar páginas
+*(Implementado 2026-08-28 — ver §10.)*
+
 **Como** usuario que va a imprimir o distribuir un PDF largo,
 **quiero** agregar numeración automática,
 **para** que sea fácil referenciar páginas específicas.
 
 - **AC1** Dado que activo "Numerar páginas", cuando confirmo, entonces cada página del resultado muestra su número en el pie, en el formato "Página X de N".
+- **AC2 (ampliado, no pedido explícitamente por la HU original pero implementado como "formato configurable" de RF-PDF-06)** Dado que el formato de numeración es configurable, cuando elijo "Número" o "Núm. / Total" en vez del formato por defecto, entonces el pie de página usa ese formato en las N páginas.
 
 ### HU-PDF-06 — Marca de agua *(backlog, no implementado)*
 **Como** usuario que comparte un borrador o documento confidencial,
@@ -143,7 +149,7 @@ firma/formularios avanzados).
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 4 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 5 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -157,7 +163,7 @@ firma/formularios avanzados).
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). El resto → RF-PDF-06 a RF-PDF-15 (backlog, §2). | Backlog documentado, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). El resto → RF-PDF-07 a RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -169,6 +175,7 @@ firma/formularios avanzados).
 | 2 | `MergePdfUseCaseTest` — unir 2 PDFs suma páginas de ambos, menos de 2 PDFs → Error. | ✅ 2 tests, en verde |
 | 3 | `RotatePdfUseCaseTest` — 90° se escribe en todas las páginas, rotación acumulada sobre una página ya rotada (180°+270°=90°). | ✅ 2 tests, en verde |
 | 4 | `CompressPdfUseCase` — no cubierto (usa `android.graphics.pdf.PdfRenderer`, requiere Robolectric/instrumentación; mismo límite que ya aplicaba a Compress y a la vista previa de Rotate). | Pendiente |
+| 5 | `NumberPagesUseCaseTest` — cada uno de los 3 formatos escribe el texto correcto en cada página (verificado extrayendo el texto real del PDF de salida con `PdfTextExtractor`, no solo el conteo de páginas), el total de páginas se conserva, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -251,3 +258,81 @@ estaba conectado a `stringResource()` desde antes — el resto no lo estaba.
   `remember { }` — corregido resolviendo los `stringResource()` fuera del
   `remember` (no puede llamarse un `@Composable` dentro de
   `@DisallowComposableCalls`) y empaquetando los valores ya resueltos.
+
+---
+
+## 10. RF-PDF-06/HU-PDF-05 — Numerar páginas (2026-08-28)
+
+Primera funcionalidad nueva del backlog implementada (prioridad "alta"
+sugerida en §2). Sigue exactamente el patrón arquitectónico ya establecido
+por las 4 herramientas existentes — nueva entrada en el menú, nuevo use
+case con su `data class *Messages`, nueva pantalla, todo en español/i18n
+desde el día uno (no se repitió la deuda de i18n que tuvieron las 4
+herramientas originales).
+
+- **`NumberPagesUseCase.kt`** (nuevo) — escribe el número de página en el
+  pie de cada página vía iText7 (`PdfCanvas`/`layout.Canvas.showTextAligned`,
+  fuente Helvetica, centrado), **no rasteriza** (RNF-PDF-01): el contenido
+  original de cada página queda intacto y el número queda como texto real,
+  seleccionable y buscable. Formato configurable vía `PageNumberFormat`
+  (enum `NUMBER_ONLY`/`NUMBER_OF_TOTAL`/`PAGE_OF_TOTAL`, por defecto
+  `PAGE_OF_TOTAL` = "Página X de N" según AC1). El texto real de
+  "Página X de N" respeta el idioma de la app (`pageOfTotalTemplate` en
+  `NumberPagesMessages`, resuelto vía `stringResource()`) — un PDF numerado
+  con la app en ruso lleva "Страница X из N" en el pie, no español fijo.
+- **`NumberPagesScreen.kt`** (nuevo) — selector de PDF, tarjeta de formato
+  con 3 chips (`FilterChip`, mismo patrón que los ángulos de Rotar) y texto
+  de ejemplo que cambia según el formato elegido. Sin vista previa en vivo
+  (a diferencia de Rotar): requeriría duplicar la lógica de renderizado del
+  use case solo para previsualizar, y no lo pide el AC — se prefirió una
+  tarjeta de ejemplo estática, consistente con la simplicidad de
+  Dividir/Comprimir.
+- **`PdfTool.NUMBER_PAGES`** (nuevo valor de enum), wireado en
+  `PdfToolsViewModel` (`pageNumberFormat` en `PdfToolsUiState`,
+  `onPageNumberFormatChange()`, rama nueva en `execute()`) y
+  `PdfToolsScreen.kt` (nueva entrada de menú con ícono
+  `Icons.Rounded.FormatListNumbered` y color `IndigoAccent`, quinto color
+  distinto de los 4 ya usados por las otras herramientas).
+- **Hallazgo real encontrado y corregido antes de shippear:**
+  `DailyLimitManager.getPdfToolKey()` mapea el nombre de cada herramienta a
+  su propia clave de contador en `SharedPreferences`; sin agregar un `case`
+  para `"NUMBER_PAGES"`, habría caído en la rama `else -> KEY_CONVERSIONS`
+  — usar "Numerar páginas" habría consumido el límite diario de
+  conversiones del Conversor en vez de tener su propio contador
+  independiente (mismo tipo de bug de "cae en el `else` equivocado" que
+  otras herramientas PDF ya tienen resuelto con su propio `KEY_*`). Se
+  agregó `KEY_NUMBER_PAGES` y su `case`, más un test de regresión en
+  `DailyLimitManagerTest` que fija que "Numerar páginas" no comparte
+  contador con conversiones ni con otra herramienta PDF.
+- **Hallazgo de UI encontrado en el dispositivo real:** el chip de formato
+  "Página X de N" se veía cortado ("Página X") en la captura del ícono de
+  check al quedar seleccionado — el ícono le resta ancho disponible al
+  texto dentro del mismo tercio de fila que los otros dos chips más
+  cortos. Corregido acortando la etiqueta del chip a "Página X" en los 5
+  idiomas (el texto completo con el total sigue apareciendo en la línea de
+  ejemplo debajo, "Ejemplo: Página 3 de 10") y reduciendo el estilo
+  tipográfico del chip a `labelSmall` como margen de seguridad adicional
+  para los idiomas más largos (ruso).
+- **5 tests unitarios nuevos** (`NumberPagesUseCaseTest`) — verifican el
+  texto real escrito en cada página con `PdfTextExtractor` para los 3
+  formatos (no solo que el resultado sea `Success`), que el total de
+  páginas se conserva, y que un archivo no-PDF devuelve `Error`.
+- **detekt:** el archivo nuevo introdujo hallazgos reales
+  (`LongMethod` en la pantalla, `WildcardImport` x3) que si se corrigieron
+  de verdad (se extrajeron `NumberPagesSelectZone`/`NumberPagesFormatCard`
+  como composables privados, imports explícitos en vez de `*`) — y
+  hallazgos de boilerplate ya aceptado en las 4 herramientas hermanas
+  (`copyUriToCache` con `NestedBlockDepth`/`ReturnCount`, `catch (e:
+  Exception)` genérico) que se añadieron al baseline (`config/detekt/
+  baseline.xml`) a mano, con las 3 líneas nuevas exactas — **no** con
+  `./gradlew detektBaseline` (que regenera el archivo completo y arrastra
+  drift de sesiones anteriores no relacionado con este cambio).
+- **Verificado end-to-end en el dispositivo real (app en español):** PDF de
+  3 páginas real subido vía `adb push` → seleccionado desde el selector del
+  sistema → las 3 páginas numeradas con el formato por defecto → mensaje de
+  éxito "PDF numerado correctamente — 3 páginas" → guardado en Descargas →
+  archivo descargado y verificado directamente: cada una de las 3 páginas
+  lleva "Página 1 de 3"/"Página 2 de 3"/"Página 3 de 3" en el pie, con el
+  contenido original de cada página ("Page one"/"Page two"/"Page three")
+  intacto.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

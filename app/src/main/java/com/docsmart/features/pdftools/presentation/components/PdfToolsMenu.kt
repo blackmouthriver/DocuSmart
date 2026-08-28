@@ -50,6 +50,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_rotate,
         descriptionRes = R.string.pdf_rotate_desc,
         color = WarningAmber
+    ),
+    PdfToolItem(
+        tool = PdfTool.NUMBER_PAGES,
+        icon = Icons.Rounded.FormatListNumbered,
+        titleRes = R.string.pdf_number_pages,
+        descriptionRes = R.string.pdf_number_pages_desc,
+        color = IndigoAccent
     )
 )
 

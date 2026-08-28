@@ -39,6 +39,7 @@
     <string name="pdf_split">Разделить PDF</string>
     <string name="pdf_compress">Сжать PDF</string>
     <string name="pdf_rotate">Повернуть PDF</string>
+    <string name="pdf_number_pages">Нумерация страниц</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -129,6 +130,7 @@
     <string name="pdf_split_desc">Извлекает страницы из PDF</string>
     <string name="pdf_compress_desc">Уменьшает размер файла</string>
     <string name="pdf_rotate_desc">Поворачивает страницы документа</string>
+    <string name="pdf_number_pages_desc">Добавляет нумерацию в нижнем колонтитуле</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -224,6 +226,25 @@
     <string name="pdf_rotate_generate_error">Ошибка при создании повёрнутого PDF.</string>
     <string name="pdf_rotate_success">PDF успешно повёрнут на %1$d°</string>
     <string name="pdf_rotate_error">Ошибка при повороте PDF: %1$s</string>
+
+    <!-- ── Нумерация страниц ── -->
+    <string name="pdf_number_pages_subtitle">Добавляет номер страницы в нижний колонтитул каждой страницы</string>
+    <string name="pdf_number_pages_ready">PDF готов к нумерации</string>
+    <string name="pdf_number_pages_format_title">Формат нумерации</string>
+    <string name="pdf_number_pages_format_number_only">Номер</string>
+    <string name="pdf_number_pages_format_number_of_total">№ / Всего</string>
+    <string name="pdf_number_pages_format_page_of_total">Страница X</string>
+    <string name="pdf_number_pages_example_number_only">Пример: 3</string>
+    <string name="pdf_number_pages_example_number_of_total">Пример: 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">Пример: Страница 3 из 10</string>
+    <string name="pdf_number_pages_progress">Нумерация страниц…</string>
+    <string name="pdf_number_pages_execute">Нумеровать страницы</string>
+    <string name="pdf_number_pages_read_error">Не удалось прочитать PDF. Убедитесь, что это корректный файл.</string>
+    <string name="pdf_number_pages_no_pages">В PDF нет страниц.</string>
+    <string name="pdf_number_pages_generate_error">Ошибка при создании нумерованного PDF.</string>
+    <string name="pdf_number_pages_success">PDF успешно пронумерован — %1$d страниц</string>
+    <string name="pdf_number_pages_error">Ошибка при нумерации страниц: %1$s</string>
+    <string name="pdf_number_pages_footer_template">Страница %1$d из %2$d</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

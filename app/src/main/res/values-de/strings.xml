@@ -39,6 +39,7 @@
     <string name="pdf_split">PDF teilen</string>
     <string name="pdf_compress">PDF komprimieren</string>
     <string name="pdf_rotate">PDF drehen</string>
+    <string name="pdf_number_pages">Seiten nummerieren</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -129,6 +130,7 @@
     <string name="pdf_split_desc">Extrahiert Seiten aus einem PDF</string>
     <string name="pdf_compress_desc">Verringert die Dateigröße</string>
     <string name="pdf_rotate_desc">Dreht die Seiten des Dokuments</string>
+    <string name="pdf_number_pages_desc">Fügt Seitenzahlen in der Fußzeile hinzu</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -224,6 +226,25 @@
     <string name="pdf_rotate_generate_error">Fehler beim Erstellen des gedrehten PDFs.</string>
     <string name="pdf_rotate_success">PDF erfolgreich um %1$d° gedreht</string>
     <string name="pdf_rotate_error">Fehler beim Drehen des PDFs: %1$s</string>
+
+    <!-- ── Seiten nummerieren ── -->
+    <string name="pdf_number_pages_subtitle">Fügt die Seitenzahl in der Fußzeile jeder Seite hinzu</string>
+    <string name="pdf_number_pages_ready">PDF bereit zur Nummerierung</string>
+    <string name="pdf_number_pages_format_title">Nummerierungsformat</string>
+    <string name="pdf_number_pages_format_number_only">Zahl</string>
+    <string name="pdf_number_pages_format_number_of_total">Nr. / Gesamt</string>
+    <string name="pdf_number_pages_format_page_of_total">Seite X</string>
+    <string name="pdf_number_pages_example_number_only">Beispiel: 3</string>
+    <string name="pdf_number_pages_example_number_of_total">Beispiel: 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">Beispiel: Seite 3 von 10</string>
+    <string name="pdf_number_pages_progress">Seiten werden nummeriert…</string>
+    <string name="pdf_number_pages_execute">Seiten nummerieren</string>
+    <string name="pdf_number_pages_read_error">Das PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_number_pages_no_pages">Das PDF hat keine Seiten.</string>
+    <string name="pdf_number_pages_generate_error">Fehler beim Erstellen des nummerierten PDFs.</string>
+    <string name="pdf_number_pages_success">PDF erfolgreich nummeriert — %1$d Seiten</string>
+    <string name="pdf_number_pages_error">Fehler beim Nummerieren der Seiten: %1$s</string>
+    <string name="pdf_number_pages_footer_template">Seite %1$d von %2$d</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 
