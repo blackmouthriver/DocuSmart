@@ -26,6 +26,7 @@ import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
+import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
@@ -36,6 +37,7 @@ import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
+import com.docsmart.features.pdftools.presentation.components.RedactPdfScreen
 import com.docsmart.features.pdftools.presentation.components.ReorderPagesScreen
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
@@ -112,6 +114,12 @@ fun PdfToolsScreen(
     val compareReportPageOnlyInB    = stringResource(R.string.pdf_compare_report_page_only_in_b)
     val compareReportOnlyInALine     = stringResource(R.string.pdf_compare_report_only_in_a_line)
     val compareReportOnlyInBLine      = stringResource(R.string.pdf_compare_report_only_in_b_line)
+    val redactEmptyRectsError = stringResource(R.string.pdf_redact_empty_rects_error)
+    val redactReadError       = stringResource(R.string.pdf_redact_read_error)
+    val redactNoPages         = stringResource(R.string.pdf_redact_no_pages)
+    val redactGenerateError   = stringResource(R.string.pdf_redact_generate_error)
+    val redactSuccess         = stringResource(R.string.pdf_redact_success)
+    val redactGenericError    = stringResource(R.string.pdf_redact_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -181,6 +189,14 @@ fun PdfToolsScreen(
                 reportPageOnlyInB  = compareReportPageOnlyInB,
                 reportOnlyInALine  = compareReportOnlyInALine,
                 reportOnlyInBLine  = compareReportOnlyInBLine
+            ),
+            redact = RedactPdfMessages(
+                emptyRectsError = redactEmptyRectsError,
+                readError       = redactReadError,
+                noPages         = redactNoPages,
+                generateError   = redactGenerateError,
+                success         = redactSuccess,
+                genericError    = redactGenericError
             )
         )
     }
@@ -466,6 +482,32 @@ fun PdfToolsScreen(
                                     onSelectPdfB = {
                                         comparePdfBLauncher.launch(MIME_PDF)
                                     },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.REDACT -> RedactPdfScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    currentPage = uiState.redactionCurrentPage,
+                                    totalPages = uiState.redactionTotalPages,
+                                    rects = uiState.redactionRects,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onTotalPagesLoaded = {
+                                        viewModel.onRedactionTotalPagesLoaded(it)
+                                    },
+                                    onPageChange = {
+                                        viewModel.onRedactionPageChange(it)
+                                    },
+                                    onAddRect = {
+                                        viewModel.onAddRedactionRect(it)
+                                    },
+                                    onUndoLastRect = { viewModel.onUndoLastRedactionRect() },
+                                    onClearRects = { viewModel.onClearRedactionRects() },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 else -> {}

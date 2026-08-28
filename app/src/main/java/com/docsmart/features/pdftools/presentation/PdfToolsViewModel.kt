@@ -23,6 +23,9 @@ import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesUseCase
 import com.docsmart.features.pdftools.domain.usecase.PageNumberFormat
+import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.RedactPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.RedactionRect
 import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.ReorderPagesUseCase
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
@@ -43,7 +46,7 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT
 }
 
 data class PdfToolMessages(
@@ -54,7 +57,8 @@ data class PdfToolMessages(
     val numberPages  : NumberPagesMessages,
     val watermark    : WatermarkMessages,
     val reorderPages : ReorderPagesMessages,
-    val compare      : ComparePdfMessages
+    val compare      : ComparePdfMessages,
+    val redact       : RedactPdfMessages
 )
 
 data class PdfToolsUiState(
@@ -74,6 +78,9 @@ data class PdfToolsUiState(
     val pageOrder: List<Int> = emptyList(),
     val comparePdfA: Uri? = null,
     val comparePdfB: Uri? = null,
+    val redactionRects: List<RedactionRect> = emptyList(),
+    val redactionCurrentPage: Int = 1,
+    val redactionTotalPages: Int = 1,
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -90,6 +97,7 @@ class PdfToolsViewModel @Inject constructor(
     private val watermarkPdf: WatermarkPdfUseCase,
     private val reorderPagesPdf: ReorderPagesUseCase,
     private val comparePdf: ComparePdfUseCase,
+    private val redactPdf: RedactPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -139,7 +147,10 @@ class PdfToolsViewModel @Inject constructor(
                 errorMessage = null,
                 savedToDownloads = false,
                 outputFileName = "",
-                pageOrder = emptyList()
+                pageOrder = emptyList(),
+                redactionRects = emptyList(),
+                redactionCurrentPage = 1,
+                redactionTotalPages = 1
             )
         }
     }
@@ -232,6 +243,26 @@ class PdfToolsViewModel @Inject constructor(
                 savedToDownloads = false, outputFileName = ""
             )
         }
+    }
+
+    fun onRedactionTotalPagesLoaded(total: Int) {
+        _uiState.update { it.copy(redactionTotalPages = total.coerceAtLeast(1)) }
+    }
+
+    fun onRedactionPageChange(page: Int) {
+        _uiState.update { it.copy(redactionCurrentPage = page.coerceIn(1, it.redactionTotalPages)) }
+    }
+
+    fun onAddRedactionRect(rect: RedactionRect) {
+        _uiState.update { it.copy(redactionRects = it.redactionRects + rect) }
+    }
+
+    fun onUndoLastRedactionRect() {
+        _uiState.update { it.copy(redactionRects = it.redactionRects.dropLast(1)) }
+    }
+
+    fun onClearRedactionRects() {
+        _uiState.update { it.copy(redactionRects = emptyList()) }
     }
 
     fun execute(messages: PdfToolMessages) {
@@ -341,6 +372,12 @@ class PdfToolsViewModel @Inject constructor(
                 null
             }
         }
+        PdfTool.REDACT -> redactPdf(
+            pdfUri = state.selectedPdfs.first(),
+            rects = state.redactionRects,
+            outputFileName = customName,
+            messages = messages.redact
+        )
         PdfTool.NONE -> null
     }
 

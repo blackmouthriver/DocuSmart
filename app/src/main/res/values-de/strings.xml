@@ -43,6 +43,7 @@
     <string name="pdf_watermark">Wasserzeichen</string>
     <string name="pdf_reorder_pages">Seiten neu anordnen</string>
     <string name="pdf_compare">PDFs vergleichen</string>
+    <string name="pdf_redact">Inhalt schwärzen</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -137,6 +138,7 @@
     <string name="pdf_watermark_desc">Legt einen Textwasserzeichen über das Dokument</string>
     <string name="pdf_reorder_pages_desc">Einzelne Seiten verschieben oder löschen</string>
     <string name="pdf_compare_desc">Findet die Unterschiede zwischen zwei Versionen</string>
+    <string name="pdf_redact_desc">Entfernt sensiblen Text und Bilder dauerhaft</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -300,6 +302,27 @@
     <string name="pdf_compare_report_page_only_in_b">Diese Seite existiert nur in Dokument B</string>
     <string name="pdf_compare_report_only_in_a_line">Nur in A: %1$s</string>
     <string name="pdf_compare_report_only_in_b_line">Nur in B: %1$s</string>
+
+    <!-- ── Censurar contenido ── -->
+    <string name="pdf_redact_subtitle">Zeichne Rechtecke über die Bereiche, die du schwärzen möchtest</string>
+    <string name="pdf_redact_ready">PDF bereit zum Schwärzen</string>
+    <string name="pdf_redact_page_indicator">Seite %1$d von %2$d</string>
+    <string name="pdf_redact_prev_page">Vorherige Seite</string>
+    <string name="pdf_redact_next_page">Nächste Seite</string>
+    <string name="pdf_redact_loading_preview">Vorschau wird geladen…</string>
+    <string name="pdf_redact_preview_desc">Seitenvorschau</string>
+    <string name="pdf_redact_draw_hint">Ziehe über die Vorschau, um einen zu schwärzenden Bereich zu markieren</string>
+    <string name="pdf_redact_zones_marked">%1$d Bereiche markiert</string>
+    <string name="pdf_redact_undo">Rückgängig</string>
+    <string name="pdf_redact_clear_all">Alles löschen</string>
+    <string name="pdf_redact_execute">PDF schwärzen</string>
+    <string name="pdf_redact_progress">Inhalt wird geschwärzt…</string>
+    <string name="pdf_redact_empty_rects_error">Markiere mindestens einen Bereich zum Schwärzen</string>
+    <string name="pdf_redact_read_error">PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_redact_no_pages">Das PDF hat keine Seiten.</string>
+    <string name="pdf_redact_generate_error">Fehler beim Erstellen des geschwärzten PDFs.</string>
+    <string name="pdf_redact_success">%1$d Bereiche erfolgreich geschwärzt</string>
+    <string name="pdf_redact_error">Fehler beim Schwärzen des PDFs: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

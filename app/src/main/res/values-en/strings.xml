@@ -43,6 +43,7 @@
     <string name="pdf_watermark">Watermark</string>
     <string name="pdf_reorder_pages">Reorder pages</string>
     <string name="pdf_compare">Compare PDFs</string>
+    <string name="pdf_redact">Censor content</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -137,6 +138,7 @@
     <string name="pdf_watermark_desc">Overlay a text watermark on the document</string>
     <string name="pdf_reorder_pages_desc">Drag or delete individual pages</string>
     <string name="pdf_compare_desc">Find the differences between two versions</string>
+    <string name="pdf_redact_desc">Permanently remove sensitive text and images</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -300,6 +302,27 @@
     <string name="pdf_compare_report_page_only_in_b">This page only exists in Document B</string>
     <string name="pdf_compare_report_only_in_a_line">Only in A: %1$s</string>
     <string name="pdf_compare_report_only_in_b_line">Only in B: %1$s</string>
+
+    <!-- ── Censurar contenido ── -->
+    <string name="pdf_redact_subtitle">Draw rectangles over the areas you want to censor</string>
+    <string name="pdf_redact_ready">PDF ready to censor</string>
+    <string name="pdf_redact_page_indicator">Page %1$d of %2$d</string>
+    <string name="pdf_redact_prev_page">Previous page</string>
+    <string name="pdf_redact_next_page">Next page</string>
+    <string name="pdf_redact_loading_preview">Loading preview…</string>
+    <string name="pdf_redact_preview_desc">Page preview</string>
+    <string name="pdf_redact_draw_hint">Drag over the preview to mark an area to censor</string>
+    <string name="pdf_redact_zones_marked">%1$d zones marked</string>
+    <string name="pdf_redact_undo">Undo</string>
+    <string name="pdf_redact_clear_all">Clear all</string>
+    <string name="pdf_redact_execute">Censor PDF</string>
+    <string name="pdf_redact_progress">Censoring content…</string>
+    <string name="pdf_redact_empty_rects_error">Mark at least one area to censor</string>
+    <string name="pdf_redact_read_error">Could not read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_redact_no_pages">The PDF has no pages.</string>
+    <string name="pdf_redact_generate_error">Error generating the censored PDF.</string>
+    <string name="pdf_redact_success">%1$d zones successfully censored</string>
+    <string name="pdf_redact_error">Error censoring PDF: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->

@@ -248,6 +248,11 @@ dependencies {
     implementation("com.itextpdf:itext7-core:7.2.5") {
         exclude(group = "org.bouncycastle")
     }
+    // Módulo pdfCleanup — RF-PDF-14 (censurar contenido de forma irreversible):
+    // a diferencia de dibujar un rectángulo negro con PdfCanvas (que deja el
+    // texto/vector original intacto y extraíble debajo), este módulo elimina
+    // de verdad el contenido del content stream dentro de la región indicada.
+    implementation("com.itextpdf:cleanup:3.0.2")
     implementation("org.bouncycastle:bcprov-jdk15on:1.70")
     implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
 
