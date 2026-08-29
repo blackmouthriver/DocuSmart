@@ -37,9 +37,10 @@ producían el archivo equivocado o fallaban al ejecutarse.
 - **RF-CONV-06** Cada conversión debe producir un archivo con la extensión y el contenido correspondientes al formato de salida elegido — no el de otra conversión.
 - **RF-CONV-07** ✅ El sistema debe soportar `.doc` legado (formato binario OLE2, pre-2007) en las 3 conversiones de Word (a PDF, texto y HTML), no solo `.docx` — ver §4 HU-CONV-05.
 - **RF-CONV-08** ✅ El sistema debe permitir seleccionar varios archivos a la vez para una misma conversión y producir una salida independiente por cada uno ("N archivos → N salidas") — ver §4 HU-CONV-06.
+- **RF-CONV-09** ✅ PDF → Word debe preservar negrita, cursiva, tamaño de fuente y párrafos reales (no solo texto plano línea por línea) — ver §4 HU-CONV-07.
 
 ### Backlog — no implementado
-- **RF-CONV-09** PDF → Word que preserve formato/diseño (hoy `PdfToWordUseCase` extrae solo texto plano, sin tablas ni estilos).
+*(vacío — no quedan RF pendientes en este módulo)*
 
 ---
 
@@ -52,6 +53,7 @@ producían el archivo equivocado o fallaban al ejecutarse.
 - **RNF-CONV-05 (detección de encabezado en `.doc` depende del idioma del documento):** a diferencia de `.docx` (donde `w:styleId` es un identificador interno siempre en inglés, sin importar el idioma de la UI de Word), en `.doc` (HWPF) el nombre de estilo que expone la API pública de Apache POI (`StyleDescription.name`) es el nombre **visible**, guardado en el idioma con el que se creó el documento — un "Heading 1" creado con Word en español se llama "Título 1". El formato binario sí guarda un identificador numérico independiente del idioma (`sti`), pero POI no lo expone públicamente. `WordToHtmlUseCase` (que es la única de las 3 conversiones de `.doc` que distingue encabezados) reconoce los nombres de encabezado/título en los 5 idiomas que la app ya soporta (es/en/de/pt/ru — ver `isHeadingStyleName()` en `WordFormatDetection.kt`); un `.doc` creado con Word en otro idioma no tendrá sus encabezados detectados y esos párrafos se renderizan como texto normal — degradado, no roto.
 - **RNF-CONV-06 (el lote cuenta contra el límite diario por archivo, no por lote):** convertir un lote de 3 archivos consume 3 conversiones del límite diario de usuarios free (`DailyLimitManager`, 5/día), no 1 — de lo contrario un "lote" sería una forma trivial de saltarse el límite. Si el límite se alcanza a mitad de un lote, los archivos restantes se marcan como `Error` (sin intentar convertirlos) en vez de detener todo el lote o dejarlo a medias sin explicación.
 - **RNF-CONV-07 (el lote no aplica a IMAGE_TO_PDF):** IMAGE_TO_PDF con varios archivos sigue siendo "fusionar N imágenes en UN solo PDF" (comportamiento preexistente, muy usado) — el modo lote ("N archivos → N salidas") solo aplica al resto de conversiones cuando hay más de un archivo elegido. Mismo picker multi-selección para ambos casos; la diferencia es de comportamiento en `ConverterViewModel.convert()`, no de UI de selección.
+- **RNF-CONV-08 (PDF→Word no reconstruye el layout visual, ni la detección de párrafos es exacta):** `PdfToWordUseCase` preserva negrita/cursiva/tamaño de fuente por fragmento de texto real y separa párrafos según el espaciado vertical entre líneas — pero sigue sin reproducir imágenes embebidas, tablas, columnas ni la posición exacta del texto (mismo alcance que RNF-CONV-02 para el resto del módulo, aplicado ahora con más fidelidad de estilo). La detección de párrafos es una heurística (gap vertical > 1.6x el tamaño de fuente = párrafo nuevo) verificada contra un PDF real exportado desde Word: acertó el corte entre una oración con negrita inline y un párrafo completo en cursiva, pero no siempre detecta el límite entre dos párrafos consecutivos con interlineado normal si el segundo usa una fuente mucho más grande (el gap real termina siendo menor que el umbral calculado con el tamaño de fuente más grande) — en ese caso el texto queda unido en el mismo párrafo de Word en vez de separado, degradado pero no roto.
 
 ---
 
@@ -239,6 +241,70 @@ original preservado), contador "Conversiones hoy: 2 / 5" (cada archivo
 del lote contó individualmente), y "Guardar todos en Descargas" guardando
 ambos `.txt` reales verificados por `adb pull`.
 
+### HU-CONV-07 — PDF → Word preserva negrita, cursiva, tamaño y párrafos reales (RF-CONV-09)
+**Como** usuario que convierte un PDF a Word para seguir editándolo,
+**quiero** que conserve al menos el formato básico del texto (negrita,
+cursiva, tamaño de fuente) y los párrafos reales del documento,
+**para** no tener que re-aplicar el formato manualmente sobre un bloque de
+texto plano.
+
+- **AC1** Dado que convierto un PDF con una palabra en negrita en medio de
+  una oración, cuando abro el `.docx` resultante, entonces esa palabra
+  aparece en negrita — no todo el párrafo plano.
+- **AC2** Dado que convierto un PDF con un párrafo completo en cursiva,
+  cuando abro el `.docx`, entonces ese párrafo aparece en cursiva.
+- **AC3** Dado que convierto un PDF con texto en un tamaño de fuente
+  distinto al resto (ej. un título más grande), cuando abro el `.docx`,
+  entonces ese texto conserva un tamaño de fuente proporcionalmente mayor.
+- **AC4** Dado que el PDF tiene líneas que se ajustan dentro del mismo
+  párrafo (espaciado normal entre líneas) y luego un salto mayor hacia el
+  siguiente párrafo, cuando se convierte, entonces las líneas ajustadas
+  quedan en un solo párrafo de Word y el salto mayor genera un párrafo
+  nuevo — no un párrafo por cada línea del PDF.
+
+**Decisión de diseño — de texto plano a fragmentos con estilo real:** la
+versión anterior extraía todo el texto de la página con
+`PdfTextExtractor.getTextFromPage()` (una sola cadena, sin información de
+estilo) y lo volcaba en un `.docx` mínimo escrito a mano por ZIP (un
+`<w:p>` por línea, sin `<w:rPr>`). Se reemplazó por un recorrido con
+`PdfCanvasProcessor` + un `IEventListener` propio que escucha
+`EventType.RENDER_TEXT`: cada evento (`TextRenderInfo`) trae el fragmento
+de texto tal como el PDF lo dibujó (ya separado por el propio documento
+en los puntos donde cambia la fuente/estilo), su tamaño de fuente real y
+la fuente (`PdfFont.fontProgram.fontNames`, con `isBold()`/`isItalic()`
+basados en los flags `macStyle` de la fuente incrustada — con respaldo
+adicional buscando "bold"/"italic"/"oblique" en el nombre de la fuente
+para fuentes que no declaran esos flags correctamente). El `.docx` se
+genera con `XWPFDocument` (modelo de objetos real de Apache POI, con
+`XWPFRun.isBold/isItalic/fontSize` por fragmento) en vez del ZIP mínimo
+anterior — más robusto además de necesario para soportar formato por
+fragmento.
+
+**Decisión de diseño — párrafos por espaciado vertical real, no por línea
+de PDF:** un PDF no tiene el concepto de "párrafo" en su modelo de datos
+—cada línea es solo texto posicionado en coordenadas X/Y—, así que separar
+un párrafo por línea (como hacía la versión anterior) produce un párrafo
+nuevo por cada línea visual, incluso dentro de una misma oración que
+simplemente se ajustó al ancho de la página. Se implementó una heurística
+basada en la coordenada Y de la línea base de cada fragmento: un salto
+vertical mayor a 1.6x el tamaño de fuente del fragmento siguiente se
+interpreta como fin de párrafo (interlineado extra / línea en blanco); un
+salto menor es un simple ajuste de línea dentro del mismo párrafo lógico.
+Detalle de la limitación de esta heurística en RNF-CONV-08.
+
+**Verificado en dispositivo (2026-08-29) con un PDF real, no sintético:**
+se generó un PDF exportando directamente desde Microsoft Word
+(`formatted-sample.pdf`, vía automatización COM de PowerShell — mismo
+mecanismo que `legacy-sample.doc` de RF-CONV-07) con una oración con una
+palabra en negrita, un párrafo completo en cursiva y una línea en tamaño
+20pt. Convertido a Word en la app y verificado extrayendo el
+`word/document.xml` del `.docx` resultante: la palabra "negrita" es la
+única marcada `<w:b w:val="on"/>` dentro de su oración (el resto en
+`"off"`), el párrafo de cursiva completo tiene `<w:i w:val="on"/>` en
+todos sus fragmentos, y el texto de tamaño 20pt tiene `<w:sz w:val="40"/>`
+(unidades de medio punto) — formato real preservado por fragmento, no una
+etiqueta global por documento.
+
 ---
 
 ## 5. Bugs de QA a corregir (trazabilidad)
@@ -266,6 +332,7 @@ ambos `.txt` reales verificados por `adb pull`.
 | 5 | `WordToPdfUseCaseTest`, `WordToTextUseCaseTest`, `WordToHtmlUseCaseTest` — cada una agrega un caso con el `.doc` real, verificando que el contenido (título, párrafos, celdas) llega al archivo de salida sin romper el camino `.docx` existente. | ✅ en verde |
 | 6 | `PdfToTextUseCaseTest` (nuevo, no existía) — extrae texto real de un PDF generado con iText7, cuenta páginas correctamente, dos llamadas seguidas no interfieren entre sí, archivo no legible → Error. Cubre el bug real corregido en HU-CONV-06 (documento cerrado antes de leer `numberOfPages`). | ✅ 4 tests, en verde |
 | 7 | `ConverterViewModelBatchTest` (nuevo) — el lote produce un resultado por archivo (no fusión), IMAGE_TO_PDF con varios archivos sigue fusionando (regresión), nombres duplicados se desambiguan, corte por límite diario a mitad de lote. | ✅ 4 tests, en verde |
+| 8 | `PdfToWordUseCaseTest` (nuevo, no existía) — líneas con poco espacio quedan en el mismo párrafo y un salto grande crea uno nuevo (PDF armado con coordenadas Y controladas), negrita/cursiva/tamaño de fuente preservados por fragmento real, PDF sin texto → Error, archivo no legible → Error. | ✅ 4 tests, en verde |
 
 Los tests de Word/Excel generan documentos reales con Apache POI en memoria
 (no mocks del contenido) — esto es precisamente lo que hizo evidente el bug
