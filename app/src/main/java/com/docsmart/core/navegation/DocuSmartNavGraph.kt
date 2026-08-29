@@ -1,6 +1,11 @@
 package com.docsmart.core.navegation
 
 import android.net.Uri
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -41,9 +46,31 @@ fun DocuSmartNavGraph(
     themeManager   : ThemeManager,
     languageManager: LanguageManager
 ) {
+    // Antes no había ninguna transición configurada -- NavHost usaba el
+    // comportamiento por defecto de Navigation-Compose (un corte seco entre
+    // pantallas, sin animación deliberada). Se agregó una transición
+    // consistente tipo "shared axis" (deslizamiento horizontal + fundido) en
+    // las 4 direcciones de navegación, aplicada globalmente a las ~30
+    // pantallas del grafo sin tener que tocar cada `composable {}` una por
+    // una. Es puramente de movimiento -- no cambia ningún color ni estilo.
+    val transitionSpec = tween<Float>(280)
+    val slideSpec       = tween<androidx.compose.ui.unit.IntOffset>(280)
+
     NavHost(
-        navController    = navController,
-        startDestination = NavRoutes.SplashMouthBlack.route
+        navController      = navController,
+        startDestination   = NavRoutes.SplashMouthBlack.route,
+        enterTransition    = {
+            slideInHorizontally(slideSpec) { it / 4 } + fadeIn(transitionSpec)
+        },
+        exitTransition     = {
+            slideOutHorizontally(slideSpec) { -it / 4 } + fadeOut(transitionSpec)
+        },
+        popEnterTransition = {
+            slideInHorizontally(slideSpec) { -it / 4 } + fadeIn(transitionSpec)
+        },
+        popExitTransition  = {
+            slideOutHorizontally(slideSpec) { it / 4 } + fadeOut(transitionSpec)
+        }
     ) {
         splashMouthBlackComposable(navController)
         splashDocuSmartComposable(navController)
@@ -88,8 +115,17 @@ fun DocuSmartNavGraph(
         }
 
         // ── Study ─────────────────────────────────────────────────────────────
-        composable(NavRoutes.Study.route) {
-            StudyScreen(onBack = { navController.popBackStack() })
+        composable(
+            route = NavRoutes.Study.route,
+            arguments = listOf(navArgument("tab") {
+                type = NavType.IntType
+                defaultValue = 0
+            })
+        ) { backStackEntry ->
+            StudyScreen(
+                onBack     = { navController.popBackStack() },
+                initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
+            )
         }
 
         // ── QR Reader ─────────────────────────────────────────────────────────
@@ -172,10 +208,11 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
             onScan      = { navController.navigate(NavRoutes.Scanner.route) },
             onConvert   = { navController.navigate(NavRoutes.Converter.route) },
             onSecurity  = { navController.navigate(NavRoutes.Security.route) },
-            onStudy     = { navController.navigate(NavRoutes.Study.route) },
+            onStudy     = { tab -> navController.navigate(NavRoutes.Study.createRoute(tab)) },
             onSeeAll    = { navController.navigate(NavRoutes.Library.route) },
             onQrReader  = { navController.navigate(NavRoutes.QrReader.route) },
             onQrCreator = { navController.navigate(NavRoutes.QrCreator.route) },
+            onTrash     = { navController.navigate(NavRoutes.Trash.route) },
             onDocumentClick = { documentId ->
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
             }

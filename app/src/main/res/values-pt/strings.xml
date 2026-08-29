@@ -19,11 +19,28 @@
     <string name="home_img_pdf">Img→PDF</string>
     <string name="home_security">Segurança</string>
     <string name="home_study">Estudo</string>
+    <string name="home_recent">Recentes</string>
+    <string name="home_see_all">Ver todos</string>
+    <string name="home_no_recent_title">Nenhum documento recente</string>
+    <string name="home_no_recent_desc">Abra um arquivo para vê-lo aqui</string>
+    <string name="home_open_file_action">Abrir arquivo</string>
+    <string name="home_share_document">Compartilhar %1$s</string>
+    <string name="home_qr_read">Ler QR</string>
+    <string name="home_qr_create">Criar QR</string>
+    <string name="home_scanner_sheet_title">Scanner</string>
+    <string name="home_scanner_sheet_subtitle">Escolha uma opção</string>
+    <string name="home_scanner_option_scan_title">Digitalizar documento</string>
+    <string name="home_scanner_option_scan_subtitle">Captura automática com ML Kit</string>
+    <string name="home_scanner_option_qr_read_subtitle">Detecta URL, texto e mais</string>
 
     <!-- ── Biblioteca ─────────────────────────────── -->
     <string name="library_title">Biblioteca</string>
+    <string name="library_subtitle">Todos os seus documentos</string>
     <string name="library_search">Buscar na biblioteca…</string>
     <string name="library_documents">documentos</string>
+    <string name="library_tab_device">Dispositivo</string>
+    <string name="library_tab_app_files">Meus arquivos</string>
+    <string name="library_tab_file_count">%1$d arquivos</string>
 
     <!-- ── Conversor ────────────────────────────────── -->
     <string name="converter_title">Conversor</string>

@@ -19,11 +19,28 @@
     <string name="home_img_pdf">Изобр→PDF</string>
     <string name="home_security">Безопасность</string>
     <string name="home_study">Учёба</string>
+    <string name="home_recent">Недавние</string>
+    <string name="home_see_all">Смотреть все</string>
+    <string name="home_no_recent_title">Нет недавних документов</string>
+    <string name="home_no_recent_desc">Откройте файл, чтобы увидеть его здесь</string>
+    <string name="home_open_file_action">Открыть файл</string>
+    <string name="home_share_document">Поделиться %1$s</string>
+    <string name="home_qr_read">Считать QR</string>
+    <string name="home_qr_create">Создать QR</string>
+    <string name="home_scanner_sheet_title">Сканер</string>
+    <string name="home_scanner_sheet_subtitle">Выберите вариант</string>
+    <string name="home_scanner_option_scan_title">Сканировать документ</string>
+    <string name="home_scanner_option_scan_subtitle">Автоматический захват с ML Kit</string>
+    <string name="home_scanner_option_qr_read_subtitle">Распознаёт URL, текст и другое</string>
 
     <!-- ── Библиотека ─────────────────────────────── -->
     <string name="library_title">Библиотека</string>
+    <string name="library_subtitle">Все ваши документы</string>
     <string name="library_search">Поиск в библиотеке…</string>
     <string name="library_documents">документов</string>
+    <string name="library_tab_device">Устройство</string>
+    <string name="library_tab_app_files">Мои файлы</string>
+    <string name="library_tab_file_count">Файлов: %1$d</string>
 
     <!-- ── Конвертер ────────────────────────────────── -->
     <string name="converter_title">Конвертер</string>

@@ -35,9 +35,16 @@ cuanto el proyecto construyó `RegexBasedLocationExtractionStrategy`
 — ambas piezas se reutilizaron para dibujar el resaltado real sobre el
 bitmap ya renderizado, sin tocar `PdfRenderer`. Con esto se cierran las 3
 funcionalidades del backlog original de este módulo (RF-VIS-06/07/08).
+**Pasada de UI/UX pedida por el usuario, 2026-08-29, ver §15:** botón de
+papelera reubicado del banner azul de Biblioteca (donde quedaba "perdido")
+a junto a las pestañas Dispositivo/Mis archivos; accesos rápidos de Home
+ampliados de 4 a 9 (agregados Lectura/Notas/Pomodoro/Leer QR/Crear
+QR/Papelera); corregido que "Recientes"/"Ver todos" y otros textos de Home
+no cambiaban de idioma; transiciones de navegación agregadas a nivel global
+(`NavHost`).
 **Código relacionado:** `features/viewer/**`, `features/library/**`,
 `features/home/**`, `core/data/FavoritesRepository.kt`, `core/data/db/**`
-(nuevo).
+(nuevo), `core/navegation/DocuSmartNavGraph.kt`.
 
 ---
 
@@ -799,3 +806,89 @@ tienen test unitario propio (son composables de layout puro, sin lógica
 de parseo nueva que probar aparte de la ya cubierta indirectamente por la
 extracción de celdas/diapositivas existente). `testDebugUnitTest`/
 `detekt`/`lintDebug` en verde.
+
+---
+
+## 15. Pasada de UI/UX pedida por el usuario (2026-08-29)
+
+El usuario pidió, antes de continuar con más HU, una revisión visual de la
+app con 4 puntos concretos: auditoría de animaciones/transiciones,
+ampliar los accesos rápidos de Home, reubicar un botón de papelera que
+quedaba "perdido" en Biblioteca, y corregir que algunos textos de Home no
+cambiaban de idioma. No se abrió una HU/RF nueva para esto — es un ajuste
+visual sobre pantallas ya cubiertas por las HU existentes de este módulo,
+no una funcionalidad nueva.
+
+### Transiciones de navegación globales
+`DocuSmartNavGraph.kt` no definía `enterTransition`/`exitTransition` en su
+`NavHost` — Compose Navigation usa un fundido por defecto sin
+desplazamiento, que se sentía abrupto entre pantallas. Se agregaron los 4
+parámetros (`enterTransition`/`exitTransition`/`popEnterTransition`/
+`popExitTransition`) a nivel del `NavHost`, aplicando un estilo "shared
+axis" (deslizamiento horizontal corto + fundido, 280ms) a **todas** las
+pantallas por igual, sin tocar cada `composable()` individualmente. De
+paso, la ruta `Study` pasó de `"study"` a `"study?tab={tab}"`
+(parámetro opcional con default 0) para poder abrir directamente en una
+pestaña específica — necesario para el punto siguiente.
+
+### Accesos rápidos de Home: de 4 a 9
+`QuickAccessGrid` solo tenía Escanear/Img→PDF/Seguridad/Estudio en una
+`Row` de ancho igual. Se agregaron 6 accesos nuevos pedidos explícitamente
+por el usuario: Lectura, Notas y Pomodoro (las 3 pestañas de Modo Estudio,
+antes solo accesibles por un acceso genérico "Estudio" que siempre abría
+en Lectura), Leer QR y Crear QR (antes solo alcanzables entrando primero a
+la hoja de "Escanear"), y Papelera (antes solo alcanzable desde dentro de
+Biblioteca). Con 9 tarjetas ya no caben en una fila de ancho igual como
+antes — se cambió a `LazyRow` con ancho fijo por tarjeta (82dp) y scroll
+horizontal, en vez de reducir el tamaño de cada una hasta hacerla
+ilegible. El bloque del `ModalBottomSheet` de "Escanear" se extrajo a un
+composable propio (`ScannerBottomSheetContent`) para mantener
+`QuickAccessGrid` bajo el umbral de detekt tras agregar los items nuevos —
+extracción real, no supresión.
+
+### Botón de papelera reubicado en Biblioteca
+El botón de papelera vivía en un slot `actions` del banner azul superior
+de Biblioteca (agregado en RF-VIS-07, ver §12) — visualmente aislado del
+resto de controles de la pantalla, el usuario lo reportó como "perdido".
+Se quitó del banner y se agregó como un tercer elemento dentro de
+`LibraryTabs`, a la misma altura que las pestañas "Dispositivo"/"Mis
+archivos" (`Modifier.height(IntrinsicSize.Min)` en el `Row` contenedor
+para que las 3 tarjetas compartan la altura de la más alta). Conserva el
+mismo `BadgedBox` con el conteo de documentos en papelera que ya tenía en
+el banner.
+
+### Corrección de i18n: "Recientes"/"Ver todos" y otros textos de Home
+Varios textos de `RecentDocuments.kt` (título "Recientes", "Ver todos",
+estado vacío, título del selector "Compartir") y de `QuickAccessGrid.kt`
+(textos de la hoja de "Escanear") estaban hardcodeados en español en vez
+de usar `stringResource()` — no cambiaban al cambiar el idioma de la app,
+a diferencia del resto de Home. Corregido envolviendo cada string en
+`stringResource(R.string.xxx)`, con las traducciones agregadas a los 5
+`values*/strings.xml` (es/en/de/pt/ru). **Hallazgo relacionado, fuera de
+alcance de esta pasada:** los chips de filtro por tipo de archivo en
+Biblioteca ("Todos", "Imágenes", "Texto", "Escaneados") tienen el mismo
+problema y quedaron sin corregir — señalado aparte para una sesión futura.
+
+**Verificado end-to-end en el dispositivo real:** los 6 accesos rápidos
+nuevos navegan cada uno a su destino correcto (Lectura/Notas/Pomodoro
+abren Modo Estudio en la pestaña correspondiente vía el parámetro `tab` de
+la ruta; Leer QR/Crear QR abren esas pantallas directamente, sin pasar por
+la hoja de Escanear; Papelera abre la pantalla de Papelera) — confirmado
+tocando cada tarjeta y capturando pantalla del resultado. El botón de
+papelera en Biblioteca aparece junto a Dispositivo/Mis archivos con la
+misma altura, ya no en el banner. Cambiando el idioma de la app a English
+desde Ajustes (sin crash, la app se reinicia sola — mismo mecanismo ya
+verificado para el fix de "crash al cambiar idioma" de una sesión
+anterior), Home mostró correctamente "Quick access"/"Recent"/"See
+all"/"Reading" y Biblioteca mostró "Library"/"Device"/"My files" —
+confirma que el fix de i18n funciona en ambas direcciones (ida a inglés y
+vuelta a español, verificado también).
+- **Gauntlet:** `testDebugUnitTest`/`detekt`/`lintDebug` en verde. Se
+  actualizó una entrada de `config/detekt/baseline.xml` (`LongMethod` de
+  `StudyScreen`) porque el texto de firma baselineado cambió al agregar el
+  parámetro `initialTab` — no es un hallazgo nuevo, solo el texto de la
+  firma ya baselineada.
+- Sin tests unitarios nuevos: los cambios de esta pasada son de UI/routing
+  (parámetros de navegación, composables de layout, `stringResource()`),
+  sin lógica de negocio nueva que cubrir — mismo criterio ya aplicado a
+  cambios puramente visuales en este proyecto.
