@@ -102,6 +102,7 @@ Dos módulos relacionados por la monetización freemium:
 | "Falta personalización de colores/estilos por el usuario" | RF-SET-07 (backlog) | Confirmado vigente, sin implementar. |
 | Almacenamiento (mostrar uso + borrar caché) | RF-SET-03 | Confirmado funcionando correctamente — cuenta y tamaño reales, borrado real. |
 | Ayuda, privacidad, acerca de, compartir, calificar | — | Confirmados funcionando correctamente (intents reales, URLs reales con el package name real). |
+| **Bug real encontrado hoy (reportado por el usuario): la app se cierra al cambiar de idioma.** | — | ✅ Corregido — ver §11 para el análisis de causa raíz completo. No era un bug del idioma en sí, sino una condición de carrera preexistente en la inicialización de AdMob, expuesta por el reinicio de `MainActivity` que dispara cualquier cambio de idioma. |
 
 ---
 
@@ -232,3 +233,61 @@ Unión Europea/Reino Unido.
 | Play Billing real (RF-PREM-05) ya está conectado en código — ¿cuándo se crean los 3 productos en Play Console para poder probarlo de punta a punta? | Requiere que la app ya esté subida al menos a una pista de prueba (ver `docs/requirements/deployment.md`) antes de poder crear los productos y probar una compra real. |
 | ¿Detección de idioma por geografía de Play Store (RF-SET-06) es prioridad, o basta con que el dispositivo decida (como ya corregido en HU-SET-01)? | Resuelto 2026-08-24: se extendió el idioma del dispositivo también al primer inicio (`loadLanguage()`), sin depender de geografía de Play Store — no es algo verificable desde el cliente, y el idioma del dispositivo es el estándar de facto en apps Android. |
 | ¿Personalización de colores (RF-SET-07) es prioridad frente a otros pendientes del roadmap? | Sin refinar, mencionado como mejora en `CONTEXT.md`. |
+
+---
+
+## 11. Crash real al cambiar de idioma (2026-08-29)
+
+Reportado por el usuario en uso manual: "cuando realizo el cambio de
+lenguaje a otro la aplicación se cierra". Reproducido de forma confiable
+en dispositivo real y confirmado con logcat.
+
+**Causa raíz — no es un bug del idioma, es una condición de carrera
+preexistente en AdMob expuesta por el reinicio de Activity:** cualquier
+cambio de idioma dispara en `MainActivity` un `LaunchedEffect` que
+reinicia la Activity vía `startActivity(... FLAG_ACTIVITY_NEW_TASK or
+FLAG_ACTIVITY_CLEAR_TASK)` para que el nuevo locale tome efecto (patrón
+correcto y necesario). Ese reinicio vuelve a ejecutar
+`onCreate() → requestAdsConsentThenInitializeAds() →
+initializeAdsIfAllowed()`, que lanzaba `adManager.initialize()` en
+`lifecycleScope.launch(Dispatchers.IO)`. `AdManager.initialize()` llama
+`MobileAds.initialize(context) { ...; loadInterstitial() }`, y
+`InterstitialAd.load()` (dentro de `loadInterstitial()`) **exige
+ejecutarse en el hilo principal** — requisito documentado por Google, no
+opcional.
+
+En un arranque en frío normal, el SDK de Google Mobile Ads tarda lo
+suficiente en resolver la inicialización como para que su callback de
+finalización termine llegando al hilo principal sin problema. Pero en un
+reinicio **en caliente** (proceso ya corriendo, clases ya cargadas, SDK
+con estado cacheado) la inicialización se resuelve casi instantáneamente
+y el callback se ejecuta de forma síncrona en el mismo hilo que lo llamó
+— el hilo de `Dispatchers.IO`, no el principal. Stack trace real
+capturado en dispositivo:
+
+```
+java.lang.IllegalStateException: #008 Must be called on the main UI thread.
+	at com.google.android.gms.ads.interstitial.InterstitialAd.load
+	at com.docsmart.core.ads.AdManager.loadInterstitial(AdManager.kt:56)
+	at com.docsmart.core.ads.AdManager.initialize$lambda$0(AdManager.kt:48)
+	at com.google.android.gms.ads.MobileAds.initialize
+	at com.docsmart.core.ads.AdManager.initialize(AdManager.kt:45)
+	at com.docsmart.MainActivity$initializeAdsIfAllowed$1.invokeSuspend(MainActivity.kt:272)
+```
+
+Esto significa que el bug **no era exclusivo del cambio de idioma** — es
+el mismo código que corre en cada arranque de la app, solo que el cambio
+de idioma es el único punto de la app que provoca un reinicio de
+`MainActivity` con el proceso ya "caliente", que es justo la condición
+que dispara la carrera. No se encontró ningún otro punto de la app que
+reinicie la Activity de la misma forma (búsqueda completa de
+`Dispatchers.IO` combinado con llamadas a AdMob/`Toast`/APIs que exigen
+hilo principal en todo `app/src/main/java` — sin otros hallazgos).
+
+**Corregido** quitando `Dispatchers.IO` del `lifecycleScope.launch` en
+`MainActivity.initializeAdsIfAllowed()` — `MobileAds.initialize()` no
+bloquea (ya es asíncrono internamente) y Google documenta explícitamente
+que debe llamarse desde el hilo principal, así que no había ninguna razón
+real para despacharlo a IO. Verificado en dispositivo con 3 cambios de
+idioma consecutivos (en caliente, el escenario que antes crasheaba
+siempre) sin ningún crash.
