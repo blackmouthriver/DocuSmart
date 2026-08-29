@@ -32,6 +32,8 @@ import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesUseCase
+import com.docsmart.features.pdftools.domain.usecase.OcrPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.OcrPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.PageNumberFormat
 import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.RedactPdfUseCase
@@ -57,7 +59,7 @@ import javax.inject.Inject
 
 enum class PdfTool {
     NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES,
-    COMPARE, REDACT, CROP, EDIT_TEXT, SIGN, FILL_FORM
+    COMPARE, REDACT, CROP, EDIT_TEXT, SIGN, FILL_FORM, OCR
 }
 
 data class PdfToolMessages(
@@ -73,7 +75,8 @@ data class PdfToolMessages(
     val crop         : CropPdfMessages,
     val editText     : EditTextPdfMessages,
     val sign         : SignPdfMessages,
-    val fillForm     : FillFormMessages
+    val fillForm     : FillFormMessages,
+    val ocr          : OcrPdfMessages
 )
 
 data class PdfToolsUiState(
@@ -127,6 +130,7 @@ class PdfToolsViewModel @Inject constructor(
     private val signPdf: SignPdfUseCase,
     private val detectFormFields: DetectFormFieldsUseCase,
     private val fillForm: FillFormUseCase,
+    private val ocrPdf: OcrPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -408,7 +412,8 @@ class PdfToolsViewModel @Inject constructor(
         PdfTool.MERGE, PdfTool.SPLIT, PdfTool.COMPRESS, PdfTool.ROTATE,
         PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES ->
             runBasicTool(state, customName, messages)
-        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN, PdfTool.FILL_FORM ->
+        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN,
+        PdfTool.FILL_FORM, PdfTool.OCR ->
             runAdvancedTool(state, customName, messages)
         PdfTool.NONE -> null
     }
@@ -515,6 +520,11 @@ class PdfToolsViewModel @Inject constructor(
             values = state.formFieldValues,
             outputFileName = customName,
             messages = messages.fillForm
+        )
+        PdfTool.OCR -> ocrPdf(
+            pdfUri = state.selectedPdfs.first(),
+            outputFileName = customName,
+            messages = messages.ocr
         )
         else -> null
     }

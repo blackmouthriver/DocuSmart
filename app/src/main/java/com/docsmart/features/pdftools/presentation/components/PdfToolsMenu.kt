@@ -113,6 +113,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_fill_form,
         descriptionRes = R.string.pdf_fill_form_desc,
         color = ColorZip
+    ),
+    PdfToolItem(
+        tool = PdfTool.OCR,
+        icon = Icons.Rounded.FindInPage,
+        titleRes = R.string.pdf_ocr,
+        descriptionRes = R.string.pdf_ocr_desc,
+        color = ColorOcr
     )
 )
 

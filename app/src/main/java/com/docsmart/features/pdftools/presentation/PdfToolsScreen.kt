@@ -29,6 +29,7 @@ import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.FillFormMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
+import com.docsmart.features.pdftools.domain.usecase.OcrPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
@@ -42,6 +43,7 @@ import com.docsmart.features.pdftools.presentation.components.EditTextPdfScreen
 import com.docsmart.features.pdftools.presentation.components.FillFormScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
+import com.docsmart.features.pdftools.presentation.components.OcrPdfScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RedactPdfScreen
@@ -152,6 +154,13 @@ fun PdfToolsScreen(
     val fillFormGenerateError    = stringResource(R.string.pdf_fill_form_generate_error)
     val fillFormSuccess          = stringResource(R.string.pdf_fill_form_success)
     val fillFormGenericError     = stringResource(R.string.pdf_fill_form_error)
+    val ocrReadError        = stringResource(R.string.pdf_ocr_read_error)
+    val ocrNoPages          = stringResource(R.string.pdf_ocr_no_pages)
+    val ocrAlreadyHasText   = stringResource(R.string.pdf_ocr_already_has_text)
+    val ocrNoTextFound      = stringResource(R.string.pdf_ocr_no_text_found)
+    val ocrGenerateError    = stringResource(R.string.pdf_ocr_generate_error)
+    val ocrSuccess          = stringResource(R.string.pdf_ocr_success)
+    val ocrGenericError     = stringResource(R.string.pdf_ocr_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -261,6 +270,15 @@ fun PdfToolsScreen(
                 generateError    = fillFormGenerateError,
                 success          = fillFormSuccess,
                 genericError     = fillFormGenericError
+            ),
+            ocr = OcrPdfMessages(
+                readError      = ocrReadError,
+                noPages        = ocrNoPages,
+                alreadyHasText = ocrAlreadyHasText,
+                noTextFound    = ocrNoTextFound,
+                generateError  = ocrGenerateError,
+                success        = ocrSuccess,
+                genericError   = ocrGenericError
             )
         )
     }
@@ -653,6 +671,18 @@ fun PdfToolsScreen(
                                     },
                                     onFieldValueChange = { name, value ->
                                         viewModel.onFormFieldValueChange(name, value)
+                                    },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.OCR -> OcrPdfScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )

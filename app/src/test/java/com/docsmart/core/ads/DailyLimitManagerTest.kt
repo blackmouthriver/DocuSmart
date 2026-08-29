@@ -223,6 +223,20 @@ class DailyLimitManagerTest {
         assertEquals(0, manager.getConversionCount())
     }
 
+    // Mismo procedimiento preventivo para RF-PDF-15 (OCR) -- se agregó
+    // KEY_OCR antes de escribir el resto del feature, con este test de
+    // regresión desde el principio.
+    @Test
+    fun `OCR tiene su propio contador, independiente de conversiones y otras herramientas`() {
+        repeat(DailyLimitManager.LIMIT_PDF_TOOLS) { manager.registerPdfTool("OCR") }
+
+        assertFalse(manager.canUsePdfTool("OCR"))
+        assertTrue(manager.canUsePdfTool("MERGE"))
+        assertTrue(manager.canUsePdfTool("FILL_FORM"))
+        assertTrue(manager.canConvert())
+        assertEquals(0, manager.getConversionCount())
+    }
+
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────
 
     private fun fakeSharedPreferences(): SharedPreferences {

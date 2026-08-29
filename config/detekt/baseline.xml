@@ -127,6 +127,7 @@
     <ID>NestedBlockDepth:FillFormUseCase.kt$FillFormUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>NestedBlockDepth:OcrPdfUseCase.kt$OcrPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:PdfToolsViewModel.kt$PdfToolsViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
     <ID>NestedBlockDepth:QrScreen.kt$private fun saveQrToDownloads(context: Context, file: File)</ID>
     <ID>NestedBlockDepth:RedactPdfUseCase.kt$RedactPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -242,6 +243,7 @@
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
     <ID>ReturnCount:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:OcrPdfUseCase.kt$OcrPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:RedactPdfUseCase.kt$RedactPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ReorderPagesUseCase.kt$ReorderPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -282,6 +284,7 @@
     <ID>TooGenericExceptionCaught:MainActivity.kt$MainActivity$e: Exception</ID>
     <ID>TooGenericExceptionCaught:MergePdfUseCase.kt$MergePdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NumberPagesUseCase.kt$NumberPagesUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:OcrPdfUseCase.kt$OcrPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:PdfPasswordUseCase.kt$PdfPasswordUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:PdfToHtmlUseCase.kt$PdfToHtmlUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:PdfToImageUseCase.kt$PdfToImageUseCase$e: Exception</ID>

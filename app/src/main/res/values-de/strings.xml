@@ -48,6 +48,7 @@
     <string name="pdf_edit_text">Text bearbeiten</string>
     <string name="pdf_sign">PDF unterschreiben</string>
     <string name="pdf_fill_form">Formular ausfüllen</string>
+    <string name="pdf_ocr">Erweiterte OCR</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -147,6 +148,7 @@
     <string name="pdf_edit_text_desc">Sucht und ersetzt vorhandenen Text im Dokument</string>
     <string name="pdf_sign_desc">Zeichne deine Unterschrift und setze sie auf das Dokument</string>
     <string name="pdf_fill_form_desc">Erkennt und füllt Textfelder eines PDF-Formulars aus</string>
+    <string name="pdf_ocr_desc">Erkennt den Text eines gescannten PDFs, um es durchsuchbar zu machen</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -400,6 +402,18 @@
     <string name="pdf_fill_form_generate_error">Fehler beim Erstellen des ausgefüllten PDFs.</string>
     <string name="pdf_fill_form_success">%1$d Felder erfolgreich ausgefüllt</string>
     <string name="pdf_fill_form_error">Fehler beim Ausfüllen des Formulars: %1$s</string>
+    <string name="pdf_ocr_subtitle">Wähle ein gescanntes PDF aus, um dessen Text zu erkennen</string>
+    <string name="pdf_ocr_ready">PDF bereit zur Texterkennung</string>
+    <string name="pdf_ocr_info">Über jeder gescannten Seite wird eine unsichtbare Textebene hinzugefügt, ohne ihr Erscheinungsbild zu verändern — das resultierende PDF wird durchsuchbar mit auswählbarem Text. Dies kann mehrere Sekunden pro Seite dauern.</string>
+    <string name="pdf_ocr_execute">Text erkennen</string>
+    <string name="pdf_ocr_progress">Text wird erkannt…</string>
+    <string name="pdf_ocr_read_error">Das PDF konnte nicht gelesen werden. Prüfe, ob es eine gültige Datei ist.</string>
+    <string name="pdf_ocr_no_pages">Das PDF hat keine Seiten zum Verarbeiten</string>
+    <string name="pdf_ocr_already_has_text">Dieses PDF hat bereits auf allen Seiten auswählbaren Text — OCR ist nicht nötig</string>
+    <string name="pdf_ocr_no_text_found">Im gescannten PDF wurde kein Text erkannt</string>
+    <string name="pdf_ocr_generate_error">Fehler beim Erstellen des PDFs mit dem erkannten Text.</string>
+    <string name="pdf_ocr_success">%1$d Seiten verarbeitet, %2$d Wörter erkannt</string>
+    <string name="pdf_ocr_error">Fehler bei der Texterkennung: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

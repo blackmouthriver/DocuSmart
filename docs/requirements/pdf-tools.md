@@ -23,7 +23,9 @@ prioridad "media". **RF-PDF-09 (Recortar márgenes) implementado
 ver §16.** **RF-PDF-11 (Firma manuscrita) implementado 2026-08-29, ver
 §17.** **RF-PDF-12 (Detección y relleno de formularios) implementado
 2026-08-29, ver §18** — cierra las 4 funcionalidades de prioridad
-"baja/futuro" del backlog. Pendiente: RF-PDF-15, y selección de archivo
+"baja/futuro" del backlog. **RF-PDF-15 (OCR avanzado sobre PDFs
+escaneados) implementado 2026-08-29, ver §19** — cierra por completo el
+backlog de mejoras sugeridas 2026-08-24. Pendiente: selección de archivo
 desde la Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
@@ -63,7 +65,11 @@ el requerimiento #3 original que todavía no existe:
     PDF (AcroForm) existente, permite escribir un valor para cada uno y
     genera un PDF con los valores aplicados de forma permanente
     (aplanados, no editables).
-14. *(Backlog, no implementado)* OCR avanzado.
+14. **OCR avanzado** — reconoce el texto de un PDF escaneado (ML Kit
+    Text Recognition, on-device) y agrega una capa de texto invisible
+    sobre cada página en la posición real de cada palabra, sin alterar
+    la apariencia visual del escaneo — el resultado queda buscable y
+    con el texto seleccionable.
 
 ---
 
@@ -84,23 +90,23 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes). **✅ Implementado 2026-08-28 — solo texto (buscar y reemplazar), ver §16.** Edición de imágenes existentes queda fuera de este alcance — ver nota de alcance en §16.
 - **RF-PDF-11** Firma digital de PDF. **✅ Implementado 2026-08-29 — firma manuscrita, no criptográfica, ver §17.** El proyecto no tiene infraestructura de certificados/PKI — ver nota de alcance en §17.
 - **RF-PDF-12** Detección y relleno de formularios PDF. **✅ Implementado 2026-08-29, ver §18.**
+- **RF-PDF-15** OCR avanzado sobre PDFs escaneados. **✅ Implementado 2026-08-29 — ML Kit Text Recognition on-device, ver §19.** La descripción original de este ítem ("texto ya buscable vía Modo Estudio para imágenes sueltas") resultó inexacta: no existía ningún motor de OCR en el proyecto (`features/study/` solo extrae texto ya existente de PDFs/Word/PowerPoint vía `PdfTextExtractor`/parseo de XML, nunca reconocimiento óptico de una imagen) — se implementó desde cero, ver nota de alcance en §19.
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
+*(vacío — las 9 funcionalidades del backlog están implementadas, ver abajo)*
 
 Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido)
 — **las 3 funcionalidades de prioridad "alta", las 2 de "media" y las 4 de
-"baja/futuro" ya están implementadas**
-(RF-PDF-06/07/08/13/14/09/10/11/12): queda solo RF-PDF-15 (OCR avanzado,
-fuera del alcance de este backlog de mejoras sugeridas 2026-08-24 — requiere
-evaluar una librería/motor OCR distinto de iText7).
+"baja/futuro" ya estaban implementadas, y RF-PDF-15 (última pendiente) se
+implementó el 2026-08-29** (RF-PDF-06/07/08/13/14/09/10/11/12/15): el
+backlog de mejoras sugeridas 2026-08-24 queda completo.
 
 ---
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible. Editar texto es un segundo caso especial en sentido inverso, igual que Censurar: **debe destruir** el texto original encontrado antes de escribir el reemplazo (RF-PDF-10/RNF-PDF-06) — el resto de la página fuera de las ocurrencias reemplazadas conserva su texto/vectores intactos. Firmar PDF es, como Comparar, un caso que queda fuera del alcance de este RNF por naturaleza en sentido inverso a Editar texto/Censurar: no destruye ni reescribe nada del contenido original, solo **añade** una imagen nueva (la firma) sobre la página en un content stream adicional (`page.newContentStreamAfter()`) — el contenido preexistente permanece exactamente igual. Rellenar formulario es un caso similar a Firmar: `PdfAcroForm.setValue()` solo escribe el valor dentro de cada campo existente y `flattenFields()` lo convierte en texto real de página, sin tocar ningún otro contenido del documento — nada se destruye ni se rasteriza.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 13 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible. Editar texto es un segundo caso especial en sentido inverso, igual que Censurar: **debe destruir** el texto original encontrado antes de escribir el reemplazo (RF-PDF-10/RNF-PDF-06) — el resto de la página fuera de las ocurrencias reemplazadas conserva su texto/vectores intactos. Firmar PDF es, como Comparar, un caso que queda fuera del alcance de este RNF por naturaleza en sentido inverso a Editar texto/Censurar: no destruye ni reescribe nada del contenido original, solo **añade** una imagen nueva (la firma) sobre la página en un content stream adicional (`page.newContentStreamAfter()`) — el contenido preexistente permanece exactamente igual. Rellenar formulario es un caso similar a Firmar: `PdfAcroForm.setValue()` solo escribe el valor dentro de cada campo existente y `flattenFields()` lo convierte en texto real de página, sin tocar ningún otro contenido del documento — nada se destruye ni se rasteriza. OCR avanzado es, igual que Firmar/Rellenar formulario, un caso que queda fuera del alcance de este RNF en sentido inverso: no toca el contenido existente de la página (la imagen del escaneo permanece intacta), solo **añade** una capa de texto invisible nueva vía `page.newContentStreamAfter()` — páginas que ya tienen texto real extraíble se omiten explícitamente para no duplicar contenido.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 14 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -274,12 +280,28 @@ en la app,
 - **AC3** Dado que selecciono un PDF sin ningún campo de formulario, cuando la app lo procesa, entonces veo un mensaje indicando que no se detectaron campos, en vez de una lista vacía sin explicación.
 - **AC4** Dado que confirmo rellenar sin haber escrito ningún valor, cuando confirmo, entonces el sistema devuelve un error y no genera ningún archivo.
 
+### HU-PDF-14 — Reconocer texto en un PDF escaneado (OCR)
+*(Implementado 2026-08-29 — ver §19. HU redactada de nuevo, mismo motivo
+que HU-PDF-08 a 13: RF-PDF-15 se agregó después como mejora sugerida —
+ver §2.)*
+
+**Como** usuario con un PDF escaneado (una imagen por página, sin texto
+seleccionable),
+**quiero** que la app reconozca el texto de cada página,
+**para** poder buscarlo, seleccionarlo y copiarlo sin tener que
+transcribirlo a mano.
+
+- **AC1** Dado que selecciono un PDF escaneado y confirmo reconocer texto, cuando reviso el resultado, entonces el texto reconocido es real y extraíble (no cosmético) — buscarlo o copiarlo funciona igual que en un PDF nativo.
+- **AC2** Dado que el PDF resultante se abre en cualquier lector, cuando lo comparo visualmente con el original, entonces se ve exactamente igual — el reconocimiento no altera la apariencia del escaneo.
+- **AC3** Dado que el texto reconocido queda posicionado sobre la página, cuando selecciono una palabra visualmente, entonces selecciono esa misma palabra (no un desplazamiento aleatorio) — la capa de texto está alineada con su posición real en la imagen.
+- **AC4** Dado que selecciono un PDF que ya tiene texto seleccionable en todas sus páginas, cuando confirmo reconocer texto, entonces el sistema informa que no es necesario aplicar OCR y no genera ningún archivo (evita una segunda capa de texto duplicada).
+
 ---
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 13 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 14 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -293,7 +315,7 @@ en la app,
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). Editar (texto) → RF-PDF-10 (ya implementado, ver §16). Firma → RF-PDF-11 (ya implementado, ver §17). Formularios → RF-PDF-12 (ya implementado, ver §18). El resto → RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). Editar (texto) → RF-PDF-10 (ya implementado, ver §16). Firma → RF-PDF-11 (ya implementado, ver §17). Formularios → RF-PDF-12 (ya implementado, ver §18). OCR → RF-PDF-15 (ya implementado, ver §19). | ✅ Resuelto — las 14 funcionalidades del backlog original y de las mejoras sugeridas 2026-08-24 están implementadas. |
 
 ---
 
@@ -314,6 +336,7 @@ en la app,
 | 11 | `EditTextPdfUseCaseTest` — el texto encontrado se reemplaza y el original deja de existir en la extracción del PDF de salida (verificado con `PdfTextExtractor`, la prueba clave de que no es cosmético), búsqueda vacía → Error sin tocar el archivo, texto no encontrado → Error específico, todas las ocurrencias en la página se reemplazan y el mensaje informa el total exacto, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 12 | `SignPdfUseCaseTest` — firmar un PDF de una página produce un archivo no vacío con la firma en la página 1, firma sin imagen → Error sin tocar el archivo, un número de página fuera de rango (por arriba o por abajo) se ajusta al límite válido más cercano, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 13 | `DetectFormFieldsUseCaseTest` — detecta los campos de texto de un PDF con AcroForm junto a su valor actual, un PDF sin formulario devuelve lista vacía sin lanzar excepción, archivo no-PDF devuelve lista vacía. `FillFormUseCaseTest` — rellenar los valores de un formulario los deja como texto real extraíble del PDF de salida (verificado con `PdfTextExtractor`, la prueba de que `flattenFields()` los hizo permanentes), mapa de valores vacío → Error sin tocar el archivo, un PDF sin campos de formulario → Error específico, solo los campos con nombre coincidente se rellenan (los demás quedan sin tocar), archivo no-PDF → Error. | ✅ 3 + 5 = 8 tests, en verde |
+| 14 | `OcrPdfUseCaseTest` — el use case en sí no se puede ejercitar en JVM puro (requiere `PdfRenderer` + ML Kit, solo disponibles en runtime Android real, mismo límite documentado para `CompressPdfUseCase`, fila 4). Cubre en cambio las dos funciones puras extraídas específicamente para ser testeables: `mapOcrBoxToPdf` (conversión de un bounding box en píxeles del bitmap a coordenadas reales del PDF en puntos — esquina superior-izquierda, cerca del pie de página, y con origen de página distinto de cero) y `horizontalScalingPercent` (ancho natural igual/mayor/menor al objetivo, división por cero evitada con anchos inválidos, resultado acotado al rango 1–500%). | ✅ 8 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -1339,4 +1362,160 @@ queda RF-PDF-15, OCR avanzado, fuera de ese backlog — ver §2).
     volver a leer las coordenadas reales del botón con `uiautomator dump`
     y repetir el toque — no reveló ningún problema de la pantalla en sí,
     solo un desfase de coordenadas en el guion de verificación.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 19. RF-PDF-15/HU-PDF-14 — OCR avanzado sobre PDFs escaneados (2026-08-29)
+
+Última funcionalidad del backlog de mejoras sugeridas 2026-08-24 — con esta
+implementación, las 3 de prioridad "alta", las 2 de "media" y las 4 de
+"baja/futuro" quedan completas.
+
+- **Hallazgo real antes de empezar a escribir código — la descripción
+  original del ítem era inexacta:** el RF decía "texto ya buscable vía
+  Modo Estudio para imágenes sueltas; falta aplicado a PDF completo",
+  sugiriendo que solo había que extender un mecanismo existente. Una
+  investigación de todo el proyecto (búsqueda de "OCR"/"TextRecognizer"/
+  "MLKit"/"Tesseract"/"recognizeText") encontró que **no existía ningún
+  motor de reconocimiento óptico de caracteres implementado en ninguna
+  parte de la app** — lo que `features/study/` (`StudyScreen.kt`,
+  `extractTextFromUri`) hace para PDF/Word/PowerPoint es extracción de
+  texto **ya existente** en el archivo (`PdfTextExtractor` de iText7,
+  parseo de XML interno para .docx/.pptx), no reconocimiento óptico de una
+  imagen — y ni siquiera tenía un `case` para `image/*` (caía en
+  `extractPlainText`, que habría producido basura leyendo bytes binarios
+  como texto). Los únicos usos de "OCR" en el código eran cosméticos: una
+  categoría de UI (`DocumentType.OCR`) para etiquetar documentos como
+  "Escaneados" en la Biblioteca, y un documento mock de ejemplo. Se
+  implementó el reconocimiento de texto **desde cero**.
+- **Motor elegido — ML Kit Text Recognition v2, variante *bundled*:**
+  `com.google.mlkit:text-recognition:16.0.1` (no la variante
+  `play-services-mlkit-*` que sí usa el `document-scanner` ya existente en
+  el proyecto) — modelo empaquetado directamente en el APK
+  (`libmlkit_google_ocr_pipeline.so`, confirmado en el output de
+  `assembleDebug`), funciona 100% on-device y offline desde el primer uso,
+  sin depender de una descarga adicional vía Play Services. Mismo criterio
+  ya usado para `barcode-scanning` en este proyecto (también variante
+  bundled, no GMS). La API devuelve una jerarquía completa con coordenadas
+  reales (`Text` → `TextBlock` → `Line` → `Element`/palabra, cada uno con
+  su propio `boundingBox`), indispensable para posicionar el texto
+  reconocido en el lugar correcto de la página (ver abajo) — no solo un
+  texto plano sin posición.
+  - **Limitación de alcance conocida, documentada:** el modelo Latin de
+    ML Kit cubre bien español/inglés/alemán/portugués, pero **no**
+    reconoce cirílico (ruso) con buena precisión — no existe una opción
+    "Cyrillic" en ML Kit Text Recognition v2 (solo Latin/Chinese/
+    Devanagari/Japanese/Korean). La funcionalidad queda disponible en los
+    5 idiomas de la UI de la app (igual que el resto del módulo), pero la
+    calidad del reconocimiento sobre un PDF escaneado *en ruso* es una
+    limitación del motor, no de la implementación — se documenta acá en
+    vez de silenciarla.
+- **`OcrPdfUseCase.kt`** (nuevo) — por cada página del PDF: si
+  `PdfTextExtractor.getTextFromPage(page)` ya devuelve texto no vacío, la
+  página se omite (evita una segunda capa de texto duplicada sobre un PDF
+  que en realidad no era un escaneo, AC4). Si no, renderiza la página a
+  bitmap con `android.graphics.pdf.PdfRenderer` a 3.0x el tamaño en puntos
+  (~216 dpi efectivos — mismo mecanismo de bajo nivel que
+  `CompressPdfUseCase.kt`, la única otra herramienta que ya rasterizaba
+  páginas, aunque acá el bitmap es solo insumo para el OCR, nunca se
+  escribe en el PDF de salida), ejecuta `TextRecognizer.process()`
+  (bloqueante vía `Tasks.await`, aceptable porque ya se corre en
+  `Dispatchers.IO`) y, por cada palabra detectada con `boundingBox` no
+  nulo y texto no vacío, dibuja un texto **invisible** (`Tr 3`, rendering
+  mode `setTextRenderingMode(3)` — el mecanismo estándar del operador de
+  PDF para texto que se pinta pero no se muestra, el mismo que usan Adobe
+  Acrobat "Reconocer texto" u ocrmypdf) en la posición real de esa
+  palabra, vía `page.newContentStreamAfter()` (mismo patrón que
+  Firmar/RF-PDF-11 y Editar texto/RF-PDF-10 para agregar contenido nuevo
+  sin tocar el content stream existente).
+  - **Conversión de coordenadas (bitmap px → PDF pts):** extraída a la
+    función pura `mapOcrBoxToPdf(text, box: OcrBoxPx, geometry:
+    PdfPageGeometry): OcrWordPlacement`, sin dependencias de Android/iText
+    — invierte el eje Y (el bitmap tiene origen arriba-izquierda, el PDF
+    origen abajo-izquierda) y divide por la escala de renderizado para
+    volver a puntos reales de página. Es la única pieza de este use case
+    que se puede testear en JVM puro (ver tests abajo).
+  - **Ajuste de ancho — escalado horizontal (`Tz`):** la fuente estándar
+    usada para la capa invisible (Helvetica) no tiene por qué coincidir
+    con el ancho real de la palabra detectada a su tamaño de fuente
+    "natural", así que se calcula
+    `horizontalScalingPercent(anchoNatural, anchoObjetivo)` (función pura,
+    también testeada) y se aplica vía `PdfCanvas.setHorizontalScaling()`
+    para que el texto invisible ocupe exactamente el ancho del
+    `boundingBox` real — necesario para que la posición de cada palabra
+    dentro de una línea siga siendo coherente al seleccionar texto
+    (HU-PDF-14 AC3).
+  - **`LongParameterList`/`NestedBlockDepth`/`LoopWithTooManyJumpStatements`
+    encontrados y corregidos de verdad, no baselineados** (detekt): la
+    primera versión de `mapOcrBoxToPdf` tomaba 9 parámetros sueltos
+    (`boxLeft`, `boxTop`, `boxRight`, `boxBottom`, `renderScale`, `pageX`,
+    `pageY`, `pageHeight` + el texto) — se agrupó en dos `data class`
+    pequeñas (`OcrBoxPx`, `PdfPageGeometry`) reduciendo a 3 parámetros. El
+    recorrido `block → line → element` con dos `for` anidados y dos
+    `continue` se aplanó con `flatMap` + `mapNotNull` a una sola lista de
+    palabras válidas, eliminando tanto el anidamiento como los saltos.
+- **`OcrPdfScreen.kt`** (nuevo) — la pantalla más simple de las últimas
+  funcionalidades del módulo: sin parámetros configurables (a diferencia
+  de todas las demás herramientas, que tienen al menos un control), solo
+  selector de PDF + tarjeta informativa explicando el comportamiento
+  (capa invisible, apariencia sin cambios, puede tardar varios segundos
+  por página) + botón de ejecutar. Reutiliza el patrón visual exacto de
+  `FillFormScreen.kt`/`SignPdfScreen.kt` (zona de selección, estados
+  habilitado/deshabilitado).
+- **`PdfTool.OCR`** (nuevo valor de enum, 14° y último del módulo por
+  ahora) — sin campos de estado nuevos en `PdfToolsUiState` (reutiliza
+  `selectedPdfs`/`outputFileName`, no necesita nada propio). Nueva entrada
+  de menú con ícono `Icons.Rounded.FindInPage` y color `ColorOcr` — color
+  ya existente en la paleta del proyecto (`Color.kt`), usado previamente
+  solo para la categoría "Escaneados" de la Biblioteca (`DocumentType.OCR`),
+  reutilizado acá por primera vez como color de tile de menú — mismo
+  criterio de reutilización semántica ya aplicado a `ErrorRed` en
+  RF-PDF-14 (§14).
+- **`DailyLimitManager`:** mismo procedimiento preventivo que las 8
+  funcionalidades anteriores (§10 a §18) — se agregó `KEY_OCR` y su
+  entrada en `PDF_TOOL_KEYS` **antes** de escribir el resto del feature,
+  con su test de regresión correspondiente en `DailyLimitManagerTest`.
+- **8 tests unitarios nuevos** (`OcrPdfUseCaseTest`) — el use case en sí
+  no se puede ejercitar en un test JVM puro (requiere `PdfRenderer` + ML
+  Kit, ambos solo disponibles en runtime Android real, mismo límite ya
+  documentado para `CompressPdfUseCase`, fila 4 de §7) — la cobertura real
+  se concentra en las dos funciones puras extraídas específicamente para
+  ser testeables: `mapOcrBoxToPdf` (3 casos: esquina superior-izquierda,
+  cerca del pie de página, origen de página distinto de cero) y
+  `horizontalScalingPercent` (5 casos: coincide con el objetivo, comprime,
+  estira, división por cero evitada, límites del rango 1–500%).
+- **detekt:** los mismos 3 hallazgos de boilerplate ya vistos en las 13
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico) más
+  los 3 hallazgos reales corregidos de verdad (`LongParameterList`,
+  `NestedBlockDepth` y `LoopWithTooManyJumpStatements`, ver arriba) — 4
+  hallazgos totales resueltos en el código, 3 añadidos al baseline en las
+  posiciones alfabéticas correctas.
+- **Verificado end-to-end en el dispositivo real (app en español), con dos
+  escenarios reales:**
+  - **Escenario 1 — PDF genuinamente escaneado:** generado fuera de línea
+    con Python + Pillow + img2pdf (`OcrTest.pdf`, una imagen con 4 líneas
+    de texto renderizadas, sin ningún texto vectorial real — confirmado
+    con `pypdf` antes de subirlo: `extract_text()` devuelve cadena vacía)
+    → subido vía `adb push` → seleccionado en la pantalla de OCR avanzado
+    → ejecutado → mensaje de éxito "1 páginas procesadas, 23 palabras
+    reconocidas" → guardado en Descargas → archivo descargado y leído
+    directamente con `pypdf`: el texto extraído es **exactamente**
+    "DOCUSMART OCR TEST / Este PDF es un escaneo sin texto real. /
+    Segunda linea de prueba para OCR. / Tercera linea con mas palabras
+    aqui." — las 4 líneas completas, en el orden correcto, coincidiendo
+    palabra por palabra con el texto real de la imagen original —
+    confirma HU-PDF-14 AC1 (texto real, no cosmético) y AC3 (posición/
+    orden coherente, prueba indirecta de que el mapeo de coordenadas y el
+    orden de lectura son correctos).
+  - **Escenario 2 — PDF que ya tenía texto real:** reutilizado
+    `DocuSmart_Editado_20260828_174543.pdf` (resultado de RF-PDF-10, con
+    texto vectorial real) → seleccionado → ejecutado → mensaje "Este PDF
+    ya tiene texto seleccionable en todas sus páginas — no es necesario
+    aplicar OCR" (`alreadyHasText`) → no se generó ningún archivo, y el
+    contador "Usos hoy" no se incrementó (confirma que un `Error` no
+    consume el límite diario, mismo comportamiento que el resto del
+    módulo) — confirma HU-PDF-14 AC4 y el guardarraíl contra capas de
+    texto duplicadas.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
