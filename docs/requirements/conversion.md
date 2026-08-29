@@ -35,9 +35,9 @@ producían el archivo equivocado o fallaban al ejecutarse.
 - **RF-CONV-04** El sistema debe convertir Excel (.xlsx/.xls) a PDF, CSV y HTML.
 - **RF-CONV-05** El sistema debe convertir PowerPoint (.pptx) a PDF y texto.
 - **RF-CONV-06** Cada conversión debe producir un archivo con la extensión y el contenido correspondientes al formato de salida elegido — no el de otra conversión.
+- **RF-CONV-07** ✅ El sistema debe soportar `.doc` legado (formato binario OLE2, pre-2007) en las 3 conversiones de Word (a PDF, texto y HTML), no solo `.docx` — ver §4 HU-CONV-05.
 
 ### Backlog — no implementado
-- **RF-CONV-07** Soporte para `.doc` legado (formato binario OLE2, pre-2007) en las conversiones de Word — hoy solo `.docx` funciona porque `XWPFDocument` (Apache POI) es específico de OOXML; `.doc` requeriría el módulo `poi-scratchpad`/`HWPFDocument`, con un parser distinto.
 - **RF-CONV-08** Conversión por lotes (varios archivos a la vez) — mencionado como mejora sugerida en `CONTEXT.md`.
 - **RF-CONV-09** PDF → Word que preserve formato/diseño (hoy `PdfToWordUseCase` extrae solo texto plano, sin tablas ni estilos).
 
@@ -49,6 +49,7 @@ producían el archivo equivocado o fallaban al ejecutarse.
 - **RNF-CONV-02 (conversiones "a PDF" son texto plano, no facsímil visual):** Word→PDF, Excel→PDF y PowerPoint→PDF extraen el contenido textual y lo componen como un documento de texto simple con iText7 — no reproducen el diseño visual original (fuentes, colores, imágenes embebidas, layout de tablas complejo). Esto es consistente en las 3 herramientas, no una limitación de una sola.
 - **RNF-CONV-03 (PPT→PDF no usa POI para renderizar):** Apache POI puede renderizar diapositivas a imagen (`XSLFSlide.draw(Graphics2D)`), pero esa ruta depende de `java.awt.Graphics2D`/`BufferedImage`, que no existen en el runtime de Android. Por eso `PptToPdfUseCase` reutiliza el parseo de texto por XML crudo de `PptToTextUseCase` en vez de intentar renderizar.
 - **RNF-CONV-04 (dependencias de Apache POI):** `poi`, `poi-ooxml` y `poi-scratchpad` **deben** incluir `org.apache.xmlbeans` en el classpath de compilación y del APK — sin xmlbeans, cualquier uso del modelo de objetos OOXML de POI (`XWPFDocument`, `WorkbookFactory`, `XSSFWorkbook`) falla en tiempo de ejecución con `NoClassDefFoundError`, incluso para solo *leer* un documento existente. Ver bug corregido en §5.
+- **RNF-CONV-05 (detección de encabezado en `.doc` depende del idioma del documento):** a diferencia de `.docx` (donde `w:styleId` es un identificador interno siempre en inglés, sin importar el idioma de la UI de Word), en `.doc` (HWPF) el nombre de estilo que expone la API pública de Apache POI (`StyleDescription.name`) es el nombre **visible**, guardado en el idioma con el que se creó el documento — un "Heading 1" creado con Word en español se llama "Título 1". El formato binario sí guarda un identificador numérico independiente del idioma (`sti`), pero POI no lo expone públicamente. `WordToHtmlUseCase` (que es la única de las 3 conversiones de `.doc` que distingue encabezados) reconoce los nombres de encabezado/título en los 5 idiomas que la app ya soporta (es/en/de/pt/ru — ver `isHeadingStyleName()` en `WordFormatDetection.kt`); un `.doc` creado con Word en otro idioma no tendrá sus encabezados detectados y esos párrafos se renderizan como texto normal — degradado, no roto.
 
 ---
 
@@ -95,6 +96,78 @@ producían el archivo equivocado o fallaban al ejecutarse.
 - **AC1** Dado que selecciono "Word → PDF" con un .docx real, cuando confirmo, entonces la conversión termina en éxito, no con `NoClassDefFoundError`.
 - **AC2** Dado que selecciono "Excel → PDF" con un .xlsx real, cuando confirmo, entonces la conversión termina en éxito, no con `NoClassDefFoundError`.
 
+### HU-CONV-05 — Soporte para `.doc` legado (RF-CONV-07)
+**Como** usuario que aún conserva documentos Word antiguos (formato binario
+pre-2007),
+**quiero** poder convertirlos igual que un `.docx`,
+**para** no depender de tener el archivo re-guardado en formato moderno.
+
+- **AC1** Dado que selecciono "Word → PDF/Texto/HTML" y elijo un `.doc`
+  real (formato binario OLE2, no `.docx` renombrado), cuando confirmo,
+  entonces la conversión termina en éxito con el contenido real del
+  documento (párrafos y texto de celdas de tabla), igual que con un `.docx`.
+- **AC2** Dado que el formato real del archivo no coincide con su extensión
+  (ni OOXML ni OLE2 reconocible), cuando confirmo, entonces veo un mensaje
+  de error, no un crash.
+- **AC3** (best-effort, ver RNF-CONV-05) Dado que el `.doc` fue creado con
+  Word en español, inglés, alemán, portugués o ruso y usa el estilo
+  "Heading"/"Título"/"Überschrift"/"Заголовок" (o "Title"/"Titel"/"Название"),
+  cuando convierto a HTML, entonces ese párrafo se renderiza como encabezado
+  (`<h2>`), no como párrafo normal.
+
+**Decisión de diseño — detección de formato por firma binaria, no por
+extensión:** `XWPFDocument` (OOXML/`.docx`) y `HWPFDocument` (OLE2/`.doc`,
+módulo `poi-scratchpad`, ya declarado como dependencia) no comparten
+interfaz común — a diferencia de `WorkbookFactory` para Excel, que sí
+detecta y abstrae `.xls`/`.xlsx` automáticamente. `WordFormatDetection.kt`
+usa `FileMagic.valueOf()` (mira los primeros bytes del archivo, no el
+nombre) para decidir cuál API usar *antes* de leer — necesario porque
+`XWPFDocument` lanza `NotOfficeXmlFileException` al recibir un `.doc` real.
+
+**Decisión de alcance — sin pasada de tablas separada para `.doc`:** a
+diferencia de la ruta `.docx` (que sí separa celdas de tabla con `" | "`
+vía `XWPFDocument.tables`), la extracción de `.doc` no repite una segunda
+pasada de tablas — el rango plano de `HWPFDocument` (`Range.getParagraph`)
+ya incluye el texto de las celdas como párrafos normales en su posición
+real del documento; agregar una iteración de tablas aparte duplicaría ese
+contenido. El texto de una tabla en un `.doc` convertido queda legible como
+líneas sueltas, sin separadores de columna — mismo nivel de fidelidad ya
+aceptado para el resto del módulo (RNF-CONV-02).
+
+**Fixture de prueba real, no sintético:** a diferencia de `.docx`
+(`XWPFDocument()` crea un documento en blanco en memoria con una sola
+línea de código), Apache POI no ofrece una API para crear un `.doc` desde
+cero — `HWPFDocument` solo permite *leer* un binario OLE2 ya existente. Se
+generó `app/src/test/resources/fixtures/legacy-sample.doc` con Microsoft
+Word real vía automatización COM de PowerShell (`New-Object -ComObject
+Word.Application`, `SaveAs` con `wdFormatDocument97`), en vez de un byte
+array con solo la firma OLE2 — permite probar la extracción de contenido
+real (párrafos, tabla, estilo de encabezado), no solo la detección de
+formato. El mismo archivo se usó para la verificación en dispositivo.
+
+**Verificado en dispositivo (2026-08-29):** las 3 conversiones probadas
+manualmente con el `.doc` real (`legacy-sample.doc`, subido a
+`Descargas`): "Word → PDF" y "Word → HTML" confirmadas end-to-end
+extrayendo el archivo resultante del dispositivo y verificando su
+contenido — título, párrafos y las 4 celdas de la tabla presentes en
+ambos, y el encabezado correctamente renderizado como `<h2>` en el HTML
+pese a que el estilo real en el archivo es "Título 1" (español), no
+"Heading 1". "Word → Texto" no se repitió manualmente porque comparte
+exactamente la misma función de extracción (`extractLegacyDocBlocks()`),
+ya cubierta por test con el mismo fixture real.
+
+**Fuera de alcance — inconsistencia de MIME type en el selector de
+archivo:** `getMimeForType()` en `ConverterScreen.kt` usa
+`"application/msword"` (MIME real de `.doc`) como filtro único para las 3
+conversiones de Word, incluyendo cuando el usuario en realidad va a elegir
+un `.docx` (cuyo MIME correcto es
+`application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
+En la práctica el selector de Android (`DocumentsUI`) es permisivo y
+sigue mostrando archivos `.docx` igual (verificado en dispositivo), así
+que no es un bug bloqueante, pero es una inconsistencia real preexistente
+que no se corrigió en esta HU por no ser parte de su alcance (soportar
+`.doc`, no arreglar el filtro del picker).
+
 ---
 
 ## 5. Bugs de QA a corregir (trazabilidad)
@@ -118,6 +191,8 @@ producían el archivo equivocado o fallaban al ejecutarse.
 | 1 | `WordToTextUseCaseTest` — extrae párrafos a .txt, documento sin texto → Error, archivo no legible → Error. | ✅ 3 tests, en verde |
 | 2 | `ExcelToCsvUseCaseTest` — filas/columnas a CSV, escape de comas/comillas (RFC 4180), hoja vacía → Error. | ✅ 3 tests, en verde |
 | 3 | `PptToPdfUseCaseTest` — texto de cada diapositiva en el PDF resultante (verificado leyendo el PDF de vuelta con iText7), presentación sin texto → Error, archivo no legible → Error. Usa un .pptx construido a mano (ZIP + XML mínimo), no un mock del contenido. | ✅ 3 tests, en verde |
+| 4 | `WordFormatDetectionTest` — detecta OOXML/OLE2/UNKNOWN por firma binaria; extrae párrafos y detecta encabezado de un `.doc` legado **real** (`legacy-sample.doc`); extrae texto de tabla sin duplicarlo. | ✅ 5 tests, en verde |
+| 5 | `WordToPdfUseCaseTest`, `WordToTextUseCaseTest`, `WordToHtmlUseCaseTest` — cada una agrega un caso con el `.doc` real, verificando que el contenido (título, párrafos, celdas) llega al archivo de salida sin romper el camino `.docx` existente. | ✅ en verde |
 
 Los tests de Word/Excel generan documentos reales con Apache POI en memoria
 (no mocks del contenido) — esto es precisamente lo que hizo evidente el bug
@@ -234,6 +309,5 @@ corregidos.
 
 | Pregunta | Notas |
 |---|---|
-| ¿Vale la pena soportar `.doc` legado (RF-CONV-07)? | Cada vez menos usuarios tienen archivos `.doc` reales (formato pre-2007); evaluar si el esfuerzo de agregar `HWPFDocument` se justifica. |
 | ¿Conversión por lotes (RF-CONV-08) antes o después de ampliar el backlog de Herramientas PDF? | Depende de qué módulo prioriza el usuario. |
 | Banner de anuncios y vista en carrusel — ¿siguen reproduciéndose en la versión actual? | Requieren prueba manual en dispositivo/emulador; no se pudieron confirmar ni descartar solo leyendo el código. |

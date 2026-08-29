@@ -30,35 +30,46 @@ class WordToPdfUseCase @Inject constructor(
             val baseName = fileName ?: generateTimestamp()
             val outputFile = File(outputDir, "$baseName.pdf")
 
-            context.contentResolver.openInputStream(wordUri)?.use { input ->
-                // ── Leer Word con Apache POI ──────────
-                val wordDoc = XWPFDocument(input)
+            context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
+                // RF-CONV-07: detecta OOXML (.docx) vs OLE2 (.doc) por firma
+                // binaria antes de decidir con qué API de POI leer -- ver
+                // WordFormatDetection.kt.
+                val (format, input) = detectWordFormat(rawInput)
                 val writer = PdfWriter(outputFile)
                 val pdfDoc = PdfDocument(writer)
                 val document = Document(pdfDoc)
 
-                // ── Extraer párrafos y escribir en PDF ─
-                wordDoc.paragraphs.forEach { para ->
-                    val text = para.text
-                    if (text.isNotBlank()) {
-                        val paragraph = Paragraph(text)
-                        document.add(paragraph)
+                if (format == WordFileFormat.OLE2) {
+                    extractLegacyDocBlocks(input).forEach { (text, _) ->
+                        document.add(Paragraph(text))
                     }
-                }
+                } else {
+                    // ── Leer Word (.docx) con Apache POI ──
+                    val wordDoc = XWPFDocument(input)
 
-                // ── Extraer tablas ────────────────────
-                wordDoc.tables.forEach { table ->
-                    document.add(Paragraph(""))
-                    table.rows.forEach { row ->
-                        val rowText = row.tableCells.joinToString(" | ") { it.text }
-                        if (rowText.isNotBlank()) {
-                            document.add(Paragraph(rowText))
+                    // ── Extraer párrafos y escribir en PDF ─
+                    wordDoc.paragraphs.forEach { para ->
+                        val text = para.text
+                        if (text.isNotBlank()) {
+                            val paragraph = Paragraph(text)
+                            document.add(paragraph)
                         }
                     }
+
+                    // ── Extraer tablas ────────────────────
+                    wordDoc.tables.forEach { table ->
+                        document.add(Paragraph(""))
+                        table.rows.forEach { row ->
+                            val rowText = row.tableCells.joinToString(" | ") { it.text }
+                            if (rowText.isNotBlank()) {
+                                document.add(Paragraph(rowText))
+                            }
+                        }
+                    }
+                    wordDoc.close()
                 }
 
                 document.close()
-                wordDoc.close()
             } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Word")
 
             ConversionResult.Success(

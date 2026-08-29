@@ -62,6 +62,7 @@
     <ID>MatchingDeclarationName:OnboardingScreen.kt$OnboardingSlide</ID>
     <ID>MatchingDeclarationName:PdfToolsMenu.kt$PdfToolItem</ID>
     <ID>MatchingDeclarationName:QuickAccessGrid.kt$QuickAccessItem</ID>
+    <ID>MatchingDeclarationName:WordFormatDetection.kt$WordFileFormat</ID>
     <ID>MaxLineLength:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$"s" -&gt; { val idx = vValue.toIntOrNull() ?: -1; if (idx in sharedStrings.indices) sharedStrings[idx] else "" }</ID>
     <ID>MaxLineLength:ImageFormatUseCase.kt$ImageFormatUseCase$ConversionType.IMAGE_TO_BMP -&gt; Triple(Bitmap.CompressFormat.PNG, "bmp", 100)</ID>
     <ID>MaxLineLength:LibraryScreen.kt$ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PermissionChecker.PERMISSION_GRANTED</ID>
@@ -319,6 +320,7 @@
     <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$ve: Exception</ID>
     <ID>TooGenericExceptionCaught:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:WordFormatDetection.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:WordToHtmlUseCase.kt$WordToHtmlUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:WordToPdfUseCase.kt$WordToPdfUseCase$e: Exception</ID>
     <ID>TooManyFunctions:ConverterViewModel.kt$ConverterViewModel : ViewModel</ID>

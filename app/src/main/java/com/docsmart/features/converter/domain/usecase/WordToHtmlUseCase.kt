@@ -44,21 +44,31 @@ class WordToHtmlUseCase @Inject constructor(
         }
     }
 
-    /** Lee `word/document.xml` del .docx y extrae cada párrafo con su texto y si es encabezado. */
-    private fun extractParagraphs(wordUri: Uri): List<Pair<String, Boolean>>? {
-        val paragraphs = mutableListOf<Pair<String, Boolean>>() // texto, esHeading
-        context.contentResolver.openInputStream(wordUri)?.use { input ->
-            val zip   = ZipInputStream(input)
-            var entry = zip.nextEntry
-            while (entry != null) {
-                if (entry.name == "word/document.xml") {
-                    paragraphs.addAll(parseDocumentXml(zip.readBytes().toString(Charsets.UTF_8)))
-                    break
-                }
-                entry = zip.nextEntry
+    /** Detecta OOXML (.docx) vs OLE2 (.doc legado, RF-CONV-07 — ver
+     *  `WordFormatDetection.kt`) y extrae cada párrafo con su texto y si
+     *  es encabezado. Para `.docx` lee `word/document.xml` a mano (no usa
+     *  POI); para `.doc` reutiliza `extractLegacyDocBlocks()`. */
+    private fun extractParagraphs(wordUri: Uri): List<Pair<String, Boolean>>? =
+        context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
+            val (format, input) = detectWordFormat(rawInput)
+            if (format == WordFileFormat.OLE2) {
+                extractLegacyDocBlocks(input)
+            } else {
+                extractDocxParagraphs(input)
             }
-            zip.close()
-        } ?: return null
+        }
+
+    private fun extractDocxParagraphs(input: java.io.InputStream): List<Pair<String, Boolean>> {
+        val paragraphs = mutableListOf<Pair<String, Boolean>>() // texto, esHeading
+        val zip   = ZipInputStream(input)
+        var entry = zip.nextEntry
+        while (entry != null) {
+            if (entry.name == "word/document.xml") {
+                paragraphs.addAll(parseDocumentXml(zip.readBytes().toString(Charsets.UTF_8)))
+                break
+            }
+            entry = zip.nextEntry
+        }
         return paragraphs
     }
 
