@@ -216,7 +216,7 @@ fun ConversionSuccess(
 // PDF/imagen) -- antes el ícono, el MIME type al compartir y el texto de
 // los botones asumían PDF/imagen a propósito fijo, mostrando el ícono y
 // el MIME equivocados para el resto (Excel→CSV, Word→HTML, PPT→Texto...).
-private fun formatIconForExtension(extension: String): Pair<ImageVector, Color> =
+internal fun formatIconForExtension(extension: String): Pair<ImageVector, Color> =
     when (extension.lowercase()) {
         "pdf"                         -> Icons.Rounded.PictureAsPdf   to ColorPdf
         "jpg", "jpeg", "png",
@@ -233,7 +233,7 @@ private fun formatIconForExtension(extension: String): Pair<ImageVector, Color> 
 // Antes: si el archivo no existía o FileProvider fallaba
 // la app crasheaba sin mensaje al usuario
 // Ahora: captura la excepción y loguea con Timber
-private fun shareFile(context: Context, file: File, shareLabel: String) {
+internal fun shareFile(context: Context, file: File, shareLabel: String) {
     try {
         // ── Verificar que el archivo existe antes de compartir
         if (!file.exists()) {

@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.features.converter.domain.model.BatchConversionItem
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.domain.model.getCategoryLabel
@@ -41,6 +42,9 @@ data class ConverterUiState(
     val outputFile        : File?            = null,
     val savedToDownloads  : Boolean          = false,
     val errorMessage      : String?          = null,
+    // ── RF-CONV-08: conversión por lotes ──────────────
+    val batchResults      : List<BatchConversionItem> = emptyList(),
+    val batchSavedToDownloads: Boolean       = false,
     // ── Límites diarios ───────────────────────────────
     val showLimitDialog   : Boolean          = false,
     val conversionCount   : Int              = 0,
@@ -165,13 +169,16 @@ class ConverterViewModel @Inject constructor(
     }
 
     // ── Ejecutar conversión ───────────────────────────────────────────────────
-    fun convert() {
+    // RF-CONV-08: IMAGE_TO_PDF con varios archivos sigue siendo "fusionar N
+    // imágenes en UN PDF" (comportamiento ya existente) -- el modo lote
+    // ("N archivos → N salidas") aplica al resto de tipos cuando hay más de
+    // un archivo elegido.
+    fun convert(context: Context) {
         val state = _uiState.value
         val type  = state.selectedType ?: return
         val files = state.selectedFiles
         if (files.isEmpty()) return
 
-        // ── Verificar límite diario (solo si no es Premium) ───────────────────
         if (!adManager.isPremium.value && !dailyLimitManager.canConvert()) {
             _uiState.update { it.copy(showLimitDialog = true) }
             Timber.d("ConverterViewModel: límite diario alcanzado")
@@ -179,50 +186,32 @@ class ConverterViewModel @Inject constructor(
         }
 
         val customName = state.fileName.trim().ifBlank { generateDefaultName() }
+        val isBatch    = type != ConversionType.IMAGE_TO_PDF && files.size > 1
 
         viewModelScope.launch {
             _uiState.update { it.copy(isConverting = true, errorMessage = null) }
 
-            val result = when (type) {
-                ConversionType.IMAGE_TO_PDF ->
-                    convertImageToPdf(imageUris = files, fileName = customName)
-                ConversionType.IMAGE_TO_JPG,
-                ConversionType.IMAGE_TO_PNG,
-                ConversionType.IMAGE_TO_WEBP,
-                ConversionType.IMAGE_TO_BMP ->
-                    imageFormat(files.first(), type, customName)
-                ConversionType.PDF_TO_IMAGE ->
-                    pdfToImage(files.first(), customName)
-                ConversionType.PDF_TO_TXT ->
-                    pdfToText(files.first(), customName)
-                ConversionType.PDF_TO_WORD ->
-                    pdfToWord(files.first(), customName)
-                ConversionType.PDF_TO_HTML ->
-                    pdfToHtml(files.first(), customName)
-                ConversionType.WORD_TO_PDF ->
-                    wordToPdf(files.first(), customName)
-                ConversionType.WORD_TO_TXT ->
-                    wordToText(files.first(), customName)
-                ConversionType.WORD_TO_HTML ->
-                    wordToHtml(files.first(), customName)
-                ConversionType.EXCEL_TO_PDF ->
-                    excelToPdf(files.first(), customName)
-                ConversionType.EXCEL_TO_CSV ->
-                    excelToCsv(files.first(), customName)
-                ConversionType.EXCEL_TO_HTML ->
-                    excelToHtml(files.first(), customName)
-                ConversionType.PPT_TO_PDF ->
-                    pptToPdf(files.first(), customName)
-                ConversionType.PPT_TO_TXT ->
-                    pptToText(files.first(), customName)
+            if (isBatch) {
+                val items = runBatchConversion(context, type, files)
+                _uiState.update { it.copy(
+                    isConverting    = false,
+                    batchResults    = items,
+                    conversionCount = dailyLimitManager.getConversionCount(),
+                    conversionLimit = dailyLimitManager.getConversionLimit()
+                )}
+                return@launch
             }
+
+            val result = if (type == ConversionType.IMAGE_TO_PDF)
+                convertImageToPdf(imageUris = files, fileName = customName)
+            else
+                runConversionForUri(type, files.first(), customName)
 
             Timber.d("ConverterViewModel: resultado $type → $result")
 
             _uiState.update { state ->
                 when (result) {
                     is ConversionResult.Success -> {
-                        // Registrar uso exitoso
                         dailyLimitManager.registerConversion()
                         state.copy(
                             isConverting     = false,
@@ -242,11 +231,94 @@ class ConverterViewModel @Inject constructor(
         }
     }
 
-    fun convertToPdf() {
+    private suspend fun runConversionForUri(type: ConversionType, uri: Uri, fileName: String): ConversionResult =
+        when (type) {
+            ConversionType.IMAGE_TO_PDF -> convertImageToPdf(imageUris = listOf(uri), fileName = fileName)
+            ConversionType.IMAGE_TO_JPG,
+            ConversionType.IMAGE_TO_PNG,
+            ConversionType.IMAGE_TO_WEBP,
+            ConversionType.IMAGE_TO_BMP -> imageFormat(uri, type, fileName)
+            ConversionType.PDF_TO_IMAGE -> pdfToImage(uri, fileName)
+            ConversionType.PDF_TO_TXT   -> pdfToText(uri, fileName)
+            ConversionType.PDF_TO_WORD  -> pdfToWord(uri, fileName)
+            ConversionType.PDF_TO_HTML  -> pdfToHtml(uri, fileName)
+            ConversionType.WORD_TO_PDF  -> wordToPdf(uri, fileName)
+            ConversionType.WORD_TO_TXT  -> wordToText(uri, fileName)
+            ConversionType.WORD_TO_HTML -> wordToHtml(uri, fileName)
+            ConversionType.EXCEL_TO_PDF -> excelToPdf(uri, fileName)
+            ConversionType.EXCEL_TO_CSV -> excelToCsv(uri, fileName)
+            ConversionType.EXCEL_TO_HTML -> excelToHtml(uri, fileName)
+            ConversionType.PPT_TO_PDF   -> pptToPdf(uri, fileName)
+            ConversionType.PPT_TO_TXT   -> pptToText(uri, fileName)
+        }
+
+    // RF-CONV-08: cada archivo del lote se registra individualmente contra el
+    // límite diario -- si se alcanza a mitad del lote, los archivos restantes
+    // quedan marcados como Error sin ejecutar la conversión (evita que "un
+    // lote" sea una forma de saltarse el límite de conversiones/día).
+    private suspend fun runBatchConversion(
+        context: Context,
+        type   : ConversionType,
+        files  : List<Uri>
+    ): List<BatchConversionItem> {
+        val usedNames = mutableSetOf<String>()
+        return files.map { uri ->
+            val originalName = resolveDisplayName(context, uri)
+            val nameNoExt    = originalName.substringBeforeLast('.').ifBlank { generateDefaultName() }
+            val baseName     = uniqueBaseName(nameNoExt, usedNames)
+
+            val result = if (!adManager.isPremium.value && !dailyLimitManager.canConvert()) {
+                ConversionResult.Error("Límite diario de conversiones alcanzado")
+            } else {
+                runConversionForUri(type, uri, baseName).also {
+                    if (it is ConversionResult.Success) dailyLimitManager.registerConversion()
+                }
+            }
+            BatchConversionItem(originalFileName = originalName, result = result)
+        }
+    }
+
+    private fun uniqueBaseName(baseName: String, usedNames: MutableSet<String>): String {
+        var candidate = baseName
+        var suffix = 2
+        while (!usedNames.add(candidate)) {
+            candidate = "$baseName ($suffix)"
+            suffix++
+        }
+        return candidate
+    }
+
+    private fun resolveDisplayName(context: Context, uri: Uri): String = try {
+        var name: String? = null
+        context.contentResolver.query(
+            uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null
+        )?.use { cursor -> if (cursor.moveToFirst()) name = cursor.getString(0) }
+        name ?: uri.lastPathSegment ?: generateDefaultName()
+    } catch (e: Exception) {
+        Timber.w(e, "ConverterViewModel: no se pudo resolver el nombre original para el lote")
+        uri.lastPathSegment ?: generateDefaultName()
+    }
+
+    // ── Guardar todos los resultados exitosos del lote en Descargas ──────────
+    fun saveAllToDownloads(context: Context) {
+        val successFiles = _uiState.value.batchResults
+            .mapNotNull { (it.result as? ConversionResult.Success)?.outputFile }
+        if (successFiles.isEmpty()) return
+
+        viewModelScope.launch {
+            val allSaved = successFiles.all { copyToDownloads(context, it) }
+            _uiState.update { state ->
+                if (allSaved) state.copy(batchSavedToDownloads = true)
+                else state.copy(errorMessage = "No se pudieron guardar todos los archivos en Descargas")
+            }
+        }
+    }
+
+    fun convertToPdf(context: Context) {
         if (_uiState.value.selectedType == null) {
             _uiState.update { it.copy(selectedType = ConversionType.IMAGE_TO_PDF) }
         }
-        convert()
+        convert(context)
     }
 
     fun saveToDownloads(context: Context) {

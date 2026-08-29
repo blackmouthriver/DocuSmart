@@ -4,14 +4,19 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 
+// RF-CONV-08: esta pantalla de progreso ahora se muestra también para lotes
+// de Word/Excel/PDF/PowerPoint, no solo IMAGE_TO_PDF -- el texto ya no puede
+// asumir "imágenes" a propósito fijo.
 @Composable
 fun ConversionProgress(
     totalImages: Int,
@@ -71,7 +76,7 @@ fun ConversionProgress(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.PictureAsPdf,
+                    imageVector = Icons.Rounded.SwapHoriz,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
                     modifier = Modifier
@@ -86,12 +91,12 @@ fun ConversionProgress(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Convirtiendo imágenes...",
+                    text = stringResource(R.string.converter_progress_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Procesando $totalImages ${if (totalImages == 1) "imagen" else "imágenes"}",
+                    text = stringResource(R.string.converter_progress_subtitle, totalImages),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -107,7 +112,7 @@ fun ConversionProgress(
             )
 
             Text(
-                text = "Por favor espera, no cierres la app",
+                text = stringResource(R.string.converter_progress_footer),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -440,6 +440,16 @@
     <string name="converter_convert_another">Weitere Datei konvertieren</string>
     <string name="general_back_action">Zurück</string>
 
+    <!-- ── Converter: Stapelkonvertierung (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">Jede Datei behält ihren ursprünglichen Namen</string>
+    <string name="converter_convert_batch_button">%1$d Dateien konvertieren</string>
+    <string name="converter_batch_success_title">%1$d von %2$d Dateien konvertiert</string>
+    <string name="converter_batch_save_all">Alle in Downloads speichern</string>
+    <string name="converter_batch_convert_another">Weiteren Stapel konvertieren</string>
+    <string name="converter_progress_title">Wird konvertiert…</string>
+    <string name="converter_progress_subtitle">%1$d Datei(en) werden verarbeitet</string>
+    <string name="converter_progress_footer">Bitte warten, App nicht schließen</string>
+
     <string name="splash_tagline">Deine intelligenten Dokumente</string>
 
     <!-- ── Onboarding ─────────────────────────────────── -->

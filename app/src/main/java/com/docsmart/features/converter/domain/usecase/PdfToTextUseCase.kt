@@ -28,7 +28,9 @@ class PdfToTextUseCase @Inject constructor(
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
             // ── Copiar al cache ───────────────────────
-            val cacheFile = File(context.cacheDir, "temp_text.pdf")
+            // Nombre único por llamada (antes fijo: "temp_text.pdf") -- RF-CONV-08
+            // puede invocar este use case varias veces en el mismo lote.
+            val cacheFile = File.createTempFile("temp_text", ".pdf", context.cacheDir)
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
                 cacheFile.outputStream().use { output -> input.copyTo(output) }
             } ?: return@withContext ConversionResult.Error("No se pudo leer el PDF")
@@ -37,7 +39,8 @@ class PdfToTextUseCase @Inject constructor(
             val sb = StringBuilder()
             val pdfDoc = PdfDocument(PdfReader(cacheFile))
 
-            for (i in 1..pdfDoc.numberOfPages) {
+            val pageCount = pdfDoc.numberOfPages
+            for (i in 1..pageCount) {
                 val pageText = PdfTextExtractor.getTextFromPage(pdfDoc.getPage(i))
                 sb.appendLine("=== Página $i ===")
                 sb.appendLine(pageText)
@@ -60,7 +63,7 @@ class PdfToTextUseCase @Inject constructor(
 
             ConversionResult.Success(
                 outputFile = outputFile,
-                pageCount = pdfDoc.numberOfPages,
+                pageCount = pageCount,
                 fileSizeKb = (outputFile.length() / 1024).toInt()
             )
         } catch (e: Exception) {

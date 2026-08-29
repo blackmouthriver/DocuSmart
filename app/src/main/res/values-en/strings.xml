@@ -439,6 +439,16 @@
     <string name="converter_convert_another">Convert another file</string>
     <string name="general_back_action">Back</string>
 
+    <!-- ── Converter: batch conversion (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">Each file keeps its original name</string>
+    <string name="converter_convert_batch_button">Convert %1$d files</string>
+    <string name="converter_batch_success_title">%1$d of %2$d files converted</string>
+    <string name="converter_batch_save_all">Save all to Downloads</string>
+    <string name="converter_batch_convert_another">Convert another batch</string>
+    <string name="converter_progress_title">Converting…</string>
+    <string name="converter_progress_subtitle">Processing %1$d file(s)</string>
+    <string name="converter_progress_footer">Please wait, don\'t close the app</string>
+
     <string name="splash_tagline">Your smart documents</string>
 
     <!-- ── Onboarding ─────────────────────────────────── -->

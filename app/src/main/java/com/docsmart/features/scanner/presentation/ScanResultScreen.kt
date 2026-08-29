@@ -318,7 +318,7 @@ fun ScanResultScreen(
                                     if (customName != null) {
                                         converterViewModel.onFileNameChange(customName)
                                     }
-                                    converterViewModel.convertToPdf()
+                                    converterViewModel.convertToPdf(context)
                                 },
                                 leadingIcon = Icons.Rounded.PictureAsPdf
                             )
