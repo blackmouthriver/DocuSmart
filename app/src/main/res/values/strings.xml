@@ -440,6 +440,16 @@
     <string name="converter_convert_another">Convertir otro archivo</string>
     <string name="general_back_action">Volver</string>
 
+    <!-- ── Converter: conversión por lotes (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">Se conservará el nombre original de cada archivo</string>
+    <string name="converter_convert_batch_button">Convertir %1$d archivos</string>
+    <string name="converter_batch_success_title">%1$d de %2$d archivos convertidos</string>
+    <string name="converter_batch_save_all">Guardar todos en Descargas</string>
+    <string name="converter_batch_convert_another">Convertir otro lote</string>
+    <string name="converter_progress_title">Convirtiendo…</string>
+    <string name="converter_progress_subtitle">Procesando %1$d archivo(s)</string>
+    <string name="converter_progress_footer">Por favor espera, no cierres la app</string>
+
     <string name="splash_tagline">Tus documentos inteligentes</string>
 
     <!-- ── Onboarding ─────────────────────────────────── -->

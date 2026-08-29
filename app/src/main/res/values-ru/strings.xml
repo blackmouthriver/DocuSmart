@@ -440,6 +440,16 @@
     <string name="converter_convert_another">Конвертировать другой файл</string>
     <string name="general_back_action">Назад</string>
 
+    <!-- ── Converter: пакетная конвертация (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">Каждый файл сохранит своё исходное имя</string>
+    <string name="converter_convert_batch_button">Конвертировать %1$d файлов</string>
+    <string name="converter_batch_success_title">Конвертировано %1$d из %2$d файлов</string>
+    <string name="converter_batch_save_all">Сохранить все в Загрузки</string>
+    <string name="converter_batch_convert_another">Конвертировать другой пакет</string>
+    <string name="converter_progress_title">Конвертация…</string>
+    <string name="converter_progress_subtitle">Обработка файлов: %1$d</string>
+    <string name="converter_progress_footer">Подождите, не закрывайте приложение</string>
+
     <string name="splash_tagline">Ваши умные документы</string>
 
     <!-- ── Онбординг ─────────────────────────────────── -->

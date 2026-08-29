@@ -32,6 +32,7 @@ import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.*
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
+import com.docsmart.features.converter.presentation.components.BatchConversionSuccess
 import com.docsmart.features.converter.presentation.components.ConversionProgress
 import com.docsmart.features.converter.presentation.components.ConversionSuccess
 
@@ -46,13 +47,13 @@ fun ConverterScreen(
     val context           = LocalContext.current
     val activity          = context as? Activity
 
+    // RF-CONV-08: selector multi-archivo para todos los tipos, no solo
+    // IMAGE_TO_PDF -- habilita elegir varios archivos para conversión por
+    // lotes (N archivos → N salidas). El picker del sistema permite elegir
+    // uno solo igual, así que no hace falta un launcher separado para eso.
     val fileLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris -> if (uris.isNotEmpty()) viewModel.onFilesSelected(uris) }
-
-    val singleFileLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let { viewModel.onFilesSelected(listOf(it)) } }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
@@ -120,6 +121,19 @@ fun ConverterScreen(
                 }
             }
 
+            if (uiState.batchResults.isNotEmpty()) {
+                item {
+                    BatchConversionSuccess(
+                        items                = uiState.batchResults,
+                        savedToDownloads     = uiState.batchSavedToDownloads,
+                        onConvertAnother     = { viewModel.clearAll() },
+                        onSaveAllToDownloads = { viewModel.saveAllToDownloads(context) },
+                        modifier             = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+                return@LazyColumn
+            }
+
             val result = uiState.conversionResult
             if (result is ConversionResult.Success) {
                 item {
@@ -151,14 +165,8 @@ fun ConverterScreen(
                         selectedFiles    = uiState.selectedFiles,
                         fileName         = uiState.fileName,
                         onFileNameChange = { viewModel.onFileNameChange(it) },
-                        onSelectFiles    = {
-                            val mime = getMimeForType(uiState.selectedType!!)
-                            if (uiState.selectedType == ConversionType.IMAGE_TO_PDF)
-                                fileLauncher.launch(mime)
-                            else
-                                singleFileLauncher.launch(mime)
-                        },
-                        onConvert = { viewModel.convert() },
+                        onSelectFiles    = { fileLauncher.launch(getMimeForType(uiState.selectedType!!)) },
+                        onConvert = { viewModel.convert(context) },
                         onBack    = { viewModel.clearAll() },
                         modifier  = Modifier.padding(horizontal = 20.dp)
                     )
@@ -491,23 +499,36 @@ private fun ConversionDetailCard(
             }
         }
 
+        // RF-CONV-08: con varios archivos (fuera de IMAGE_TO_PDF, que fusiona
+        // todo en un solo PDF) cada archivo produce su propia salida con su
+        // propio nombre original -- el campo de nombre único no aplica.
+        val isBatchMode = selectedFiles.size > 1 && type != ConversionType.IMAGE_TO_PDF
+
         if (selectedFiles.isNotEmpty()) {
-            OutlinedTextField(
-                value         = fileName,
-                onValueChange = onFileNameChange,
-                modifier      = Modifier.fillMaxWidth(),
-                label         = { Text(stringResource(R.string.converter_file_name_label)) },
-                placeholder   = { Text(stringResource(R.string.converter_file_name_placeholder)) },
-                trailingIcon  = {
-                    Text(
-                        text     = ".${type.outputExtension}",
-                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp)
-                    )
-                },
-                singleLine = true,
-                shape      = MaterialTheme.shapes.medium
-            )
+            if (isBatchMode) {
+                Text(
+                    text  = stringResource(R.string.converter_batch_hint),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                OutlinedTextField(
+                    value         = fileName,
+                    onValueChange = onFileNameChange,
+                    modifier      = Modifier.fillMaxWidth(),
+                    label         = { Text(stringResource(R.string.converter_file_name_label)) },
+                    placeholder   = { Text(stringResource(R.string.converter_file_name_placeholder)) },
+                    trailingIcon  = {
+                        Text(
+                            text     = ".${type.outputExtension}",
+                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                    },
+                    singleLine = true,
+                    shape      = MaterialTheme.shapes.medium
+                )
+            }
 
             Button(
                 onClick  = onConvert,
@@ -520,7 +541,10 @@ private fun ConversionDetailCard(
                 Icon(Icons.Rounded.SwapHoriz, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text  = stringResource(R.string.converter_to_format, type.localizedToFormat()),
+                    text  = if (isBatchMode)
+                        stringResource(R.string.converter_convert_batch_button, selectedFiles.size)
+                    else
+                        stringResource(R.string.converter_to_format, type.localizedToFormat()),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

@@ -5,7 +5,7 @@
     <ID>CyclomaticComplexMethod:CompressPdfScreen.kt$@Composable fun CompressPdfScreen( selectedPdf: Uri?, quality: Int, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdf: () -&gt; Unit, onQualityChange: (Int) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier )</ID>
     <ID>CyclomaticComplexMethod:CompressPdfUseCase.kt$CompressPdfUseCase$suspend operator fun invoke( pdfUri : Uri, quality : Int = 60, outputFileName: String? = null ): PdfToolResult</ID>
     <ID>CyclomaticComplexMethod:ConverterScreen.kt$@Composable fun ConverterScreen( viewModel: ConverterViewModel = hiltViewModel() )</ID>
-    <ID>CyclomaticComplexMethod:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
+    <ID>CyclomaticComplexMethod:ConverterViewModel.kt$ConverterViewModel$private suspend fun runConversionForUri(type: ConversionType, uri: Uri, fileName: String): ConversionResult</ID>
     <ID>CyclomaticComplexMethod:DocuSmartNavGraph.kt$@Composable fun DocuSmartNavGraph( navController : NavHostController, themeManager : ThemeManager, languageManager: LanguageManager )</ID>
     <ID>CyclomaticComplexMethod:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$suspend operator fun invoke( excelUri: Uri, fileName: String? = null ): ConversionResult</ID>
     <ID>CyclomaticComplexMethod:PdfPasswordScreen.kt$@Composable private fun ProtectPdfForm( uiState : SecurityUiState, context : android.content.Context, defaultDocumentName: String, onProtect : (Uri, String, String) -&gt; Unit, onCancel : () -&gt; Unit, onSaveToDownloads: (java.io.File) -&gt; Unit )</ID>
@@ -236,7 +236,7 @@
     <ID>PrintStackTrace:SettingsScreen.kt$e</ID>
     <ID>ReturnCount:ComparePdfUseCase.kt$ComparePdfUseCase$private fun copyUriToCache(uri: Uri, prefix: String): File?</ID>
     <ID>ReturnCount:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
-    <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
+    <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert(context: Context)</ID>
     <ID>ReturnCount:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:EditTextPdfUseCase.kt$EditTextPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -342,6 +342,8 @@
     <ID>UnusedPrivateProperty:SettingsScreen.kt$var showShareDialog by remember { mutableStateOf(false) }</ID>
     <ID>WildcardImport:AdBanner.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:AdBanner.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:BatchConversionSuccess.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:BatchConversionSuccess.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:CategoryFilter.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:CategoryFilter.kt$import androidx.compose.material.icons.rounded.*</ID>
     <ID>WildcardImport:CategoryFilter.kt$import com.docsmart.core.ui.theme.*</ID>
@@ -361,6 +363,7 @@
     <ID>WildcardImport:ConverterScreen.kt$import androidx.compose.runtime.*</ID>
     <ID>WildcardImport:ConverterScreen.kt$import com.docsmart.core.ui.theme.*</ID>
     <ID>WildcardImport:ConverterViewModel.kt$import com.docsmart.features.converter.domain.usecase.*</ID>
+    <ID>WildcardImport:ConverterViewModelBatchTest.kt$import com.docsmart.features.converter.domain.usecase.*</ID>
     <ID>WildcardImport:DocuSmartBannerAd.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:DocuSmartBannerAd.kt$import androidx.compose.runtime.*</ID>
     <ID>WildcardImport:DocuSmartBottomBar.kt$import androidx.compose.material.icons.rounded.*</ID>

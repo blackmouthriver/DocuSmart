@@ -36,9 +36,9 @@ producían el archivo equivocado o fallaban al ejecutarse.
 - **RF-CONV-05** El sistema debe convertir PowerPoint (.pptx) a PDF y texto.
 - **RF-CONV-06** Cada conversión debe producir un archivo con la extensión y el contenido correspondientes al formato de salida elegido — no el de otra conversión.
 - **RF-CONV-07** ✅ El sistema debe soportar `.doc` legado (formato binario OLE2, pre-2007) en las 3 conversiones de Word (a PDF, texto y HTML), no solo `.docx` — ver §4 HU-CONV-05.
+- **RF-CONV-08** ✅ El sistema debe permitir seleccionar varios archivos a la vez para una misma conversión y producir una salida independiente por cada uno ("N archivos → N salidas") — ver §4 HU-CONV-06.
 
 ### Backlog — no implementado
-- **RF-CONV-08** Conversión por lotes (varios archivos a la vez) — mencionado como mejora sugerida en `CONTEXT.md`.
 - **RF-CONV-09** PDF → Word que preserve formato/diseño (hoy `PdfToWordUseCase` extrae solo texto plano, sin tablas ni estilos).
 
 ---
@@ -50,6 +50,8 @@ producían el archivo equivocado o fallaban al ejecutarse.
 - **RNF-CONV-03 (PPT→PDF no usa POI para renderizar):** Apache POI puede renderizar diapositivas a imagen (`XSLFSlide.draw(Graphics2D)`), pero esa ruta depende de `java.awt.Graphics2D`/`BufferedImage`, que no existen en el runtime de Android. Por eso `PptToPdfUseCase` reutiliza el parseo de texto por XML crudo de `PptToTextUseCase` en vez de intentar renderizar.
 - **RNF-CONV-04 (dependencias de Apache POI):** `poi`, `poi-ooxml` y `poi-scratchpad` **deben** incluir `org.apache.xmlbeans` en el classpath de compilación y del APK — sin xmlbeans, cualquier uso del modelo de objetos OOXML de POI (`XWPFDocument`, `WorkbookFactory`, `XSSFWorkbook`) falla en tiempo de ejecución con `NoClassDefFoundError`, incluso para solo *leer* un documento existente. Ver bug corregido en §5.
 - **RNF-CONV-05 (detección de encabezado en `.doc` depende del idioma del documento):** a diferencia de `.docx` (donde `w:styleId` es un identificador interno siempre en inglés, sin importar el idioma de la UI de Word), en `.doc` (HWPF) el nombre de estilo que expone la API pública de Apache POI (`StyleDescription.name`) es el nombre **visible**, guardado en el idioma con el que se creó el documento — un "Heading 1" creado con Word en español se llama "Título 1". El formato binario sí guarda un identificador numérico independiente del idioma (`sti`), pero POI no lo expone públicamente. `WordToHtmlUseCase` (que es la única de las 3 conversiones de `.doc` que distingue encabezados) reconoce los nombres de encabezado/título en los 5 idiomas que la app ya soporta (es/en/de/pt/ru — ver `isHeadingStyleName()` en `WordFormatDetection.kt`); un `.doc` creado con Word en otro idioma no tendrá sus encabezados detectados y esos párrafos se renderizan como texto normal — degradado, no roto.
+- **RNF-CONV-06 (el lote cuenta contra el límite diario por archivo, no por lote):** convertir un lote de 3 archivos consume 3 conversiones del límite diario de usuarios free (`DailyLimitManager`, 5/día), no 1 — de lo contrario un "lote" sería una forma trivial de saltarse el límite. Si el límite se alcanza a mitad de un lote, los archivos restantes se marcan como `Error` (sin intentar convertirlos) en vez de detener todo el lote o dejarlo a medias sin explicación.
+- **RNF-CONV-07 (el lote no aplica a IMAGE_TO_PDF):** IMAGE_TO_PDF con varios archivos sigue siendo "fusionar N imágenes en UN solo PDF" (comportamiento preexistente, muy usado) — el modo lote ("N archivos → N salidas") solo aplica al resto de conversiones cuando hay más de un archivo elegido. Mismo picker multi-selección para ambos casos; la diferencia es de comportamiento en `ConverterViewModel.convert()`, no de UI de selección.
 
 ---
 
@@ -168,6 +170,75 @@ que no es un bug bloqueante, pero es una inconsistencia real preexistente
 que no se corrigió en esta HU por no ser parte de su alcance (soportar
 `.doc`, no arreglar el filtro del picker).
 
+### HU-CONV-06 — Conversión por lotes (RF-CONV-08)
+**Como** usuario que necesita convertir varios documentos del mismo tipo,
+**quiero** elegirlos todos de una vez,
+**para** no repetir manualmente el mismo flujo de conversión archivo por
+archivo.
+
+- **AC1** Dado que elijo un tipo de conversión (que no sea Imagen→PDF) y
+  selecciono más de un archivo, cuando confirmo, entonces obtengo una
+  salida independiente por cada archivo, cada una con el nombre original
+  del archivo de entrada (sin la extensión original) — no un solo archivo
+  fusionado.
+- **AC2** Dado que uno de los archivos del lote falla (formato inválido,
+  sin texto extraíble, etc.), cuando termina la conversión, entonces veo
+  el resultado de CADA archivo por separado (éxito o el mensaje de error
+  puntual) — un archivo roto no oculta ni cancela el resultado de los
+  demás.
+- **AC3** Dado que elijo Imagen→PDF con varios archivos, cuando confirmo,
+  entonces se sigue fusionando todo en un solo PDF (comportamiento
+  existente, sin cambios) — el modo lote no aplica a este tipo.
+- **AC4** Dado que dos archivos del lote comparten el mismo nombre original
+  (ej. dos "informe.docx" de carpetas distintas), cuando se convierten,
+  entonces el segundo no sobrescribe la salida del primero (se le agrega
+  " (2)", " (3)", etc.).
+- **AC5** Dado que el lote llega al límite diario de conversiones a mitad
+  de proceso, cuando termina, entonces los archivos restantes aparecen
+  marcados como error (límite alcanzado) sin haber intentado convertirlos
+  — cada archivo del lote cuenta individualmente contra el límite, no el
+  lote como una sola unidad (ver RNF-CONV-06).
+
+**Decisión de diseño — mismo selector multi-archivo para todos los tipos:**
+antes de esta HU, `ActivityResultContracts.GetMultipleContents()` (picker
+que permite elegir varios) solo se usaba para IMAGE_TO_PDF; el resto de
+conversiones usaba `GetContent()` (un solo archivo) — si el usuario elegía
+varios archivos igual para otro tipo, los demás se perdían en silencio. Se
+unificó a un solo `fileLauncher` multi-selección para las 17 conversiones
+(el picker del sistema permite elegir uno solo igual), y `convert()`
+decide entre "fusionar" (solo IMAGE_TO_PDF) o "lote" (todo lo demás, si
+hay más de un archivo) según el tipo — ver `ConverterViewModel.kt`.
+
+**Bug real encontrado durante la verificación en dispositivo de esta HU
+(preexistente, no introducido por el lote):** `PdfToTextUseCase` llamaba
+`pdfDoc.close()` y DESPUÉS volvía a leer `pdfDoc.numberOfPages` para
+construir el `ConversionResult.Success` — iText7 invalida el documento al
+cerrarlo, así que esa lectura lanzaba
+`PdfException: Document was closed. It is impossible to execute action.`
+**Esto significa que la conversión "PDF → Texto" fallaba siempre, en TODO
+caso, no solo en lotes** — nadie lo había detectado porque no existía
+`PdfToTextUseCaseTest.kt`. Corregido guardando `pageCount` en una variable
+local antes de cerrar el documento. De paso, se cambió el nombre de
+archivo de caché de `PdfToTextUseCase` (antes fijo: `"temp_text.pdf"`,
+frágil ante llamadas repetidas dentro del mismo lote) a uno único por
+llamada vía `File.createTempFile()`. Se agregó `PdfToTextUseCaseTest.kt`
+(4 tests) con un PDF real generado con iText7, incluyendo un test que
+verifica que dos llamadas seguidas no interfieren entre sí. **Hallazgo
+adicional, fuera de alcance de esta HU y reportado por separado:** el
+mensaje de error "el PDF no contiene texto extraíble" nunca se dispara en
+la práctica porque el use case agrega un encabezado `"=== Página N ==="`
+a cada página incondicionalmente antes de comprobar si el texto está en
+blanco.
+
+**Verificado en dispositivo (2026-08-29):** lote real de 2 PDFs
+(`OcrTest.pdf`, `FormTest.pdf`) convertidos a Texto usando el selector
+multi-archivo del sistema (mantener presionado + tocar para agregar a la
+selección) — resultado "2 de 2 archivos convertidos", cada fila mostrando
+`OcrTest.pdf → OcrTest.txt` / `FormTest.pdf → FormTest.txt` (nombre
+original preservado), contador "Conversiones hoy: 2 / 5" (cada archivo
+del lote contó individualmente), y "Guardar todos en Descargas" guardando
+ambos `.txt` reales verificados por `adb pull`.
+
 ---
 
 ## 5. Bugs de QA a corregir (trazabilidad)
@@ -193,6 +264,8 @@ que no se corrigió en esta HU por no ser parte de su alcance (soportar
 | 3 | `PptToPdfUseCaseTest` — texto de cada diapositiva en el PDF resultante (verificado leyendo el PDF de vuelta con iText7), presentación sin texto → Error, archivo no legible → Error. Usa un .pptx construido a mano (ZIP + XML mínimo), no un mock del contenido. | ✅ 3 tests, en verde |
 | 4 | `WordFormatDetectionTest` — detecta OOXML/OLE2/UNKNOWN por firma binaria; extrae párrafos y detecta encabezado de un `.doc` legado **real** (`legacy-sample.doc`); extrae texto de tabla sin duplicarlo. | ✅ 5 tests, en verde |
 | 5 | `WordToPdfUseCaseTest`, `WordToTextUseCaseTest`, `WordToHtmlUseCaseTest` — cada una agrega un caso con el `.doc` real, verificando que el contenido (título, párrafos, celdas) llega al archivo de salida sin romper el camino `.docx` existente. | ✅ en verde |
+| 6 | `PdfToTextUseCaseTest` (nuevo, no existía) — extrae texto real de un PDF generado con iText7, cuenta páginas correctamente, dos llamadas seguidas no interfieren entre sí, archivo no legible → Error. Cubre el bug real corregido en HU-CONV-06 (documento cerrado antes de leer `numberOfPages`). | ✅ 4 tests, en verde |
+| 7 | `ConverterViewModelBatchTest` (nuevo) — el lote produce un resultado por archivo (no fusión), IMAGE_TO_PDF con varios archivos sigue fusionando (regresión), nombres duplicados se desambiguan, corte por límite diario a mitad de lote. | ✅ 4 tests, en verde |
 
 Los tests de Word/Excel generan documentos reales con Apache POI en memoria
 (no mocks del contenido) — esto es precisamente lo que hizo evidente el bug
@@ -309,5 +382,4 @@ corregidos.
 
 | Pregunta | Notas |
 |---|---|
-| ¿Conversión por lotes (RF-CONV-08) antes o después de ampliar el backlog de Herramientas PDF? | Depende de qué módulo prioriza el usuario. |
 | Banner de anuncios y vista en carrusel — ¿siguen reproduciéndose en la versión actual? | Requieren prueba manual en dispositivo/emulador; no se pudieron confirmar ni descartar solo leyendo el código. |
