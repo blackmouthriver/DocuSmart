@@ -29,6 +29,11 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- ── Pomodoro en segundo plano (RF-STU-10) ─────── -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <application
         android:name=".DocuSmartApplication"
         android:allowBackup="false"
@@ -115,6 +120,21 @@
             </intent-filter>
 
         </activity>
+
+        <!-- RF-STU-10: mantiene el Pomodoro corriendo aunque se navegue
+             fuera de Modo Estudio o la app pase a segundo plano. No encaja
+             en ningún foregroundServiceType estándar (no es dataSync,
+             mediaPlayback, location, etc.); "specialUse" es el tipo
+             reservado exactamente para este caso, exige declarar el motivo
+             en PROPERTY_SPECIAL_USE_FGS_SUBTYPE. -->
+        <service
+            android:name=".features.study.domain.PomodoroTimerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="pomodoro_study_timer" />
+        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

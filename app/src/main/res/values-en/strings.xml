@@ -157,6 +157,7 @@
     <string name="general_back">Back</string>
     <string name="general_share">Share</string>
     <string name="general_delete">Delete</string>
+    <string name="general_close">Close</string>
     <string name="general_saved_downloads">Saved to Downloads</string>
 
     <!-- ── PDF Tools descriptions ─────────────────────── -->
@@ -731,6 +732,19 @@
     <string name="study_extract_pdf_error">Error reading the PDF: %1$s</string>
     <string name="study_extract_generic_error">Error: %1$s</string>
     <string name="study_default_document_name">Document</string>
+    <string name="study_pomodoro_notification_channel">Pomodoro</string>
+    <string name="study_pomodoro_notification_text">%1$s left</string>
+    <string name="study_export_notes">Export notes</string>
+    <string name="study_export_as_text">As text</string>
+    <string name="study_export_as_pdf">As PDF</string>
+    <string name="study_export_share_title">Share notes</string>
+    <string name="study_stats_icon_desc">View statistics</string>
+    <string name="study_stats_title">Study statistics</string>
+    <string name="study_stats_total_reading">Total time read aloud</string>
+    <string name="study_stats_reading_value">%1$dh %2$dmin</string>
+    <string name="study_stats_pomodoros_this_week">Pomodoros this week</string>
+    <string name="study_stats_pomodoros_total">Total pomodoros completed</string>
+    <string name="study_stats_empty">No stats yet — start reading aloud or finish your first Pomodoro.</string>
 
     <!-- ── Recycle bin (RF-VIS-07) ───────────────────────── -->
     <string name="library_trash">Trash</string>

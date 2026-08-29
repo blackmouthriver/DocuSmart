@@ -183,7 +183,7 @@ private fun shareDocument(context: Context, document: DocumentUiModel) {
         try {
             val file = java.io.File(document.id)
             val uri  = androidx.core.content.FileProvider.getUriForFile(
-                context, "${context.packageName}.provider", file
+                context, "${context.packageName}.fileprovider", file
             )
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "*/*"
