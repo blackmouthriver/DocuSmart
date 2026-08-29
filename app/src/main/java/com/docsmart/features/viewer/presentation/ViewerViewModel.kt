@@ -13,6 +13,7 @@ import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
+import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
@@ -49,6 +50,9 @@ data class ViewerUiState(
     val decryptedFile    : File?   = null,
     val pdfSearchMatches : List<Int> = emptyList(), // páginas (1-based) con coincidencias
     val pdfSearchIndex   : Int     = -1,            // índice actual dentro de pdfSearchMatches
+    // RF-VIS-08: posición real de cada coincidencia por página, para el
+    // resaltado inline -- página (1-based) → rects en puntos PDF.
+    val pdfSearchHighlights: Map<Int, List<PdfMatchRect>> = emptyMap(),
     // ── RF-VIS-06: renombrar/eliminar desde el Visor ──────────────────────
     val showRenameDialog : Boolean = false,
     val showDeleteConfirm: Boolean = false,
@@ -640,21 +644,25 @@ class ViewerViewModel @Inject constructor(
     }
 
     // ── Búsqueda dentro de PDF ─────────────────────────────────────────────────
-    // Los PDF se muestran como bitmaps renderizados, así que no hay resaltado
-    // inline como en Word/Excel/Texto: se buscan las páginas con coincidencias
-    // y se navega entre ellas (ver SearchPdfTextUseCase).
+    // RF-VIS-08: además de saltar entre páginas con coincidencias, se guarda
+    // la posición real de cada una (`pdfSearchHighlights`) para que
+    // `PdfViewerContent` dibuje el resaltado directamente sobre el bitmap ya
+    // renderizado (ver SearchPdfTextUseCase).
     fun searchInPdf(query: String) {
         val uri = _uiState.value.fileUri
         if (uri == null || query.isBlank()) {
-            _uiState.update { it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1) }
+            _uiState.update {
+                it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1, pdfSearchHighlights = emptyMap())
+            }
             return
         }
         viewModelScope.launch {
-            val matches = searchPdfText(uri, query)
+            val results = searchPdfText(uri, query)
             _uiState.update {
                 it.copy(
-                    pdfSearchMatches = matches,
-                    pdfSearchIndex   = if (matches.isEmpty()) -1 else 0
+                    pdfSearchMatches    = results.map { r -> r.pageNumber },
+                    pdfSearchIndex      = if (results.isEmpty()) -1 else 0,
+                    pdfSearchHighlights = results.associate { r -> r.pageNumber to r.rects }
                 )
             }
         }
@@ -678,7 +686,9 @@ class ViewerViewModel @Inject constructor(
     }
 
     fun clearPdfSearch() {
-        _uiState.update { it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1) }
+        _uiState.update {
+            it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1, pdfSearchHighlights = emptyMap())
+        }
     }
 
     fun shareDocument(context: Context) {
