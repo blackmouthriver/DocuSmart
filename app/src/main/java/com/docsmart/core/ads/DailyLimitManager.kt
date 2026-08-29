@@ -34,6 +34,7 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_EDIT_TEXT      = "count_edit_text"
         private const val KEY_SIGN           = "count_sign"
         private const val KEY_FILL_FORM       = "count_fill_form"
+        private const val KEY_OCR             = "count_ocr"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
         private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
 
@@ -57,7 +58,8 @@ class DailyLimitManager @Inject constructor(
             "CROP"          to KEY_CROP,
             "EDIT_TEXT"     to KEY_EDIT_TEXT,
             "SIGN"          to KEY_SIGN,
-            "FILL_FORM"     to KEY_FILL_FORM
+            "FILL_FORM"     to KEY_FILL_FORM,
+            "OCR"           to KEY_OCR
         )
     }
 
@@ -89,6 +91,7 @@ class DailyLimitManager @Inject constructor(
                 .putInt(KEY_EDIT_TEXT,      0)
                 .putInt(KEY_SIGN,           0)
                 .putInt(KEY_FILL_FORM,      0)
+                .putInt(KEY_OCR,            0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
                 .putInt(KEY_EXTRA_PDF_TOOLS, 0)
                 .apply()

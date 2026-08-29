@@ -48,6 +48,7 @@
     <string name="pdf_edit_text">Редактировать текст</string>
     <string name="pdf_sign">Подписать PDF</string>
     <string name="pdf_fill_form">Заполнить форму</string>
+    <string name="pdf_ocr">Расширенное OCR</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -147,6 +148,7 @@
     <string name="pdf_edit_text_desc">Ищет и заменяет существующий текст в документе</string>
     <string name="pdf_sign_desc">Нарисуйте подпись и поставьте её на документ</string>
     <string name="pdf_fill_form_desc">Определяет и заполняет текстовые поля формы PDF</string>
+    <string name="pdf_ocr_desc">Распознаёт текст отсканированного PDF, чтобы сделать его доступным для поиска</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -400,6 +402,18 @@
     <string name="pdf_fill_form_generate_error">Ошибка при создании заполненного PDF.</string>
     <string name="pdf_fill_form_success">Успешно заполнено полей: %1$d</string>
     <string name="pdf_fill_form_error">Ошибка при заполнении формы: %1$s</string>
+    <string name="pdf_ocr_subtitle">Выберите отсканированный PDF, чтобы распознать его текст</string>
+    <string name="pdf_ocr_ready">PDF готов к распознаванию</string>
+    <string name="pdf_ocr_info">Над каждой отсканированной страницей будет добавлен невидимый слой текста без изменения её внешнего вида — итоговый PDF станет доступным для поиска, с выделяемым текстом. Это может занять несколько секунд на страницу.</string>
+    <string name="pdf_ocr_execute">Распознать текст</string>
+    <string name="pdf_ocr_progress">Распознавание текста…</string>
+    <string name="pdf_ocr_read_error">Не удалось прочитать PDF. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_ocr_no_pages">В PDF нет страниц для обработки</string>
+    <string name="pdf_ocr_already_has_text">В этом PDF уже есть выделяемый текст на всех страницах — OCR не требуется</string>
+    <string name="pdf_ocr_no_text_found">В отсканированном PDF не распознано ни одного текста</string>
+    <string name="pdf_ocr_generate_error">Ошибка при создании PDF с распознанным текстом.</string>
+    <string name="pdf_ocr_success">Обработано страниц: %1$d, распознано слов: %2$d</string>
+    <string name="pdf_ocr_error">Ошибка при распознавании текста: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

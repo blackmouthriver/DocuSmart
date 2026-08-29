@@ -298,6 +298,12 @@ dependencies {
     // ── ML Kit ────────────────────────────────────────────────────────────────
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    // Reconocimiento de texto (OCR) on-device para RF-PDF-15 -- distinto del
+    // document-scanner (solo recorta/mejora la imagen del escaneo) y del
+    // barcode-scanning (solo códigos QR/barras). Variante "bundled" (modelo
+    // incluido en el APK, no la de Play Services) para funcionar offline
+    // desde el primer uso, mismo criterio que barcode-scanning ya usa.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 
     // ── ZXing ─────────────────────────────────────────────────────────────────
     implementation("com.google.zxing:core:3.5.4")

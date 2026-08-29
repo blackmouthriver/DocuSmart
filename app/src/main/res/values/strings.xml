@@ -48,6 +48,7 @@
     <string name="pdf_edit_text">Editar texto</string>
     <string name="pdf_sign">Firmar PDF</string>
     <string name="pdf_fill_form">Rellenar formulario</string>
+    <string name="pdf_ocr">OCR avanzado</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -147,6 +148,7 @@
     <string name="pdf_edit_text_desc">Busca y reemplaza texto existente en el documento</string>
     <string name="pdf_sign_desc">Dibuja tu firma y estámpala sobre el documento</string>
     <string name="pdf_fill_form_desc">Detecta y completa campos de texto de un formulario PDF</string>
+    <string name="pdf_ocr_desc">Reconoce el texto de un PDF escaneado para hacerlo buscable</string>
 
     <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
     <string name="daily_limit_title">Límite diario alcanzado</string>
@@ -400,6 +402,18 @@
     <string name="pdf_fill_form_generate_error">Error al generar el PDF con el formulario rellenado.</string>
     <string name="pdf_fill_form_success">%1$d campos rellenados correctamente</string>
     <string name="pdf_fill_form_error">Error al rellenar el formulario: %1$s</string>
+    <string name="pdf_ocr_subtitle">Selecciona un PDF escaneado para reconocer su texto</string>
+    <string name="pdf_ocr_ready">PDF listo para reconocer</string>
+    <string name="pdf_ocr_info">Se agregará una capa de texto invisible sobre cada página escaneada, sin cambiar su apariencia — el PDF resultante queda buscable y con el texto seleccionable. Puede tardar varios segundos por página.</string>
+    <string name="pdf_ocr_execute">Reconocer texto</string>
+    <string name="pdf_ocr_progress">Reconociendo texto…</string>
+    <string name="pdf_ocr_read_error">No se pudo leer el PDF. Verifica que sea un archivo válido.</string>
+    <string name="pdf_ocr_no_pages">El PDF no tiene páginas para procesar</string>
+    <string name="pdf_ocr_already_has_text">Este PDF ya tiene texto seleccionable en todas sus páginas — no es necesario aplicar OCR</string>
+    <string name="pdf_ocr_no_text_found">No se reconoció ningún texto en el PDF escaneado</string>
+    <string name="pdf_ocr_generate_error">Error al generar el PDF con el texto reconocido.</string>
+    <string name="pdf_ocr_success">%1$d páginas procesadas, %2$d palabras reconocidas</string>
+    <string name="pdf_ocr_error">Error al reconocer el texto: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 

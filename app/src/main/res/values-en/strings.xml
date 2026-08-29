@@ -48,6 +48,7 @@
     <string name="pdf_edit_text">Edit text</string>
     <string name="pdf_sign">Sign PDF</string>
     <string name="pdf_fill_form">Fill form</string>
+    <string name="pdf_ocr">Advanced OCR</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -147,6 +148,7 @@
     <string name="pdf_edit_text_desc">Search and replace existing text in the document</string>
     <string name="pdf_sign_desc">Draw your signature and stamp it on the document</string>
     <string name="pdf_fill_form_desc">Detects and fills text fields in a PDF form</string>
+    <string name="pdf_ocr_desc">Recognizes text in a scanned PDF to make it searchable</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -400,6 +402,18 @@
     <string name="pdf_fill_form_generate_error">Error generating the filled-in PDF.</string>
     <string name="pdf_fill_form_success">%1$d fields filled in successfully</string>
     <string name="pdf_fill_form_error">Error filling in the form: %1$s</string>
+    <string name="pdf_ocr_subtitle">Select a scanned PDF to recognize its text</string>
+    <string name="pdf_ocr_ready">PDF ready to recognize</string>
+    <string name="pdf_ocr_info">An invisible text layer will be added over each scanned page, without changing its appearance — the resulting PDF becomes searchable with selectable text. This can take several seconds per page.</string>
+    <string name="pdf_ocr_execute">Recognize text</string>
+    <string name="pdf_ocr_progress">Recognizing text…</string>
+    <string name="pdf_ocr_read_error">Could not read the PDF. Check that it is a valid file.</string>
+    <string name="pdf_ocr_no_pages">The PDF has no pages to process</string>
+    <string name="pdf_ocr_already_has_text">This PDF already has selectable text on every page — OCR is not needed</string>
+    <string name="pdf_ocr_no_text_found">No text was recognized in the scanned PDF</string>
+    <string name="pdf_ocr_generate_error">Error generating the PDF with the recognized text.</string>
+    <string name="pdf_ocr_success">%1$d pages processed, %2$d words recognized</string>
+    <string name="pdf_ocr_error">Error recognizing text: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->

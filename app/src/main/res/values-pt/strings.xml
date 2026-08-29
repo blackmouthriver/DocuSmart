@@ -48,6 +48,7 @@
     <string name="pdf_edit_text">Editar texto</string>
     <string name="pdf_sign">Assinar PDF</string>
     <string name="pdf_fill_form">Preencher formulário</string>
+    <string name="pdf_ocr">OCR avançado</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -147,6 +148,7 @@
     <string name="pdf_edit_text_desc">Busca e substitui texto existente no documento</string>
     <string name="pdf_sign_desc">Desenhe sua assinatura e aplique-a no documento</string>
     <string name="pdf_fill_form_desc">Detecta e preenche campos de texto de um formulário PDF</string>
+    <string name="pdf_ocr_desc">Reconhece o texto de um PDF digitalizado para torná-lo pesquisável</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -400,6 +402,18 @@
     <string name="pdf_fill_form_generate_error">Erro ao gerar o PDF com o formulário preenchido.</string>
     <string name="pdf_fill_form_success">%1$d campos preenchidos com sucesso</string>
     <string name="pdf_fill_form_error">Erro ao preencher o formulário: %1$s</string>
+    <string name="pdf_ocr_subtitle">Selecione um PDF digitalizado para reconhecer seu texto</string>
+    <string name="pdf_ocr_ready">PDF pronto para reconhecimento</string>
+    <string name="pdf_ocr_info">Uma camada de texto invisível será adicionada sobre cada página digitalizada, sem alterar sua aparência — o PDF resultante fica pesquisável e com texto selecionável. Isso pode levar vários segundos por página.</string>
+    <string name="pdf_ocr_execute">Reconhecer texto</string>
+    <string name="pdf_ocr_progress">Reconhecendo texto…</string>
+    <string name="pdf_ocr_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_ocr_no_pages">O PDF não tem páginas para processar</string>
+    <string name="pdf_ocr_already_has_text">Este PDF já tem texto selecionável em todas as páginas — o OCR não é necessário</string>
+    <string name="pdf_ocr_no_text_found">Nenhum texto foi reconhecido no PDF digitalizado</string>
+    <string name="pdf_ocr_generate_error">Erro ao gerar o PDF com o texto reconhecido.</string>
+    <string name="pdf_ocr_success">%1$d páginas processadas, %2$d palavras reconhecidas</string>
+    <string name="pdf_ocr_error">Erro ao reconhecer o texto: %1$s</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 
