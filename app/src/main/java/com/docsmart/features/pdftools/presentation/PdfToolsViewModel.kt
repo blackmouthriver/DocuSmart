@@ -20,8 +20,12 @@ import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CropPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.DetectFormFieldsUseCase
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.FillFormMessages
+import com.docsmart.features.pdftools.domain.usecase.FillFormUseCase
+import com.docsmart.features.pdftools.domain.usecase.FormFieldInfo
 import com.docsmart.features.pdftools.domain.usecase.SignPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SignPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
@@ -52,7 +56,8 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT, CROP, EDIT_TEXT, SIGN
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES,
+    COMPARE, REDACT, CROP, EDIT_TEXT, SIGN, FILL_FORM
 }
 
 data class PdfToolMessages(
@@ -67,7 +72,8 @@ data class PdfToolMessages(
     val redact       : RedactPdfMessages,
     val crop         : CropPdfMessages,
     val editText     : EditTextPdfMessages,
-    val sign         : SignPdfMessages
+    val sign         : SignPdfMessages,
+    val fillForm     : FillFormMessages
 )
 
 data class PdfToolsUiState(
@@ -96,6 +102,9 @@ data class PdfToolsUiState(
     val signaturePageNumber: Int = 1,
     val signatureTotalPages: Int = 1,
     val signatureImageBytes: ByteArray? = null,
+    val formFields: List<FormFieldInfo> = emptyList(),
+    val formFieldValues: Map<String, String> = emptyMap(),
+    val formFieldsDetected: Boolean = false,
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -116,6 +125,8 @@ class PdfToolsViewModel @Inject constructor(
     private val cropPdf: CropPdfUseCase,
     private val editTextPdf: EditTextPdfUseCase,
     private val signPdf: SignPdfUseCase,
+    private val detectFormFields: DetectFormFieldsUseCase,
+    private val fillForm: FillFormUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -171,7 +182,10 @@ class PdfToolsViewModel @Inject constructor(
                 redactionTotalPages = 1,
                 signaturePageNumber = 1,
                 signatureTotalPages = 1,
-                signatureImageBytes = null
+                signatureImageBytes = null,
+                formFields = emptyList(),
+                formFieldValues = emptyMap(),
+                formFieldsDetected = false
             )
         }
     }
@@ -314,6 +328,24 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(signatureImageBytes = null) }
     }
 
+    fun onDetectFormFields(uri: Uri) {
+        _uiState.update { it.copy(formFieldsDetected = false) }
+        viewModelScope.launch {
+            val fields = detectFormFields(uri)
+            _uiState.update {
+                it.copy(
+                    formFields = fields,
+                    formFieldValues = fields.associate { field -> field.name to field.currentValue },
+                    formFieldsDetected = true
+                )
+            }
+        }
+    }
+
+    fun onFormFieldValueChange(name: String, value: String) {
+        _uiState.update { it.copy(formFieldValues = it.formFieldValues + (name to value)) }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         val hasSelection = if (state.selectedTool == PdfTool.COMPARE) {
@@ -376,7 +408,7 @@ class PdfToolsViewModel @Inject constructor(
         PdfTool.MERGE, PdfTool.SPLIT, PdfTool.COMPRESS, PdfTool.ROTATE,
         PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES ->
             runBasicTool(state, customName, messages)
-        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN ->
+        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN, PdfTool.FILL_FORM ->
             runAdvancedTool(state, customName, messages)
         PdfTool.NONE -> null
     }
@@ -478,6 +510,12 @@ class PdfToolsViewModel @Inject constructor(
                 null
             }
         }
+        PdfTool.FILL_FORM -> fillForm(
+            pdfUri = state.selectedPdfs.first(),
+            values = state.formFieldValues,
+            outputFileName = customName,
+            messages = messages.fillForm
+        )
         else -> null
     }
 

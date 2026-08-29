@@ -106,6 +106,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_sign,
         descriptionRes = R.string.pdf_sign_desc,
         color = NavyDark
+    ),
+    PdfToolItem(
+        tool = PdfTool.FILL_FORM,
+        icon = Icons.Rounded.Checklist,
+        titleRes = R.string.pdf_fill_form,
+        descriptionRes = R.string.pdf_fill_form_desc,
+        color = ColorZip
     )
 )
 

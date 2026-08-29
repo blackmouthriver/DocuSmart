@@ -21,8 +21,10 @@ prioridad "media". **RF-PDF-09 (Recortar márgenes) implementado
 2026-08-28, ver §15** — primera funcionalidad de prioridad "baja/futuro".
 **RF-PDF-10 (Editar texto: buscar y reemplazar) implementado 2026-08-28,
 ver §16.** **RF-PDF-11 (Firma manuscrita) implementado 2026-08-29, ver
-§17.** Pendiente: RF-PDF-12 y RF-PDF-15, y selección de archivo desde la
-Biblioteca de la app (ver §5).
+§17.** **RF-PDF-12 (Detección y relleno de formularios) implementado
+2026-08-29, ver §18** — cierra las 4 funcionalidades de prioridad
+"baja/futuro" del backlog. Pendiente: RF-PDF-15, y selección de archivo
+desde la Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
 ---
@@ -57,7 +59,11 @@ el requerimiento #3 original que todavía no existe:
 12. **Firmar PDF** — el usuario dibuja su firma con el dedo y se estampa
     como imagen sobre la página elegida (firma manuscrita, no
     criptográfica — ver §17 para la justificación de esta decisión).
-13. *(Backlog, no implementado)* formularios, OCR avanzado.
+13. **Rellenar formulario** — detecta los campos de texto de un formulario
+    PDF (AcroForm) existente, permite escribir un valor para cada uno y
+    genera un PDF con los valores aplicados de forma permanente
+    (aplanados, no editables).
+14. *(Backlog, no implementado)* OCR avanzado.
 
 ---
 
@@ -77,24 +83,24 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-09** Recortar (crop) márgenes de página. **✅ Implementado 2026-08-28, ver §15.**
 - **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes). **✅ Implementado 2026-08-28 — solo texto (buscar y reemplazar), ver §16.** Edición de imágenes existentes queda fuera de este alcance — ver nota de alcance en §16.
 - **RF-PDF-11** Firma digital de PDF. **✅ Implementado 2026-08-29 — firma manuscrita, no criptográfica, ver §17.** El proyecto no tiene infraestructura de certificados/PKI — ver nota de alcance en §17.
+- **RF-PDF-12** Detección y relleno de formularios PDF. **✅ Implementado 2026-08-29, ver §18.**
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-12** Detección y relleno de formularios PDF.
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
 Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido)
-— **las 3 funcionalidades de prioridad "alta", las 2 de "media" y las 3
-primeras de "baja/futuro" ya están implementadas**
-(RF-PDF-06/07/08/13/14/09/10/11): quedan RF-PDF-12, RF-PDF-15 (requieren
-más superficie de UI o licenciamiento adicional de iText7 para formularios
-avanzados).
+— **las 3 funcionalidades de prioridad "alta", las 2 de "media" y las 4 de
+"baja/futuro" ya están implementadas**
+(RF-PDF-06/07/08/13/14/09/10/11/12): queda solo RF-PDF-15 (OCR avanzado,
+fuera del alcance de este backlog de mejoras sugeridas 2026-08-24 — requiere
+evaluar una librería/motor OCR distinto de iText7).
 
 ---
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible. Editar texto es un segundo caso especial en sentido inverso, igual que Censurar: **debe destruir** el texto original encontrado antes de escribir el reemplazo (RF-PDF-10/RNF-PDF-06) — el resto de la página fuera de las ocurrencias reemplazadas conserva su texto/vectores intactos. Firmar PDF es, como Comparar, un caso que queda fuera del alcance de este RNF por naturaleza en sentido inverso a Editar texto/Censurar: no destruye ni reescribe nada del contenido original, solo **añade** una imagen nueva (la firma) sobre la página en un content stream adicional (`page.newContentStreamAfter()`) — el contenido preexistente permanece exactamente igual.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 12 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible. Editar texto es un segundo caso especial en sentido inverso, igual que Censurar: **debe destruir** el texto original encontrado antes de escribir el reemplazo (RF-PDF-10/RNF-PDF-06) — el resto de la página fuera de las ocurrencias reemplazadas conserva su texto/vectores intactos. Firmar PDF es, como Comparar, un caso que queda fuera del alcance de este RNF por naturaleza en sentido inverso a Editar texto/Censurar: no destruye ni reescribe nada del contenido original, solo **añade** una imagen nueva (la firma) sobre la página en un content stream adicional (`page.newContentStreamAfter()`) — el contenido preexistente permanece exactamente igual. Rellenar formulario es un caso similar a Firmar: `PdfAcroForm.setValue()` solo escribe el valor dentro de cada campo existente y `flattenFields()` lo convierte en texto real de página, sin tocar ningún otro contenido del documento — nada se destruye ni se rasteriza.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 13 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -252,12 +258,28 @@ criptográfica con certificados — ver nota de alcance en §17.)*
 - **AC3** Dado que no he dibujado ninguna firma, cuando intento firmar, entonces el botón permanece deshabilitado y no se genera ningún archivo.
 - **AC4** Dado que el PDF resultante se abre en cualquier lector, cuando reviso el contenido, entonces el texto original de la página sigue intacto y seleccionable — la firma se agrega, no reemplaza ni destruye nada existente.
 
+### HU-PDF-13 — Detectar y rellenar un formulario PDF
+*(Implementado 2026-08-29 — ver §18. HU redactada de nuevo, mismo motivo
+que HU-PDF-08/09/10/11/12: RF-PDF-12 se agregó después como mejora
+sugerida — ver §2.)*
+
+**Como** usuario que recibió un PDF con un formulario (AcroForm) para
+completar,
+**quiero** ver sus campos y escribir un valor para cada uno directamente
+en la app,
+**para** no tener que imprimirlo, completarlo a mano y volver a escanearlo.
+
+- **AC1** Dado que selecciono un PDF con campos de formulario, cuando la app lo procesa, entonces veo la lista de campos detectados con su nombre y, si ya tenía un valor, precargado.
+- **AC2** Dado que escribo un valor en uno o más campos y confirmo rellenar, cuando reviso el PDF resultante, entonces esos valores aparecen como contenido permanente de la página (no como un campo de formulario todavía editable).
+- **AC3** Dado que selecciono un PDF sin ningún campo de formulario, cuando la app lo procesa, entonces veo un mensaje indicando que no se detectaron campos, en vez de una lista vacía sin explicación.
+- **AC4** Dado que confirmo rellenar sin haber escrito ningún valor, cuando confirmo, entonces el sistema devuelve un error y no genera ningún archivo.
+
 ---
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 12 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 13 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -271,7 +293,7 @@ criptográfica con certificados — ver nota de alcance en §17.)*
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). Editar (texto) → RF-PDF-10 (ya implementado, ver §16). Firma → RF-PDF-11 (ya implementado, ver §17). El resto → RF-PDF-12 y RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). Editar (texto) → RF-PDF-10 (ya implementado, ver §16). Firma → RF-PDF-11 (ya implementado, ver §17). Formularios → RF-PDF-12 (ya implementado, ver §18). El resto → RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -291,6 +313,7 @@ criptográfica con certificados — ver nota de alcance en §17.)*
 | 10 | `CropPdfUseCaseTest` — recortar con margen del 10% reduce el tamaño de página proporcionalmente (verificado leyendo el `pageSize` real del PDF de salida, no solo el mensaje), el texto de la página sigue siendo extraíble tras recortar (no se toca el content stream), margen de 0% no cambia el tamaño de la página, un margen fuera de rango se ajusta al máximo permitido (40%) sin generar un rectángulo inválido, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 11 | `EditTextPdfUseCaseTest` — el texto encontrado se reemplaza y el original deja de existir en la extracción del PDF de salida (verificado con `PdfTextExtractor`, la prueba clave de que no es cosmético), búsqueda vacía → Error sin tocar el archivo, texto no encontrado → Error específico, todas las ocurrencias en la página se reemplazan y el mensaje informa el total exacto, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 12 | `SignPdfUseCaseTest` — firmar un PDF de una página produce un archivo no vacío con la firma en la página 1, firma sin imagen → Error sin tocar el archivo, un número de página fuera de rango (por arriba o por abajo) se ajusta al límite válido más cercano, archivo no-PDF → Error. | ✅ 5 tests, en verde |
+| 13 | `DetectFormFieldsUseCaseTest` — detecta los campos de texto de un PDF con AcroForm junto a su valor actual, un PDF sin formulario devuelve lista vacía sin lanzar excepción, archivo no-PDF devuelve lista vacía. `FillFormUseCaseTest` — rellenar los valores de un formulario los deja como texto real extraíble del PDF de salida (verificado con `PdfTextExtractor`, la prueba de que `flattenFields()` los hizo permanentes), mapa de valores vacío → Error sin tocar el archivo, un PDF sin campos de formulario → Error específico, solo los campos con nombre coincidente se rellenan (los demás quedan sin tocar), archivo no-PDF → Error. | ✅ 3 + 5 = 8 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -1197,4 +1220,123 @@ del backlog de mejoras sugeridas 2026-08-24 antes de RF-PDF-12/15
   página, con "SECRETO CONFIDENCIAL" y "PUBLICO VISIBLE" intactos —
   coincide exactamente con el gesto realizado en pantalla y confirma que
   el contenido original no se vio afectado.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 18. RF-PDF-12/HU-PDF-13 — Detectar y rellenar un formulario PDF (2026-08-29)
+
+Cuarta y última funcionalidad de prioridad "baja/futuro" implementada,
+cerrando por completo el backlog de mejoras sugeridas 2026-08-24 (solo
+queda RF-PDF-15, OCR avanzado, fuera de ese backlog — ver §2).
+
+- **`DetectFormFieldsUseCase.kt`** (nuevo) — usa
+  `PdfAcroForm.getAcroForm(pdf, createIfNotExist = false)` (paquete
+  `com.itextpdf.forms`, ya incluido como dependencia transitiva de
+  `itext7-core`, no requirió agregar nada a Gradle) para leer los campos
+  del formulario existente, filtra solo los de tipo texto
+  (`field.getFormType() == PdfName.Tx`, se excluyen checkboxes/radio
+  buttons/firmas de este primer alcance) y devuelve una lista de
+  `FormFieldInfo(name, currentValue)` con el valor actual de cada campo ya
+  precargado. Un PDF sin formulario o con un error de lectura devuelve
+  lista vacía en vez de lanzar excepción — la pantalla interpreta lista
+  vacía como "sin campos detectados" (AC3), no como un fallo.
+- **`FillFormUseCase.kt`** (nuevo) — recibe un `Map<String, String>` de
+  nombre de campo → valor nuevo, usa `field.setValue(value)` por cada
+  entrada que coincide con un campo real del formulario (las que no
+  coinciden se ignoran en silencio, no es un error) y, tras rellenar todos
+  los valores, llama a `form.flattenFields()` — este es el paso que
+  convierte los campos de formulario en **contenido de página normal, ya
+  no editable** (AC2): sin este paso, el PDF resultante seguiría siendo un
+  formulario con los valores precargados pero editable, no lo que pide la
+  HU. Un mapa de valores vacío devuelve `Error` sin tocar el archivo (AC4),
+  igual que un PDF sin ningún campo de formulario detectado
+  (`noFieldsError`, cubre tanto "no es un AcroForm" como "ninguno de los
+  valores enviados coincide con un campo real").
+- **`FillFormScreen.kt`** (nuevo) — al seleccionar un PDF dispara la
+  detección de campos automáticamente (sin botón aparte), con 3 estados
+  visuales: detectando (spinner + texto), sin campos (mensaje explicativo,
+  AC3) y lista de campos (un `OutlinedTextField` por campo detectado, con
+  el nombre del campo como etiqueta y el valor actual precargado si lo
+  tenía). El botón de ejecutar reutiliza el mismo patrón de habilitación
+  condicional que el resto del módulo (deshabilitado sin PDF seleccionado
+  o sin campos detectados).
+- **`PdfTool.FILL_FORM`** (nuevo valor de enum, 13° y último del módulo por
+  ahora), con 3 campos de estado nuevos en `PdfToolsUiState`
+  (`formFields: List<FormFieldInfo>`, `formFieldValues: Map<String,
+  String>`, `formFieldsDetected: Boolean`) y 2 acciones nuevas en el
+  ViewModel (`onDetectFormFields()`, `onFormFieldValueChange()`). Reutiliza
+  `selectedPdfs`/`singlePdfLauncher`. Nueva entrada de menú con ícono
+  `Icons.Rounded.Checklist` y color `ColorZip` (décimotercer color
+  distinto de los 12 ya usados).
+- **Refactor real motivado por detekt, no boilerplate — tercera vez en el
+  módulo, pero en un archivo distinto:** a diferencia de las dos veces
+  anteriores (§12, §16 — siempre el dispatcher `when` de
+  `PdfToolsViewModel`), esta vez la misma clase de problema apareció en
+  `DailyLimitManager.getPdfToolKey()`: su `when` de 13 ramas (una por cada
+  herramienta ya implementada) superó el umbral de complejidad ciclomática
+  de detekt (15) al agregar la rama de `"FILL_FORM"`. En vez de seguir
+  agregando ramas a un `when` que ya venía creciendo desde el inicio del
+  módulo, se reemplazó por una tabla de búsqueda
+  (`Map<String, String>` constante en el companion object,
+  `PDF_TOOL_KEYS[toolKey] ?: KEY_CONVERSIONS`), reduciendo la complejidad
+  de la función a 1 — un patrón más adecuado que dividir en sub-funciones
+  (como se hizo con `runTool()`/`runBasicTool()`/`runAdvancedTool()`) para
+  este caso concreto, porque `getPdfToolKey()` es una función de mapeo
+  puro sin lógica por rama, no un dispatcher que ejecuta comportamiento
+  distinto. Se deja documentado como el patrón a preferir si el `when`
+  dispatcher de `PdfToolsViewModel` vuelve a crecer más allá de sus 2
+  sub-funciones actuales.
+- **`DailyLimitManager`:** mismo procedimiento preventivo que las 7
+  funcionalidades anteriores (§10 a §17) — se agregó `KEY_FILL_FORM` y su
+  entrada en `PDF_TOOL_KEYS` **antes** de escribir el resto del feature,
+  con su test de regresión correspondiente en `DailyLimitManagerTest`.
+- **8 tests unitarios nuevos** (`DetectFormFieldsUseCaseTest` × 3,
+  `FillFormUseCaseTest` × 5) — ambos comparten un helper de prueba
+  (`createPdfWithForm()`) que construye un AcroForm real con
+  `PdfFormField.createText(pdfDoc, Rectangle(...), name, initialValue)` +
+  `form.addField(field, page)`, no un PDF hecho a mano como los de otras
+  herramientas (un AcroForm válido requiere la estructura de diccionario
+  `/AcroForm` que solo la propia API de iText7 genera correctamente).
+  `DetectFormFieldsUseCaseTest` verifica que los campos detectados
+  incluyen su valor actual, que un PDF sin formulario devuelve lista
+  vacía, y que un archivo no-PDF también devuelve lista vacía sin lanzar
+  excepción. `FillFormUseCaseTest` verifica con `PdfTextExtractor` que los
+  valores rellenados quedan como texto real extraíble tras
+  `flattenFields()` (la prueba clave de AC2 — que no es cosmético ni
+  sigue siendo un campo editable), mapa vacío → `Error`, PDF sin campos →
+  `Error` específico, que solo los campos con nombre coincidente se
+  rellenan (uno con nombre inexistente en el mapa no afecta al resto), y
+  archivo no-PDF → `Error`.
+- **detekt:** los mismos 3 hallazgos de boilerplate ya vistos en las 12
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico, esta
+  vez en `DetectFormFieldsUseCase.kt`/`FillFormUseCase.kt`) más el
+  `CyclomaticComplexMethod` real de `getPdfToolKey()` (ver arriba),
+  corregido de verdad con la tabla de búsqueda en vez de baselinearse.
+- **Verificado end-to-end en el dispositivo real (app en español):** un
+  PDF de prueba con formulario real (`FormTest.pdf`, 2 campos de texto
+  "nombre"/"email") generado fuera de línea con un test temporal de
+  Gradle (`PdfFormField.createText()`, borrado antes de continuar — la
+  misma razón que los tests: un AcroForm real no se puede construir a mano
+  con texto plano como los PDFs de prueba de otras herramientas) → subido
+  vía `adb push` → seleccionado en la pantalla de Rellenar formulario →
+  "2 campos detectados" confirmado con "nombre" y "email" mostrados
+  correctamente → escrito "Ana Torres" en nombre y "ana@ejemplo.com" en
+  email → ejecutado → mensaje de éxito "2 campos rellenados
+  correctamente" → guardado en Descargas → archivo descargado y leído
+  directamente con extracción de texto real (`PdfTextExtractor`/`pypdf`):
+  contiene "Ana Torres" y "ana@ejemplo.com" como texto de página normal —
+  confirma que `flattenFields()` los dejó permanentes, coincide
+  exactamente con HU-PDF-13 AC1/AC2.
+  - **Incidencia menor durante la verificación (UI, no código):** el
+    primer intento de tocar el botón "Rellenar formulario" no tuvo efecto
+    porque el teclado en pantalla seguía abierto tras escribir el último
+    campo, desplazando el layout real respecto a las coordenadas
+    calculadas antes de cerrarlo — el toque cayó cerca del campo de email
+    en vez de sobre el botón, agregando un carácter espurio al valor. Se
+    resolvió cerrando el teclado explícitamente (`KEYCODE_BACK`) antes de
+    volver a leer las coordenadas reales del botón con `uiautomator dump`
+    y repetir el toque — no reveló ningún problema de la pantalla en sí,
+    solo un desfase de coordenadas en el guion de verificación.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

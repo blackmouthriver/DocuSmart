@@ -47,6 +47,7 @@
     <string name="pdf_crop">Crop pages</string>
     <string name="pdf_edit_text">Edit text</string>
     <string name="pdf_sign">Sign PDF</string>
+    <string name="pdf_fill_form">Fill form</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -145,6 +146,7 @@
     <string name="pdf_crop_desc">Trim the extra margin from each page</string>
     <string name="pdf_edit_text_desc">Search and replace existing text in the document</string>
     <string name="pdf_sign_desc">Draw your signature and stamp it on the document</string>
+    <string name="pdf_fill_form_desc">Detects and fills text fields in a PDF form</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -383,6 +385,21 @@
     <string name="pdf_sign_generate_error">Error generating the signed PDF.</string>
     <string name="pdf_sign_success">PDF signed successfully — page %1$d</string>
     <string name="pdf_sign_error">Error signing PDF: %1$s</string>
+
+    <!-- ── Rellenar formulario ── -->
+    <string name="pdf_fill_form_subtitle">Select a PDF with form fields and fill them in</string>
+    <string name="pdf_fill_form_ready">PDF ready to fill</string>
+    <string name="pdf_fill_form_detecting">Detecting form fields…</string>
+    <string name="pdf_fill_form_no_fields">This PDF has no text form fields</string>
+    <string name="pdf_fill_form_fields_title">%1$d fields detected</string>
+    <string name="pdf_fill_form_execute">Fill form</string>
+    <string name="pdf_fill_form_progress">Filling form…</string>
+    <string name="pdf_fill_form_empty_values_error">There are no values to fill in</string>
+    <string name="pdf_fill_form_read_error">Could not read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_fill_form_no_fields_error">This PDF has no form fields to fill in</string>
+    <string name="pdf_fill_form_generate_error">Error generating the filled-in PDF.</string>
+    <string name="pdf_fill_form_success">%1$d fields filled in successfully</string>
+    <string name="pdf_fill_form_error">Error filling in the form: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->

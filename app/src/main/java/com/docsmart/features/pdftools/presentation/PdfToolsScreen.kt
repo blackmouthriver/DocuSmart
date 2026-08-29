@@ -26,6 +26,7 @@ import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.FillFormMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
@@ -38,6 +39,7 @@ import com.docsmart.features.pdftools.presentation.components.ComparePdfScreen
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.CropPdfScreen
 import com.docsmart.features.pdftools.presentation.components.EditTextPdfScreen
+import com.docsmart.features.pdftools.presentation.components.FillFormScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
 import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
@@ -144,6 +146,12 @@ fun PdfToolsScreen(
     val signGenerateError       = stringResource(R.string.pdf_sign_generate_error)
     val signSuccess             = stringResource(R.string.pdf_sign_success)
     val signGenericError        = stringResource(R.string.pdf_sign_error)
+    val fillFormEmptyValuesError = stringResource(R.string.pdf_fill_form_empty_values_error)
+    val fillFormReadError        = stringResource(R.string.pdf_fill_form_read_error)
+    val fillFormNoFieldsError    = stringResource(R.string.pdf_fill_form_no_fields_error)
+    val fillFormGenerateError    = stringResource(R.string.pdf_fill_form_generate_error)
+    val fillFormSuccess          = stringResource(R.string.pdf_fill_form_success)
+    val fillFormGenericError     = stringResource(R.string.pdf_fill_form_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -245,6 +253,14 @@ fun PdfToolsScreen(
                 generateError       = signGenerateError,
                 success             = signSuccess,
                 genericError        = signGenericError
+            ),
+            fillForm = FillFormMessages(
+                emptyValuesError = fillFormEmptyValuesError,
+                readError        = fillFormReadError,
+                noFieldsError    = fillFormNoFieldsError,
+                generateError    = fillFormGenerateError,
+                success          = fillFormSuccess,
+                genericError     = fillFormGenericError
             )
         )
     }
@@ -617,6 +633,27 @@ fun PdfToolsScreen(
                                         viewModel.onSignatureCaptured(it)
                                     },
                                     onClearSignature = { viewModel.onClearSignature() },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.FILL_FORM -> FillFormScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    formFields = uiState.formFields,
+                                    formFieldValues = uiState.formFieldValues,
+                                    formFieldsDetected = uiState.formFieldsDetected,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onDetectFields = {
+                                        viewModel.onDetectFormFields(it)
+                                    },
+                                    onFieldValueChange = { name, value ->
+                                        viewModel.onFormFieldValueChange(name, value)
+                                    },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 else -> {}

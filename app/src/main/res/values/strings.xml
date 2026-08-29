@@ -47,6 +47,7 @@
     <string name="pdf_crop">Recortar páginas</string>
     <string name="pdf_edit_text">Editar texto</string>
     <string name="pdf_sign">Firmar PDF</string>
+    <string name="pdf_fill_form">Rellenar formulario</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -145,6 +146,7 @@
     <string name="pdf_crop_desc">Elimina el margen sobrante de cada página</string>
     <string name="pdf_edit_text_desc">Busca y reemplaza texto existente en el documento</string>
     <string name="pdf_sign_desc">Dibuja tu firma y estámpala sobre el documento</string>
+    <string name="pdf_fill_form_desc">Detecta y completa campos de texto de un formulario PDF</string>
 
     <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
     <string name="daily_limit_title">Límite diario alcanzado</string>
@@ -383,6 +385,21 @@
     <string name="pdf_sign_generate_error">Error al generar el PDF firmado.</string>
     <string name="pdf_sign_success">PDF firmado correctamente — página %1$d</string>
     <string name="pdf_sign_error">Error al firmar PDF: %1$s</string>
+
+    <!-- ── Rellenar formulario ── -->
+    <string name="pdf_fill_form_subtitle">Selecciona un PDF con campos de formulario y complétalos</string>
+    <string name="pdf_fill_form_ready">PDF listo para rellenar</string>
+    <string name="pdf_fill_form_detecting">Detectando campos del formulario…</string>
+    <string name="pdf_fill_form_no_fields">Este PDF no tiene campos de formulario de texto</string>
+    <string name="pdf_fill_form_fields_title">%1$d campos detectados</string>
+    <string name="pdf_fill_form_execute">Rellenar formulario</string>
+    <string name="pdf_fill_form_progress">Rellenando formulario…</string>
+    <string name="pdf_fill_form_empty_values_error">No hay valores para rellenar</string>
+    <string name="pdf_fill_form_read_error">No se pudo leer el PDF. Verifica que sea un archivo válido.</string>
+    <string name="pdf_fill_form_no_fields_error">Este PDF no tiene campos de formulario para rellenar</string>
+    <string name="pdf_fill_form_generate_error">Error al generar el PDF con el formulario rellenado.</string>
+    <string name="pdf_fill_form_success">%1$d campos rellenados correctamente</string>
+    <string name="pdf_fill_form_error">Error al rellenar el formulario: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 

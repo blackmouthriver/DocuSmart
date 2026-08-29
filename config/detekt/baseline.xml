@@ -120,9 +120,11 @@
     <ID>NestedBlockDepth:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:ConverterViewModel.kt$ConverterViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
     <ID>NestedBlockDepth:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>NestedBlockDepth:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadImagesFromMediaStore(): List&lt;DocumentUiModel&gt;</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadPdfsFromDownloads(): List&lt;DocumentUiModel&gt;</ID>
     <ID>NestedBlockDepth:EditTextPdfUseCase.kt$EditTextPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>NestedBlockDepth:FillFormUseCase.kt$FillFormUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:PdfToolsViewModel.kt$PdfToolsViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
@@ -234,7 +236,9 @@
     <ID>ReturnCount:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
     <ID>ReturnCount:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:EditTextPdfUseCase.kt$EditTextPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:FillFormUseCase.kt$FillFormUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
     <ID>ReturnCount:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -260,6 +264,7 @@
     <ID>TooGenericExceptionCaught:ConverterViewModel.kt$ConverterViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:CropPdfScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:CropPdfUseCase.kt$CropPdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocuSmartBannerAd.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocuSmartNavGraph.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocumentListSection.kt$e2: Exception</ID>
@@ -270,6 +275,7 @@
     <ID>TooGenericExceptionCaught:ExcelToPdfUseCase.kt$ExcelToPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:FavoritesSection.kt$e2: Exception</ID>
     <ID>TooGenericExceptionCaught:FavoritesSection.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FillFormUseCase.kt$FillFormUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:HomeViewModel.kt$HomeViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageFormatUseCase.kt$ImageFormatUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:LibraryViewModel.kt$LibraryViewModel$e: Exception</ID>

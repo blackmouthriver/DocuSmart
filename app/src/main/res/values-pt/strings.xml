@@ -47,6 +47,7 @@
     <string name="pdf_crop">Cortar páginas</string>
     <string name="pdf_edit_text">Editar texto</string>
     <string name="pdf_sign">Assinar PDF</string>
+    <string name="pdf_fill_form">Preencher formulário</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -145,6 +146,7 @@
     <string name="pdf_crop_desc">Remove a margem excedente de cada página</string>
     <string name="pdf_edit_text_desc">Busca e substitui texto existente no documento</string>
     <string name="pdf_sign_desc">Desenhe sua assinatura e aplique-a no documento</string>
+    <string name="pdf_fill_form_desc">Detecta e preenche campos de texto de um formulário PDF</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -383,6 +385,21 @@
     <string name="pdf_sign_generate_error">Erro ao gerar o PDF assinado.</string>
     <string name="pdf_sign_success">PDF assinado com sucesso — página %1$d</string>
     <string name="pdf_sign_error">Erro ao assinar PDF: %1$s</string>
+
+    <!-- ── Rellenar formulario ── -->
+    <string name="pdf_fill_form_subtitle">Selecione um PDF com campos de formulário e preencha-os</string>
+    <string name="pdf_fill_form_ready">PDF pronto para preencher</string>
+    <string name="pdf_fill_form_detecting">Detectando campos do formulário…</string>
+    <string name="pdf_fill_form_no_fields">Este PDF não tem campos de formulário de texto</string>
+    <string name="pdf_fill_form_fields_title">%1$d campos detectados</string>
+    <string name="pdf_fill_form_execute">Preencher formulário</string>
+    <string name="pdf_fill_form_progress">Preenchendo formulário…</string>
+    <string name="pdf_fill_form_empty_values_error">Não há valores para preencher</string>
+    <string name="pdf_fill_form_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_fill_form_no_fields_error">Este PDF não tem campos de formulário para preencher</string>
+    <string name="pdf_fill_form_generate_error">Erro ao gerar o PDF com o formulário preenchido.</string>
+    <string name="pdf_fill_form_success">%1$d campos preenchidos com sucesso</string>
+    <string name="pdf_fill_form_error">Erro ao preencher o formulário: %1$s</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 
