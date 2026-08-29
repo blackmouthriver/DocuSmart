@@ -36,7 +36,6 @@ import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
@@ -268,7 +267,18 @@ class MainActivity : AppCompatActivity() {
                 .setTestDeviceIds(testDeviceIds)
                 .build()
         )
-        lifecycleScope.launch(Dispatchers.IO) {
+        // MobileAds.initialize() debe llamarse desde el hilo principal (documentado
+        // por Google) -- lanzarlo en Dispatchers.IO hacía que, en el camino rápido
+        // donde el SDK resuelve la inicialización desde caché, el callback de
+        // finalización (que dispara InterstitialAd.load()) se ejecutara en el
+        // mismo hilo IO en vez de pasar por el main looper, y esa llamada exige
+        // hilo principal explícitamente -- crash real: "IllegalStateException:
+        // #008 Must be called on the main UI thread." Se reprodujo de forma
+        // confiable en el reinicio "en caliente" de la Activity al cambiar de
+        // idioma (MainActivity se recrea con el proceso ya corriendo, callback
+        // del SDK resuelto casi instantáneo) aunque el código es el mismo que
+        // corre en cada arranque en frío de la app.
+        lifecycleScope.launch {
             adManager.initialize()
         }
     }
