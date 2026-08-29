@@ -45,6 +45,7 @@
     <string name="pdf_compare">PDFs vergleichen</string>
     <string name="pdf_redact">Inhalt schwärzen</string>
     <string name="pdf_crop">Seiten zuschneiden</string>
+    <string name="pdf_edit_text">Text bearbeiten</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -141,6 +142,7 @@
     <string name="pdf_compare_desc">Findet die Unterschiede zwischen zwei Versionen</string>
     <string name="pdf_redact_desc">Entfernt sensiblen Text und Bilder dauerhaft</string>
     <string name="pdf_crop_desc">Entfernt den überschüssigen Rand jeder Seite</string>
+    <string name="pdf_edit_text_desc">Sucht und ersetzt vorhandenen Text im Dokument</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -341,6 +343,24 @@
     <string name="pdf_crop_generate_error">Fehler beim Erstellen des zugeschnittenen PDFs.</string>
     <string name="pdf_crop_success">PDF erfolgreich zugeschnitten — %1$d%% Rand</string>
     <string name="pdf_crop_error">Fehler beim Zuschneiden des PDFs: %1$s</string>
+
+    <!-- ── Editar texto ── -->
+    <string name="pdf_edit_text_subtitle">Gib den zu suchenden Text und den Ersatztext ein</string>
+    <string name="pdf_edit_text_ready">PDF bereit zum Bearbeiten</string>
+    <string name="pdf_edit_text_search_label">Suchen</string>
+    <string name="pdf_edit_text_search_placeholder">Zu suchender Text</string>
+    <string name="pdf_edit_text_replace_label">Ersetzen durch</string>
+    <string name="pdf_edit_text_replace_placeholder">Ersatztext (leer lassen zum Entfernen)</string>
+    <string name="pdf_edit_text_hint">Die Suche unterscheidet nicht zwischen Groß- und Kleinschreibung und ersetzt jedes Vorkommen</string>
+    <string name="pdf_edit_text_execute">Änderungen anwenden</string>
+    <string name="pdf_edit_text_progress">Text wird bearbeitet…</string>
+    <string name="pdf_edit_text_empty_search_error">Gib den Text ein, den du suchen möchtest</string>
+    <string name="pdf_edit_text_read_error">PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_edit_text_no_pages">Das PDF hat keine Seiten.</string>
+    <string name="pdf_edit_text_no_matches_error">Dieser Text wurde im Dokument nicht gefunden</string>
+    <string name="pdf_edit_text_generate_error">Fehler beim Erstellen des bearbeiteten PDFs.</string>
+    <string name="pdf_edit_text_success">%1$d Vorkommen erfolgreich ersetzt</string>
+    <string name="pdf_edit_text_error">Fehler beim Bearbeiten des PDFs: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

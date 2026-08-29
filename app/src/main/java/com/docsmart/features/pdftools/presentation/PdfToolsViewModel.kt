@@ -20,6 +20,8 @@ import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CropPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.EditTextPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
@@ -48,7 +50,7 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT, CROP
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT, CROP, EDIT_TEXT
 }
 
 data class PdfToolMessages(
@@ -61,7 +63,8 @@ data class PdfToolMessages(
     val reorderPages : ReorderPagesMessages,
     val compare      : ComparePdfMessages,
     val redact       : RedactPdfMessages,
-    val crop         : CropPdfMessages
+    val crop         : CropPdfMessages,
+    val editText     : EditTextPdfMessages
 )
 
 data class PdfToolsUiState(
@@ -85,6 +88,8 @@ data class PdfToolsUiState(
     val redactionCurrentPage: Int = 1,
     val redactionTotalPages: Int = 1,
     val cropMarginPercent: Int = 10,
+    val editSearchText: String = "",
+    val editReplaceText: String = "",
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -103,6 +108,7 @@ class PdfToolsViewModel @Inject constructor(
     private val comparePdf: ComparePdfUseCase,
     private val redactPdf: RedactPdfUseCase,
     private val cropPdf: CropPdfUseCase,
+    private val editTextPdf: EditTextPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -274,6 +280,14 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(cropMarginPercent = percent.coerceIn(0, 40)) }
     }
 
+    fun onEditSearchTextChange(text: String) {
+        _uiState.update { it.copy(editSearchText = text) }
+    }
+
+    fun onEditReplaceTextChange(text: String) {
+        _uiState.update { it.copy(editReplaceText = text) }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         val hasSelection = if (state.selectedTool == PdfTool.COMPARE) {
@@ -324,8 +338,24 @@ class PdfToolsViewModel @Inject constructor(
     // Extraído de execute() para mantener su complejidad ciclomática bajo el
     // umbral de detekt (15) -- este dispatcher crece un caso por cada
     // herramienta nueva del backlog (RF-PDF-06/07/08...) y ya lo había
-    // superado con la séptima.
+    // superado con la séptima. Con la décimoprimera (RF-PDF-10) volvió a
+    // superarlo, así que se dividió en dos sub-dispatchers por categoría
+    // (herramientas de un solo archivo con parámetros simples vs. las que
+    // necesitan lógica propia) en vez de seguir baselineando el hallazgo.
     private suspend fun runTool(
+        state: PdfToolsUiState,
+        customName: String?,
+        messages: PdfToolMessages
+    ): PdfToolResult? = when (state.selectedTool) {
+        PdfTool.MERGE, PdfTool.SPLIT, PdfTool.COMPRESS, PdfTool.ROTATE,
+        PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES ->
+            runBasicTool(state, customName, messages)
+        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT ->
+            runAdvancedTool(state, customName, messages)
+        PdfTool.NONE -> null
+    }
+
+    private suspend fun runBasicTool(
         state: PdfToolsUiState,
         customName: String?,
         messages: PdfToolMessages
@@ -372,6 +402,14 @@ class PdfToolsViewModel @Inject constructor(
             outputFileName = customName,
             messages = messages.reorderPages
         )
+        else -> null
+    }
+
+    private suspend fun runAdvancedTool(
+        state: PdfToolsUiState,
+        customName: String?,
+        messages: PdfToolMessages
+    ): PdfToolResult? = when (state.selectedTool) {
         PdfTool.COMPARE -> {
             val pdfA = state.comparePdfA
             val pdfB = state.comparePdfB
@@ -393,7 +431,14 @@ class PdfToolsViewModel @Inject constructor(
             outputFileName = customName,
             messages = messages.crop
         )
-        PdfTool.NONE -> null
+        PdfTool.EDIT_TEXT -> editTextPdf(
+            pdfUri = state.selectedPdfs.first(),
+            searchText = state.editSearchText,
+            replaceText = state.editReplaceText,
+            outputFileName = customName,
+            messages = messages.editText
+        )
+        else -> null
     }
 
     fun shareResult(context: Context, chooserTitle: String, errorMessage: String) {

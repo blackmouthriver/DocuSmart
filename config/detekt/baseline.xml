@@ -122,6 +122,7 @@
     <ID>NestedBlockDepth:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadImagesFromMediaStore(): List&lt;DocumentUiModel&gt;</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadPdfsFromDownloads(): List&lt;DocumentUiModel&gt;</ID>
+    <ID>NestedBlockDepth:EditTextPdfUseCase.kt$EditTextPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:PdfToolsViewModel.kt$PdfToolsViewModel$private fun copyToDownloads(context: Context, file: File): Boolean</ID>
@@ -232,6 +233,7 @@
     <ID>ReturnCount:CompressPdfUseCase.kt$CompressPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert()</ID>
     <ID>ReturnCount:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:EditTextPdfUseCase.kt$EditTextPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
     <ID>ReturnCount:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:NumberPagesUseCase.kt$NumberPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -261,6 +263,7 @@
     <ID>TooGenericExceptionCaught:DocumentListSection.kt$e2: Exception</ID>
     <ID>TooGenericExceptionCaught:DocumentListSection.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocumentRepository.kt$DocumentRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:EditTextPdfUseCase.kt$EditTextPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ExcelToPdfUseCase.kt$ExcelToPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:FavoritesSection.kt$e2: Exception</ID>

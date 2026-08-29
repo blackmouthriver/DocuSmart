@@ -92,6 +92,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_crop,
         descriptionRes = R.string.pdf_crop_desc,
         color = PremiumGold
+    ),
+    PdfToolItem(
+        tool = PdfTool.EDIT_TEXT,
+        icon = Icons.Rounded.Edit,
+        titleRes = R.string.pdf_edit_text,
+        descriptionRes = R.string.pdf_edit_text_desc,
+        color = SmartBlue
     )
 )
 

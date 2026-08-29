@@ -19,8 +19,9 @@ funcionalidades de prioridad "media". **RF-PDF-14 (Censurar contenido)
 implementado 2026-08-28, ver §14** — cierra las 2 funcionalidades de
 prioridad "media". **RF-PDF-09 (Recortar márgenes) implementado
 2026-08-28, ver §15** — primera funcionalidad de prioridad "baja/futuro".
-Pendiente: RF-PDF-10 a RF-PDF-12 y RF-PDF-15, y selección de archivo desde
-la Biblioteca de la app (ver §5).
+**RF-PDF-10 (Editar texto: buscar y reemplazar) implementado 2026-08-28,
+ver §16.** Pendiente: RF-PDF-11, RF-PDF-12 y RF-PDF-15, y selección de
+archivo desde la Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
 ---
@@ -49,7 +50,10 @@ el requerimiento #3 original que todavía no existe:
    de forma irreversible del PDF (no un rectángulo negro visual encima).
 10. **Recortar páginas** — quita un margen uniforme (0–40%) de los 4 lados
     de cada página, con vista previa en vivo del resultado.
-11. *(Backlog, no implementado)* editar contenido, firma digital,
+11. **Editar texto** — busca texto existente en el documento y lo reemplaza,
+    localizándolo por posición real y eliminándolo de verdad antes de
+    escribir el reemplazo (no es cosmético).
+12. *(Backlog, no implementado)* firma digital,
     formularios, OCR avanzado.
 
 ---
@@ -68,26 +72,25 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-13** Comparar dos versiones de un PDF y resaltar diferencias. **✅ Implementado 2026-08-28, ver §13.**
 - **RF-PDF-14** Censurar (redactar) contenido sensible de forma irreversible. **✅ Implementado 2026-08-28, ver §14.**
 - **RF-PDF-09** Recortar (crop) márgenes de página. **✅ Implementado 2026-08-28, ver §15.**
+- **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes). **✅ Implementado 2026-08-28 — solo texto (buscar y reemplazar), ver §16.** Edición de imágenes existentes queda fuera de este alcance — ver nota de alcance en §16.
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes).
 - **RF-PDF-11** Firma digital de PDF.
 - **RF-PDF-12** Detección y relleno de formularios PDF.
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
 Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido)
-— **las 3 funcionalidades de prioridad "alta", las 2 de "media" y la
-primera de "baja/futuro" ya están implementadas** (RF-PDF-06/07/08/13/14/09):
-quedan RF-PDF-10, RF-PDF-11, RF-PDF-12, RF-PDF-15 (requieren más superficie
-de UI o licenciamiento adicional de iText7 para firma/formularios
-avanzados).
+— **las 3 funcionalidades de prioridad "alta", las 2 de "media" y las 2
+primeras de "baja/futuro" ya están implementadas** (RF-PDF-06/07/08/13/14/09/10):
+quedan RF-PDF-11, RF-PDF-12, RF-PDF-15 (requieren más superficie de UI o
+licenciamiento adicional de iText7 para firma/formularios avanzados).
 
 ---
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 10 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible. Editar texto es un segundo caso especial en sentido inverso, igual que Censurar: **debe destruir** el texto original encontrado antes de escribir el reemplazo (RF-PDF-10/RNF-PDF-06) — el resto de la página fuera de las ocurrencias reemplazadas conserva su texto/vectores intactos.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 11 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -214,12 +217,28 @@ ver §2.)*
 - **AC2** Dado que confirmo recortar con un margen del N%, cuando reviso el PDF resultante, entonces cada página es más pequeña en esa proporción y el contenido de texto original se conserva (no se pierde ni se rasteriza).
 - **AC3 (protección contra un margen inválido)** Dado que intento fijar un margen mayor al máximo permitido, cuando confirmo, entonces el sistema lo ajusta al máximo (40%) en vez de generar un rectángulo de página inválido o vacío.
 
+### HU-PDF-11 — Buscar y reemplazar texto en un PDF
+*(Implementado 2026-08-28 — ver §16. HU redactada de nuevo, mismo motivo
+que HU-PDF-08/09/10: RF-PDF-10 se agregó después como mejora sugerida —
+ver §2. Cubre solo la parte de texto del RF original ("texto/imágenes
+existentes") — ver nota de alcance en §16.)*
+
+**Como** usuario que necesita corregir un dato incorrecto o desactualizado
+en un PDF ya generado,
+**quiero** buscar un texto específico y reemplazarlo por otro,
+**para** no tener que rehacer el documento completo desde el origen.
+
+- **AC1** Dado que escribo un texto a buscar y confirmo, cuando ese texto existe en el documento, entonces todas sus apariciones se reemplazan por el texto de reemplazo en el PDF resultante.
+- **AC2 (irreversibilidad del texto original, mismo criterio que RF-PDF-14/HU-PDF-09 AC2)** Dado que reviso el PDF resultante, cuando intento extraer o seleccionar el texto original que busqué, entonces ese texto ya no existe en el documento — no quedó superpuesto ni recuperable debajo del reemplazo.
+- **AC3** Dado que el texto de reemplazo se deja vacío, cuando confirmo, entonces el texto encontrado se elimina sin escribir nada en su lugar (equivalente a borrar ese texto).
+- **AC4** Dado que el texto buscado no existe en el documento, cuando confirmo, entonces el sistema informa que no se encontró ninguna coincidencia y no genera ningún archivo.
+
 ---
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 10 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 11 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -233,7 +252,7 @@ ver §2.)*
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). El resto → RF-PDF-10 a RF-PDF-12 y RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). Editar (texto) → RF-PDF-10 (ya implementado, ver §16). El resto → RF-PDF-11, RF-PDF-12 y RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -251,6 +270,7 @@ ver §2.)*
 | 8 | `ComparePdfUseCaseTest` — documentos idénticos → mensaje "identical" sin diferencias, una línea distinta en una página compartida aparece en el reporte generado y se cuenta como página distinta, una página que solo existe en un documento se marca como tal (no se cuenta como idéntica ni se compara contra texto vacío), stream nulo al leer A → Error de lectura A, stream nulo al leer B → Error de lectura B. | ✅ 5 tests, en verde |
 | 9 | `RedactPdfUseCaseTest` — censurar la franja donde está el texto "secreto" lo elimina de la extracción del PDF de salida mientras el texto "público" en otra zona de la misma página se conserva intacto (verificado con `PdfTextExtractor`, no solo el mensaje — la prueba que demuestra que la censura es real y no un rectángulo visual), sin zonas marcadas → Error sin tocar el archivo, una zona en una página fuera de rango se ignora sin fallar, el mensaje de éxito informa el número de zonas censuradas, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 10 | `CropPdfUseCaseTest` — recortar con margen del 10% reduce el tamaño de página proporcionalmente (verificado leyendo el `pageSize` real del PDF de salida, no solo el mensaje), el texto de la página sigue siendo extraíble tras recortar (no se toca el content stream), margen de 0% no cambia el tamaño de la página, un margen fuera de rango se ajusta al máximo permitido (40%) sin generar un rectángulo inválido, archivo no-PDF → Error. | ✅ 5 tests, en verde |
+| 11 | `EditTextPdfUseCaseTest` — el texto encontrado se reemplaza y el original deja de existir en la extracción del PDF de salida (verificado con `PdfTextExtractor`, la prueba clave de que no es cosmético), búsqueda vacía → Error sin tocar el archivo, texto no encontrado → Error específico, todas las ocurrencias en la página se reemplazan y el mensaje informa el total exacto, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -914,4 +934,131 @@ de dibujo libre, solo ajustar el tamaño declarado de cada página.
   superior recortado, ya no aparece en el contenido visible del PDF
   resultante — coincide con el efecto esperado del recorte aplicado en
   pantalla.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 16. RF-PDF-10/HU-PDF-11 — Editar texto: buscar y reemplazar (2026-08-28)
+
+Segunda funcionalidad de prioridad "baja/futuro" del backlog. **Nota de
+alcance:** el RF-PDF-10 original dice "edición básica de contenido
+(texto/imágenes existentes)" — esta implementación cubre **solo texto**
+(buscar y reemplazar). Editar imágenes ya existentes en un PDF (moverlas,
+reemplazarlas, redimensionarlas) es un problema bastante más complejo con
+iText7 (requiere identificar objetos `XObject` de imagen y su matriz de
+transformación, no solo localizar texto por regex) y se dejó fuera de esta
+iteración; se documenta aquí como el motivo de que RF-PDF-10 no se marque
+como "100% cubierto" sino con la aclaración explícita en §2.
+
+- **Decisión de diseño — no es un editor de PDF de propósito general:**
+  "editar contenido" en un PDF genérico es un problema abierto (el formato
+  no tiene la noción de "párrafo editable" que sí tiene un `.docx`). Se
+  optó por un **buscar y reemplazar real** en vez de, por ejemplo, un
+  editor de texto libre sobre la página — reutiliza exactamente 3
+  mecanismos ya construidos en las funcionalidades anteriores del módulo:
+  localizar texto por posición (nuevo, ver abajo), eliminarlo de verdad
+  (`PdfCleaner`, RF-PDF-14/Censurar) y escribir el reemplazo con tamaño de
+  fuente ajustado (`PdfCanvas` + ajuste de tamaño, RF-PDF-07/Marca de
+  agua). Es una interpretación acotada pero honesta de "editar contenido":
+  no promete más de lo que puede cumplir con garantías reales.
+- **`EditTextPdfUseCase.kt`** (nuevo) — introduce la primera pieza nueva de
+  API de iText7-core en el módulo desde que existe:
+  `RegexBasedLocationExtractionStrategy` (paquete
+  `com.itextpdf.kernel.pdf.canvas.parser.listener`, parte del `kernel`
+  base, **no** requiere el módulo `pdfCleanup` para esto) procesada vía
+  `PdfCanvasProcessor` — dado un patrón regex, devuelve la lista de
+  `IPdfTextLocation` (rectángulo + página) donde aparece. El texto buscado
+  se escapa como literal con `Pattern.quote()` y se antepone `(?i)` para
+  que la búsqueda no distinga mayúsculas/minúsculas (AC1 de HU-PDF-11, sin
+  exponer regex arbitraria al usuario — evita que un usuario sin
+  conocimientos de regex rompa la búsqueda con caracteres especiales sin
+  querer). Localizadas todas las coincidencias en el documento completo, se
+  eliminan todas de una sola vez con `PdfCleaner.cleanUp()` (mismo
+  mecanismo que Censurar) y luego se escribe el texto de reemplazo en cada
+  posición — o no se escribe nada si el reemplazo es vacío, lo que
+  equivale a "borrar" ese texto (AC3).
+- **Bug real encontrado y corregido durante el desarrollo — orden de
+  verificación de `outputFile.length()`:** el primer intento devolvía
+  `Error(generateError)` incluso cuando el reemplazo se había escrito
+  correctamente. La causa: el chequeo `outputFile.length() == 0L` estaba
+  **dentro** del bloque `PdfDocument(...).use { pdf -> ... }`, antes de que
+  el documento se cerrara y volcara (flush) su contenido final a disco —
+  con archivos de prueba pequeños, el archivo todavía tenía 0 bytes en ese
+  punto. Se corrigió moviendo el chequeo y la construcción del
+  `PdfToolResult.Success` **fuera** del `.use{}`, seguido correctamente
+  (mismo patrón ya usado en `CropPdfUseCase.kt`). Al revisar el resto del
+  módulo se encontró que `RedactPdfUseCase.kt` y `ComparePdfUseCase.kt`
+  tienen el mismo patrón potencialmente frágil sin haberlo manifestado en
+  sus tests actuales (con PDFs algo más grandes, el archivo ya tenía bytes
+  suficientes en disco en ese punto) — se dejó una tarea de seguimiento
+  aparte para auditar y corregir esos dos archivos, en vez de tocarlos
+  dentro del alcance de esta funcionalidad.
+- **Segundo detalle técnico no evidente — escribir contenido después de
+  `PdfCleaner.cleanUp()`:** el primer intento de `drawReplacement()` usaba
+  `PdfCanvas(page)` (el mismo patrón simple usado en Marca de agua/Numerar
+  páginas) para escribir el texto de reemplazo — el texto **no aparecía en
+  absoluto** en el PDF de salida (confirmado con `PdfTextExtractor` en el
+  test, no solo visualmente). Se corrigió usando
+  `PdfCanvas(page.newContentStreamAfter(), page.resources, pdf)` — el
+  patrón documentado de iText7 para agregar contenido *después* de una
+  limpieza (`cleanUp`) sobre la misma página, en vez de reutilizar/continuar
+  el content stream existente de forma ambigua.
+- **`EditTextPdfScreen.kt`** (nuevo) — la pantalla más simple de las
+  últimas 4 funcionalidades (Comparar/Censurar/Recortar/Editar texto): dos
+  campos `OutlinedTextField` (Buscar / Reemplazar con), mismo patrón visual
+  ya usado en Marca de agua. El botón se habilita solo si hay un PDF
+  seleccionado y el campo de búsqueda no está vacío — el de reemplazo sí
+  puede quedar vacío a propósito (equivale a eliminar, AC3).
+- **`PdfTool.EDIT_TEXT`** (nuevo valor de enum, 12° del módulo), con dos
+  campos de estado nuevos (`editSearchText`, `editReplaceText`) que no se
+  resetean en `onPdfsSelected()`, mismo criterio que `watermarkText`.
+  Reutiliza `selectedPdfs`/`singlePdfLauncher`. Nueva entrada de menú con
+  ícono `Icons.Rounded.Edit` y color `SmartBlue` (onceavo color distinto de
+  los 10 ya usados — reutilizado del mismo criterio ya aplicado a
+  `ErrorRed`: estaba en la paleta como acento interno de Reordenar páginas,
+  §12, pero nunca como color de tile de menú).
+- **Refactor real motivado por detekt, no boilerplate — segunda vez en el
+  módulo:** con la 12ª rama del `when` de `runTool()` (`PdfToolsViewModel`),
+  su complejidad ciclomática volvió a superar el umbral de detekt (15) —
+  mismo tipo de hallazgo que ya ocurrió con la 7ª rama en RF-PDF-08 (§12).
+  Esta vez, en vez de seguir extendiendo un único `when` plano, se dividió
+  en dos sub-dispatchers por categoría: `runBasicTool()` (las 7
+  herramientas de un solo archivo con parámetros simples: Unir, Dividir,
+  Comprimir, Rotar, Numerar páginas, Marca de agua, Reordenar páginas) y
+  `runAdvancedTool()` (Comparar, Censurar, Recortar, Editar texto — las que
+  necesitan lógica propia además de invocar el use case), con `runTool()`
+  reducido a un `when` de 3 ramas que delega a la sub-función
+  correspondiente. Cada sub-función queda con complejidad muy por debajo
+  del umbral, dejando más margen para agregar las 3 herramientas restantes
+  del backlog (RF-PDF-11/12/15) sin volver a chocar con este límite tan
+  pronto.
+- **`DailyLimitManager`:** mismo procedimiento preventivo que las 6
+  funcionalidades anteriores (§10/§11/§12/§13/§14/§15) — se agregó
+  `KEY_EDIT_TEXT` y su `case` **antes** de escribir el resto del feature,
+  con su test de regresión correspondiente.
+- **5 tests unitarios nuevos** (`EditTextPdfUseCaseTest`) — el texto
+  encontrado se reemplaza y el original **deja de existir** en la
+  extracción del PDF de salida (verificado con `PdfTextExtractor`, no solo
+  el mensaje de éxito — la prueba que demuestra que no es cosmético),
+  búsqueda vacía → `Error`, texto no encontrado → `Error` específico
+  (`noMatchesError`), múltiples ocurrencias en la misma página se
+  reemplazan todas y el mensaje informa el total exacto, archivo no-PDF →
+  `Error`.
+- **detekt:** los mismos 3 hallazgos de boilerplate ya vistos en las 10
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico) más el
+  `CyclomaticComplexMethod` real de `runTool()` (ver arriba), corregido de
+  verdad dividiendo el dispatcher en vez de baselinearse.
+- **Verificado end-to-end en el dispositivo real (app en español):**
+  reutilizado el mismo PDF de prueba de Censurar/Recortar (`RedactTest.pdf`,
+  "SECRETO CONFIDENCIAL" / "PUBLICO VISIBLE") → seleccionado en la pantalla
+  de Editar texto → escrito "PUBLICO" en Buscar y "PRIVADO" en Reemplazar
+  con → ejecutado → mensaje de éxito "1 ocurrencias reemplazadas
+  correctamente" → guardado en Descargas → archivo descargado y leído
+  directamente: contiene "SECRETO CONFIDENCIAL" intacto (no se tocó, no fue
+  buscado) y "PRIVADO VISIBLE" — "PUBLICO" ya no existe en el documento,
+  reemplazado por "PRIVADO" con un tamaño de fuente visiblemente más
+  pequeño que "VISIBLE" (coincide con lo esperado: el tamaño se ajustó al
+  ancho del rectángulo original de "PUBLICO", más angosto que "VISIBLE"
+  que no se tocó).
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

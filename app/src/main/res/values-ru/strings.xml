@@ -45,6 +45,7 @@
     <string name="pdf_compare">Сравнить PDF</string>
     <string name="pdf_redact">Скрыть содержимое</string>
     <string name="pdf_crop">Обрезать страницы</string>
+    <string name="pdf_edit_text">Редактировать текст</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -141,6 +142,7 @@
     <string name="pdf_compare_desc">Найдите различия между двумя версиями</string>
     <string name="pdf_redact_desc">Безвозвратно удаляет конфиденциальный текст и изображения</string>
     <string name="pdf_crop_desc">Удаляет лишние поля на каждой странице</string>
+    <string name="pdf_edit_text_desc">Ищет и заменяет существующий текст в документе</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -341,6 +343,24 @@
     <string name="pdf_crop_generate_error">Ошибка при создании обрезанного PDF.</string>
     <string name="pdf_crop_success">PDF успешно обрезан — поле %1$d%%</string>
     <string name="pdf_crop_error">Ошибка при обрезке PDF: %1$s</string>
+
+    <!-- ── Editar texto ── -->
+    <string name="pdf_edit_text_subtitle">Введите текст для поиска и текст для замены</string>
+    <string name="pdf_edit_text_ready">PDF готов к редактированию</string>
+    <string name="pdf_edit_text_search_label">Поиск</string>
+    <string name="pdf_edit_text_search_placeholder">Текст для поиска</string>
+    <string name="pdf_edit_text_replace_label">Заменить на</string>
+    <string name="pdf_edit_text_replace_placeholder">Текст замены (оставьте пустым, чтобы удалить)</string>
+    <string name="pdf_edit_text_hint">Поиск не учитывает регистр и заменяет все совпадения</string>
+    <string name="pdf_edit_text_execute">Применить изменения</string>
+    <string name="pdf_edit_text_progress">Редактирование текста…</string>
+    <string name="pdf_edit_text_empty_search_error">Введите текст, который хотите найти</string>
+    <string name="pdf_edit_text_read_error">Не удалось прочитать PDF. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_edit_text_no_pages">В PDF нет страниц.</string>
+    <string name="pdf_edit_text_no_matches_error">Этот текст не найден в документе</string>
+    <string name="pdf_edit_text_generate_error">Ошибка при создании отредактированного PDF.</string>
+    <string name="pdf_edit_text_success">Успешно заменено совпадений: %1$d</string>
+    <string name="pdf_edit_text_error">Ошибка при редактировании PDF: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 
