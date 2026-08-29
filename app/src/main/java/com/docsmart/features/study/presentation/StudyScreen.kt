@@ -39,6 +39,14 @@ import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
+import com.itextpdf.kernel.geom.Vector
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfReader
+import com.itextpdf.kernel.pdf.canvas.parser.EventType
+import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
+import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData
+import com.itextpdf.kernel.pdf.canvas.parser.data.TextRenderInfo
+import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -56,6 +64,7 @@ fun StudyScreen(onBack: () -> Unit = {}) {
     // ── Estado general ────────────────────────────────
     var selectedTab by remember { mutableIntStateOf(0) }
     var documentText by remember { mutableStateOf<List<String>>(emptyList()) }
+    var documentHeadingIndices by remember { mutableStateOf<Set<Int>>(emptySet()) }
     val noDocumentLabel = stringResource(R.string.study_no_document)
     var documentName by remember { mutableStateOf(noDocumentLabel) }
 
@@ -149,8 +158,9 @@ fun StudyScreen(onBack: () -> Unit = {}) {
             isLoadingDoc = true
             scope.launch {
                 val result = extractTextFromUri(context, uri, extractionMessages)
-                documentText = result.first
-                documentName = result.second
+                documentText = result.paragraphs
+                documentHeadingIndices = result.headingIndices
+                documentName = result.fileName
                 isLoadingDoc = false
             }
         }
@@ -204,6 +214,7 @@ fun StudyScreen(onBack: () -> Unit = {}) {
                 // ── Tab Lectura ───────────────────────
                 0 -> ReadingTab(
                     documentText = documentText,
+                    headingIndices = documentHeadingIndices,
                     isLoading = isLoadingDoc,
                     highlights = highlights,
                     isSpeaking = isSpeaking.value,
@@ -365,6 +376,7 @@ private fun StudyTopBar(
 @Composable
 private fun ReadingTab(
     documentText: List<String>,
+    headingIndices: Set<Int> = emptySet(),
     isLoading: Boolean,
     highlights: Set<Int>,
     isSpeaking: Boolean,
@@ -502,88 +514,17 @@ private fun ReadingTab(
                         verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
                         itemsIndexed(documentText) { index, paragraph ->
-                            // ── Párrafo como texto fluido ─
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        when {
-                                            currentSpeakingIndex == index ->
-                                                DocuBlue.copy(alpha = 0.08f)
-                                            highlights.contains(index) ->
-                                                WarningAmber.copy(alpha = 0.1f)
-                                            else -> Color.Transparent
-                                        }
-                                    )
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                // ── Texto ─────────────────
-                                Text(
-                                    text = paragraph,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontSize = 16.sp,
-                                    lineHeight = 26.sp,
-                                    color = when {
-                                        currentSpeakingIndex == index -> DocuBlue
-                                        else -> MaterialTheme.colorScheme.onSurface
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                // ── Botones acción ────────
-                                Column {
-                                    // Resaltar
-                                    IconButton(
-                                        onClick = { onToggleHighlight(index) },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = if (highlights.contains(index))
-                                                Icons.Rounded.Bookmark
-                                            else
-                                                Icons.Rounded.BookmarkBorder,
-                                            contentDescription = null,
-                                            tint = if (highlights.contains(index))
-                                                WarningAmber
-                                            else
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                                    .copy(alpha = 0.4f),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                    // Leer párrafo
-                                    IconButton(
-                                        onClick = { onSpeak(paragraph, index) },
-                                        modifier = Modifier.size(28.dp),
-                                        enabled = ttsReady
-                                    ) {
-                                        Icon(
-                                            imageVector = if (currentSpeakingIndex == index)
-                                                Icons.Rounded.VolumeOff
-                                            else
-                                                Icons.Rounded.VolumeUp,
-                                            contentDescription = null,
-                                            tint = if (currentSpeakingIndex == index)
-                                                DocuBlue
-                                            else
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                                    .copy(alpha = 0.4f),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // ── Separador sutil ───────────
-                            if (index < documentText.size - 1) {
-                                HorizontalDivider(
-                                    color = MaterialTheme.colorScheme.outlineVariant
-                                        .copy(alpha = 0.3f),
-                                    thickness = 0.5.dp
-                                )
-                            }
+                            ReadingParagraphRow(
+                                paragraph = paragraph,
+                                index = index,
+                                isLast = index == documentText.size - 1,
+                                isHeading = headingIndices.contains(index),
+                                isHighlighted = highlights.contains(index),
+                                isSpeakingThis = currentSpeakingIndex == index,
+                                ttsReady = ttsReady,
+                                onToggleHighlight = onToggleHighlight,
+                                onSpeak = onSpeak
+                            )
                         }
                     }
                 }
@@ -593,86 +534,86 @@ private fun ReadingTab(
 }
 
 // ── Párrafo individual ────────────────────────────────
+// Extraído de ReadingTab (antes tenía el render de cada párrafo inline,
+// LongMethod por detekt) -- reemplaza además a ParagraphItem/HighlightButton/
+// SpeakButton/paragraphCardColor, que quedaron como código muerto (ninguna
+// función del archivo las llamaba) desde que ReadingTab pasó a dibujar el
+// párrafo como texto fluido con Row en vez de una Card por párrafo.
 @Composable
-private fun ParagraphItem(
-    text: String,
-    index: Int,
-    isHighlighted: Boolean,
-    isSpeaking: Boolean,
-    onToggleHighlight: () -> Unit,
-    onSpeak: () -> Unit
+private fun ReadingParagraphRow(
+    paragraph        : String,
+    index            : Int,
+    isLast           : Boolean,
+    isHeading        : Boolean,
+    isHighlighted    : Boolean,
+    isSpeakingThis   : Boolean,
+    ttsReady         : Boolean,
+    onToggleHighlight: (Int) -> Unit,
+    onSpeak          : (String, Int) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = paragraphCardColor(isSpeaking, isHighlighted)
-        ),
-        elevation = CardDefaults.cardElevation(
-            if (isHighlighted || isSpeaking) 4.dp else 1.dp
-        )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                when {
+                    isSpeakingThis -> DocuBlue.copy(alpha = 0.08f)
+                    isHighlighted  -> WarningAmber.copy(alpha = 0.1f)
+                    else           -> Color.Transparent
+                }
+            )
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            // ── Número de párrafo ─────────────────────
-            Text(
-                text = "${index + 1}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(20.dp)
-            )
+        // ── Texto (encabezados en negrita, igual que el Visor de Word) ─
+        Text(
+            text = paragraph,
+            style = MaterialTheme.typography.bodyMedium,
+            fontSize = if (isHeading) 18.sp else 16.sp,
+            fontWeight = if (isHeading) FontWeight.Bold else FontWeight.Normal,
+            lineHeight = 26.sp,
+            color = when {
+                isSpeakingThis -> DocuBlue
+                isHeading      -> MaterialTheme.colorScheme.primary
+                else           -> MaterialTheme.colorScheme.onSurface
+            },
+            modifier = Modifier.weight(1f)
+        )
 
-            // ── Texto ─────────────────────────────────
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isSpeaking) DocuBlue
-                else MaterialTheme.colorScheme.onSurface,
-                lineHeight = 22.sp,
-                modifier = Modifier.weight(1f)
-            )
-
-            // ── Acciones ──────────────────────────────
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                HighlightButton(isHighlighted, onToggleHighlight)
-                SpeakButton(isSpeaking, onSpeak)
+        // ── Botones acción ────────
+        Column {
+            IconButton(
+                onClick = { onToggleHighlight(index) },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    imageVector = if (isHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                    contentDescription = null,
+                    tint = if (isHighlighted) WarningAmber
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            IconButton(
+                onClick = { onSpeak(paragraph, index) },
+                modifier = Modifier.size(28.dp),
+                enabled = ttsReady
+            ) {
+                Icon(
+                    imageVector = if (isSpeakingThis) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+                    contentDescription = null,
+                    tint = if (isSpeakingThis) DocuBlue
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
     }
-}
 
-@Composable
-private fun paragraphCardColor(isSpeaking: Boolean, isHighlighted: Boolean) = when {
-    isSpeaking -> DocuBlue.copy(alpha = 0.15f)
-    isHighlighted -> WarningAmber.copy(alpha = 0.15f)
-    else -> MaterialTheme.colorScheme.surface
-}
-
-@Composable
-private fun HighlightButton(isHighlighted: Boolean, onToggleHighlight: () -> Unit) {
-    IconButton(onClick = onToggleHighlight, modifier = Modifier.size(28.dp)) {
-        Icon(
-            imageVector = if (isHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
-            contentDescription = "Resaltar",
-            tint = if (isHighlighted) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
-@Composable
-private fun SpeakButton(isSpeaking: Boolean, onSpeak: () -> Unit) {
-    IconButton(onClick = onSpeak, modifier = Modifier.size(28.dp)) {
-        Icon(
-            imageVector = if (isSpeaking) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-            contentDescription = "Leer",
-            tint = if (isSpeaking) DocuBlue else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp)
+    if (!isLast) {
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+            thickness = 0.5.dp
         )
     }
 }
@@ -1278,100 +1219,178 @@ data class StudyExtractionMessages(
     val defaultDocumentName: String
 )
 
+// Resultado de extracción: encabezados detectados vienen como índices dentro
+// de `paragraphs` (no un tipo por-párrafo aparte) para no tocar la lógica de
+// resaltado/TTS existente, que ya identifica párrafos por índice sobre
+// `documentText` (ver `highlights: Set<Int>`, `currentSpeakingIndex`).
+data class StudyExtractionResult(
+    val paragraphs: List<String>,
+    val headingIndices: Set<Int>,
+    val fileName: String
+)
+
 // ── Extraer texto de documento ────────────────────────
 private suspend fun extractTextFromUri(
     context: Context,
     uri: Uri,
     messages: StudyExtractionMessages
-): Pair<List<String>, String> = withContext(Dispatchers.IO) {
+): StudyExtractionResult = withContext(Dispatchers.IO) {
     try {
         val mimeType = context.contentResolver.getType(uri) ?: ""
         val fileName = resolveFileName(context, uri, messages)
 
-        val text = when {
-            mimeType.contains("pdf") -> extractPdfText(context, uri, messages)
+        val (paragraphs, headingIndices) = when {
+            mimeType.contains("pdf") -> extractPdfText(context, uri, messages) to emptySet()
             mimeType.contains("word") || mimeType.contains("msword") ||
                     mimeType.contains("wordprocessingml") -> extractWordText(context, uri, messages)
-            mimeType.contains("text") -> extractPlainText(context, uri, messages)
+            mimeType.contains("text") -> extractPlainText(context, uri, messages) to emptySet()
             mimeType.contains("powerpoint") || mimeType.contains("presentation") ->
-                extractPptText(context, uri, messages)
-            else -> extractPlainText(context, uri, messages)
+                extractPptText(context, uri, messages) to emptySet()
+            else -> extractPlainText(context, uri, messages) to emptySet()
         }
 
-        Pair(text, fileName)
+        StudyExtractionResult(paragraphs, headingIndices, fileName)
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto")
-        Pair(emptyList(), String.format(messages.genericErrorTemplate, e.message ?: ""))
+        StudyExtractionResult(emptyList(), emptySet(), String.format(messages.genericErrorTemplate, e.message ?: ""))
     }
 }
 
+// RF: antes dividía por CADA salto de línea del PDF (`pageText.split("\n")`),
+// así que una oración larga que el PDF ajusta en 2-3 líneas visuales se
+// mostraba y se leía en voz alta como 2-3 "párrafos" distintos, cortados a
+// mitad de frase. Ahora agrupa por espaciado vertical real entre líneas
+// (misma heurística ya verificada en PdfToWordUseCase/RF-CONV-09: un salto
+// > 1.6x el tamaño de fuente = párrafo nuevo, uno menor = ajuste de línea
+// dentro del mismo párrafo lógico) para que "leer este párrafo" lea un
+// párrafo real, no medio renglón.
 private fun extractPdfText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
     return try {
-        // ── Copiar al cache ───────────────────────────
-        val cacheFile = File(context.cacheDir, "study_temp.pdf")
+        val cacheFile = File.createTempFile("study_temp", ".pdf", context.cacheDir)
         context.contentResolver.openInputStream(uri)?.use { input ->
             cacheFile.outputStream().use { output -> input.copyTo(output) }
         } ?: return listOf(messages.couldNotRead)
 
-        // ── Extraer texto con iText7 ──────────────────
+        val pdfDoc = PdfDocument(PdfReader(cacheFile))
+
         val paragraphs = mutableListOf<String>()
-        val pdfDoc = com.itextpdf.kernel.pdf.PdfDocument(
-            com.itextpdf.kernel.pdf.PdfReader(cacheFile)
-        )
-
         for (i in 1..pdfDoc.numberOfPages) {
-            val pageText = com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
-                .getTextFromPage(pdfDoc.getPage(i))
-                .trim()
-
-            if (pageText.isNotBlank()) {
-                // ── Dividir por párrafos ──────────────
-                pageText.split("\n")
-                    .map { it.trim() }
-                    .filter { it.length > 5 }
-                    .forEach { paragraphs.add(it) }
-            }
+            val listener = StudyPdfLineListener()
+            PdfCanvasProcessor(listener).processPageContent(pdfDoc.getPage(i))
+            paragraphs.addAll(groupPdfChunksIntoParagraphs(listener.chunks))
         }
-
         pdfDoc.close()
+        cacheFile.delete()
 
-        if (paragraphs.isEmpty()) {
-            listOf(messages.pdfNoText)
-        } else {
-            paragraphs
-        }
+        if (paragraphs.isEmpty()) listOf(messages.pdfNoText) else paragraphs
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto PDF")
         listOf(String.format(messages.pdfErrorTemplate, e.message ?: ""))
     }
 }
 
-private fun extractWordText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
+internal data class StudyPdfChunk(val text: String, val y: Float, val fontSize: Float)
+
+private class StudyPdfLineListener : IEventListener {
+    val chunks = mutableListOf<StudyPdfChunk>()
+
+    override fun eventOccurred(data: IEventData?, type: EventType) {
+        val info = data as? TextRenderInfo ?: return
+        if (info.text.isEmpty()) return
+        val y = info.baseline.startPoint.get(Vector.I2)
+        chunks.add(StudyPdfChunk(info.text, y, info.fontSize))
+    }
+
+    override fun getSupportedEvents() = mutableSetOf(EventType.RENDER_TEXT)
+}
+
+internal fun groupPdfChunksIntoParagraphs(chunks: List<StudyPdfChunk>): List<String> {
+    if (chunks.isEmpty()) return emptyList()
+    val paragraphs = mutableListOf<StringBuilder>()
+    var current = StringBuilder()
+    var previousY: Float? = null
+
+    chunks.forEach { chunk ->
+        val sameLine = previousY != null && kotlin.math.abs(previousY!! - chunk.y) <= 1f
+        val isNewParagraph = previousY != null && !sameLine &&
+            (previousY!! - chunk.y) > 1.6f * chunk.fontSize
+        val isWrappedLine = previousY != null && !sameLine && !isNewParagraph
+
+        if (isNewParagraph) {
+            paragraphs.add(current)
+            current = StringBuilder()
+        }
+        if (isWrappedLine && current.isNotEmpty() && !chunk.text.startsWith(" ")) current.append(' ')
+        current.append(chunk.text)
+        previousY = chunk.y
+    }
+    paragraphs.add(current)
+    return paragraphs.map { it.toString().trim() }.filter { it.length > 5 }
+}
+
+// RF: antes convertía TODO <w:p> en un simple salto de línea antes de
+// quitar etiquetas, perdiendo la información de estilo (<w:pPr>) necesaria
+// para saber si un párrafo es un encabezado -- igual mejora ya aplicada al
+// Visor de Word (WordViewerContent), reutilizando la misma detección de
+// estilo "Heading/Title/Título/H1-H6".
+private fun extractWordText(
+    context: Context,
+    uri: Uri,
+    messages: StudyExtractionMessages
+): Pair<List<String>, Set<Int>> {
     return try {
         context.contentResolver.openInputStream(uri)?.use { input ->
-            val zip = ZipInputStream(input)
-            var entry = zip.nextEntry
-            val result = mutableListOf<String>()
-            while (entry != null) {
-                if (entry.name == "word/document.xml") {
-                    val content = zip.readBytes().toString(Charsets.UTF_8)
-                    content.replace(Regex("<w:p[ >]"), "\n")
-                        .replace(Regex("<[^>]+>"), "")
-                        .replace("&amp;", "&")
-                        .split("\n")
-                        .map { it.trim() }
-                        .filter { it.length > 3 }
-                        .also { result.addAll(it) }
-                    break
-                }
-                entry = zip.nextEntry
-            }
-            zip.close()
-            result.ifEmpty { listOf(messages.noTextFound) }
-        } ?: listOf(messages.couldNotOpen)
+            val documentXml = findWordDocumentXml(input)
+                ?: return@use listOf(messages.noTextFound) to emptySet()
+            val (paragraphs, headingIndices) = parseWordParagraphsWithHeadings(documentXml)
+            if (paragraphs.isEmpty()) listOf(messages.noTextFound) to emptySet()
+            else paragraphs to headingIndices
+        } ?: listOf(messages.couldNotOpen) to emptySet()
     } catch (e: Exception) {
-        listOf(String.format(messages.genericErrorTemplate, e.message ?: ""))
+        listOf(String.format(messages.genericErrorTemplate, e.message ?: "")) to emptySet()
     }
+}
+
+private fun findWordDocumentXml(input: java.io.InputStream): String? {
+    val zip = ZipInputStream(input)
+    var entry = zip.nextEntry
+    while (entry != null) {
+        if (entry.name == "word/document.xml") return zip.readBytes().toString(Charsets.UTF_8)
+        entry = zip.nextEntry
+    }
+    return null
+}
+
+// Hallazgo real verificado en dispositivo con un .docx generado por Word en
+// español: el identificador de estilo interno (w:pStyle w:val) NO siempre es
+// en inglés como se asumía -- Word en español escribió "Ttulo1" (con tilde
+// quitada), no "Heading1". Mismo criterio ya corregido en WordViewerContent
+// (ver WORD_HEADING_STYLE_REGEX en ViewerScreen.kt) -- se duplica acá en vez
+// de importarlo entre features para no acoplar Estudio al Visor por un
+// patrón de 3 líneas.
+private val STUDY_HEADING_STYLE_REGEX = Regex(
+    "w:val=\"(heading|title|titulo|ttulo|berschrift|titel|заголовок|название|h[123456])",
+    RegexOption.IGNORE_CASE
+)
+
+internal fun parseWordParagraphsWithHeadings(xml: String): Pair<List<String>, Set<Int>> {
+    val paragraphs = mutableListOf<String>()
+    val headingIndices = mutableSetOf<Int>()
+    val paraRegex = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
+
+    paraRegex.findAll(xml).forEach { match ->
+        val paraXml = match.value
+        val text = paraXml
+            .replace(Regex("<w:rPr>.*?</w:rPr>", RegexOption.DOT_MATCHES_ALL), "")
+            .replace(Regex("<w:pPr>.*?</w:pPr>", RegexOption.DOT_MATCHES_ALL), "")
+            .replace(Regex("<[^>]+>"), "")
+            .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+            .replace(Regex("\\s+"), " ").trim()
+        if (text.length <= 3) return@forEach
+        if (paraXml.contains(STUDY_HEADING_STYLE_REGEX)) headingIndices.add(paragraphs.size)
+        paragraphs.add(text)
+    }
+    return paragraphs to headingIndices
 }
 
 private fun extractPptText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
