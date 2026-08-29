@@ -4,6 +4,9 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import com.docsmart.features.converter.domain.model.ConversionResult
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfReader
+import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -18,23 +21,18 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 
-/**
- * Cubre el bug real encontrado en Conversión (docs/requirements/conversion.md):
- * "Word → Texto" estaba enrutado a `WordToPdfUseCase` — seleccionar esa
- * opción entregaba un PDF, no un .txt. Este use case reemplaza ese hueco.
- */
-class WordToTextUseCaseTest {
+class WordToPdfUseCaseTest {
 
     private lateinit var filesDir: File
     private lateinit var context: Context
-    private lateinit var useCase: WordToTextUseCase
+    private lateinit var useCase: WordToPdfUseCase
 
     @BeforeEach
     fun setUp() {
-        filesDir = Files.createTempDirectory("docsmart_wordtotext_").toFile()
+        filesDir = Files.createTempDirectory("docsmart_wordtopdf_").toFile()
         context = mockk()
         every { context.filesDir } returns filesDir
-        useCase = WordToTextUseCase(context)
+        useCase = WordToPdfUseCase(context)
     }
 
     @AfterEach
@@ -43,39 +41,32 @@ class WordToTextUseCaseTest {
     }
 
     @Test
-    fun `extrae el texto de los parrafos del docx a un archivo txt`() = runTest {
-        stubResolver(createTestDocx(listOf("Primer párrafo", "Segundo párrafo")))
+    fun `convierte un docx a PDF con parrafos y tablas`() = runTest {
+        stubResolver(createTestDocx(listOf("Primer párrafo"), listOf(listOf("A1", "B1"))))
 
         val result = useCase(mockk<Uri>(), "salida")
 
         assertTrue(result is ConversionResult.Success)
         val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("txt", outputFile.extension)
-        val text = outputFile.readText()
-        assertTrue(text.contains("Primer párrafo"))
-        assertTrue(text.contains("Segundo párrafo"))
+        assertEquals("pdf", outputFile.extension)
+        val extracted = extractPdfText(outputFile)
+        assertTrue(extracted.contains("Primer párrafo"))
+        assertTrue(extracted.contains("A1"))
     }
 
+    // RF-CONV-07: WordFormatDetectionTest.kt explica por qué el fixture es
+    // un .doc real generado con Word y no un byte array sintético.
     @Test
-    fun `docx sin texto extraible devuelve Error`() = runTest {
-        stubResolver(createTestDocx(emptyList()))
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Error)
-    }
-
-    @Test
-    fun `extrae el texto de un doc legado real (OLE2) a un archivo txt`() = runTest {
+    fun `convierte un doc legado real (OLE2) a PDF`() = runTest {
         stubResolver(legacyDocBytes())
 
         val result = useCase(mockk<Uri>(), "salida")
 
         assertTrue(result is ConversionResult.Success)
-        val text = (result as ConversionResult.Success).outputFile.readText()
-        assertTrue(text.contains("Titulo de prueba"))
-        assertTrue(text.contains("Primer parrafo del documento legado."))
-        assertTrue(text.contains("Celda A1"))
+        val outputFile = (result as ConversionResult.Success).outputFile
+        val extracted = extractPdfText(outputFile)
+        assertTrue(extracted.contains("Titulo de prueba"))
+        assertTrue(extracted.contains("Celda A1"))
     }
 
     @Test
@@ -98,22 +89,30 @@ class WordToTextUseCaseTest {
         every { context.contentResolver } returns resolver
     }
 
-    private fun createTestDocx(paragraphs: List<String>): ByteArray {
+    private fun createTestDocx(paragraphs: List<String>, tableRows: List<List<String>>): ByteArray {
         val out = ByteArrayOutputStream()
         XWPFDocument().use { doc ->
-            paragraphs.forEach { text ->
-                val paragraph = doc.createParagraph()
-                paragraph.createRun().setText(text)
+            paragraphs.forEach { text -> doc.createParagraph().createRun().setText(text) }
+            if (tableRows.isNotEmpty()) {
+                val table = doc.createTable(tableRows.size, tableRows.first().size)
+                tableRows.forEachIndexed { r, row ->
+                    row.forEachIndexed { c, value -> table.getRow(r).getCell(c).text = value }
+                }
             }
             doc.write(out)
         }
         return out.toByteArray()
     }
 
-    // Fixture .doc real generado con Word (ver WordFormatDetectionTest.kt) --
-    // HWPFDocument no permite crear un documento en blanco como XWPFDocument.
     private fun legacyDocBytes(): ByteArray =
         checkNotNull(javaClass.classLoader?.getResourceAsStream("fixtures/legacy-sample.doc")) {
             "No se encontró fixtures/legacy-sample.doc en recursos de test"
         }.use { it.readBytes() }
+
+    private fun extractPdfText(file: File): String {
+        val pdf = PdfDocument(PdfReader(file))
+        val text = (1..pdf.numberOfPages).joinToString("\n") { PdfTextExtractor.getTextFromPage(pdf.getPage(it)) }
+        pdf.close()
+        return text
+    }
 }

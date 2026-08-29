@@ -18,23 +18,18 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 
-/**
- * Cubre el bug real encontrado en Conversión (docs/requirements/conversion.md):
- * "Word → Texto" estaba enrutado a `WordToPdfUseCase` — seleccionar esa
- * opción entregaba un PDF, no un .txt. Este use case reemplaza ese hueco.
- */
-class WordToTextUseCaseTest {
+class WordToHtmlUseCaseTest {
 
     private lateinit var filesDir: File
     private lateinit var context: Context
-    private lateinit var useCase: WordToTextUseCase
+    private lateinit var useCase: WordToHtmlUseCase
 
     @BeforeEach
     fun setUp() {
-        filesDir = Files.createTempDirectory("docsmart_wordtotext_").toFile()
+        filesDir = Files.createTempDirectory("docsmart_wordtohtml_").toFile()
         context = mockk()
         every { context.filesDir } returns filesDir
-        useCase = WordToTextUseCase(context)
+        useCase = WordToHtmlUseCase(context)
     }
 
     @AfterEach
@@ -43,17 +38,32 @@ class WordToTextUseCaseTest {
     }
 
     @Test
-    fun `extrae el texto de los parrafos del docx a un archivo txt`() = runTest {
+    fun `convierte un docx a HTML con parrafos`() = runTest {
         stubResolver(createTestDocx(listOf("Primer párrafo", "Segundo párrafo")))
 
         val result = useCase(mockk<Uri>(), "salida")
 
         assertTrue(result is ConversionResult.Success)
         val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("txt", outputFile.extension)
-        val text = outputFile.readText()
-        assertTrue(text.contains("Primer párrafo"))
-        assertTrue(text.contains("Segundo párrafo"))
+        assertEquals("html", outputFile.extension)
+        val html = outputFile.readText()
+        assertTrue(html.contains("<p>Primer párrafo</p>"))
+        assertTrue(html.contains("<p>Segundo párrafo</p>"))
+    }
+
+    // RF-CONV-07: WordFormatDetectionTest.kt explica por qué el fixture es
+    // un .doc real generado con Word y no un byte array sintético.
+    @Test
+    fun `convierte un doc legado real (OLE2) a HTML detectando el encabezado`() = runTest {
+        stubResolver(legacyDocBytes())
+
+        val result = useCase(mockk<Uri>(), "salida")
+
+        assertTrue(result is ConversionResult.Success)
+        val html = (result as ConversionResult.Success).outputFile.readText()
+        assertTrue(html.contains("<h2>Titulo de prueba</h2>"))
+        assertTrue(html.contains("<p>Primer parrafo del documento legado.</p>"))
+        assertTrue(html.contains("Celda A1"))
     }
 
     @Test
@@ -63,19 +73,6 @@ class WordToTextUseCaseTest {
         val result = useCase(mockk<Uri>(), "salida")
 
         assertTrue(result is ConversionResult.Error)
-    }
-
-    @Test
-    fun `extrae el texto de un doc legado real (OLE2) a un archivo txt`() = runTest {
-        stubResolver(legacyDocBytes())
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Success)
-        val text = (result as ConversionResult.Success).outputFile.readText()
-        assertTrue(text.contains("Titulo de prueba"))
-        assertTrue(text.contains("Primer parrafo del documento legado."))
-        assertTrue(text.contains("Celda A1"))
     }
 
     @Test
@@ -101,17 +98,12 @@ class WordToTextUseCaseTest {
     private fun createTestDocx(paragraphs: List<String>): ByteArray {
         val out = ByteArrayOutputStream()
         XWPFDocument().use { doc ->
-            paragraphs.forEach { text ->
-                val paragraph = doc.createParagraph()
-                paragraph.createRun().setText(text)
-            }
+            paragraphs.forEach { text -> doc.createParagraph().createRun().setText(text) }
             doc.write(out)
         }
         return out.toByteArray()
     }
 
-    // Fixture .doc real generado con Word (ver WordFormatDetectionTest.kt) --
-    // HWPFDocument no permite crear un documento en blanco como XWPFDocument.
     private fun legacyDocBytes(): ByteArray =
         checkNotNull(javaClass.classLoader?.getResourceAsStream("fixtures/legacy-sample.doc")) {
             "No se encontró fixtures/legacy-sample.doc en recursos de test"

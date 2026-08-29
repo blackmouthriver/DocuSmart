@@ -28,21 +28,30 @@ class WordToTextUseCase @Inject constructor(
             val sb = StringBuilder()
             var pageCount = 0
 
-            context.contentResolver.openInputStream(wordUri)?.use { input ->
-                val wordDoc = XWPFDocument(input)
+            context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
+                // RF-CONV-07: ver WordFormatDetection.kt.
+                val (format, input) = detectWordFormat(rawInput)
 
-                wordDoc.paragraphs.forEach { para ->
-                    if (para.text.isNotBlank()) sb.appendLine(para.text)
-                }
-                wordDoc.tables.forEach { table ->
-                    sb.appendLine()
-                    table.rows.forEach { row ->
-                        val rowText = row.tableCells.joinToString(" | ") { it.text }
-                        if (rowText.isNotBlank()) sb.appendLine(rowText)
+                if (format == WordFileFormat.OLE2) {
+                    val blocks = extractLegacyDocBlocks(input)
+                    blocks.forEach { (text, _) -> sb.appendLine(text) }
+                    pageCount = blocks.size
+                } else {
+                    val wordDoc = XWPFDocument(input)
+
+                    wordDoc.paragraphs.forEach { para ->
+                        if (para.text.isNotBlank()) sb.appendLine(para.text)
                     }
+                    wordDoc.tables.forEach { table ->
+                        sb.appendLine()
+                        table.rows.forEach { row ->
+                            val rowText = row.tableCells.joinToString(" | ") { it.text }
+                            if (rowText.isNotBlank()) sb.appendLine(rowText)
+                        }
+                    }
+                    pageCount = wordDoc.paragraphs.size
+                    wordDoc.close()
                 }
-                pageCount = wordDoc.paragraphs.size
-                wordDoc.close()
             } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Word")
 
             val text = sb.toString().trim()
