@@ -19,9 +19,15 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDocuSmartDatabase(@ApplicationContext context: Context): DocuSmartDatabase =
-        Room.databaseBuilder(context, DocuSmartDatabase::class.java, "docsmart.db").build()
+        Room.databaseBuilder(context, DocuSmartDatabase::class.java, "docsmart.db")
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
 
     @Provides
     fun provideDocumentHistoryDao(database: DocuSmartDatabase): DocumentHistoryDao =
         database.documentHistoryDao()
+
+    @Provides
+    fun provideTrashDao(database: DocuSmartDatabase): TrashDao =
+        database.trashDao()
 }

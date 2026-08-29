@@ -7,6 +7,7 @@ import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
+import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,20 +30,25 @@ data class LibraryUiState(
     val selectedCategory  : DocumentType?         = null,
     val selectedTab       : LibraryTab            = LibraryTab.DEVICE, // ← NUEVO
     val isLoading         : Boolean               = false,
-    val deleteError       : String?               = null
+    val deleteError       : String?               = null,
+    val trashCount        : Int                   = 0 // RF-VIS-07
 )
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     val adManager          : AdManager,
     private val repository : DocumentRepository,
+    private val trashRepository: TrashRepository,
     private val favoritesRepository: FavoritesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
-    init { loadDocuments() }
+    init {
+        loadDocuments()
+        loadTrashCount()
+    }
 
     fun loadDocuments() {
         viewModelScope.launch {
@@ -182,14 +188,15 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    // RF-VIS-07: "eliminar" mueve a la papelera, no borra de inmediato -- ver
+    // DocumentRepository.moveToTrash().
     fun removeDocument(documentId: String) {
         viewModelScope.launch {
-            val deleted = repository.deleteDocument(documentId)
-            if (!deleted) {
+            val movedToTrash = trashRepository.moveToTrash(documentId)
+            if (!movedToTrash) {
                 _uiState.update { it.copy(deleteError = "No se pudo eliminar el archivo") }
                 return@launch
             }
-            favoritesRepository.removeAlias(documentId)
 
             val updated    = _uiState.value.allDocuments.filter { it.id != documentId }
             val deviceDocs = updated.filter { isDeviceDocument(it) }
@@ -206,10 +213,18 @@ class LibraryViewModel @Inject constructor(
                     favorites         = updated.filter { it.isFavorite }
                 )
             }
+            loadTrashCount()
         }
     }
 
     fun dismissDeleteError() {
         _uiState.update { it.copy(deleteError = null) }
+    }
+
+    fun loadTrashCount() {
+        viewModelScope.launch {
+            val count = trashRepository.loadTrashedDocuments().size
+            _uiState.update { it.copy(trashCount = count) }
+        }
     }
 }

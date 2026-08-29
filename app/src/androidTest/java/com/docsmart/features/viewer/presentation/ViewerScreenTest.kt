@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.features.library.data.DocumentRepository
+import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
 import io.mockk.coVerify
 import io.mockk.every
@@ -44,7 +45,8 @@ class ViewerScreenTest {
             favoritesRepository = favoritesRepository,
             searchPdfText = mockk<SearchPdfTextUseCase>(relaxed = true),
             documentHistoryDao = mockk<DocumentHistoryDao>(relaxed = true),
-            documentRepository = mockk<DocumentRepository>(relaxed = true)
+            documentRepository = mockk<DocumentRepository>(relaxed = true),
+            trashRepository = mockk<TrashRepository>(relaxed = true)
         )
     }
 

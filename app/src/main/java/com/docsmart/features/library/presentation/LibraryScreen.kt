@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Folder
@@ -14,7 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartTopBanner
@@ -30,6 +34,7 @@ import com.docsmart.features.library.presentation.components.*
 @Composable
 fun LibraryScreen(
     onDocumentClick: (String) -> Unit = {},
+    onTrashClick   : () -> Unit = {},
     viewModel      : LibraryViewModel = hiltViewModel()
 ) {
     val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
@@ -58,7 +63,10 @@ fun LibraryScreen(
         if (!hasPermission) permissionLauncher.launch(getRequiredPermissions())
     }
     LaunchedEffect(hasPermission) {
-        if (hasPermission) viewModel.loadDocuments()
+        if (hasPermission) {
+            viewModel.loadDocuments()
+            viewModel.loadTrashCount()
+        }
     }
 
     LazyColumn(
@@ -82,7 +90,25 @@ fun LibraryScreen(
             DocuSmartTopBanner(
                 screenTitle    = "Biblioteca",
                 screenSubtitle = "Todos tus documentos",
-                modifier       = Modifier.padding(horizontal = 20.dp)
+                modifier       = Modifier.padding(horizontal = 20.dp),
+                actions        = {
+                    // RF-VIS-07: acceso a la papelera, con contador si hay algo
+                    BadgedBox(
+                        badge = {
+                            if (uiState.trashCount > 0) {
+                                Badge { Text("${uiState.trashCount}") }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = onTrashClick) {
+                            Icon(
+                                imageVector        = Icons.Rounded.DeleteOutline,
+                                contentDescription = stringResource(R.string.library_trash),
+                                tint               = Color.White
+                            )
+                        }
+                    }
+                }
             )
         }
 

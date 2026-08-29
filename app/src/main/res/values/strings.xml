@@ -705,4 +705,17 @@
     <string name="study_extract_pdf_error">Error al leer el PDF: %1$s</string>
     <string name="study_extract_generic_error">Error: %1$s</string>
     <string name="study_default_document_name">Documento</string>
+
+    <!-- ── Papelera de reciclaje (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">Papelera</string>
+    <string name="trash_title">Papelera</string>
+    <string name="trash_subtitle">Se eliminan definitivamente a los 30 días</string>
+    <string name="trash_empty_title">La papelera está vacía</string>
+    <string name="trash_empty_body">Los documentos que elimines desde Biblioteca, Inicio o el Visor aparecerán aquí antes de borrarse para siempre.</string>
+    <string name="trash_deletes_today">Se elimina hoy</string>
+    <string name="trash_days_remaining">Quedan %1$d días</string>
+    <string name="trash_restore">Restaurar</string>
+    <string name="trash_delete_forever">Eliminar ahora</string>
+    <string name="trash_delete_forever_confirm_title">¿Eliminar definitivamente?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s se eliminará para siempre y ya no se podrá recuperar."</string>
 </resources>
