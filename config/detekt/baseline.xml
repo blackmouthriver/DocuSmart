@@ -311,6 +311,7 @@
     <ID>TooGenericExceptionCaught:SignPdfUseCase.kt$SignPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SplitPdfUseCase.kt$SplitPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StudyScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:TrashRepository.kt$TrashRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e1: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerViewModel.kt$ViewerViewModel$e2: Exception</ID>

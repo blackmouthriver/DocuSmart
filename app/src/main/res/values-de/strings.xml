@@ -705,4 +705,17 @@
     <string name="study_extract_pdf_error">Fehler beim Lesen des PDFs: %1$s</string>
     <string name="study_extract_generic_error">Fehler: %1$s</string>
     <string name="study_default_document_name">Dokument</string>
+
+    <!-- ── Papierkorb (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">Papierkorb</string>
+    <string name="trash_title">Papierkorb</string>
+    <string name="trash_subtitle">Wird nach 30 Tagen endgültig gelöscht</string>
+    <string name="trash_empty_title">Der Papierkorb ist leer</string>
+    <string name="trash_empty_body">Dokumente, die du aus der Bibliothek, Start oder dem Betrachter löschst, erscheinen hier, bevor sie endgültig gelöscht werden.</string>
+    <string name="trash_deletes_today">Wird heute gelöscht</string>
+    <string name="trash_days_remaining">Noch %1$d Tage</string>
+    <string name="trash_restore">Wiederherstellen</string>
+    <string name="trash_delete_forever">Jetzt löschen</string>
+    <string name="trash_delete_forever_confirm_title">Endgültig löschen?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s wird endgültig gelöscht und kann nicht mehr wiederhergestellt werden."</string>
 </resources>

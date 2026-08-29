@@ -6,6 +6,8 @@ import android.net.Uri
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
+import com.docsmart.core.data.db.TrashDao
+import com.docsmart.core.data.db.TrashEntry
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import io.mockk.Runs
@@ -39,6 +41,7 @@ class DocumentRepositoryTest {
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var historyDao: FakeDocumentHistoryDao
+    private lateinit var trashDao: FakeTrashDao
     private lateinit var repository: DocumentRepository
 
     @BeforeEach
@@ -47,7 +50,8 @@ class DocumentRepositoryTest {
         context = mockk()
         every { context.filesDir } returns filesDir
         historyDao = FakeDocumentHistoryDao()
-        repository = DocumentRepository(context, mockk<FavoritesRepository>(), historyDao)
+        trashDao = FakeTrashDao()
+        repository = DocumentRepository(context, mockk<FavoritesRepository>(relaxed = true), historyDao, trashDao)
         mockkStatic(Uri::class)
     }
 
@@ -137,7 +141,7 @@ class DocumentRepositoryTest {
     fun `renameDocument renombra un archivo real de la app y devuelve la nueva ruta`() = runTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.removeAlias(any()) } just Runs
-        val repo = DocumentRepository(context, favorites, historyDao)
+        val repo = DocumentRepository(context, favorites, historyDao, trashDao)
         val dir  = File(filesDir, "converted").apply { mkdirs() }
         val file = File(dir, "original.pdf").apply { writeText("contenido") }
 
@@ -153,7 +157,7 @@ class DocumentRepositoryTest {
     fun `renameDocument de un documento de MediaStore usa alias sin tocar el archivo`() = runTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.saveAlias(any(), any()) } just Runs
-        val repo = DocumentRepository(context, favorites, historyDao)
+        val repo = DocumentRepository(context, favorites, historyDao, trashDao)
         val uriString = "content://media/external/downloads/12345"
 
         val newId = repo.renameDocument(uriString, "Nuevo nombre.pdf")
@@ -166,7 +170,7 @@ class DocumentRepositoryTest {
     fun `renameDocument cae a alias si el archivo de la app no se pudo mover`() = runTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.saveAlias(any(), any()) } just Runs
-        val repo = DocumentRepository(context, favorites, historyDao)
+        val repo = DocumentRepository(context, favorites, historyDao, trashDao)
         val missing = File(filesDir, "no_existe.pdf") // File.renameTo() sobre un origen inexistente devuelve false
 
         val newId = repo.renameDocument(missing.absolutePath, "nuevo.pdf")
@@ -236,5 +240,21 @@ class DocumentRepositoryTest {
         override suspend fun remove(documentId: String) {
             store.remove(documentId)
         }
+    }
+
+    // ── fake de TrashDao respaldado por un mapa en memoria ────────────────────
+
+    private class FakeTrashDao : TrashDao {
+        private val store = mutableMapOf<String, TrashEntry>()
+
+        override suspend fun insert(entry: TrashEntry) {
+            store[entry.documentId] = entry
+        }
+
+        override suspend fun remove(documentId: String) {
+            store.remove(documentId)
+        }
+
+        override suspend fun getAll(): List<TrashEntry> = store.values.toList()
     }
 }

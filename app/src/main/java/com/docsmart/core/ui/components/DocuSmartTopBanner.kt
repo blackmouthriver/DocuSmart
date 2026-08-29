@@ -23,7 +23,11 @@ import com.docsmart.core.ui.theme.SmartBlue
 fun DocuSmartTopBanner(
     screenTitle   : String,
     screenSubtitle: String = "",
-    modifier      : Modifier = Modifier
+    modifier      : Modifier = Modifier,
+    // RF-VIS-07: slot opcional para un ícono de acción (ej. acceso a la
+    // Papelera en Biblioteca) -- por defecto null, no afecta a las 9 pantallas
+    // que ya usan este banner sin este parámetro.
+    actions       : (@Composable RowScope.() -> Unit)? = null
 ) {
     Box(
         modifier = modifier
@@ -83,7 +87,10 @@ fun DocuSmartTopBanner(
             }
 
             // Textos
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 // Marca "DocuSmart" pequeña arriba
                 Row(
                     verticalAlignment     = Alignment.CenterVertically,
@@ -118,6 +125,8 @@ fun DocuSmartTopBanner(
                     )
                 }
             }
+
+            actions?.invoke(this)
         }
     }
 }

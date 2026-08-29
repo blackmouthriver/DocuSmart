@@ -6,6 +6,7 @@ import android.os.Build
 import android.provider.MediaStore
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -23,7 +24,8 @@ import javax.inject.Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val favoritesRepository: FavoritesRepository,  // ← NUEVO
-    private val documentHistoryDao: DocumentHistoryDao
+    private val documentHistoryDao: DocumentHistoryDao,
+    private val trashDao: TrashDao
 ) {
     // Buffer sobre el límite pedido: algunos ids del historial pueden
     // apuntar a archivos que ya no existen (borrados/movidos fuera de la
@@ -64,33 +66,45 @@ class DocumentRepository @Inject constructor(
         return (fromHistory + fallback).take(limit)
     }
 
-    suspend fun loadAllDocuments(): List<DocumentUiModel> =
-        withContext(Dispatchers.IO) {
-            try {
-                val documents = mutableListOf<DocumentUiModel>()
-                documents.addAll(loadPdfsFromDownloads())
-                documents.addAll(loadImagesFromMediaStore())
-                documents.addAll(loadAppGeneratedFiles())
+    /**
+     * Excluye documentos en la papelera (RF-VIS-07) -- `TrashRepository`
+     * mantiene la tabla `trash_entries` con lo que hay que ocultar acá; la
+     * purga automática de lo vencido vive allá también (se ejecuta cuando
+     * se abre la pantalla de Papelera, no en cada carga de esta lista).
+     */
+    suspend fun loadAllDocuments(): List<DocumentUiModel> = withContext(Dispatchers.IO) {
+        val trashedIds = trashDao.getAll().map { it.documentId }.toSet()
+        loadAllDocumentsRaw().filterNot { it.id in trashedIds }
+    }
 
-                val seen = mutableSetOf<String>()
-                val unique = documents.filter { seen.add(it.id) }
+    // internal (no private): TrashRepository también necesita el inventario
+    // real de documentos para saber cuáles de ellos están en la papelera.
+    internal suspend fun loadAllDocumentsRaw(): List<DocumentUiModel> {
+        return try {
+            val documents = mutableListOf<DocumentUiModel>()
+            documents.addAll(loadPdfsFromDownloads())
+            documents.addAll(loadImagesFromMediaStore())
+            documents.addAll(loadAppGeneratedFiles())
 
-                // ── Aplica favoritos persistidos al cargar ─────────────────
-                val favoriteIds = favoritesRepository.getAllFavoriteIds()
-                val withFavorites = unique.map { doc ->
-                    val alias = favoritesRepository.getAlias(doc.id)
-                    doc.copy(
-                        isFavorite = favoriteIds.contains(doc.id),
-                        name       = alias ?: doc.name   // ← aplica alias si existe
-                    )
-                }
+            val seen = mutableSetOf<String>()
+            val unique = documents.filter { seen.add(it.id) }
 
-                withFavorites.sortedByDescending { it.date }
-            } catch (e: Exception) {
-                Timber.e(e, "Error cargando documentos")
-                emptyList()
+            // ── Aplica favoritos persistidos al cargar ─────────────────
+            val favoriteIds = favoritesRepository.getAllFavoriteIds()
+            val withFavorites = unique.map { doc ->
+                val alias = favoritesRepository.getAlias(doc.id)
+                doc.copy(
+                    isFavorite = favoriteIds.contains(doc.id),
+                    name       = alias ?: doc.name   // ← aplica alias si existe
+                )
             }
+
+            withFavorites.sortedByDescending { it.date }
+        } catch (e: Exception) {
+            Timber.e(e, "Error cargando documentos")
+            emptyList()
         }
+    }
 
     /**
      * Elimina el documento subyacente (archivo de la app o fila de MediaStore),

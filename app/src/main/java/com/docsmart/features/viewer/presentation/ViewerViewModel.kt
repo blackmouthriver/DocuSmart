@@ -12,6 +12,7 @@ import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
+import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
@@ -60,7 +61,8 @@ class ViewerViewModel @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
     private val searchPdfText: SearchPdfTextUseCase,
     private val documentHistoryDao: DocumentHistoryDao,
-    private val documentRepository: DocumentRepository
+    private val documentRepository: DocumentRepository,
+    private val trashRepository: TrashRepository
 ) : ViewModel() {
 
     companion object {
@@ -620,19 +622,20 @@ class ViewerViewModel @Inject constructor(
         _uiState.update { it.copy(deleteError = null) }
     }
 
+    // RF-VIS-07: "eliminar" mueve a la papelera, no borra de inmediato -- ver
+    // DocumentRepository.moveToTrash().
     fun confirmDelete() {
         val documentId = _uiState.value.document?.id ?: return
         viewModelScope.launch {
-            val deleted = documentRepository.deleteDocument(documentId)
-            if (deleted) {
-                favoritesRepository.removeAlias(documentId)
+            val movedToTrash = trashRepository.moveToTrash(documentId)
+            if (movedToTrash) {
                 _uiState.update { it.copy(showDeleteConfirm = false, documentDeleted = true) }
             } else {
                 _uiState.update {
                     it.copy(showDeleteConfirm = false, deleteError = "No se pudo eliminar el archivo")
                 }
             }
-            Timber.d("$TAG: confirmDelete $documentId → $deleted")
+            Timber.d("$TAG: confirmDelete $documentId → $movedToTrash")
         }
     }
 

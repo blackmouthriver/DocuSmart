@@ -705,4 +705,17 @@
     <string name="study_extract_pdf_error">Ошибка чтения PDF: %1$s</string>
     <string name="study_extract_generic_error">Ошибка: %1$s</string>
     <string name="study_default_document_name">Документ</string>
+
+    <!-- ── Корзина (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">Корзина</string>
+    <string name="trash_title">Корзина</string>
+    <string name="trash_subtitle">Удаляется навсегда через 30 дней</string>
+    <string name="trash_empty_title">Корзина пуста</string>
+    <string name="trash_empty_body">Документы, удалённые из Библиотеки, Главной или Просмотрщика, появятся здесь перед окончательным удалением.</string>
+    <string name="trash_deletes_today">Удаляется сегодня</string>
+    <string name="trash_days_remaining">Осталось дней: %1$d</string>
+    <string name="trash_restore">Восстановить</string>
+    <string name="trash_delete_forever">Удалить сейчас</string>
+    <string name="trash_delete_forever_confirm_title">Удалить навсегда?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s будет удалён навсегда и его больше нельзя будет восстановить."</string>
 </resources>

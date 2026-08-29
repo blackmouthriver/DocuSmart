@@ -704,4 +704,17 @@
     <string name="study_extract_pdf_error">Error reading the PDF: %1$s</string>
     <string name="study_extract_generic_error">Error: %1$s</string>
     <string name="study_default_document_name">Document</string>
+
+    <!-- ── Recycle bin (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">Trash</string>
+    <string name="trash_title">Trash</string>
+    <string name="trash_subtitle">Permanently deleted after 30 days</string>
+    <string name="trash_empty_title">Trash is empty</string>
+    <string name="trash_empty_body">Documents you delete from Library, Home, or the Viewer will appear here before being permanently deleted.</string>
+    <string name="trash_deletes_today">Deletes today</string>
+    <string name="trash_days_remaining">%1$d days left</string>
+    <string name="trash_restore">Restore</string>
+    <string name="trash_delete_forever">Delete now</string>
+    <string name="trash_delete_forever_confirm_title">Delete permanently?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s will be permanently deleted and can no longer be recovered."</string>
 </resources>

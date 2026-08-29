@@ -21,6 +21,7 @@ sealed class NavRoutes(val route: String) {
     data object QrCreator   : NavRoutes("qr_creator")
     data object Onboarding  : NavRoutes("onboarding")
     data object SecureFolder : NavRoutes("secure_folder")
+    data object Trash        : NavRoutes("trash") // RF-VIS-07
     data object Viewer : NavRoutes("viewer/{documentId}") {
         fun createRoute(documentId: String): String {
             return "viewer/${Uri.encode(documentId)}"

@@ -23,7 +23,11 @@ comportamiento real de anuncios. 21 tests nuevos (10 + 5 + 6, más 2 pruebas
 instrumentadas aparte de este conteo). **RF-VIS-06 implementado 2026-08-29,
 ver §11** — renombrar y eliminar desde el Visor, con la lógica de rename
 extraída de Biblioteca/Home a `DocumentRepository` para reutilizarla en un
-tercer lugar sin triplicar código.
+tercer lugar sin triplicar código. **RF-VIS-07 implementado 2026-08-29,
+ver §12** — papelera de reciclaje: "eliminar" desde Biblioteca/Home/Visor
+ahora mueve a una papelera (`trash_entries`, segunda tabla Room del
+proyecto) en vez de borrar de inmediato, con 30 días para restaurar antes
+del borrado definitivo automático.
 **Código relacionado:** `features/viewer/**`, `features/library/**`,
 `features/home/**`, `core/data/FavoritesRepository.kt`, `core/data/db/**`
 (nuevo).
@@ -53,8 +57,9 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 - **RF-VIS-09** ✅ "Recientes" en Home debe reflejar los documentos que el usuario realmente abrió más recientemente en el Visor, no solo la fecha de modificación del archivo en disco. Resuelto 2026-08-25 con una tabla Room (`document_history`) — ver §8.
 - **RF-VIS-06** ✅ El sistema debe permitir renombrar y eliminar un documento directamente desde el Visor. Implementado 2026-08-29, ver §11.
 
+- **RF-VIS-07** ✅ Papelera de reciclaje: recuperar un documento eliminado dentro de un plazo antes del borrado definitivo. Implementado 2026-08-29, ver §12.
+
 ### Backlog — no implementado
-- **RF-VIS-07** Papelera de reciclaje: recuperar un documento eliminado dentro de un plazo antes del borrado definitivo.
 - **RF-VIS-08** Resaltado inline de coincidencias de búsqueda dentro del PDF (hoy solo salta de página en página — ver RNF-VIS-01 sobre por qué no hay resaltado real).
 
 ---
@@ -105,6 +110,13 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 
 *(Corrige bug real: `removeDocument()` en `LibraryViewModel` y `HomeViewModel` solo filtraba la lista en memoria — el archivo seguía existiendo en disco/MediaStore, y reaparecía en la siguiente carga de `loadAllDocuments()`. El usuario veía "eliminado" un documento que en realidad seguía intacto y accesible.)*
 
+**Actualizado 2026-08-29 (RF-VIS-07, ver §12):** "eliminar" ya no borra de
+inmediato -- mueve el documento a la papelera. AC1/AC2 (el archivo se borra
+de verdad) siguen cumpliéndose, pero ahora en el momento del borrado
+*definitivo* (manual desde la papelera, o automático al vencer el plazo),
+no en el toque inicial de "eliminar". AC3/AC4 se mantienen sin cambios
+(`deleteDocument()`, la función que hace el borrado real, no cambió).
+
 ### HU-VIS-04 — Pestañas dispositivo / app en Biblioteca
 *(Ya implementado — HU documentada como base de tests de regresión.)*
 
@@ -144,6 +156,26 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 
 *(Responde la pregunta abierta de §10: "¿vale la pena renombrar/eliminar desde el Visor, o basta con Biblioteca/Home?" — se decidió que sí, siguiendo el patrón de la mayoría de apps de gestión de documentos similares.)*
 
+**Actualizado 2026-08-29 (RF-VIS-07, ver §12):** AC5/AC6 describían el
+borrado inmediato de antes de la papelera. Ahora "Eliminar" desde el Visor
+mueve a la papelera (`moveToTrash()`, que casi nunca falla al ser solo una
+escritura de metadatos) — el escenario de AC6 ("sin permiso sobre
+MediaStore") pasa a aplicar al borrado *definitivo* desde la Papelera, no
+al toque inicial de "Eliminar" en el Visor.
+
+### HU-VIS-07 — Recuperar un documento eliminado
+*(Implementado 2026-08-29 — ver §12.)*
+
+**Como** usuario que eliminó un documento por error (o cambió de opinión),
+**quiero** poder recuperarlo dentro de un plazo,
+**para** no perderlo para siempre por un toque accidental.
+
+- **AC1** Dado que elimino un documento desde Biblioteca, Home o el Visor, cuando esto ocurre, entonces el documento aparece en la Papelera en vez de desaparecer para siempre de inmediato.
+- **AC2** Dado que un documento está en la Papelera, cuando lo restauro, entonces vuelve a aparecer en Biblioteca/Home exactamente como estaba (mismo nombre, mismo favorito) y el archivo real nunca se tocó.
+- **AC3** Dado que un documento lleva 30 días en la Papelera, cuando la app consulta la Papelera de nuevo, entonces se elimina definitivamente de forma automática.
+- **AC4** Dado que quiero liberar espacio antes de que se cumplan los 30 días, cuando toco "Eliminar ahora" en la Papelera y confirmo, entonces el archivo se borra de verdad de inmediato.
+- **AC5** Dado que veo un documento en la Papelera, cuando lo veo, entonces la app me indica cuántos días quedan antes del borrado definitivo.
+
 ---
 
 ## 5. Bugs de QA a corregir (trazabilidad)
@@ -161,6 +193,7 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 | Biblioteca: tarjetas de favoritos con tamaños inconsistentes en el carrusel | — | Fuera de alcance de esta pasada (ajuste visual, no funcional). |
 | Home: botón "Inicio" de la bottom nav deja de responder tras ir a Convertir | — | No verificado — requiere prueba de navegación en vivo, no se pudo confirmar ni descartar por lectura de código. |
 | "Recientes" en Home era solo `loadAllDocuments().take(5)` — un documento abierto hoy pero sin modificar no aparecía como reciente | HU-VIS-05 | ✅ Resuelto 2026-08-25 con `document_history` (Room) — ver §8. |
+| Falta papelera de reciclaje / deshacer un borrado accidental | RF-VIS-07 | ✅ Resuelto 2026-08-29 — ver §12. |
 
 ---
 
@@ -173,6 +206,8 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 | 3 | `LibraryViewModel`/`HomeViewModel`/`ViewerViewModel` — no cubiertos (ViewModels con `StateFlow` + Hilt, requieren fixture más elaborado); la lógica de negocio que antes vivía implícita en ellos (borrado real, id consistente, fusión de historial) ya quedó cubierta en el use case/repositorio subyacente. | Pendiente si se necesita cobertura de transiciones de estado. |
 | 4 | `DocumentHistoryDaoTest` (**primera prueba de integración del proyecto** — ver §8.1) — inserta, upsert no duplica y actualiza la fecha, orden descendente por fecha, respeta el límite, `remove` funciona y no falla con un id inexistente. Corre contra SQLite real (`BundledSQLiteDriver`), no un fake. | ✅ 6 tests, en verde |
 | 5 | `DocumentRepository.renameDocument()` (RF-VIS-06, ver §11) — renombra un archivo real de la app y devuelve la nueva ruta absoluta, un documento de MediaStore usa alias sin tocar el archivo (conserva su id), un archivo de la app que no se pudo mover cae al mismo alias. | ✅ 3 tests, en verde |
+| 6 | `TrashDaoTest` (RF-VIS-07, ver §12, mismo patrón que `DocumentHistoryDaoTest`) — insertar agrega una fila, insertar el mismo id es upsert (actualiza la fecha, no duplica), `remove` funciona y no falla con un id inexistente. Corre contra SQLite real. | ✅ 4 tests, en verde |
+| 7 | `TrashRepositoryTest` (RF-VIS-07, ver §12) — `moveToTrash` registra sin borrar el archivo y limpia el historial de abierto recientemente, `restoreFromTrash` saca de la papelera sin tocar el archivo, `deleteForever` borra el archivo real y limpia la entrada, `isTrashEntryExpired` (función pura) antes/al cumplirse el plazo, `purgeExpiredTrash` borra de verdad solo las entradas vencidas y conserva las recientes. `loadTrashedDocuments()` no tiene test directo (depende de `loadAllDocumentsRaw()` → MediaStore real, mismo límite ya documentado para `CompressPdfUseCase` en `pdf-tools.md`). | ✅ 6 tests, en verde |
 
 Todos los tests nuevos generan PDFs reales con iText7 o usan archivos
 temporales reales (`Files.createTempDirectory`), mismo patrón que
@@ -400,4 +435,140 @@ dispositivo + docs).
   volvió a Biblioteca → el contador de documentos bajó de 70 a 69 (13→12
   en "Mis archivos") → confirmado de nuevo con `run-as ls` que el archivo
   ya no existe en disco — coincide exactamente con HU-VIS-06 AC1 a AC5.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 12. RF-VIS-07/HU-VIS-07 — Papelera de reciclaje (2026-08-29)
+
+Primera funcionalidad implementada tras cerrar RF-VIS-06 en el mismo
+módulo. Convierte el "eliminar" ya existente (RF-VIS-04, HU-VIS-03) en un
+borrado suave con posibilidad de deshacer, en vez de un borrado inmediato.
+
+- **Diseño — soft-delete vía tabla nueva, sin tocar el archivo real:** en
+  vez de mover físicamente el archivo a una carpeta "papelera" (complicado
+  y arriesgado para documentos de MediaStore, que requerirían
+  `MediaStore.createTrashRequest()` de Android 11+ con su propio flujo de
+  `IntentSender` gestionado por el sistema, no por la app), "eliminar" solo
+  inserta una fila en la tabla nueva `trash_entries` (`documentId`,
+  `deletedAt`) — el archivo/fila real permanece **intacto** en su
+  ubicación original. `DocumentRepository.loadAllDocuments()` excluye los
+  ids presentes en `trash_entries`; la Papelera muestra exactamente lo
+  contrario (solo esos ids). Esto funciona idéntico para archivos de la
+  app y de MediaStore, sin pedir ningún permiso adicional.
+- **`TrashEntry`/`TrashDao`** (nuevo, `core/data/db/`) — segunda tabla Room
+  del proyecto (la primera fue `document_history`, 2026-08-25). `insert()`
+  usa `OnConflictStrategy.REPLACE` (mismo criterio ya documentado para
+  `DocumentHistoryDao.recordOpen()`: upsert de una fila de pocas columnas
+  sin el problema de traducción de `@Upsert` con `BundledSQLiteDriver`).
+  `DocuSmartDatabase` sube a `version = 2` con
+  `fallbackToDestructiveMigration(dropAllTables = true)` en
+  `DatabaseModule` — decisión deliberada, no un descuido: la única tabla
+  previa (`document_history`) es solo un caché de "abierto recientemente"
+  que se regenera solo sin pérdida de datos reales del usuario, así que no
+  se justifica escribir una migración real para una segunda tabla nueva.
+- **`TrashRepository`** (nuevo, `features/library/data/`) — extraído como
+  clase propia desde el primer intento de meter esta lógica dentro de
+  `DocumentRepository`, que **superó el umbral `TooManyFunctions` de
+  detekt** (18 funciones, límite 15) al agregar los 5 métodos nuevos. Se
+  extrajo siguiendo el mismo criterio ya usado para `FavoritesRepository`
+  (una responsabilidad propia, aunque relacionada) en vez de baselinear el
+  hallazgo — real refactor, no supresión. Depende de `DocumentRepository`
+  (vía un nuevo `loadAllDocumentsRaw()` interno, expuesto `internal` en
+  vez de `private` para este único consumidor adicional) para el
+  inventario real de documentos.
+  - `moveToTrash(documentId)`: inserta en `trash_entries` con
+    `System.currentTimeMillis()` y limpia la fila de `document_history`
+    (un documento en la papelera no debe seguir contando como "reciente").
+  - `restoreFromTrash(documentId)`: borra la fila de `trash_entries`, sin
+    tocar nada más — el documento vuelve a aparecer donde estaba, con su
+    nombre/favorito intactos (nunca se tocaron).
+  - `deleteForever(documentId)`: reutiliza
+    `DocumentRepository.deleteDocument()` (el mecanismo real de borrado ya
+    existente desde antes de esta HU) y limpia `trash_entries` +
+    el alias de `FavoritesRepository`.
+  - `purgeExpiredTrash(now)`: función interna que borra de verdad
+    (`deleteDocument()` + limpiar la fila) las entradas con más de
+    `TRASH_RETENTION_DAYS` (30, constante pública de la clase) — se
+    ejecuta al abrir la Papelera (`loadTrashedDocuments()`), no en
+    segundo plano. **Decisión deliberada:** el proyecto no tenía ningún
+    mecanismo de tarea programada (sin WorkManager, sin AlarmManager,
+    confirmado por búsqueda en todo el código) — agregar WorkManager solo
+    para esto habría sido desproporcionado, y los requisitos no piden una
+    garantía de "se borra exactamente al día 30 aunque la app esté
+    cerrada". Una purga perezosa al leer la Papelera es suficiente y
+    consistente con el resto del proyecto.
+  - `isTrashEntryExpired(deletedAt, now)`: función pura en el companion
+    object, extraída para poder testear el umbral de 30 días con
+    timestamps directos sin mockear Room — mismo patrón que
+    `mergeHistoryWithDocuments()`.
+- **`LibraryViewModel`/`HomeViewModel`/`ViewerViewModel`** (modificados) —
+  sus respectivos `removeDocument()`/`confirmDelete()` ahora llaman a
+  `trashRepository.moveToTrash()` en vez de `documentRepository.deleteDocument()`
+  directamente. El resto de su lógica (actualizar la lista en memoria,
+  cerrar el Visor) no cambió — `moveToTrash()` devuelve `Boolean` con la
+  misma forma que `deleteDocument()` antes, así que el manejo de
+  éxito/error existente siguió funcionando sin reescribirse.
+- **`TrashViewModel`/`TrashScreen.kt`** (nuevos,
+  `features/library/presentation/`) — pantalla nueva con el mismo patrón
+  visual que `SecurityMenuScreen.kt` (`IconButton` de volver +
+  `DocuSmartTopBanner` con `weight(1f)`, no un `Scaffold`/`TopAppBar`).
+  Cada fila muestra nombre/tamaño/fecha, "Quedan N días" (o "Se elimina
+  hoy" si `daysRemaining == 0`), y dos botones: "Restaurar" y "Eliminar
+  ahora" — el segundo con diálogo de confirmación propio
+  (`TrashDeleteForeverDialog`), reutilizando el mismo patrón ya usado en
+  `ViewerDeleteConfirmDialog` (RF-VIS-06) pero como composable local,
+  ya que Biblioteca/Home tampoco tienen ninguno para su propio flujo de
+  borrado (documentado como hueco preexistente, fuera de alcance de esta
+  HU). Completamente localizado con `stringResource()` desde el día uno.
+  Estado vacío dedicado (`TrashEmptyState`) cuando no hay nada que
+  restaurar.
+- **Punto de acceso — ícono en el banner de Biblioteca:** en vez de una
+  tercera pestaña junto a "Dispositivo"/"Mis archivos" (la Papelera
+  necesita su propia UI por fila — días restantes, Restaurar/Eliminar
+  ahora — muy distinta de una lista normal de documentos), se agregó un
+  slot `actions` opcional a `DocuSmartTopBanner` (nuevo parámetro,
+  default `null`, no afecta a las 9 pantallas que ya usan este banner) con
+  un ícono de papelera + `BadgedBox` mostrando el conteo cuando es mayor a
+  cero. `LibraryViewModel.loadTrashCount()` se llama en `init` y de nuevo
+  en el mismo `LaunchedEffect(hasPermission)` que ya recargaba
+  `loadDocuments()` al volver de otra pantalla (mismo mecanismo que ya
+  refresca la lista al volver del Visor tras un borrado).
+- **`NavRoutes.Trash`** (nuevo, ruta simple sin argumento) registrado
+  inline en `DocuSmartNavGraph.kt` junto a `Study`/`QrReader`/`QrCreator`
+  (mismo patrón de pantallas secundarias con solo `onBack`), no como
+  función `NavGraphBuilder` dedicada (reservado para pantallas con más
+  parámetros de navegación, como `Library`/`Viewer`).
+- **10 tests unitarios nuevos** — `TrashDaoTest` (4, integración contra
+  SQLite real, mismo patrón que `DocumentHistoryDaoTest`) y
+  `TrashRepositoryTest` (6: `moveToTrash`, `restoreFromTrash`,
+  `deleteForever`, `isTrashEntryExpired`, `purgeExpiredTrash` con entradas
+  vencidas/recientes mezcladas). `loadTrashedDocuments()` no tiene test
+  directo por la misma razón que `DocumentRepository.loadAllDocuments()`
+  nunca la tuvo: depende de `loadImagesFromMediaStore()` (ContentResolver
+  real), mismo límite ya documentado para `CompressPdfUseCase` en
+  `pdf-tools.md` §7 — se intentó un test con este alcance y falló porque
+  el mock sin configurar de `ContentResolver` lanza una excepción que el
+  `catch` interno de `loadAllDocumentsRaw()` silencia, devolviendo lista
+  vacía en vez de fallar de forma diagnosticable.
+- **detekt:** `TooGenericExceptionCaught` boilerplate en `TrashRepository.kt`
+  (mismos 2 `catch (e: Exception)` ya vistos en el resto del proyecto,
+  colapsan en 1 entrada de baseline) — el hallazgo real de
+  `TooManyFunctions` que motivó toda esta extracción se corrigió de
+  verdad, no se baselineó.
+- **Verificado end-to-end en el dispositivo real (app en español), ciclo
+  completo:** eliminado un documento desde Biblioteca (pestaña
+  Dispositivo) → el contador de documentos bajó de 70 a 69 y el ícono de
+  Papelera mostró la insignia "1" → entrado a la Papelera → el documento
+  aparece con "Quedan 30 días" → "Restaurar" → la Papelera queda vacía
+  (estado vacío visible) → vuelto a Biblioteca → el contador volvió a 70 y
+  la insignia desapareció → eliminado el mismo documento de nuevo →
+  "Eliminar ahora" en la Papelera → diálogo de confirmación con el nombre
+  correcto → confirmado → la Papelera quedó vacía de nuevo →
+  **confirmado con `adb shell ls /sdcard/Download/` que el archivo físico
+  ya no existe** — el borrado definitivo fue real, no solo la fila de
+  `trash_entries`. Coincide exactamente con HU-VIS-07 AC1, AC2, AC4, AC5
+  (AC3, el borrado automático a los 30 días, no es verificable en una
+  sesión de prueba — cubierto por `purgeExpiredTrash` en el test
+  unitario con timestamps simulados).
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

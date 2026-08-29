@@ -6,6 +6,7 @@ import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
+import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     val adManager: AdManager,
     private val repository: DocumentRepository,
+    private val trashRepository: TrashRepository,
     private val favoritesRepository: FavoritesRepository  // ← NUEVO
 ) : ViewModel() {
 
@@ -73,14 +75,15 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    // RF-VIS-07: "eliminar" mueve a la papelera, no borra de inmediato -- ver
+    // DocumentRepository.moveToTrash().
     fun removeDocument(documentId: String) {
         viewModelScope.launch {
-            val deleted = repository.deleteDocument(documentId)
-            if (!deleted) {
+            val movedToTrash = trashRepository.moveToTrash(documentId)
+            if (!movedToTrash) {
                 _uiState.update { it.copy(deleteError = "No se pudo eliminar el archivo") }
                 return@launch
             }
-            favoritesRepository.removeAlias(documentId)
             _uiState.update { state ->
                 state.copy(
                     recentDocuments = state.recentDocuments.filter { it.id != documentId }

@@ -29,6 +29,7 @@ import com.docsmart.features.settings.presentation.SettingsScreen
 import com.docsmart.features.splash.presentation.SplashDocuSmartScreen
 import com.docsmart.features.splash.presentation.SplashMouthBlackScreen
 import com.docsmart.features.study.presentation.StudyScreen
+import com.docsmart.features.library.presentation.TrashScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
 import com.docsmart.features.security.presentation.SecurityMenuScreen
 import com.docsmart.features.security.presentation.PdfPasswordScreen
@@ -99,6 +100,11 @@ fun DocuSmartNavGraph(
         // ── QR Creator ────────────────────────────────────────────────────────
         composable(NavRoutes.QrCreator.route) {
             QrCreatorScreen(onBack = { navController.popBackStack() })
+        }
+
+        // ── Papelera (RF-VIS-07) ──────────────────────────────────────────────
+        composable(NavRoutes.Trash.route) {
+            TrashScreen(onBack = { navController.popBackStack() })
         }
     }
 }
@@ -198,7 +204,8 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
                     }
                 }
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
-            }
+            },
+            onTrashClick = { navController.navigate(NavRoutes.Trash.route) }
         )
     }
 }
