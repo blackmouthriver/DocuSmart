@@ -46,6 +46,7 @@
     <string name="pdf_redact">Скрыть содержимое</string>
     <string name="pdf_crop">Обрезать страницы</string>
     <string name="pdf_edit_text">Редактировать текст</string>
+    <string name="pdf_sign">Подписать PDF</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -143,6 +144,7 @@
     <string name="pdf_redact_desc">Безвозвратно удаляет конфиденциальный текст и изображения</string>
     <string name="pdf_crop_desc">Удаляет лишние поля на каждой странице</string>
     <string name="pdf_edit_text_desc">Ищет и заменяет существующий текст в документе</string>
+    <string name="pdf_sign_desc">Нарисуйте подпись и поставьте её на документ</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -361,6 +363,26 @@
     <string name="pdf_edit_text_generate_error">Ошибка при создании отредактированного PDF.</string>
     <string name="pdf_edit_text_success">Успешно заменено совпадений: %1$d</string>
     <string name="pdf_edit_text_error">Ошибка при редактировании PDF: %1$s</string>
+
+    <!-- ── Firmar PDF ── -->
+    <string name="pdf_sign_subtitle">Выберите страницу и нарисуйте подпись пальцем</string>
+    <string name="pdf_sign_ready">PDF готов к подписанию</string>
+    <string name="pdf_sign_page_indicator">Страница %1$d из %2$d</string>
+    <string name="pdf_sign_prev_page">Предыдущая страница</string>
+    <string name="pdf_sign_next_page">Следующая страница</string>
+    <string name="pdf_sign_draw_label">Ваша подпись</string>
+    <string name="pdf_sign_draw_hint">Нарисуйте подпись пальцем в поле выше</string>
+    <string name="pdf_sign_hint">Вы ещё не нарисовали подпись</string>
+    <string name="pdf_sign_captured">Подпись сохранена</string>
+    <string name="pdf_sign_clear">Очистить</string>
+    <string name="pdf_sign_execute">Подписать PDF</string>
+    <string name="pdf_sign_progress">Подписание документа…</string>
+    <string name="pdf_sign_empty_signature_error">Нарисуйте подпись, прежде чем продолжить</string>
+    <string name="pdf_sign_read_error">Не удалось прочитать PDF. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_sign_no_pages">В PDF нет страниц.</string>
+    <string name="pdf_sign_generate_error">Ошибка при создании подписанного PDF.</string>
+    <string name="pdf_sign_success">PDF успешно подписан — страница %1$d</string>
+    <string name="pdf_sign_error">Ошибка при подписании PDF: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

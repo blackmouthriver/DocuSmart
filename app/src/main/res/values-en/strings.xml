@@ -46,6 +46,7 @@
     <string name="pdf_redact">Censor content</string>
     <string name="pdf_crop">Crop pages</string>
     <string name="pdf_edit_text">Edit text</string>
+    <string name="pdf_sign">Sign PDF</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -143,6 +144,7 @@
     <string name="pdf_redact_desc">Permanently remove sensitive text and images</string>
     <string name="pdf_crop_desc">Trim the extra margin from each page</string>
     <string name="pdf_edit_text_desc">Search and replace existing text in the document</string>
+    <string name="pdf_sign_desc">Draw your signature and stamp it on the document</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -361,6 +363,26 @@
     <string name="pdf_edit_text_generate_error">Error generating the edited PDF.</string>
     <string name="pdf_edit_text_success">%1$d occurrences replaced successfully</string>
     <string name="pdf_edit_text_error">Error editing PDF: %1$s</string>
+
+    <!-- ── Firmar PDF ── -->
+    <string name="pdf_sign_subtitle">Choose the page and draw your signature with your finger</string>
+    <string name="pdf_sign_ready">PDF ready to sign</string>
+    <string name="pdf_sign_page_indicator">Page %1$d of %2$d</string>
+    <string name="pdf_sign_prev_page">Previous page</string>
+    <string name="pdf_sign_next_page">Next page</string>
+    <string name="pdf_sign_draw_label">Your signature</string>
+    <string name="pdf_sign_draw_hint">Draw your signature with your finger in the box above</string>
+    <string name="pdf_sign_hint">You haven\'t drawn your signature yet</string>
+    <string name="pdf_sign_captured">Signature captured</string>
+    <string name="pdf_sign_clear">Clear</string>
+    <string name="pdf_sign_execute">Sign PDF</string>
+    <string name="pdf_sign_progress">Signing document…</string>
+    <string name="pdf_sign_empty_signature_error">Draw your signature before continuing</string>
+    <string name="pdf_sign_read_error">Could not read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_sign_no_pages">The PDF has no pages.</string>
+    <string name="pdf_sign_generate_error">Error generating the signed PDF.</string>
+    <string name="pdf_sign_success">PDF signed successfully — page %1$d</string>
+    <string name="pdf_sign_error">Error signing PDF: %1$s</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->

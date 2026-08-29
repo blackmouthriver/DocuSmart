@@ -46,6 +46,7 @@
     <string name="pdf_redact">Inhalt schwärzen</string>
     <string name="pdf_crop">Seiten zuschneiden</string>
     <string name="pdf_edit_text">Text bearbeiten</string>
+    <string name="pdf_sign">PDF unterschreiben</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -143,6 +144,7 @@
     <string name="pdf_redact_desc">Entfernt sensiblen Text und Bilder dauerhaft</string>
     <string name="pdf_crop_desc">Entfernt den überschüssigen Rand jeder Seite</string>
     <string name="pdf_edit_text_desc">Sucht und ersetzt vorhandenen Text im Dokument</string>
+    <string name="pdf_sign_desc">Zeichne deine Unterschrift und setze sie auf das Dokument</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -361,6 +363,26 @@
     <string name="pdf_edit_text_generate_error">Fehler beim Erstellen des bearbeiteten PDFs.</string>
     <string name="pdf_edit_text_success">%1$d Vorkommen erfolgreich ersetzt</string>
     <string name="pdf_edit_text_error">Fehler beim Bearbeiten des PDFs: %1$s</string>
+
+    <!-- ── Firmar PDF ── -->
+    <string name="pdf_sign_subtitle">Wähle die Seite und zeichne deine Unterschrift mit dem Finger</string>
+    <string name="pdf_sign_ready">PDF bereit zum Unterschreiben</string>
+    <string name="pdf_sign_page_indicator">Seite %1$d von %2$d</string>
+    <string name="pdf_sign_prev_page">Vorherige Seite</string>
+    <string name="pdf_sign_next_page">Nächste Seite</string>
+    <string name="pdf_sign_draw_label">Deine Unterschrift</string>
+    <string name="pdf_sign_draw_hint">Zeichne deine Unterschrift mit dem Finger im Feld oben</string>
+    <string name="pdf_sign_hint">Du hast deine Unterschrift noch nicht gezeichnet</string>
+    <string name="pdf_sign_captured">Unterschrift erfasst</string>
+    <string name="pdf_sign_clear">Löschen</string>
+    <string name="pdf_sign_execute">PDF unterschreiben</string>
+    <string name="pdf_sign_progress">Dokument wird unterschrieben…</string>
+    <string name="pdf_sign_empty_signature_error">Zeichne deine Unterschrift, bevor du fortfährst</string>
+    <string name="pdf_sign_read_error">PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_sign_no_pages">Das PDF hat keine Seiten.</string>
+    <string name="pdf_sign_generate_error">Fehler beim Erstellen des unterschriebenen PDFs.</string>
+    <string name="pdf_sign_success">PDF erfolgreich unterschrieben — Seite %1$d</string>
+    <string name="pdf_sign_error">Fehler beim Unterschreiben des PDFs: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

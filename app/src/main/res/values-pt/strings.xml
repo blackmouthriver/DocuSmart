@@ -46,6 +46,7 @@
     <string name="pdf_redact">Censurar conteúdo</string>
     <string name="pdf_crop">Cortar páginas</string>
     <string name="pdf_edit_text">Editar texto</string>
+    <string name="pdf_sign">Assinar PDF</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -143,6 +144,7 @@
     <string name="pdf_redact_desc">Remove texto e imagens sensíveis de forma irreversível</string>
     <string name="pdf_crop_desc">Remove a margem excedente de cada página</string>
     <string name="pdf_edit_text_desc">Busca e substitui texto existente no documento</string>
+    <string name="pdf_sign_desc">Desenhe sua assinatura e aplique-a no documento</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -361,6 +363,26 @@
     <string name="pdf_edit_text_generate_error">Erro ao gerar o PDF editado.</string>
     <string name="pdf_edit_text_success">%1$d ocorrências substituídas com sucesso</string>
     <string name="pdf_edit_text_error">Erro ao editar o PDF: %1$s</string>
+
+    <!-- ── Firmar PDF ── -->
+    <string name="pdf_sign_subtitle">Escolha a página e desenhe sua assinatura com o dedo</string>
+    <string name="pdf_sign_ready">PDF pronto para assinar</string>
+    <string name="pdf_sign_page_indicator">Página %1$d de %2$d</string>
+    <string name="pdf_sign_prev_page">Página anterior</string>
+    <string name="pdf_sign_next_page">Próxima página</string>
+    <string name="pdf_sign_draw_label">Sua assinatura</string>
+    <string name="pdf_sign_draw_hint">Desenhe sua assinatura com o dedo no quadro acima</string>
+    <string name="pdf_sign_hint">Você ainda não desenhou sua assinatura</string>
+    <string name="pdf_sign_captured">Assinatura capturada</string>
+    <string name="pdf_sign_clear">Limpar</string>
+    <string name="pdf_sign_execute">Assinar PDF</string>
+    <string name="pdf_sign_progress">Assinando documento…</string>
+    <string name="pdf_sign_empty_signature_error">Desenhe sua assinatura antes de continuar</string>
+    <string name="pdf_sign_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_sign_no_pages">O PDF não tem páginas.</string>
+    <string name="pdf_sign_generate_error">Erro ao gerar o PDF assinado.</string>
+    <string name="pdf_sign_success">PDF assinado com sucesso — página %1$d</string>
+    <string name="pdf_sign_error">Erro ao assinar PDF: %1$s</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 

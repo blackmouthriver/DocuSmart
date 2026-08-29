@@ -20,8 +20,9 @@ implementado 2026-08-28, ver §14** — cierra las 2 funcionalidades de
 prioridad "media". **RF-PDF-09 (Recortar márgenes) implementado
 2026-08-28, ver §15** — primera funcionalidad de prioridad "baja/futuro".
 **RF-PDF-10 (Editar texto: buscar y reemplazar) implementado 2026-08-28,
-ver §16.** Pendiente: RF-PDF-11, RF-PDF-12 y RF-PDF-15, y selección de
-archivo desde la Biblioteca de la app (ver §5).
+ver §16.** **RF-PDF-11 (Firma manuscrita) implementado 2026-08-29, ver
+§17.** Pendiente: RF-PDF-12 y RF-PDF-15, y selección de archivo desde la
+Biblioteca de la app (ver §5).
 **Código relacionado:** `features/pdftools/**`.
 
 ---
@@ -53,8 +54,10 @@ el requerimiento #3 original que todavía no existe:
 11. **Editar texto** — busca texto existente en el documento y lo reemplaza,
     localizándolo por posición real y eliminándolo de verdad antes de
     escribir el reemplazo (no es cosmético).
-12. *(Backlog, no implementado)* firma digital,
-    formularios, OCR avanzado.
+12. **Firmar PDF** — el usuario dibuja su firma con el dedo y se estampa
+    como imagen sobre la página elegida (firma manuscrita, no
+    criptográfica — ver §17 para la justificación de esta decisión).
+13. *(Backlog, no implementado)* formularios, OCR avanzado.
 
 ---
 
@@ -73,24 +76,25 @@ el requerimiento #3 original que todavía no existe:
 - **RF-PDF-14** Censurar (redactar) contenido sensible de forma irreversible. **✅ Implementado 2026-08-28, ver §14.**
 - **RF-PDF-09** Recortar (crop) márgenes de página. **✅ Implementado 2026-08-28, ver §15.**
 - **RF-PDF-10** Edición básica de contenido (texto/imágenes existentes). **✅ Implementado 2026-08-28 — solo texto (buscar y reemplazar), ver §16.** Edición de imágenes existentes queda fuera de este alcance — ver nota de alcance en §16.
+- **RF-PDF-11** Firma digital de PDF. **✅ Implementado 2026-08-29 — firma manuscrita, no criptográfica, ver §17.** El proyecto no tiene infraestructura de certificados/PKI — ver nota de alcance en §17.
 
 ### Backlog — nuevas funcionalidades (mejoras sugeridas 2026-08-24, no implementadas)
-- **RF-PDF-11** Firma digital de PDF.
 - **RF-PDF-12** Detección y relleno de formularios PDF.
 - **RF-PDF-15** OCR avanzado sobre PDFs escaneados (texto ya buscable vía Modo Estudio para imágenes sueltas; falta aplicado a PDF completo).
 
 Prioridad sugerida dentro del backlog restante (esfuerzo vs. valor percibido)
-— **las 3 funcionalidades de prioridad "alta", las 2 de "media" y las 2
-primeras de "baja/futuro" ya están implementadas** (RF-PDF-06/07/08/13/14/09/10):
-quedan RF-PDF-11, RF-PDF-12, RF-PDF-15 (requieren más superficie de UI o
-licenciamiento adicional de iText7 para firma/formularios avanzados).
+— **las 3 funcionalidades de prioridad "alta", las 2 de "media" y las 3
+primeras de "baja/futuro" ya están implementadas**
+(RF-PDF-06/07/08/13/14/09/10/11): quedan RF-PDF-12, RF-PDF-15 (requieren
+más superficie de UI o licenciamiento adicional de iText7 para formularios
+avanzados).
 
 ---
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible. Editar texto es un segundo caso especial en sentido inverso, igual que Censurar: **debe destruir** el texto original encontrado antes de escribir el reemplazo (RF-PDF-10/RNF-PDF-06) — el resto de la página fuera de las ocurrencias reemplazadas conserva su texto/vectores intactos.
-- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 11 herramientas.
+- **RNF-PDF-01 (preservar contenido vectorial):** Unir, Dividir, Rotar, Numerar páginas, Marca de agua y Reordenar páginas deben operar sobre el PDF a nivel de página (iText7 `copyPagesTo`/`setRotation`/`PdfCanvas`), nunca rasterizando a imagen — el texto debe seguir siendo seleccionable y buscable en el resultado. **✅ Cumplido** para las 6 (Unir y Rotar migrados desde un enfoque de bitmap que lo violaba; Numerar páginas y Marca de agua escriben su texto directamente sobre la página como texto real; Reordenar páginas reutiliza `copyPagesTo` igual que Unir, solo que página por página en el orden final deseado — las miniaturas que se ven en la UI sí son bitmaps vía `PdfRenderer`, pero eso es únicamente la vista previa, no el archivo generado). Comprimir es la única excepción deliberada: reducir tamaño de forma significativa requiere recodificar imágenes/rasterizar, así que se acepta perder texto seleccionable en esa operación específica. Comparar PDFs queda fuera del alcance de este RNF por naturaleza: no modifica ni copia contenido de los PDFs originales, solo lee su texto (`PdfTextExtractor`, igual que Modo Estudio/Buscar) y **genera un documento nuevo** (el reporte) — no hay "contenido vectorial que preservar" porque no hay página original que reescribir. Censurar contenido es un caso especial en sentido inverso: **debe destruir** deliberadamente el contenido vectorial dentro de las zonas marcadas (ver RF-PDF-14/RNF-PDF-06) — el resto de la página fuera de esas zonas sí conserva su texto/vectores intactos. Recortar páginas cumple este RNF igual que Rotar: solo ajusta `MediaBox`/`CropBox` (metadatos de tamaño de página), nunca toca el content stream — el texto sigue siendo el mismo texto real, solo cambia qué porción de la página es visible. Editar texto es un segundo caso especial en sentido inverso, igual que Censurar: **debe destruir** el texto original encontrado antes de escribir el reemplazo (RF-PDF-10/RNF-PDF-06) — el resto de la página fuera de las ocurrencias reemplazadas conserva su texto/vectores intactos. Firmar PDF es, como Comparar, un caso que queda fuera del alcance de este RNF por naturaleza en sentido inverso a Editar texto/Censurar: no destruye ni reescribe nada del contenido original, solo **añade** una imagen nueva (la firma) sobre la página en un content stream adicional (`page.newContentStreamAfter()`) — el contenido preexistente permanece exactamente igual.
+- **RNF-PDF-02 (nombre de archivo consistente):** todo archivo generado por Herramientas PDF debe llevar el prefijo `DocuSmart_` seguido de un nombre descriptivo y timestamp. **✅ Cumplido** en las 12 herramientas.
 - **RNF-PDF-03 (no bloquear UI):** toda operación debe ejecutarse en `Dispatchers.IO`, nunca en el hilo principal. **✅ Ya cumplido.**
 - **RNF-PDF-04 (mensajes de error):** los mensajes no deben filtrar rutas de archivo completas ni detalles internos de excepciones (mismo lineamiento que RNF-SEC-05).
 - **RNF-PDF-05 (feedback tras operación exitosa):** nombre, tamaño y opciones de guardar/compartir deben mostrarse siempre, sin pasos adicionales. **✅ Ya cumplido** (`ToolSuccessCard`, compartido por las 4 herramientas).
@@ -233,12 +237,27 @@ en un PDF ya generado,
 - **AC3** Dado que el texto de reemplazo se deja vacío, cuando confirmo, entonces el texto encontrado se elimina sin escribir nada en su lugar (equivalente a borrar ese texto).
 - **AC4** Dado que el texto buscado no existe en el documento, cuando confirmo, entonces el sistema informa que no se encontró ninguna coincidencia y no genera ningún archivo.
 
+### HU-PDF-12 — Firmar un PDF con firma manuscrita
+*(Implementado 2026-08-29 — ver §17. HU redactada de nuevo, mismo motivo
+que HU-PDF-08/09/10/11: RF-PDF-11 se agregó después como mejora sugerida
+— ver §2. Cubre firma manuscrita (imagen del trazo del usuario), no firma
+criptográfica con certificados — ver nota de alcance en §17.)*
+
+**Como** usuario que necesita dejar constancia de su aprobación en un documento,
+**quiero** dibujar mi firma con el dedo y estamparla sobre el PDF,
+**para** no depender de imprimir, firmar a mano y volver a escanear el documento.
+
+- **AC1** Dado que dibujo mi firma en el recuadro provisto, cuando confirmo firmar, entonces el trazo dibujado aparece estampado sobre la página elegida del PDF resultante.
+- **AC2** Dado que elijo una página específica del documento, cuando confirmo firmar, entonces la firma se coloca en esa página y no en otra.
+- **AC3** Dado que no he dibujado ninguna firma, cuando intento firmar, entonces el botón permanece deshabilitado y no se genera ningún archivo.
+- **AC4** Dado que el PDF resultante se abre en cualquier lector, cuando reviso el contenido, entonces el texto original de la página sigue intacto y seleccionable — la firma se agrega, no reemplaza ni destruye nada existente.
+
 ---
 
 ## 5. Deuda técnica y pendientes fuera de HU
 
 - **i18n:** ✅ Completado 2026-08-28, ver §9. Ya no queda español fijo en este módulo.
-- **Selector de archivo:** las 11 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
+- **Selector de archivo:** las 12 herramientas solo permiten elegir un PDF desde el selector del dispositivo (SAF), no desde la Biblioteca de la app — mismo gap que tenía Seguridad antes de corregirse (RF-SEC-04/HU-SEC-04 AC3).
 - **Compresión con pérdida de texto:** aceptado como trade-off deliberado (RNF-PDF-01) — una futura mejora de calidad/no indispensable sería ofrecer un modo "conservar texto" que solo recomprima imágenes embebidas en vez de rasterizar la página completa, pero requiere más trabajo con la API de iText7 y no está en el alcance de esta refinación.
 
 ---
@@ -252,7 +271,7 @@ en un PDF ya generado,
 | "Comprimir no indica dónde queda guardado, no ofrece compartir/descargar" | HU-PDF-03 | **Obsoleto** — `ToolSuccessCard` ya muestra nombre, tamaño y ambas acciones para las 4 herramientas. |
 | "Rotar: la vista previa no refleja la rotación real en grados" | HU-PDF-04 | Mitigado indirectamente — al migrar la rotación real a `setRotation()` (metadato estándar de PDF), cualquier discrepancia posible del cálculo manual de matriz de bitmap deja de existir en el archivo final. La vista previa de `RotatePdfScreen.kt` sigue usando su propio cálculo de bitmap con `Matrix().postRotate()` para mostrar el ángulo antes de procesar — consistente con el resultado real, pero no se migró a leer el PDF ya rotado por no ser indispensable para la corrección del archivo generado. |
 | Nombre de archivo antepone "DocuSmart_" automáticamente (confirmar si es deseado) | RNF-PDF-02 | Resuelto como decisión de producto: se mantiene y se estandarizó en las 4 herramientas (antes solo 2 de 4 lo tenían) — es branding consistente, no un bug. |
-| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). Editar (texto) → RF-PDF-10 (ya implementado, ver §16). El resto → RF-PDF-11, RF-PDF-12 y RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
+| Faltan: contraseña, quitar contraseña, eliminar página, reordenar, firma, recorte, marca de agua, numeración, editar, formularios, comparar, censurar | Contraseña/quitar contraseña → `security.md` (ya implementado). Numeración → RF-PDF-06 (ya implementado, ver §10). Marca de agua → RF-PDF-07 (ya implementado, ver §11). Eliminar página/reordenar → RF-PDF-08 (ya implementado, ver §12). Comparar → RF-PDF-13 (ya implementado, ver §13). Censurar → RF-PDF-14 (ya implementado, ver §14). Recorte → RF-PDF-09 (ya implementado, ver §15). Editar (texto) → RF-PDF-10 (ya implementado, ver §16). Firma → RF-PDF-11 (ya implementado, ver §17). El resto → RF-PDF-12 y RF-PDF-15 (backlog, §2). | Parcialmente resuelto — resto documentado como backlog, no implementado. |
 
 ---
 
@@ -271,6 +290,7 @@ en un PDF ya generado,
 | 9 | `RedactPdfUseCaseTest` — censurar la franja donde está el texto "secreto" lo elimina de la extracción del PDF de salida mientras el texto "público" en otra zona de la misma página se conserva intacto (verificado con `PdfTextExtractor`, no solo el mensaje — la prueba que demuestra que la censura es real y no un rectángulo visual), sin zonas marcadas → Error sin tocar el archivo, una zona en una página fuera de rango se ignora sin fallar, el mensaje de éxito informa el número de zonas censuradas, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 10 | `CropPdfUseCaseTest` — recortar con margen del 10% reduce el tamaño de página proporcionalmente (verificado leyendo el `pageSize` real del PDF de salida, no solo el mensaje), el texto de la página sigue siendo extraíble tras recortar (no se toca el content stream), margen de 0% no cambia el tamaño de la página, un margen fuera de rango se ajusta al máximo permitido (40%) sin generar un rectángulo inválido, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 | 11 | `EditTextPdfUseCaseTest` — el texto encontrado se reemplaza y el original deja de existir en la extracción del PDF de salida (verificado con `PdfTextExtractor`, la prueba clave de que no es cosmético), búsqueda vacía → Error sin tocar el archivo, texto no encontrado → Error específico, todas las ocurrencias en la página se reemplazan y el mensaje informa el total exacto, archivo no-PDF → Error. | ✅ 5 tests, en verde |
+| 12 | `SignPdfUseCaseTest` — firmar un PDF de una página produce un archivo no vacío con la firma en la página 1, firma sin imagen → Error sin tocar el archivo, un número de página fuera de rango (por arriba o por abajo) se ajusta al límite válido más cercano, archivo no-PDF → Error. | ✅ 5 tests, en verde |
 
 Todos los tests generan PDFs reales en memoria con iText7 (mismo patrón que
 `PdfPasswordUseCaseTest`), no mocks del contenido del PDF — el conteo de
@@ -1061,4 +1081,120 @@ como "100% cubierto" sino con la aclaración explícita en §2.
   pequeño que "VISIBLE" (coincide con lo esperado: el tamaño se ajustó al
   ancho del rectángulo original de "PUBLICO", más angosto que "VISIBLE"
   que no se tocó).
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 17. RF-PDF-11/HU-PDF-12 — Firmar PDF con firma manuscrita (2026-08-29)
+
+Tercera funcionalidad de prioridad "baja/futuro" implementada, y la última
+del backlog de mejoras sugeridas 2026-08-24 antes de RF-PDF-12/15
+(formularios/OCR avanzado, ambas pendientes).
+
+- **Decisión de alcance — firma manuscrita, no firma criptográfica:** el RF
+  original dice "firma digital de PDF", que en el sentido estricto/legal
+  significa firma criptográfica basada en certificados X.509 (PKI) —
+  requeriría que el usuario tenga o genere un certificado, gestión de
+  claves privadas, y el módulo `com.itextpdf:sign` de iText7 (dependencia
+  adicional, con su propia superficie de complejidad de manejo de
+  keystores). El proyecto no tiene ninguna infraestructura de este tipo, y
+  construirla desde cero está fuera de proporción para una mejora de
+  prioridad "baja/futuro". En cambio, se implementó lo que la mayoría de
+  apps de firma de PDF de consumo (Adobe Fill & Sign, DocuSign en su modo
+  simple, etc.) ofrecen en la práctica bajo el mismo nombre: una **firma
+  manuscrita** — el usuario dibuja su firma con el dedo, se captura como
+  imagen y se estampa sobre la página elegida. Mismo espíritu que la
+  decisión de alcance ya documentada para RF-PDF-10 en §16 (interpretar un
+  RF ambiguo/amplio del backlog original con una implementación real y
+  acotada, en vez de construir la versión más compleja posible o no
+  implementar nada).
+- **`SignPdfUseCase.kt`** (nuevo) — recibe la imagen de la firma ya
+  capturada (bytes PNG) y el número de página donde estamparla. Usa
+  `ImageDataFactory.create(bytes)` (paquete `com.itextpdf.io.image`, ya
+  incluido en `itext7-core`, no requiere dependencia nueva) para cargar la
+  imagen, calcula su alto manteniendo el aspect ratio original a partir de
+  un ancho fijo (150pt), y la coloca en la esquina inferior derecha de la
+  página con un margen fijo de 30pt vía
+  `PdfCanvas.addImageFittedIntoRectangle()` sobre
+  `page.newContentStreamAfter()` — mismo patrón exacto que RF-PDF-10 (§16)
+  para agregar contenido nuevo sin interferir con el content stream
+  existente. Un número de página fuera de rango (por arriba o por abajo
+  del total real) se ajusta al límite válido más cercano en vez de fallar
+  toda la operación.
+- **`SignPdfScreen.kt`** (nuevo) — navegador de páginas igual que
+  Censurar/Recortar (§14/§15) para elegir dónde va la firma, y un canvas
+  de dibujo libre (`Modifier.pointerInput` + `detectDragGestures`,
+  acumulando una lista de trazos como `List<List<Offset>>` en vez de un
+  solo trazo, para soportar firmas que requieren levantar el dedo varias
+  veces). A diferencia de Censurar (que dibuja rectángulos mientras se
+  arrastra), acá cada trazo completo se renderiza a un
+  `android.graphics.Bitmap` real (`android.graphics.Canvas` +
+  `Paint.Style.STROKE` con extremos redondeados) recién al soltar el dedo
+  (`onDragEnd`), y se comprime a PNG (`Bitmap.compress`) — los bytes PNG
+  resultantes son lo que efectivamente viaja al ViewModel y al use case, no
+  una representación vectorial de los trazos. Sin arrastre de posición
+  interactivo (la firma siempre va a la esquina inferior derecha) —
+  simplificación deliberada para mantener el alcance de esta primera
+  versión razonable frente a Censurar, que sí necesita posición arbitraria
+  porque su propósito es tapar contenido específico en cualquier parte de
+  la página.
+- **`PdfTool.SIGN`** (nuevo valor de enum), con 3 campos de estado nuevos
+  en `PdfToolsUiState` (`signaturePageNumber`, `signatureTotalPages`,
+  `signatureImageBytes: ByteArray?`) y 4 acciones nuevas en el ViewModel.
+  Reutiliza `selectedPdfs`/`singlePdfLauncher` (un solo archivo de
+  entrada). Nueva entrada de menú con ícono `Icons.Rounded.Draw` y color
+  `NavyDark` (décimosegundo color distinto de los 11 ya usados).
+- **`DailyLimitManager`:** mismo procedimiento preventivo que las 6
+  funcionalidades anteriores (§10/§11/§12/§13/§14/§15/§16) — se agregó
+  `KEY_SIGN` y su `case` **antes** de escribir el resto del feature, con
+  su test de regresión correspondiente.
+- **5 tests unitarios nuevos** (`SignPdfUseCaseTest`) — verifica que firmar
+  un PDF de una página produce un archivo no vacío con la firma en la
+  página 1, que una firma sin imagen devuelve `Error` sin tocar el
+  archivo, que un número de página fuera de rango (por arriba con 99 en un
+  PDF de 2 páginas, y por abajo con 0 en un PDF de 3 páginas) se ajusta
+  correctamente al límite válido, y que un archivo no-PDF devuelve
+  `Error`. La imagen de prueba es un PNG real de 100×40 generado **fuera
+  de línea** con Python + `zlib` puro y embebido en base64 dentro del
+  test — `java.awt`/`javax.imageio.ImageIO` (la forma obvia de generar un
+  PNG en tiempo de ejecución en JVM estándar) no está disponible en el
+  classpath de tests unitarios de Android, y un primer intento con un PNG
+  1×1 transparente hardcodeado de memoria falló con
+  `PNG image exception` al pasar por `ImageDataFactory.create()` — el PNG
+  generado con Python (bytes reales, CRC correcto) sí fue aceptado sin
+  problema.
+- **detekt:** los mismos 3 hallazgos de boilerplate ya vistos en las 11
+  herramientas hermanas (`copyUriToCache` con
+  `NestedBlockDepth`/`ReturnCount`, `catch (e: Exception)` genérico en
+  `SignPdfUseCase.kt` y en `SignPdfScreen.kt`, mismo patrón exacto ya
+  baselineado para el resto del módulo) más 5 `MaxLineLength` reales en
+  `SignPdfUseCaseTest.kt` (llamadas al use case con varios parámetros
+  nombrados en una sola línea, envueltas en múltiples líneas; el literal
+  base64 de la imagen de prueba se dejó con `@Suppress("MaxLineLength")`
+  en vez de partirlo, ya que dividir un literal de datos binarios
+  requeriría concatenación que solo reduce la legibilidad sin aportar
+  nada).
+- **Incidencia de dispositivo durante la verificación (no relacionada con
+  el código):** a mitad de la verificación en el dispositivo real, el
+  motorola edge 30 neo dejó de responder a comandos de captura de pantalla
+  y `uiautomator` (`screencap` devolvía archivos de 0 bytes,
+  `uiautomator dump` fallaba con "could not get idle state", ni siquiera
+  el botón HOME respondía) — sin ningún ANR ni crash de la app en
+  `logcat`, así que no era un problema de `SignPdfScreen.kt`. Se confirmó
+  con el usuario y se resolvió con `adb reboot`; tras el reinicio, el
+  dispositivo volvió a responder con normalidad y la verificación
+  continuó sin cambios de código.
+- **Verificado end-to-end en el dispositivo real (app en español), tras el
+  reinicio:** reutilizado el mismo PDF de prueba de Censurar/Editar texto
+  (`RedactTest.pdf`) → seleccionado en la pantalla de Firmar → dibujado un
+  trazo diagonal en el recuadro de firma (`adb shell input swipe`,
+  gesto real de arrastre) → "Firma capturada" visible en pantalla →
+  ejecutado con "Página 1 de 1" → mensaje de éxito "PDF firmado
+  correctamente — página 1" → archivo resultante de 4 KB (frente a los
+  ~640 bytes del PDF original, confirmando que la imagen se incrustó) →
+  guardado en Descargas → archivo descargado y leído directamente: el
+  trazo dibujado aparece estampado en la esquina inferior derecha de la
+  página, con "SECRETO CONFIDENCIAL" y "PUBLICO VISIBLE" intactos —
+  coincide exactamente con el gesto realizado en pantalla y confirma que
+  el contenido original no se vio afectado.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
