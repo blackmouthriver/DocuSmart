@@ -131,6 +131,7 @@
     <ID>NestedBlockDepth:ReorderPagesUseCase.kt$ReorderPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:ScanResultScreen.kt$private fun saveFileToDownloads(context: Context, file: File): Boolean</ID>
+    <ID>NestedBlockDepth:SignPdfUseCase.kt$SignPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:StudyScreen.kt$private fun extractPdfText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
     <ID>NestedBlockDepth:StudyScreen.kt$private fun extractPptText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
@@ -240,6 +241,7 @@
     <ID>ReturnCount:RedactPdfUseCase.kt$RedactPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ReorderPagesUseCase.kt$ReorderPagesUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:SignPdfUseCase.kt$SignPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
     <ID>ReturnCount:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -296,6 +298,8 @@
     <ID>TooGenericExceptionCaught:SecurityManager.kt$SecurityManager$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SecurityViewModel.kt$SecurityViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SettingsScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SignPdfScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SignPdfUseCase.kt$SignPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SplitPdfUseCase.kt$SplitPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StudyScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewerScreen.kt$e: Exception</ID>

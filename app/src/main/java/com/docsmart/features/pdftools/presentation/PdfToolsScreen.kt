@@ -31,6 +31,7 @@ import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RedactPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
+import com.docsmart.features.pdftools.domain.usecase.SignPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.presentation.components.ComparePdfScreen
@@ -44,6 +45,7 @@ import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RedactPdfScreen
 import com.docsmart.features.pdftools.presentation.components.ReorderPagesScreen
 import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
+import com.docsmart.features.pdftools.presentation.components.SignPdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
 import com.docsmart.features.pdftools.presentation.components.WatermarkPdfScreen
 import com.docsmart.R
@@ -136,6 +138,12 @@ fun PdfToolsScreen(
     val editTextGenerateError    = stringResource(R.string.pdf_edit_text_generate_error)
     val editTextSuccess          = stringResource(R.string.pdf_edit_text_success)
     val editTextGenericError     = stringResource(R.string.pdf_edit_text_error)
+    val signEmptySignatureError = stringResource(R.string.pdf_sign_empty_signature_error)
+    val signReadError           = stringResource(R.string.pdf_sign_read_error)
+    val signNoPages             = stringResource(R.string.pdf_sign_no_pages)
+    val signGenerateError       = stringResource(R.string.pdf_sign_generate_error)
+    val signSuccess             = stringResource(R.string.pdf_sign_success)
+    val signGenericError        = stringResource(R.string.pdf_sign_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -229,6 +237,14 @@ fun PdfToolsScreen(
                 generateError    = editTextGenerateError,
                 success          = editTextSuccess,
                 genericError     = editTextGenericError
+            ),
+            sign = SignPdfMessages(
+                emptySignatureError = signEmptySignatureError,
+                readError           = signReadError,
+                noPages             = signNoPages,
+                generateError       = signGenerateError,
+                success             = signSuccess,
+                genericError        = signGenericError
             )
         )
     }
@@ -576,6 +592,31 @@ fun PdfToolsScreen(
                                     onReplaceTextChange = {
                                         viewModel.onEditReplaceTextChange(it)
                                     },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
+                                PdfTool.SIGN -> SignPdfScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    pageNumber = uiState.signaturePageNumber,
+                                    totalPages = uiState.signatureTotalPages,
+                                    hasSignature = uiState.signatureImageBytes != null,
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        singlePdfLauncher.launch(MIME_PDF)
+                                    },
+                                    onTotalPagesLoaded = {
+                                        viewModel.onSignatureTotalPagesLoaded(it)
+                                    },
+                                    onPageChange = {
+                                        viewModel.onSignaturePageChange(it)
+                                    },
+                                    onSignatureCaptured = {
+                                        viewModel.onSignatureCaptured(it)
+                                    },
+                                    onClearSignature = { viewModel.onClearSignature() },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
                                 else -> {}

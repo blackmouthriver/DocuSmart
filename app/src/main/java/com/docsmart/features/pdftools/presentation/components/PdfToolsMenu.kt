@@ -99,6 +99,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_edit_text,
         descriptionRes = R.string.pdf_edit_text_desc,
         color = SmartBlue
+    ),
+    PdfToolItem(
+        tool = PdfTool.SIGN,
+        icon = Icons.Rounded.Draw,
+        titleRes = R.string.pdf_sign,
+        descriptionRes = R.string.pdf_sign_desc,
+        color = NavyDark
     )
 )
 

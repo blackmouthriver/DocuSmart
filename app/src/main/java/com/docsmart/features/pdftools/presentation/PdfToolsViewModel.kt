@@ -22,6 +22,8 @@ import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CropPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.SignPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.SignPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
@@ -50,7 +52,7 @@ import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT, CROP, EDIT_TEXT
+    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES, COMPARE, REDACT, CROP, EDIT_TEXT, SIGN
 }
 
 data class PdfToolMessages(
@@ -64,7 +66,8 @@ data class PdfToolMessages(
     val compare      : ComparePdfMessages,
     val redact       : RedactPdfMessages,
     val crop         : CropPdfMessages,
-    val editText     : EditTextPdfMessages
+    val editText     : EditTextPdfMessages,
+    val sign         : SignPdfMessages
 )
 
 data class PdfToolsUiState(
@@ -90,6 +93,9 @@ data class PdfToolsUiState(
     val cropMarginPercent: Int = 10,
     val editSearchText: String = "",
     val editReplaceText: String = "",
+    val signaturePageNumber: Int = 1,
+    val signatureTotalPages: Int = 1,
+    val signatureImageBytes: ByteArray? = null,
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
@@ -109,6 +115,7 @@ class PdfToolsViewModel @Inject constructor(
     private val redactPdf: RedactPdfUseCase,
     private val cropPdf: CropPdfUseCase,
     private val editTextPdf: EditTextPdfUseCase,
+    private val signPdf: SignPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     val adManager: AdManager
 ) : ViewModel() {
@@ -161,7 +168,10 @@ class PdfToolsViewModel @Inject constructor(
                 pageOrder = emptyList(),
                 redactionRects = emptyList(),
                 redactionCurrentPage = 1,
-                redactionTotalPages = 1
+                redactionTotalPages = 1,
+                signaturePageNumber = 1,
+                signatureTotalPages = 1,
+                signatureImageBytes = null
             )
         }
     }
@@ -288,6 +298,22 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(editReplaceText = text) }
     }
 
+    fun onSignatureTotalPagesLoaded(total: Int) {
+        _uiState.update { it.copy(signatureTotalPages = total.coerceAtLeast(1)) }
+    }
+
+    fun onSignaturePageChange(page: Int) {
+        _uiState.update { it.copy(signaturePageNumber = page.coerceIn(1, it.signatureTotalPages)) }
+    }
+
+    fun onSignatureCaptured(bytes: ByteArray) {
+        _uiState.update { it.copy(signatureImageBytes = bytes) }
+    }
+
+    fun onClearSignature() {
+        _uiState.update { it.copy(signatureImageBytes = null) }
+    }
+
     fun execute(messages: PdfToolMessages) {
         val state = _uiState.value
         val hasSelection = if (state.selectedTool == PdfTool.COMPARE) {
@@ -350,7 +376,7 @@ class PdfToolsViewModel @Inject constructor(
         PdfTool.MERGE, PdfTool.SPLIT, PdfTool.COMPRESS, PdfTool.ROTATE,
         PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES ->
             runBasicTool(state, customName, messages)
-        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT ->
+        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN ->
             runAdvancedTool(state, customName, messages)
         PdfTool.NONE -> null
     }
@@ -438,6 +464,20 @@ class PdfToolsViewModel @Inject constructor(
             outputFileName = customName,
             messages = messages.editText
         )
+        PdfTool.SIGN -> {
+            val signature = state.signatureImageBytes
+            if (signature != null) {
+                signPdf(
+                    pdfUri = state.selectedPdfs.first(),
+                    signatureImageBytes = signature,
+                    pageNumber = state.signaturePageNumber,
+                    outputFileName = customName,
+                    messages = messages.sign
+                )
+            } else {
+                null
+            }
+        }
         else -> null
     }
 
