@@ -57,12 +57,12 @@ import java.util.Locale
 import java.util.zip.ZipInputStream
 
 @Composable
-fun StudyScreen(onBack: () -> Unit = {}) {
+fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     // ── Estado general ────────────────────────────────
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(initialTab.coerceIn(0, 2)) }
     var documentText by remember { mutableStateOf<List<String>>(emptyList()) }
     var documentHeadingIndices by remember { mutableStateOf<Set<Int>>(emptySet()) }
     val noDocumentLabel = stringResource(R.string.study_no_document)

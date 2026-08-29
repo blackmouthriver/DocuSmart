@@ -86,29 +86,15 @@ fun LibraryScreen(
         }
 
         // ── Banner azul ───────────────────────────────────────────────────────
+        // RF-VIS-07: el botón de papelera vivía acá, en una esquina del banner
+        // -- quedaba perdido junto al título/subtítulo. Se movió junto a las
+        // pestañas Dispositivo/Mis archivos (ver LibraryTabs más abajo), donde
+        // el usuario ya está mirando para elegir qué documentos ver.
         item {
             DocuSmartTopBanner(
-                screenTitle    = "Biblioteca",
-                screenSubtitle = "Todos tus documentos",
-                modifier       = Modifier.padding(horizontal = 20.dp),
-                actions        = {
-                    // RF-VIS-07: acceso a la papelera, con contador si hay algo
-                    BadgedBox(
-                        badge = {
-                            if (uiState.trashCount > 0) {
-                                Badge { Text("${uiState.trashCount}") }
-                            }
-                        }
-                    ) {
-                        IconButton(onClick = onTrashClick) {
-                            Icon(
-                                imageVector        = Icons.Rounded.DeleteOutline,
-                                contentDescription = stringResource(R.string.library_trash),
-                                tint               = Color.White
-                            )
-                        }
-                    }
-                }
+                screenTitle    = stringResource(R.string.library_title),
+                screenSubtitle = stringResource(R.string.library_subtitle),
+                modifier       = Modifier.padding(horizontal = 20.dp)
             )
         }
 
@@ -133,13 +119,15 @@ fun LibraryScreen(
             )
         }
 
-        // ── Tabs: Dispositivo / Mis archivos ──────────────────────────────────
+        // ── Tabs: Dispositivo / Mis archivos + Papelera ────────────────────────
         item {
             LibraryTabs(
                 selectedTab   = uiState.selectedTab,
                 deviceCount   = uiState.deviceDocuments.size,
                 appFilesCount = uiState.appDocuments.size,
-                onTabSelected = { viewModel.onTabSelected(it) }
+                trashCount    = uiState.trashCount,
+                onTabSelected = { viewModel.onTabSelected(it) },
+                onTrashClick  = onTrashClick
             )
         }
 
@@ -178,24 +166,33 @@ fun LibraryScreen(
     }
 }
 
-// ── Tabs de Dispositivo / Mis archivos ────────────────────────────────────────
+// ── Tabs de Dispositivo / Mis archivos + Papelera ─────────────────────────────
+// RF-VIS-07: la papelera vivía en el banner azul, en una esquina fácil de
+// pasar por alto. Se movió acá, al lado de las pestañas -- mismo lugar donde
+// el usuario ya está mirando para decidir qué documentos ver, y con la misma
+// altura que las pestañas (Modifier.height(IntrinsicSize.Min) en el Row +
+// fillMaxHeight() en el botón) para que se vea como parte del mismo grupo,
+// no un elemento suelto.
 @Composable
 private fun LibraryTabs(
     selectedTab  : LibraryTab,
     deviceCount  : Int,
     appFilesCount: Int,
-    onTabSelected: (LibraryTab) -> Unit
+    trashCount   : Int,
+    onTabSelected: (LibraryTab) -> Unit,
+    onTrashClick : () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // Tab Dispositivo
         LibraryTabItem(
             icon     = Icons.Rounded.PhoneAndroid,
-            label    = "Dispositivo",
+            label    = stringResource(R.string.library_tab_device),
             count    = deviceCount,
             selected = selectedTab == LibraryTab.DEVICE,
             onClick  = { onTabSelected(LibraryTab.DEVICE) },
@@ -204,12 +201,47 @@ private fun LibraryTabs(
         // Tab Mis archivos
         LibraryTabItem(
             icon     = Icons.Rounded.Folder,
-            label    = "Mis archivos",
+            label    = stringResource(R.string.library_tab_app_files),
             count    = appFilesCount,
             selected = selectedTab == LibraryTab.APP_FILES,
             onClick  = { onTabSelected(LibraryTab.APP_FILES) },
             modifier = Modifier.weight(1f)
         )
+        // Papelera
+        LibraryTrashButton(
+            trashCount = trashCount,
+            onClick    = onTrashClick,
+            modifier   = Modifier.fillMaxHeight()
+        )
+    }
+}
+
+@Composable
+private fun LibraryTrashButton(
+    trashCount: Int,
+    onClick   : () -> Unit,
+    modifier  : Modifier = Modifier
+) {
+    Card(
+        onClick   = onClick,
+        modifier  = modifier.width(56.dp),
+        shape     = MaterialTheme.shapes.large,
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            BadgedBox(
+                badge = {
+                    if (trashCount > 0) Badge { Text("$trashCount") }
+                }
+            ) {
+                Icon(
+                    imageVector        = Icons.Rounded.DeleteOutline,
+                    contentDescription = stringResource(R.string.library_trash),
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
@@ -264,7 +296,7 @@ private fun LibraryTabItem(
                     else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text  = "$count archivos",
+                    text  = stringResource(R.string.library_tab_file_count, count),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

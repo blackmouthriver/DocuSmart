@@ -10,7 +10,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartDocumentItem
 import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocumentUiModel
@@ -51,13 +53,13 @@ fun RecentDocuments(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text  = "Recientes",
+                text  = stringResource(R.string.home_recent),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             TextButton(onClick = onSeeAllClick) {
                 Text(
-                    text  = "Ver todos",
+                    text  = stringResource(R.string.home_see_all),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -69,9 +71,9 @@ fun RecentDocuments(
         if (documents.isEmpty()) {
             DocuSmartEmptyState(
                 icon        = Icons.Rounded.FolderOff,
-                title       = "Sin documentos recientes",
-                description = "Abre un archivo para verlo aquí",
-                actionLabel = "Abrir archivo",
+                title       = stringResource(R.string.home_no_recent_title),
+                description = stringResource(R.string.home_no_recent_desc),
+                actionLabel = stringResource(R.string.home_open_file_action),
                 onAction    = onOpenFileClick
             )
         } else {
@@ -83,6 +85,7 @@ fun RecentDocuments(
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 documents.forEachIndexed { index, document ->
+                    val shareLabel = stringResource(R.string.home_share_document, document.name)
                     DocuSmartDocumentItem(
                         document        = document,
                         onClick         = { onDocumentClick(document) },
@@ -90,7 +93,7 @@ fun RecentDocuments(
                         showDivider     = index < documents.size - 1,
                         onOpenClick     = { onDocumentClick(document) },
                         onConvertClick  = onConvertClick?.let { cb -> { cb(document) } },
-                        onShareClick    = { shareDocument(context, document) },
+                        onShareClick    = { shareDocument(context, document, shareLabel) },
                         onRenameClick   = if (onRenameClick != null) {
                             { documentToRename = document }
                         } else null,
@@ -102,7 +105,7 @@ fun RecentDocuments(
     }
 }
 
-private fun shareDocument(context: Context, document: DocumentUiModel) {
+private fun shareDocument(context: Context, document: DocumentUiModel, shareLabel: String) {
     try {
         val uri    = Uri.parse(document.id)
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -111,7 +114,7 @@ private fun shareDocument(context: Context, document: DocumentUiModel) {
             putExtra(Intent.EXTRA_SUBJECT, document.name)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
+        context.startActivity(Intent.createChooser(intent, shareLabel))
     } catch (e: Exception) {
         try {
             val file = java.io.File(document.id)
@@ -123,7 +126,7 @@ private fun shareDocument(context: Context, document: DocumentUiModel) {
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
+            context.startActivity(Intent.createChooser(intent, shareLabel))
         } catch (e2: Exception) { e2.printStackTrace() }
     }
 }

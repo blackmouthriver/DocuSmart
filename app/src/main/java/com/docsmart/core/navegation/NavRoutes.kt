@@ -15,7 +15,12 @@ sealed class NavRoutes(val route: String) {
     data object ScanResult  : NavRoutes("scan_result")
     data object Security    : NavRoutes("security")
     data object PdfPassword : NavRoutes("pdf_password")  // ← NUEVA
-    data object Study       : NavRoutes("study")
+    data object Study : NavRoutes("study?tab={tab}") {
+        // Acceso rápido a una pestaña específica de Estudio (Lectura=0,
+        // Notas=1, Pomodoro=2) desde Home -- antes solo había un punto de
+        // entrada genérico que siempre abría en Lectura.
+        fun createRoute(tab: Int = 0): String = "study?tab=$tab"
+    }
     data object Qr          : NavRoutes("qr")
     data object QrReader    : NavRoutes("qr_reader")
     data object QrCreator   : NavRoutes("qr_creator")

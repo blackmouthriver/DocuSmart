@@ -25,12 +25,13 @@ fun HomeScreen(
     onConvert      : () -> Unit = {},
     onScan         : () -> Unit = {},
     onSecurity     : () -> Unit = {},
-    onStudy        : () -> Unit = {},
+    onStudy        : (Int) -> Unit = {},  // ← tab inicial: Lectura=0, Notas=1, Pomodoro=2
     onDocumentClick: (String) -> Unit = {},
     onSeeAll       : () -> Unit = {},
     onQr           : () -> Unit = {},
-    onQrReader     : () -> Unit = {},  // ← NUEVO
-    onQrCreator    : () -> Unit = {},  // ← NUEVO
+    onQrReader     : () -> Unit = {},
+    onQrCreator    : () -> Unit = {},
+    onTrash        : () -> Unit = {},  // ← NUEVO: acceso rápido a la papelera
     viewModel      : HomeViewModel = hiltViewModel()
 ) {
     Timber.d("HomeScreen: iniciando composición")
@@ -94,10 +95,13 @@ fun HomeScreen(
                 onScanClick       = onScan,
                 onImageToPdfClick = onConvert,
                 onSafeBoxClick    = onSecurity,
-                onStudyModeClick  = onStudy,
+                onStudyModeClick  = { onStudy(0) },
+                onNotesClick      = { onStudy(1) },
+                onPomodoroClick   = { onStudy(2) },
                 onQrClick         = onQr,
                 onQrReaderClick   = onQrReader,
                 onQrCreatorClick  = onQrCreator,
+                onTrashClick      = onTrash,
                 modifier          = Modifier.padding(horizontal = 20.dp)
             )
         }
