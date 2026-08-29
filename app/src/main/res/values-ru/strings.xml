@@ -157,6 +157,7 @@
     <string name="general_back">Назад</string>
     <string name="general_share">Поделиться</string>
     <string name="general_delete">Удалить</string>
+    <string name="general_close">Закрыть</string>
     <string name="general_saved_downloads">Сохранено в Загрузки</string>
 
     <!-- ── Описания инструментов PDF ─────────────────────── -->
@@ -732,6 +733,19 @@
     <string name="study_extract_pdf_error">Ошибка чтения PDF: %1$s</string>
     <string name="study_extract_generic_error">Ошибка: %1$s</string>
     <string name="study_default_document_name">Документ</string>
+    <string name="study_pomodoro_notification_channel">Помодоро</string>
+    <string name="study_pomodoro_notification_text">Осталось %1$s</string>
+    <string name="study_export_notes">Экспортировать заметки</string>
+    <string name="study_export_as_text">Как текст</string>
+    <string name="study_export_as_pdf">Как PDF</string>
+    <string name="study_export_share_title">Поделиться заметками</string>
+    <string name="study_stats_icon_desc">Посмотреть статистику</string>
+    <string name="study_stats_title">Статистика учёбы</string>
+    <string name="study_stats_total_reading">Общее время чтения вслух</string>
+    <string name="study_stats_reading_value">%1$dч %2$dмин</string>
+    <string name="study_stats_pomodoros_this_week">Помодоро на этой неделе</string>
+    <string name="study_stats_pomodoros_total">Всего завершено помодоро</string>
+    <string name="study_stats_empty">Статистики пока нет — начните читать вслух или завершите первый помодоро.</string>
 
     <!-- ── Корзина (RF-VIS-07) ───────────────────────── -->
     <string name="library_trash">Корзина</string>

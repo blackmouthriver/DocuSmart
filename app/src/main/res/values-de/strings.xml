@@ -157,6 +157,7 @@
     <string name="general_back">Zurück</string>
     <string name="general_share">Teilen</string>
     <string name="general_delete">Löschen</string>
+    <string name="general_close">Schließen</string>
     <string name="general_saved_downloads">In Downloads gespeichert</string>
 
     <!-- ── PDF Tools Beschreibungen ─────────────────────── -->
@@ -732,6 +733,19 @@
     <string name="study_extract_pdf_error">Fehler beim Lesen des PDFs: %1$s</string>
     <string name="study_extract_generic_error">Fehler: %1$s</string>
     <string name="study_default_document_name">Dokument</string>
+    <string name="study_pomodoro_notification_channel">Pomodoro</string>
+    <string name="study_pomodoro_notification_text">%1$s verbleibend</string>
+    <string name="study_export_notes">Notizen exportieren</string>
+    <string name="study_export_as_text">Als Text</string>
+    <string name="study_export_as_pdf">Als PDF</string>
+    <string name="study_export_share_title">Notizen teilen</string>
+    <string name="study_stats_icon_desc">Statistiken ansehen</string>
+    <string name="study_stats_title">Lernstatistiken</string>
+    <string name="study_stats_total_reading">Gesamte Vorlesezeit</string>
+    <string name="study_stats_reading_value">%1$dh %2$dmin</string>
+    <string name="study_stats_pomodoros_this_week">Pomodoros diese Woche</string>
+    <string name="study_stats_pomodoros_total">Pomodoros insgesamt abgeschlossen</string>
+    <string name="study_stats_empty">Noch keine Statistiken — beginne mit dem Vorlesen oder schließe deinen ersten Pomodoro ab.</string>
 
     <!-- ── Papierkorb (RF-VIS-07) ───────────────────────── -->
     <string name="library_trash">Papierkorb</string>

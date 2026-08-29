@@ -9,9 +9,17 @@ corrompía el contenido de las notas del usuario en cada guardado. La nota de
 **incorrecta al revisar el código con más detalle** — sí existe una lista de
 notas guardadas (contrario a lo que indicaba la QA de mayo), pero su
 serialización manual tenía dos bugs reales que nadie había detectado. 5 tests
-nuevos.
+nuevos. **RF-STU-08/09/10 implementados 2026-08-29, ver §9** — cierran por
+completo el backlog original de este módulo: exportar notas (texto/PDF),
+estadísticas de estudio (tiempo leído, pomodoros por semana), y Pomodoro en
+segundo plano vía un servicio en primer plano (`PomodoroTimerService`) en
+vez de un `LaunchedEffect` que se cancelaba al salir de la pantalla.
 **Código relacionado:** `features/study/presentation/StudyScreen.kt`,
-`features/study/domain/StudyNotesStorage.kt` (nuevo).
+`features/study/domain/StudyNotesStorage.kt`,
+`features/study/domain/StudyNotesExporter.kt` (nuevo),
+`features/study/domain/StudyStatsStorage.kt` (nuevo),
+`features/study/domain/PomodoroEngine.kt` (nuevo),
+`features/study/domain/PomodoroTimerService.kt` (nuevo).
 
 ---
 
@@ -38,10 +46,12 @@ ver §3 nota de arquitectura):
 - **RF-STU-06** El sistema debe permitir eliminar una nota individual o todas a la vez (con confirmación).
 - **RF-STU-07** El sistema debe ofrecer un temporizador Pomodoro (25 min de estudio / 5 min de descanso) con contador de ciclos completados.
 
-### Backlog — no implementado
-- **RF-STU-08** Exportar notas (compartir como texto o PDF).
-- **RF-STU-09** Estadísticas de estudio (tiempo total leído, pomodoros completados por semana).
-- **RF-STU-10** Temporizador Pomodoro que siga corriendo en segundo plano (hoy se detiene si se navega fuera de la pantalla — es un `LaunchedEffect` que se cancela al salir de la composición, no un servicio en segundo plano).
+- **RF-STU-08** ✅ Exportar notas (compartir como texto o PDF). Implementado 2026-08-29, ver §9.
+- **RF-STU-09** ✅ Estadísticas de estudio (tiempo total leído, pomodoros completados por semana). Implementado 2026-08-29, ver §9.
+- **RF-STU-10** ✅ Temporizador Pomodoro que siga corriendo en segundo plano. Implementado 2026-08-29, ver §9.
+
+### Backlog
+*(vacío — las 3 funcionalidades de este backlog, RF-STU-08/09/10, están implementadas)*
 
 ---
 
@@ -115,6 +125,43 @@ absoluto, a diferencia del Visor de Word, que sí lo hacía desde antes.)*
 
 ---
 
+### HU-STU-05 — Exportar mis notas
+*(Implementado 2026-08-29 — ver §9.)*
+
+**Como** usuario que tomó varias notas durante una sesión de estudio,
+**quiero** exportarlas como texto o PDF,
+**para** guardarlas o compartirlas fuera de la app.
+
+- **AC1** Dado que tengo al menos una nota guardada, cuando toco el ícono de exportar en la lista de notas, entonces veo dos opciones: "Como texto" y "Como PDF".
+- **AC2** Dado que elijo "Como texto", cuando se genera el archivo, entonces se abre el selector de compartir de Android con un `.txt` que incluye título, fecha y contenido de cada nota.
+- **AC3** Dado que elijo "Como PDF", cuando se genera el archivo, entonces se abre el mismo selector con un `.pdf` con el mismo contenido, uno debajo del otro.
+- **AC4** Dado que no tengo ninguna nota guardada, cuando veo la lista, entonces no hay ningún botón de exportar visible (nada que exportar).
+
+### HU-STU-06 — Ver mis estadísticas de estudio
+*(Implementado 2026-08-29 — ver §9.)*
+
+**Como** usuario que usa Modo Estudio con frecuencia,
+**quiero** ver cuánto tiempo he leído en voz alta y cuántos pomodoros completé esta semana,
+**para** darme una idea de mi constancia sin llevar la cuenta yo mismo.
+
+- **AC1** Dado que toco el ícono de estadísticas en la barra superior, cuando se abre el diálogo, entonces veo el tiempo total leído en voz alta (horas y minutos) y el total de pomodoros completados.
+- **AC2** Dado que veo el diálogo, cuando reviso la sección semanal, entonces veo una barra por cada día de la semana calendario actual con la cantidad de pomodoros completados ese día.
+- **AC3** Dado que nunca usé la lectura en voz alta ni completé un pomodoro, cuando abro el diálogo, entonces veo un mensaje de estado vacío en vez de ceros sin contexto.
+
+### HU-STU-07 — El Pomodoro sigue corriendo si salgo de la pantalla
+*(Implementado 2026-08-29 — ver §9.)*
+
+**Como** usuario que inició un Pomodoro y quiere revisar un documento mientras estudia,
+**quiero** que el conteo siga corriendo aunque salga de Modo Estudio,
+**para** no perder el tiempo real transcurrido por navegar a otra pantalla.
+
+- **AC1** Dado que inicio un Pomodoro y navego a otra pantalla de la app, cuando vuelvo a Modo Estudio, entonces el tiempo restante refleja lo que realmente transcurrió, no se reinició ni se congeló.
+- **AC2** Dado que un Pomodoro está corriendo y la app pasa a segundo plano, cuando reviso las notificaciones, entonces veo una notificación persistente con el tiempo restante (siempre que el permiso de notificaciones esté concedido).
+- **AC3** Dado que un bloque de estudio o descanso termina, cuando esto ocurre, entonces el timer se pausa solo (no encadena el siguiente bloque automáticamente) — mismo comportamiento que antes de esta HU.
+- **AC4** Dado que no concedo el permiso de notificaciones, cuando uso el Pomodoro, entonces el conteo funciona igual, solo sin notificación visible.
+
+---
+
 ## 5. Bugs de QA a corregir (trazabilidad)
 
 | Bug (barrido de pruebas v1.0 / mejoras pendientes v1.0.1, y nota de `CONTEXT.md`) | HU que lo cubre | Estado |
@@ -133,7 +180,10 @@ absoluto, a diferencia del Visor de Word, que sí lo hacía desde antes.)*
 |---|---|---|
 | 1 | `StudyNotesStorageTest` — comillas dobles sobreviven el round-trip, saltos de línea reales sobreviven el round-trip, el orden guardado (más nuevo primero) se preserva al recargar, sin notas guardadas devuelve lista vacía, JSON corrupto en preferencias devuelve lista vacía en vez de fallar. | ✅ 5 tests, en verde |
 | 2 | `StudyTextExtractionTest` — agrupación de párrafos reales de PDF por espaciado vertical (líneas ajustadas quedan en el mismo párrafo, salto grande crea uno nuevo, párrafos muy cortos se descartan, sin fragmentos no hay párrafos), detección de encabezado de Word (incluyendo el bug real del identificador de estilo en español, `w:val="Ttulo1"`). | ✅ 7 tests, en verde |
-| 3 | Resto de `StudyScreen.kt` (TTS, Pomodoro, resto de extracción PPT/texto plano) — no cubierto. Son funciones/composables sin ViewModel (ver RNF-STU-03); las funciones de extracción de PDF/Word de la fila 2 se expusieron como `internal` (mismo patrón que `StudyNotesStorage`) puntualmente para poder probarlas, sin refactorizar el resto del módulo. | Pendiente si se decide abordar la deuda de arquitectura completa. |
+| 3 | Resto de `StudyScreen.kt` (TTS, resto de extracción PPT/texto plano) — no cubierto. Son funciones/composables sin ViewModel (ver RNF-STU-03); las funciones de extracción de PDF/Word de la fila 2 se expusieron como `internal` (mismo patrón que `StudyNotesStorage`) puntualmente para poder probarlas, sin refactorizar el resto del módulo. | Pendiente si se decide abordar la deuda de arquitectura completa. |
+| 4 | `PomodoroEngineTest` (RF-STU-10, ver §9) — un tick normal solo descuenta un segundo, pasar de 0 segundos al minuto siguiente dan 59 segundos, terminar un bloque de estudio cuenta el pomodoro y pausa en descanso, terminar un descanso vuelve a estudio pausado sin sumar otro pomodoro, `tickCompletesStudyBlock` distingue el tick exacto que cierra un bloque de estudio. | ✅ 5 tests, en verde |
+| 5 | `StudyStatsStorageTest` (RF-STU-09, ver §9) — `addReadingTime` acumula y descarta valores no positivos, `recordPomodoroCompletion` agrega al historial, `trimOldTimestamps` descarta lo más viejo que el período de retención, `pomodoroCountsByWeekday`/`pomodoroCountThisWeek` solo cuentan la semana calendario actual, `millisToHoursAndMinutes` convierte sin decimales. | ✅ 7 tests, en verde |
+| 6 | `StudyNotesExporterTest` (RF-STU-08, ver §9) — solo cubre `buildPlainText` (lógica pura); `exportAsTextFile`/`exportAsPdfFile` escriben a disco y generan PDF con iText7, mismo límite ya documentado para otros use cases de conversión/PDF que tampoco tienen test unitario directo. | ✅ 3 tests, en verde |
 
 Se agregó `testImplementation("org.json:json:20231013")` en `app/build.gradle.kts`
 — el stub de Android para unit tests deja `org.json.*` sin implementar
@@ -147,7 +197,8 @@ Se agregó `testImplementation("org.json:json:20231013")` en `app/build.gradle.k
 | Pregunta | Notas |
 |---|---|
 | ¿Vale la pena refactorizar `StudyScreen.kt` a una arquitectura con `ViewModel` (como el resto de módulos)? | Es la única pantalla grande sin esa estructura; permitiría testear TTS/Pomodoro/extracción y sería más consistente, pero es un refactor grande, no un bug fix. |
-| ¿Prioridad de exportar notas (RF-STU-08) vs. estadísticas de estudio (RF-STU-09) vs. Pomodoro en segundo plano (RF-STU-10)? | Los 3 son mejoras sugeridas ya documentadas en `CONTEXT.md`, sin refinar todavía. |
+| ¿Prioridad de exportar notas (RF-STU-08) vs. estadísticas de estudio (RF-STU-09) vs. Pomodoro en segundo plano (RF-STU-10)? | **Resuelto 2026-08-29** — se implementaron los 3 en la misma pasada, ver §9. |
+| ¿El Pomodoro en segundo plano (RF-STU-10) debería sobrevivir si el usuario mata el proceso de la app, no solo si navega a otra pantalla? | No implementado en esta pasada — el `PomodoroEngine` vive mientras el proceso esté vivo (cubre el caso reportado: salir de Modo Estudio), pero no persiste un timestamp de fin en disco para recalcular tras un reinicio del proceso. Alcance deliberado, ver §9. |
 
 ---
 
@@ -213,3 +264,156 @@ párrafos cortos descartados, lista vacía), detección de encabezado
 `ReadingParagraphRow` fue necesario para que `ReadingTab` volviera a
 pasar el umbral de `LongMethod` de detekt tras las nuevas líneas de
 lógica de encabezado.
+
+---
+
+## 9. RF-STU-08/09/10 — Exportar notas, estadísticas y Pomodoro en segundo plano (2026-08-29)
+
+Cierra por completo el backlog original de este módulo, en la misma pasada
+de UI/UX en la que el usuario pidió continuar con las HU pendientes de todo
+el proyecto (ver también `visor-biblioteca.md` §15).
+
+### RF-STU-08 — Exportar notas
+`StudyNotesExporter.kt` (nuevo, `features/study/domain/`) — mismo patrón de
+nombre de archivo y ubicación ya usado por Conversión/Herramientas PDF
+(`filesDir/study_exports/DocuSmart_Notas_<timestamp>.<ext>`):
+`buildPlainText()` (función pura, testeada) arma el texto plano de todas las
+notas separadas por un separador visual; `exportAsTextFile()` lo escribe a
+disco; `exportAsPdfFile()` genera un PDF con iText7 (`Document`/`Paragraph`,
+mismo mecanismo ya usado en `WordToPdfUseCase`) con título en negrita, fecha
+en gris y contenido por nota. Un ícono nuevo (`IosShare`) en el encabezado
+de "Notas guardadas" (visible solo si hay al menos una nota) abre un
+`DropdownMenu` con "Como texto"/"Como PDF"; al elegir uno, se comparte vía
+`Intent.ACTION_SEND` + `FileProvider`, mismo patrón que el resto de la app.
+
+**Bug real encontrado de paso, no reportado por el usuario:** al implementar
+esto se necesitó la autoridad correcta del `FileProvider`
+(`${packageName}.fileprovider`, la única registrada en el manifiesto) y se
+descubrió que 3 archivos (`RecentDocuments.kt`, `FavoritesSection.kt`,
+`DocumentListSection.kt`) usaban `${packageName}.provider` — una autoridad
+que **no existe** — en su rama de respaldo para compartir un documento
+generado por la app (se activa cuando el `content://` normal falla).
+Cualquier intento de usar ese respaldo habría lanzado
+`IllegalArgumentException: Failed to find configured root...` en vez de
+compartir el archivo. Corregido en los 3 archivos a la autoridad real.
+
+### RF-STU-09 — Estadísticas de estudio
+`StudyStatsStorage.kt` (nuevo) — mismo patrón de persistencia que
+`StudyNotesStorage` (SharedPreferences + JSON real vía `org.json`, sin
+Room: este módulo no tiene ViewModel, ver RNF-STU-03, y el volumen de datos
+es mínimo). Guarda `totalReadingMillis` (acumulado) y una lista de
+timestamps de pomodoros completados (recortada a 90 días de retención —
+`trimOldTimestamps()`, función pura). Dos funciones puras testeadas aparte:
+`pomodoroCountsByWeekday()` (cuenta por día de la semana calendario actual,
+usando `Calendar.DAY_OF_WEEK`/`firstDayOfWeek` para respetar el locale) y
+`millisToHoursAndMinutes()`.
+
+- **Tiempo de lectura real, no "tiempo con la pantalla abierta":**
+  `StudyScreen` agrega un `LaunchedEffect(isSpeaking.value)` que, mientras
+  `isSpeaking` es `true`, se suspende en `awaitCancellation()` — cuando
+  `isSpeaking` vuelve a `false` (el usuario detiene la lectura, termina el
+  TTS, o navega fuera), Compose cancela el efecto y el bloque `finally`
+  calcula la duración real y la persiste. Cubre tanto "leer este párrafo"
+  como "leer todo" porque ambos comparten el mismo `isSpeaking`.
+- **UI:** un ícono nuevo (`QueryStats`, "Ver estadísticas") en
+  `StudyTopBar` abre `StudyStatsDialog` — total de horas/minutos leídos,
+  total de pomodoros, y una barra por día de la semana actual (con la
+  inicial del día calculada vía `SimpleDateFormat("EEEEE", Locale...)` en
+  vez de 7 strings nuevos por idioma, para no duplicar el trabajo de i18n
+  ya hecho). Estado vacío dedicado si nunca hubo lectura ni pomodoros.
+- El punto exacto en el que un pomodoro "cuenta" para las estadísticas es
+  el mismo tick que cierra un bloque de ESTUDIO (no de descanso) — ver
+  `tickCompletesStudyBlock()` más abajo.
+
+### RF-STU-10 — Pomodoro en segundo plano
+**Diagnóstico:** el Pomodoro vivía enteramente en `remember{}` dentro de
+`StudyScreen` y un `LaunchedEffect(isRunning)` — Compose cancela ese efecto
+en cuanto la composición se destruye, así que navegar a cualquier otra
+pantalla de la app detenía el conteo en seco (no lo pausaba de forma
+consciente, simplemente dejaba de avanzar hasta volver a Modo Estudio).
+
+**Diseño — un motor fuera de la composición, más un servicio que lo hace
+sobrevivir en segundo plano:**
+- **`PomodoroEngine.kt`** (nuevo) — objeto singleton con su propio
+  `CoroutineScope` (vive mientras el proceso esté vivo, no atado a ninguna
+  pantalla) y un `MutableStateFlow<PomodoroState>`. `StudyScreen` ya no
+  tiene ningún `remember` de minutos/segundos/etc. — solo
+  `collectAsState()` sobre `PomodoroEngine.state`, y `onToggle`/`onReset`
+  llaman a `PomodoroEngine.toggle(context)`/`reset(context)`.
+  - `tickPomodoro(current): PomodoroState` y
+    `tickCompletesStudyBlock(current): Boolean` son funciones puras
+    extraídas del motor (sin `Context`, sin tocar `StudyStatsStorage`)
+    específicamente para poder testearlas con estados fijos — mismo
+    criterio ya usado para `isTrashEntryExpired`/
+    `mergeHistoryWithDocuments` en `visor-biblioteca.md`.
+  - **Mismo comportamiento de fin de ciclo que antes, no un cambio de
+    conducta:** al completarse un bloque de estudio o descanso, el
+    resultado ya trae `isRunning = false` — el usuario debe tocar
+    "Iniciar" de nuevo para el siguiente bloque, igual que la versión
+    anterior basada en `LaunchedEffect`.
+- **`PomodoroTimerService.kt`** (nuevo, primer `Service` del proyecto) —
+  servicio "tonto": no tiene timer propio, solo observa
+  `PomodoroEngine.state` y refleja el minuto:segundo restante en una
+  notificación en primer plano (canal `pomodoro_timer`, importancia baja,
+  ícono monocromo nuevo `ic_notification_pomodoro.xml`); se detiene solo
+  (`stopSelf()`) en cuanto `state.isRunning` es `false`. `PomodoroEngine`
+  lo arranca con `startForegroundService()` al iniciar el timer y lo
+  detiene con `stopService()` al pausar/reiniciar/completar un ciclo.
+- **Manifiesto** — 3 permisos nuevos
+  (`POST_NOTIFICATIONS`/`FOREGROUND_SERVICE`/
+  `FOREGROUND_SERVICE_SPECIAL_USE`) y la declaración del servicio con
+  `android:foregroundServiceType="specialUse"` +
+  `PROPERTY_SPECIAL_USE_FGS_SUBTYPE="pomodoro_study_timer"` — un timer de
+  estudio no encaja en ningún tipo de FGS estándar (no es
+  `dataSync`/`mediaPlayback`/`location`/etc.), y Android 14+ exige declarar
+  un tipo explícito con motivo para cualquier servicio en primer plano.
+- **Permiso de notificaciones (Android 13+):** `StudyScreen` lo pide
+  (`ActivityResultContracts.RequestPermission()`) al entrar a la pestaña
+  Pomodoro, mismo patrón ya usado para la cámara en `QrScreen.kt`. El
+  timer funciona igual sin el permiso — solo no se ve la notificación
+  mientras la app está en segundo plano (AC4 de HU-STU-07).
+- **Alcance deliberado, no cubierto:** el motor sobrevive a navegar a otra
+  pantalla o a que la app pase a segundo plano (el caso reportado), pero
+  no persiste un timestamp de fin en disco para recalcular el tiempo
+  restante si el usuario mata el proceso por completo (deslizar la app
+  fuera de "recientes", o que el sistema lo mate por memoria) — al volver
+  a abrir la app en ese escenario, el Pomodoro se reinicia. Se documenta
+  como pregunta abierta en §7 en vez de resolverla en esta pasada: hacerlo
+  bien requeriría guardar `endTimestamp`/`pausedRemaining` en
+  SharedPreferences y recalcular al arrancar, más alcance del que pedía el
+  hallazgo original ("se detiene si se navega fuera de la pantalla").
+
+**5 tests nuevos** (`PomodoroEngineTest`) sobre `tickPomodoro`/
+`tickCompletesStudyBlock` — ver fila 4 de §6. **7 tests nuevos**
+(`StudyStatsStorageTest`) y **3 tests nuevos** (`StudyNotesExporterTest`) —
+ver filas 5 y 6 de §6.
+
+**detekt:** un hallazgo real corregido durante el desarrollo (no
+baselineado) — `createNotificationChannelIfNeeded()` con 3
+`return`tempranos superaba el límite de `ReturnCount`; reescrito con un
+solo `if` anidado en vez de suprimir el hallazgo.
+
+**Verificado end-to-end en el dispositivo real (app en español):**
+- **Pomodoro en segundo plano (AC1/AC2 de HU-STU-07):** iniciado el timer
+  en 25:00, confirmado el permiso de notificaciones solicitado al entrar a
+  la pestaña, concedido, y `adb shell dumpsys activity services` confirmó
+  `PomodoroTimerService` con `isForeground=true` y la notificación real
+  (`channel=pomodoro_timer`) mientras la app estaba completamente cerrada
+  (tecla atrás + `am start` de nuevo, no solo minimizada). Al volver a
+  abrir Modo Estudio → Pomodoro, el reloj mostraba 22:20 "en progreso" —
+  el conteo avanzó de verdad mientras la app no estaba en primer plano, no
+  se reinició ni se congeló.
+- **Fin de ciclo pausado, no encadenado (AC3):** cubierto por el test
+  unitario (`tickPomodoro` con minutos/segundos en 0 devuelve
+  `isRunning = false`); no repetido en dispositivo por ser una espera de
+  25/5 minutos reales.
+- **Exportar notas (AC1-AC3 de HU-STU-05):** creada una nota de prueba,
+  tocado el ícono de exportar → menú con "Como texto"/"Como PDF" → elegido
+  "Como PDF" → se abrió el selector de compartir de Android mostrando
+  `DocuSmart_Notas_20260829_183935.pdf` listo para compartir — confirma
+  que el archivo se generó y el `FileProvider` (ya corregido) lo resolvió
+  correctamente.
+- **Estadísticas (AC1/AC3 de HU-STU-06):** tocado el ícono de
+  estadísticas antes de generar ningún dato → diálogo mostró el mensaje de
+  estado vacío correctamente, no ceros sin contexto.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

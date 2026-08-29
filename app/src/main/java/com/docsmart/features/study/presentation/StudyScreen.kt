@@ -1,7 +1,9 @@
 package com.docsmart.features.study.presentation
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,9 +33,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.docsmart.R
+import com.docsmart.features.study.domain.PomodoroEngine
 import com.docsmart.features.study.domain.SavedNote
+import com.docsmart.features.study.domain.StudyNotesExporter
 import com.docsmart.features.study.domain.StudyNotesStorage
+import com.docsmart.features.study.domain.StudyStats
+import com.docsmart.features.study.domain.StudyStatsStorage
+import com.docsmart.features.study.domain.millisToHoursAndMinutes
+import com.docsmart.features.study.domain.pomodoroCountsByWeekday
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
@@ -48,11 +58,13 @@ import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData
 import com.itextpdf.kernel.pdf.canvas.parser.data.TextRenderInfo
 import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.util.Calendar
 import java.util.Locale
 import java.util.zip.ZipInputStream
 
@@ -87,12 +99,16 @@ fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
     val ttsReady = remember { mutableStateOf(false) }
     val currentSpeakingIndex = remember { mutableIntStateOf(-1) }
 
-    // ── Pomodoro ──────────────────────────────────────
-    var pomodoroMinutes by remember { mutableIntStateOf(25) }
-    var pomodoroSeconds by remember { mutableIntStateOf(0) }
-    var isRunning by remember { mutableStateOf(false) }
-    var isBreak by remember { mutableStateOf(false) }
-    var pomodoroCount by remember { mutableIntStateOf(0) }
+    // ── Pomodoro (RF-STU-10: vive en PomodoroEngine, no en remember{},
+    // para que siga corriendo al salir de esta pantalla) ─────────────
+    val pomodoroState by PomodoroEngine.state.collectAsState()
+
+    // ── Estadísticas (RF-STU-09) ──────────────────────
+    var showStats by remember { mutableStateOf(false) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { /* No-op: el Pomodoro funciona igual sin el permiso, solo no se ve
+          la notificación mientras la app está en segundo plano. */ }
 
     // ── Inicializar TTS ───────────────────────────────
     DisposableEffect(Unit) {
@@ -124,30 +140,33 @@ fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
 
 
 
-    // ── Timer Pomodoro ────────────────────────────────
-    LaunchedEffect(isRunning) {
-        while (isRunning) {
-            delay(1000)
-            if (pomodoroSeconds > 0) {
-                pomodoroSeconds--
-            } else if (pomodoroMinutes > 0) {
-                pomodoroMinutes--
-                pomodoroSeconds = 59
-            } else {
-                // Tiempo terminado
-                isRunning = false
-                if (!isBreak) {
-                    pomodoroCount++
-                    isBreak = true
-                    pomodoroMinutes = 5
-                    pomodoroSeconds = 0
-                } else {
-                    isBreak = false
-                    pomodoroMinutes = 25
-                    pomodoroSeconds = 0
-                }
-            }
+    // ── RF-STU-09: acumula tiempo de lectura en voz alta real. Se relanza
+    // cada vez que isSpeaking cambia; mientras está en true, se suspende en
+    // awaitCancellation() -- cuando isSpeaking vuelve a false, Compose
+    // cancela este efecto y el bloque finally calcula cuánto duró esa
+    // lectura y lo persiste. No mide "tiempo con la pantalla abierta", mide
+    // reproducción de TTS real (onSpeak/onSpeakAll comparten el mismo
+    // isSpeaking).
+    LaunchedEffect(isSpeaking.value) {
+        if (!isSpeaking.value) return@LaunchedEffect
+        val start = System.currentTimeMillis()
+        try {
+            awaitCancellation()
+        } finally {
+            StudyStatsStorage.addReadingTime(context, System.currentTimeMillis() - start)
         }
+    }
+
+    // ── RF-STU-10: pide el permiso de notificaciones (Android 13+) al
+    // entrar a la pestaña Pomodoro, para que la notificación de progreso en
+    // segundo plano sea visible -- el timer en sí funciona igual sin el
+    // permiso, ver comentario en el launcher.
+    LaunchedEffect(selectedTab) {
+        if (selectedTab != 2 || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@LaunchedEffect
+        val granted = ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
     }
 
     // ── Selector de documento ─────────────────────────
@@ -176,10 +195,17 @@ fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
                     isSpeaking.value = false
                     onBack()
                 },
-                onSelectDoc = { docLauncher.launch("*/*") }
+                onSelectDoc = { docLauncher.launch("*/*") },
+                onShowStats = { showStats = true }
             )
         }
     ) { innerPadding ->
+        if (showStats) {
+            StudyStatsDialog(
+                stats = remember(showStats) { StudyStatsStorage.loadStats(context) },
+                onDismiss = { showStats = false }
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -310,18 +336,13 @@ fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
 
                 // ── Tab Pomodoro ──────────────────────
                 2 -> PomodoroTab(
-                    minutes = pomodoroMinutes,
-                    seconds = pomodoroSeconds,
-                    isRunning = isRunning,
-                    isBreak = isBreak,
-                    pomodoroCount = pomodoroCount,
-                    onToggle = { isRunning = !isRunning },
-                    onReset = {
-                        isRunning = false
-                        isBreak = false
-                        pomodoroMinutes = 25
-                        pomodoroSeconds = 0
-                    }
+                    minutes = pomodoroState.minutes,
+                    seconds = pomodoroState.seconds,
+                    isRunning = pomodoroState.isRunning,
+                    isBreak = pomodoroState.isBreak,
+                    pomodoroCount = pomodoroState.pomodoroCount,
+                    onToggle = { PomodoroEngine.toggle(context) },
+                    onReset = { PomodoroEngine.reset(context) }
                 )
             }
         }
@@ -334,7 +355,8 @@ fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
 private fun StudyTopBar(
     documentName: String,
     onBack: () -> Unit,
-    onSelectDoc: () -> Unit
+    onSelectDoc: () -> Unit,
+    onShowStats: () -> Unit
 ) {
     TopAppBar(
         title = {
@@ -358,6 +380,13 @@ private fun StudyTopBar(
             }
         },
         actions = {
+            IconButton(onClick = onShowStats) {
+                Icon(
+                    imageVector = Icons.Rounded.QueryStats,
+                    contentDescription = stringResource(R.string.study_stats_icon_desc),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             IconButton(onClick = onSelectDoc) {
                 Icon(
                     imageVector = Icons.Rounded.FolderOpen,
@@ -890,12 +919,15 @@ private fun NotesTab(
                 color      = MaterialTheme.colorScheme.onSurface
             )
             if (savedNotes.isNotEmpty()) {
-                TextButton(onClick = { showDeleteAll = true }) {
-                    Text(
-                        text  = stringResource(R.string.study_delete_all),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StudyExportNotesButton(notes = savedNotes)
+                    TextButton(onClick = { showDeleteAll = true }) {
+                        Text(
+                            text  = stringResource(R.string.study_delete_all),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }
@@ -1005,6 +1037,154 @@ private fun NotesTab(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+// ── RF-STU-08: exportar/compartir notas ───────────────
+@Composable
+private fun StudyExportNotesButton(notes: List<SavedNote>) {
+    val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    val shareTitle = stringResource(R.string.study_export_share_title)
+
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Rounded.IosShare,
+                contentDescription = stringResource(R.string.study_export_notes),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.study_export_as_text)) },
+                onClick = {
+                    expanded = false
+                    shareStudyNotes(context, notes, asPdf = false, shareTitle = shareTitle)
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.study_export_as_pdf)) },
+                onClick = {
+                    expanded = false
+                    shareStudyNotes(context, notes, asPdf = true, shareTitle = shareTitle)
+                }
+            )
+        }
+    }
+}
+
+@Suppress("TooGenericExceptionCaught")
+private fun shareStudyNotes(context: Context, notes: List<SavedNote>, asPdf: Boolean, shareTitle: String) {
+    try {
+        val file = if (asPdf) StudyNotesExporter.exportAsPdfFile(context, notes)
+        else StudyNotesExporter.exportAsTextFile(context, notes)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = if (asPdf) "application/pdf" else "text/plain"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(android.content.Intent.createChooser(intent, shareTitle))
+    } catch (e: Exception) {
+        Timber.e(e, "Error exportando notas de estudio")
+    }
+}
+
+// ── RF-STU-09: estadísticas de estudio ────────────────
+@Composable
+private fun StudyStatsDialog(stats: StudyStats, onDismiss: () -> Unit) {
+    val now = remember { System.currentTimeMillis() }
+    val (hours, minutes) = remember(stats) { millisToHoursAndMinutes(stats.totalReadingMillis) }
+    val weekdayCounts = remember(stats) { pomodoroCountsByWeekday(stats.pomodoroTimestamps, now) }
+    val weekdayLabels = remember {
+        val formatter = java.text.SimpleDateFormat("EEEEE", Locale.getDefault())
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+        (0 until 7).map { offset ->
+            val label = formatter.format(calendar.time).uppercase(Locale.getDefault())
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            label
+        }
+    }
+    val hasAnyStats = stats.totalReadingMillis > 0 || stats.pomodoroTimestamps.isNotEmpty()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = MaterialTheme.shapes.large,
+        title = { Text(stringResource(R.string.study_stats_title)) },
+        text = {
+            if (!hasAnyStats) {
+                Text(stringResource(R.string.study_stats_empty))
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    StudyStatRow(
+                        icon = Icons.Rounded.VolumeUp,
+                        label = stringResource(R.string.study_stats_total_reading),
+                        value = stringResource(R.string.study_stats_reading_value, hours, minutes)
+                    )
+                    StudyStatRow(
+                        icon = Icons.Rounded.EmojiEvents,
+                        label = stringResource(R.string.study_stats_pomodoros_total),
+                        value = "${stats.pomodoroTimestamps.size}"
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.study_stats_pomodoros_this_week) +
+                                " (${weekdayCounts.sum()})",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        StudyWeekBars(labels = weekdayLabels, counts = weekdayCounts)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
+        }
+    )
+}
+
+@Composable
+private fun StudyStatRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(22.dp))
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun StudyWeekBars(labels: List<String>, counts: IntArray) {
+    val maxCount = (counts.maxOrNull() ?: 0).coerceAtLeast(1)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        labels.forEachIndexed { index, label ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(text = "${counts[index]}", style = MaterialTheme.typography.labelSmall)
+                Box(
+                    modifier = Modifier
+                        .width(18.dp)
+                        .height((32 * counts[index] / maxCount).coerceAtLeast(4).dp)
+                        .background(DocuBlue, RoundedCornerShape(4.dp))
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
