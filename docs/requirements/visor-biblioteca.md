@@ -66,9 +66,10 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 
 - **RF-VIS-07** ✅ Papelera de reciclaje: recuperar un documento eliminado dentro de un plazo antes del borrado definitivo. Implementado 2026-08-29, ver §12.
 - **RF-VIS-08** ✅ Resaltado inline de coincidencias de búsqueda dentro del PDF. Implementado 2026-08-29, ver §13 — ver RNF-VIS-01 para la nota de por qué la suposición original de "no viable" quedó desactualizada.
+- **RF-VIS-10** ✅ El Visor de Word/Excel/PowerPoint debe mostrar el contenido con una fidelidad visual mínima razonable (negrita/cursiva/tamaño real en Word, grilla real en Excel, aspecto de diapositiva en PowerPoint) — no una lista de texto plano indistinguible del formato de origen. Implementado 2026-08-29, ver §14.
 
 ### Backlog
-*(vacío — las 3 funcionalidades de este backlog, RF-VIS-06/07/08, están implementadas)*
+*(vacío — las 4 funcionalidades de este backlog, RF-VIS-06/07/08/10, están implementadas)*
 
 ---
 
@@ -78,6 +79,7 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 - **RNF-VIS-02 (id de documento consistente):** todo documento debe tener el mismo `id` sin importar desde qué pantalla se cargue — es la clave que usa `FavoritesRepository` para favoritos y alias. Para documentos de MediaStore es el `content://` URI tal cual; para archivos generados por la app es la ruta absoluta **sin** prefijo de esquema (`/data/...`, no `file:///data/...`).
 - **RNF-VIS-03 (eliminar es real o falla explícitamente):** eliminar un documento debe borrar el archivo/fila real. Si no se puede (por ejemplo, permiso denegado sobre un archivo de MediaStore que la app no creó), el sistema debe informarlo y **no** quitar el documento de la lista — mismo principio que RNF-SEC-01 (no fallar en silencio).
 - **RNF-VIS-04 (mensajes de error):** sin rutas de archivo completas ni detalles internos de excepciones en mensajes visibles al usuario (mismo lineamiento que RNF-SEC-05 / RNF-PDF-04).
+- **RNF-VIS-05 (el Visor de Word/Excel/PPT sigue sin ser una réplica visual del original):** a diferencia de PDF (que renderiza páginas reales como bitmap con `PdfRenderer`), Word/Excel/PowerPoint se siguen leyendo por extracción de texto del XML interno — no hay en Android una librería nativa gratuita para renderizar estos formatos visualmente (Apache POI puede rasterizar diapositivas, pero depende de `java.awt.Graphics2D`, inexistente en Android; ver RNF-CONV-03). RF-VIS-10 mejora la fidelidad (formato real por fragmento en Word, grilla real en Excel, aspecto de diapositiva en PowerPoint) pero no reproduce imágenes embebidas, layout de columnas, ni la posición exacta del contenido — decisión de alcance explícita del usuario (evaluadas y descartadas por costo/complejidad: convertir a PDF internamente y reusar el renderer de PDF, o integrar una librería de renderizado de Office paga tipo Aspose/Syncfusion).
 
 ---
 
@@ -201,6 +203,33 @@ al toque inicial de "Eliminar" en el Visor.
 - **AC4** Dado que cierro la búsqueda o borro el texto buscado, cuando esto ocurre, entonces el resaltado desaparece de inmediato.
 
 *(Responde RNF-VIS-01, cuya premisa de "no viable sin reescribir el renderer" quedó desactualizada — ver nota en §3.)*
+
+### HU-VIS-09 — El Visor de Word/Excel/PowerPoint no se ve como texto plano
+*(Implementado 2026-08-29 — ver §14. Reportado por el usuario en uso manual.)*
+
+**Como** usuario que abre un Word, Excel o PowerPoint en el Visor,
+**quiero** ver al menos el formato básico del documento (negrita, tablas
+con columnas reales, diapositivas con su propio aspecto),
+**para** que el contenido sea legible y reconocible como el tipo de
+documento que es, no una lista de texto indistinguible.
+
+- **AC1** Dado que abro un `.docx` con una palabra en negrita, un párrafo
+  en cursiva y texto de tamaño distinto, cuando lo veo en el Visor,
+  entonces cada fragmento conserva su propio formato real — no todo el
+  documento en un solo estilo de texto plano.
+- **AC2** Dado que abro un `.xlsx`, cuando lo veo en el Visor, entonces
+  las columnas aparecen alineadas en una grilla real (con scroll
+  horizontal si hay más columnas de las que caben en pantalla) — no una
+  fila de texto con las celdas separadas por `|`.
+- **AC3** Dado que abro un `.pptx`, cuando lo veo en el Visor, entonces
+  cada diapositiva se muestra en un lienzo de proporción 16:9 con su
+  número como leyenda — no una tarjeta de lista genérica.
+
+*(Alcance explícito, ver RNF-VIS-05: esto NO es una réplica visual del
+documento original — sigue sin reproducir imágenes embebidas ni el layout
+exacto. El usuario evaluó y descartó, por ahora, convertir a PDF
+internamente o integrar una librería de renderizado de Office paga —
+eligió mejorar la vista de texto existente.)*
 
 ---
 
@@ -694,3 +723,79 @@ cerrado por completo con esta implementación.
   coincidencias, no repetidos en dispositivo por redundancia con lo ya
   verificado.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 14. RF-VIS-10/HU-VIS-09 — Fidelidad visual de Word/Excel/PowerPoint en el Visor (2026-08-29)
+
+Reportado por el usuario en uso manual: "cuando abro el Word, me lo
+muestra como un archivo plano y no como es el documento, como si pasa con
+el pdf, también pasa con power point y el excel". Se investigó primero
+(ver §11 de `settings-premium.md` para el crash relacionado encontrado en
+la misma sesión de revisión) confirmando en el código que, a diferencia
+de PDF (`PdfViewerContent` renderiza páginas reales como bitmap), Word/
+Excel/PowerPoint extraían texto por regex del XML interno y lo mostraban
+como una lista plana — una limitación de arquitectura real, no un bug
+accidental (ver RNF-VIS-05). Se presentaron 3 alcances posibles al
+usuario (mejorar la vista de texto existente / convertir a PDF interno y
+reusar el renderer / integrar una librería de renderizado de Office paga)
+y se eligió el primero.
+
+### Word — formato real por fragmento, no texto plano
+`WordViewerContent` descartaba `<w:rPr>` por completo al extraer el texto
+de cada párrafo. Ahora `parseWordRuns()` procesa cada `<w:r>` (run) por
+separado, extrayendo negrita (`<w:b/>`, con soporte para `<w:b
+w:val="0"/>` como negrita apagada explícitamente), cursiva (`<w:i/>`) y
+tamaño de fuente (`<w:sz w:val="X"/>`, en medios puntos) — reconstruidos
+con `AnnotatedString`/`SpanStyle` de Compose, un `Text()` por párrafo con
+un `withStyle` por fragmento. Mismo enfoque de "fragmento real, no texto
+global" ya usado en `PdfToWordUseCase` (RF-CONV-09).
+
+**Bug real encontrado en dispositivo, no relacionado con el fragmento por
+run:** la detección de encabezado (`w:pStyle w:val`) asumía que el
+identificador de estilo interno de un `.docx` es siempre en inglés
+("Heading1") sin importar el idioma de la UI de Word — igual que se había
+verificado para `.docx` en RF-CONV-07. Un `.docx` generado con Word en
+español real escribió `w:val="Ttulo1"` (tilde quitada), no "Heading1", así
+que "Título del documento" se mostraba sin negrita ni color, como
+cualquier párrafo normal. Corregido con `WORD_HEADING_STYLE_REGEX`:
+coincidencia case-insensitive contra `heading|title|titulo|ttulo|
+berschrift|titel|заголовок|название|h[1-6]` (es/en/de/ru), en vez de una
+lista de mayúsculas/minúsculas explícitas asumiendo inglés. Mismo criterio
+aplicado también en Modo Estudio (ver §15 de `study.md`), que tiene su
+propia copia de la constante para no acoplar los dos features por un
+patrón de 3 líneas.
+
+### Excel — grilla real, no celdas unidas por "|"
+`ExcelViewerContent` unía todas las celdas de una fila en un solo string
+con `"  |  "` como separador — una fila de texto, no una hoja de cálculo.
+Ahora cada celda es su propia columna de ancho fijo (`ExcelGridRow`)
+dentro de un `Row` con `horizontalScroll` **compartido** entre todas las
+filas (mismo `ScrollState` en cada fila) para que se desplacen juntas como
+una grilla real en vez de filas independientes.
+
+### PowerPoint — lienzo de diapositiva, no tarjeta de lista genérica
+Cada diapositiva ya se mostraba en una tarjeta separada (mejor que Word/
+Excel de partida), pero sin aspecto de diapositiva. Ahora es un `Card` con
+`Modifier.aspectRatio(16f / 9f)` (proporción real de diapositiva), con
+"Diapositiva N" como leyenda fuera del lienzo — mismo patrón que un editor
+de presentaciones muestra sus miniaturas.
+
+**Verificado en dispositivo (2026-08-29) con archivos reales generados con
+Word/Excel/PowerPoint vía automatización COM** (mismo mecanismo que
+`legacy-sample.doc` de RF-CONV-07): `.docx` con palabra en negrita
+inline + párrafo en cursiva + texto de tamaño 20 — confirmado cada
+fragmento con su estilo real, encabezado "Titulo del documento" en
+negrita/azul tras el fix del regex; `.xlsx` con 5 columnas — confirmada la
+grilla con scroll horizontal sincronizado (deslizado hasta ver la columna
+"Activo" fuera del encuadre inicial, todas las filas se movieron juntas);
+`.pptx` con 2 diapositivas — confirmado el lienzo 16:9 con título y viñetas.
+
+**Tests nuevos:** `WordRunParsingTest` (10 tests) — negrita/cursiva/
+tamaño por fragmento, negrita explícitamente apagada, múltiples `<w:t>`
+concatenados, fragmentos en blanco descartados, y el bug real del
+identificador de estilo en español. `ExcelGridRow`/lienzo de PowerPoint no
+tienen test unitario propio (son composables de layout puro, sin lógica
+de parseo nueva que probar aparte de la ya cubierta indirectamente por la
+extracción de celdas/diapositivas existente). `testDebugUnitTest`/
+`detekt`/`lintDebug` en verde.

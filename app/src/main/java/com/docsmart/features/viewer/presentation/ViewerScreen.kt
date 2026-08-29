@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,7 +15,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -32,8 +35,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -662,6 +671,71 @@ private fun PdfViewerContent(
 }
 
 // ── Visor de Word ─────────────────────────────────────────────────────────────
+// Antes se descartaba <w:rPr> por completo al extraer el texto de cada
+// párrafo -- se veía como texto plano aunque el .docx tuviera negrita/
+// cursiva/tamaño reales. Ahora cada <w:r> (run) del párrafo se procesa por
+// separado conservando su propio formato, igual que ya hace PdfToWordUseCase
+// al reconstruir un .docx desde un PDF (RF-CONV-09) -- incluso dentro de un
+// mismo párrafo, una palabra en negrita queda en negrita, no todo el bloque.
+internal data class WordRun(val text: String, val bold: Boolean, val italic: Boolean, val fontSizeSp: Int?)
+internal data class WordParagraph(val runs: List<WordRun>, val isHeading: Boolean)
+
+// Hallazgo real verificado en dispositivo con un .docx generado por Word en
+// español: el identificador de estilo interno (w:pStyle w:val) NO siempre es
+// en inglés como se asumía -- Word en español escribió "Ttulo1" (con tilde
+// quitada), no "Heading1". Mismo tipo de problema ya documentado para .doc/
+// HWPF en RF-CONV-07 (WordFormatDetection.kt$isHeadingStyleName), aplicado
+// acá con case-insensitive + variantes es/de/ru en vez de una lista de
+// mayúsculas/minúsculas explícitas.
+internal val WORD_HEADING_STYLE_REGEX = Regex(
+    "w:val=\"(heading|title|titulo|ttulo|berschrift|titel|заголовок|название|h[123456])",
+    RegexOption.IGNORE_CASE
+)
+
+internal fun parseWordRuns(paraXml: String): List<WordRun> {
+    val runRegex = Regex("<w:r[ >](.*?)</w:r>", RegexOption.DOT_MATCHES_ALL)
+    val rPrRegex = Regex("<w:rPr>(.*?)</w:rPr>", RegexOption.DOT_MATCHES_ALL)
+    val textRegex = Regex("<w:t[^>]*>(.*?)</w:t>", RegexOption.DOT_MATCHES_ALL)
+    val szRegex = Regex("""<w:sz\s+w:val="(\d+)"""")
+
+    fun isToggledOn(rPr: String, tag: String): Boolean {
+        val m = Regex("""<w:$tag(?:\s+w:val="([^"]*)")?\s*/>""").find(rPr) ?: return false
+        val v = m.groupValues[1]
+        return v.isBlank() || v == "1" || v.equals("true", ignoreCase = true) || v.equals("on", ignoreCase = true)
+    }
+
+    return runRegex.findAll(paraXml).mapNotNull { runMatch ->
+        val runXml = runMatch.value
+        val text = textRegex.findAll(runXml).joinToString("") { it.groupValues[1] }
+            .replace("&lt;", "<").replace("&gt;", ">")
+            .replace("&amp;", "&").replace("&nbsp;", " ")
+        if (text.isBlank()) return@mapNotNull null
+
+        val rPr = rPrRegex.find(runXml)?.groupValues?.get(1) ?: ""
+        WordRun(
+            text       = text,
+            bold       = isToggledOn(rPr, "b"),
+            italic     = isToggledOn(rPr, "i"),
+            fontSizeSp = szRegex.find(rPr)?.groupValues?.get(1)?.toIntOrNull()?.let { it / 2 }
+        )
+    }.toList()
+}
+
+private fun wordParagraphAnnotatedString(
+    para: WordParagraph,
+    baseSizeSp: TextUnit
+): AnnotatedString = buildAnnotatedString {
+    para.runs.forEach { run ->
+        withStyle(
+            SpanStyle(
+                fontWeight = if (run.bold) FontWeight.Bold else FontWeight.Normal,
+                fontStyle  = if (run.italic) FontStyle.Italic else FontStyle.Normal,
+                fontSize   = run.fontSizeSp?.sp ?: baseSizeSp
+            )
+        ) { append(run.text) }
+    }
+}
+
 @Composable
 private fun WordViewerContent(
     uri        : Uri?,
@@ -669,8 +743,6 @@ private fun WordViewerContent(
     onTap      : () -> Unit
 ) {
     val context = LocalContext.current
-
-    data class WordParagraph(val text: String, val isHeading: Boolean)
 
     var paragraphs by remember { mutableStateOf<List<WordParagraph>>(emptyList()) }
     var isLoading  by remember { mutableStateOf(true) }
@@ -692,17 +764,9 @@ private fun WordViewerContent(
 
                             paraRegex.findAll(xml).forEach { match ->
                                 val paraXml   = match.value
-                                val isHeading = paraXml.contains(Regex(
-                                    "w:val=\"(Heading|heading|Title|title|Titulo|H[123456])"
-                                ))
-                                val text = paraXml
-                                    .replace(Regex("<w:rPr>.*?</w:rPr>", RegexOption.DOT_MATCHES_ALL), "")
-                                    .replace(Regex("<w:pPr>.*?</w:pPr>", RegexOption.DOT_MATCHES_ALL), "")
-                                    .replace(Regex("<[^>]+>"), "")
-                                    .replace("&lt;", "<").replace("&gt;", ">")
-                                    .replace("&amp;", "&").replace("&nbsp;", " ")
-                                    .replace(Regex("\\s+"), " ").trim()
-                                if (text.isNotBlank()) result.add(WordParagraph(text, isHeading))
+                                val isHeading = paraXml.contains(WORD_HEADING_STYLE_REGEX)
+                                val runs = parseWordRuns(paraXml)
+                                if (runs.any { it.text.isNotBlank() }) result.add(WordParagraph(runs, isHeading))
                             }
                             break
                         }
@@ -722,8 +786,9 @@ private fun WordViewerContent(
     }
 
     // Filtrar por búsqueda
+    val paragraphPlainText = { p: WordParagraph -> p.runs.joinToString("") { it.text } }
     val displayParagraphs = if (searchQuery.isBlank()) paragraphs
-    else paragraphs.filter { it.text.contains(searchQuery, ignoreCase = true) }
+    else paragraphs.filter { paragraphPlainText(it).contains(searchQuery, ignoreCase = true) }
 
     Box(
         modifier = Modifier
@@ -777,7 +842,7 @@ private fun WordViewerContent(
                         ) {
                             Spacer(Modifier.height(16.dp))
                             Text(
-                                text       = para.text,
+                                text       = wordParagraphAnnotatedString(para, baseSizeSp = 18.sp),
                                 style      = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color      = MaterialTheme.colorScheme.primary,
@@ -792,7 +857,7 @@ private fun WordViewerContent(
                         }
                     } else {
                         Text(
-                            text       = para.text,
+                            text       = wordParagraphAnnotatedString(para, baseSizeSp = 14.sp),
                             style      = MaterialTheme.typography.bodyMedium,
                             color      = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 24.sp,
@@ -810,6 +875,16 @@ private fun WordViewerContent(
 }
 
 // ── Visor de Excel ────────────────────────────────────────────────────────────
+// Antes cada fila se mostraba como UN string con las celdas unidas por
+// "  |  " -- se veía como texto plano, no como una hoja de cálculo. Ahora
+// cada celda es su propia columna de ancho fijo dentro de un Row con scroll
+// horizontal COMPARTIDO entre todas las filas (mismo ScrollState en cada
+// una) para que se desplacen juntas como una grilla real, no una lista de
+// filas independientes.
+private val EXCEL_COLUMN_WIDTH = 120.dp
+
+private data class ExcelRow(val cells: List<String>)
+
 @Composable
 private fun ExcelViewerContent(
     uri        : Uri?,
@@ -818,15 +893,13 @@ private fun ExcelViewerContent(
 ) {
     val context = LocalContext.current
 
-    data class ExcelCell(val value: String, val row: Int)
-
-    var cells     by remember { mutableStateOf<List<ExcelCell>>(emptyList()) }
+    var rows      by remember { mutableStateOf<List<ExcelRow>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        cells = withContext(Dispatchers.IO) {
+        rows = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     val zip       = ZipInputStream(input)
@@ -853,8 +926,7 @@ private fun ExcelViewerContent(
                         )
                     }
 
-                    val result    = mutableListOf<ExcelCell>()
-                    var rowNum    = 0
+                    val result    = mutableListOf<ExcelRow>()
                     val rowRegex  = Regex("<row[^>]*>(.*?)</row>", RegexOption.DOT_MATCHES_ALL)
                     val cellRegex = Regex("<c[^>]*>(.*?)</c>",     RegexOption.DOT_MATCHES_ALL)
                     val vRegex    = Regex("<v>([^<]*)</v>")
@@ -871,12 +943,9 @@ private fun ExcelViewerContent(
                                 "str","inlineStr"  -> vValue
                                 else               -> vValue
                             }
-                            if (displayValue.isNotBlank()) rowCells.add(displayValue)
+                            rowCells.add(displayValue)
                         }
-                        if (rowCells.isNotEmpty()) {
-                            result.add(ExcelCell(rowCells.joinToString("  |  "), rowNum))
-                            rowNum++
-                        }
+                        if (rowCells.any { it.isNotBlank() }) result.add(ExcelRow(rowCells))
                     }
                     result
                 } ?: emptyList()
@@ -890,8 +959,10 @@ private fun ExcelViewerContent(
         }
     }
 
-    val displayCells = if (searchQuery.isBlank()) cells
-    else cells.filter { it.value.contains(searchQuery, ignoreCase = true) }
+    val displayRows = if (searchQuery.isBlank()) rows
+    else rows.filter { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
+    val columnCount = rows.maxOfOrNull { it.cells.size } ?: 0
+    val gridScrollState = rememberScrollState()
 
     Box(
         modifier = Modifier
@@ -904,7 +975,7 @@ private fun ExcelViewerContent(
                 modifier = Modifier.align(Alignment.Center),
                 color    = MaterialTheme.colorScheme.primary
             )
-            hasError || cells.isEmpty() -> Text(
+            hasError || rows.isEmpty() -> Text(
                 text      = "No se pudo leer el contenido del archivo Excel",
                 modifier  = Modifier.align(Alignment.Center).padding(32.dp),
                 color     = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -917,7 +988,7 @@ private fun ExcelViewerContent(
                 if (searchQuery.isNotBlank()) {
                     item {
                         Text(
-                            text     = "${displayCells.size} resultado(s) para \"$searchQuery\"",
+                            text     = "${displayRows.size} resultado(s) para \"$searchQuery\"",
                             style    = MaterialTheme.typography.labelMedium,
                             color    = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -925,55 +996,89 @@ private fun ExcelViewerContent(
                     }
                 }
 
-                val header = if (searchQuery.isBlank()) displayCells.firstOrNull() else null
-                val data   = if (searchQuery.isBlank() && displayCells.size > 1)
-                    displayCells.drop(1) else displayCells
+                val header = if (searchQuery.isBlank()) displayRows.firstOrNull() else null
+                val data   = if (searchQuery.isBlank() && displayRows.size > 1)
+                    displayRows.drop(1) else displayRows
 
                 if (header != null) {
                     item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.primary)
-                                .padding(horizontal = 16.dp, vertical = 10.dp)
-                        ) {
-                            Text(
-                                text       = header.value,
-                                style      = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color      = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
+                        ExcelGridRow(
+                            cells       = header.cells,
+                            columnCount = columnCount,
+                            scrollState = gridScrollState,
+                            isHeader    = true,
+                            highlighted = false,
+                            zebra       = false
+                        )
                     }
                 }
 
-                itemsIndexed(data) { index, cell ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                if (searchQuery.isNotBlank())
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                else if (index % 2 == 0)
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                                else
-                                    MaterialTheme.colorScheme.surface
-                            )
-                            .padding(horizontal = 16.dp, vertical = 9.dp)
-                    ) {
-                        Text(
-                            text  = cell.value,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    HorizontalDivider(
-                        color     = MaterialTheme.colorScheme.outlineVariant,
-                        thickness = 0.5.dp
+                itemsIndexed(data) { index, row ->
+                    ExcelGridRow(
+                        cells       = row.cells,
+                        columnCount = columnCount,
+                        scrollState = gridScrollState,
+                        isHeader    = false,
+                        highlighted = searchQuery.isNotBlank(),
+                        zebra       = index % 2 == 0
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ExcelGridRow(
+    cells      : List<String>,
+    columnCount: Int,
+    scrollState: ScrollState,
+    isHeader   : Boolean,
+    highlighted: Boolean,
+    zebra      : Boolean
+) {
+    val bgColor = when {
+        isHeader    -> MaterialTheme.colorScheme.primary
+        highlighted -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        zebra       -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        else        -> MaterialTheme.colorScheme.surface
+    }
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(scrollState)
+                .background(bgColor)
+        ) {
+            for (col in 0 until columnCount) {
+                if (col > 0) {
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(if (isHeader) 40.dp else 36.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .width(EXCEL_COLUMN_WIDTH)
+                        .padding(horizontal = 10.dp, vertical = 9.dp)
+                ) {
+                    Text(
+                        text       = cells.getOrElse(col) { "" },
+                        style      = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
+                        color      = if (isHeader) MaterialTheme.colorScheme.onPrimary
+                                     else MaterialTheme.colorScheme.onSurface,
+                        maxLines   = 2
+                    )
+                }
+            }
+        }
+        HorizontalDivider(
+            color     = MaterialTheme.colorScheme.outlineVariant,
+            thickness = 0.5.dp
+        )
     }
 }
 
@@ -1073,70 +1178,63 @@ private fun PptViewerContent(
                         )
                     }
                 }
+                // RF: cada diapositiva se muestra como un lienzo de proporción
+                // 16:9 (como una diapositiva real), no como una tarjeta de lista
+                // genérica -- el número de diapositiva queda como leyenda FUERA
+                // del lienzo, igual que un editor de presentaciones muestra sus
+                // miniaturas.
                 itemsIndexed(displaySlides) { _, slide ->
-                    Card(
-                        modifier  = Modifier.fillMaxWidth(),
-                        shape     = MaterialTheme.shapes.large,
-                        colors    = CardDefaults.cardColors(
-                            containerColor = if (searchQuery.isNotBlank())
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                            else
-                                MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        MaterialTheme.colorScheme.primaryContainer,
-                                        RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                                    )
-                                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                                verticalAlignment     = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.primary
-                                ) {
-                                    Text(
-                                        text       = "${slide.number}",
-                                        style      = MaterialTheme.typography.labelSmall,
-                                        color      = MaterialTheme.colorScheme.onPrimary,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier   = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-                                    )
-                                }
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text     = "Diapositiva ${slide.number}",
+                            style    = MaterialTheme.typography.labelSmall,
+                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                        Card(
+                            modifier  = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
+                            shape     = MaterialTheme.shapes.large,
+                            colors    = CardDefaults.cardColors(
+                                containerColor = if (searchQuery.isNotBlank())
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                                else
+                                    MaterialTheme.colorScheme.surface
+                            ),
+                            border    = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            elevation = CardDefaults.cardElevation(3.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
                                 Text(
                                     text       = slide.title,
-                                    style      = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color      = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier   = Modifier.weight(1f)
+                                    style      = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color      = MaterialTheme.colorScheme.primary,
+                                    maxLines   = 2
                                 )
-                            }
-                            if (slide.body.isNotBlank()) {
-                                Column(
-                                    modifier            = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    slide.body.split("\n").forEach { line ->
-                                        if (line.isNotBlank()) {
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                modifier              = Modifier.fillMaxWidth()
-                                            ) {
-                                                Text("•", color = MaterialTheme.colorScheme.primary,
-                                                    style = MaterialTheme.typography.bodyMedium)
-                                                Text(
-                                                    text       = line,
-                                                    style      = MaterialTheme.typography.bodyMedium,
-                                                    color      = MaterialTheme.colorScheme.onSurface,
-                                                    lineHeight = 22.sp,
-                                                    modifier   = Modifier.weight(1f)
-                                                )
+                                if (slide.body.isNotBlank()) {
+                                    Spacer(Modifier.height(8.dp))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                    Spacer(Modifier.height(10.dp))
+                                    Column(
+                                        modifier            = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        slide.body.split("\n").forEach { line ->
+                                            if (line.isNotBlank()) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    modifier              = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text("•", color = MaterialTheme.colorScheme.primary,
+                                                        style = MaterialTheme.typography.bodySmall)
+                                                    Text(
+                                                        text       = line,
+                                                        style      = MaterialTheme.typography.bodySmall,
+                                                        color      = MaterialTheme.colorScheme.onSurface,
+                                                        lineHeight = 18.sp,
+                                                        modifier   = Modifier.weight(1f)
+                                                    )
+                                                }
                                             }
                                         }
                                     }

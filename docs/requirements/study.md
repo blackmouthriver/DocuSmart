@@ -50,6 +50,7 @@ ver §3 nota de arquitectura):
 - **RNF-STU-01 (persistencia sin corrupción):** cualquier texto que el usuario escriba en una nota (comillas, saltos de línea, cualquier carácter) debe guardarse y recuperarse exactamente igual — sin reemplazos silenciosos de caracteres.
 - **RNF-STU-02 (idioma de lectura en voz alta):** el TTS debe intentar primero el idioma configurado del dispositivo, igual que ya hace el reconocimiento de voz al dictar una nota — no debe forzar un idioma fijo sin importar la configuración del usuario.
 - **RNF-STU-03 (nota de arquitectura):** este módulo es la única pantalla grande del proyecto sin `ViewModel` — todo el estado (documento, notas, Pomodoro, TTS) vive en `remember {}` dentro del Composable. Esto significa que no es testable con pruebas de ViewModel como el resto de módulos, y que el estado se pierde en cualquier recomposición que destruya la instancia (no en rotación, que Compose maneja, pero sí si el proceso muere). No se refactorizó en esta pasada — es un cambio de arquitectura más grande que un bug fix puntual.
+- **RNF-STU-04 (el modo lectura es texto plano a propósito, no por descuido):** a diferencia del Visor (ver RF-VIS-10 en `visor-biblioteca.md`), Modo Estudio **no** intenta mostrar el documento con su aspecto visual original — la función central de esta pantalla es narrar el texto en voz alta y resaltar el párrafo que se está leyendo, algo que solo es viable sobre texto real extraído, no sobre una imagen renderizada del documento. El usuario confirmó explícitamente esta prioridad al elegir "solo mejorar la calidad del texto" frente a la opción de intentar una vista más visual. Lo que sí se corrigió es la CALIDAD de esa extracción de texto (ver HU-STU-04) — no su naturaleza de texto plano.
 
 ---
 
@@ -85,6 +86,33 @@ ver §3 nota de arquitectura):
 
 *(Corrige bug real: la inicialización de TTS forzaba `Locale("es","ES")` incondicionalmente, sin importar el idioma configurado — mismo tipo de bug ya corregido antes para el reconocimiento de voz al dictar, pero que persistía en el lado de lectura en voz alta.)*
 
+### HU-STU-04 — Los párrafos de lectura son párrafos reales
+*(Implementado 2026-08-29 — ver §8. Reportado por el usuario en uso manual, agrupado con el mismo hallazgo del Visor — ver RNF-STU-04 para por qué la solución NO es la misma que en el Visor.)*
+
+**Como** usuario que usa "leer este párrafo" sobre un PDF,
+**quiero** que lea un párrafo real, no medio renglón cortado a mitad de
+frase,
+**para** que la narración tenga sentido y el resaltado marque bloques de
+texto coherentes.
+
+- **AC1** Dado que abro un PDF cuyo texto se ajusta en varias líneas
+  visuales dentro del mismo párrafo, cuando lo veo en Modo Estudio,
+  entonces esas líneas aparecen como UN párrafo — no uno por cada línea
+  del PDF.
+- **AC2** Dado que el PDF tiene un salto real entre párrafos (mayor
+  espaciado vertical), cuando lo veo, entonces ese salto sí separa dos
+  párrafos distintos.
+- **AC3** Dado que abro un Word con un encabezado, cuando lo veo en Modo
+  Estudio, entonces ese párrafo aparece en negrita y con color distintivo
+  — igual que ya distingue el Visor de Word — para ubicarlo de un vistazo
+  dentro de la narración.
+
+*(Corrige bug real: `extractPdfText()` dividía por cada `\n` de
+`PdfTextExtractor.getTextFromPage()` — una oración de una sola idea que el
+PDF ajusta en 2-3 líneas se leía y resaltaba como 2-3 "párrafos"
+distintos. `extractWordText()` tampoco distinguía encabezados en
+absoluto, a diferencia del Visor de Word, que sí lo hacía desde antes.)*
+
 ---
 
 ## 5. Bugs de QA a corregir (trazabilidad)
@@ -95,7 +123,7 @@ ver §3 nota de arquitectura):
 | **Bug real encontrado hoy (no reportado en la QA):** comillas dobles en una nota se convertían en comillas simples en cada guardado. | HU-STU-01 | ✅ Corregido — reemplazado el serializador manual por `org.json` (parte del SDK de Android), que escapa correctamente cualquier carácter. |
 | **Bug real encontrado hoy (no reportado en la QA):** el orden de las notas se invertía al recargar la pantalla (más vieja primero en vez de más nueva primero). | HU-STU-02 | ✅ Corregido — se quitó el `.reversed()` de más en `loadNotes()`. |
 | **Bug real encontrado hoy (no reportado en la QA):** la lectura en voz alta forzaba español sin importar el idioma configurado del dispositivo — mismo bug ya corregido para el reconocimiento de voz, pero no para el TTS. | HU-STU-03 | ✅ Corregido — ahora intenta `Locale.getDefault()` primero, español como respaldo. |
-| "Lectura se ve como texto plano — mejorar presentación visual" | — | No abordado en esta pasada — es una mejora visual, no un bug funcional. |
+| "Lectura se ve como texto plano — mejorar presentación visual" | HU-STU-04 | ✅ Parcialmente abordado 2026-08-29 — corregida la calidad real del texto extraído (párrafos reales de PDF, encabezados de Word), no la presentación visual como el documento original: el modo lectura sigue siendo texto plano **a propósito**, ver RNF-STU-04. |
 
 ---
 
@@ -104,7 +132,8 @@ ver §3 nota de arquitectura):
 | # | Cobertura | Estado |
 |---|---|---|
 | 1 | `StudyNotesStorageTest` — comillas dobles sobreviven el round-trip, saltos de línea reales sobreviven el round-trip, el orden guardado (más nuevo primero) se preserva al recargar, sin notas guardadas devuelve lista vacía, JSON corrupto en preferencias devuelve lista vacía en vez de fallar. | ✅ 5 tests, en verde |
-| 2 | Resto de `StudyScreen.kt` (extracción de PDF/Word/PPT/texto, TTS, Pomodoro) — no cubierto. Son funciones `private` dentro de un Composable sin ViewModel (ver RNF-STU-03); testearlas requeriría o exponerlas como en este módulo se hizo con `StudyNotesStorage`, o el refactor completo a ViewModel. | Pendiente si se decide abordar la deuda de arquitectura. |
+| 2 | `StudyTextExtractionTest` — agrupación de párrafos reales de PDF por espaciado vertical (líneas ajustadas quedan en el mismo párrafo, salto grande crea uno nuevo, párrafos muy cortos se descartan, sin fragmentos no hay párrafos), detección de encabezado de Word (incluyendo el bug real del identificador de estilo en español, `w:val="Ttulo1"`). | ✅ 7 tests, en verde |
+| 3 | Resto de `StudyScreen.kt` (TTS, Pomodoro, resto de extracción PPT/texto plano) — no cubierto. Son funciones/composables sin ViewModel (ver RNF-STU-03); las funciones de extracción de PDF/Word de la fila 2 se expusieron como `internal` (mismo patrón que `StudyNotesStorage`) puntualmente para poder probarlas, sin refactorizar el resto del módulo. | Pendiente si se decide abordar la deuda de arquitectura completa. |
 
 Se agregó `testImplementation("org.json:json:20231013")` en `app/build.gradle.kts`
 — el stub de Android para unit tests deja `org.json.*` sin implementar
@@ -119,3 +148,68 @@ Se agregó `testImplementation("org.json:json:20231013")` en `app/build.gradle.k
 |---|---|
 | ¿Vale la pena refactorizar `StudyScreen.kt` a una arquitectura con `ViewModel` (como el resto de módulos)? | Es la única pantalla grande sin esa estructura; permitiría testear TTS/Pomodoro/extracción y sería más consistente, pero es un refactor grande, no un bug fix. |
 | ¿Prioridad de exportar notas (RF-STU-08) vs. estadísticas de estudio (RF-STU-09) vs. Pomodoro en segundo plano (RF-STU-10)? | Los 3 son mejoras sugeridas ya documentadas en `CONTEXT.md`, sin refinar todavía. |
+
+---
+
+## 8. HU-STU-04 — Párrafos reales en el modo lectura (2026-08-29)
+
+Reportado por el usuario en uso manual junto con el mismo hallazgo del
+Visor (ver §14 de `visor-biblioteca.md`): "cuando tomo un archivo para
+usar para lectura presenta el mismo problema, muestra el texto, y la voz
+narra el texto pero en un archivo plano". Investigado por separado porque
+la causa y la solución correcta NO son las mismas que en el Visor — ver
+RNF-STU-04 para por qué el modo lectura sigue siendo texto plano a
+propósito (la narración por voz y el resaltado de palabras no son
+viables sobre una imagen renderizada del documento).
+
+**PDF — párrafos por espaciado vertical real, no por cada salto de
+línea:** `extractPdfText()` dividía el texto de cada página con
+`pageText.split("\n")` — cualquier oración que el PDF ajustara en 2-3
+líneas visuales se guardaba y se leía en voz alta como 2-3 "párrafos"
+distintos, cortados a mitad de frase. Reemplazado por un recorrido con
+`PdfCanvasProcessor` + `StudyPdfLineListener` (mismo mecanismo que
+`PdfToWordUseCase`, RF-CONV-09) que agrupa fragmentos de texto por la
+coordenada Y real de su línea base: un salto vertical mayor a 1.6x el
+tamaño de fuente del fragmento siguiente = párrafo nuevo; uno menor =
+ajuste de línea dentro del mismo párrafo lógico (`groupPdfChunksIntoParagraphs()`).
+
+**Word — encabezados detectados, igual que el Visor:**
+`extractWordText()` convertía cada `<w:p>` en un salto de línea ANTES de
+quitar las etiquetas, perdiendo la información de `<w:pPr>` necesaria
+para saber si un párrafo es un encabezado — Estudio nunca distinguía
+encabezados, ni siquiera antes de este hallazgo. Reescrito con el mismo
+enfoque por bloque `<w:p>` que ya usaba `WordViewerContent`
+(`parseWordParagraphsWithHeadings()`), incluyendo el mismo fix del
+identificador de estilo real que escribe Word en español (`w:val="Ttulo1"`,
+no `"Heading1"` — ver §14 de `visor-biblioteca.md` para el hallazgo
+completo). Los encabezados detectados se resaltan en negrita/color
+primario en la lista de lectura sin tocar la lógica existente de
+resaltado manual (`highlights: Set<Int>`) ni el seguimiento de lectura en
+voz alta (`currentSpeakingIndex`) — se agregó un `Set<Int>` paralelo
+(`headingIndices`) puramente para estilo, sin cambiar el significado de
+los índices ya usados por esas dos funcionalidades.
+
+**Refactor de paso — código muerto eliminado:** `ParagraphItem`,
+`paragraphCardColor`, `HighlightButton` y `SpeakButton` eran un composable
+alternativo para renderizar un párrafo (tarjeta con número) que ninguna
+función del archivo llamaba — `ReadingTab` ya dibujaba el párrafo como
+texto fluido con un `Row` inline en su lugar. Encontrado al extraer el
+render de cada párrafo a `ReadingParagraphRow` (por `LongMethod` de
+detekt sobre `ReadingTab` tras agregar la lógica de encabezado) y
+reemplazado en el mismo lugar en vez de dejarlo huérfano al lado.
+
+**Verificado en dispositivo (2026-08-29):** `formatted-sample.pdf`
+(mismo PDF real usado para verificar RF-CONV-09, con una oración ajustada
+en varias líneas) mostró "2 párrafos" en Modo Estudio, no uno por línea;
+`formatted-viewer-sample.docx` (mismo `.docx` real de §14 de
+`visor-biblioteca.md`) mostró "4 párrafos" con "Titulo del documento" en
+negrita/azul, igual que en el Visor.
+
+**Tests nuevos:** `StudyTextExtractionTest` (7 tests) — agrupación de
+párrafos por espaciado vertical (línea ajustada vs. párrafo nuevo,
+párrafos cortos descartados, lista vacía), detección de encabezado
+(incluyendo el bug real del identificador de estilo en español).
+`testDebugUnitTest`/`detekt`/`lintDebug` en verde — el refactor de
+`ReadingParagraphRow` fue necesario para que `ReadingTab` volviera a
+pasar el umbral de `LongMethod` de detekt tras las nuevas líneas de
+lógica de encabezado.
