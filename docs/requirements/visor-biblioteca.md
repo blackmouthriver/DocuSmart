@@ -20,7 +20,10 @@ proyecto** contra SQLite real (§8.1), que encontró un bug real en el uso de
 condición alguna al arrancar la app, crasheando el proceso bajo
 instrumentación — corregido solo para el caso de test, sin tocar el
 comportamiento real de anuncios. 21 tests nuevos (10 + 5 + 6, más 2 pruebas
-instrumentadas aparte de este conteo).
+instrumentadas aparte de este conteo). **RF-VIS-06 implementado 2026-08-29,
+ver §11** — renombrar y eliminar desde el Visor, con la lógica de rename
+extraída de Biblioteca/Home a `DocumentRepository` para reutilizarla en un
+tercer lugar sin triplicar código.
 **Código relacionado:** `features/viewer/**`, `features/library/**`,
 `features/home/**`, `core/data/FavoritesRepository.kt`, `core/data/db/**`
 (nuevo).
@@ -44,13 +47,13 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 
 - **RF-VIS-01** El sistema debe permitir marcar/desmarcar un documento como favorito desde el Visor, Biblioteca o Home, y el estado debe ser el mismo sin importar desde dónde se marcó.
 - **RF-VIS-02** El sistema debe permitir buscar texto dentro de un documento abierto en el Visor. Para PDF, la búsqueda debe indicar cuántas páginas tienen coincidencias y permitir saltar entre ellas.
-- **RF-VIS-03** El sistema debe permitir renombrar un documento desde Biblioteca/Home (ya implementado); el Visor no ofrece esta acción (ver backlog, RF-VIS-06).
+- **RF-VIS-03** El sistema debe permitir renombrar un documento desde Biblioteca/Home o desde el Visor (ver RF-VIS-06).
 - **RF-VIS-04** El sistema debe permitir eliminar un documento desde Biblioteca/Home, y la eliminación debe ser real (el archivo deja de existir), no solo ocultarlo de la lista.
 - **RF-VIS-05** La Biblioteca debe separar los documentos del dispositivo de los generados por la app en pestañas distintas.
 - **RF-VIS-09** ✅ "Recientes" en Home debe reflejar los documentos que el usuario realmente abrió más recientemente en el Visor, no solo la fecha de modificación del archivo en disco. Resuelto 2026-08-25 con una tabla Room (`document_history`) — ver §8.
+- **RF-VIS-06** ✅ El sistema debe permitir renombrar y eliminar un documento directamente desde el Visor. Implementado 2026-08-29, ver §11.
 
 ### Backlog — no implementado
-- **RF-VIS-06** Renombrar y eliminar un documento directamente desde el Visor (hoy la barra superior solo tiene volver/buscar/favorito/compartir).
 - **RF-VIS-07** Papelera de reciclaje: recuperar un documento eliminado dentro de un plazo antes del borrado definitivo.
 - **RF-VIS-08** Resaltado inline de coincidencias de búsqueda dentro del PDF (hoy solo salta de página en página — ver RNF-VIS-01 sobre por qué no hay resaltado real).
 
@@ -125,6 +128,22 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 - **AC3** Dado que es una instalación nueva sin historial todavía, cuando entro a Home, entonces "Recientes" se completa con los documentos más recientes por fecha de archivo (mismo comportamiento que antes de esta HU) — nunca queda vacío solo por falta de historial.
 - **AC4** Dado que un documento del historial fue borrado desde fuera de la app, cuando cargo Recientes, entonces ese id se descarta silenciosamente y se completa con otro documento — no aparece un hueco ni un error.
 
+### HU-VIS-06 — Renombrar y eliminar desde el Visor
+*(Implementado 2026-08-29 — ver §11.)*
+
+**Como** usuario leyendo un documento en el Visor,
+**quiero** poder renombrarlo o eliminarlo sin volver a Biblioteca/Home,
+**para** no interrumpir el flujo de lectura por una acción de gestión de archivos.
+
+- **AC1** Dado que toco "Renombrar" desde el menú del Visor y confirmo un nombre nuevo, cuando la operación termina, entonces el título de la barra superior refleja el nuevo nombre de inmediato, sin salir del Visor.
+- **AC2** Dado que el documento abierto es un archivo generado por la app, cuando renombro, entonces el archivo real en disco cambia de nombre (no es solo una etiqueta) — verificable listando el almacenamiento de la app.
+- **AC3** Dado que el documento abierto es de MediaStore (dispositivo), cuando renombro, entonces se guarda como alias (mismo mecanismo ya usado por Biblioteca/Home) sin requerir permiso de escritura sobre el archivo real.
+- **AC4** Dado que toco "Eliminar" desde el menú del Visor, cuando esto ocurre, entonces veo un diálogo de confirmación explícito antes de borrar nada — nunca se elimina con un solo toque.
+- **AC5** Dado que confirmo eliminar, cuando el borrado es exitoso, entonces el Visor se cierra automáticamente (vuelve a la pantalla anterior) y el documento no reaparece en Biblioteca/Home.
+- **AC6** Dado que el borrado no se pudo completar (por ejemplo, sin permiso sobre un archivo de MediaStore que la app no creó), cuando esto ocurre, entonces veo un aviso y el Visor **no** se cierra — mismo criterio que RNF-VIS-03 (no fallar en silencio).
+
+*(Responde la pregunta abierta de §10: "¿vale la pena renombrar/eliminar desde el Visor, o basta con Biblioteca/Home?" — se decidió que sí, siguiendo el patrón de la mayoría de apps de gestión de documentos similares.)*
+
 ---
 
 ## 5. Bugs de QA a corregir (trazabilidad)
@@ -137,7 +156,7 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 | Biblioteca: falta discriminar archivos de la app vs. del dispositivo | HU-VIS-04 | **Obsoleto** — ya implementado (`LibraryTab.DEVICE`/`APP_FILES`), sin registro de cuándo se agregó. |
 | Home: botón "Abrir" del banner no genera ninguna acción | — | **Obsoleto** — ya lanza `ACTION_OPEN_DOCUMENT` correctamente. |
 | Home: accesos rápidos de scanner/seguridad/estudio aislados | — | **Obsoleto** — ya navegan a rutas reales en `DocuSmartNavGraph.kt`. |
-| Visor: no permite renombrar ni eliminar desde el visor | RF-VIS-06 (backlog) | Confirmado vigente — no hay UI para esto en `ViewerTopBar`. No implementado en esta sesión. |
+| Visor: no permite renombrar ni eliminar desde el visor | RF-VIS-06 | ✅ Resuelto 2026-08-29 — ver §11. |
 | Visor: margen superior falla, el PDF "se pierde" arriba | — | No verificado — requiere prueba visual en dispositivo/emulador, no se pudo confirmar ni descartar por lectura de código. |
 | Biblioteca: tarjetas de favoritos con tamaños inconsistentes en el carrusel | — | Fuera de alcance de esta pasada (ajuste visual, no funcional). |
 | Home: botón "Inicio" de la bottom nav deja de responder tras ir a Convertir | — | No verificado — requiere prueba de navegación en vivo, no se pudo confirmar ni descartar por lectura de código. |
@@ -153,6 +172,7 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 | 2 | `DocumentRepositoryTest` — borra archivo de la app, archivo inexistente → false, borra vía `ContentResolver`, `ContentResolver` no pudo borrar → false, excepción de permisos → false (no propaga), borrado exitoso también limpia el historial, y 4 tests de `mergeHistoryWithDocuments` (orden por historial, ids obsoletos se descartan, fallback completa el resto, sin historial se comporta como antes). | ✅ 10 tests, en verde |
 | 3 | `LibraryViewModel`/`HomeViewModel`/`ViewerViewModel` — no cubiertos (ViewModels con `StateFlow` + Hilt, requieren fixture más elaborado); la lógica de negocio que antes vivía implícita en ellos (borrado real, id consistente, fusión de historial) ya quedó cubierta en el use case/repositorio subyacente. | Pendiente si se necesita cobertura de transiciones de estado. |
 | 4 | `DocumentHistoryDaoTest` (**primera prueba de integración del proyecto** — ver §8.1) — inserta, upsert no duplica y actualiza la fecha, orden descendente por fecha, respeta el límite, `remove` funciona y no falla con un id inexistente. Corre contra SQLite real (`BundledSQLiteDriver`), no un fake. | ✅ 6 tests, en verde |
+| 5 | `DocumentRepository.renameDocument()` (RF-VIS-06, ver §11) — renombra un archivo real de la app y devuelve la nueva ruta absoluta, un documento de MediaStore usa alias sin tocar el archivo (conserva su id), un archivo de la app que no se pudo mover cae al mismo alias. | ✅ 3 tests, en verde |
 
 Todos los tests nuevos generan PDFs reales con iText7 o usan archivos
 temporales reales (`Files.createTempDirectory`), mismo patrón que
@@ -278,7 +298,106 @@ resto del proyecto — son mundos separados (`androidTest/` vs `test/`).
 
 | Pregunta | Notas |
 |---|---|
-| ¿Vale la pena renombrar/eliminar desde el Visor (RF-VIS-06), o basta con hacerlo desde Biblioteca/Home? | La mayoría de apps similares lo ofrecen en ambos lugares; queda pendiente de prioridad. |
+| ¿Vale la pena renombrar/eliminar desde el Visor (RF-VIS-06), o basta con hacerlo desde Biblioteca/Home? | **Resuelto 2026-08-29** — sí, implementado. Ver §11. |
 | ¿Papelera de reciclaje (RF-VIS-07) antes o después de las demás funcionalidades del backlog de Herramientas PDF? | Depende de cuánto valor le da el usuario a poder deshacer un borrado. Si se aborda, puede reusar `core/data/db/` (nueva tabla `trash_entries`). |
 | Los 2 hallazgos "no verificados" de la tabla de bugs (margen del PDF, bottom nav tras Convertir) — ¿siguen reproduciéndose en la versión actual? | Requieren prueba manual en dispositivo/emulador; no se pudieron confirmar ni descartar solo leyendo el código. |
 | ¿Extender "últimos abiertos" también a una sección de Biblioteca (ya mencionada en el inventario de pantallas)? | `loadRecentlyOpened()` ya está construido y probado — agregarlo a Biblioteca es sobre todo trabajo de UI, no de datos. |
+
+---
+
+## 11. RF-VIS-06/HU-VIS-06 — Renombrar y eliminar desde el Visor (2026-08-29)
+
+Primera funcionalidad implementada tras cerrar el backlog completo de
+Herramientas PDF (RF-PDF-06 a 15) — continúa el mismo patrón de trabajo
+(use case/repositorio + tests + UI + i18n + verificación real en
+dispositivo + docs).
+
+- **Extracción a `DocumentRepository.renameDocument()`:** antes de esta HU,
+  la lógica de renombrar (intentar `File.renameTo()` real para archivos de
+  la app; si es un documento de MediaStore o el rename real falla, guardar
+  un alias en `FavoritesRepository`) estaba **duplicada exactamente igual**
+  en `LibraryViewModel.renameDocument()` y `HomeViewModel.renameDocument()`
+  — un tercer consumidor (el Visor) habría triplicado ese código. Se
+  extrajo a `DocumentRepository.renameDocument(documentId, newName): String`,
+  que devuelve el id resultante (la ruta nueva si el archivo se movió de
+  verdad, o el mismo id si solo se guardó un alias) — información que
+  Library/Home no necesitaban (recargan toda la lista o actualizan por id
+  sin importar cuál pasó), pero que el Visor sí necesita: al tener un solo
+  documento abierto, debe seguir apuntando al archivo correcto después de
+  un rename real (`document.id`/`fileUri` se actualizan en el estado local
+  con el id devuelto). `LibraryViewModel`/`HomeViewModel` se refactorizaron
+  para delegar en el método nuevo, sin cambiar su comportamiento observable
+  (mismos tests existentes siguen en verde, sin modificarlos).
+- **`ViewerViewModel.kt`** (modificado) — inyecta `DocumentRepository`
+  (nuevo), agrega `showRenameDialog`/`showDeleteConfirm`/`deleteError`/
+  `documentDeleted` a `ViewerUiState`, y 6 funciones nuevas
+  (`onRenameClick`/`dismissRenameDialog`/`renameDocument`/`onDeleteClick`/
+  `dismissDeleteConfirm`/`confirmDelete`/`dismissDeleteError`) siguiendo el
+  mismo patrón ya usado por `toggleFavorite()`/`shareDocument()` (operan
+  sobre `_uiState.value.document?.id`, trabajo en `viewModelScope.launch`).
+  Mensajes de error hardcodeados en español (`"No se pudo eliminar el
+  archivo"`), consistente con el resto de errores ya existentes en este
+  mismo archivo (`"Documento no encontrado"`, `"Contraseña incorrecta..."`,
+  etc.) — el `ViewerViewModel` no sigue el patrón de `*Messages` con
+  `stringResource()` que sí usan los use cases de Herramientas PDF; se
+  respetó la convención existente del archivo en vez de introducir una
+  nueva a mitad de camino.
+- **`ViewerDocumentDialogs.kt`** (nuevo, `presentation/components/`) —
+  `ViewerRenameDialog` (campo de texto con validación de no-vacío en
+  tiempo real) y `ViewerDeleteConfirmDialog` (primer diálogo de
+  confirmación de borrado del proyecto — **ni Biblioteca ni Home lo
+  tienen hoy**, eliminan directo al tocar el ítem del menú contextual sin
+  paso intermedio; se documenta como hueco preexistente, fuera de alcance
+  de esta HU). A diferencia de `RenameDocumentDialog` en
+  `core/ui/components/DocuSmartDocumentItem.kt` (usado por Biblioteca/Home,
+  con texto hardcodeado en español), estos dos diálogos nuevos usan
+  `stringResource()` desde el día uno — no se reutilizó el composable
+  existente para no heredar ese hueco de i18n en una pantalla nueva.
+- **`ViewerTopBar.kt`** (modificado) — en vez de agregar 2 `IconButton` más
+  a una barra que ya tenía 4 (back/buscar/favorito/compartir, dejaría 6
+  íconos apretados), se agregó un menú `DropdownMenu` detrás de un ícono
+  `MoreVert` ("Más opciones") con las entradas "Renombrar"/"Eliminar" —
+  patrón más escalable si se agregan más acciones al Visor en el futuro.
+- **Navegación tras eliminar:** no se agregó ninguna ruta ni callback
+  nuevo a `DocuSmartNavGraph.kt` — al detectar `documentDeleted = true` en
+  el estado, `ViewerScreen` simplemente invoca el mismo `onBack()` que ya
+  recibe como parámetro (mismo mecanismo que el back real del usuario:
+  `popBackStack()` a Biblioteca/Home, o `finish()` si no hay stack). Como
+  Biblioteca/Home ya recargan su lista al montar (`LaunchedEffect`/`init`),
+  no hace falta pasar ningún resultado explícito de vuelta.
+- **3 tests unitarios nuevos** (`DocumentRepositoryTest`, sobre el método
+  extraído) — renombrar un archivo real de la app devuelve la nueva ruta y
+  el archivo físico cambia de nombre en disco, un documento de MediaStore
+  usa alias sin tocar ningún archivo (conserva su id), un archivo de la
+  app que no se pudo mover cae al mismo alias. `ViewerViewModel` en sí
+  sigue sin test unitario nuevo, mismo criterio ya documentado en §6 fila 3
+  (ViewModels con `StateFlow`+Hilt sin cobertura directa, lógica de negocio
+  cubierta en la capa de repositorio).
+- **`ViewerScreenTest.kt`** (instrumentado) actualizado — el constructor de
+  `ViewerViewModel` ahora requiere `DocumentRepository`, agregado como
+  `mockk(relaxed = true)` en `buildViewModel()`; los 2 tests existentes
+  (nombre visible, tocar favorito) no cambiaron de comportamiento.
+- **Gauntlet:** `testDebugUnitTest`/`detekt`/`lintDebug` en verde sin
+  necesidad de tocar `config/detekt/baseline.xml` — a diferencia de casi
+  todas las funcionalidades de Herramientas PDF, esta no introdujo ningún
+  hallazgo nuevo de boilerplate (`copyUriToCache` no aplica acá, el código
+  nuevo es más simple).
+- **Verificado end-to-end en el dispositivo real (app en español), con
+  ambas acciones reales, no solo la UI:** abierto un PDF generado por la
+  app (`DocuSmart_OCR_20260829_113452.pdf`, desde la pestaña "Mis
+  archivos" de Biblioteca — confirma que el id es una ruta absoluta, no
+  `content://`) → menú "Más opciones" → "Renombrar" → validación de campo
+  vacío visible en tiempo real al borrar el nombre → escrito un nombre
+  nuevo → "Guardar" → el título de la barra superior cambió de inmediato
+  sin salir del Visor → confirmado con
+  `adb shell run-as com.docsmart ls files/pdftools/` que el archivo físico
+  en disco **cambió de nombre de verdad** (ya no aparece
+  `DocuSmart_OCR_...pdf`, aparece el nuevo nombre con el mismo tamaño en
+  bytes) — no fue un alias cosmético. Acto seguido, mismo documento →
+  "Más opciones" → "Eliminar" → diálogo de confirmación mostró el nombre
+  ya actualizado (confirma que `document.id`/`name` se propagaron
+  correctamente tras el rename) → confirmado → el Visor se cerró solo y
+  volvió a Biblioteca → el contador de documentos bajó de 70 a 69 (13→12
+  en "Mis archivos") → confirmado de nuevo con `run-as ls` que el archivo
+  ya no existe en disco — coincide exactamente con HU-VIS-06 AC1 a AC5.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

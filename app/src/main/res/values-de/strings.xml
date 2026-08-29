@@ -125,6 +125,14 @@
     <string name="viewer_rendering">Dokument wird gerendert…</string>
     <string name="viewer_unsupported">Dieses Format wird vom integrierten Viewer nicht unterstützt.</string>
     <string name="viewer_open_other">Mit anderer App öffnen</string>
+    <string name="viewer_more_options">Weitere Optionen</string>
+    <string name="viewer_rename">Umbenennen</string>
+    <string name="viewer_delete">Löschen</string>
+    <string name="viewer_rename_title">Dokument umbenennen</string>
+    <string name="viewer_rename_label">Dateiname</string>
+    <string name="viewer_rename_empty_error">Der Name darf nicht leer sein</string>
+    <string name="viewer_delete_confirm_title">Dieses Dokument löschen?</string>
+    <string name="viewer_delete_confirm_body">"%1$s wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."</string>
 
     <!-- ── Allgemein ────────────────────────────────── -->
     <string name="general_save">Speichern</string>

@@ -8,7 +8,11 @@ import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
@@ -124,6 +128,51 @@ class DocumentRepositoryTest {
         repository.deleteDocument(file.absolutePath)
 
         assertTrue(historyDao.recentDocumentIds(10).isEmpty())
+    }
+
+    // ── renameDocument (RF-VIS-06: extraído de Library/HomeViewModel para
+    // reutilizarlo también desde el Visor) ────────────────────────────────
+
+    @Test
+    fun `renameDocument renombra un archivo real de la app y devuelve la nueva ruta`() = runTest {
+        val favorites = mockk<FavoritesRepository>()
+        coEvery { favorites.removeAlias(any()) } just Runs
+        val repo = DocumentRepository(context, favorites, historyDao)
+        val dir  = File(filesDir, "converted").apply { mkdirs() }
+        val file = File(dir, "original.pdf").apply { writeText("contenido") }
+
+        val newId = repo.renameDocument(file.absolutePath, "nuevo.pdf")
+
+        assertEquals(File(dir, "nuevo.pdf").absolutePath, newId)
+        assertTrue(File(dir, "nuevo.pdf").exists())
+        assertFalse(file.exists())
+        coVerify { favorites.removeAlias(file.absolutePath) }
+    }
+
+    @Test
+    fun `renameDocument de un documento de MediaStore usa alias sin tocar el archivo`() = runTest {
+        val favorites = mockk<FavoritesRepository>()
+        coEvery { favorites.saveAlias(any(), any()) } just Runs
+        val repo = DocumentRepository(context, favorites, historyDao)
+        val uriString = "content://media/external/downloads/12345"
+
+        val newId = repo.renameDocument(uriString, "Nuevo nombre.pdf")
+
+        assertEquals(uriString, newId, "un documento de MediaStore conserva su id -- solo cambia el alias")
+        coVerify { favorites.saveAlias(uriString, "Nuevo nombre.pdf") }
+    }
+
+    @Test
+    fun `renameDocument cae a alias si el archivo de la app no se pudo mover`() = runTest {
+        val favorites = mockk<FavoritesRepository>()
+        coEvery { favorites.saveAlias(any(), any()) } just Runs
+        val repo = DocumentRepository(context, favorites, historyDao)
+        val missing = File(filesDir, "no_existe.pdf") // File.renameTo() sobre un origen inexistente devuelve false
+
+        val newId = repo.renameDocument(missing.absolutePath, "nuevo.pdf")
+
+        assertEquals(missing.absolutePath, newId, "el id no cambia si el rename real falló")
+        coVerify { favorites.saveAlias(missing.absolutePath, "nuevo.pdf") }
     }
 
     // ── mergeHistoryWithDocuments (RF-VIS/HOME: recientes = uso real) ─────────

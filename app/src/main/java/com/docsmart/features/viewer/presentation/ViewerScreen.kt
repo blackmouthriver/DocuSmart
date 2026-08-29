@@ -37,6 +37,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
+import com.docsmart.features.viewer.presentation.components.ViewerDeleteConfirmDialog
+import com.docsmart.features.viewer.presentation.components.ViewerRenameDialog
 import com.docsmart.features.viewer.presentation.components.ViewerTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -58,6 +60,35 @@ fun ViewerScreen(
 
     LaunchedEffect(documentId) {
         viewModel.loadDocument(documentId, context)
+    }
+
+    // ── RF-VIS-06: eliminar exitosamente cierra el Visor ─────────────────────
+    LaunchedEffect(uiState.documentDeleted) {
+        if (uiState.documentDeleted) onBack()
+    }
+
+    // ── RF-VIS-06: aviso transitorio si no se pudo eliminar ──────────────────
+    LaunchedEffect(uiState.deleteError) {
+        uiState.deleteError?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+            viewModel.dismissDeleteError()
+        }
+    }
+
+    // ── RF-VIS-06: diálogos de renombrar/eliminar ────────────────────────────
+    if (uiState.showRenameDialog) {
+        ViewerRenameDialog(
+            currentName = uiState.document?.name ?: "",
+            onConfirm   = { newName -> viewModel.renameDocument(newName) },
+            onDismiss   = { viewModel.dismissRenameDialog() }
+        )
+    }
+    if (uiState.showDeleteConfirm) {
+        ViewerDeleteConfirmDialog(
+            fileName  = uiState.document?.name ?: "",
+            onConfirm = { viewModel.confirmDelete() },
+            onDismiss = { viewModel.dismissDeleteConfirm() }
+        )
     }
 
     // ── Dialog de contraseña PDF ──────────────────────────────────────────────
@@ -230,6 +261,8 @@ fun ViewerScreen(
                         if (!showSearch) searchQuery = ""
                     }
                 },
+                onRenameClick   = { viewModel.onRenameClick() },
+                onDeleteClick   = { viewModel.onDeleteClick() },
                 modifier        = Modifier.align(Alignment.TopCenter)
             )
 

@@ -11,6 +11,7 @@ import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
@@ -46,14 +47,20 @@ data class ViewerUiState(
     val passwordError    : String? = null,
     val decryptedFile    : File?   = null,
     val pdfSearchMatches : List<Int> = emptyList(), // páginas (1-based) con coincidencias
-    val pdfSearchIndex   : Int     = -1             // índice actual dentro de pdfSearchMatches
+    val pdfSearchIndex   : Int     = -1,            // índice actual dentro de pdfSearchMatches
+    // ── RF-VIS-06: renombrar/eliminar desde el Visor ──────────────────────
+    val showRenameDialog : Boolean = false,
+    val showDeleteConfirm: Boolean = false,
+    val deleteError      : String? = null,
+    val documentDeleted  : Boolean = false
 )
 
 @HiltViewModel
 class ViewerViewModel @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
     private val searchPdfText: SearchPdfTextUseCase,
-    private val documentHistoryDao: DocumentHistoryDao
+    private val documentHistoryDao: DocumentHistoryDao,
+    private val documentRepository: DocumentRepository
 ) : ViewModel() {
 
     companion object {
@@ -569,6 +576,64 @@ class ViewerViewModel @Inject constructor(
 
     fun toggleControls() {
         _uiState.update { it.copy(showControls = !it.showControls) }
+    }
+
+    // ── RF-VIS-06: renombrar/eliminar desde el Visor ──────────────────────────
+    fun onRenameClick() {
+        _uiState.update { it.copy(showRenameDialog = true) }
+    }
+
+    fun dismissRenameDialog() {
+        _uiState.update { it.copy(showRenameDialog = false) }
+    }
+
+    fun renameDocument(newName: String) {
+        val document = _uiState.value.document ?: return
+        val trimmed  = newName.trim()
+        if (trimmed.isBlank() || trimmed == document.name) {
+            _uiState.update { it.copy(showRenameDialog = false) }
+            return
+        }
+        viewModelScope.launch {
+            val newId  = documentRepository.renameDocument(document.id, trimmed)
+            val newUri = if (newId != document.id) Uri.fromFile(File(newId)) else _uiState.value.fileUri
+            _uiState.update { state ->
+                state.copy(
+                    showRenameDialog = false,
+                    document         = state.document?.copy(id = newId, name = trimmed),
+                    fileUri          = newUri
+                )
+            }
+            Timber.d("$TAG: renameDocument ${document.id} → $newId ($trimmed)")
+        }
+    }
+
+    fun onDeleteClick() {
+        _uiState.update { it.copy(showDeleteConfirm = true) }
+    }
+
+    fun dismissDeleteConfirm() {
+        _uiState.update { it.copy(showDeleteConfirm = false) }
+    }
+
+    fun dismissDeleteError() {
+        _uiState.update { it.copy(deleteError = null) }
+    }
+
+    fun confirmDelete() {
+        val documentId = _uiState.value.document?.id ?: return
+        viewModelScope.launch {
+            val deleted = documentRepository.deleteDocument(documentId)
+            if (deleted) {
+                favoritesRepository.removeAlias(documentId)
+                _uiState.update { it.copy(showDeleteConfirm = false, documentDeleted = true) }
+            } else {
+                _uiState.update {
+                    it.copy(showDeleteConfirm = false, deleteError = "No se pudo eliminar el archivo")
+                }
+            }
+            Timber.d("$TAG: confirmDelete $documentId → $deleted")
+        }
     }
 
     // ── Búsqueda dentro de PDF ─────────────────────────────────────────────────

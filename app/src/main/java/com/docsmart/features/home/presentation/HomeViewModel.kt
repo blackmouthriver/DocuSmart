@@ -95,20 +95,7 @@ class HomeViewModel @Inject constructor(
 
     fun renameDocument(documentId: String, newName: String) {
         viewModelScope.launch {
-            try {
-                val isAppFile = !documentId.startsWith("content://")
-                if (isAppFile) {
-                    val file    = java.io.File(documentId)
-                    val newFile = java.io.File(file.parent, newName)
-                    if (!file.renameTo(newFile)) {
-                        favoritesRepository.saveAlias(documentId, newName)
-                    }
-                } else {
-                    favoritesRepository.saveAlias(documentId, newName)
-                }
-            } catch (e: Exception) {
-                favoritesRepository.saveAlias(documentId, newName)
-            }
+            repository.renameDocument(documentId, newName)
             // Actualiza UI en memoria
             _uiState.update { state ->
                 state.copy(

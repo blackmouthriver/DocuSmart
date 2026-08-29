@@ -153,25 +153,10 @@ class LibraryViewModel @Inject constructor(
 
     fun renameDocument(documentId: String, newName: String) {
         viewModelScope.launch {
-            try {
-                val isAppFile = !documentId.startsWith("content://")
-                if (isAppFile) {
-                    val file    = java.io.File(documentId)
-                    val newFile = java.io.File(file.parent, newName)
-                    if (file.renameTo(newFile)) {
-                        favoritesRepository.removeAlias(documentId)
-                        loadDocuments()
-                    } else {
-                        favoritesRepository.saveAlias(documentId, newName)
-                        updateNameInState(documentId, newName)
-                    }
-                } else {
-                    favoritesRepository.saveAlias(documentId, newName)
-                    updateNameInState(documentId, newName)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Error renombrando documento")
-                favoritesRepository.saveAlias(documentId, newName)
+            val newId = repository.renameDocument(documentId, newName)
+            if (newId != documentId) {
+                loadDocuments()
+            } else {
                 updateNameInState(documentId, newName)
             }
         }

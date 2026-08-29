@@ -125,6 +125,14 @@
     <string name="viewer_rendering">Renderizando documento…</string>
     <string name="viewer_unsupported">Este formato no es compatible con el visor integrado.</string>
     <string name="viewer_open_other">Abrir con otra aplicación</string>
+    <string name="viewer_more_options">Más opciones</string>
+    <string name="viewer_rename">Renombrar</string>
+    <string name="viewer_delete">Eliminar</string>
+    <string name="viewer_rename_title">Renombrar documento</string>
+    <string name="viewer_rename_label">Nombre del archivo</string>
+    <string name="viewer_rename_empty_error">El nombre no puede estar vacío</string>
+    <string name="viewer_delete_confirm_title">¿Eliminar este documento?</string>
+    <string name="viewer_delete_confirm_body">"%1$s se eliminará de forma permanente. Esta acción no se puede deshacer."</string>
 
     <!-- ── General ────────────────────────────────── -->
     <string name="general_save">Guardar</string>
