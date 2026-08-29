@@ -4,19 +4,41 @@ import android.content.Context
 import android.net.Uri
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
-import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
+import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
+import com.itextpdf.kernel.pdf.canvas.parser.listener.RegexBasedLocationExtractionStrategy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.util.regex.Pattern
 import javax.inject.Inject
 
+/** Posición real (puntos PDF, origen inferior-izquierda) de una coincidencia. */
+data class PdfMatchRect(
+    val xPts     : Float,
+    val yPts     : Float,
+    val widthPts : Float,
+    val heightPts: Float
+)
+
+/** Página (1-based) y todas las coincidencias reales encontradas en ella. */
+data class PdfPageMatches(
+    val pageNumber: Int,
+    val rects     : List<PdfMatchRect>
+)
+
 /**
- * Busca texto dentro de un PDF y devuelve los números de página (1-based)
- * donde aparece. El visor muestra los PDF como bitmaps renderizados
- * (`android.graphics.pdf.PdfRenderer`), así que no hay resaltado inline como
- * en Word/Excel/Texto — solo salto a la página con coincidencias.
+ * RF-VIS-08: busca texto dentro de un PDF y devuelve, por página, la
+ * posición real (no solo el número de página) de cada coincidencia --
+ * mismo mecanismo que `EditTextPdfUseCase.findMatches()` en Herramientas
+ * PDF (`RegexBasedLocationExtractionStrategy`, parte de iText7-core). Esta
+ * clase originalmente solo devolvía números de página (documentado como
+ * "no hay resaltado inline posible sin reescribir el renderer" en
+ * RNF-VIS-01) -- esa nota quedó desactualizada en cuanto el proyecto
+ * construyó este mismo mecanismo de posición real para RF-PDF-10/RF-PDF-15.
+ * `PdfViewerContent` usa estas coordenadas para dibujar el resaltado
+ * directamente sobre el bitmap ya renderizado, sin tocar el renderer.
  */
 class SearchPdfTextUseCase @Inject constructor(
     @ApplicationContext private val context: Context
@@ -26,18 +48,16 @@ class SearchPdfTextUseCase @Inject constructor(
     }
 
     // Contraseña incorrecta o datos corruptos deben verse igual para quien llama:
-    // cualquier fallo al abrir/leer una página se trata como "sin coincidencia"
-    // en esa página, no como error fatal de toda la búsqueda.
+    // cualquier fallo al abrir/leer el PDF se trata como "sin coincidencias",
+    // no como error fatal de toda la búsqueda.
     @Suppress("TooGenericExceptionCaught")
-    suspend operator fun invoke(uri: Uri, query: String): List<Int> = withContext(Dispatchers.IO) {
+    suspend operator fun invoke(uri: Uri, query: String): List<PdfPageMatches> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
 
         val cacheFile = copyToCache(uri) ?: return@withContext emptyList()
         try {
             val pdf = PdfDocument(PdfReader(cacheFile))
-            val matches = (1..pdf.numberOfPages).filter { pageNumber ->
-                textOfPage(pdf, pageNumber).contains(query, ignoreCase = true)
-            }
+            val matches = findMatches(pdf, query)
             pdf.close()
             matches
         } catch (e: Exception) {
@@ -49,11 +69,23 @@ class SearchPdfTextUseCase @Inject constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun textOfPage(pdf: PdfDocument, pageNumber: Int): String = try {
-        PdfTextExtractor.getTextFromPage(pdf.getPage(pageNumber))
-    } catch (e: Exception) {
-        Timber.w("$TAG: no se pudo extraer texto de la página $pageNumber — ${e.message}")
-        ""
+    private fun findMatches(pdf: PdfDocument, query: String): List<PdfPageMatches> {
+        val regex = "(?i)" + Pattern.quote(query)
+        val matches = mutableListOf<PdfPageMatches>()
+        for (pageNumber in 1..pdf.numberOfPages) {
+            try {
+                val strategy = RegexBasedLocationExtractionStrategy(regex)
+                PdfCanvasProcessor(strategy).processPageContent(pdf.getPage(pageNumber))
+                val rects = strategy.resultantLocations.map { location ->
+                    val r = location.rectangle
+                    PdfMatchRect(r.x, r.y, r.width, r.height)
+                }
+                if (rects.isNotEmpty()) matches.add(PdfPageMatches(pageNumber, rects))
+            } catch (e: Exception) {
+                Timber.w("$TAG: no se pudo buscar en la página $pageNumber — ${e.message}")
+            }
+        }
+        return matches
     }
 
     @Suppress("TooGenericExceptionCaught")

@@ -23,6 +23,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size as ComposeSize
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -36,6 +40,7 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
 import com.docsmart.features.viewer.presentation.components.ViewerDeleteConfirmDialog
 import com.docsmart.features.viewer.presentation.components.ViewerRenameDialog
@@ -169,6 +174,7 @@ fun ViewerScreen(
                                 targetPage    = uiState.pdfSearchMatches
                                     .getOrNull(uiState.pdfSearchIndex)
                                     ?.minus(1),
+                                highlights    = uiState.pdfSearchHighlights,
                                 onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
                                 onTap         = { viewModel.toggleControls() }
                             )
@@ -464,8 +470,13 @@ private fun PdfSearchResultBar(
     }
 }
 
+/** Página renderizada + su tamaño real en puntos PDF (RF-VIS-08: necesario
+ *  para convertir la posición de una coincidencia de búsqueda a píxeles de
+ *  pantalla y dibujar el resaltado sobre el bitmap ya renderizado). */
+private data class PdfPageBitmap(val bitmap: Bitmap, val pageWidthPts: Float, val pageHeightPts: Float)
+
 /** Copia el PDF de [uri] al caché de la app y renderiza cada página a un [Bitmap]. */
-private fun renderPdfPagesToBitmaps(uri: Uri, context: android.content.Context): List<Bitmap> {
+private fun renderPdfPagesToBitmaps(uri: Uri, context: android.content.Context): List<PdfPageBitmap> {
     val cacheFile = File(context.cacheDir, "preview_${System.currentTimeMillis()}.pdf")
     if (!copyPdfUriToCache(uri, context, cacheFile)) {
         Timber.e("PdfViewer: no se pudo copiar el PDF al caché")
@@ -501,10 +512,10 @@ private fun copyContentUriToCache(uri: Uri, context: android.content.Context, ca
     false
 }
 
-private fun renderCachedPdfPages(cacheFile: File): List<Bitmap> {
+private fun renderCachedPdfPages(cacheFile: File): List<PdfPageBitmap> {
     val fileDescriptor = ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY)
     val pdfRenderer = PdfRenderer(fileDescriptor)
-    val bitmaps     = mutableListOf<Bitmap>()
+    val pages       = mutableListOf<PdfPageBitmap>()
 
     for (i in 0 until pdfRenderer.pageCount) {
         val page   = pdfRenderer.openPage(i)
@@ -513,25 +524,30 @@ private fun renderCachedPdfPages(cacheFile: File): List<Bitmap> {
         )
         bitmap.eraseColor(android.graphics.Color.WHITE)
         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+        pages.add(PdfPageBitmap(bitmap, page.width.toFloat(), page.height.toFloat()))
         page.close()
-        bitmaps.add(bitmap)
     }
 
     pdfRenderer.close()
     fileDescriptor.close()
-    return bitmaps
+    return pages
 }
+
+// RF-VIS-08: color del resaltado de búsqueda -- amarillo semitransparente,
+// mismo tono que usan la mayoría de lectores/navegadores para esto.
+private val PdfHighlightColor = Color(0xFFFFEB3B).copy(alpha = 0.4f)
 
 // ── Visor de PDF ──────────────────────────────────────────────────────────────
 @Composable
 private fun PdfViewerContent(
     uri          : Uri?,
     targetPage   : Int?,
+    highlights   : Map<Int, List<PdfMatchRect>>,
     onPageChanged: (Int, Int) -> Unit,
     onTap        : () -> Unit
 ) {
     val context   = LocalContext.current
-    var pages     by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
+    var pages     by remember { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
     var loadError by remember { mutableStateOf(false) }
     var scale     by remember { mutableFloatStateOf(1f) }
     var offsetX   by remember { mutableFloatStateOf(0f) }
@@ -605,19 +621,40 @@ private fun PdfViewerContent(
         contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        itemsIndexed(pages) { index, bitmap ->
+        itemsIndexed(pages) { index, pageBitmap ->
             LaunchedEffect(index, pages.size) {
                 onPageChanged(index, pages.size)
             }
+            val pageHighlights = highlights[index + 1]
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = MaterialTheme.shapes.small,
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Image(
-                    bitmap             = bitmap.asImageBitmap(),
+                    bitmap             = pageBitmap.bitmap.asImageBitmap(),
                     contentDescription = "Página ${index + 1}",
-                    modifier           = Modifier.fillMaxWidth()
+                    modifier           = Modifier
+                        .fillMaxWidth()
+                        .drawWithContent {
+                            drawContent()
+                            // RF-VIS-08: resaltado inline -- convierte cada
+                            // coincidencia de puntos PDF (origen abajo-izquierda)
+                            // a píxeles de pantalla (origen arriba-izquierda),
+                            // inverso exacto de mapOcrBoxToPdf en OcrPdfUseCase.
+                            if (!pageHighlights.isNullOrEmpty()) {
+                                val displayScale = size.width / pageBitmap.pageWidthPts
+                                pageHighlights.forEach { r ->
+                                    val screenX = r.xPts * displayScale
+                                    val screenY = (pageBitmap.pageHeightPts - (r.yPts + r.heightPts)) * displayScale
+                                    drawRect(
+                                        color   = PdfHighlightColor,
+                                        topLeft = Offset(screenX, screenY),
+                                        size    = ComposeSize(r.widthPts * displayScale, r.heightPts * displayScale)
+                                    )
+                                }
+                            }
+                        }
                 )
             }
         }

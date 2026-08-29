@@ -27,6 +27,11 @@ import java.nio.file.Files
  * recibía ningún `searchQuery` — no hacía nada. Este use case reemplaza ese
  * hueco extrayendo texto por página con iText7 y devolviendo las páginas con
  * coincidencias.
+ *
+ * RF-VIS-08 (2026-08-29): además de la página, ahora se verifica que cada
+ * coincidencia trae una posición real (`PdfMatchRect` con ancho/alto > 0) --
+ * la prueba de que no es cosmético, mismo criterio ya usado para RF-PDF-10
+ * (verificar con `PdfTextExtractor` que el reemplazo es real).
  */
 class SearchPdfTextUseCaseTest {
 
@@ -53,7 +58,18 @@ class SearchPdfTextUseCaseTest {
 
         val matches = useCase(contentUri(), "pago")
 
-        assertEquals(listOf(2), matches)
+        assertEquals(listOf(2), matches.map { it.pageNumber })
+    }
+
+    @Test
+    fun `cada coincidencia trae una posicion real, no solo el numero de pagina`() = runTest {
+        stubResolver(createTestPdf(listOf("Cláusula de pago mensual")))
+
+        val matches = useCase(contentUri(), "pago")
+
+        val rect = matches.single().rects.single()
+        assertTrue(rect.widthPts > 0f, "el ancho real de la coincidencia debe ser mayor a 0")
+        assertTrue(rect.heightPts > 0f, "el alto real de la coincidencia debe ser mayor a 0")
     }
 
     @Test
@@ -62,7 +78,7 @@ class SearchPdfTextUseCaseTest {
 
         val matches = useCase(contentUri(), "confidencial")
 
-        assertEquals(listOf(1), matches)
+        assertEquals(listOf(1), matches.map { it.pageNumber })
     }
 
     @Test
@@ -71,7 +87,16 @@ class SearchPdfTextUseCaseTest {
 
         val matches = useCase(contentUri(), "factura")
 
-        assertEquals(listOf(1, 3), matches)
+        assertEquals(listOf(1, 3), matches.map { it.pageNumber })
+    }
+
+    @Test
+    fun `varias coincidencias en la misma pagina se devuelven todas`() = runTest {
+        stubResolver(createTestPdf(listOf("gato perro gato pajaro gato")))
+
+        val matches = useCase(contentUri(), "gato")
+
+        assertEquals(3, matches.single().rects.size)
     }
 
     @Test

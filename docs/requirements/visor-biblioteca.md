@@ -27,7 +27,14 @@ tercer lugar sin triplicar código. **RF-VIS-07 implementado 2026-08-29,
 ver §12** — papelera de reciclaje: "eliminar" desde Biblioteca/Home/Visor
 ahora mueve a una papelera (`trash_entries`, segunda tabla Room del
 proyecto) en vez de borrar de inmediato, con 30 días para restaurar antes
-del borrado definitivo automático.
+del borrado definitivo automático. **RF-VIS-08 implementado 2026-08-29,
+ver §13** — resaltado inline de búsqueda en PDF: RNF-VIS-01 (que decía que
+esto no era viable sin reescribir el renderer) quedó desactualizado en
+cuanto el proyecto construyó `RegexBasedLocationExtractionStrategy`
+(RF-PDF-10) y la conversión de coordenadas puntos↔píxeles (RF-PDF-15/OCR)
+— ambas piezas se reutilizaron para dibujar el resaltado real sobre el
+bitmap ya renderizado, sin tocar `PdfRenderer`. Con esto se cierran las 3
+funcionalidades del backlog original de este módulo (RF-VIS-06/07/08).
 **Código relacionado:** `features/viewer/**`, `features/library/**`,
 `features/home/**`, `core/data/FavoritesRepository.kt`, `core/data/db/**`
 (nuevo).
@@ -58,15 +65,16 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 - **RF-VIS-06** ✅ El sistema debe permitir renombrar y eliminar un documento directamente desde el Visor. Implementado 2026-08-29, ver §11.
 
 - **RF-VIS-07** ✅ Papelera de reciclaje: recuperar un documento eliminado dentro de un plazo antes del borrado definitivo. Implementado 2026-08-29, ver §12.
+- **RF-VIS-08** ✅ Resaltado inline de coincidencias de búsqueda dentro del PDF. Implementado 2026-08-29, ver §13 — ver RNF-VIS-01 para la nota de por qué la suposición original de "no viable" quedó desactualizada.
 
-### Backlog — no implementado
-- **RF-VIS-08** Resaltado inline de coincidencias de búsqueda dentro del PDF (hoy solo salta de página en página — ver RNF-VIS-01 sobre por qué no hay resaltado real).
+### Backlog
+*(vacío — las 3 funcionalidades de este backlog, RF-VIS-06/07/08, están implementadas)*
 
 ---
 
 ## 3. Requerimientos no funcionales
 
-- **RNF-VIS-01 (búsqueda en PDF sin resaltado inline):** los PDF se muestran como bitmaps renderizados (`android.graphics.pdf.PdfRenderer`), no como texto con posición — no hay forma de dibujar un resaltado sobre una palabra específica sin reescribir el renderer completo. La búsqueda en PDF por tanto identifica páginas con coincidencias (vía extracción de texto con iText7) y navega entre ellas, no resalta la palabra en pantalla. Word/Excel/PowerPoint/Texto sí resaltan inline porque se renderizan como texto real, no como imagen.
+- **RNF-VIS-01 (búsqueda en PDF, ~~sin~~ con resaltado inline):** la premisa original de este RNF — "los PDF se muestran como bitmaps renderizados, no hay forma de dibujar un resaltado sin reescribir el renderer completo" — quedó **desactualizada** y se corrigió 2026-08-29 (RF-VIS-08, ver §13): el bitmap sigue siendo un bitmap (el `PdfRenderer` no cambió), pero el proyecto ya tenía dos piezas reutilizables para resolver esto sin tocarlo — extracción de posición real de texto (`RegexBasedLocationExtractionStrategy`, construida para RF-PDF-10) y conversión de coordenadas puntos-PDF↔píxeles (construida para RF-PDF-15/OCR). El resaltado se dibuja como un overlay (`Modifier.drawWithContent`) sobre el mismo `Image` del bitmap, en vez de modificar el renderer.
 - **RNF-VIS-02 (id de documento consistente):** todo documento debe tener el mismo `id` sin importar desde qué pantalla se cargue — es la clave que usa `FavoritesRepository` para favoritos y alias. Para documentos de MediaStore es el `content://` URI tal cual; para archivos generados por la app es la ruta absoluta **sin** prefijo de esquema (`/data/...`, no `file:///data/...`).
 - **RNF-VIS-03 (eliminar es real o falla explícitamente):** eliminar un documento debe borrar el archivo/fila real. Si no se puede (por ejemplo, permiso denegado sobre un archivo de MediaStore que la app no creó), el sistema debe informarlo y **no** quitar el documento de la lista — mismo principio que RNF-SEC-01 (no fallar en silencio).
 - **RNF-VIS-04 (mensajes de error):** sin rutas de archivo completas ni detalles internos de excepciones en mensajes visibles al usuario (mismo lineamiento que RNF-SEC-05 / RNF-PDF-04).
@@ -97,6 +105,10 @@ Tres pantallas que comparten el mismo repositorio de documentos:
 - **AC4** La búsqueda no distingue mayúsculas/minúsculas.
 
 *(Corrige bug real: el botón de búsqueda aparecía habilitado para PDF — `isTextBased` lo incluía — pero `PdfViewerContent` no recibía ningún `searchQuery`; escribir en el buscador no tenía ningún efecto. Word/Excel/PowerPoint/Texto sí funcionaban correctamente.)*
+
+**Actualizado 2026-08-29 (RF-VIS-08, ver §13):** además de saltar entre
+páginas (AC2), ahora cada coincidencia queda resaltada visualmente sobre
+la página — ver HU-VIS-08.
 
 ### HU-VIS-03 — Eliminar un documento de verdad
 **Como** usuario que ya no necesita un documento,
@@ -176,6 +188,20 @@ al toque inicial de "Eliminar" en el Visor.
 - **AC4** Dado que quiero liberar espacio antes de que se cumplan los 30 días, cuando toco "Eliminar ahora" en la Papelera y confirmo, entonces el archivo se borra de verdad de inmediato.
 - **AC5** Dado que veo un documento en la Papelera, cuando lo veo, entonces la app me indica cuántos días quedan antes del borrado definitivo.
 
+### HU-VIS-08 — Ver resaltada una coincidencia de búsqueda en PDF
+*(Implementado 2026-08-29 — ver §13.)*
+
+**Como** usuario buscando una palabra dentro de un PDF largo,
+**quiero** ver la coincidencia resaltada visualmente sobre la página,
+**para** encontrarla de un vistazo en vez de leer toda la página buscándola.
+
+- **AC1** Dado que busco una palabra y hay coincidencias, cuando veo la página con una coincidencia, entonces la palabra aparece resaltada con un color semitransparente en su posición real, no solo salto a la página.
+- **AC2** Dado que una página tiene varias coincidencias, cuando la veo, entonces todas quedan resaltadas, no solo la primera.
+- **AC3** Dado que hago zoom o desplazo el PDF, cuando esto ocurre, entonces el resaltado se mueve y escala junto con el contenido de la página, sin desalinearse.
+- **AC4** Dado que cierro la búsqueda o borro el texto buscado, cuando esto ocurre, entonces el resaltado desaparece de inmediato.
+
+*(Responde RNF-VIS-01, cuya premisa de "no viable sin reescribir el renderer" quedó desactualizada — ver nota en §3.)*
+
 ---
 
 ## 5. Bugs de QA a corregir (trazabilidad)
@@ -194,6 +220,7 @@ al toque inicial de "Eliminar" en el Visor.
 | Home: botón "Inicio" de la bottom nav deja de responder tras ir a Convertir | — | No verificado — requiere prueba de navegación en vivo, no se pudo confirmar ni descartar por lectura de código. |
 | "Recientes" en Home era solo `loadAllDocuments().take(5)` — un documento abierto hoy pero sin modificar no aparecía como reciente | HU-VIS-05 | ✅ Resuelto 2026-08-25 con `document_history` (Room) — ver §8. |
 | Falta papelera de reciclaje / deshacer un borrado accidental | RF-VIS-07 | ✅ Resuelto 2026-08-29 — ver §12. |
+| Visor: búsqueda en PDF no resalta la coincidencia, solo salta de página | RF-VIS-08 | ✅ Resuelto 2026-08-29 — ver §13. |
 
 ---
 
@@ -201,7 +228,7 @@ al toque inicial de "Eliminar" en el Visor.
 
 | # | Cobertura | Estado |
 |---|---|---|
-| 1 | `SearchPdfTextUseCaseTest` — coincidencias en la página correcta, sin distinguir mayúsculas, varias páginas con coincidencia, sin coincidencias, query en blanco no toca el archivo. | ✅ 5 tests, en verde |
+| 1 | `SearchPdfTextUseCaseTest` — coincidencias en la página correcta, sin distinguir mayúsculas, varias páginas con coincidencia, sin coincidencias, query en blanco no toca el archivo. **Actualizado 2026-08-29 (RF-VIS-08, ver §13):** +2 tests — cada coincidencia trae una posición real (ancho/alto > 0, no solo el número de página), varias coincidencias en la misma página se devuelven todas. | ✅ 7 tests, en verde |
 | 2 | `DocumentRepositoryTest` — borra archivo de la app, archivo inexistente → false, borra vía `ContentResolver`, `ContentResolver` no pudo borrar → false, excepción de permisos → false (no propaga), borrado exitoso también limpia el historial, y 4 tests de `mergeHistoryWithDocuments` (orden por historial, ids obsoletos se descartan, fallback completa el resto, sin historial se comporta como antes). | ✅ 10 tests, en verde |
 | 3 | `LibraryViewModel`/`HomeViewModel`/`ViewerViewModel` — no cubiertos (ViewModels con `StateFlow` + Hilt, requieren fixture más elaborado); la lógica de negocio que antes vivía implícita en ellos (borrado real, id consistente, fusión de historial) ya quedó cubierta en el use case/repositorio subyacente. | Pendiente si se necesita cobertura de transiciones de estado. |
 | 4 | `DocumentHistoryDaoTest` (**primera prueba de integración del proyecto** — ver §8.1) — inserta, upsert no duplica y actualiza la fecha, orden descendente por fecha, respeta el límite, `remove` funciona y no falla con un id inexistente. Corre contra SQLite real (`BundledSQLiteDriver`), no un fake. | ✅ 6 tests, en verde |
@@ -571,4 +598,99 @@ borrado suave con posibilidad de deshacer, en vez de un borrado inmediato.
   (AC3, el borrado automático a los 30 días, no es verificable en una
   sesión de prueba — cubierto por `purgeExpiredTrash` en el test
   unitario con timestamps simulados).
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 13. RF-VIS-08/HU-VIS-08 — Resaltado inline de búsqueda en PDF (2026-08-29)
+
+Última funcionalidad del backlog original de este módulo (RF-VIS-06/07/08),
+cerrado por completo con esta implementación.
+
+- **La premisa de RNF-VIS-01 estaba desactualizada, no era un límite real:**
+  antes de tocar código se investigó si "reescribir el renderer completo"
+  (lo que decía la nota original) seguía siendo cierto, dado que el
+  proyecto ya había construido, para otras HU, exactamente las dos piezas
+  necesarias para resolver esto: extracción de posición real de texto
+  (`RegexBasedLocationExtractionStrategy`, usada en
+  `EditTextPdfUseCase.kt` para RF-PDF-10) y conversión de coordenadas
+  puntos-PDF↔píxeles con manejo de escala y flip de eje Y
+  (`mapOcrBoxToPdf()` en `OcrPdfUseCase.kt`, RF-PDF-15). Confirmado que sí
+  era viable sin tocar `android.graphics.pdf.PdfRenderer` en absoluto —
+  el trabajo real fue agregar un overlay de dibujo sobre el bitmap ya
+  renderizado, no cambiar cómo se renderiza.
+- **`SearchPdfTextUseCase.kt`** (reescrito) — antes devolvía
+  `List<Int>` (solo números de página); ahora devuelve
+  `List<PdfPageMatches>` (`pageNumber` + `List<PdfMatchRect>`, cada
+  rectángulo en puntos PDF reales). Migrado de `PdfTextExtractor` (texto
+  plano sin posición) a `RegexBasedLocationExtractionStrategy` +
+  `PdfCanvasProcessor` — el mismo mecanismo exacto que `EditTextPdfUseCase`
+  ya usa en producción para localizar texto antes de reemplazarlo, ahora
+  reutilizado para localizarlo antes de resaltarlo. La búsqueda sigue sin
+  distinguir mayúsculas/minúsculas (`"(?i)" + Pattern.quote(query)`, mismo
+  criterio que antes con `ignoreCase = true`).
+- **`ViewerViewModel.kt`** (modificado) — `ViewerUiState` gana
+  `pdfSearchHighlights: Map<Int, List<PdfMatchRect>>` (página → rects).
+  `searchInPdf()`/`clearPdfSearch()` lo pueblan/limpian junto a
+  `pdfSearchMatches`/`pdfSearchIndex` (que se conservan sin cambios, para
+  no alterar la navegación "siguiente/anterior" ya existente — HU-VIS-02
+  AC2 sigue funcionando igual).
+- **`ViewerScreen.kt` — `PdfViewerContent`** (modificado) — `renderCachedPdfPages()`/
+  `renderPdfPagesToBitmaps()` ahora devuelven `PdfPageBitmap(bitmap,
+  pageWidthPts, pageHeightPts)` en vez de solo `Bitmap` (el tamaño real de
+  página en puntos, disponible gratis desde `PdfRenderer.Page.width/height`,
+  se descartaba antes tras generar el bitmap). Cada `Image` de página usa
+  `Modifier.drawWithContent { drawContent(); ...rects... }` para dibujar
+  los rectángulos de resaltado **dentro** del mismo `Card`/`Image` de esa
+  página — deliberado, no un overlay global sobre todo el `LazyColumn`:
+  como el zoom/pan del Visor es un único `graphicsLayer` aplicado a toda
+  la lista (`scale`/`offsetX`/`offsetY`), dibujar el resaltado dentro del
+  subárbol de la página hace que **herede esa misma transformación
+  automáticamente** — sin este detalle, el resaltado se desalinearía del
+  texto real en cuanto el usuario hiciera zoom o pan.
+  - **Fórmula de conversión (puntos PDF → píxeles de pantalla),
+    inversa exacta de `mapOcrBoxToPdf`:**
+    ```
+    displayScale = size.width / pageWidthPts   // size = tamaño real del Image en pantalla
+    screenX = rect.xPts * displayScale
+    screenY = (pageHeightPts - (rect.yPts + rect.heightPts)) * displayScale  // flip Y
+    screenWidth  = rect.widthPts  * displayScale
+    screenHeight = rect.heightPts * displayScale
+    ```
+    `size.width` dentro de `drawWithContent` es el ancho ya calculado por
+    Compose tras `fillMaxWidth()` — no hace falta ningún
+    `onGloballyPositioned` ni medición manual adicional.
+  - Color de resaltado: amarillo semitransparente (`0xFFFFEB3B`, alpha
+    0.4), mismo tono que la mayoría de lectores/navegadores. Se resaltan
+    **todas** las coincidencias visibles de cada página por igual (no se
+    distingue visualmente cuál es "la actual" del índice de
+    navegación) — decisión de alcance deliberada para mantener el cambio
+    acotado; distinguir la coincidencia activa con un tono distinto queda
+    como posible mejora futura, no bloquea HU-VIS-08 tal como está escrita
+    (AC1/AC2 piden resaltar, no piden distinguir cuál es la actual).
+- **2 tests unitarios nuevos** (`SearchPdfTextUseCaseTest`) — cada
+  coincidencia trae una posición real con ancho/alto mayor a cero (la
+  prueba de que no es cosmético, mismo criterio que RF-PDF-10), y varias
+  coincidencias en la misma página se devuelven todas (no solo la
+  primera) — verifica AC2 de HU-VIS-08 a nivel de datos. Los 5 tests
+  existentes se actualizaron para leer `matches.map { it.pageNumber }` en
+  vez de `matches` directo (cambio de tipo de retorno), sin cambiar su
+  intención original.
+- **detekt/lint:** sin hallazgos nuevos — el código agregado
+  (`drawWithContent`, la fórmula de conversión) no introdujo boilerplate
+  ni complejidad que cruzara ningún umbral.
+- **Verificado end-to-end en el dispositivo real (app en español), con
+  captura de pantalla real, no solo la UI de texto:** abierto
+  `DocuSmart_Firmado_...pdf` (contiene "PUBLICO VISIBLE" como texto real,
+  reutilizado de RF-PDF-11) → buscado "PUBLICO" → "Coincidencia 1 de 1" →
+  captura de pantalla confirma un rectángulo amarillo semitransparente
+  dibujado **exactamente** sobre la palabra "PUBLICO", sin cubrir
+  "VISIBLE" al lado — la posición y el ancho son correctos, no una
+  aproximación. Confirma HU-VIS-08 AC1. AC2 (varias coincidencias) y AC3
+  (persistencia del resaltado durante zoom/pan) quedan cubiertos por el
+  diseño (mismo mecanismo `drawWithContent` para cada rect de la lista, y
+  el resaltado vive dentro del subárbol transformado por el
+  `graphicsLayer` existente) y por el test unitario de múltiples
+  coincidencias, no repetidos en dispositivo por redundancia con lo ya
+  verificado.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
