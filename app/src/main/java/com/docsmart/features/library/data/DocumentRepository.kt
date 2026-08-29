@@ -115,6 +115,37 @@ class DocumentRepository @Inject constructor(
         }
     }
 
+    /**
+     * RF-VIS-06: renombra un documento -- intenta un rename real del
+     * archivo si es de la app (ruta absoluta); si es un documento de
+     * MediaStore o el rename real falla, guarda un alias en
+     * `FavoritesRepository` (no requiere permiso de escritura sobre el
+     * archivo real, mismo mecanismo que ya usaban Biblioteca/Home antes de
+     * esta extracción). Devuelve el id resultante: la ruta nueva si el
+     * archivo se movió de verdad, o el mismo id si solo se guardó un alias
+     * -- quien llama lo necesita para saber si su propia referencia al
+     * documento quedó obsoleta (el Visor, que tiene un solo documento
+     * abierto, debe seguir apuntando al archivo correcto tras renombrar).
+     */
+    suspend fun renameDocument(documentId: String, newName: String): String = withContext(Dispatchers.IO) {
+        try {
+            if (!documentId.startsWith("content://")) {
+                val file = File(documentId)
+                val newFile = File(file.parent, newName)
+                if (file.renameTo(newFile)) {
+                    favoritesRepository.removeAlias(documentId)
+                    return@withContext newFile.absolutePath
+                }
+            }
+            favoritesRepository.saveAlias(documentId, newName)
+            documentId
+        } catch (e: Exception) {
+            Timber.e(e, "Error renombrando documento: $documentId")
+            favoritesRepository.saveAlias(documentId, newName)
+            documentId
+        }
+    }
+
     private fun loadPdfsFromDownloads(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return documents

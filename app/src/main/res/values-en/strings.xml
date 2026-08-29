@@ -125,6 +125,14 @@
     <string name="viewer_rendering">Rendering document…</string>
     <string name="viewer_unsupported">This format is not supported by the built-in viewer.</string>
     <string name="viewer_open_other">Open with another app</string>
+    <string name="viewer_more_options">More options</string>
+    <string name="viewer_rename">Rename</string>
+    <string name="viewer_delete">Delete</string>
+    <string name="viewer_rename_title">Rename document</string>
+    <string name="viewer_rename_label">File name</string>
+    <string name="viewer_rename_empty_error">Name cannot be empty</string>
+    <string name="viewer_delete_confirm_title">Delete this document?</string>
+    <string name="viewer_delete_confirm_body">"%1$s will be permanently deleted. This action cannot be undone."</string>
 
     <!-- ── General ────────────────────────────────── -->
     <string name="general_save">Save</string>
