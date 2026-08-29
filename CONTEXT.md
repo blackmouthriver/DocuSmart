@@ -5,7 +5,7 @@
 > perder contexto entre sesiones. Fuentes originales: documentos en
 > `C:\Users\HP\Desktop\proyectoDocSmart\` (ver [Fuentes](#fuentes-originales) al final).
 
-**Última actualización:** 2026-08-27 (auditoría completa de avance por HU/RF, ver §2)
+**Última actualización:** 2026-08-29 (auditoría completa de avance por HU/RF, ver §2)
 
 **Specs por módulo (FR/NFR + HU con criterios de aceptación):**
 - [`docs/requirements/security.md`](docs/requirements/security.md) — Carpeta Segura, contraseña PDF, QR protegido (en refinamiento)
@@ -231,40 +231,61 @@ al dictar, pero que persistía del lado de lectura. `StudyScreen.kt` es la
 pasada. 5 tests nuevos.
 Detalle completo en [`docs/requirements/study.md`](docs/requirements/study.md).
 
-### Avance por dimensión (actualizado 2026-08-27, auditoría completa de los 8 docs de requerimientos)
+### Avance por dimensión (actualizado 2026-08-29, auditoría completa de los 8 docs de requerimientos)
 No hay un único "% completado" honesto — depende del eje. Recalculado contando
 cada RF-XXX de los 8 módulos uno por uno (77 RF en total sobre los 7 módulos de
-producto), no una estimación aproximada como la versión anterior (2026-08-24).
+producto), leyendo directamente el estado marcado en cada doc de requisitos
+(no la tabla anterior) para evitar arrastrar información desactualizada.
 
 | Dimensión | Avance | Nota |
 |---|---|---|
-| Infraestructura y calidad base | ~94% | build estable, CI con emulador real corriendo los 3 flujos de Compose UI Testing (8 intentos para dejarlo estable, ver `deployment.md` §3), i18n completo, RF-SEC-08 (lifecycle) y UMP (consentimiento) implementados |
-| Funcionalidad core (77 RF catalogados en los 7 módulos de producto) | ~70% (54/77) | Seguridad 14/15, Ajustes+Premium 11/12, Escáner 5/7, Visor+Biblioteca 6/9, Conversión 6/9, Estudio 7/10, Herramientas PDF 5/15 (el módulo con más backlog: numeración, marca de agua, reordenar, firma, formularios, comparar, censurar, OCR — todas features avanzadas, no bugs) |
-| Documentación formal (HU con criterios de aceptación) | ~90% | 8 de 8 módulos con specs propias (los 7 de producto + deployment); todas con tabla de bugs de QA trazada como corregido/obsoleto/backlog |
-| Pruebas automatizadas | ~26% | 117 tests (era 77 el 2026-08-24): primera prueba de integración real (Room/SQLite), primeros 3 flujos de Compose UI Testing contra dispositivo real y CI con emulador, primer test de ViewModel (`SecurityViewModelTest`, 22 tests) — crecimiento más cualitativo (tipos de prueba nuevos) que solo cuantitativo |
-| Listo para publicar en Play Store | ~80% | Todo lo que dependía de código ya está: firma de release + CI de build firmado, política de privacidad + formulario de seguridad de datos, Play Billing real conectado, UMP (consentimiento de anuncios) verificado de punta a punta en dispositivo real. Lo que falta ya no es ingeniería: la primera subida manual a Play Console (obligatoria, no automatizable, tuya), el AdMob App ID real (tuyo, ver instrucciones más abajo), y ajustar `versionCode`/`versionName` (hoy `1`/`1.0.0`, placeholder) antes de subir |
+| Infraestructura y calidad base | ~94% | build estable, CI con emulador real corriendo los 3 flujos de Compose UI Testing, i18n completo, RF-SEC-08 (lifecycle) y UMP (consentimiento) implementados — sin cambios desde el 2026-08-27, no se tocó infraestructura en este período |
+| Funcionalidad core (77 RF catalogados en los 7 módulos de producto) | ~92% (71/77) | Seguridad 15/15 (RF-SEC-09 cerrado), Ajustes+Premium 11/12, Escáner 5/7, Visor+Biblioteca 9/9 (RF-VIS-06/07/08 cerrados), Conversión 9/9 (RF-CONV-07/08/09 cerrados), Estudio 7/10, Herramientas PDF 15/15 (RF-PDF-06 a 15 cerrados) — **con esto, Herramientas PDF, Visor+Biblioteca y Conversión quedan con backlog de RF en cero**; lo que queda pendiente en todo el proyecto son 6 RF repartidos en 3 módulos (Ajustes+Premium: personalización de tema; Escáner: brillo/contraste y reescalado, ambos bloqueados por limitaciones de ML Kit Document Scanner; Estudio: exportar notas, estadísticas, Pomodoro en segundo plano) |
+| Documentación formal (HU con criterios de aceptación) | ~95% | 8 de 8 módulos con specs propias (los 7 de producto + deployment); todas con tabla de bugs de QA trazada como corregido/obsoleto/backlog; los 3 módulos recién cerrados (PDF, Visor+Biblioteca, Conversión) tienen sus HU con AC y verificación en dispositivo documentadas |
+| Pruebas automatizadas | creciendo (228 tests, era 117 el 2026-08-27) | +111 tests en este período: cobertura nueva de `WordFormatDetectionTest`/soporte `.doc` legado (fixture real generado con Word vía COM), `ConverterViewModelBatchTest` (primer test de ViewModel del módulo Conversión), `PdfToTextUseCaseTest`/`PdfToWordUseCaseTest` (use cases que no tenían ningún test — encontraron 2 bugs reales preexistentes, ver abajo), y la suite completa de Herramientas PDF (firma, formularios, OCR, numeración, marca de agua, reordenar, comparar, censurar, recortar, editar texto) |
+| Listo para publicar en Play Store | ~80% | Sin cambios desde el 2026-08-27 — todo lo que dependía de código ya está (firma de release, Play Billing real, UMP verificado); lo que falta sigue siendo la subida manual a Play Console, el AdMob App ID real, y ajustar `versionCode`/`versionName` antes de subir |
 
-**Estimado global "producto listo para producción": ~48-52%** (era ~35-40% el
-2026-08-24). La brecha ya no es tanto "bugs en funciones centrales" (la mayoría
-de los módulos base están sólidos y probados) sino: (a) features avanzadas de
-las HU sin empezar — sobre todo en Herramientas PDF — y (b) los 3 pasos que
-solo tú puedes dar para publicar (subida a Play Console, AdMob real, respaldo
-del keystore).
+**Estimado global "producto listo para producción": ~65-70%** (era ~48-52% el
+2026-08-27). El salto se explica casi enteramente por cerrar el backlog de RF
+de 3 de los 7 módulos de producto (Herramientas PDF, Visor+Biblioteca,
+Conversión) — el módulo con más deuda funcional (Herramientas PDF, 5/15) pasó
+a estar completo. Lo que queda ya no es "features grandes sin empezar" sino
+gaps puntuales en 3 módulos (Ajustes/Escáner/Estudio, 6 RF en total) más los 3
+pasos manuales de publicación que solo el dueño del proyecto puede dar (subida
+a Play Console, AdMob real, respaldo del keystore) — sin cambios ahí desde
+2026-08-27.
+
+**Dos bugs reales preexistentes encontrados y corregidos al escribir tests
+para use cases que nunca tuvieron cobertura (no relacionados con las
+features nuevas que los expusieron):**
+- `PdfToTextUseCase` cerraba el `PdfDocument` de iText7 y **después** volvía a
+  leer `numberOfPages` para construir el resultado — iText7 invalida el
+  documento al cerrarlo, así que la conversión **PDF → Texto fallaba
+  siempre**, en el 100% de los casos, no solo en el escenario que lo expuso
+  (conversión por lotes). Corregido en RF-CONV-08, ver `conversion.md` HU-CONV-06.
+- El mensaje de error "PDF sin texto extraíble" de ese mismo use case nunca
+  se dispara en la práctica (agrega un encabezado a cada página antes de
+  comprobar si el texto está en blanco) — encontrado al mismo tiempo,
+  reportado por separado (fuera de alcance de la HU que lo encontró).
 
 ### Mejoras y funcionalidades candidatas a agregar a las HU
 Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 
 - **Seguridad:** cambiar PIN sin borrar archivos (hoy solo "restablecer" destructivo),
   backup/exportación cifrada de la carpeta segura, registro de último acceso.
-- **Herramientas PDF:** dividir/comprimir/rotar ya verificados y corregidos
-  (ver módulo arriba); pendiente agregar numeración de páginas y marca de agua
-  (rápidas, alto valor) antes que firma digital u OCR avanzado (más costosas);
-  comparar/censurar PDF como diferencial (backlog en `pdf-tools.md`).
-- **Conversión:** PDF → Word editable (killer feature premium), conversión por
-  lotes, conversión en segundo plano para archivos grandes.
-- **Visor/Biblioteca:** ya refinado (ver módulo abajo) — pendiente: renombrar/
-  eliminar desde el Visor (RF-VIS-06), resaltado inline de búsqueda en PDF
-  (RF-VIS-08), papelera de reciclaje (RF-VIS-07) (backlog en `visor-biblioteca.md`).
+- **Herramientas PDF:** ✅ backlog de RF cerrado por completo 2026-08-29 (numeración,
+  marca de agua, reordenar, comparar, censurar, recortar, editar texto, firma
+  manuscrita, formularios, OCR avanzado — ver `pdf-tools.md`). Sin candidatas
+  nuevas identificadas todavía.
+- **Conversión:** ✅ backlog de RF cerrado por completo 2026-08-29 (`.doc` legado,
+  conversión por lotes, PDF → Word con negrita/cursiva/tamaño reales — ver
+  `conversion.md`). Candidata nueva, sin refinar: conversión en segundo plano
+  para archivos grandes (no estaba en el backlog original de RF, es una mejora
+  de UX sobre lo ya implementado).
+- **Visor/Biblioteca:** ✅ backlog de RF cerrado por completo 2026-08-29
+  (renombrar/eliminar desde el Visor, papelera de reciclaje, resaltado inline
+  de búsqueda en PDF — ver `visor-biblioteca.md`). Sin candidatas nuevas
+  identificadas todavía.
 - **Estudio:** exportar notas, estadísticas de estudio (tiempo leído, pomodoros/semana).
 - **Premium:** ~~conectar Play Billing real~~ ✅ 2026-08-25 (ver más abajo); límite diario no-premium ya estaba conectado (RF-PREM-02); pendiente: programa de referidos.
 - **Transversal:** estandarizar banner azul en todas las vistas (pedido repetido
@@ -278,11 +299,11 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
 | # | Requerimiento | Estado conocido |
 |---|---|---|
 | 1 | Visor universal: Word/Excel/PDF/img/texto, desde dispositivo, link, QR, correo, WhatsApp | Visor de PDF/imagen funciona bien; Word/Excel/PPT con inconvenientes por confirmar (no se tocó en esta pasada). Refinado con HU en [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) |
-| 2 | Conversión: imágenes↔pdf/jpg/png/webp/bmp; pdf↔img/texto/word/html; word↔pdf/texto/html; ppt→pdf/texto | Las 17 combinaciones ya estaban declaradas y visibles — el problema real era enrutamiento incorrecto (3 opciones daban el formato equivocado) y un bug de dependencias que rompía Word→PDF/Excel→PDF en silencio. Corregido y refinado con HU (ver [`docs/requirements/conversion.md`](docs/requirements/conversion.md)) |
-| 3 | Herramientas PDF: unir, dividir, comprimir, rotar, editar, firmar, marca de agua, numeración, detector de formularios, recortar, ordenar, proteger con contraseña, OCR avanzado | Unir/dividir/comprimir/rotar/proteger implementados y refinados con HU (ver [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md)) — bug de arquitectura en Unir/Rotar corregido hoy (rasterizaban a imagen), "dividir no funciona" confirmado obsoleto con tests. Editar, firmar, marca de agua, numeración, formularios, recortar, ordenar, comparar, censurar, OCR avanzado: **backlog documentado, no implementado** |
+| 2 | Conversión: imágenes↔pdf/jpg/png/webp/bmp; pdf↔img/texto/word/html; word↔pdf/texto/html; ppt→pdf/texto | Las 17 combinaciones funcionan, incluyendo `.doc` legado además de `.docx` (RF-CONV-07), conversión por lotes (RF-CONV-08) y PDF→Word con negrita/cursiva/tamaño de fuente reales en vez de texto plano (RF-CONV-09) — backlog de RF cerrado por completo 2026-08-29. Ver [`docs/requirements/conversion.md`](docs/requirements/conversion.md) |
+| 3 | Herramientas PDF: unir, dividir, comprimir, rotar, editar, firmar, marca de agua, numeración, detector de formularios, recortar, ordenar, proteger con contraseña, OCR avanzado | **Las 15 RF de este módulo están implementadas** (backlog cerrado 2026-08-29) — unir/dividir/comprimir/rotar/proteger/editar/firmar/marca de agua/numeración/formularios/recortar/ordenar/comparar/censurar/OCR. Ver [`docs/requirements/pdf-tools.md`](docs/requirements/pdf-tools.md) |
 | 4 | Biblioteca con lista navegable, filtro por formato | Implementado, incluyendo pestañas dispositivo/app (ya existían, confirmado). Refinado con HU |
-| 5 | Sub-menú por documento: abrir, favorito, renombrar, compartir, convertir, crear QR; favoritos visibles en biblioteca | Favorito ahora consistente entre Visor/Biblioteca/Home (bug de id corregido hoy); falta renombrar/eliminar desde el Visor específicamente (backlog) |
-| 6 | Buscador en vistas relevantes | Funciona en Biblioteca; en el Visor **corregido hoy** — antes el botón aparecía habilitado para PDF pero no hacía nada, ahora busca por página con iText7 y navega entre coincidencias |
+| 5 | Sub-menú por documento: abrir, favorito, renombrar, compartir, convertir, crear QR; favoritos visibles en biblioteca | Favorito consistente entre Visor/Biblioteca/Home; renombrar y eliminar desde el Visor implementados (RF-VIS-06, 2026-08-29), con papelera de reciclaje de 30 días en vez de borrado directo (RF-VIS-07) |
+| 6 | Buscador en vistas relevantes | Funciona en Biblioteca; en el Visor busca por página con iText7 y navega entre coincidencias, con resaltado inline sobre el PDF renderizado (RF-VIS-08, 2026-08-29) — antes solo indicaba la página, ahora se ve el texto encontrado remarcado |
 | 7 | Accesos rápidos | **Obsoleto el hallazgo de "aislados"** — confirmado que ya navegan a rutas reales (scanner/seguridad/estudio) |
 | 8 | Acceso directo a abrir/convertir | Implementado (banner Home) — botón "Abrir" confirmado funcional (obsoleto el hallazgo de que no hacía nada) |
 | 9 | Escanear/foto/leer QR/crear QR, guardado en biblioteca y recientes | Escáner funciona bien (delega captura a Google ML Kit); leer QR con URL/navegación y QR con contraseña ya estaban implementados (hallazgo obsoleto). Refinado con HU en [`docs/requirements/scanner.md`](docs/requirements/scanner.md) |
@@ -327,7 +348,7 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - Falta logo de marca en el banner azul (estandarizar en todas las vistas) — pendiente, ticket de UI transversal.
 - ~~Visor: búsqueda no tiene función real.~~ **Corregido hoy** — el botón aparecía habilitado para PDF pero `PdfViewerContent` no recibía `searchQuery`; construido `SearchPdfTextUseCase` (iText7) + navegación entre páginas con coincidencias.
 - **Bug real encontrado hoy (no reportado en la QA):** "eliminar" en Biblioteca/Home solo filtraba la lista en memoria, nunca borraba el archivo real — reaparecía al recargar. Corregido: `DocumentRepository.deleteDocument()` borra de verdad (archivo de la app o `ContentResolver` para MediaStore) y solo se quita de la lista si el borrado fue exitoso.
-- Visor: no permite renombrar ni eliminar desde el visor — confirmado vigente, backlog (RF-VIS-06).
+- ~~Visor: no permite renombrar ni eliminar desde el visor.~~ **Corregido 2026-08-29** — RF-VIS-06, con papelera de reciclaje de 30 días en vez de borrado directo (RF-VIS-07).
 - Visor: margen superior falla, el PDF "se pierde" arriba — no verificado, requiere prueba visual.
 - Word/Excel/texto/PowerPoint presentan inconvenientes (solo PDF/imagen confiables) — no verificado en esta pasada.
 - ~~Biblioteca: falta discriminar "archivos creados por la app" vs. "archivos del dispositivo".~~ **Obsoleto** — ya implementado (pestañas `LibraryTab.DEVICE`/`APP_FILES`).
@@ -347,7 +368,7 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - **Rotar PDF**: la vista previa no refleja la rotación real en grados. Mitigado indirectamente — la rotación real ahora se escribe con `PdfPage.setRotation()` (metadato estándar de PDF), no con una matriz de bitmap manual.
 - Nombre de archivo antepone "DocuSmart_" — confirmado como decisión de marca deliberada, estandarizado en las 4 herramientas.
 - **Bug real encontrado hoy (no reportado en la QA):** Unir y Rotar rasterizaban cada página a imagen antes de reconstruir el PDF, destruyendo todo el texto seleccionable/buscable del resultado. Corregido migrando ambos a iText7 (`copyPagesTo`/`setRotation`), igual que ya hacían Dividir y la contraseña de PDF.
-- Faltan (backlog documentado, RF-PDF-06 a RF-PDF-15): numeración, marca de agua, reordenar/eliminar página, recorte, editar, firma, formularios, comparar, censurar, OCR avanzado.
+- ~~Faltan (backlog documentado, RF-PDF-06 a RF-PDF-15): numeración, marca de agua, reordenar/eliminar página, recorte, editar, firma, formularios, comparar, censurar, OCR avanzado.~~ **Corregido 2026-08-29** — las 10 quedaron implementadas, backlog de RF de este módulo en cero.
 - Pendiente: i18n de las 4 pantallas (aún en español fijo, mismo patrón que Seguridad/QR/Estudio antes de corregirse); selector de archivo desde la Biblioteca de la app (hoy solo desde el dispositivo).
 
 ### Seguridad
