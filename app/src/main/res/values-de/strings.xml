@@ -47,6 +47,7 @@
     <string name="pdf_crop">Seiten zuschneiden</string>
     <string name="pdf_edit_text">Text bearbeiten</string>
     <string name="pdf_sign">PDF unterschreiben</string>
+    <string name="pdf_fill_form">Formular ausfüllen</string>
 
     <!-- ── Einstellungen ────────────────────────────────── -->
     <string name="settings_title">Einstellungen</string>
@@ -145,6 +146,7 @@
     <string name="pdf_crop_desc">Entfernt den überschüssigen Rand jeder Seite</string>
     <string name="pdf_edit_text_desc">Sucht und ersetzt vorhandenen Text im Dokument</string>
     <string name="pdf_sign_desc">Zeichne deine Unterschrift und setze sie auf das Dokument</string>
+    <string name="pdf_fill_form_desc">Erkennt und füllt Textfelder eines PDF-Formulars aus</string>
 
     <!-- ── Tageslimit-Dialog (gemeinsam: Konverter und PDF-Werkzeuge) ── -->
     <string name="daily_limit_title">Tageslimit erreicht</string>
@@ -383,6 +385,21 @@
     <string name="pdf_sign_generate_error">Fehler beim Erstellen des unterschriebenen PDFs.</string>
     <string name="pdf_sign_success">PDF erfolgreich unterschrieben — Seite %1$d</string>
     <string name="pdf_sign_error">Fehler beim Unterschreiben des PDFs: %1$s</string>
+
+    <!-- ── Rellenar formulario ── -->
+    <string name="pdf_fill_form_subtitle">Wähle ein PDF mit Formularfeldern aus und fülle sie aus</string>
+    <string name="pdf_fill_form_ready">PDF bereit zum Ausfüllen</string>
+    <string name="pdf_fill_form_detecting">Formularfelder werden erkannt…</string>
+    <string name="pdf_fill_form_no_fields">Dieses PDF hat keine Textformularfelder</string>
+    <string name="pdf_fill_form_fields_title">%1$d Felder erkannt</string>
+    <string name="pdf_fill_form_execute">Formular ausfüllen</string>
+    <string name="pdf_fill_form_progress">Formular wird ausgefüllt…</string>
+    <string name="pdf_fill_form_empty_values_error">Es gibt keine Werte zum Ausfüllen</string>
+    <string name="pdf_fill_form_read_error">PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
+    <string name="pdf_fill_form_no_fields_error">Dieses PDF hat keine Formularfelder zum Ausfüllen</string>
+    <string name="pdf_fill_form_generate_error">Fehler beim Erstellen des ausgefüllten PDFs.</string>
+    <string name="pdf_fill_form_success">%1$d Felder erfolgreich ausgefüllt</string>
+    <string name="pdf_fill_form_error">Fehler beim Ausfüllen des Formulars: %1$s</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 

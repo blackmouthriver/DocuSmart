@@ -209,6 +209,20 @@ class DailyLimitManagerTest {
         assertEquals(0, manager.getConversionCount())
     }
 
+    // RF-PDF-12: mismo tipo de hallazgo que NUMBER_PAGES/WATERMARK/REORDER_PAGES/
+    // COMPARE/REDACT/CROP/EDIT_TEXT/SIGN (ver arriba) -- fija de entrada que
+    // FILL_FORM tiene su propio contador antes de que pueda repetirse el mismo bug.
+    @Test
+    fun `FILL_FORM tiene su propio contador, independiente de conversiones y otras herramientas`() {
+        repeat(DailyLimitManager.LIMIT_PDF_TOOLS) { manager.registerPdfTool("FILL_FORM") }
+
+        assertFalse(manager.canUsePdfTool("FILL_FORM"))
+        assertTrue(manager.canUsePdfTool("MERGE"))
+        assertTrue(manager.canUsePdfTool("SIGN"))
+        assertTrue(manager.canConvert())
+        assertEquals(0, manager.getConversionCount())
+    }
+
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────
 
     private fun fakeSharedPreferences(): SharedPreferences {

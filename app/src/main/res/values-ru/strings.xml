@@ -47,6 +47,7 @@
     <string name="pdf_crop">Обрезать страницы</string>
     <string name="pdf_edit_text">Редактировать текст</string>
     <string name="pdf_sign">Подписать PDF</string>
+    <string name="pdf_fill_form">Заполнить форму</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -145,6 +146,7 @@
     <string name="pdf_crop_desc">Удаляет лишние поля на каждой странице</string>
     <string name="pdf_edit_text_desc">Ищет и заменяет существующий текст в документе</string>
     <string name="pdf_sign_desc">Нарисуйте подпись и поставьте её на документ</string>
+    <string name="pdf_fill_form_desc">Определяет и заполняет текстовые поля формы PDF</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -383,6 +385,21 @@
     <string name="pdf_sign_generate_error">Ошибка при создании подписанного PDF.</string>
     <string name="pdf_sign_success">PDF успешно подписан — страница %1$d</string>
     <string name="pdf_sign_error">Ошибка при подписании PDF: %1$s</string>
+
+    <!-- ── Rellenar formulario ── -->
+    <string name="pdf_fill_form_subtitle">Выберите PDF с полями формы и заполните их</string>
+    <string name="pdf_fill_form_ready">PDF готов к заполнению</string>
+    <string name="pdf_fill_form_detecting">Определение полей формы…</string>
+    <string name="pdf_fill_form_no_fields">В этом PDF нет текстовых полей формы</string>
+    <string name="pdf_fill_form_fields_title">Найдено полей: %1$d</string>
+    <string name="pdf_fill_form_execute">Заполнить форму</string>
+    <string name="pdf_fill_form_progress">Заполнение формы…</string>
+    <string name="pdf_fill_form_empty_values_error">Нет значений для заполнения</string>
+    <string name="pdf_fill_form_read_error">Не удалось прочитать PDF. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_fill_form_no_fields_error">В этом PDF нет полей формы для заполнения</string>
+    <string name="pdf_fill_form_generate_error">Ошибка при создании заполненного PDF.</string>
+    <string name="pdf_fill_form_success">Успешно заполнено полей: %1$d</string>
+    <string name="pdf_fill_form_error">Ошибка при заполнении формы: %1$s</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 

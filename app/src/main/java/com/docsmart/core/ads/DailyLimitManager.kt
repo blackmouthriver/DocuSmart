@@ -33,12 +33,32 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_CROP          = "count_crop"
         private const val KEY_EDIT_TEXT      = "count_edit_text"
         private const val KEY_SIGN           = "count_sign"
+        private const val KEY_FILL_FORM       = "count_fill_form"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
         private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
 
         // ── Límites diarios ───────────────────────────────────────────────────
         const val LIMIT_CONVERSIONS = 5
         const val LIMIT_PDF_TOOLS   = 3
+
+        // Mapa en vez de `when` -- este dispatcher crece una entrada por cada
+        // herramienta PDF nueva del backlog y ya había superado el umbral de
+        // complejidad ciclomática de detekt (15) como `when` con 13 ramas.
+        private val PDF_TOOL_KEYS = mapOf(
+            "MERGE"         to KEY_MERGE,
+            "SPLIT"         to KEY_SPLIT,
+            "COMPRESS"      to KEY_COMPRESS,
+            "ROTATE"        to KEY_ROTATE,
+            "NUMBER_PAGES"  to KEY_NUMBER_PAGES,
+            "WATERMARK"     to KEY_WATERMARK,
+            "REORDER_PAGES" to KEY_REORDER_PAGES,
+            "COMPARE"       to KEY_COMPARE,
+            "REDACT"        to KEY_REDACT,
+            "CROP"          to KEY_CROP,
+            "EDIT_TEXT"     to KEY_EDIT_TEXT,
+            "SIGN"          to KEY_SIGN,
+            "FILL_FORM"     to KEY_FILL_FORM
+        )
     }
 
     private val prefs by lazy {
@@ -68,6 +88,7 @@ class DailyLimitManager @Inject constructor(
                 .putInt(KEY_CROP,           0)
                 .putInt(KEY_EDIT_TEXT,      0)
                 .putInt(KEY_SIGN,           0)
+                .putInt(KEY_FILL_FORM,      0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
                 .putInt(KEY_EXTRA_PDF_TOOLS, 0)
                 .apply()
@@ -149,19 +170,5 @@ class DailyLimitManager @Inject constructor(
         return LIMIT_PDF_TOOLS + extras
     }
 
-    private fun getPdfToolKey(toolKey: String): String = when (toolKey) {
-        "MERGE"         -> KEY_MERGE
-        "SPLIT"         -> KEY_SPLIT
-        "COMPRESS"      -> KEY_COMPRESS
-        "ROTATE"        -> KEY_ROTATE
-        "NUMBER_PAGES"  -> KEY_NUMBER_PAGES
-        "WATERMARK"     -> KEY_WATERMARK
-        "REORDER_PAGES" -> KEY_REORDER_PAGES
-        "COMPARE"       -> KEY_COMPARE
-        "REDACT"        -> KEY_REDACT
-        "CROP"          -> KEY_CROP
-        "EDIT_TEXT"     -> KEY_EDIT_TEXT
-        "SIGN"          -> KEY_SIGN
-        else            -> KEY_CONVERSIONS
-    }
+    private fun getPdfToolKey(toolKey: String): String = PDF_TOOL_KEYS[toolKey] ?: KEY_CONVERSIONS
 }
