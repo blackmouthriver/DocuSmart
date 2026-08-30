@@ -944,3 +944,103 @@ una única expresión de una línea por eje, no se justificó el nivel de
 indirección adicional.
 
 Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+## 17. Bug real: borrado definitivo "resucitaba" archivos + falta "Borrar todo" (2026-08-30)
+
+Cierra dos hallazgos de QA sobre la Papelera (§12): "no hay opción para
+borrar todo" y "al eliminar de la papelera, el archivo no se borra de
+Biblioteca ni de Recientes, y dice que no se puede eliminar".
+
+**Causa raíz (reproducida en dispositivo con logcat, no asumida):**
+`DocumentRepository.deleteDocument()` intenta `contentResolver.delete()`
+sobre una foto de MediaStore que la app no creó (p.ej. tomada con la
+cámara) y Android lanza `RecoverableSecurityException: com.docsmart has no
+access to content://media/...` (scoped storage, API 29+) — confirmado con
+el stack trace real al tocar "Eliminar ahora" sobre `search5.png`. El bug
+real no era ese rechazo en sí (esperable sin permiso), sino que
+`TrashRepository.deleteForever()` llamaba a `trashDao.remove(documentId)`
+**sin importar si el borrado real tuvo éxito**. Resultado: la entrada de
+la papelera desaparecía igual, `DocumentRepository.loadAllDocuments()`
+dejaba de excluir ese id, y el archivo "resucitaba" en Biblioteca y
+Recientes — mientras el toast decía "No se pudo eliminar el archivo".
+
+**Corregido:**
+- `DocumentRepository.deleteDocument()` ahora devuelve un
+  `DeleteOutcome` (`Deleted` / `NeedsPermission(intentSender)` / `Failed`)
+  en vez de `Boolean`. En API 30+ usa `MediaStore.createDeleteRequest()`
+  para *todo* content:// (un solo diálogo de sistema, sin importar si la
+  fila es propia); en API 29 cae a capturar `RecoverableSecurityException`
+  y extraer su `IntentSender`. Ambas referencias a clases/métodos que no
+  existen en API < 29/30 quedan aisladas en funciones `@RequiresApi` dentro
+  de la nueva `MediaDeletePermission` (extraída para no superar el umbral
+  `TooManyFunctions` de detekt en `DocumentRepository`).
+- `TrashRepository.deleteForever()` solo limpia `trash_entries`/favoritos
+  si el outcome es `Deleted`. Si Android pide permiso, el llamador
+  (`TrashViewModel`/`TrashScreen`) lanza el `IntentSender` vía
+  `ActivityResultContracts.StartIntentSenderForResult` y, si el usuario
+  confirma, llama a `finalizeDeleteForever()` para recién ahí limpiar las
+  tablas — nunca antes de que Android confirme el borrado real.
+- `purgeExpiredTrash()` (purga automática a los 30 días) tiene la misma
+  guarda: si el borrado falla o pide permiso, el archivo se queda vencido
+  pero visible en la papelera en vez de desaparecer de la lista sin
+  haberse borrado de verdad.
+- **"Borrar todo"** (`TrashRepository.deleteAllForever()`): separa los
+  archivos propios de la app (se borran directo) de las fotos de
+  MediaStore, y agrupa estas últimas en un único `createDeleteRequest()`
+  — un solo diálogo de sistema para todo el lote en API 30+, en vez de
+  encadenar un diálogo por archivo. En API < 30 (sin API de borrado en
+  lote) se reintenta uno por uno; los que pidan permiso individual quedan
+  en la papelera con el mensaje "Algunos archivos requieren eliminarse uno
+  por uno" en vez de encadenar varios diálogos seguidos.
+
+**Verificado en dispositivo real** (dos rondas completas con logcat):
+1. "Eliminar ahora" sobre una foto real de MediaStore → apareció el
+   diálogo de sistema "¿Deseas permitir que DocuSmart borre esta foto?" →
+   al confirmar, `MediaProvider: Granted permission to 1 items` en logcat,
+   el archivo desapareció de la Papelera y **no reapareció** en Biblioteca.
+2. "Borrar todo" con 11 archivos en la papelera → diálogo único "¿Deseas
+   permitir que DocuSmart borre 11 fotos?" → al confirmar, papelera vacía,
+   sin errores.
+
+Tests nuevos: `TrashRepositoryTest` — `deleteForever no limpia la entrada
+de la papelera si el borrado real fallo` (reproduce exactamente el bug:
+con un archivo inexistente, la entrada debe seguir en la papelera en vez
+de limpiarse). El resto de `DocumentRepositoryTest`/`TrashRepositoryTest`
+se actualizó al nuevo tipo `DeleteOutcome`. `testDebugUnitTest`/`detekt`/
+`lintDebug` en verde.
+
+## 18. Bug real: abrir un archivo desde Drive/WhatsApp dejaba una copia de Inicio "pegada" (2026-08-30)
+
+**Causa raíz:** `MainActivity` no declaraba `android:launchMode`, así que
+usaba el modo "standard" por defecto. Al abrir un PDF/imagen desde Drive o
+WhatsApp con DocuSmart ya corriendo, Android creaba una **segunda
+instancia** de `MainActivity` encima de la que ya estaba en Inicio (el
+`onNewIntent()` existente nunca se ejecutaba, porque solo se dispara si la
+Activity ya en pantalla es reutilizada). El Visor mostraba el archivo
+correctamente en la instancia nueva, pero al presionar atrás el usuario
+volvía a una copia de Inicio "pegada" debajo en vez de cerrar la app y
+volver a Drive/WhatsApp — percibido como que "no se cierra".
+
+**Corregido:**
+- `AndroidManifest.xml`: `android:launchMode="singleTask"` en
+  `MainActivity` — Android reutiliza la instancia existente y entrega el
+  nuevo intent vía `onNewIntent()` en vez de crear una copia.
+- `MainActivity.kt`: `externalFileUri` pasa de `var` plano a
+  `mutableStateOf` (con la Activity ya compuesta, `onNewIntent()` necesita
+  disparar recomposición, no solo dejar el valor listo para la próxima
+  lectura) y se agrega `setIntent(intent)` en `onNewIntent()`. El efecto
+  que redirige al Visor ahora reacciona a `externalFileUri` en cualquier
+  pantalla (no solo esperando llegar a Home), salvo mientras el splash o
+  el onboarding siguen en curso (arranque en frío) — así cubre tanto el
+  arranque en frío como abrir un archivo con la app ya en cualquier
+  pantalla.
+
+**Verificado en dispositivo real:** con la app ya abierta en Biblioteca,
+se disparó `am start -a VIEW -d content://.../search5.png -n
+com.docsmart/.MainActivity` (simula el intent que enviaría Drive/WhatsApp)
+→ logcat confirmó `"intent has been delivered to currently running
+top-most instance"` (no se creó Activity nueva) → `dumpsys activity
+activities` mostró **una sola** `Task` con **una sola** `ActivityRecord`
+(`sz=1`) antes y después → el Visor abrió `search5.png` correctamente →
+al presionar atrás, volvió a Biblioteca (la pantalla previa real, no una
+copia) sin ninguna instancia duplicada.

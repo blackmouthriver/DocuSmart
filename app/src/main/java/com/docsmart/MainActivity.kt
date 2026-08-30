@@ -49,7 +49,11 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var themeManager: ThemeManager
     @Inject lateinit var languageManager: LanguageManager
 
-    private var externalFileUri: Uri? = null
+    // mutableStateOf, no un `var` plano: con android:launchMode="singleTask"
+    // (ver bug real de abajo), onNewIntent() puede setear un nuevo valor con
+    // la Activity ya compuesta -- necesita disparar recomposición, no solo
+    // quedar disponible para la próxima vez que se lea.
+    private var externalFileUri by mutableStateOf<Uri?>(null)
     private var adsInitialized  = false
 
     private val permissionLauncher = registerForActivityResult(
@@ -115,17 +119,30 @@ class MainActivity : AppCompatActivity() {
                 val currentBackStack by navController.currentBackStackEntryAsState()
                 val currentRoute = currentBackStack?.destination?.route
 
-                LaunchedEffect(Unit) {
-                    externalFileUri?.let { uri ->
-                        navController.addOnDestinationChangedListener { _, destination, _ ->
-                            if (destination.route == NavRoutes.Home.route) {
-                                navController.navigate(
-                                    NavRoutes.Viewer.createRoute(uri.toString())
-                                )
-                                externalFileUri = null
-                            }
-                        }
-                    }
+                // Bug real (reportado 2026-08-29): al abrir un PDF/imagen desde
+                // Drive o WhatsApp con la app ya corriendo, Android creaba una
+                // SEGUNDA instancia de MainActivity encima de la que ya estaba
+                // en Inicio (sin android:launchMode, el intent-filter VIEW usa
+                // el modo "standard" por defecto) -- el visor mostraba el
+                // archivo correctamente, pero al volver atrás quedaba una copia
+                // de Inicio "pegada" debajo en vez de cerrar la app. Con
+                // launchMode="singleTask" ahora Android reutiliza esta misma
+                // instancia vía onNewIntent(), así que solo falta reaccionar
+                // acá al cambio de externalFileUri en vez de esperar a llegar
+                // a Home (ese caso solo aplicaba al arranque en frío).
+                LaunchedEffect(externalFileUri, currentRoute) {
+                    val uri = externalFileUri ?: return@LaunchedEffect
+                    // Espera a que termine splash/onboarding (arranque en frío)
+                    // antes de redirigir -- en caliente (singleTask +
+                    // onNewIntent) currentRoute ya es Home/Library/etc. y esto
+                    // navega de inmediato.
+                    val stillWaiting = currentRoute == null ||
+                        currentRoute == NavRoutes.SplashMouthBlack.route ||
+                        currentRoute == NavRoutes.SplashDocuSmart.route ||
+                        currentRoute == NavRoutes.Onboarding.route
+                    if (stillWaiting) return@LaunchedEffect
+                    navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
+                    externalFileUri = null
                 }
 
                 Scaffold(
@@ -159,6 +176,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         val uri = resolveExternalIntent(intent)
         if (uri != null) {
             Timber.d("onNewIntent: URI externa = $uri")

@@ -1,6 +1,7 @@
 package com.docsmart.features.library.data
 
 import android.content.Context
+import android.content.IntentSender
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -25,7 +26,8 @@ class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val favoritesRepository: FavoritesRepository,  // ← NUEVO
     private val documentHistoryDao: DocumentHistoryDao,
-    private val trashDao: TrashDao
+    private val trashDao: TrashDao,
+    private val mediaDeletePermission: MediaDeletePermission
 ) {
     // Buffer sobre el límite pedido: algunos ids del historial pueden
     // apuntar a archivos que ya no existen (borrados/movidos fuera de la
@@ -106,14 +108,40 @@ class DocumentRepository @Inject constructor(
         }
     }
 
+    /** Resultado de intentar borrar un documento real (archivo o fila de
+     *  MediaStore) -- separado de un simple Boolean porque el caso de "sin
+     *  permiso" no es un fallo terminal: Android entrega un [IntentSender]
+     *  que, al lanzarse y confirmarse, sí realiza el borrado. */
+    sealed interface DeleteOutcome {
+        data object Deleted : DeleteOutcome
+        data class NeedsPermission(val intentSender: IntentSender) : DeleteOutcome
+        data object Failed : DeleteOutcome
+    }
+
     /**
      * Elimina el documento subyacente (archivo de la app o fila de MediaStore),
-     * no solo la entrada en memoria. Devuelve false si no se pudo borrar
-     * (por ejemplo, sin permiso sobre un archivo de MediaStore que la app no
-     * creó) para que quien llama pueda informarlo en vez de dar por hecho
-     * que se eliminó.
+     * no solo la entrada en memoria.
+     *
+     * Bug real (RF-VIS-07, reportado 2026-08-29): para una foto de MediaStore
+     * que la app no creó (p.ej. tomada con la cámara), `contentResolver.delete()`
+     * lanza `RecoverableSecurityException` en API 29 -- Android exige
+     * confirmación explícita del usuario para borrar filas que no son propias
+     * (scoped storage). Antes esto se trataba como fallo genérico y
+     * `TrashRepository` igual quitaba la entrada de la papelera, "resucitando"
+     * el archivo en Biblioteca/Recientes aunque el toast dijera que no se
+     * pudo eliminar. En API 30+ se usa `MediaStore.createDeleteRequest()`
+     * para todos los content:// -- un solo diálogo de sistema por operación,
+     * sin depender de si la fila es propia o no.
      */
-    suspend fun deleteDocument(documentId: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun deleteDocument(documentId: String): DeleteOutcome = withContext(Dispatchers.IO) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && documentId.startsWith("content://")) {
+            val intentSender = mediaDeletePermission.createBulkDeleteRequest(listOf(Uri.parse(documentId)))
+            return@withContext if (intentSender != null) {
+                DeleteOutcome.NeedsPermission(intentSender)
+            } else {
+                DeleteOutcome.Failed
+            }
+        }
         try {
             val deleted = if (documentId.startsWith("content://")) {
                 context.contentResolver.delete(Uri.parse(documentId), null, null) > 0
@@ -122,10 +150,15 @@ class DocumentRepository @Inject constructor(
                 file.exists() && file.delete()
             }
             if (deleted) documentHistoryDao.remove(documentId)
-            deleted
+            if (deleted) DeleteOutcome.Deleted else DeleteOutcome.Failed
         } catch (e: Exception) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                mediaDeletePermission.recoverableIntentSenderOrNull(e)?.let {
+                    return@withContext DeleteOutcome.NeedsPermission(it)
+                }
+            }
             Timber.e(e, "Error eliminando documento: $documentId")
-            false
+            DeleteOutcome.Failed
         }
     }
 

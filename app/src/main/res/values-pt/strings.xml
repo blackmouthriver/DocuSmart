@@ -773,4 +773,7 @@
     <string name="trash_delete_forever">Excluir agora</string>
     <string name="trash_delete_forever_confirm_title">Excluir permanentemente?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s será excluído para sempre e não poderá mais ser recuperado."</string>
+    <string name="trash_delete_all">Excluir tudo</string>
+    <string name="trash_delete_all_confirm_title">Esvaziar a lixeira?</string>
+    <string name="trash_delete_all_confirm_body">"%1$d arquivos serão excluídos para sempre e não poderão mais ser recuperados."</string>
 </resources>
