@@ -96,9 +96,10 @@ fun DocuSmartTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     useSystemTheme: Boolean = false,
     dynamicColor: Boolean = false,
+    accentColor: AccentColor = AccentColor.BLUE,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
+    val baseColorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context)
@@ -108,6 +109,23 @@ fun DocuSmartTheme(
         useSystemTheme -> SystemColorScheme
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+
+    // RF-SET-07: el color de acento solo recolorea primary/onPrimary/
+    // primaryContainer/onPrimaryContainer -- fondos, superficies y colores
+    // de error quedan intactos sin importar el acento elegido. No se aplica
+    // sobre Material You dinámico (dynamicColor): ahí el acento ya lo elige
+    // el propio wallpaper del sistema, no tendría sentido pisarlo.
+    val colorScheme = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        baseColorScheme
+    } else {
+        val tone = if (darkTheme) accentColor.dark else accentColor.light
+        baseColorScheme.copy(
+            primary = tone.primary,
+            onPrimary = tone.onPrimary,
+            primaryContainer = tone.container,
+            onPrimaryContainer = tone.onContainer
+        )
     }
 
     val view = LocalView.current

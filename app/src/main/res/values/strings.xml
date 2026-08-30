@@ -74,6 +74,8 @@
     <string name="settings_premium_subtitle">Desbloquea todas las funciones</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_theme">Tema</string>
+    <string name="settings_accent_color">Color de acento</string>
+    <string name="settings_select_accent_color">Seleccionar color de acento</string>
     <string name="settings_storage">Almacenamiento</string>
     <string name="settings_storage_subtitle">Ver archivos generados</string>
     <string name="settings_about">Acerca de</string>
@@ -126,6 +128,12 @@
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
     <string name="theme_system">Sistema</string>
+    <string name="accent_color_blue">Azul</string>
+    <string name="accent_color_purple">Morado</string>
+    <string name="accent_color_green">Verde</string>
+    <string name="accent_color_orange">Naranja</string>
+    <string name="accent_color_pink">Rosa</string>
+    <string name="accent_color_teal">Turquesa</string>
 
     <!-- ── Escáner ────────────────────────────────── -->
     <string name="scanner_title">Iniciando escáner</string>

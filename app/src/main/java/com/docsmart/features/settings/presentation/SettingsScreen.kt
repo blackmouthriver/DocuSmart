@@ -5,8 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -25,6 +27,7 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.AppLanguage
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.theme.AccentColor
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.core.ui.theme.ThemeManager
@@ -43,9 +46,10 @@ fun SettingsScreen(
     viewModel      : SettingsViewModel = hiltViewModel()
 ) {
     val context         = LocalContext.current
-    val currentTheme    by themeManager.currentTheme.collectAsState()
-    val currentLanguage by languageManager.currentLanguage.collectAsState()
-    val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val currentTheme       by themeManager.currentTheme.collectAsState()
+    val currentAccentColor by themeManager.accentColor.collectAsState()
+    val currentLanguage    by languageManager.currentLanguage.collectAsState()
+    val isPremium          by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     @Composable
     fun themeLabel(theme: AppTheme): String = when (theme) {
@@ -54,7 +58,18 @@ fun SettingsScreen(
         AppTheme.SYSTEM -> stringResource(R.string.theme_system)
     }
 
-    var showThemeDialog    by remember { mutableStateOf(false) }
+    @Composable
+    fun accentColorLabel(accent: AccentColor): String = when (accent) {
+        AccentColor.BLUE   -> stringResource(R.string.accent_color_blue)
+        AccentColor.PURPLE -> stringResource(R.string.accent_color_purple)
+        AccentColor.GREEN  -> stringResource(R.string.accent_color_green)
+        AccentColor.ORANGE -> stringResource(R.string.accent_color_orange)
+        AccentColor.PINK   -> stringResource(R.string.accent_color_pink)
+        AccentColor.TEAL   -> stringResource(R.string.accent_color_teal)
+    }
+
+    var showThemeDialog       by remember { mutableStateOf(false) }
+    var showAccentColorDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showStorageDialog  by remember { mutableStateOf(false) }
     var showAboutDialog    by remember { mutableStateOf(false) }
@@ -161,6 +176,56 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showThemeDialog = false }) {
+                    Text(stringResource(R.string.settings_close))
+                }
+            }
+        )
+    }
+
+    // ── Diálogo: Color de acento (RF-SET-07) ─────────────────────────────────
+    if (showAccentColorDialog) {
+        AlertDialog(
+            onDismissRequest = { showAccentColorDialog = false },
+            shape = MaterialTheme.shapes.large,
+            title = { Text(stringResource(R.string.settings_select_accent_color),
+                style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Column {
+                    AccentColor.entries.forEach { accent ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    themeManager.setAccentColor(accent)
+                                    showAccentColorDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentAccentColor == accent,
+                                onClick  = {
+                                    themeManager.setAccentColor(accent)
+                                    showAccentColorDialog = false
+                                }
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(accent.swatch, shape = CircleShape)
+                            )
+                            Text(
+                                text  = accentColorLabel(accent),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAccentColorDialog = false }) {
                     Text(stringResource(R.string.settings_close))
                 }
             }
@@ -328,6 +393,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     themeManager.setTheme(AppTheme.SYSTEM)
+                    themeManager.setAccentColor(AccentColor.BLUE)
                     languageManager.setLanguage(languageManager.deviceDefaultLanguage())
                     java.io.File(context.filesDir, "converted").listFiles()?.forEach { it.delete() }
                     java.io.File(context.filesDir, "pdftools").listFiles()?.forEach { it.delete() }
@@ -492,6 +558,14 @@ fun SettingsScreen(
                 title    = stringResource(R.string.settings_theme),
                 subtitle = themeLabel(currentTheme),
                 onClick  = { showThemeDialog = true }
+            )
+        }
+        item {
+            SettingsItem(
+                icon     = Icons.Rounded.Palette,
+                title    = stringResource(R.string.settings_accent_color),
+                subtitle = accentColorLabel(currentAccentColor),
+                onClick  = { showAccentColorDialog = true }
             )
         }
 

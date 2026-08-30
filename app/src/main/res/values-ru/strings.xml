@@ -74,6 +74,8 @@
     <string name="settings_premium_subtitle">Откройте все функции</string>
     <string name="settings_language">Язык</string>
     <string name="settings_theme">Тема</string>
+    <string name="settings_accent_color">Акцентный цвет</string>
+    <string name="settings_select_accent_color">Выбрать акцентный цвет</string>
     <string name="settings_storage">Хранилище</string>
     <string name="settings_storage_subtitle">Просмотр созданных файлов</string>
     <string name="settings_about">О приложении</string>
@@ -126,6 +128,12 @@
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>
     <string name="theme_system">Системная</string>
+    <string name="accent_color_blue">Синий</string>
+    <string name="accent_color_purple">Фиолетовый</string>
+    <string name="accent_color_green">Зелёный</string>
+    <string name="accent_color_orange">Оранжевый</string>
+    <string name="accent_color_pink">Розовый</string>
+    <string name="accent_color_teal">Бирюзовый</string>
 
     <!-- ── Сканер ────────────────────────────────── -->
     <string name="scanner_title">Запуск сканера</string>
