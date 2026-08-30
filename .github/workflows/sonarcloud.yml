@@ -17,26 +17,45 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Mismo fix ya aplicado en ci.yml (ver deployment.md §3): ubuntu-latest
+      # no trae suficiente espacio libre de fábrica para este build (iText7 +
+      # Apache POI + caché de Gradle/Sonar) -- sin esto, el job falla a mitad
+      # de camino con "No space left on device", y jacocoTestReport nunca
+      # termina de generar el XML de cobertura que Sonar necesita. Debe ir
+      # antes de instalar JDK/Gradle/SDK (mismo motivo documentado en
+      # ci.yml): con tool-cache:false no hay nada en hostedtoolcache que
+      # perder, evita depender del orden de pasos para no repetir ese error.
+      - name: Liberar espacio en disco
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Checkout (historial completo)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
       - name: JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Cache SonarCloud
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
 
       - name: Permiso de ejecución para gradlew
         run: chmod +x ./gradlew
