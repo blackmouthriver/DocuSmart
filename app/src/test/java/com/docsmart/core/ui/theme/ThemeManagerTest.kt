@@ -1,10 +1,7 @@
 package com.docsmart.core.ui.theme
 
-import android.content.Context
-import android.content.SharedPreferences
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
+import com.docsmart.testutil.fakeContextWithPrefs
+import com.docsmart.testutil.fakePrefsStore
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -17,7 +14,7 @@ class ThemeManagerTest {
 
     @Test
     fun `sin nada guardado, el tema es Sistema y el acento es Azul por defecto`() {
-        val manager = ThemeManager(contextWith(fakePrefsStore()))
+        val manager = ThemeManager(fakeContextWithPrefs(fakePrefsStore()))
 
         assertEquals(AppTheme.SYSTEM, manager.currentTheme.value)
         assertEquals(AccentColor.BLUE, manager.accentColor.value)
@@ -25,7 +22,7 @@ class ThemeManagerTest {
 
     @Test
     fun `setAccentColor persiste y no afecta el tema guardado`() {
-        val manager = ThemeManager(contextWith(fakePrefsStore()))
+        val manager = ThemeManager(fakeContextWithPrefs(fakePrefsStore()))
 
         manager.setTheme(AppTheme.DARK)
         manager.setAccentColor(AccentColor.PURPLE)
@@ -37,9 +34,9 @@ class ThemeManagerTest {
     @Test
     fun `un acento guardado se recupera en una instancia nueva`() {
         val store = fakePrefsStore()
-        ThemeManager(contextWith(store)).setAccentColor(AccentColor.TEAL)
+        ThemeManager(fakeContextWithPrefs(store)).setAccentColor(AccentColor.TEAL)
 
-        val reloaded = ThemeManager(contextWith(store))
+        val reloaded = ThemeManager(fakeContextWithPrefs(store))
 
         assertEquals(AccentColor.TEAL, reloaded.accentColor.value)
     }
@@ -49,35 +46,8 @@ class ThemeManagerTest {
         val store = fakePrefsStore()
         store["accent_color"] = "NO_EXISTE"
 
-        val manager = ThemeManager(contextWith(store))
+        val manager = ThemeManager(fakeContextWithPrefs(store))
 
         assertEquals(AccentColor.BLUE, manager.accentColor.value)
-    }
-
-    // ── helpers: SharedPreferences respaldado por un mapa real ─────────────
-
-    private fun fakePrefsStore(): MutableMap<String, String> = mutableMapOf()
-
-    private fun contextWith(store: MutableMap<String, String>): Context {
-        val editor = mockk<SharedPreferences.Editor>()
-        val keySlot = slot<String>()
-        val valueSlot = slot<String>()
-        every { editor.putString(capture(keySlot), capture(valueSlot)) } answers {
-            store[keySlot.captured] = valueSlot.captured
-            editor
-        }
-        every { editor.apply() } answers { }
-
-        val keyArg = slot<String>()
-        val defaultArg = slot<String>()
-        val prefs = mockk<SharedPreferences>()
-        every { prefs.getString(capture(keyArg), capture(defaultArg)) } answers {
-            store[keyArg.captured] ?: defaultArg.captured
-        }
-        every { prefs.edit() } returns editor
-
-        val context = mockk<Context>()
-        every { context.getSharedPreferences(any(), any()) } returns prefs
-        return context
     }
 }

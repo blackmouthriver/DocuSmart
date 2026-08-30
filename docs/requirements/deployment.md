@@ -9,6 +9,10 @@ Actions listo para construir y firmar en cada tag de versión. **Pendiente
 del usuario:** configurar los 4 secrets de GitHub (una vez), respaldar el
 keystore de forma segura, y hacer la primera subida manual a Play Console
 (Google no permite automatizar la primera subida de una app nueva).
+**CI de SonarCloud corregido 2026-08-30, ver §7** — llevaba fallando 28 de
+las últimas 30 corridas por falta de espacio en disco del runner, no por
+ningún retroceso real de código; el dashboard mostraba datos de un análisis
+viejo (cobertura 0% incompleta, no una regresión real).
 
 ---
 
@@ -364,3 +368,72 @@ no lo pedía. Implementado y verificado en el dispositivo real, ver
   el requisito actual antes de subir.
 - **AdMob App ID de prueba** en `AndroidManifest.xml` — reemplazar por el
   real antes de publicar (ver hallazgo en §5.3).
+
+---
+
+## 7. CI de SonarCloud roto por falta de espacio en disco (2026-08-30)
+
+El usuario reportó la puerta de calidad de SonarCloud como "Fallido"
+(cobertura 0,0%, calificación de seguridad D, duplicación 3,1-3,2%) al
+revisar el dashboard antes de continuar con los pasos de publicación.
+Investigado con `gh run list`/`gh run view` antes de tocar nada.
+
+**Causa raíz real, no un problema de código:** `gh run list
+--workflow=sonarcloud.yml` mostró 28 de las últimas 30 corridas en
+`failure`, todas con el mismo error en el log del job:
+
+```
+System.IO.IOException: No space left on device
+```
+
+El runner `ubuntu-latest` se queda sin disco a mitad del build (iText7 +
+Apache POI + caché de Gradle/Sonar) antes de que `jacocoTestReport` termine
+de generar el XML de cobertura. Esto significa:
+
+- La **cobertura 0,0%** en el dashboard no es una regresión real de
+  testing — el reporte nunca se genera/sube porque el job falla antes.
+- Los **27-37 hallazgos de seguridad/mantenibilidad** que sí se ven en el
+  dashboard vienen del último análisis que sí llegó a completarse (uno de
+  los pocos `success` en el historial), no de código agregado después.
+- La puerta de calidad "Fallido" está evaluando datos de un análisis
+  incompleto, no el estado real del código en `main`.
+
+**Ya se había resuelto exactamente este mismo problema antes**, para el
+job `instrumented-tests` de `ci.yml` (ver §3) — solo nunca se replicó al
+workflow de SonarCloud cuando se agregó después.
+
+**Corregido** agregando el mismo paso `jlumbroso/free-disk-space@...` (con
+`tool-cache: false`, `android: false`) al principio de `sonarcloud.yml`,
+antes de cualquier paso que instale JDK/Gradle/SDK — mismo orden y mismos
+flags ya verificados en `ci.yml` por el mismo motivo (evitar borrar el JDK
+recién instalado o el SDK de Android que el propio build necesita).
+
+**De paso, se atendieron los 2 hallazgos reales visibles en el último
+análisis completo:**
+- **"Utilice el hash SHA de confirmación completo para esta dependencia"**
+  (regla de Seguridad/Alto sobre GitHub Actions, repetida en `ci.yml`/
+  `release.yml`/`sonarcloud.yml`/`gitleaks.yml`/`pages.yml`) — las Actions
+  de terceros
+  estaban fijadas por tag (`@v7`, `@main`, etc.), que es una referencia
+  mutable: quien controle ese tag podría apuntarlo a código malicioso sin
+  que el repo lo note. Corregido fijando las 12 referencias de Action en
+  los 5 workflows a su SHA de commit completo (resuelto vía `gh api
+  repos/<owner>/<repo>/git/refs/tags/<tag>`), con el tag original como
+  comentario (`@<sha> # v7`) para que Dependabot (ya configurado para
+  `github-actions` en `dependabot.yml`) las siga pudiendo actualizar solo.
+- **Duplicación de código (3,1-3,2%, umbral 3,0%):** 3 clases de test
+  agregadas en esta sesión (`StudyNotesStorageTest`, `StudyStatsStorageTest`,
+  `ThemeManagerTest`) repetían casi línea por línea el mismo helper de
+  `SharedPreferences` fake respaldado por un mapa en memoria. Extraído a
+  `app/src/test/java/com/docsmart/testutil/FakeAndroidPrefs.kt`
+  (`fakePrefsStore()` + `fakeContextWithPrefs(store)`, soporta tanto
+  `String` como `Long` para cubrir los 3 casos), y los 3 archivos
+  actualizados para usarlo en vez de su copia privada. No se tocó
+  `LanguageManagerTest.kt` (helper similar pero preexistente, de una sesión
+  anterior, con una forma distinta) — no es la causa de este pico de
+  duplicación y tocarlo hubiera sido alcance extra no pedido.
+
+**No verificable hasta el próximo push real a `main`** — SonarCloud solo
+analiza en push/PR, no hay forma de forzar una corrida contra este cambio
+sin subirlo. `testDebugUnitTest`/`detekt`/`lintDebug` en verde localmente
+antes de subir.

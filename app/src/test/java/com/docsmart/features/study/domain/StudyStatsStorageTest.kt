@@ -1,10 +1,7 @@
 package com.docsmart.features.study.domain
 
-import android.content.Context
-import android.content.SharedPreferences
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
+import com.docsmart.testutil.fakeContextWithPrefs
+import com.docsmart.testutil.fakePrefsStore
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -19,7 +16,7 @@ class StudyStatsStorageTest {
 
     @Test
     fun `addReadingTime acumula milisegundos entre llamadas`() {
-        val context = contextWith(fakePrefsStore())
+        val context = fakeContextWithPrefs(fakePrefsStore())
 
         StudyStatsStorage.addReadingTime(context, 5_000)
         StudyStatsStorage.addReadingTime(context, 3_000)
@@ -29,7 +26,7 @@ class StudyStatsStorageTest {
 
     @Test
     fun `addReadingTime ignora valores no positivos`() {
-        val context = contextWith(fakePrefsStore())
+        val context = fakeContextWithPrefs(fakePrefsStore())
 
         StudyStatsStorage.addReadingTime(context, 0)
         StudyStatsStorage.addReadingTime(context, -500)
@@ -39,7 +36,7 @@ class StudyStatsStorageTest {
 
     @Test
     fun `recordPomodoroCompletion agrega un timestamp al historial`() {
-        val context = contextWith(fakePrefsStore())
+        val context = fakeContextWithPrefs(fakePrefsStore())
 
         StudyStatsStorage.recordPomodoroCompletion(context, at = 1000L)
         StudyStatsStorage.recordPomodoroCompletion(context, at = 2000L)
@@ -101,39 +98,5 @@ class StudyStatsStorageTest {
         assertEquals(1 to 5, millisToHoursAndMinutes(65 * 60_000L))
         assertEquals(0 to 0, millisToHoursAndMinutes(0))
         assertEquals(0 to 59, millisToHoursAndMinutes(59 * 60_000L))
-    }
-
-    // ── helpers: SharedPreferences respaldado por un mapa real ─────────────
-
-    private fun fakePrefsStore(): MutableMap<String, Any> = mutableMapOf()
-
-    private fun contextWith(store: MutableMap<String, Any>): Context {
-        val editor = mockk<SharedPreferences.Editor>()
-        val longKeySlot = slot<String>(); val longValueSlot = slot<Long>()
-        every { editor.putLong(capture(longKeySlot), capture(longValueSlot)) } answers {
-            store[longKeySlot.captured] = longValueSlot.captured
-            editor
-        }
-        val strKeySlot = slot<String>(); val strValueSlot = slot<String>()
-        every { editor.putString(capture(strKeySlot), capture(strValueSlot)) } answers {
-            store[strKeySlot.captured] = strValueSlot.captured
-            editor
-        }
-        every { editor.apply() } answers { }
-
-        val prefs = mockk<SharedPreferences>()
-        val getLongKey = slot<String>(); val getLongDefault = slot<Long>()
-        every { prefs.getLong(capture(getLongKey), capture(getLongDefault)) } answers {
-            (store[getLongKey.captured] as? Long) ?: getLongDefault.captured
-        }
-        val getStrKey = slot<String>(); val getStrDefault = slot<String>()
-        every { prefs.getString(capture(getStrKey), capture(getStrDefault)) } answers {
-            (store[getStrKey.captured] as? String) ?: getStrDefault.captured
-        }
-        every { prefs.edit() } returns editor
-
-        val context = mockk<Context>()
-        every { context.getSharedPreferences(any(), any()) } returns prefs
-        return context
     }
 }
