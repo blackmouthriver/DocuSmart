@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -558,9 +560,10 @@ private fun PdfViewerContent(
     val context   = LocalContext.current
     var pages     by remember { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
     var loadError by remember { mutableStateOf(false) }
-    var scale     by remember { mutableFloatStateOf(1f) }
-    var offsetX   by remember { mutableFloatStateOf(0f) }
-    var offsetY   by remember { mutableFloatStateOf(0f) }
+    var scale         by remember { mutableFloatStateOf(1f) }
+    var offsetX       by remember { mutableFloatStateOf(0f) }
+    var offsetY       by remember { mutableFloatStateOf(0f) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(targetPage, pages.size) {
@@ -613,12 +616,26 @@ private fun PdfViewerContent(
         state = listState,
         modifier = Modifier
             .fillMaxSize()
+            .onSizeChanged { containerSize = it }
             .clickable { onTap() }
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
-                    scale   = (scale * zoom).coerceIn(0.5f, 4f)
-                    offsetX += pan.x
-                    offsetY += pan.y
+                    val newScale = (scale * zoom).coerceIn(0.5f, 4f)
+                    // Bug real (QA): sin límite, arrastrar tras hacer zoom
+                    // podía sacar el contenido del área visible por
+                    // completo -- "el PDF se pierde arriba" -- sin ninguna
+                    // forma de recuperarlo salvo adivinar cuánto arrastrar
+                    // de vuelta. `graphicsLayer` escala/traslada desde el
+                    // centro por defecto, así que el desplazamiento máximo
+                    // que deja al menos el borde del contenido visible es
+                    // `tamaño * (escala - 1) / 2` por eje -- en escala 1 el
+                    // rango es [0, 0], forzando el desplazamiento de vuelta
+                    // a cero en cuanto se hace pinch-zoom-out del todo.
+                    val maxX = (containerSize.width  * (newScale - 1) / 2f).coerceAtLeast(0f)
+                    val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
+                    scale   = newScale
+                    offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                    offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
                 }
             }
             .graphicsLayer(
