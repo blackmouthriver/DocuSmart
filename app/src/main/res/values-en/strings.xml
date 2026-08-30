@@ -631,6 +631,12 @@
     <string name="scan_result_filename_hint">If left empty, an automatic name will be generated</string>
     <string name="scan_result_generating_pdf">Generating PDF…</string>
     <string name="scan_result_default_name_prefix">Scan_%1$s</string>
+    <string name="scan_edit_page_content_desc">Edit page %1$d</string>
+    <string name="scan_edit_title">Edit page</string>
+    <string name="scan_edit_brightness">Brightness: %1$d</string>
+    <string name="scan_edit_contrast">Contrast: %1$d</string>
+    <string name="scan_edit_scale">Scale</string>
+    <string name="scan_edit_apply">Apply</string>
     <string name="security_file_protected_original_kept">File protected. Couldn\'t delete the original from its location — delete it manually if you want it fully removed.</string>
     <string name="qr_protected_title">Protected QR code</string>
     <string name="qr_protected_desc">This content is password-protected. Enter the password to view it.</string>

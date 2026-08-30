@@ -240,21 +240,22 @@ producto), leyendo directamente el estado marcado en cada doc de requisitos
 | Dimensión | Avance | Nota |
 |---|---|---|
 | Infraestructura y calidad base | ~94% | build estable, CI con emulador real corriendo los 3 flujos de Compose UI Testing, i18n completo, RF-SEC-08 (lifecycle) y UMP (consentimiento) implementados — sin cambios desde el 2026-08-27, no se tocó infraestructura en este período |
-| Funcionalidad core (77 RF catalogados en los 7 módulos de producto) | ~97% (75/77) | Seguridad 15/15 (RF-SEC-09 cerrado), Ajustes+Premium 12/12 (RF-SET-07 cerrado 2026-08-29), Escáner 5/7, Visor+Biblioteca 9/9 (RF-VIS-06/07/08 cerrados), Conversión 9/9 (RF-CONV-07/08/09 cerrados), Estudio 10/10 (RF-STU-08/09/10 cerrados 2026-08-29), Herramientas PDF 15/15 (RF-PDF-06 a 15 cerrados) — **con esto, solo Escáner queda con backlog de RF pendiente**; los 2 RF que quedan en todo el proyecto (brillo/contraste y reescalado) están bloqueados por limitaciones de ML Kit Document Scanner, no por falta de tiempo |
+| Funcionalidad core (77 RF catalogados en los 7 módulos de producto) | **100% (77/77)** | Seguridad 15/15 (RF-SEC-09 cerrado), Ajustes+Premium 12/12 (RF-SET-07 cerrado 2026-08-29), Escáner 7/7 (RF-SCAN-06/07 cerrados 2026-08-29), Visor+Biblioteca 9/9 (RF-VIS-06/07/08 cerrados), Conversión 9/9 (RF-CONV-07/08/09 cerrados), Estudio 10/10 (RF-STU-08/09/10 cerrados 2026-08-29), Herramientas PDF 15/15 (RF-PDF-06 a 15 cerrados) — **con esto, el backlog de RF de los 7 módulos de producto queda en cero**; RF-SCAN-06/07 requirieron además dejar de pedirle a ML Kit el PDF interno (siempre "ganaba" sobre las páginas como imágenes) para que la edición de brillo/contraste/escala fuera alcanzable de verdad, ver `scanner.md` §8 |
 | Documentación formal (HU con criterios de aceptación) | ~95% | 8 de 8 módulos con specs propias (los 7 de producto + deployment); todas con tabla de bugs de QA trazada como corregido/obsoleto/backlog; los 3 módulos recién cerrados (PDF, Visor+Biblioteca, Conversión) tienen sus HU con AC y verificación en dispositivo documentadas |
 | Pruebas automatizadas | creciendo (228 tests, era 117 el 2026-08-27) | +111 tests en este período: cobertura nueva de `WordFormatDetectionTest`/soporte `.doc` legado (fixture real generado con Word vía COM), `ConverterViewModelBatchTest` (primer test de ViewModel del módulo Conversión), `PdfToTextUseCaseTest`/`PdfToWordUseCaseTest` (use cases que no tenían ningún test — encontraron 2 bugs reales preexistentes, ver abajo), y la suite completa de Herramientas PDF (firma, formularios, OCR, numeración, marca de agua, reordenar, comparar, censurar, recortar, editar texto) |
 | Listo para publicar en Play Store | ~80% | Sin cambios desde el 2026-08-27 — todo lo que dependía de código ya está (firma de release, Play Billing real, UMP verificado); lo que falta sigue siendo la subida manual a Play Console, el AdMob App ID real, y ajustar `versionCode`/`versionName` antes de subir |
 
-**Estimado global "producto listo para producción": ~75-80%** (era ~65-70%
-el 2026-08-29 antes de cerrar Estudio y Ajustes). El salto se explica por
-cerrar el backlog de RF de Estudio (RF-STU-08/09/10 — exportar notas,
-estadísticas, Pomodoro en segundo plano vía el primer `Service` del
-proyecto) y de Ajustes+Premium (RF-SET-07 — color de acento personalizable,
-6 opciones). Lo que queda ya no es "features grandes sin empezar" sino un
-gap puntual en un solo módulo (Escáner: brillo/contraste y reescalado,
-ambos bloqueados por limitaciones de ML Kit Document Scanner, 2 RF en
-total) más los 3 pasos manuales de publicación que solo el dueño del
-proyecto puede dar (subida a Play Console, AdMob real,
+**Estimado global "producto listo para producción": ~80-85%** (era ~65-70%
+el 2026-08-29 antes de cerrar Estudio/Ajustes/Escáner en la misma sesión).
+El salto se explica por cerrar el backlog de RF de Estudio (RF-STU-08/09/10
+— exportar notas, estadísticas, Pomodoro en segundo plano vía el primer
+`Service` del proyecto), de Ajustes+Premium (RF-SET-07 — color de acento
+personalizable, 6 opciones) y de Escáner (RF-SCAN-06/07 — brillo/contraste
+y reescalado, con un cambio de flujo para que la edición fuera alcanzable
+de verdad, ver `scanner.md` §8). **Con esto, el backlog de RF de los 7
+módulos de producto queda en cero** — lo que queda ya no es "funcionalidad
+sin implementar" sino únicamente los 3 pasos manuales de publicación que
+solo el dueño del proyecto puede dar (subida a Play Console, AdMob real,
 respaldo del keystore) — sin cambios ahí desde 2026-08-27.
 
 **Dos bugs reales preexistentes encontrados y corregidos al escribir tests
@@ -292,6 +293,12 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
   estadísticas de estudio, Pomodoro en segundo plano — ver `study.md` §9).
   Sin candidatas nuevas identificadas todavía.
 - **Premium:** ~~conectar Play Billing real~~ ✅ 2026-08-25 (ver más abajo); límite diario no-premium ya estaba conectado (RF-PREM-02); pendiente: programa de referidos.
+- **Ajustes:** ✅ backlog de RF cerrado por completo 2026-08-29 (color de acento
+  personalizable, 6 opciones — ver `settings-premium.md` §12). Sin candidatas
+  nuevas identificadas todavía.
+- **Escáner:** ✅ backlog de RF cerrado por completo 2026-08-29 (brillo/
+  contraste y reescalado sobre la imagen ya escaneada — ver `scanner.md` §8).
+  Sin candidatas nuevas identificadas todavía.
 - **Transversal:** estandarizar banner azul en todas las vistas (pedido repetido
   en QA), accesibilidad (TalkBack, fuentes dinámicas), completar idiomas
   pendientes (ja/ko/zh/it/fr).

@@ -632,6 +632,12 @@
     <string name="scan_result_filename_hint">Если оставить пустым, будет создано автоматическое имя</string>
     <string name="scan_result_generating_pdf">Создание PDF…</string>
     <string name="scan_result_default_name_prefix">Скан_%1$s</string>
+    <string name="scan_edit_page_content_desc">Редактировать страницу %1$d</string>
+    <string name="scan_edit_title">Редактировать страницу</string>
+    <string name="scan_edit_brightness">Яркость: %1$d</string>
+    <string name="scan_edit_contrast">Контраст: %1$d</string>
+    <string name="scan_edit_scale">Масштаб</string>
+    <string name="scan_edit_apply">Применить</string>
     <string name="security_file_protected_original_kept">Файл защищён. Не удалось удалить оригинал из исходного места — удалите его вручную, если хотите убрать его полностью.</string>
     <string name="qr_protected_title">Защищённый QR-код</string>
     <string name="qr_protected_desc">Это содержимое защищено паролем. Введите пароль, чтобы увидеть его.</string>
