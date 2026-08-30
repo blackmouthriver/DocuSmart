@@ -476,7 +476,7 @@
     <string name="converter_progress_subtitle">Обработка файлов: %1$d</string>
     <string name="converter_progress_footer">Подождите, не закрывайте приложение</string>
 
-    <string name="splash_tagline">Ваши умные документы</string>
+    <string name="splash_tagline">СКАНИРУЙ · ОРГАНИЗУЙ</string>
 
     <!-- ── Онбординг ─────────────────────────────────── -->
     <string name="onboarding_1_title">Добро пожаловать в DocuSmart</string>

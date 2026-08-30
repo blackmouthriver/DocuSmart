@@ -476,7 +476,7 @@
     <string name="converter_progress_subtitle">Procesando %1$d archivo(s)</string>
     <string name="converter_progress_footer">Por favor espera, no cierres la app</string>
 
-    <string name="splash_tagline">Tus documentos inteligentes</string>
+    <string name="splash_tagline">ESCANEA · ORGANIZA</string>
 
     <!-- ── Onboarding ─────────────────────────────────── -->
     <string name="onboarding_1_title">Bienvenido a DocuSmart</string>
