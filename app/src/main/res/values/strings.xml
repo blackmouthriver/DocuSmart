@@ -773,4 +773,7 @@
     <string name="trash_delete_forever">Eliminar ahora</string>
     <string name="trash_delete_forever_confirm_title">¿Eliminar definitivamente?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s se eliminará para siempre y ya no se podrá recuperar."</string>
+    <string name="trash_delete_all">Borrar todo</string>
+    <string name="trash_delete_all_confirm_title">¿Vaciar la papelera?</string>
+    <string name="trash_delete_all_confirm_body">"Se eliminarán %1$d archivos para siempre y ya no se podrán recuperar."</string>
 </resources>

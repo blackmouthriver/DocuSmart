@@ -773,4 +773,7 @@
     <string name="trash_delete_forever">Удалить сейчас</string>
     <string name="trash_delete_forever_confirm_title">Удалить навсегда?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s будет удалён навсегда и его больше нельзя будет восстановить."</string>
+    <string name="trash_delete_all">Удалить всё</string>
+    <string name="trash_delete_all_confirm_title">Очистить корзину?</string>
+    <string name="trash_delete_all_confirm_body">"%1$d файлов будут удалены навсегда и их больше нельзя будет восстановить."</string>
 </resources>

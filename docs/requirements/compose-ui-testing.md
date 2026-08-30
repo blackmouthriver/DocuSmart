@@ -1,0 +1,146 @@
+# Compose UI Testing — cobertura de flujos de la app
+
+## 1. Contexto y motivación
+
+SonarCloud marca la condición `new_coverage` del Quality Gate en 0.0%
+(umbral exigido: 80%) — ver [`deployment.md`](deployment.md) §7. Esto
+**no es una regresión ni un descuido**: es un límite conocido de la
+arquitectura del proyecto. `jacocoTestReport` (la tarea que alimenta a
+Sonar, ver `.github/workflows/sonarcloud.yml`) solo corre
+`testDebugUnitTest` — pruebas JVM puras (JUnit5 + MockK, en
+`app/src/test/`). El código de Compose (`@Composable`, `ViewModel`s que
+dependen de `Context`/Android framework, navegación) no se puede ejercer
+de forma significativa ahí; requiere pruebas **instrumentadas**
+(`app/src/androidTest/`, JUnit4 + `createAndroidComposeRule`, corren en un
+emulador/dispositivo real).
+
+Esta HU responde a la pregunta abierta: **¿conviene invertir en Compose UI
+Testing para subir la cobertura de Sonar?** La respuesta corta es
+**parcialmente**: da regresión automática real (valioso por sí solo,
+independiente de Sonar), pero **no mueve la aguja de `new_coverage` sin
+un cambio adicional de CI** — ver §4 "Advertencia técnica" antes de asumir
+que esto cierra la condición del Quality Gate.
+
+## 2. Estado actual (auditado 2026-08-30 — no asumir, verificar contra el código)
+
+**Ya existe infraestructura real, esto no es un proyecto desde cero:**
+
+- 3 pruebas instrumentadas ya escritas y en verde:
+  `ViewerScreenTest` (abrir documento + favorito, ver
+  [`visor-biblioteca.md`](visor-biblioteca.md) §9),
+  `ConverterScreenTest` (ver [`conversion.md`](conversion.md) §7),
+  `SecurityScreenTest` (PIN de Carpeta Segura).
+- Ya corren en CI: `.github/workflows/ci.yml`, job `instrumented-tests`
+  ("Compose UI Testing (emulador)") — emulador API 34 x86_64 con KVM,
+  `connectedDebugAndroidTest` sobre los 3 flujos de arriba. Con
+  `disable-animations: true` (evita el flakiness de Compose documentado en
+  `conversion.md` §7).
+- Dependencias y configuración de Gradle ya resueltas: `ui-test-junit4`,
+  `mockk-android`, conflictos de "consistent resolution" de AGP, excludes
+  de `META-INF/*.md` duplicados, detección de instrumentación para no
+  disparar carga real de anuncios en los tests (ver `visor-biblioteca.md`
+  §9 para el bug real que esto destapó).
+- Patrón establecido: se pasa un ViewModel construido a mano con `mockk`
+  al Composable (que ya acepta `viewModel` como parámetro con default
+  `hiltViewModel()`) — **sin infraestructura de Hilt en los tests**, mismo
+  patrón que los unit tests JVM.
+
+Lo que falta es **ampliar la cobertura al resto de los flujos** — este
+documento es el inventario y la priorización de eso.
+
+## 3. RF-QA-01 — Cobertura de Compose UI Testing para los flujos críticos de cada módulo
+
+**Como** equipo de desarrollo de DocuSmart,
+**quiero** pruebas de UI automatizadas para el flujo principal de cada
+módulo de la app,
+**para** detectar regresiones de navegación/estado real (no solo lógica
+pura) antes de que lleguen a producción, con el mismo nivel de confianza
+que ya dan los ~150+ unit tests JVM para la lógica de negocio.
+
+### Alcance — inventario de flujos (fuente: `NavRoutes.kt`, 18 rutas)
+
+| # | Módulo / pantalla | Flujo a cubrir | Prioridad | Estado |
+|---|---|---|---|---|
+| 1 | Visor (`ViewerScreen`) | Abrir documento, ver nombre en barra superior, favorito | Alta | ✅ Cubierto (`ViewerScreenTest`) |
+| 2 | Convertidor (`ConverterScreen`) | Seleccionar formato origen/destino, elegir archivo, convertir | Alta | ✅ Cubierto (`ConverterScreenTest`) |
+| 3 | Seguridad (`SecurityScreen`) | Configurar PIN de Carpeta Segura | Alta | ✅ Cubierto (`SecurityScreenTest`) |
+| 4 | Visor — búsqueda | Escribir término, navegar entre coincidencias resaltadas (RF-VIS-08) | Alta | ⬜ Pendiente |
+| 5 | Visor — renombrar/eliminar | Renombrar documento, mover a papelera desde el Visor (RF-VIS-06) | Media | ⬜ Pendiente |
+| 6 | Home (`HomeScreen`) | Ver recientes, favorito, accesos rápidos navegan a la ruta correcta | Alta | ⬜ Pendiente |
+| 7 | Home — eliminar | "Eliminar del historial" mueve a papelera y desaparece de la lista | Alta | ⬜ Pendiente |
+| 8 | Biblioteca (`LibraryScreen`) | Cambiar pestaña Dispositivo/Mis archivos, filtrar por tipo, buscar | Alta | ⬜ Pendiente |
+| 9 | Papelera (`TrashScreen`) | Restaurar, eliminar uno, **"Borrar todo"** (§17 de `visor-biblioteca.md`, bug real recién corregido) | Alta | ⬜ Pendiente |
+| 10 | Herramientas PDF (`PdfToolsScreen`) | Elegir herramienta, ejecutar sobre un PDF real, ver `ToolSuccessCard` | Alta | ⬜ Pendiente |
+| 11 | Contraseña PDF (`PdfPasswordScreen`) | Poner/quitar/cambiar contraseña | Media | ⬜ Pendiente |
+| 12 | Escáner (`ScannerScreen`/`ScanResultScreen`) | Delegado a Google ML Kit — probar solo el resultado (guardar/compartir), no la captura en sí | Media | ⬜ Pendiente |
+| 13 | QR (`QrReaderScreen`/`QrCreatorScreen`) | Crear QR con/sin contraseña, leer y navegar a URL | Media | ⬜ Pendiente |
+| 14 | Estudio (`StudyScreen`) | Guardar/eliminar nota, orden de la lista, Pomodoro inicia/pausa | Media | ⬜ Pendiente |
+| 15 | Ajustes (`SettingsScreen`) | Cambiar tema/idioma/acento, Restablecer configuración | Alta | ⬜ Pendiente |
+| 16 | Premium (`PremiumScreen`) | Elegir plan, iniciar compra (mock de `BillingManager`), restaurar compras | Media | ⬜ Pendiente |
+| 17 | Onboarding (`OnboardingScreen`) | Recorrer y completar, navega a Home | Baja | ⬜ Pendiente |
+| 18 | Splash (`SplashMouthBlackScreen`/`SplashDocuSmartScreen`) | Transición automática a la siguiente pantalla | Baja | ⬜ Pendiente |
+
+### Criterios de aceptación
+
+- **AC1** Cada flujo de prioridad Alta pendiente (filas 4, 6-9, 10, 15)
+  tiene al menos una prueba instrumentada en `app/src/androidTest/` que
+  cubre su camino principal (golden path), siguiendo el patrón ya
+  establecido (ViewModel mockeado a mano, sin Hilt en el test).
+- **AC2** Todas las pruebas nuevas pasan con `disable-animations: true`
+  (mismo mitigante de flakiness ya usado) y no dependen de temporizaciones
+  fijas (`Thread.sleep`) sino de `waitUntil`/`onNodeWithText(...).assertExists()`
+  de Compose Testing.
+- **AC3** El job `instrumented-tests` de `ci.yml` sigue corriendo
+  `connectedDebugAndroidTest` con todas las pruebas nuevas incluidas, sin
+  aumentar el timeout más allá de lo necesario (hoy 40 min) — si una
+  prueba nueva hace que el job exceda el timeout, se evalúa paralelizar
+  antes de simplemente subir el límite.
+- **AC4** Ninguna prueba nueva depende de red real, Play Billing real, ni
+  MediaStore real con archivos que no controla el propio test (mismo
+  criterio ya aplicado: `TrashRepositoryTest`/`DocumentRepositoryTest` no
+  tocan MediaStore real, ver nota en `TrashRepositoryTest`).
+- **AC5** Las prioridades Media/Baja (filas 5, 11-14, 16-18) quedan
+  documentadas como backlog explícito en la tabla de arriba, no
+  implementadas en el mismo lote que las de prioridad Alta — evita una
+  sola HU/PR gigante.
+
+## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
+
+`jacocoTestReport` (`app/build.gradle.kts`, tarea usada por
+`sonarcloud.yml`) solo agrega los reportes de `testDebugUnitTest`. Las
+pruebas de `androidTest/` corren en un **proceso distinto, dentro del
+emulador**, vía `connectedDebugAndroidTest` — Jacoco puede instrumentar
+también ese proceso, pero requiere:
+
+1. Habilitar `testCoverageEnabled = true` (o el mecanismo equivalente en
+   AGP moderno) en el build type de test, para que
+   `connectedDebugAndroidTest` genere su propio reporte Jacoco.
+2. Fusionar ese reporte con el de `testDebugUnitTest` antes de pasárselo a
+   Sonar (`sonar.coverage.jacoco.xmlReportPaths` acepta una lista de
+   archivos).
+3. Mover (o duplicar) el job `instrumented-tests` — con emulador, ~15-20
+   min más de CI — al workflow de `sonarcloud.yml`, hoy sin emulador. Esto
+   aumenta el tiempo y el costo de cómputo de cada análisis de Sonar en
+   `main`/PRs.
+
+Ninguno de estos 3 pasos está hecho hoy. **Decisión pendiente del
+usuario:** si vale la pena ese costo de CI para que Sonar refleje la
+cobertura real, o si el valor de estas pruebas (regresión real, atrapar
+bugs como el de Papelera de §17) es suficiente sin perseguir el número de
+Sonar — en cuyo caso la alternativa más simple es bajar/ajustar el umbral
+de `new_coverage` en la configuración del Quality Gate de SonarCloud
+(decisión de configuración, no de código).
+
+## 5. Preguntas abiertas
+
+- ¿Se prioriza cerrar primero los flujos de prioridad Alta (fila 4, 6-9,
+  10, 15 de la tabla) antes de evaluar la integración con Sonar (§4), o
+  se aborda todo junto?
+- ¿Vale la pena el costo de CI adicional (emulador en cada análisis de
+  Sonar) para que `new_coverage` refleje pruebas instrumentadas, o se
+  prefiere ajustar el umbral del Quality Gate y dejar Compose UI Testing
+  como iniciativa de calidad independiente?
+- Fila 12 (Escáner): dado que la captura en sí es 100% Google ML Kit (sin
+  código propio que testear ahí), ¿se limita el test a lo que sí es código
+  propio (guardar/compartir el resultado), o se considera fuera de alcance
+  por completo?

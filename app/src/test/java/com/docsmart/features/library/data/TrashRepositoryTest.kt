@@ -46,8 +46,9 @@ class TrashRepositoryTest {
         trashDao = FakeTrashDao()
         favorites = mockk()
         coEvery { favorites.removeAlias(any()) } just Runs
-        documentRepository = DocumentRepository(context, favorites, historyDao, trashDao)
-        repository = TrashRepository(documentRepository, trashDao, historyDao, favorites)
+        val mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
+        documentRepository = DocumentRepository(context, favorites, historyDao, trashDao, mediaDeletePermission)
+        repository = TrashRepository(documentRepository, trashDao, historyDao, favorites, mediaDeletePermission)
     }
 
     @AfterEach
@@ -100,9 +101,23 @@ class TrashRepositoryTest {
 
         val deleted = repository.deleteForever(file.absolutePath)
 
-        assertTrue(deleted)
+        assertTrue(deleted is DocumentRepository.DeleteOutcome.Deleted)
         assertFalse(file.exists())
         assertTrue(trashDao.getAll().isEmpty())
+    }
+
+    @Test
+    fun `deleteForever no limpia la entrada de la papelera si el borrado real fallo`() = runTest {
+        // Bug real corregido (2026-08-30): antes se llamaba a trashDao.remove()
+        // sin importar el resultado del borrado -- el archivo "resucitaba" en
+        // Biblioteca/Recientes aunque no se hubiera podido borrar de verdad.
+        val missing = File(filesDir, "no_existe.pdf")
+        trashDao.insert(TrashEntry(missing.absolutePath, 1000L))
+
+        val deleted = repository.deleteForever(missing.absolutePath)
+
+        assertTrue(deleted is DocumentRepository.DeleteOutcome.Failed)
+        assertEquals(1, trashDao.getAll().size, "la entrada debe seguir en la papelera para reintentar")
     }
 
     @Test

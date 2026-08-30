@@ -773,4 +773,7 @@
     <string name="trash_delete_forever">Jetzt löschen</string>
     <string name="trash_delete_forever_confirm_title">Endgültig löschen?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s wird endgültig gelöscht und kann nicht mehr wiederhergestellt werden."</string>
+    <string name="trash_delete_all">Alle löschen</string>
+    <string name="trash_delete_all_confirm_title">Papierkorb leeren?</string>
+    <string name="trash_delete_all_confirm_body">"%1$d Dateien werden endgültig gelöscht und können nicht mehr wiederhergestellt werden."</string>
 </resources>

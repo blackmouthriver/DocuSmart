@@ -388,3 +388,65 @@ independientes y compatibles entre sí (AC4). Restablecido tema a Sistema y
 acento a Azul manualmente para dejar el dispositivo en su estado por
 defecto tras la verificación.
 - Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 13. Crash real al entrar a Premium — segunda instancia del mismo bug de §11 (2026-08-30)
+
+Reportado por el usuario en uso manual: "al intentar ingresar a
+DocuSmart Premium se sale la aplicación" (y, de forma intermitente,
+también al entrar a Ajustes). Reproducido de forma confiable en
+dispositivo real y confirmado con logcat.
+
+**Causa raíz:** exactamente la misma familia de bug que §11
+(`InterstitialAd.load()`/`RewardedAd.load()` exigen hilo principal), pero
+en un punto distinto que la búsqueda de §11 no cubrió porque no pasa por
+`AdManager.initialize()`. `BillingManager` corre en su propio
+`CoroutineScope(SupervisorJob() + Dispatchers.IO)`; al conectar con Play
+Billing por primera vez (primera visita a Premium tras instalar/abrir la
+app), `onBillingSetupFinished` dispara `restorePurchases()` en ese scope
+IO. Si el usuario no tiene compras, `restorePurchases()` llama a
+`premiumManager.deactivatePremium()` → `adManager.setPremium(false)` →
+`loadInterstitial()`/`loadRewarded()` — mismo `IllegalStateException:
+#008 Must be called on the main UI thread` de §11, esta vez originado en
+`BillingManager.kt`, no en `MainActivity.kt`. Stack trace real:
+
+```
+java.lang.IllegalStateException: #008 Must be called on the main UI thread.
+	at com.google.android.gms.ads.interstitial.InterstitialAd.load
+	at com.docsmart.core.ads.AdManager.loadInterstitial(AdManager.kt:56)
+	at com.docsmart.core.ads.AdManager.setPremium(AdManager.kt:170)
+	at com.docsmart.core.premium.PremiumManager.deactivatePremium(PremiumManager.kt:40)
+	at com.docsmart.core.billing.BillingManager.restorePurchases(BillingManager.kt:210)
+```
+
+**Lección de §11 que no alcanzó:** aquella vez se corrigió el único punto
+de llamada conocido (quitar `Dispatchers.IO` de un `lifecycleScope.launch`
+puntual) y se documentó explícitamente no haber encontrado otros
+puntos — pero `AdManager` es un `Singleton` al que se llega desde
+contextos muy distintos (UI en Main, `BillingManager` en IO), y arreglar
+cada llamador uno por uno deja la puerta abierta a que aparezca un tercer
+punto igual. Esta vez el fix es en `AdManager` mismo, no en el llamador.
+
+**Corregido:** `AdManager.loadInterstitial()`/`loadRewarded()` ahora
+despachan explícitamente al hilo principal (`Handler(Looper.getMainLooper())`,
+con verificación `Looper.myLooper() == Looper.getMainLooper()` para no
+hacer un post innecesario cuando ya se llama desde Main) antes de invocar
+`InterstitialAd.load()`/`RewardedAd.load()` — sin importar desde qué
+dispatcher los llame quien sea. Esto vuelve a `AdManager` seguro para
+llamar desde cualquier hilo, cerrando la clase completa de bug en vez de
+un solo síntoma.
+
+**Verificado en dispositivo real:** app reinstalada en frío → Ajustes →
+tocar la tarjeta "DocuSmart Premium" (primera conexión a Play Billing del
+proceso, el escenario que antes crasheaba siempre) → sin crash, pantalla
+Premium cargó normalmente → logcat confirmó `BillingManager: conexión
+lista=true` → `AdManager: Interstitial cargado`/`Rewarded cargado` sin
+ningún `FATAL EXCEPTION`.
+
+Sin tests nuevos: el bug depende de una carrera entre dispatchers reales
+(`Dispatchers.IO` vs. el `Looper` principal de Android), no reproducible
+de forma determinística en un test unitario JVM sin Robolectric — mismo
+límite ya documentado en §11 para esta clase de bug.
+
+Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

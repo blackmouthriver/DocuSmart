@@ -2,6 +2,8 @@ package com.docsmart.core.ads
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -28,6 +30,22 @@ class AdManager @Inject constructor(
     private var interstitialAd : InterstitialAd? = null
     private var rewardedAd     : RewardedAd?     = null
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    // Google Ads exige que InterstitialAd.load()/RewardedAd.load() se llamen
+    // desde el hilo principal. AdManager es un Singleton al que se llega
+    // desde contextos muy distintos -- algunos ya en Main (UI), otros en
+    // Dispatchers.IO (p.ej. BillingManager.restorePurchases() al conectar
+    // con Play Billing) -- y no es responsabilidad de cada llamador saber
+    // esto. Crash real reproducido: "IllegalStateException: #008 Must be
+    // called on the main UI thread" al entrar a Premium por primera vez,
+    // porque BillingManager.restorePurchases() corre en IO y termina
+    // llamando a setPremium(false) -> loadInterstitial().
+    private fun runOnMainThread(action: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) action()
+        else mainHandler.post(action)
+    }
+
     private val conversionCount       = AtomicInteger(0)
     private val lastInterstitialTime  = AtomicLong(0L)
 
@@ -53,21 +71,23 @@ class AdManager @Inject constructor(
     // ── Interstitial ──────────────────────────────────────────────────────────
     private fun loadInterstitial() {
         if (_isPremium.value) return
-        InterstitialAd.load(
-            context,
-            AdConstants.INTERSTITIAL_CONVERSION_ID,
-            AdRequest.Builder().build(),
-            object : InterstitialAdLoadCallback() {
-                override fun onAdLoaded(ad: InterstitialAd) {
-                    interstitialAd = ad
-                    Timber.d("AdManager: Interstitial cargado")
+        runOnMainThread {
+            InterstitialAd.load(
+                context,
+                AdConstants.INTERSTITIAL_CONVERSION_ID,
+                AdRequest.Builder().build(),
+                object : InterstitialAdLoadCallback() {
+                    override fun onAdLoaded(ad: InterstitialAd) {
+                        interstitialAd = ad
+                        Timber.d("AdManager: Interstitial cargado")
+                    }
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        Timber.e("AdManager: Interstitial error — ${error.message}")
+                        interstitialAd = null
+                    }
                 }
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    Timber.e("AdManager: Interstitial error — ${error.message}")
-                    interstitialAd = null
-                }
-            }
-        )
+            )
+        }
     }
 
     fun onConversionCompleted(activity: Activity) {
@@ -99,23 +119,25 @@ class AdManager @Inject constructor(
     // ── Rewarded Ad ───────────────────────────────────────────────────────────
     private fun loadRewarded() {
         if (_isPremium.value) return
-        RewardedAd.load(
-            context,
-            AdConstants.REWARDED_UNLOCK_ID,
-            AdRequest.Builder().build(),
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: RewardedAd) {
-                    rewardedAd           = ad
-                    _isRewardedReady.value = true
-                    Timber.d("AdManager: Rewarded cargado ✅")
+        runOnMainThread {
+            RewardedAd.load(
+                context,
+                AdConstants.REWARDED_UNLOCK_ID,
+                AdRequest.Builder().build(),
+                object : RewardedAdLoadCallback() {
+                    override fun onAdLoaded(ad: RewardedAd) {
+                        rewardedAd           = ad
+                        _isRewardedReady.value = true
+                        Timber.d("AdManager: Rewarded cargado ✅")
+                    }
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        Timber.e("AdManager: Rewarded error — ${error.message}")
+                        rewardedAd             = null
+                        _isRewardedReady.value = false
+                    }
                 }
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    Timber.e("AdManager: Rewarded error — ${error.message}")
-                    rewardedAd             = null
-                    _isRewardedReady.value = false
-                }
-            }
-        )
+            )
+        }
     }
 
     /**

@@ -1,5 +1,9 @@
 package com.docsmart.features.library.presentation
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -63,11 +67,36 @@ fun TrashScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var pendingDelete by remember { mutableStateOf<TrashedItemUi?>(null) }
+    var pendingDeleteAll by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.actionError) {
         uiState.actionError?.let { message ->
             android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
             viewModel.dismissError()
+        }
+    }
+
+    // ── Borrado real que Android no puede hacer sin confirmación del usuario
+    // (fotos de MediaStore que la app no creó) -- se lanza el diálogo de
+    // sistema y, si vuelve OK, se avisa de vuelta al ViewModel para limpiar
+    // la papelera (ver DocumentRepository.DeleteOutcome.NeedsPermission).
+    var pendingRequest by remember { mutableStateOf<PendingDeleteRequest?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        val request = pendingRequest
+        pendingRequest = null
+        if (result.resultCode == Activity.RESULT_OK && request != null) {
+            when (request) {
+                is PendingDeleteRequest.Single -> viewModel.onSingleDeleteConfirmed(request.documentId)
+                is PendingDeleteRequest.Bulk   -> viewModel.onBulkDeleteConfirmed(request.documentIds)
+            }
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.pendingDeleteRequest.collect { request ->
+            pendingRequest = request
+            permissionLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
         }
     }
 
@@ -79,6 +108,17 @@ fun TrashScreen(
                 pendingDelete = null
             },
             onDismiss = { pendingDelete = null }
+        )
+    }
+
+    if (pendingDeleteAll) {
+        TrashDeleteAllDialog(
+            count     = uiState.items.size,
+            onConfirm = {
+                viewModel.deleteAll()
+                pendingDeleteAll = false
+            },
+            onDismiss = { pendingDeleteAll = false }
         )
     }
 
@@ -100,6 +140,15 @@ fun TrashScreen(
                 screenSubtitle = stringResource(R.string.trash_subtitle),
                 modifier       = Modifier.weight(1f)
             )
+            if (uiState.items.isNotEmpty()) {
+                IconButton(onClick = { pendingDeleteAll = true }) {
+                    Icon(
+                        imageVector        = Icons.Rounded.DeleteSweep,
+                        contentDescription = stringResource(R.string.trash_delete_all),
+                        tint               = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(16.dp))
@@ -225,6 +274,30 @@ private fun TrashItemCard(
             }
         }
     }
+}
+
+@Composable
+private fun TrashDeleteAllDialog(
+    count    : Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.trash_delete_all_confirm_title)) },
+        text  = { Text(stringResource(R.string.trash_delete_all_confirm_body, count)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    text  = stringResource(R.string.general_delete),
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
+        }
+    )
 }
 
 @Composable

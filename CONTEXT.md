@@ -368,6 +368,8 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - ~~Biblioteca: falta discriminar "archivos creados por la app" vs. "archivos del dispositivo".~~ **Obsoleto** — ya implementado (pestañas `LibraryTab.DEVICE`/`APP_FILES`).
 - Tarjetas de favoritos con tamaños inconsistentes en el carrusel horizontal — ajuste visual, no funcional, fuera de alcance de esta pasada.
 - Formatos en carrusel esconden opciones — sugerido: grilla en vez de carrusel — pendiente.
+- **Bug real encontrado 2026-08-30:** "Eliminar definitivamente" en la Papelera fallaba en silencio para fotos de MediaStore no creadas por la app (`RecoverableSecurityException`, scoped storage) y aun así borraba la entrada de la papelera — el archivo "resucitaba" en Biblioteca/Recientes. Corregido con el flujo de confirmación de sistema (`MediaStore.createDeleteRequest`/`RecoverableSecurityException`) + no limpiar la papelera hasta confirmar el borrado real. De paso se agregó "Borrar todo" (faltaba por completo). Ver [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) §17.
+- **Bug real encontrado 2026-08-30:** abrir un archivo desde Drive/WhatsApp con la app ya corriendo creaba una segunda instancia de `MainActivity` (sin `launchMode` declarado) — al volver atrás quedaba una copia de Inicio "pegada" en vez de cerrar la app. Corregido con `launchMode="singleTask"` + manejo reactivo de `onNewIntent()`. Ver [`docs/requirements/visor-biblioteca.md`](docs/requirements/visor-biblioteca.md) §18.
 
 ### Convertidor — refinado 2026-08-24, ver [`docs/requirements/conversion.md`](docs/requirements/conversion.md)
 - ~~Muy pocas opciones de conversión por formato (2-3 cuando el requerimiento pide más).~~ **Obsoleto en cantidad** — hay 17 combinaciones ya declaradas y visibles. El problema real: 3 opciones enrutaban al use case equivocado (entregaban el formato incorrecto) y 2 más ya "implementadas" fallaban al ejecutarse — ver bug real abajo.
@@ -413,11 +415,13 @@ antes de asumir que siguen vigentes**, varios documentos son de mayo 2026):
 - ~~Idioma: falta detección automática al primer inicio.~~ **Resuelto 2026-08-24** — `loadLanguage()` ahora usa el idioma del dispositivo como respaldo cuando no hay ninguno guardado (RF-SET-06). Sigue pendiente ampliar el catálogo de idiomas (agregar japonés, coreano, mandarín, italiano, francés — **es/en/de/pt/ru ya están, faltan ja/ko/zh/it/fr para el pedido completo**) — backlog, no abordado en esta pasada.
 - Falta personalización de colores/estilos por el usuario (banner, botones, iconos, nav bar) — backlog.
 - ~~Compra Premium simulada.~~ **Resuelto 2026-08-25** — Play Billing real conectado (`BillingManager`), ver sección dedicada más abajo.
+- **Bug crítico encontrado 2026-08-30:** la app se cerraba al entrar a Premium (y de forma intermitente a Ajustes) — `IllegalStateException: Must be called on the main UI thread` al cargar un anuncio desde `BillingManager.restorePurchases()` (corre en `Dispatchers.IO`). Segunda instancia de la misma familia de bug que la fila de arriba (§11 de `settings-premium.md`); esta vez corregido en `AdManager` mismo (despacha internamente al hilo principal) en vez de en el llamador. Ver [`docs/requirements/settings-premium.md`](docs/requirements/settings-premium.md) §13.
 
 ### General / transversal
 - Banner de anuncios: ubicarlo consistente (arriba antes del banner azul, o abajo cerca de la nav bar) en todas las vistas, y ocultarlo por completo para usuarios premium.
 - Carga de anuncios no perezosa: `AdManager.initialize()` carga interstitial + video recompensado de inmediato al arrancar la app (hallazgo de `sentinel_report.json`, mayo). Confirmado 2026-08-25 que no es solo un tema de rendimiento — en el emulador de pruebas, esa carga inicializó el decoder de video y crasheó el proceso completo. Cargar bajo demanda (justo antes de mostrar el anuncio) evitaría ambos problemas.
 - Estandarizar el banner azul (logo + título) en todas las pantallas.
+- **HU creada 2026-08-30** para ampliar Compose UI Testing a todos los flujos de la app (pedido explícito del usuario, ligado a la condición `new_coverage` 0% del Quality Gate de SonarCloud) — inventario completo de las 18 pantallas, priorización y advertencia técnica sobre qué hace falta en CI para que esto realmente mueva la métrica de Sonar. Ver [`docs/requirements/compose-ui-testing.md`](docs/requirements/compose-ui-testing.md).
 
 ---
 

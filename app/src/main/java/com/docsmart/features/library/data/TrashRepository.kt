@@ -1,5 +1,7 @@
 package com.docsmart.features.library.data
 
+import android.content.IntentSender
+import android.os.Build
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.TrashDao
@@ -34,7 +36,8 @@ class TrashRepository @Inject constructor(
     private val documentRepository: DocumentRepository,
     private val trashDao: TrashDao,
     private val documentHistoryDao: DocumentHistoryDao,
-    private val favoritesRepository: FavoritesRepository
+    private val favoritesRepository: FavoritesRepository,
+    private val mediaDeletePermission: MediaDeletePermission
 ) {
     companion object {
         const val TRASH_RETENTION_DAYS = 30
@@ -95,15 +98,88 @@ class TrashRepository @Inject constructor(
     /**
      * Borrado definitivo manual desde la papelera -- reutiliza
      * `DocumentRepository.deleteDocument()` (mismo mecanismo real ya usado
-     * antes de RF-VIS-07) y limpia la entrada de `trash_entries` sin
-     * importar el resultado (si el archivo ya no existía, igual no debe
-     * seguir listado).
+     * antes de RF-VIS-07).
+     *
+     * Bug real corregido (2026-08-30): antes se llamaba a
+     * `trashDao.remove(documentId)` sin importar el resultado del borrado
+     * real. Para fotos de MediaStore que la app no creó, `deleteDocument()`
+     * fallaba por falta de permiso (ver `DocumentRepository.DeleteOutcome`) y
+     * aun así se quitaba la entrada de la papelera -- el archivo "resucitaba"
+     * en Biblioteca/Recientes aunque el toast dijera que no se pudo eliminar.
+     * Ahora la entrada de la papelera solo se limpia si el borrado fue
+     * confirmado (`Deleted`); si Android pide permiso (`NeedsPermission`), el
+     * llamador debe lanzar el `IntentSender` y, si el usuario confirma,
+     * llamar a [finalizeDeleteForever].
      */
-    suspend fun deleteForever(documentId: String): Boolean = withContext(Dispatchers.IO) {
-        val deleted = documentRepository.deleteDocument(documentId)
+    suspend fun deleteForever(documentId: String): DocumentRepository.DeleteOutcome = withContext(Dispatchers.IO) {
+        val outcome = documentRepository.deleteDocument(documentId)
+        if (outcome is DocumentRepository.DeleteOutcome.Deleted) {
+            trashDao.remove(documentId)
+            favoritesRepository.removeAlias(documentId)
+        }
+        outcome
+    }
+
+    /** Limpia las tablas propias tras confirmar un borrado que requirió el
+     *  diálogo de sistema (Android ya borró la fila en ese punto). */
+    suspend fun finalizeDeleteForever(documentId: String) = withContext(Dispatchers.IO) {
         trashDao.remove(documentId)
         favoritesRepository.removeAlias(documentId)
-        deleted
+    }
+
+    suspend fun finalizeDeleteForever(documentIds: List<String>) = withContext(Dispatchers.IO) {
+        documentIds.forEach {
+            trashDao.remove(it)
+            favoritesRepository.removeAlias(it)
+        }
+    }
+
+    sealed interface BulkDeleteOutcome {
+        data object Done : BulkDeleteOutcome
+        data class NeedsPermission(val intentSender: IntentSender, val documentIds: List<String>) : BulkDeleteOutcome
+        data object PartialNeedsPermission : BulkDeleteOutcome
+    }
+
+    /**
+     * "Borrar todo" -- los archivos propios de la app (rutas de archivo) se
+     * borran directo; las fotos de MediaStore (content://) se agrupan en un
+     * único `MediaStore.createDeleteRequest()` (API 30+, un solo diálogo de
+     * sistema para todas). En API < 30 no existe el borrado en lote: se
+     * reintenta una por una y las que pidan permiso individual quedan en la
+     * papelera (se informa con [PartialNeedsPermission] en vez de encadenar
+     * varios diálogos de sistema seguidos).
+     */
+    suspend fun deleteAllForever(documentIds: List<String>): BulkDeleteOutcome = withContext(Dispatchers.IO) {
+        val plainFiles = documentIds.filterNot { it.startsWith("content://") }
+        val mediaFiles = documentIds.filter { it.startsWith("content://") }
+
+        plainFiles.forEach { id ->
+            if (documentRepository.deleteDocument(id) is DocumentRepository.DeleteOutcome.Deleted) {
+                trashDao.remove(id)
+                favoritesRepository.removeAlias(id)
+            }
+        }
+
+        if (mediaFiles.isEmpty()) return@withContext BulkDeleteOutcome.Done
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val uris = mediaFiles.map { android.net.Uri.parse(it) }
+            val intentSender = mediaDeletePermission.createBulkDeleteRequest(uris)
+            if (intentSender != null) return@withContext BulkDeleteOutcome.NeedsPermission(intentSender, mediaFiles)
+        }
+
+        var pendingPermission = false
+        mediaFiles.forEach { id ->
+            when (documentRepository.deleteDocument(id)) {
+                is DocumentRepository.DeleteOutcome.Deleted -> {
+                    trashDao.remove(id)
+                    favoritesRepository.removeAlias(id)
+                }
+                is DocumentRepository.DeleteOutcome.NeedsPermission -> pendingPermission = true
+                DocumentRepository.DeleteOutcome.Failed -> Unit
+            }
+        }
+        if (pendingPermission) BulkDeleteOutcome.PartialNeedsPermission else BulkDeleteOutcome.Done
     }
 
     /**
@@ -118,8 +194,16 @@ class TrashRepository @Inject constructor(
         trashDao.getAll()
             .filter { isTrashEntryExpired(it.deletedAt, now) }
             .forEach { entry ->
-                documentRepository.deleteDocument(entry.documentId)
-                trashDao.remove(entry.documentId)
+                // Solo se quita la entrada si el borrado real se confirmó --
+                // si Android pidió permiso (NeedsPermission) no hay Activity
+                // disponible acá para mostrar el diálogo, así que el archivo
+                // se queda en la papelera (vencido, pero visible) hasta que
+                // el usuario lo borre manualmente desde la UI.
+                if (documentRepository.deleteDocument(entry.documentId)
+                    is DocumentRepository.DeleteOutcome.Deleted
+                ) {
+                    trashDao.remove(entry.documentId)
+                }
             }
     }
 }
