@@ -433,7 +433,95 @@ análisis completo:**
   anterior, con una forma distinta) — no es la causa de este pico de
   duplicación y tocarlo hubiera sido alcance extra no pedido.
 
-**No verificable hasta el próximo push real a `main`** — SonarCloud solo
-analiza en push/PR, no hay forma de forzar una corrida contra este cambio
-sin subirlo. `testDebugUnitTest`/`detekt`/`lintDebug` en verde localmente
-antes de subir.
+**Verificado con el push real:** el job de SonarCloud terminó en verde
+(9m26s, antes fallaba siempre) — confirmado con `gh run watch`. Con el
+análisis ya completo, se consultó la puerta de calidad real vía la API
+pública de SonarCloud
+(`api/qualitygates/project_status?projectKey=blackmouthriver_DocuSmart`):
+
+| Condición (código nuevo) | Antes (datos incompletos) | Con el análisis completo |
+|---|---|---|
+| Duplicación | 3,1-3,2% (❌) | **0,1% (✅)** — confirma que el fix del helper de test funcionó |
+| Hotspots de seguridad revisados | — | **100% (✅)** |
+| Fiabilidad / Mantenibilidad | — | **A / A (✅)** |
+| Calificación de seguridad | D (dato viejo/incompleto) | **B (❌)** — real, ver abajo |
+| Cobertura | 0,0% (dato incompleto) | **0,0% (❌)** — real, ver abajo |
+
+### Calificación de seguridad B — 20 hallazgos reales corregidos parcialmente
+
+Con el análisis completo, `api/issues/search?...&inNewCodePeriod=true`
+mostró 20 hallazgos reales de seguridad en "código nuevo" (todo lo tocado
+desde la última versión etiquetada, que cubre básicamente toda la sesión
+de trabajo del 2026-08-29/30, no solo estos commits de CI). Corregidos los
+de bajo riesgo y esfuerzo acotado, documentados para revisión posterior los
+que implican una decisión de arquitectura:
+
+- **"Avoid expanding secrets in a run block"** (`release.yml`, 4
+  instancias) — el bloque que arma `keystore.properties` interpolaba
+  `${{ secrets.X }}` directamente en el texto del script de shell; GitHub
+  sustituye ese texto de forma literal antes de que el shell lo vea, así
+  que un valor de secret con comillas/backticks/`$()` se ejecutaría como
+  parte del script en vez de tratarse como dato opaco. Corregido pasando
+  los 4 secrets por un bloque `env:` y referenciándolos como variables de
+  shell (`$RELEASE_KEYSTORE_PASSWORD`, etc.) dentro del script.
+- **"Not enforcing HTTPS"** (`gitleaks.yml`, 2 instancias) — las llamadas
+  `curl -sSL` ya usaban URLs `https://`, pero `-L` (seguir redirecciones)
+  seguiría una redirección a `http://` si el servidor alguna vez
+  respondiera con una. Corregido agregando `--proto '=https' --tlsv1.2` a
+  ambas llamadas.
+- **"Set keyboardOptions to disable the keyboard cache"** (5 instancias:
+  `PdfPasswordScreen.kt` ×3, `QrScreen.kt` ×2, `ViewerScreen.kt` ×1) — los
+  campos de contraseña de PDF y de QR protegido usaban
+  `PasswordVisualTransformation()` para ocultar visualmente el texto, pero
+  no declaraban `keyboardType = KeyboardType.Password` en
+  `keyboardOptions` — sin eso, el teclado del sistema puede guardar el
+  texto tecleado en su caché de sugerencias/diccionario personalizado.
+  Corregido agregando `KeyboardOptions(keyboardType = KeyboardType.Password)`
+  a los 5 campos. Verificado en dispositivo real: el campo "Nueva
+  contraseña" de Proteger PDF sigue enmascarando el texto igual que antes,
+  con el teclado QWERTY estándar (no numérico) respondiendo con
+  normalidad.
+- **Sin tocar, pendiente de revisión con más contexto (no son errores de
+  código, son decisiones que requieren evaluar el diseño existente):**
+  - **"Make sure accessing the Android external storage is safe here"**
+    (CRITICAL ×4: `ScanResultScreen.kt`, `SecurityViewModel.kt`,
+    `ConverterViewModel.kt`, `PdfToolsViewModel.kt`) — son los usos ya
+    documentados de `Environment.getExternalStoragePublicDirectory()`
+    para el fallback pre-Android 10 (RNF-SCAN-02), un patrón deliberado y
+    necesario para soportar minSdk 26. Probablemente aplica marcarlos como
+    "Seguro" en el dashboard de SonarCloud (acción de revisión, no de
+    código) en vez de cambiar el código.
+  - **"Make sure performing a biometric authentication without a
+    CryptoObject is safe here"** (`SecurityViewModel.kt:120`) — Carpeta
+    Segura usa biometría como desbloqueo de conveniencia junto al PIN, no
+    como el mecanismo criptográfico que protege los archivos en sí;
+    agregar un `CryptoObject` real requeriría atar la biometría a una
+    clave del Keystore de Android, un cambio de diseño más grande que
+    vale la pena evaluar aparte, no un ajuste de una línea.
+  - **Verificación de dependencias (Gradle) / `verification-metadata.xml`
+    faltante** — requiere generar y mantener un archivo de metadatos de
+    verificación de dependencias (`./gradlew --write-verification-metadata`),
+    una iniciativa de endurecimiento de la cadena de suministro aparte,
+    no relacionada con este CI.
+
+### Cobertura 0,0% en código nuevo — no es un bug, es un límite conocido de arquitectura
+
+A diferencia de la duplicación/seguridad, esta condición **no se corrigió**
+porque no es algo que se arregle escribiendo más código en una pasada
+puntual: la gran mayoría de las líneas "nuevas" desde la última versión
+etiquetada son Composables de Compose UI y código atado directamente al
+framework de Android (`PomodoroTimerService`, `ScanImageEditor` con
+`Bitmap`/`Canvas`, etc.) que este proyecto, por convención ya establecida y
+documentada repetidamente en `study.md`/`scanner.md`/`settings-premium.md`,
+**no cubre con unit tests** — solo la lógica de negocio pura, que sí tiene
+tests pero es una fracción pequeña del total de líneas nuevas. El umbral de
+80% de la puerta "Sonar way" es el default genérico de SonarCloud, no algo
+calibrado para un proyecto Android con esta arquitectura (sin Compose UI
+Testing exhaustivo). Dos caminos posibles, ambos fuera de alcance de una
+corrección de código:
+1. Ajustar el umbral de cobertura de la puerta de calidad en la
+   configuración del proyecto en SonarCloud (acción del usuario en el
+   dashboard).
+2. Invertir en Compose UI Testing más exhaustivo (ya hay 3 flujos cubiertos,
+   ver `visor-biblioteca.md` §9) — una iniciativa grande aparte, no algo
+   para resolver de pasada.
