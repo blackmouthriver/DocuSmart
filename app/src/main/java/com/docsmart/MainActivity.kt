@@ -82,6 +82,7 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             val currentTheme by themeManager.currentTheme.collectAsState()
+            val currentAccentColor by themeManager.accentColor.collectAsState()
             val currentLanguage by languageManager.currentLanguage.collectAsState()
             val isSystemDark = isSystemInDarkTheme()
 
@@ -107,7 +108,8 @@ class MainActivity : AppCompatActivity() {
 
             DocuSmartTheme(
                 darkTheme = isDarkTheme,
-                useSystemTheme = useSystemTheme
+                useSystemTheme = useSystemTheme,
+                accentColor = currentAccentColor
             ) {
                 val navController = rememberNavController()
                 val currentBackStack by navController.currentBackStackEntryAsState()
