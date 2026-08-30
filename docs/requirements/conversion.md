@@ -12,6 +12,15 @@ conversión que usara el modelo de objetos OOXML de Apache POI (`XWPFDocument`,
 al intentar leer un .docx/.xlsx real. Además, 3 opciones de conversión
 declaradas en el menú estaban enrutadas al use case equivocado (entregaban
 un formato de salida distinto al que el usuario eligió). 12 tests nuevos.
+**Verificación de hallazgos de QA pendientes, 2026-08-29:** el banner de
+publicidad sí se muestra (solo tenía un retraso normal de carga de AdMob,
+no reproducido como bug — ver §7 de `CONTEXT.md`/tabla de bugs abajo); "vista
+en carrusel se ve vacía" **sí era un bug real** — `ImagePickerSection.kt`
+(con la miniatura en carrusel) existía en el código pero nunca se usaba;
+todas las conversiones, incluidas las de imagen, mostraban un picker
+genérico solo de texto (`ConversionDetailCard`). Corregido agregando un
+carrusel real de miniaturas para conversiones con origen Imagen y
+eliminando el archivo muerto.
 **Código relacionado:** `features/converter/**`, `app/build.gradle.kts`
 (dependencias de Apache POI), `app/proguard-rules.pro`.
 
@@ -316,8 +325,8 @@ etiqueta global por documento.
 | "Word → Texto" entregaba un PDF (enrutado a `wordToPdf` en `ConverterViewModel.convert()`) | HU-CONV-01 | ✅ Corregido — nuevo `WordToTextUseCase`, enrutado correctamente. |
 | "Excel → CSV" entregaba un PDF (enrutado a `excelToPdf`) | HU-CONV-02 | ✅ Corregido — nuevo `ExcelToCsvUseCase`, enrutado correctamente. |
 | "PPT → PDF" fallaba siempre (enrutado a `wordToPdf`, que no puede leer .pptx) | HU-CONV-03 | ✅ Corregido — nuevo `PptToPdfUseCase`, enrutado correctamente. |
-| "Banner de publicidad no se visualiza en esta pantalla" | — | No reproducido por lectura de código — el banner está conectado igual que en Home/Biblioteca/Herramientas PDF (mismo `AdConstants` de prueba, mismo componente `DocuSmartBannerAd`), que sí funcionan. Requiere verificación visual en dispositivo/emulador. |
-| "Vista en carrusel se ve vacía — sugerido grilla/lista" | — | No verificado — requiere prueba visual, no se pudo confirmar ni descartar por lectura de código. |
+| "Banner de publicidad no se visualiza en esta pantalla" | — | **No reproducido** (verificado visualmente en dispositivo 2026-08-29) — el banner sí carga y se muestra; el hallazgo original probablemente capturó el estado justo antes de que AdMob terminara de cargar (mismo retraso de red que cualquier banner de AdMob, no específico de esta pantalla). |
+| "Vista en carrusel se ve vacía — sugerido grilla/lista" | — | ✅ **Bug real confirmado y corregido 2026-08-29** — `ImagePickerSection.kt` (con el carrusel de miniaturas) existía en el código pero no se usaba en ningún lado; el picker real (`ConversionDetailCard`) solo mostraba "N archivo(s) seleccionado(s)" en texto, sin ninguna imagen. Se agregó `SelectedImagesCarousel` (miniaturas reales + botón eliminar) para conversiones con origen Imagen, y se eliminó el archivo muerto. |
 
 ---
 
@@ -445,8 +454,42 @@ corregidos.
 
 ---
 
-## 9. Preguntas abiertas
+## 9. Carrusel de miniaturas para conversiones de imagen (2026-08-29)
+
+Cierra el hallazgo de QA "vista en carrusel se ve vacía", verificado como
+bug real al retomar la lista de hallazgos pendientes de todo el proyecto.
+
+- **Causa raíz:** `ImagePickerSection.kt` (`features/converter/presentation/components/`)
+  ya tenía una implementación completa de carrusel de miniaturas (`LazyRow`
+  + `AsyncImage` + botón eliminar por imagen), pero **nunca se usaba en
+  ningún lugar del código** — quedó como código muerto desde que se
+  escribió. El picker realmente activo para todas las conversiones,
+  incluidas las de imagen, es `ConversionDetailCard`, que solo muestra un
+  ícono de carpeta + texto ("N archivo(s) seleccionado(s)") sin ninguna
+  vista previa visual.
+- **Corregido** agregando `SelectedImagesCarousel` (un `LazyRow` de
+  miniaturas de 84dp con botón "✕" de eliminar por imagen, reutilizando
+  `onRemoveImage` que `ConverterViewModel` ya exponía) dentro de
+  `ConversionDetailCard`, visible solo cuando `type.fromFormat == "Imagen"`
+  y hay al menos un archivo seleccionado — Word/Excel/PDF/PowerPoint siguen
+  mostrando solo el ícono genérico, donde una miniatura de imagen no
+  aportaría nada (no son archivos de imagen).
+- `ImagePickerSection.kt` se eliminó por completo (código muerto real, no
+  una funcionalidad a futuro) en vez de dejarlo sin usar al lado del
+  carrusel nuevo.
+- **Verificado en dispositivo real:** seleccionadas 2 imágenes para
+  "Imagen → PDF" → confirmado que las miniaturas reales aparecen debajo
+  del picker (antes solo se veía el texto "2 archivo(s)
+  seleccionado(s)") → confirmado el botón "✕" visible por miniatura.
+- Sin tests nuevos: cambio de UI puro (un `LazyRow` con `AsyncImage`, sin
+  lógica de negocio nueva) — mismo criterio ya aplicado a otros cambios
+  puramente visuales del proyecto.
+- Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.
+
+---
+
+## 10. Preguntas abiertas
 
 | Pregunta | Notas |
 |---|---|
-| Banner de anuncios y vista en carrusel — ¿siguen reproduciéndose en la versión actual? | Requieren prueba manual en dispositivo/emulador; no se pudieron confirmar ni descartar solo leyendo el código. |
+| Banner de anuncios y vista en carrusel — ¿siguen reproduciéndose en la versión actual? | **Resuelto 2026-08-29** — banner no reproducido (solo retraso de carga normal); carrusel sí era un bug real, corregido. Ver tabla de bugs arriba. |

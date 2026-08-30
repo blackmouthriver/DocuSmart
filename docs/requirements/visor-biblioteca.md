@@ -251,9 +251,9 @@ eligió mejorar la vista de texto existente.)*
 | Home: botón "Abrir" del banner no genera ninguna acción | — | **Obsoleto** — ya lanza `ACTION_OPEN_DOCUMENT` correctamente. |
 | Home: accesos rápidos de scanner/seguridad/estudio aislados | — | **Obsoleto** — ya navegan a rutas reales en `DocuSmartNavGraph.kt`. |
 | Visor: no permite renombrar ni eliminar desde el visor | RF-VIS-06 | ✅ Resuelto 2026-08-29 — ver §11. |
-| Visor: margen superior falla, el PDF "se pierde" arriba | — | No verificado — requiere prueba visual en dispositivo/emulador, no se pudo confirmar ni descartar por lectura de código. |
+| Visor: margen superior falla, el PDF "se pierde" arriba | — | ✅ **Bug real confirmado y corregido 2026-08-29** — ver §16. |
 | Biblioteca: tarjetas de favoritos con tamaños inconsistentes en el carrusel | — | Fuera de alcance de esta pasada (ajuste visual, no funcional). |
-| Home: botón "Inicio" de la bottom nav deja de responder tras ir a Convertir | — | No verificado — requiere prueba de navegación en vivo, no se pudo confirmar ni descartar por lectura de código. |
+| Home: botón "Inicio" de la bottom nav deja de responder tras ir a Convertir | — | **No reproducido** (verificado en dispositivo 2026-08-29, varios ciclos Convertir→Inicio consecutivos) — la navegación responde correctamente en la versión actual. |
 | "Recientes" en Home era solo `loadAllDocuments().take(5)` — un documento abierto hoy pero sin modificar no aparecía como reciente | HU-VIS-05 | ✅ Resuelto 2026-08-25 con `document_history` (Room) — ver §8. |
 | Falta papelera de reciclaje / deshacer un borrado accidental | RF-VIS-07 | ✅ Resuelto 2026-08-29 — ver §12. |
 | Visor: búsqueda en PDF no resalta la coincidencia, solo salta de página | RF-VIS-08 | ✅ Resuelto 2026-08-29 — ver §13. |
@@ -398,7 +398,7 @@ resto del proyecto — son mundos separados (`androidTest/` vs `test/`).
 |---|---|
 | ¿Vale la pena renombrar/eliminar desde el Visor (RF-VIS-06), o basta con hacerlo desde Biblioteca/Home? | **Resuelto 2026-08-29** — sí, implementado. Ver §11. |
 | ¿Papelera de reciclaje (RF-VIS-07) antes o después de las demás funcionalidades del backlog de Herramientas PDF? | Depende de cuánto valor le da el usuario a poder deshacer un borrado. Si se aborda, puede reusar `core/data/db/` (nueva tabla `trash_entries`). |
-| Los 2 hallazgos "no verificados" de la tabla de bugs (margen del PDF, bottom nav tras Convertir) — ¿siguen reproduciéndose en la versión actual? | Requieren prueba manual en dispositivo/emulador; no se pudieron confirmar ni descartar solo leyendo el código. |
+| Los 2 hallazgos "no verificados" de la tabla de bugs (margen del PDF, bottom nav tras Convertir) — ¿siguen reproduciéndose en la versión actual? | **Resuelto 2026-08-29** — margen del PDF era un bug real de zoom/pan sin límites, corregido (ver §16); bottom nav no se pudo reproducir. |
 | ¿Extender "últimos abiertos" también a una sección de Biblioteca (ya mencionada en el inventario de pantallas)? | `loadRecentlyOpened()` ya está construido y probado — agregarlo a Biblioteca es sobre todo trabajo de UI, no de datos. |
 
 ---
@@ -892,3 +892,55 @@ vuelta a español, verificado también).
   (parámetros de navegación, composables de layout, `stringResource()`),
   sin lógica de negocio nueva que cubrir — mismo criterio ya aplicado a
   cambios puramente visuales en este proyecto.
+
+---
+
+## 16. Bug real: zoom/pan sin límites perdía el PDF fuera de pantalla (2026-08-29)
+
+Cierra el hallazgo de QA "margen superior falla, el PDF 'se pierde' arriba",
+confirmado como bug real al retomar la lista de hallazgos pendientes de
+todo el proyecto (junto con `conversion.md` §9 y el resto de esta pasada).
+
+**Causa raíz:** el zoom/pan del Visor de PDF (`PdfViewerContent` en
+`ViewerScreen.kt`) aplica `scale`/`offsetX`/`offsetY` como un
+`graphicsLayer` sobre todo el `LazyColumn` de páginas, actualizados desde
+`detectTransformGestures`. El código incrementaba `offsetX`/`offsetY` con
+el delta de arrastre **sin ningún límite** — tras hacer zoom y arrastrar
+lo suficiente (o incluso sin zoom, un arrastre normal ya modificaba el
+offset), el contenido podía desplazarse fuera del área visible por
+completo, sin ninguna forma de recuperarlo salvo adivinar cuánto arrastrar
+de vuelta en la dirección contraria. Esto coincide exactamente con "el PDF
+se pierde arriba": arrastrar hacia abajo empuja `offsetY` a un valor muy
+negativo, y el borde superior de la página termina fuera de la pantalla de
+forma indefinida.
+
+**Corregido** limitando `offsetX`/`offsetY` en cada gesto al rango que
+`graphicsLayer` permite sin sacar el contenido del todo del área visible:
+como Compose escala/traslada desde el centro por defecto, el
+desplazamiento máximo que mantiene al menos el borde del contenido dentro
+del contenedor es `tamaño_del_contenedor * (escala - 1) / 2` por eje —
+en escala 1 (sin zoom) ese rango es `[0, 0]`, así que cualquier intento de
+arrastrar sin haber hecho zoom se ignora (correcto: el scroll normal entre
+páginas ya lo maneja el `LazyColumn` por separado, no este offset). El
+tamaño del contenedor se obtiene con `Modifier.onSizeChanged` sobre el
+propio `LazyColumn`.
+
+**Verificado en dispositivo real:** abierto un PDF real → 5 arrastres
+consecutivos y agresivos hacia arriba sin soltar → la página permaneció
+en su lugar, sin desplazarse fuera del área visible (antes del fix, un
+solo arrastre ya movía el `offsetY` sin límite). La verificación completa
+de pinch-zoom + arrastre no se pudo automatizar vía `adb` (requiere un
+gesto multitáctil real, que `adb shell input` no soporta), pero la fórmula
+de límite es la misma que usan la mayoría de visores de imágenes con zoom
+centrado — matemáticamente garantiza que el contenido nunca puede quedar
+completamente fuera del área visible sin importar cuánto se arrastre.
+
+**Sin tests nuevos:** la lógica vive dentro de un lambda de
+`detectTransformGestures` en un Composable, acoplada a gestos táctiles
+reales — mismo límite ya documentado para otras interacciones táctiles
+del proyecto (sin Robolectric/instrumentación para esto). Se consideró
+extraer la fórmula de clamping a una función pura testeable, pero al ser
+una única expresión de una línea por eje, no se justificó el nivel de
+indirección adicional.
+
+Verificado también: `testDebugUnitTest`/`detekt`/`lintDebug` en verde.

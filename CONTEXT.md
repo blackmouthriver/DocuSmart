@@ -300,7 +300,10 @@ Por módulo, sin refinar aún — para retomar al planear el siguiente sprint:
   contraste y reescalado sobre la imagen ya escaneada — ver `scanner.md` §8).
   Sin candidatas nuevas identificadas todavía.
 - **Transversal:** estandarizar banner azul en todas las vistas (pedido repetido
-  en QA), accesibilidad (TalkBack, fuentes dinámicas), completar idiomas
+  en QA — confirmado 2026-08-29 que el botón "volver" flotante junto al banner
+  en Seguridad/Papelera es un patrón deliberado y consistente entre varias
+  pantallas, no un defecto puntual; corregirlo es este ítem, no un fix
+  aislado), accesibilidad (TalkBack, fuentes dinámicas), completar idiomas
   pendientes (ja/ko/zh/it/fr).
 
 ---

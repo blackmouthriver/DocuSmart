@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
@@ -166,6 +170,7 @@ fun ConverterScreen(
                         fileName         = uiState.fileName,
                         onFileNameChange = { viewModel.onFileNameChange(it) },
                         onSelectFiles    = { fileLauncher.launch(getMimeForType(uiState.selectedType!!)) },
+                        onRemoveFile     = { viewModel.removeImage(it) },
                         onConvert = { viewModel.convert(context) },
                         onBack    = { viewModel.clearAll() },
                         modifier  = Modifier.padding(horizontal = 20.dp)
@@ -437,6 +442,7 @@ private fun ConversionDetailCard(
     fileName        : String,
     onFileNameChange: (String) -> Unit,
     onSelectFiles   : () -> Unit,
+    onRemoveFile    : (Uri) -> Unit,
     onConvert       : () -> Unit,
     onBack          : () -> Unit,
     modifier        : Modifier = Modifier
@@ -499,6 +505,16 @@ private fun ConversionDetailCard(
             }
         }
 
+        // Hallazgo de QA "vista en carrusel se ve vacía": el picker de
+        // arriba solo mostraba un conteo en texto ("N archivo(s)
+        // seleccionado(s)"), sin ninguna miniatura -- para conversiones con
+        // origen Imagen, donde una vista previa visual sí aporta (a
+        // diferencia de Word/Excel/PDF, donde un ícono genérico basta),
+        // se agrega el carrusel real de miniaturas.
+        if (type.fromFormat == "Imagen" && selectedFiles.isNotEmpty()) {
+            SelectedImagesCarousel(uris = selectedFiles, onRemove = onRemoveFile)
+        }
+
         // RF-CONV-08: con varios archivos (fuera de IMAGE_TO_PDF, que fusiona
         // todo en un solo PDF) cada archivo produce su propia salida con su
         // propio nombre original -- el campo de nombre único no aplica.
@@ -547,6 +563,45 @@ private fun ConversionDetailCard(
                         stringResource(R.string.converter_to_format, type.localizedToFormat()),
                     style = MaterialTheme.typography.labelLarge
                 )
+            }
+        }
+    }
+}
+
+// Extraído de ConversionDetailCard -- miniaturas reales de las imágenes ya
+// seleccionadas para una conversión con origen Imagen (corrige el hallazgo
+// de QA "vista en carrusel se ve vacía": antes no existía ningún carrusel,
+// solo un texto de conteo).
+@Composable
+private fun SelectedImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        itemsIndexed(uris) { _, uri ->
+            Box(modifier = Modifier.size(84.dp)) {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.medium)
+                )
+                IconButton(
+                    onClick = { onRemove(uri) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(24.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = MaterialTheme.shapes.extraSmall
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.general_delete),
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
             }
         }
     }
