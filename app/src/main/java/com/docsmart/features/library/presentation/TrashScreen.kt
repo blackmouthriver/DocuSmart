@@ -140,14 +140,22 @@ fun TrashScreen(
                 screenSubtitle = stringResource(R.string.trash_subtitle),
                 modifier       = Modifier.weight(1f)
             )
-            if (uiState.items.isNotEmpty()) {
-                IconButton(onClick = { pendingDeleteAll = true }) {
-                    Icon(
-                        imageVector        = Icons.Rounded.DeleteSweep,
-                        contentDescription = stringResource(R.string.trash_delete_all),
-                        tint               = MaterialTheme.colorScheme.error
-                    )
-                }
+        }
+
+        if (uiState.items.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick  = { pendingDeleteAll = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors   = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Icon(
+                    imageVector        = Icons.Rounded.DeleteSweep,
+                    contentDescription = null,
+                    modifier           = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.trash_delete_all))
             }
         }
 
