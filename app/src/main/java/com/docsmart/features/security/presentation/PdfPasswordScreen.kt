@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -337,6 +339,7 @@ private fun ProtectPdfForm(
             label         = { Text(stringResource(R.string.pdf_pw_new_password_label)) },
             visualTransformation = if (showPassword) VisualTransformation.None
             else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon  = {
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(
@@ -356,6 +359,7 @@ private fun ProtectPdfForm(
             modifier      = Modifier.fillMaxWidth(),
             label         = { Text(stringResource(R.string.pdf_pw_confirm_password_label)) },
             visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             isError       = confirmPass.isNotEmpty() && password != confirmPass,
             supportingText = {
                 if (confirmPass.isNotEmpty() && password != confirmPass)
@@ -575,6 +579,7 @@ private fun RemovePdfPasswordForm(
             placeholder   = { Text(stringResource(R.string.pdf_pw_current_password_placeholder)) },
             visualTransformation = if (showPassword) VisualTransformation.None
             else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon  = {
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(

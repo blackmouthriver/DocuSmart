@@ -18,6 +18,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -176,6 +177,7 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                             label = { Text(stringResource(R.string.qr_password_label)) },
                             visualTransformation = if (qrPasswordVisible) VisualTransformation.None
                             else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             trailingIcon = {
                                 IconButton(onClick = { qrPasswordVisible = !qrPasswordVisible }) {
                                     Icon(
@@ -967,6 +969,7 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                             },
                             visualTransformation = if (showPassword) VisualTransformation.None
                             else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             singleLine = true,
                             shape      = MaterialTheme.shapes.medium
                         )

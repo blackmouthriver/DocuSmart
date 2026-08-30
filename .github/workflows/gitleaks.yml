@@ -25,12 +25,16 @@ jobs:
       # Se usa el binario de gitleaks directamente (Apache-2.0, sin licencia
       # ni cuenta externa) en vez de la Action del marketplace, para evitar
       # cualquier dependencia de licenciamiento en repos privados/de organización.
+      # `--proto '=https'` evita que `-L` (seguir redirecciones) termine
+      # siguiendo una redirección a http:// si el servidor alguna vez
+      # respondiera con una -- hallazgo real de SonarCloud ("Not enforcing
+      # HTTPS here might allow for redirections to insecure websites").
       - name: Descargar gitleaks
         run: |
           set -euo pipefail
-          VERSION=$(curl -sSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
+          VERSION=$(curl --proto '=https' --tlsv1.2 -sSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
             | grep -Po '"tag_name":\s*"v\K[^"]*')
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+          curl --proto '=https' --tlsv1.2 -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
             -o gitleaks.tar.gz
           tar -xzf gitleaks.tar.gz gitleaks
           chmod +x gitleaks

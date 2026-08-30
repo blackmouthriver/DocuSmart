@@ -35,15 +35,27 @@ jobs:
       - name: Permiso de ejecución para gradlew
         run: chmod +x ./gradlew
 
+      # Los secrets se pasan por `env:` y se referencian como variables de
+      # shell ($VAR), no interpolados directamente en el texto del script
+      # (${{ secrets.X }}) -- GitHub sustituye ese texto de forma literal
+      # antes de que el shell lo vea, así que un valor con comillas/backticks/
+      # `$()` se ejecutaría como parte del script en vez de tratarse como un
+      # dato opaco (hallazgo real de SonarCloud: "Avoid expanding secrets in
+      # a run block").
       - name: Preparar firma de release desde secrets
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           mkdir -p keystore
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > keystore/docsmart-release.jks
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > keystore/docsmart-release.jks
           cat > keystore.properties <<EOF
           storeFile=keystore/docsmart-release.jks
-          storePassword=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.RELEASE_KEY_ALIAS }}
-          keyPassword=${{ secrets.RELEASE_KEY_PASSWORD }}
+          storePassword=$RELEASE_KEYSTORE_PASSWORD
+          keyAlias=$RELEASE_KEY_ALIAS
+          keyPassword=$RELEASE_KEY_PASSWORD
           EOF
 
       - name: Construir AAB firmado
