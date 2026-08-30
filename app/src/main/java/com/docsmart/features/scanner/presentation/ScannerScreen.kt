@@ -49,24 +49,23 @@ fun ScannerScreen(
             val scanResult = GmsDocumentScanningResult
                 .fromActivityResultIntent(result.data)
 
-            // ── Preferir PDF si está disponible ───────
-            val pdfUri = scanResult?.pdf?.uri
+            // RF-SCAN-06/07: se dejó de pedir RESULT_FORMAT_PDF -- ML Kit
+            // solo hace el recorte/corrección de perspectiva y devuelve las
+            // páginas como imágenes; el PDF final lo arma el conversor
+            // propio de DocuSmart (ConvertImageToPdfUseCase, ya usado en
+            // Conversión), que es el mismo paso donde ahora se puede
+            // ajustar brillo/contraste/escala de cada página antes de
+            // generarlo. Antes, pedir también PDF hacía que esa rama
+            // siempre "ganara" y las páginas nunca se usaran de verdad.
             val pages = scanResult?.pages?.mapNotNull { it.imageUri } ?: emptyList()
 
-            Timber.d("Escáner: ${pages.size} páginas, pdf=$pdfUri")
+            Timber.d("Escáner: ${pages.size} páginas")
 
-            when {
-                // Si hay PDF directo lo usamos
-                pdfUri != null -> {
-                    viewModel.onScanComplete(listOf(pdfUri), isPdf = true)
-                    onScanComplete(listOf(pdfUri))
-                }
-                // Si hay páginas las enviamos al convertidor
-                pages.isNotEmpty() -> {
-                    viewModel.onScanComplete(pages, isPdf = false)
-                    onScanComplete(pages)
-                }
-                else -> onBack()
+            if (pages.isNotEmpty()) {
+                viewModel.onScanComplete(pages, isPdf = false)
+                onScanComplete(pages)
+            } else {
+                onBack()
             }
         } else {
             Timber.d("Escáner: cancelado")
@@ -186,13 +185,12 @@ private fun launchScanner(
         ScannerMode.PHOTO -> GmsDocumentScannerOptions.SCANNER_MODE_BASE
     }
 
+    // RF-SCAN-06/07: solo JPEG -- ver comentario en el listener del
+    // resultado (arriba) sobre por qué se dejó de pedir también PDF.
     val options = GmsDocumentScannerOptions.Builder()
         .setScannerMode(scannerMode)
         .setPageLimit(10)
-        .setResultFormats(
-            GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
-            GmsDocumentScannerOptions.RESULT_FORMAT_PDF
-        )
+        .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
         .build()
 
     GmsDocumentScanning.getClient(options)
