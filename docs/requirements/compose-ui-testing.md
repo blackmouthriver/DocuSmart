@@ -68,8 +68,8 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 | 3 | Seguridad (`SecurityScreen`) | Configurar PIN de Carpeta Segura | Alta | ✅ Cubierto (`SecurityScreenTest`) |
 | 4 | Visor — búsqueda | Escribir término, navegar entre coincidencias resaltadas (RF-VIS-08) | Alta | ⬜ Pendiente |
 | 5 | Visor — renombrar/eliminar | Renombrar documento, mover a papelera desde el Visor (RF-VIS-06) | Media | ⬜ Pendiente |
-| 6 | Home (`HomeScreen`) | Ver recientes, favorito, accesos rápidos navegan a la ruta correcta | Alta | ⬜ Pendiente |
-| 7 | Home — eliminar | "Eliminar del historial" mueve a papelera y desaparece de la lista | Alta | ⬜ Pendiente |
+| 6 | Home (`HomeScreen`) | Ver recientes, favorito, accesos rápidos navegan a la ruta correcta | Alta | ✅ Cubierto 2026-08-31 (`HomeScreenTest`) |
+| 7 | Home — eliminar | "Eliminar del historial" mueve a papelera y desaparece de la lista | Alta | ✅ Cubierto 2026-08-31 (`HomeScreenTest`) |
 | 8 | Biblioteca (`LibraryScreen`) | Cambiar pestaña Dispositivo/Mis archivos, filtrar por tipo, buscar | Alta | ✅ Cubierto 2026-08-31 (`LibraryScreenTest`) |
 | 9 | Papelera (`TrashScreen`) | Restaurar, eliminar uno, **"Borrar todo"** (§17 de `visor-biblioteca.md`, bug real recién corregido) | Alta | ✅ Cubierto 2026-08-31 (`TrashScreenTest`) |
 | 10 | Herramientas PDF (`PdfToolsScreen`) | Elegir herramienta, ejecutar sobre un PDF real, ver `ToolSuccessCard` | Alta | ⬜ Pendiente |
@@ -140,6 +140,34 @@ el resto (fila 4, 6, 7, 10, 15 quedan pendientes para lotes futuros).
   pruebas previamente flagueadas como flaky -- pasaron limpio en esta
   corrida, consistente con la hipótesis de carga transitoria del
   dispositivo tras varias corridas seguidas, no un bug de código).
+
+### Implementado 2026-08-31 — filas 6 y 7 (Home)
+
+Segundo lote: las dos filas de Home juntas (misma pantalla, mismo
+ViewModel) en vez de combinarlas con otro módulo distinto.
+
+- **`HomeScreenTest`** (4 pruebas: ver recientes, tocar favorito, tocar un
+  acceso rápido, eliminar mueve a la papelera y desaparece de la lista).
+  `HomeViewModel` (el real, en el paquete `home.presentation`) se
+  construye con `DocumentRepository`/`TrashRepository`/
+  `FavoritesRepository`/`AdManager` mockeados, mismo patrón ya usado en
+  `LibraryScreenTest`.
+- **Nota de alcance sobre "accesos rápidos navegan a la ruta correcta"**:
+  `HomeScreen` recibe los callbacks de navegación (`onSecurity`, `onScan`,
+  etc.) ya resueltos desde afuera -- la navegación real la hace
+  `DocuSmartNavGraph.kt`, no `HomeScreen`. La prueba verifica que tocar el
+  acceso invoca el callback correcto (`onSecurity`), no que ocurra una
+  navegación real -- eso requeriría un `NavController` real, un alcance
+  distinto (integración de navegación, no UI de una pantalla aislada).
+- **Hallazgo real, no de código sino de organización del proyecto**: existe
+  un segundo `HomeViewModel` huérfano en el paquete `converter.presentation`
+  (datos mock hardcodeados, sin ninguna referencia real en el código,
+  confirmado con `grep`) -- no es el que usa `HomeScreen` (mismo paquete
+  `home.presentation`, resuelto sin import). Se flagueó aparte para
+  eliminarlo, no se tocó en este lote.
+- Gauntlet completo verde: `compileDebugAndroidTestKotlin`, `detekt`,
+  `lintDebug`, `testDebugUnitTest`, `connectedDebugAndroidTest` (16/16)
+  en verde, sin `FATAL EXCEPTION` en logcat.
 
 ## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
 
