@@ -334,7 +334,7 @@ dependencies {
     // El stub de Android para unit tests deja org.json.* sin implementar
     // ("not mocked") — esta dependencia real (mismo paquete org.json) la
     // sustituye solo para los tests, sin afectar el runtime de la app.
-    testImplementation("org.json:json:20231013")
+    testImplementation("org.json:json:20260814")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     // GrantPermissionRule -- LibraryScreenTest necesita permiso real de
