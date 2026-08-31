@@ -151,6 +151,8 @@
     <string name="viewer_unsupported">Этот формат не поддерживается встроенным просмотрщиком.</string>
     <string name="viewer_open_other">Открыть в другом приложении</string>
     <string name="viewer_more_options">Дополнительные параметры</string>
+    <string name="viewer_convert">Конвертировать</string>
+    <string name="viewer_create_qr">Создать QR-код</string>
     <string name="viewer_rename">Переименовать</string>
     <string name="viewer_delete">Удалить</string>
     <string name="viewer_rename_title">Переименовать документ</string>

@@ -624,6 +624,13 @@ private fun QrCornerDecoration() {
 @Composable
 fun QrCreatorScreen(
     onBack: () -> Unit = {},
+    // Atajo "Crear QR" desde el menú "⋮" de un archivo ya elegido (backlog
+    // UX 2026-08-30, HU-UX-01) -- `initialFileType` es "image" o "document",
+    // decide qué chip preseleccionar ya que ambos comparten el mismo
+    // mecanismo de adjuntar un archivo.
+    initialFileUri : String? = null,
+    initialFileType: String? = null,
+    initialFileName: String? = null,
     viewModel: QrViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -635,6 +642,15 @@ fun QrCreatorScreen(
     var content      by remember { mutableStateOf("") }
     var selectedUri  by remember { mutableStateOf<Uri?>(null) }
     var selectedName by remember { mutableStateOf("") }
+
+    LaunchedEffect(initialFileUri) {
+        if (initialFileUri != null) {
+            selectedType = if (initialFileType == "image") 4 else 5
+            selectedUri  = Uri.parse(initialFileUri)
+            selectedName = initialFileName ?: ""
+            content      = initialFileUri
+        }
+    }
     var password     by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var usePassword  by remember { mutableStateOf(false) }

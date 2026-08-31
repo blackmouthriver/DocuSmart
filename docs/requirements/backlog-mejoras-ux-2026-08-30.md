@@ -21,7 +21,7 @@ priorización para decidir qué se aborda y en qué orden.
 
 | # | Ítem | Tipo | Prioridad | Dificultad | Riesgo | Origen |
 |---|---|---|---|---|---|---|
-| 1 | Acceso directo a Convertir/QR desde el menú "⋮" de un archivo (Biblioteca/Recientes/Visores) | Mejora | Alta | Media | Bajo-Medio | Nuevo (§3) |
+| 1 | Acceso directo a Convertir/QR desde el menú "⋮" de un archivo (Biblioteca/Recientes/Visores) | Mejora | Alta | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-31** — ver §3 |
 | 2 | Capturar archivo desde cámara para convertir | Mejora | Media | Media | Bajo | Nuevo (§4) |
 | 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
@@ -29,7 +29,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | ✅ 6 de 6 pantallas implementadas y verificadas 2026-08-31 — ver §8 |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | — | — | — | Nuevo (§10) — **no reproducido en código**, necesita captura |
-| 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | Nuevo — mismo mecanismo que #1 (ver §3) |
+| 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | **✅ Implementado y verificado 2026-08-31** — mismo mecanismo que #1 (ver §3, AC5) |
 | 10 | Compose UI Testing en toda la app | Mejora (épica) | Mixta por flujo | Mixta por flujo | Bajo | Ya catalogado en [`compose-ui-testing.md`](compose-ui-testing.md) — no duplicar, ver §11 |
 | 11 | Auditoría UX/UI experta + plan de mejoras | Entregable | — | — | — | Nuevo — ver §12 (findings + HUs propias) |
 | 12 | Hallazgos de seguridad diferidos de SonarCloud (external storage x5, biometric CryptoObject, dependency verification) | Bug/Deuda técnica | Media | Media-Alta | Medio | Ya listado en `deployment.md` §7 |
@@ -124,6 +124,62 @@ compartir por QR.
 
 *(Nota de alcance: no incluye construir ninguna conversión nueva — solo
 el atajo de navegación + pre-carga sobre las conversiones que ya existen.)*
+
+### Implementado y verificado en dispositivo real (2026-08-31)
+
+- **`DocuSmartDocumentItem.kt`**: el menú "⋮" (`DocumentContextMenu`) ganó
+  la opción **"Crear QR"** junto a "Convertir" (ya existía pero no estaba
+  conectada en ningún lado — ver más abajo). Ambas son opcionales
+  (`onConvertClick`/`onCreateQrClick` nulos por defecto), así que no
+  afectan a ningún otro lugar que use este componente sin pasarlas.
+- **`NavRoutes.Converter`** ganó `initialFileUri`/`initialFileCategory`
+  (además del `initialType` que ya tenía desde el acceso rápido
+  "Img→PDF"). **`NavRoutes.QrCreator`** ganó
+  `initialFileUri`/`initialFileType`/`initialFileName` (antes no aceptaba
+  ningún parámetro).
+- **`ConverterViewModel`**: como un mismo formato de origen (p.ej. PDF)
+  tiene varios destinos posibles (PDF→Imagen/TXT/Word/HTML), no se puede
+  saltar directo a un `ConversionType` como hace "Img→PDF". Se agregó
+  `preloadFile(uri, category)` que deja el archivo en espera; en cuanto el
+  usuario toca cualquier tipo de conversión de esa misma categoría
+  (`onTypeSelected`), el archivo se adjunta automáticamente una sola vez
+  (consumo único) — así se ve el listado completo de las 5 categorías
+  igual que siempre (AC3), pero sin tener que volver a buscar el archivo
+  al elegir el destino (AC2).
+- **`QrCreatorScreen`**: mucho más simple que Convertir porque todo su
+  estado ya era local (`remember`), sin interdependencias — un
+  `LaunchedEffect(initialFileUri)` preselecciona el chip Imagen/Documento
+  y adjunta el archivo directo, saltando el picker.
+- **`DocuSmartNavGraph.kt`**: se agregaron `DocumentType.toConverterCategoryOrNull()`
+  (mapea el tipo real del archivo a la categoría del Convertidor; Texto y
+  ZIP devuelven `null` porque no tienen ninguna conversión definida hoy —
+  en ese caso se navega igual pero sin precarga, cae al flujo manual sin
+  romper nada) y `DocumentType.toQrFileType()` ("image"/"document").
+- **Biblioteca** (`LibraryScreen.kt` → `DocumentListSection.kt`) y
+  **Recientes** (`HomeScreen.kt` → `RecentDocuments.kt`) ganaron los
+  callbacks `onConvertClick`/`onCreateQrClick` (antes "Convertir" en
+  Recientes existía pero ignoraba el documento y mandaba siempre al CTA
+  genérico; en Biblioteca no existía en absoluto ninguna de las dos
+  opciones).
+- **Visor** (AC5, ítem #9): `ViewerTopBar.kt` ganó dos `DropdownMenuItem`
+  nuevos ("Convertir"/"Crear QR", con sus propios strings localizados en
+  5 idiomas) antes de Renombrar/Eliminar en el menú "⋮" ya existente
+  (RF-VIS-06) — riesgo bajo porque solo se agregan ítems, no se toca
+  ningún callback existente.
+- Detekt: agregar los nuevos parámetros a `ConverterScreen`,
+  `QrCreatorScreen` y `ViewerScreen` invalidó 3 entradas de
+  `LongMethod` en el baseline (mismo patrón de la sesión anterior) — se
+  regeneraron solo esas 3 líneas a mano, sin tocar las demás.
+- Gauntlet completo verificado: `compileDebugKotlin`, `detekt`,
+  `lintDebug`, `testDebugUnitTest` y `connectedDebugAndroidTest` (6/6) en
+  verde. Verificado en dispositivo real (Motorola Edge 30 Neo): "Crear
+  QR" desde Biblioteca llega con la imagen ya adjunta sin mostrar el
+  selector (se generó el QR con éxito); "Convertir" desde Biblioteca
+  muestra las 5 categorías completas y, al elegir "Imagen → PDF", el
+  archivo ya está adjunto (se completó la conversión con éxito); desde el
+  Visor, ambas opciones del menú "⋮" navegan con el documento
+  actualmente abierto precargado. Sin `FATAL EXCEPTION` en logcat en
+  ningún punto de la verificación.
 
 ---
 

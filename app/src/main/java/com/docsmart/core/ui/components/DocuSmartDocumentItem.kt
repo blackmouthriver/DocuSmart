@@ -48,6 +48,7 @@ fun DocuSmartDocumentItem(
     showDivider    : Boolean = true,
     onOpenClick    : (() -> Unit)? = null,
     onConvertClick : (() -> Unit)? = null,
+    onCreateQrClick: (() -> Unit)? = null,
     onShareClick   : (() -> Unit)? = null,
     onRenameClick  : (() -> Unit)? = null,
     onDeleteClick  : (() -> Unit)? = null
@@ -64,10 +65,11 @@ fun DocuSmartDocumentItem(
             onDismiss  = { showMenu = false },
             onOpen     = { showMenu = false; (onOpenClick ?: onClick)() },
             onFavorite = { showMenu = false; onFavoriteClick() },
-            onRename   = onRenameClick?.let  { a -> { showMenu = false; a() } },
-            onConvert  = onConvertClick?.let { a -> { showMenu = false; a() } },
-            onShare    = onShareClick?.let   { a -> { showMenu = false; a() } },
-            onDelete   = onDeleteClick?.let  { a -> { showMenu = false; a() } }
+            onRename   = onRenameClick?.let   { a -> { showMenu = false; a() } },
+            onConvert  = onConvertClick?.let  { a -> { showMenu = false; a() } },
+            onCreateQr = onCreateQrClick?.let { a -> { showMenu = false; a() } },
+            onShare    = onShareClick?.let    { a -> { showMenu = false; a() } },
+            onDelete   = onDeleteClick?.let   { a -> { showMenu = false; a() } }
         )
     }
 
@@ -157,6 +159,7 @@ fun DocumentContextMenu(
     onFavorite: () -> Unit,
     onRename  : (() -> Unit)? = null,
     onConvert : (() -> Unit)? = null,
+    onCreateQr: (() -> Unit)? = null,
     onShare   : (() -> Unit)? = null,
     onDelete  : (() -> Unit)? = null
 ) {
@@ -191,7 +194,7 @@ fun DocumentContextMenu(
                 tint    = if (document.isFavorite) MaterialTheme.colorScheme.error else null,
                 onClick = onFavorite
             )
-            OptionalContextMenuItems(onRename, onConvert, onShare, onDelete)
+            OptionalContextMenuItems(onRename, onConvert, onCreateQr, onShare, onDelete)
         }
     }
 }
@@ -237,10 +240,11 @@ private fun DocumentContextMenuHeader(document: DocumentUiModel) {
 
 @Composable
 private fun OptionalContextMenuItems(
-    onRename : (() -> Unit)?,
-    onConvert: (() -> Unit)?,
-    onShare  : (() -> Unit)?,
-    onDelete : (() -> Unit)?
+    onRename  : (() -> Unit)?,
+    onConvert : (() -> Unit)?,
+    onCreateQr: (() -> Unit)?,
+    onShare   : (() -> Unit)?,
+    onDelete  : (() -> Unit)?
 ) {
     if (onRename != null) {
         ContextMenuItem(
@@ -254,6 +258,13 @@ private fun OptionalContextMenuItems(
             icon    = Icons.Rounded.SwapHoriz,
             label   = "Convertir",
             onClick = onConvert
+        )
+    }
+    if (onCreateQr != null) {
+        ContextMenuItem(
+            icon    = Icons.Rounded.QrCode,
+            label   = "Crear QR",
+            onClick = onCreateQr
         )
     }
     if (onShare != null) {
