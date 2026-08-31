@@ -66,18 +66,18 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 | 1 | Visor (`ViewerScreen`) | Abrir documento, ver nombre en barra superior, favorito | Alta | ✅ Cubierto (`ViewerScreenTest`) |
 | 2 | Convertidor (`ConverterScreen`) | Seleccionar formato origen/destino, elegir archivo, convertir | Alta | ✅ Cubierto (`ConverterScreenTest`) |
 | 3 | Seguridad (`SecurityScreen`) | Configurar PIN de Carpeta Segura | Alta | ✅ Cubierto (`SecurityScreenTest`) |
-| 4 | Visor — búsqueda | Escribir término, navegar entre coincidencias resaltadas (RF-VIS-08) | Alta | ⬜ Pendiente |
+| 4 | Visor — búsqueda | Escribir término, navegar entre coincidencias resaltadas (RF-VIS-08) | Alta | ✅ Cubierto 2026-08-31 (`ViewerSearchTest`) |
 | 5 | Visor — renombrar/eliminar | Renombrar documento, mover a papelera desde el Visor (RF-VIS-06) | Media | ⬜ Pendiente |
 | 6 | Home (`HomeScreen`) | Ver recientes, favorito, accesos rápidos navegan a la ruta correcta | Alta | ✅ Cubierto 2026-08-31 (`HomeScreenTest`) |
 | 7 | Home — eliminar | "Eliminar del historial" mueve a papelera y desaparece de la lista | Alta | ✅ Cubierto 2026-08-31 (`HomeScreenTest`) |
 | 8 | Biblioteca (`LibraryScreen`) | Cambiar pestaña Dispositivo/Mis archivos, filtrar por tipo, buscar | Alta | ✅ Cubierto 2026-08-31 (`LibraryScreenTest`) |
 | 9 | Papelera (`TrashScreen`) | Restaurar, eliminar uno, **"Borrar todo"** (§17 de `visor-biblioteca.md`, bug real recién corregido) | Alta | ✅ Cubierto 2026-08-31 (`TrashScreenTest`) |
-| 10 | Herramientas PDF (`PdfToolsScreen`) | Elegir herramienta, ejecutar sobre un PDF real, ver `ToolSuccessCard` | Alta | ⬜ Pendiente |
+| 10 | Herramientas PDF (`PdfToolsScreen`) | Elegir herramienta, ejecutar sobre un PDF real, ver `ToolSuccessCard` | Alta | ✅ Cubierto 2026-08-31 (`PdfToolsScreenTest`) |
 | 11 | Contraseña PDF (`PdfPasswordScreen`) | Poner/quitar/cambiar contraseña | Media | ⬜ Pendiente |
 | 12 | Escáner (`ScannerScreen`/`ScanResultScreen`) | Delegado a Google ML Kit — probar solo el resultado (guardar/compartir), no la captura en sí | Media | ⬜ Pendiente |
 | 13 | QR (`QrReaderScreen`/`QrCreatorScreen`) | Crear QR con/sin contraseña, leer y navegar a URL | Media | ⬜ Pendiente |
 | 14 | Estudio (`StudyScreen`) | Guardar/eliminar nota, orden de la lista, Pomodoro inicia/pausa | Media | ⬜ Pendiente |
-| 15 | Ajustes (`SettingsScreen`) | Cambiar tema/idioma/acento, Restablecer configuración | Alta | ⬜ Pendiente |
+| 15 | Ajustes (`SettingsScreen`) | Cambiar tema/idioma/acento, Restablecer configuración | Alta | ✅ Cubierto 2026-08-31 (`SettingsScreenTest`) |
 | 16 | Premium (`PremiumScreen`) | Elegir plan, iniciar compra (mock de `BillingManager`), restaurar compras | Media | ⬜ Pendiente |
 | 17 | Onboarding (`OnboardingScreen`) | Recorrer y completar, navega a Home | Baja | ⬜ Pendiente |
 | 18 | Splash (`SplashMouthBlackScreen`/`SplashDocuSmartScreen`) | Transición automática a la siguiente pantalla | Baja | ⬜ Pendiente |
@@ -87,7 +87,8 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 - **AC1** Cada flujo de prioridad Alta pendiente (filas 4, 6-9, 10, 15)
   tiene al menos una prueba instrumentada en `app/src/androidTest/` que
   cubre su camino principal (golden path), siguiendo el patrón ya
-  establecido (ViewModel mockeado a mano, sin Hilt en el test).
+  establecido (ViewModel mockeado a mano, sin Hilt en el test). ✅ Cumplido
+  2026-08-31 -- las 7 filas Alta están cubiertas.
 - **AC2** Todas las pruebas nuevas pasan con `disable-animations: true`
   (mismo mitigante de flakiness ya usado) y no dependen de temporizaciones
   fijas (`Thread.sleep`) sino de `waitUntil`/`onNodeWithText(...).assertExists()`
@@ -169,6 +170,55 @@ ViewModel) en vez de combinarlas con otro módulo distinto.
   `lintDebug`, `testDebugUnitTest`, `connectedDebugAndroidTest` (16/16)
   en verde, sin `FATAL EXCEPTION` en logcat.
 
+### Implementado 2026-08-31 — filas 4, 10 y 15 (Visor-búsqueda, Herramientas PDF, Ajustes)
+
+Tercer y último lote de prioridad Alta pendiente -- con esto quedan
+cubiertas las 7 filas Alta de la tabla (1-4, 6-10, 15). Las prioridades
+Media/Baja (filas 5, 11-14, 16-18) quedan sin implementar, per AC5.
+
+- **`ViewerSearchTest`** (1 prueba: escribir término, ver "Coincidencia X
+  de Y", navegar siguiente/anterior con vuelta de módulo). A diferencia de
+  `ViewerScreenTest` (que usa un `documentId` mock sin `fileUri` real, por
+  lo que `searchInPdf()` corta temprano), acá se genera un PDF real de 2
+  páginas con iText7 (mismo patrón de `StudyNotesExporter`) y se pasa su
+  ruta absoluta como `documentId` para forzar la resolución real de
+  `fileUri`. `SearchPdfTextUseCase` se usa real (no mock), mismo criterio
+  ya aplicado a `ImageFormatUseCase` en `ConverterScreenTest`.
+- **`SettingsScreenTest`** (2 pruebas: cambiar tema/acento/idioma y ver el
+  subtítulo actualizado; restablecer configuración vuelve todo a
+  default). `ThemeManager`/`LanguageManager` reales, envueltos en un
+  `ContextWrapper` propio (`IsolatedPrefsContext`) que aísla cualquier
+  `SharedPreferences` pedida por nombre del estado real del dispositivo --
+  generaliza el patrón ya usado en `SecurityScreenTest` para un solo
+  namespace, a varios (`docusmart_theme`/`docusmart_language`).
+- **`PdfToolsScreenTest`** (1 prueba: elegir "Rotar PDF", ejecutar sobre un
+  PDF real de iText7, ver el mensaje de éxito). De las 14 herramientas del
+  dispatcher solo se ejercita "Rotar PDF" (la más simple) con
+  `RotatePdfUseCase` real; las otras 13 quedan mockeadas relajadas, nunca
+  invocadas en este camino.
+- **Hallazgo real (bug de test, no de producción) -- clic sintético fuera
+  del viewport visible**: el botón final "Rotar PDF 90°" quedó totalmente
+  sin efecto al hacer `performClick()` -- sin excepción, sin logs de
+  `PdfToolsViewModel`/`RotatePdfUseCase` (se instrumentó temporalmente con
+  `Timber.d` en la primera línea de `execute()` para confirmarlo), sin
+  cambio de estado. Diagnosticado con `composeRule.onRoot().printToLog(...)`
+  volcado a logcat: el nodo del botón existía en el árbol de semántica con
+  su acción `OnClick` presente (`t=3020px, b=3157px`), pero la pantalla
+  física del dispositivo mide 2400px de alto y el viewport visible de la
+  `LazyColumn` llegaba solo hasta `b=2274px` -- el nodo SÍ está compuesto
+  (a diferencia del caso de `SettingsScreenTest` más abajo, donde el nodo
+  ni existía) porque la `LazyColumn` mide el `item` completo aunque exceda
+  el viewport, pero `performClick()` dispara un toque sintético en las
+  coordenadas reales del nodo, y esas coordenadas caen fuera de lo visible
+  -- el toque no llega a nada y no se lanza ningún error. Corregido con
+  `.performScrollTo().performClick()` en vez de `.performClick()` directo.
+  Distinto del hallazgo de "Restablecer configuración" en `SettingsScreenTest`
+  (mismo síntoma superficial -- timeout esperando texto -- pero causa
+  distinta: ahí el nodo no estaba compuesto todavía, acá sí lo estaba pero
+  era inalcanzable por toque).
+- Gauntlet completo verde: `connectedDebugAndroidTest` (20/20), `detekt`,
+  `lintDebug`, `testDebugUnitTest`.
+
 ## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
 
 `jacocoTestReport` (`app/build.gradle.kts`, tarea usada por
@@ -198,9 +248,9 @@ de `new_coverage` en la configuración del Quality Gate de SonarCloud
 
 ## 5. Preguntas abiertas
 
-- ¿Se prioriza cerrar primero los flujos de prioridad Alta (fila 4, 6-9,
-  10, 15 de la tabla) antes de evaluar la integración con Sonar (§4), o
-  se aborda todo junto?
+- Con las 7 filas Alta ya cubiertas (2026-08-31), ¿se evalúa ahora la
+  integración con Sonar (§4), se aborda el backlog Media/Baja (filas 5,
+  11-14, 16-18), o ambos quedan en pausa hasta nueva indicación?
 - ¿Vale la pena el costo de CI adicional (emulador en cada análisis de
   Sonar) para que `new_coverage` refleje pruebas instrumentadas, o se
   prefiere ajustar el umbral del Quality Gate y dejar Compose UI Testing
