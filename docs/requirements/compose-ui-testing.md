@@ -25,14 +25,16 @@ que esto cierra la condición del Quality Gate.
 
 **Ya existe infraestructura real, esto no es un proyecto desde cero:**
 
-- 3 pruebas instrumentadas ya escritas y en verde:
+- 5 pruebas instrumentadas ya escritas y en verde:
   `ViewerScreenTest` (abrir documento + favorito, ver
   [`visor-biblioteca.md`](visor-biblioteca.md) §9),
   `ConverterScreenTest` (ver [`conversion.md`](conversion.md) §7),
-  `SecurityScreenTest` (PIN de Carpeta Segura).
+  `SecurityScreenTest` (PIN de Carpeta Segura),
+  `LibraryScreenTest` y `TrashScreenTest` (nuevos 2026-08-31, ver §3
+  filas 8-9 más abajo).
 - Ya corren en CI: `.github/workflows/ci.yml`, job `instrumented-tests`
   ("Compose UI Testing (emulador)") — emulador API 34 x86_64 con KVM,
-  `connectedDebugAndroidTest` sobre los 3 flujos de arriba. Con
+  `connectedDebugAndroidTest` sobre los flujos de arriba. Con
   `disable-animations: true` (evita el flakiness de Compose documentado en
   `conversion.md` §7).
 - Dependencias y configuración de Gradle ya resueltas: `ui-test-junit4`,
@@ -68,8 +70,8 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 | 5 | Visor — renombrar/eliminar | Renombrar documento, mover a papelera desde el Visor (RF-VIS-06) | Media | ⬜ Pendiente |
 | 6 | Home (`HomeScreen`) | Ver recientes, favorito, accesos rápidos navegan a la ruta correcta | Alta | ⬜ Pendiente |
 | 7 | Home — eliminar | "Eliminar del historial" mueve a papelera y desaparece de la lista | Alta | ⬜ Pendiente |
-| 8 | Biblioteca (`LibraryScreen`) | Cambiar pestaña Dispositivo/Mis archivos, filtrar por tipo, buscar | Alta | ⬜ Pendiente |
-| 9 | Papelera (`TrashScreen`) | Restaurar, eliminar uno, **"Borrar todo"** (§17 de `visor-biblioteca.md`, bug real recién corregido) | Alta | ⬜ Pendiente |
+| 8 | Biblioteca (`LibraryScreen`) | Cambiar pestaña Dispositivo/Mis archivos, filtrar por tipo, buscar | Alta | ✅ Cubierto 2026-08-31 (`LibraryScreenTest`) |
+| 9 | Papelera (`TrashScreen`) | Restaurar, eliminar uno, **"Borrar todo"** (§17 de `visor-biblioteca.md`, bug real recién corregido) | Alta | ✅ Cubierto 2026-08-31 (`TrashScreenTest`) |
 | 10 | Herramientas PDF (`PdfToolsScreen`) | Elegir herramienta, ejecutar sobre un PDF real, ver `ToolSuccessCard` | Alta | ⬜ Pendiente |
 | 11 | Contraseña PDF (`PdfPasswordScreen`) | Poner/quitar/cambiar contraseña | Media | ⬜ Pendiente |
 | 12 | Escáner (`ScannerScreen`/`ScanResultScreen`) | Delegado a Google ML Kit — probar solo el resultado (guardar/compartir), no la captura en sí | Media | ⬜ Pendiente |
@@ -103,6 +105,41 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
   documentadas como backlog explícito en la tabla de arriba, no
   implementadas en el mismo lote que las de prioridad Alta — evita una
   sola HU/PR gigante.
+
+### Implementado 2026-08-31 — filas 8 y 9 (Biblioteca y Papelera)
+
+Primer lote de 2 flujos Alta (de un total de 7 pendientes), a propósito
+más chico que "todos juntos" para verificar el patrón antes de seguir con
+el resto (fila 4, 6, 7, 10, 15 quedan pendientes para lotes futuros).
+
+- **`TrashScreenTest`** (3 pruebas: restaurar, eliminar uno, "Borrar
+  todo"): `TrashRepository` se mockea completo -- `TrashViewModel` solo
+  depende de él, no de sus 5 sub-dependencias. Los resultados de
+  `deleteForever()`/`deleteAllForever()` se stubean como ya confirmados
+  (`Deleted`/`Done`) para no depender del diálogo real de
+  `MediaStore.createDeleteRequest()` (proceso externo, ver AC4).
+- **`LibraryScreenTest`** (3 pruebas: cambiar pestaña, filtrar por
+  categoría, buscar): `LibraryScreen` verifica un permiso real de
+  almacenamiento (`ContextCompat.checkSelfPermission`) antes de cargar
+  nada -- no es mockeable desde el ViewModel, así que se agregó
+  `androidx.test:rules:1.6.1` (nueva dependencia `androidTestImplementation`)
+  para usar `GrantPermissionRule`, que concede el permiso antes de que la
+  Activity componga, sin depender del diálogo real del sistema.
+- **Hallazgo real de ambigüedad de texto** (no asumido, encontrado al
+  correr la prueba): filtrar por la categoría "PDF" falló porque el chip
+  de filtro y el badge de tipo de cada documento (`DocuSmartDocumentItem`)
+  muestran el mismo texto ("PDF") -- `onNodeWithText` encontró 2 nodos en
+  vez de 1. Se resolvió eligiendo una categoría donde el label del chip y
+  el del badge difieren a propósito (Imagen: chip "Imágenes" plural vs.
+  badge "Imagen" singular) en vez de forzar un matcher más complejo --
+  PDF/Word/Excel/ZIP comparten el mismo texto entre chip y badge y
+  tendrían el mismo problema si se cubren en un lote futuro.
+- Gauntlet completo verde: `compileDebugAndroidTestKotlin`, `detekt`
+  (no analiza `androidTest/`, sin cambios ahí), `lintDebug`,
+  `testDebugUnitTest`, `connectedDebugAndroidTest` (12/12, incluidas las 2
+  pruebas previamente flagueadas como flaky -- pasaron limpio en esta
+  corrida, consistente con la hipótesis de carga transitoria del
+  dispositivo tras varias corridas seguidas, no un bug de código).
 
 ## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
 
