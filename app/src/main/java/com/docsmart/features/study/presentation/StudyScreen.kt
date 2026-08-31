@@ -35,7 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.features.study.domain.PomodoroEngine
 import com.docsmart.features.study.domain.SavedNote
 import com.docsmart.features.study.domain.StudyNotesExporter
@@ -69,9 +73,14 @@ import java.util.Locale
 import java.util.zip.ZipInputStream
 
 @Composable
-fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
+fun StudyScreen(
+    onBack: () -> Unit = {},
+    initialTab: Int = 0,
+    viewModel: StudyViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     // ── Estado general ────────────────────────────────
     var selectedTab by remember { mutableIntStateOf(initialTab.coerceIn(0, 2)) }
@@ -234,6 +243,16 @@ fun StudyScreen(onBack: () -> Unit = {}, initialTab: Int = 0) {
                         }
                     )
                 }
+            }
+
+            // ── AdMob — solo para usuarios free (backlog UX §8), visible
+            // en las 3 pestañas por igual, no solo en una ────────────────
+            if (!isPremium) {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_STUDY_ID,
+                    adManager = viewModel.adManager,
+                    modifier  = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
             }
 
             when (selectedTab) {

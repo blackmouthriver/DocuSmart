@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.features.library.data.DocumentRepository
@@ -14,6 +15,7 @@ import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
 import org.junit.Test
 
@@ -41,12 +43,23 @@ class ViewerScreenTest {
     private fun buildViewModel(): ViewerViewModel {
         favoritesRepository = mockk(relaxed = true)
         every { favoritesRepository.isFavorite("1") } returns false
+
+        // Los StateFlow<Boolean> de AdManager se leen directo en Composables
+        // de anuncios (DocuSmartBannerAd, agregado a ViewerScreen en el
+        // backlog UX 2026-08-30) -- un mock relajado sin stub explícito para
+        // cada uno causa un ClassCastException al leer el proxy de MockK
+        // como Boolean primitivo (mismo patrón ya usado en ConverterScreenTest).
+        val adManager = mockk<AdManager>(relaxed = true)
+        every { adManager.isPremium } returns MutableStateFlow(true)
+        every { adManager.isInitialized } returns MutableStateFlow(false)
+
         return ViewerViewModel(
             favoritesRepository = favoritesRepository,
             searchPdfText = mockk<SearchPdfTextUseCase>(relaxed = true),
             documentHistoryDao = mockk<DocumentHistoryDao>(relaxed = true),
             documentRepository = mockk<DocumentRepository>(relaxed = true),
-            trashRepository = mockk<TrashRepository>(relaxed = true)
+            trashRepository = mockk<TrashRepository>(relaxed = true),
+            adManager = adManager
         )
     }
 

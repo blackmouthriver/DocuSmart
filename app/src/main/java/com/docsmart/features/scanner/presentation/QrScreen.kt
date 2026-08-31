@@ -41,7 +41,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.features.scanner.domain.QrCrypto
@@ -69,9 +73,13 @@ private fun ImageProxy.toMediaImageOrNull() = image
 // ── Pantalla: Leer QR con cámara ─────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QrReaderScreen(onBack: () -> Unit = {}) {
+fun QrReaderScreen(
+    onBack: () -> Unit = {},
+    viewModel: QrViewModel = hiltViewModel()
+) {
     val context        = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -323,6 +331,16 @@ fun QrReaderScreen(onBack: () -> Unit = {}) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // ── AdMob — solo para usuarios free (backlog UX §8),
+                    // solo en el resultado detectado, nunca sobre la vista
+                    // de cámara en vivo (taparía el área de escaneo) ──────
+                    if (!isPremium) {
+                        DocuSmartBannerAd(
+                            adUnitId  = AdConstants.BANNER_QR_ID,
+                            adManager = viewModel.adManager
+                        )
+                    }
+
                     Spacer(Modifier.height(8.dp))
 
                     // Ícono según tipo
@@ -604,9 +622,13 @@ private fun QrCornerDecoration() {
 // ── Pantalla: Crear QR ────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QrCreatorScreen(onBack: () -> Unit = {}) {
+fun QrCreatorScreen(
+    onBack: () -> Unit = {},
+    viewModel: QrViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     // 0=URL, 1=Texto, 2=Email, 3=Teléfono, 4=Imagen, 5=Documento
     var selectedType by remember { mutableIntStateOf(0) }
@@ -699,6 +721,14 @@ fun QrCreatorScreen(onBack: () -> Unit = {}) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // ── AdMob — solo para usuarios free (backlog UX §8) ───────────────
+            if (!isPremium) {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_QR_ID,
+                    adManager = viewModel.adManager
+                )
+            }
+
             Spacer(Modifier.height(4.dp))
 
             // ── Selector de tipo en 2 filas ───────────────────────────────────

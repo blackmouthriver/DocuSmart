@@ -26,7 +26,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
-| 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | Nuevo (§8), ya listado en `CONTEXT.md` §5 transversal |
+| 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | ✅ 6 de 6 pantallas implementadas y verificadas 2026-08-31 — ver §8 |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | — | — | — | Nuevo (§10) — **no reproducido en código**, necesita captura |
 | 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | Nuevo — mismo mecanismo que #1 (ver §3) |
@@ -332,6 +332,11 @@ navegación por separado (no solo un acento único como hoy),
 
 ## 8. Mejora — Banner de anuncios consistente en todas las pantallas (no-premium)
 
+**✅ Implementado y verificado en dispositivo real 2026-08-31**
+(6 de 6 pantallas de AC1). Decisión del usuario confirmada: Contraseña
+PDF, Carpeta Segura y Papelera quedan **sin** banner (recomendación
+adoptada).
+
 **Investigado:** `DocuSmartBannerAd` aparece hoy en 5 de 18 rutas: Home,
 Biblioteca, Convertir, Herramientas PDF, Ajustes — todas con el mismo
 criterio de gating (`if (!isPremium) { ... }`, patrón ya establecido y
@@ -361,12 +366,78 @@ incentivo de pasar a Premium sea claro y parejo).
 - **AC3** Premium y las 2 pantallas de Splash quedan explícitamente
   excluidas.
 
-**Decisión que necesito del usuario antes de implementar:** Contraseña
-PDF, Carpeta Segura (ingreso de PIN) y Papelera son pantallas de
-"acción rápida"/seguridad — ¿también quieres el banner ahí, o preferís
-dejarlas sin anuncios por ser interacciones sensibles/breves (ingresar
-una clave, confirmar un borrado)? Recomiendo dejarlas fuera por ahora,
-pero es una decisión de producto, no técnica.
+**✅ Decisión confirmada por el usuario:** Contraseña PDF, Carpeta Segura
+y Papelera quedan sin banner (recomendación adoptada tal cual).
+
+### Implementado y verificado en dispositivo real (2026-08-31)
+
+- **Resultado de escaneo** (`ScanResultScreen.kt`): reutiliza
+  `converterViewModel.adManager` (ya lo recibía como parámetro, sin
+  necesidad de agregar nada nuevo) — riesgo mínimo. **No se pudo
+  verificar visualmente** (requiere una captura real con cámara, mismo
+  límite ya documentado en §9 para esta pantalla).
+- **Menú de Seguridad** (`SecurityMenuScreen.kt`): no tenía ningún
+  ViewModel — se creó `SecurityMenuViewModel` mínimo (solo expone
+  `adManager`, sin lógica propia) inyectado vía `hiltViewModel()`.
+  Verificado en dispositivo: banner visible arriba del banner azul.
+- **Visor** (`ViewerScreen.kt`): `ViewerViewModel` ganó `adManager` en su
+  constructor. El banner se agrupa en una `Column` junto con
+  `ViewerBottomBar`, mostrándose/ocultándose junto con el resto de los
+  controles (`uiState.showControls`) en vez de quedar fijo tapando el
+  documento — el modo de lectura inmersiva del Visor ya oculta/muestra su
+  propia barra de controles, así que el anuncio sigue esa misma
+  convención en vez de romperla. Verificado en dispositivo: banner visible
+  junto a los controles inferiores.
+- Se actualizó `ViewerScreenTest.kt` (prueba instrumentada existente) para
+  pasar el nuevo parámetro `adManager` mockeado — **hallazgo real durante
+  la verificación**: un mock relajado de `AdManager` sin stub explícito de
+  `isPremium`/`isInitialized` causa un `ClassCastException` al leer esos
+  `StateFlow<Boolean>` desde Compose (mismo problema ya documentado antes
+  en `ConverterScreenTest`). Se estabilizó con `isPremium = true` para que
+  el test no dependa de que el anuncio realmente cargue.
+- Las 6 pruebas instrumentadas (`connectedDebugAndroidTest`) confirmadas
+  en verde tras el cambio.
+
+### Completado — Estudio, Lector QR y Creador QR (2026-08-31)
+
+**Estudio, Lector de QR y Creador de QR no tenían ningún ViewModel**
+(todo su estado era `remember`/objetos locales) — se agregó uno mínimo a
+cada uno (mismo patrón ya usado en Menú de Seguridad: solo expone
+`adManager`, sin lógica propia):
+
+- `StudyViewModel` — inyectado en `StudyScreen`. El banner se ubica
+  después del `TabRow` y antes del contenido de cada pestaña, por lo que
+  se ve igual en Lectura, Notas y Pomodoro (no solo en una). Verificado en
+  dispositivo en las 3 pestañas.
+- `QrViewModel` — compartido entre `QrReaderScreen` y `QrCreatorScreen`
+  (cada pantalla recibe su propia instancia por scope de
+  `NavBackStackEntry`).
+  - **Creador de QR**: banner como primer elemento del formulario,
+    arriba de los chips de tipo (URL/Texto/Email/...). Verificado en
+    dispositivo.
+  - **Lector de QR**: banner **solo** en el estado "código detectado"
+    (cuando ya hay un resultado), nunca durante la vista de cámara en
+    vivo — para no obstruir el escaneo. Verificado en dispositivo que la
+    vista de cámara en vivo permanece sin banner; el estado "detectado"
+    no se pudo verificar visualmente en este ciclo (requiere apuntar la
+    cámara real a un QR físico, mismo límite ya documentado para
+    Resultado de escaneo) pero sigue el mismo patrón exacto ya probado en
+    Creador de QR y Estudio.
+- **Escáner** (`ScannerScreen`) queda **excluido** del alcance, confirmado
+  por el usuario: pantalla transitoria de carga (abre la cámara de ML Kit
+  casi de inmediato), sin tiempo de pantalla real para un banner.
+- Detekt: agregar el parámetro `viewModel` a las 3 funciones invalidó sus
+  entradas de `LongMethod` en `config/detekt/baseline.xml` (ya estaban al
+  límite antes de este cambio). Se regeneraron **solo esas 3 líneas**
+  manualmente en vez de correr `detektBaseline` completo — ese task
+  hubiera borrado ~70 supresiones preexistentes no relacionadas.
+- Gauntlet completo verificado: `compileDebugKotlin`, `detekt`,
+  `lintDebug`, `testDebugUnitTest`, `connectedDebugAndroidTest` (6/6) —
+  todo en verde. Sin `FATAL EXCEPTION` en logcat en ninguna de las 3
+  pantallas visitadas.
+
+**HU-UX-07 completa: 6 de 6 pantallas de AC1 implementadas y
+verificadas.**
 
 ---
 
