@@ -7,7 +7,16 @@ sealed class NavRoutes(val route: String) {
     data object SplashDocuSmart  : NavRoutes("splash_docusmart")
     data object Home        : NavRoutes("home")
     data object Library     : NavRoutes("library")
-    data object Converter   : NavRoutes("converter")
+    data object Converter : NavRoutes("converter?initialType={initialType}") {
+        // Acceso rápido "Img→PDF" de Home: abre el Convertidor con un tipo ya
+        // preseleccionado (nombre de ConversionType, p.ej. "IMAGE_TO_PDF") en
+        // vez del genérico -- evita que ese acceso termine siendo un segundo
+        // botón "Convertir" idéntico al CTA principal, sin distinguirse en
+        // nada. `initialType = null` (la entrada genérica) sigue funcionando
+        // igual que antes.
+        fun createRoute(initialType: String? = null): String =
+            if (initialType != null) "converter?initialType=$initialType" else "converter"
+    }
     data object PdfTools    : NavRoutes("pdf_tools")
     data object Settings    : NavRoutes("settings")
     data object Premium     : NavRoutes("premium")

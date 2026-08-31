@@ -40,9 +40,27 @@ import com.docsmart.features.converter.presentation.components.BatchConversionSu
 import com.docsmart.features.converter.presentation.components.ConversionProgress
 import com.docsmart.features.converter.presentation.components.ConversionSuccess
 
+// Extraído de ConverterScreen (detekt: LongMethod) -- las 5 secciones por
+// categoría (Imagen/PDF/Word/Excel/PowerPoint) eran código casi idéntico
+// repetido 5 veces, solo cambiaba el título/ícono/color.
+private data class ConversionCategory(
+    val title: String,
+    val icon : ImageVector,
+    val color: Color
+)
+
+private val CONVERSION_CATEGORIES = listOf(
+    ConversionCategory("Imagen",     Icons.Rounded.Image,        ColorImage),
+    ConversionCategory("PDF",        Icons.Rounded.PictureAsPdf, ColorPdf),
+    ConversionCategory("Word",       Icons.Rounded.Description,  ColorWord),
+    ConversionCategory("Excel",      Icons.Rounded.TableChart,   ColorExcel),
+    ConversionCategory("PowerPoint", Icons.Rounded.Slideshow,    ColorPowerPoint)
+)
+
 @Composable
 fun ConverterScreen(
-    viewModel: ConverterViewModel = hiltViewModel()
+    initialType: String? = null,
+    viewModel  : ConverterViewModel = hiltViewModel()
 ) {
     val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
     val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
@@ -50,6 +68,15 @@ fun ConverterScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context           = LocalContext.current
     val activity          = context as? Activity
+
+    // Acceso rápido "Img→PDF" de Home: llega con el tipo ya elegido, sin
+    // pasar por la grilla de selección manual. `LaunchedEffect(initialType)`
+    // en vez de leerlo directo en el init del ViewModel -- así una
+    // recomposición por rotación no vuelve a pisar una selección que el
+    // usuario ya cambió manualmente dentro de la misma sesión de pantalla.
+    LaunchedEffect(initialType) {
+        applyInitialType(initialType, uiState.selectedType, viewModel::onTypeSelected)
+    }
 
     // RF-CONV-08: selector multi-archivo para todos los tipos, no solo
     // IMAGE_TO_PDF -- habilita elegir varios archivos para conversión por
@@ -190,69 +217,18 @@ fun ConverterScreen(
             }
 
             val allTypes = ConversionType.entries.toList()
-
-            val imageTypes = allTypes.filter { it.getCategoryForUi() == "Imagen" }
-            if (imageTypes.isNotEmpty()) {
-                item {
-                    ConversionSection(
-                        title          = "Imagen",
-                        icon           = Icons.Rounded.Image,
-                        color          = ColorImage,
-                        types          = imageTypes,
-                        onTypeSelected = { viewModel.onTypeSelected(it) }
-                    )
-                }
-            }
-
-            val pdfTypes = allTypes.filter { it.getCategoryForUi() == "PDF" }
-            if (pdfTypes.isNotEmpty()) {
-                item {
-                    ConversionSection(
-                        title          = "PDF",
-                        icon           = Icons.Rounded.PictureAsPdf,
-                        color          = ColorPdf,
-                        types          = pdfTypes,
-                        onTypeSelected = { viewModel.onTypeSelected(it) }
-                    )
-                }
-            }
-
-            val wordTypes = allTypes.filter { it.getCategoryForUi() == "Word" }
-            if (wordTypes.isNotEmpty()) {
-                item {
-                    ConversionSection(
-                        title          = "Word",
-                        icon           = Icons.Rounded.Description,
-                        color          = ColorWord,
-                        types          = wordTypes,
-                        onTypeSelected = { viewModel.onTypeSelected(it) }
-                    )
-                }
-            }
-
-            val excelTypes = allTypes.filter { it.getCategoryForUi() == "Excel" }
-            if (excelTypes.isNotEmpty()) {
-                item {
-                    ConversionSection(
-                        title          = "Excel",
-                        icon           = Icons.Rounded.TableChart,
-                        color          = ColorExcel,
-                        types          = excelTypes,
-                        onTypeSelected = { viewModel.onTypeSelected(it) }
-                    )
-                }
-            }
-
-            val pptTypes = allTypes.filter { it.getCategoryForUi() == "PowerPoint" }
-            if (pptTypes.isNotEmpty()) {
-                item {
-                    ConversionSection(
-                        title          = "PowerPoint",
-                        icon           = Icons.Rounded.Slideshow,
-                        color          = ColorPowerPoint,
-                        types          = pptTypes,
-                        onTypeSelected = { viewModel.onTypeSelected(it) }
-                    )
+            CONVERSION_CATEGORIES.forEach { category ->
+                val types = allTypes.filter { it.getCategoryForUi() == category.title }
+                if (types.isNotEmpty()) {
+                    item {
+                        ConversionSection(
+                            title          = category.title,
+                            icon           = category.icon,
+                            color          = category.color,
+                            types          = types,
+                            onTypeSelected = { viewModel.onTypeSelected(it) }
+                        )
+                    }
                 }
             }
         }
@@ -608,6 +584,21 @@ private fun SelectedImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Extraído de ConverterScreen (detekt: LongMethod) -- resuelve el tipo
+// pasado por navegación (nombre de ConversionType) al abrir la pantalla
+// desde un acceso directo. No hace nada si ya hay un tipo seleccionado
+// (evita pisar una elección manual del usuario) o si el nombre no
+// coincide con ningún ConversionType real.
+private fun applyInitialType(
+    initialType   : String?,
+    currentType   : ConversionType?,
+    onTypeSelected: (ConversionType) -> Unit
+) {
+    if (initialType == null || currentType != null) return
+    ConversionType.entries.find { it.name == initialType }?.let(onTypeSelected)
+}
+
 private fun ConversionType.getCategoryForUi(): String = when (this) {
     ConversionType.IMAGE_TO_PDF,
     ConversionType.IMAGE_TO_JPG,

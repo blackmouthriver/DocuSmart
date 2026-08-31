@@ -23,7 +23,7 @@ priorización para decidir qué se aborda y en qué orden.
 |---|---|---|---|---|---|---|
 | 1 | Acceso directo a Convertir/QR desde el menú "⋮" de un archivo (Biblioteca/Recientes/Visores) | Mejora | Alta | Media | Bajo-Medio | Nuevo (§3) |
 | 2 | Capturar archivo desde cámara para convertir | Mejora | Media | Media | Bajo | Nuevo (§4) |
-| 3 | Accesos rápidos: carrusel → grilla | Mejora | Media | Baja | Bajo | **✅ Implementado 2026-08-30** — ver §5. Falta el renombrado "Img→PDF" → "Convertir" (pendiente de la decisión de §5) |
+| 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
 | 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | Nuevo (§8), ya listado en `CONTEXT.md` §5 transversal |
@@ -163,14 +163,51 @@ acepta archivos por otras vías (picker); no reemplaza nada existente.
 
 ## 5. Mejora/Bug — Accesos rápidos: carrusel → grilla + renombrar "Img→PDF"
 
-**✅ Parte de grilla implementada y verificada en dispositivo 2026-08-30**
-(AC1-AC3 de HU-UX-04). `QuickAccessGrid.kt` pasó de `LazyRow` a una
-grilla fija de 3 columnas (`items.chunked(3)` + `Row`s con
+**✅ Implementado y verificado en dispositivo real 2026-08-30, AC1-AC3
+completos y AC4 resuelto con la opción (c)** (recomendada, ver abajo, en
+vez de un renombrado directo). `QuickAccessGrid.kt` pasó de `LazyRow` a
+una grilla fija de 3 columnas (`items.chunked(3)` + `Row`s con
 `Modifier.weight(1f)` por tarjeta, sin `LazyVerticalGrid` para evitar
 problemas de scroll anidado dentro del `Column` de Home) — los 9 accesos
-se ven de un vistazo, sin deslizar. Los 9 `onClick` no cambiaron. **El
-renombrado "Img→PDF" → "Convertir" (AC4) sigue sin implementarse**,
-pendiente de la decisión de abajo.
+se ven de un vistazo, sin deslizar. Los 9 `onClick` no cambiaron.
+
+**AC4 — resuelto sin renombrar, diferenciando de verdad el destino:** en
+vez de renombrar "Img→PDF" a "Convertir" (que hubiera dejado dos botones
+"Convertir" idénticos en Home), el acceso rápido ahora navega al
+Convertidor **ya preseleccionado en Imagen → PDF** (salta la pantalla de
+elegir categoría/formato), mientras el CTA grande "Convertir" sigue
+siendo el genérico. Con esto el label "Img→PDF" pasa a describir
+exactamente lo que hace — no hizo falta cambiarlo.
+
+- `NavRoutes.Converter` ganó un parámetro opcional de ruta
+  (`"converter?initialType={initialType}"`, mismo patrón ya usado por
+  `NavRoutes.Study`) con `createRoute(initialType: String? = null)`.
+- `ConverterScreen` acepta `initialType: String?` y preselecciona el
+  `ConversionType` correspondiente vía `LaunchedEffect(initialType)` —
+  solo si el usuario no eligió ya un tipo manualmente (no pisa una
+  selección en curso).
+- `HomeScreen` gana `onQuickConvertImageToPdf` (por defecto = `onConvert`,
+  no rompe si algo más construye `HomeScreen` sin pasarlo) — solo el
+  acceso rápido lo usa; el CTA grande y el menú "⋮" de un archivo siguen
+  en `onConvert` sin cambios.
+- Efecto colateral corregido: al agregar el parámetro opcional a la ruta,
+  `DocuSmartBottomBar` navegaba con la plantilla sin resolver
+  (`"converter?initialType={initialType}"` literal) al tocar la pestaña
+  "Convertir" de la barra inferior — se agregó `navigateRoute` separado de
+  `route` (que sigue siendo la plantilla, usada para detectar la pestaña
+  activa) para que la pestaña siga navegando a la ruta genérica resuelta.
+- De paso, `ConverterScreen` había quedado justo en el límite de
+  `LongMethod` de detekt al agregar la línea del `LaunchedEffect` — se
+  aprovechó para eliminar una duplicación real: las 5 secciones por
+  categoría (Imagen/PDF/Word/Excel/PowerPoint) eran el mismo código
+  repetido 5 veces con solo título/ícono/color distintos, ahora es una
+  lista `CONVERSION_CATEGORIES` recorrida en un `forEach`.
+
+**Verificado en dispositivo real:** acceso rápido "Img→PDF" abre directo
+en "Imagen → PDF" sin la pantalla de selección; el CTA grande "Convertir"
+sigue mostrando la selección manual completa sin preselección; la pestaña
+"Convertir" de la barra inferior sigue resaltándose y navegando
+correctamente. Sin crashes.
 
 **Investigado:** `QuickAccessGrid.kt` (pese al nombre) es un `LazyRow`
 (línea 134) con 9 ítems: Escanear, Img→PDF, Seguridad, Lectura, Notas,

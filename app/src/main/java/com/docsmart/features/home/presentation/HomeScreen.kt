@@ -23,6 +23,7 @@ import timber.log.Timber
 fun HomeScreen(
     onOpenFile     : (Uri) -> Unit = {},
     onConvert      : () -> Unit = {},
+    onQuickConvertImageToPdf: () -> Unit = onConvert,  // ← acceso rápido "Img→PDF": preselecciona Imagen→PDF
     onScan         : () -> Unit = {},
     onSecurity     : () -> Unit = {},
     onStudy        : (Int) -> Unit = {},  // ← tab inicial: Lectura=0, Notas=1, Pomodoro=2
@@ -93,7 +94,7 @@ fun HomeScreen(
         item {
             QuickAccessGrid(
                 onScanClick       = onScan,
-                onImageToPdfClick = onConvert,
+                onImageToPdfClick = onQuickConvertImageToPdf,
                 onSafeBoxClick    = onSecurity,
                 onStudyModeClick  = { onStudy(0) },
                 onNotesClick      = { onStudy(1) },
