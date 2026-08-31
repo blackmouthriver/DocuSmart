@@ -76,6 +76,8 @@
     <string name="settings_theme">Tema</string>
     <string name="settings_accent_color">Cor de destaque</string>
     <string name="settings_select_accent_color">Selecionar cor de destaque</string>
+    <string name="settings_font_scale">Tamanho da fonte</string>
+    <string name="settings_select_font_scale">Selecionar tamanho da fonte</string>
     <string name="settings_storage">Armazenamento</string>
     <string name="settings_storage_subtitle">Ver arquivos gerados</string>
     <string name="settings_about">Sobre</string>
@@ -118,7 +120,7 @@
     <string name="settings_help_a3">Toque no ícone de coração em qualquer documento ou use o menu ⋮.</string>
     <string name="settings_help_q4">Meus documentos estão seguros?</string>
     <string name="settings_help_a4">Sim. Todo o processamento é local. Nenhum arquivo sai do seu dispositivo.</string>
-    <string name="settings_reset_body">O tema será redefinido para claro, o idioma para espanhol, e o cache será limpo. Os documentos não serão excluídos. Continuar?</string>
+    <string name="settings_reset_body">O tema será redefinido para claro, o idioma para espanhol, o tamanho da fonte para Normal, e o cache será limpo. Os documentos não serão excluídos. Continuar?</string>
     <string name="settings_reset_confirm">Redefinir</string>
     <string name="settings_about_dialog_title">Sobre o DocuSmart</string>
     <string name="settings_about_body">Visualizador e conversor inteligente de documentos. Gerencie, converta e organize seus arquivos com rapidez e segurança.</string>
@@ -134,6 +136,9 @@
     <string name="accent_color_orange">Laranja</string>
     <string name="accent_color_pink">Rosa</string>
     <string name="accent_color_teal">Turquesa</string>
+    <string name="font_scale_normal">Normal</string>
+    <string name="font_scale_large">Grande</string>
+    <string name="font_scale_extra_large">Muito grande</string>
 
     <!-- ── Scanner ────────────────────────────────── -->
     <string name="scanner_title">Iniciando o scanner</string>

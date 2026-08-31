@@ -97,6 +97,8 @@ fun DocuSmartTheme(
     useSystemTheme: Boolean = false,
     dynamicColor: Boolean = false,
     accentColor: AccentColor = AccentColor.BLUE,
+    // HU-UX-05 (backlog UX 2026-08-30): tamaño de letra ajustable.
+    fontScale: Float = 1f,
     content: @Composable () -> Unit
 ) {
     val baseColorScheme = when {
@@ -142,7 +144,7 @@ fun DocuSmartTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography  = DocuSmartTypography,
+        typography  = DocuSmartTypography.scaledBy(fontScale),
         shapes      = DocuSmartShapes,
         content     = content
     )

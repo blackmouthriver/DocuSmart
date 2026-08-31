@@ -76,6 +76,8 @@
     <string name="settings_theme">Тема</string>
     <string name="settings_accent_color">Акцентный цвет</string>
     <string name="settings_select_accent_color">Выбрать акцентный цвет</string>
+    <string name="settings_font_scale">Размер шрифта</string>
+    <string name="settings_select_font_scale">Выбрать размер шрифта</string>
     <string name="settings_storage">Хранилище</string>
     <string name="settings_storage_subtitle">Просмотр созданных файлов</string>
     <string name="settings_about">О приложении</string>
@@ -118,7 +120,7 @@
     <string name="settings_help_a3">Нажмите на значок сердца на документе или используйте меню ⋮.</string>
     <string name="settings_help_q4">Мои документы в безопасности?</string>
     <string name="settings_help_a4">Да. Вся обработка выполняется локально. Ни один файл не покидает ваше устройство.</string>
-    <string name="settings_reset_body">Тема будет сброшена на светлую, язык — на испанский, а кэш будет очищен. Документы не будут удалены. Продолжить?</string>
+    <string name="settings_reset_body">Тема будет сброшена на светлую, язык — на испанский, размер шрифта — на обычный, а кэш будет очищен. Документы не будут удалены. Продолжить?</string>
     <string name="settings_reset_confirm">Сбросить</string>
     <string name="settings_about_dialog_title">О DocuSmart</string>
     <string name="settings_about_body">Умный просмотрщик и конвертер документов. Управляйте, конвертируйте и организуйте файлы быстро и безопасно.</string>
@@ -134,6 +136,9 @@
     <string name="accent_color_orange">Оранжевый</string>
     <string name="accent_color_pink">Розовый</string>
     <string name="accent_color_teal">Бирюзовый</string>
+    <string name="font_scale_normal">Обычный</string>
+    <string name="font_scale_large">Крупный</string>
+    <string name="font_scale_extra_large">Очень крупный</string>
 
     <!-- ── Сканер ────────────────────────────────── -->
     <string name="scanner_title">Запуск сканера</string>

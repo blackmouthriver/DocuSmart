@@ -76,6 +76,8 @@
     <string name="settings_theme">Design</string>
     <string name="settings_accent_color">Akzentfarbe</string>
     <string name="settings_select_accent_color">Akzentfarbe auswählen</string>
+    <string name="settings_font_scale">Schriftgröße</string>
+    <string name="settings_select_font_scale">Schriftgröße auswählen</string>
     <string name="settings_storage">Speicher</string>
     <string name="settings_storage_subtitle">Erstellte Dateien anzeigen</string>
     <string name="settings_about">Über die App</string>
@@ -118,7 +120,7 @@
     <string name="settings_help_a3">Tippe auf das Herz-Symbol bei einem Dokument oder nutze das ⋮-Menü.</string>
     <string name="settings_help_q4">Sind meine Dokumente sicher?</string>
     <string name="settings_help_a4">Ja. Die gesamte Verarbeitung erfolgt lokal. Keine Datei verlässt dein Gerät.</string>
-    <string name="settings_reset_body">Das Design wird auf Hell zurückgesetzt, die Sprache auf Spanisch, und der Cache wird geleert. Dokumente werden nicht gelöscht. Fortfahren?</string>
+    <string name="settings_reset_body">Das Design wird auf Hell zurückgesetzt, die Sprache auf Spanisch, die Schriftgröße auf Normal, und der Cache wird geleert. Dokumente werden nicht gelöscht. Fortfahren?</string>
     <string name="settings_reset_confirm">Zurücksetzen</string>
     <string name="settings_about_dialog_title">Über DocuSmart</string>
     <string name="settings_about_body">Intelligenter Dokumentenbetrachter und -konverter. Verwalte, konvertiere und organisiere deine Dateien schnell und sicher.</string>
@@ -134,6 +136,9 @@
     <string name="accent_color_orange">Orange</string>
     <string name="accent_color_pink">Pink</string>
     <string name="accent_color_teal">Türkis</string>
+    <string name="font_scale_normal">Normal</string>
+    <string name="font_scale_large">Groß</string>
+    <string name="font_scale_extra_large">Sehr groß</string>
 
     <!-- ── Scanner ────────────────────────────────── -->
     <string name="scanner_title">Scanner wird gestartet</string>

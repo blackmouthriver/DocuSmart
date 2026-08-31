@@ -259,12 +259,19 @@ private fun LibraryTabItem(
             )
         else null
     ) {
-        Row(
+        // HU-UX-05: con "Grande"/"Muy grande" activo, "Dispositivo"/"Mis
+        // archivos"/"Papelera" no entran ni en 2 líneas compartiendo el ancho
+        // con el ícono en una Row -- layout vertical (ícono arriba, texto
+        // centrado abajo, mismo patrón que una barra de navegación inferior)
+        // le da al texto todo el ancho de la tarjeta. A tamaño Normal el
+        // texto ya entraba en una línea, así que no hay cambio visual ahí
+        // más que el ícono ahora arriba en vez de al lado.
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 10.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
                 imageVector        = icon,
@@ -273,24 +280,24 @@ private fun LibraryTabItem(
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier           = Modifier.size(20.dp)
             )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text       = label,
-                    style      = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (selected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurface,
-                    maxLines   = 1,
-                    overflow   = TextOverflow.Ellipsis
-                )
-                Text(
-                    text     = stringResource(R.string.library_tab_file_count, count),
-                    style    = MaterialTheme.typography.labelSmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(
+                text       = label,
+                style      = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color      = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurface,
+                textAlign  = TextAlign.Center,
+                maxLines   = 2,
+                overflow   = TextOverflow.Ellipsis
+            )
+            Text(
+                text      = stringResource(R.string.library_tab_file_count, count),
+                style     = MaterialTheme.typography.labelSmall,
+                color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines  = 1,
+                overflow  = TextOverflow.Ellipsis
+            )
         }
     }
 }
