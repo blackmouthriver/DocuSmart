@@ -457,6 +457,7 @@
     <string name="converter_select_files">Tippe, um %1$s auszuwählen</string>
     <string name="converter_files_selected">%1$d Datei(en) ausgewählt</string>
     <string name="converter_formats">Formate: %1$s</string>
+    <string name="converter_capture_camera">Mit Kamera erfassen</string>
     <string name="converter_to_format">In %1$s konvertieren</string>
     <string name="converter_file_name_label">Dateiname</string>
     <string name="converter_file_name_placeholder">Automatischer Name</string>

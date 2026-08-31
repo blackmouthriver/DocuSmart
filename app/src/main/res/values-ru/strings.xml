@@ -457,6 +457,7 @@
     <string name="converter_select_files">Нажмите, чтобы выбрать %1$s</string>
     <string name="converter_files_selected">Выбрано файлов: %1$d</string>
     <string name="converter_formats">Форматы: %1$s</string>
+    <string name="converter_capture_camera">Снять камерой</string>
     <string name="converter_to_format">Конвертировать в %1$s</string>
     <string name="converter_file_name_label">Имя файла</string>
     <string name="converter_file_name_placeholder">Автоматическое имя</string>

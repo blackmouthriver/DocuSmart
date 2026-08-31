@@ -456,6 +456,7 @@
     <string name="converter_select_files">Tap to select %1$s</string>
     <string name="converter_files_selected">%1$d file(s) selected</string>
     <string name="converter_formats">Formats: %1$s</string>
+    <string name="converter_capture_camera">Capture with camera</string>
     <string name="converter_to_format">Convert to %1$s</string>
     <string name="converter_file_name_label">File name</string>
     <string name="converter_file_name_placeholder">Auto name</string>

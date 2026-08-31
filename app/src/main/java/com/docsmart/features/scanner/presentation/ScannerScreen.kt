@@ -25,8 +25,6 @@ import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.SmartBlue
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
-import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import timber.log.Timber
 
@@ -78,7 +76,7 @@ fun ScannerScreen(
             onBack()
             return@LaunchedEffect
         }
-        launchScanner(
+        launchDocumentScanner(
             activity = activity,
             mode = uiState.selectedMode,
             onLaunched = { intentSender ->
@@ -172,32 +170,4 @@ fun ScannerScreen(
             }
         }
     }
-}
-
-private fun launchScanner(
-    activity: Activity,
-    mode: ScannerMode,
-    onLaunched: (android.content.IntentSender) -> Unit,
-    onError: (String) -> Unit
-) {
-    val scannerMode = when (mode) {
-        ScannerMode.DOCUMENT -> GmsDocumentScannerOptions.SCANNER_MODE_FULL
-        ScannerMode.PHOTO -> GmsDocumentScannerOptions.SCANNER_MODE_BASE
-    }
-
-    // RF-SCAN-06/07: solo JPEG -- ver comentario en el listener del
-    // resultado (arriba) sobre por qué se dejó de pedir también PDF.
-    val options = GmsDocumentScannerOptions.Builder()
-        .setScannerMode(scannerMode)
-        .setPageLimit(10)
-        .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
-        .build()
-
-    GmsDocumentScanning.getClient(options)
-        .getStartScanIntent(activity)
-        .addOnSuccessListener { onLaunched(it) }
-        .addOnFailureListener { e ->
-            Timber.e(e, "Error obteniendo intent del escáner")
-            onError(e.message ?: "")
-        }
 }

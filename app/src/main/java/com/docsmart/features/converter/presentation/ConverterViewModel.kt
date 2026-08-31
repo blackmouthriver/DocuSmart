@@ -393,6 +393,13 @@ class ConverterViewModel @Inject constructor(
         _uiState.update { it.copy(errorMessage = null) }
     }
 
+    // Atajo "Capturar con cámara" (backlog UX 2026-08-30, HU-UX-03) --
+    // reusa el mismo mecanismo de Snackbar que ya tienen los demás errores
+    // de esta pantalla en vez de agregar uno nuevo.
+    fun onScanError(message: String) {
+        _uiState.update { it.copy(errorMessage = message) }
+    }
+
     private fun generateDefaultName(): String {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         return "DocuSmart_$timestamp"
