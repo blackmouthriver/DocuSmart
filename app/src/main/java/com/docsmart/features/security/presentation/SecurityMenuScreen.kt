@@ -27,21 +27,11 @@ fun SecurityMenuScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Header
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth()
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Rounded.ArrowBack, null,
-                    tint = MaterialTheme.colorScheme.primary)
-            }
-            Spacer(Modifier.width(4.dp))
-            DocuSmartTopBanner(
-                screenTitle    = stringResource(R.string.security_title),
-                screenSubtitle = stringResource(R.string.security_subtitle),
-                modifier       = Modifier.weight(1f)
-            )
-        }
+        DocuSmartTopBanner(
+            screenTitle    = stringResource(R.string.security_title),
+            screenSubtitle = stringResource(R.string.security_subtitle),
+            onBack         = onBack
+        )
 
         Spacer(Modifier.height(8.dp))
 

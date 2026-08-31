@@ -74,23 +74,11 @@ fun PdfPasswordScreen(
         ) {
             // ── Header ───────────────────────────────────────────────────────
             item {
-                Row(
-                    verticalAlignment     = Alignment.CenterVertically,
-                    modifier              = Modifier.fillMaxWidth()
-                ) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.Rounded.ArrowBack, null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    DocuSmartTopBanner(
-                        screenTitle    = stringResource(R.string.security_pdf_password),
-                        screenSubtitle = stringResource(R.string.pdf_pw_screen_subtitle),
-                        modifier       = Modifier.weight(1f)
-                    )
-                }
+                DocuSmartTopBanner(
+                    screenTitle    = stringResource(R.string.security_pdf_password),
+                    screenSubtitle = stringResource(R.string.pdf_pw_screen_subtitle),
+                    onBack         = onBack
+                )
             }
 
             // ── Selector de modo ──────────────────────────────────────────────

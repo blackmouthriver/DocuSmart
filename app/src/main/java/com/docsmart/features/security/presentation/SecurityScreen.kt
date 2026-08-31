@@ -622,21 +622,11 @@ private fun SecureFolderContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier          = Modifier.fillMaxWidth()
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Rounded.ArrowBack, stringResource(R.string.general_back),
-                        tint = MaterialTheme.colorScheme.primary)
-                }
-                Spacer(Modifier.width(4.dp))
-                DocuSmartTopBanner(
-                    screenTitle    = stringResource(R.string.security_secure_folder),
-                    screenSubtitle = stringResource(R.string.security_files_protected_count, uiState.secureFiles.size),
-                    modifier       = Modifier.weight(1f)
-                )
-            }
+            DocuSmartTopBanner(
+                screenTitle    = stringResource(R.string.security_secure_folder),
+                screenSubtitle = stringResource(R.string.security_files_protected_count, uiState.secureFiles.size),
+                onBack         = onBack
+            )
         }
 
         item {

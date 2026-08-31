@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Restore
@@ -29,7 +28,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -123,24 +121,11 @@ fun TrashScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier          = Modifier.fillMaxWidth()
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector        = Icons.Rounded.ArrowBack,
-                    contentDescription = stringResource(R.string.general_back),
-                    tint               = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(Modifier.width(4.dp))
-            DocuSmartTopBanner(
-                screenTitle    = stringResource(R.string.trash_title),
-                screenSubtitle = stringResource(R.string.trash_subtitle),
-                modifier       = Modifier.weight(1f)
-            )
-        }
+        DocuSmartTopBanner(
+            screenTitle    = stringResource(R.string.trash_title),
+            screenSubtitle = stringResource(R.string.trash_subtitle),
+            onBack         = onBack
+        )
 
         if (uiState.items.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))

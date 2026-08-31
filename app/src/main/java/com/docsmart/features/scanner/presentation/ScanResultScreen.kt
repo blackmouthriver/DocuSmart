@@ -117,23 +117,14 @@ fun ScanResultScreen(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.scan_result_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
+    // Bug real reportado por el usuario 2026-08-30 (backlog UX §9): esta
+    // pantalla usaba un Scaffold+TopAppBar con su propio título y flecha
+    // de volver, duplicando el título que ya muestra el banner azul justo
+    // debajo -- se reemplaza por el mismo patrón de "Volver" integrado en
+    // el banner que ya usan el resto de sub-pantallas.
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 horizontal = 20.dp,
                 vertical = 24.dp
@@ -144,7 +135,8 @@ fun ScanResultScreen(
             item {
                 DocuSmartTopBanner(
                     screenTitle = stringResource(R.string.scanner_result_title),
-                    screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, scannedUris.size)
+                    screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, scannedUris.size),
+                    onBack = onBack
                 )
             }
 
