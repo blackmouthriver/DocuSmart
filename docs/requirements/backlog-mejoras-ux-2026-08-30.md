@@ -39,7 +39,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 16 | Encriptar/quitar contraseña de archivo individual en Seguridad | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug (no verificado) | Media | — | — | Ya listado en `CONTEXT.md` §5 — pendiente reproducir |
-| 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | Nuevo (§13) — **bloqueado, a la espera de que el usuario entregue los assets** |
+| 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-30** — ver §13 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -497,13 +497,13 @@ considerando que es justamente la acción que el usuario pediría para
 
 ## 13. Mejora — Actualizar splash screens e íconos con el nuevo diseño
 
-Pedido del usuario: reemplazar el splash de marca de empresa
-(mouthblack), el splash de marca de la app (DocuSmart) y sus íconos
-correspondientes — el de inicio (lanzador) y el del banner azul — por los
-diseños nuevos que el usuario va a proporcionar. **Bloqueado hasta
-recibir esos assets** — esta sección queda como ficha técnica de qué hay
-hoy y qué implica el reemplazo, no como HU cerrada con ACs todavía (los
-ACs dependen de ver el diseño real).
+**✅ Implementado y verificado en dispositivo real, 2026-08-30.** El
+usuario entregó dos handoffs completos (`handoff/` para mouthblack,
+`handoff-docusmart/` para DocuSmart) con especificación, código Compose
+listo y vectores del ícono adaptativo. Se integraron ambos diseños sobre
+la arquitectura de navegación existente, sin adoptar la reestructuración
+de `MainActivity`/SplashScreen API que sugerían los handoffs (habría sido
+un cambio de arquitectura innecesario y de mayor riesgo).
 
 **Investigado (estado actual, importante para estimar bien):**
 
@@ -540,30 +540,74 @@ las formas/proporciones del diseño nuevo, y verificar en dispositivo real
 que la duración total del splash (~2.5s + ~1.5s) sigue sintiéndose bien
 con el contenido nuevo.
 
-### Ficha de trabajo (a completar en HU formal cuando lleguen los assets)
+### Qué se hizo
 
-- **AC borrador 1**: el ícono de lanzador (ícono de la app en el
-  launcher del teléfono) refleja el nuevo diseño en las 5 densidades y en
-  su variante adaptativa (redonda/cuadrada según el launcher del
-  fabricante).
-- **AC borrador 2**: el ícono dentro del banner azul (todas las pantallas
-  que usan `DocuSmartTopBanner`) refleja el nuevo diseño, sin recortarse
-  ni verse pixelado a ningún tamaño de pantalla probado.
-- **AC borrador 3**: el splash de mouthblack (primera pantalla al abrir
-  la app) muestra el nuevo diseño de marca de empresa, con una animación
-  de entrada tan pulida como la actual (no es aceptable "solo poner la
-  imagen estática sin animación" si la actual ya anima fade+scale+línea).
-- **AC borrador 4**: el splash de DocuSmart (segunda pantalla) muestra el
-  nuevo diseño de marca de la app, con el mismo criterio de animación que
-  el punto anterior.
-- **AC borrador 5**: la duración total de la secuencia de splash (hoy
-  ~2.5s + ~1.5s ≈ 4s) no aumenta de forma perceptible — sigue sintiéndose
-  como una transición rápida, no una carga larga.
-- **Pendiente del usuario:** compartir los archivos de diseño (formato
-  ideal: SVG o PDF vectorial para los íconos, que sirve tanto para el
-  lanzador como para el banner sin pérdida de calidad; si son PNG,
-  entregarlos en la mayor resolución posible). Una vez recibidos, esta
-  ficha se convierte en HU cerrada con ACs definitivos.
+- **`SplashMouthBlackScreen.kt`** reescrito con el diseño nuevo: círculo
+  blanco con "mordisco" recortado (`BlendMode.Clear` sobre una capa
+  offscreen), monograma "mb", wordmark "mouthblack", descriptor "DEV &
+  TECH" en verde menta `#35D08A`, sobre fondo `#0B0B0B`. Animación de
+  entrada (scale+alpha con rebote) y del mordisco (entra, se retira,
+  muerde de nuevo, reposo) portada del handoff tal cual.
+- **`SplashDocuSmartScreen.kt`** reescrito con la opción "la línea
+  revela": mira de 4 esquinas + documento que se revela de arriba a abajo
+  detrás de una línea de escaneo cian, sobre degradado azul→índigo
+  (`#1E9BFF → #2563FF → #3B1FE0`). El wordmark reutiliza el string
+  `splash_tagline` **existente** (actualizado a "ESCANEA · ORGANIZA" y su
+  traducción en los 5 idiomas) en vez de hardcodear texto nuevo — se
+  preservó el i18n ya construido.
+- **Ícono de la app**: `drawable/ic_launcher_docusmart_background.xml`
+  reemplazado (antes era literalmente la plantilla verde de Android
+  Studio sin personalizar — nunca se había tocado) y
+  `drawable/ic_launcher_docusmart_foreground.xml` agregado con el
+  documento + mira + línea de escaneo. El ícono adaptativo
+  (`mipmap-anydpi-v26/ic_launcher_docusmart.xml` y `_round.xml`) ahora
+  referencia estos vectores en vez de los `.webp` por densidad — con
+  minSdk 26 el ícono adaptativo es el único que se usa nunca, así que los
+  15 `.webp` huérfanos (5 densidades × 3 variantes) se borraron.
+- **Ícono del banner azul** (`drawable/ic_docusmart_logo.xml`) actualizado
+  con el mismo arte que el ícono de la app, para consistencia de marca
+  entre el lanzador y el banner.
+- **Tipografías**: se usan las familias del sistema (`SansSerif`/
+  `Monospace`, exactamente el valor por defecto que ya traían los
+  handoffs) en vez de Space Grotesk/JetBrains Mono/Plus Jakarta Sans —
+  agregar esas fuentes de marca requiere archivos `.ttf` reales o un
+  certificado de Google Fonts Downloadable que no era seguro escribir de
+  memoria (un hash de certificado mal copiado falla en silencio en
+  runtime). Queda como mejora de seguimiento, no bloqueaba el rediseño
+  visual/animado que era el pedido principal.
+- Accesibilidad: ambos splashes ahora respetan
+  `Settings.Global.ANIMATOR_DURATION_SCALE == 0` (mostrando el estado
+  final sin animar) — mejora nueva, no estaba en el código anterior.
+
+### Verificado en dispositivo real
+
+- Compilación, `detekt`, `lintDebug` y `testDebugUnitTest` en verde.
+- Splash de mouthblack: capturado en su estado de reposo, coincide
+  exactamente con la especificación (círculo mordido, "mb", wordmark,
+  descriptor en verde menta, "V1.0" al pie).
+- Splash de DocuSmart: capturado a mitad de animación, con la línea de
+  escaneo y el documento revelándose parcialmente — confirma que el
+  mecanismo de recorte (`clipRect` sobre `reveal`) funciona.
+- Ícono de la app confirmado en el launcher del dispositivo (buscador de
+  apps) con el nuevo diseño sobre degradado azul.
+- Logo del banner azul confirmado en la pantalla de Inicio, consistente
+  con el ícono de la app.
+- Sin ningún `FATAL EXCEPTION` en logcat durante toda la verificación
+  (arranque en frío, onboarding, navegación a Home).
+- Detalle de la verificación: el dispositivo tenía
+  `animator_duration_scale=0` (probablemente configurado para las
+  pruebas instrumentadas de Compose UI Testing, ver `ci.yml`) — se
+  reactivaron las animaciones temporalmente para confirmar el
+  comportamiento animado real, y se restauraron a 0 al terminar para no
+  afectar la suite de pruebas instrumentadas.
+
+### Pendiente de seguimiento (no bloquea este ítem)
+
+- Integrar las tipografías de marca reales (Space Grotesk Bold, JetBrains
+  Mono Bold/Regular, Plus Jakarta Sans ExtraBold) vía Google Fonts
+  Downloadable (requiere el certificado oficial generado por el asistente
+  de Android Studio, no escrito a mano) o archivos `.ttf` que el usuario
+  provea directamente.
 
 ---
 

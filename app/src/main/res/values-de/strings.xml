@@ -476,7 +476,7 @@
     <string name="converter_progress_subtitle">%1$d Datei(en) werden verarbeitet</string>
     <string name="converter_progress_footer">Bitte warten, App nicht schließen</string>
 
-    <string name="splash_tagline">Deine intelligenten Dokumente</string>
+    <string name="splash_tagline">SCANNEN · ORGANISIEREN</string>
 
     <!-- ── Onboarding ─────────────────────────────────── -->
     <string name="onboarding_1_title">Willkommen bei DocuSmart</string>

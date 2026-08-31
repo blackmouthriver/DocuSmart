@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Logo DocuSmart usado en el banner azul (DocuSmartTopBanner), misma
-  marca que el ícono de la app (ic_launcher_docusmart_foreground.xml),
-  reescalado al viewport que ya usaba este ícono. Rediseño 2026-08-30, ver
+  Primer plano del ícono adaptativo DocuSmart (opción 2a, "la línea
+  revela"): documento blanco, línea de escaneo (#7EE0FF) y mira de 4
+  esquinas. Todo dentro de la zona segura (círculo de 66dp centrado en
+  54,54). Rediseño 2026-08-30, ver
   docs/requirements/backlog-mejoras-ux-2026-08-30.md §13.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
+    android:width="108dp"
+    android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
