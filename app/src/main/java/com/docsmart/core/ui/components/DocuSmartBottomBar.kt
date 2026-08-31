@@ -14,7 +14,14 @@ data class BottomNavItem(
     @StringRes val labelRes: Int,
     val route: String,
     val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
+    val unselectedIcon: ImageVector,
+    // Ruta real a la que navegar al tocar la pestaña -- por defecto igual a
+    // `route`, pero para Convertir difiere: `route` es la plantilla con
+    // parámetro opcional ("converter?initialType={initialType}", usada para
+    // comparar contra el destino actual) mientras que acá hace falta la
+    // ruta ya resuelta (`NavRoutes.Converter.createRoute()`, sin el
+    // placeholder literal) para que `navController.navigate(...)` funcione.
+    val navigateRoute: String = route
 )
 
 // Los labels se resuelven con stringResource() dentro del Composable (ver
@@ -28,7 +35,8 @@ private val bottomNavItems = listOf(
     ),
     BottomNavItem(
         R.string.nav_converter, NavRoutes.Converter.route,
-        Icons.Rounded.SwapHoriz, Icons.Rounded.SwapHoriz
+        Icons.Rounded.SwapHoriz, Icons.Rounded.SwapHoriz,
+        navigateRoute = NavRoutes.Converter.createRoute()
     ),
     BottomNavItem(
         R.string.nav_pdf, NavRoutes.PdfTools.route,
@@ -60,7 +68,7 @@ fun DocuSmartBottomBar(
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-                    if (!isSelected) onNavigate(item.route)
+                    if (!isSelected) onNavigate(item.navigateRoute)
                 },
                 icon = {
                     Icon(

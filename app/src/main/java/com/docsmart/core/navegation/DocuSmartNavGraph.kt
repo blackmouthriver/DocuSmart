@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.theme.ThemeManager
+import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterScreen
 import com.docsmart.features.home.presentation.HomeScreen
 import com.docsmart.features.library.presentation.LibraryScreen
@@ -80,7 +81,18 @@ fun DocuSmartNavGraph(
         viewerComposable(navController)
 
         // ── Converter ─────────────────────────────────────────────────────────
-        composable(NavRoutes.Converter.route) { ConverterScreen() }
+        composable(
+            route     = NavRoutes.Converter.route,
+            arguments = listOf(navArgument("initialType") {
+                type         = NavType.StringType
+                nullable     = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            ConverterScreen(
+                initialType = backStackEntry.arguments?.getString("initialType")
+            )
+        }
 
         // ── PDF Tools ─────────────────────────────────────────────────────────
         composable(NavRoutes.PdfTools.route) { PdfToolsScreen() }
@@ -206,7 +218,15 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                 navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
             },
             onScan      = { navController.navigate(NavRoutes.Scanner.route) },
-            onConvert   = { navController.navigate(NavRoutes.Converter.route) },
+            onConvert   = { navController.navigate(NavRoutes.Converter.createRoute()) },
+            // Acceso rápido "Img→PDF": abre el Convertidor ya en Imagen→PDF
+            // en vez del genérico -- antes iba al mismo lugar que el botón
+            // "Convertir" grande, sin ninguna diferencia real entre los dos.
+            onQuickConvertImageToPdf = {
+                navController.navigate(
+                    NavRoutes.Converter.createRoute(ConversionType.IMAGE_TO_PDF.name)
+                )
+            },
             onSecurity  = { navController.navigate(NavRoutes.Security.route) },
             onStudy     = { tab -> navController.navigate(NavRoutes.Study.createRoute(tab)) },
             onSeeAll    = { navController.navigate(NavRoutes.Library.route) },

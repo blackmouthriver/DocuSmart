@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
@@ -207,41 +208,18 @@ private fun LibraryTabs(
             onClick  = { onTabSelected(LibraryTab.APP_FILES) },
             modifier = Modifier.weight(1f)
         )
-        // Papelera
-        LibraryTrashButton(
-            trashCount = trashCount,
-            onClick    = onTrashClick,
-            modifier   = Modifier.fillMaxHeight()
+        // Papelera -- mismo componente visual que las pestañas (ícono +
+        // label + contador, weight(1f)) en vez de una tarjeta de ancho fijo
+        // sin texto. Bug real reportado por el usuario 2026-08-30: se veía
+        // solo el ícono, sin título, y de un tamaño distinto a sus vecinas.
+        LibraryTabItem(
+            icon     = Icons.Rounded.DeleteOutline,
+            label    = stringResource(R.string.library_trash),
+            count    = trashCount,
+            selected = false,
+            onClick  = onTrashClick,
+            modifier = Modifier.weight(1f)
         )
-    }
-}
-
-@Composable
-private fun LibraryTrashButton(
-    trashCount: Int,
-    onClick   : () -> Unit,
-    modifier  : Modifier = Modifier
-) {
-    Card(
-        onClick   = onClick,
-        modifier  = modifier.width(56.dp),
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            BadgedBox(
-                badge = {
-                    if (trashCount > 0) Badge { Text("$trashCount") }
-                }
-            ) {
-                Icon(
-                    imageVector        = Icons.Rounded.DeleteOutline,
-                    contentDescription = stringResource(R.string.library_trash),
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
     }
 }
 
@@ -293,12 +271,16 @@ private fun LibraryTabItem(
                     style      = MaterialTheme.typography.labelLarge,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                     color      = if (selected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurface,
+                    maxLines   = 1,
+                    overflow   = TextOverflow.Ellipsis
                 )
                 Text(
-                    text  = stringResource(R.string.library_tab_file_count, count),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text     = stringResource(R.string.library_tab_file_count, count),
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

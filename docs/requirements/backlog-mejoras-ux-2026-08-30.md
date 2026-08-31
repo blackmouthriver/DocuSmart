@@ -23,8 +23,8 @@ priorización para decidir qué se aborda y en qué orden.
 |---|---|---|---|---|---|---|
 | 1 | Acceso directo a Convertir/QR desde el menú "⋮" de un archivo (Biblioteca/Recientes/Visores) | Mejora | Alta | Media | Bajo-Medio | Nuevo (§3) |
 | 2 | Capturar archivo desde cámara para convertir | Mejora | Media | Media | Bajo | Nuevo (§4) |
-| 3 | Accesos rápidos: carrusel → grilla + renombrar "Img→PDF" | Mejora/Bug | Media | Baja | Bajo | Nuevo (§5) |
-| 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | Nuevo (§6) |
+| 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
+| 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
 | 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | Nuevo (§8), ya listado en `CONTEXT.md` §5 transversal |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | Nuevo (§9), reabre `security.md` (back button "deliberado") |
@@ -40,6 +40,8 @@ priorización para decidir qué se aborda y en qué orden.
 | 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug (no verificado) | Media | — | — | Ya listado en `CONTEXT.md` §5 — pendiente reproducir |
 | 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-30** — ver §13 |
+| 20 | H1: texto "Eliminar del historial" engañoso (en realidad mueve a la papelera real) | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §12, hallazgo H1 |
+| 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | Nuevo, encontrado al corregir #20 — ver §12, hallazgo H6 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -161,6 +163,52 @@ acepta archivos por otras vías (picker); no reemplaza nada existente.
 
 ## 5. Mejora/Bug — Accesos rápidos: carrusel → grilla + renombrar "Img→PDF"
 
+**✅ Implementado y verificado en dispositivo real 2026-08-30, AC1-AC3
+completos y AC4 resuelto con la opción (c)** (recomendada, ver abajo, en
+vez de un renombrado directo). `QuickAccessGrid.kt` pasó de `LazyRow` a
+una grilla fija de 3 columnas (`items.chunked(3)` + `Row`s con
+`Modifier.weight(1f)` por tarjeta, sin `LazyVerticalGrid` para evitar
+problemas de scroll anidado dentro del `Column` de Home) — los 9 accesos
+se ven de un vistazo, sin deslizar. Los 9 `onClick` no cambiaron.
+
+**AC4 — resuelto sin renombrar, diferenciando de verdad el destino:** en
+vez de renombrar "Img→PDF" a "Convertir" (que hubiera dejado dos botones
+"Convertir" idénticos en Home), el acceso rápido ahora navega al
+Convertidor **ya preseleccionado en Imagen → PDF** (salta la pantalla de
+elegir categoría/formato), mientras el CTA grande "Convertir" sigue
+siendo el genérico. Con esto el label "Img→PDF" pasa a describir
+exactamente lo que hace — no hizo falta cambiarlo.
+
+- `NavRoutes.Converter` ganó un parámetro opcional de ruta
+  (`"converter?initialType={initialType}"`, mismo patrón ya usado por
+  `NavRoutes.Study`) con `createRoute(initialType: String? = null)`.
+- `ConverterScreen` acepta `initialType: String?` y preselecciona el
+  `ConversionType` correspondiente vía `LaunchedEffect(initialType)` —
+  solo si el usuario no eligió ya un tipo manualmente (no pisa una
+  selección en curso).
+- `HomeScreen` gana `onQuickConvertImageToPdf` (por defecto = `onConvert`,
+  no rompe si algo más construye `HomeScreen` sin pasarlo) — solo el
+  acceso rápido lo usa; el CTA grande y el menú "⋮" de un archivo siguen
+  en `onConvert` sin cambios.
+- Efecto colateral corregido: al agregar el parámetro opcional a la ruta,
+  `DocuSmartBottomBar` navegaba con la plantilla sin resolver
+  (`"converter?initialType={initialType}"` literal) al tocar la pestaña
+  "Convertir" de la barra inferior — se agregó `navigateRoute` separado de
+  `route` (que sigue siendo la plantilla, usada para detectar la pestaña
+  activa) para que la pestaña siga navegando a la ruta genérica resuelta.
+- De paso, `ConverterScreen` había quedado justo en el límite de
+  `LongMethod` de detekt al agregar la línea del `LaunchedEffect` — se
+  aprovechó para eliminar una duplicación real: las 5 secciones por
+  categoría (Imagen/PDF/Word/Excel/PowerPoint) eran el mismo código
+  repetido 5 veces con solo título/ícono/color distintos, ahora es una
+  lista `CONVERSION_CATEGORIES` recorrida en un `forEach`.
+
+**Verificado en dispositivo real:** acceso rápido "Img→PDF" abre directo
+en "Imagen → PDF" sin la pantalla de selección; el CTA grande "Convertir"
+sigue mostrando la selección manual completa sin preselección; la pestaña
+"Convertir" de la barra inferior sigue resaltándose y navegando
+correctamente. Sin crashes.
+
 **Investigado:** `QuickAccessGrid.kt` (pese al nombre) es un `LazyRow`
 (línea 134) con 9 ítems: Escanear, Img→PDF, Seguridad, Lectura, Notas,
 Pomodoro, Leer QR, Crear QR, Papelera. Confirmado que "Img→PDF"
@@ -201,27 +249,20 @@ nombre?
 
 ## 6. Bug — Botón de Papelera sin título y de tamaño inconsistente
 
-**Investigado:** en `LibraryScreen.kt:185-217`, "Dispositivo" y "Mis
-archivos" usan `Modifier.weight(1f)` (ancho proporcional), mientras que el
-botón de Papelera usa `Modifier.width(56.dp)` fijo (línea 227) — de ahí la
-inconsistencia visual reportada, y no tiene texto visible (solo el ícono
-`Icons.Rounded.DeleteOutline` + badge de contador).
+**✅ Corregido y verificado en dispositivo 2026-08-30.** `LibraryTrashButton`
+(ancho fijo `56.dp`, sin label) se eliminó por completo — la Papelera
+ahora reutiliza el mismo `LibraryTabItem` que "Dispositivo"/"Mis
+archivos" (ícono + label "Papelera" + contador, `Modifier.weight(1f)`),
+así que los 3 son literalmente el mismo componente, no una réplica visual
+aproximada.
 
-**Riesgo:** bajo — cambio contenido en un solo `Row` de 3 elementos, sin
-lógica de negocio de por medio.
-
-### Ficha de bug (no requiere HU completa, es un ajuste de layout)
-
-- **Causa:** `LibraryTrashButton` con ancho fijo en vez de `weight(1f)`
-  como sus vecinos, y sin `Text` de label (a diferencia de
-  `LibraryTabItem`, que sí tiene label).
-- **Arreglo propuesto:** los 3 elementos del `Row` (Dispositivo, Mis
-  archivos, Papelera) con `Modifier.weight(1f)` cada uno y el mismo
-  componente visual (ícono + label + badge de contador si aplica) para
-  que se vean uniformes.
-- **Verificación necesaria post-fix:** en dispositivo real, confirmar que
-  los 3 caben en una fila sin recortarse en pantallas angostas (probar en
-  el emulador/dispositivo más pequeño disponible).
+**Regresión encontrada y corregida en la misma verificación:** al pasar
+"Dispositivo"/"Mis archivos"/"Papelera" a igual ancho (antes 2 pestañas
+se repartían el espacio entre solo 2, ahora entre 3), el label
+"Dispositivo" se envolvía a media palabra ("Disposi" / "vo"). Se agregó
+`maxLines = 1` + `overflow = TextOverflow.Ellipsis` a ambos `Text` de
+`LibraryTabItem` (label y contador) — ahora trunca con "…" en vez de
+partirse.
 
 ---
 
@@ -431,9 +472,17 @@ antes de que existiera la Papelera (RF-VIS-07). Heurística de Nielsen
 #2 (correspondencia entre el sistema y el mundo real): el texto miente
 sobre lo que realmente pasa.
 
-- **Bug (etiqueta engañosa), prioridad Media, dificultad Baja, riesgo
-  Bajo** — cambiar el string a "Eliminar" (mueve a papelera), sin tocar
-  lógica.
+- **✅ Corregido 2026-08-30** — label cambiado a "Eliminar" en
+  `DocuSmartDocumentItem.kt`, sin tocar lógica. Verificado en dispositivo:
+  el menú "⋮" de un archivo en Recientes ahora dice "Eliminar".
+- **Hallazgo nuevo al corregirlo (H6):** este componente compartido
+  (`DocuSmartDocumentItem.kt`, usado por el menú "⋮" de Home y
+  Biblioteca) tiene **todos sus labels hardcodeados en español**
+  ("Renombrar", "Convertir", "Compartir", "Agregar/Quitar de favoritos",
+  ahora "Eliminar") — no pasa por `stringResource()` como el resto de la
+  app. No se tocó en esta pasada (habría sido un cambio mucho más grande
+  que el bug puntual pedido) pero queda catalogado como fila 21 de la
+  tabla de §2 — afecta a los usuarios en, de, pt, ru por igual.
 
 **H2 — Botón "Eliminar ahora" en Papelera no aclara que puede pedir un
 permiso del sistema.** Tras el fix de hoy (§17 de `visor-biblioteca.md`),

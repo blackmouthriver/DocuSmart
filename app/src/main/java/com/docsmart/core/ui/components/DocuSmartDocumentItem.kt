@@ -271,7 +271,7 @@ private fun OptionalContextMenuItems(
         )
         ContextMenuItem(
             icon    = Icons.Rounded.DeleteOutline,
-            label   = "Eliminar del historial",
+            label   = "Eliminar",
             tint    = MaterialTheme.colorScheme.error,
             onClick = onDelete
         )
