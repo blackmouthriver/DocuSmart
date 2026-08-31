@@ -67,7 +67,7 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 | 2 | Convertidor (`ConverterScreen`) | Seleccionar formato origen/destino, elegir archivo, convertir | Alta | ✅ Cubierto (`ConverterScreenTest`) |
 | 3 | Seguridad (`SecurityScreen`) | Configurar PIN de Carpeta Segura | Alta | ✅ Cubierto (`SecurityScreenTest`) |
 | 4 | Visor — búsqueda | Escribir término, navegar entre coincidencias resaltadas (RF-VIS-08) | Alta | ✅ Cubierto 2026-08-31 (`ViewerSearchTest`) |
-| 5 | Visor — renombrar/eliminar | Renombrar documento, mover a papelera desde el Visor (RF-VIS-06) | Media | ⬜ Pendiente |
+| 5 | Visor — renombrar/eliminar | Renombrar documento, mover a papelera desde el Visor (RF-VIS-06) | Media | ✅ Cubierto 2026-08-31 (`ViewerRenameDeleteTest`) |
 | 6 | Home (`HomeScreen`) | Ver recientes, favorito, accesos rápidos navegan a la ruta correcta | Alta | ✅ Cubierto 2026-08-31 (`HomeScreenTest`) |
 | 7 | Home — eliminar | "Eliminar del historial" mueve a papelera y desaparece de la lista | Alta | ✅ Cubierto 2026-08-31 (`HomeScreenTest`) |
 | 8 | Biblioteca (`LibraryScreen`) | Cambiar pestaña Dispositivo/Mis archivos, filtrar por tipo, buscar | Alta | ✅ Cubierto 2026-08-31 (`LibraryScreenTest`) |
@@ -75,7 +75,7 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 | 10 | Herramientas PDF (`PdfToolsScreen`) | Elegir herramienta, ejecutar sobre un PDF real, ver `ToolSuccessCard` | Alta | ✅ Cubierto 2026-08-31 (`PdfToolsScreenTest`) |
 | 11 | Contraseña PDF (`PdfPasswordScreen`) | Poner/quitar/cambiar contraseña | Media | ⬜ Pendiente |
 | 12 | Escáner (`ScannerScreen`/`ScanResultScreen`) | Delegado a Google ML Kit — probar solo el resultado (guardar/compartir), no la captura en sí | Media | ⬜ Pendiente |
-| 13 | QR (`QrReaderScreen`/`QrCreatorScreen`) | Crear QR con/sin contraseña, leer y navegar a URL | Media | ⬜ Pendiente |
+| 13 | QR (`QrReaderScreen`/`QrCreatorScreen`) | Crear QR con/sin contraseña, leer y navegar a URL | Media | 🟡 Parcial 2026-08-31 (`QrCreatorScreenTest` -- solo crear; leer depende 100% de cámara, ver nota) |
 | 14 | Estudio (`StudyScreen`) | Guardar/eliminar nota, orden de la lista, Pomodoro inicia/pausa | Media | ⬜ Pendiente |
 | 15 | Ajustes (`SettingsScreen`) | Cambiar tema/idioma/acento, Restablecer configuración | Alta | ✅ Cubierto 2026-08-31 (`SettingsScreenTest`) |
 | 16 | Premium (`PremiumScreen`) | Elegir plan, iniciar compra (mock de `BillingManager`), restaurar compras | Media | ⬜ Pendiente |
@@ -217,6 +217,34 @@ Media/Baja (filas 5, 11-14, 16-18) quedan sin implementar, per AC5.
   distinta: ahí el nodo no estaba compuesto todavía, acá sí lo estaba pero
   era inalcanzable por toque).
 - Gauntlet completo verde: `connectedDebugAndroidTest` (20/20), `detekt`,
+  `lintDebug`, `testDebugUnitTest`.
+
+### Implementado 2026-08-31 — filas 5 y 13 (Visor renombrar/eliminar, Crear QR)
+
+Primer lote de prioridad Media del backlog restante (filas 5, 11-14, 16-18).
+
+- **`ViewerRenameDeleteTest`** (2 pruebas: renombrar actualiza el nombre en
+  la barra superior, eliminar mueve a la papelera y cierra el Visor).
+  `DocumentRepository`/`TrashRepository` se mockean completos (a
+  diferencia de `SearchPdfTextUseCase`/`RotatePdfUseCase`, `DocumentRepository`
+  necesita 5 dependencias propias solo para renombrar un archivo -- no
+  compensa construirlo real para lo que aporta acá). El menú "⋮" del Visor
+  (`viewer_more_options`) expone ambas acciones.
+- **`QrCreatorScreenTest`** (2 pruebas: generar QR de URL sin contraseña,
+  generar QR de texto con contraseña y ver la insignia "Protegido"). Cubre
+  solo `QrCreatorScreen`, no `QrReaderScreen` -- leer un QR depende 100% de
+  CameraX + Google ML Kit en vivo (`AndroidView`/`ProcessCameraProvider`/
+  `BarcodeScanning`), sin código propio que testear ahí, mismo criterio ya
+  aplicado al Escáner (fila 12) en la priorización original. Marcado como
+  🟡 parcial en la tabla en vez de ✅ completo por esta razón.
+- **Hallazgo real, mismo patrón que en `PdfToolsScreenTest`**: al generar un
+  QR protegido con contraseña, la insignia "Protegido" quedaba fuera del
+  viewport visible -- pero acá la pantalla usa una `Column` con
+  `verticalScroll` normal (no una `LazyColumn`), así que `.performScrollTo()`
+  alcanza directo sobre el nodo destino, sin necesitar el patrón más
+  elaborado de `hasScrollAction().performScrollToNode(...)` usado en
+  `SettingsScreenTest` para una `LazyColumn`.
+- Gauntlet completo verde: `connectedDebugAndroidTest` (24/24), `detekt`,
   `lintDebug`, `testDebugUnitTest`.
 
 ## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
