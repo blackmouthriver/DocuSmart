@@ -274,7 +274,7 @@ dependencies {
     }
 
     // ── AdMob ─────────────────────────────────────────────────────────────────
-    implementation("com.google.android.gms:play-services-ads:23.3.0")
+    implementation("com.google.android.gms:play-services-ads:25.4.0")
     // UMP (User Messaging Platform) -- consentimiento de anuncios UE/Reino
     // Unido (RF pendiente, ver docs/requirements/settings-premium.md). Es un
     // artefacto separado, NO viene incluido en play-services-ads -- versión
