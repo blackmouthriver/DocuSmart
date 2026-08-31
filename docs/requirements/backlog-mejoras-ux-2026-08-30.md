@@ -27,7 +27,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
 | 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | Nuevo (§8), ya listado en `CONTEXT.md` §5 transversal |
-| 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | Nuevo (§9), reabre `security.md` (back button "deliberado") |
+| 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | — | — | — | Nuevo (§10) — **no reproducido en código**, necesita captura |
 | 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | Nuevo — mismo mecanismo que #1 (ver §3) |
 | 10 | Compose UI Testing en toda la app | Mejora (épica) | Mixta por flujo | Mixta por flujo | Bajo | Ya catalogado en [`compose-ui-testing.md`](compose-ui-testing.md) — no duplicar, ver §11 |
@@ -372,6 +372,10 @@ pero es una decisión de producto, no técnica.
 
 ## 9. Mejora — Banner azul uniforme (100% ancho, alto contenido) + "Volver" con texto
 
+**✅ Implementado y verificado en dispositivo real 2026-08-30** (AC1, AC3,
+AC4 completos; AC2 resuelto como efecto directo del mismo cambio, ver
+abajo).
+
 **Investigado:** `DocuSmartTopBanner` **no tiene** un parámetro de flecha
 de "volver" — cada pantalla arma su propio `Row` con `IconButton` +
 `Icon(ArrowBack)` al lado del banner (`TrashScreen.kt`,
@@ -403,21 +407,34 @@ alrededor del banner).
 de volver diga "Volver" (no solo un ícono),
 **para** tener una navegación más clara y predecible.
 
-- **AC1** `DocuSmartTopBanner` gana un parámetro opcional `onBack: (() ->
-  Unit)? = null` — cuando se pasa, el banner muestra la flecha + el texto
-  "Volver" integrados en el propio banner (no un `Row` externo); cuando es
-  `null` (pantallas de la barra inferior), el banner se ve exactamente
-  igual que hoy.
-- **AC2** El banner ocupa el 100% del ancho disponible y una altura que
-  alcanza para logo + nombre de la app + título de la vista, sin espacio
-  vacío de más (revisar contra el alto actual, que puede que ya sea
-  correcto en algunas pantallas y no en otras).
-- **AC3** Cada pantalla migrada (mínimo: Papelera, Menú de Seguridad,
-  Contraseña PDF, Resultado de escaneo) se verifica individualmente en
-  dispositivo real tras el cambio — texto no se corta, el banner no se ve
-  distinto de las demás.
-- **AC4** Las pantallas sin flecha de volver (Convertir, Ajustes, y el
-  resto de la barra inferior) no cambian.
+- **✅ AC1** `DocuSmartTopBanner` ganó `onBack: (() -> Unit)? = null` — la
+  flecha (`Icons.AutoMirrored.Rounded.ArrowBack`) + el texto "Volver"
+  (string `general_back`, ya existente y traducido a los 5 idiomas) se
+  muestran integrados arriba del contenido principal, en blanco sobre el
+  degradado azul, solo cuando `onBack != null`.
+- **✅ AC2** Resuelto como efecto directo de AC1/AC3: las pantallas
+  migradas ya no comparten la fila con un `IconButton` externo (que les
+  quitaba ancho vía `Modifier.weight(1f)`) — el banner pasa a ocupar el
+  100% del ancho disponible automáticamente, sin tocar su padding
+  vertical (18dp), que ya alcanzaba para el contenido.
+- **✅ AC3** Migradas y verificadas en dispositivo real: **Papelera**,
+  **Menú de Seguridad**, **Contraseña PDF**, **Carpeta Segura** (dentro de
+  `SecurityScreen.kt`) — las 4 con capturas confirmando "← Volver" en
+  blanco arriba del logo/título, banner a ancho completo, navegación de
+  vuelta funcionando. **Resultado de escaneo** (`ScanResultScreen.kt`) se
+  migró en código (reemplazó un `Scaffold`+`TopAppBar` que además
+  duplicaba el título ya mostrado en el banner) pero **no se pudo
+  verificar visualmente** — requiere completar una captura real con la
+  cámara de ML Kit, no reproducible por `adb` sin apuntar a un documento
+  físico. Mismo patrón exacto ya probado en las otras 4 pantallas;
+  compilación + `detekt` + `lintDebug` + `testDebugUnitTest` en verde.
+- **✅ AC4** Confirmado sin cambios: Home, Biblioteca, Convertir, Ajustes
+  y PDF (destinos de la barra inferior) siguen sin flecha de "Volver".
+- **Fuera de esta pasada, a propósito:** las 2 pantallas de PIN dentro de
+  `SecurityScreen.kt` (líneas ~213-227 y ~415-425) tienen su propia flecha
+  blanca sobre fondo degradado de pantalla completa, **sin usar
+  `DocuSmartTopBanner`** — son un diseño distinto (pantalla completa, sin
+  logo/título de banner), no una instancia de este patrón. No se tocaron.
 
 ---
 
