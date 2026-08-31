@@ -22,7 +22,7 @@ priorización para decidir qué se aborda y en qué orden.
 | # | Ítem | Tipo | Prioridad | Dificultad | Riesgo | Origen |
 |---|---|---|---|---|---|---|
 | 1 | Acceso directo a Convertir/QR desde el menú "⋮" de un archivo (Biblioteca/Recientes/Visores) | Mejora | Alta | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-31** — ver §3 |
-| 2 | Capturar archivo desde cámara para convertir | Mejora | Media | Media | Bajo | Nuevo (§4) |
+| 2 | Capturar archivo desde cámara para convertir | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo 2026-08-31** — ver §4 |
 | 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
@@ -185,6 +185,8 @@ el atajo de navegación + pre-carga sobre las conversiones que ya existen.)*
 
 ## 4. Mejora — Capturar archivo desde cámara para convertir
 
+**✅ Implementado y verificado en dispositivo real 2026-08-31**
+
 **Investigado:** no existe ningún mecanismo de cámara propio (CameraX/
 Camera2) en el proyecto. El único punto de captura de imagen es el
 escáner de documentos de Google ML Kit (`GmsDocumentScannerOptions`,
@@ -214,6 +216,36 @@ acepta archivos por otras vías (picker); no reemplaza nada existente.
   nada, sin crashear ni dejar estado a medias.
 - **AC4** El resto de las fuentes de origen (picker de archivos) siguen
   funcionando igual que hoy.
+
+### Implementado y verificado en dispositivo real (2026-08-31)
+
+- **`launchDocumentScanner()`** (nuevo `DocumentScannerLauncher.kt`,
+  paquete `scanner.presentation`): se extrajo la configuración de
+  `GmsDocumentScannerOptions` que antes vivía como función privada dentro
+  de `ScannerScreen.kt`, para reutilizarla tal cual desde Convertir sin
+  duplicarla. `ScannerScreen.kt` ahora llama a esta misma función
+  compartida (sin cambio de comportamiento).
+- **`ConverterScreen.kt`**: el botón "Capturar con cámara" aparece junto
+  al selector de archivo, pero **solo cuando el origen es Imagen** (`type.
+  fromFormat == "Imagen"`) y **solo antes de tener ya un archivo elegido**
+  — la cámara de ML Kit siempre devuelve páginas como imagen (nunca un
+  PDF directo, ver comentario ya existente en `ScannerScreen.kt`), así
+  que ofrecerlo para PDF/Word/Excel/PowerPoint no tendría sentido.
+- **`ConverterViewModel.onScanError()`**: nuevo, reutiliza el mismo
+  mecanismo de Snackbar que ya tenían los demás errores de esta pantalla.
+- Cancelar la captura (botón "X" del escáner) no dispara ningún callback
+  — el selector de origen queda exactamente como estaba (AC3).
+- Verificado en dispositivo real (Motorola Edge 30 Neo): el botón
+  aparece en Imagen→PDF y NO aparece en PDF→TXT (ni en ninguna otra
+  categoría); "Capturar con cámara" abre correctamente la UI de ML Kit
+  ("Posiciona el documento en el marco"); cancelar vuelve sin cambios;
+  completar una captura real deja la foto adjunta automáticamente como
+  archivo de origen (sin volver a mostrar el selector); la conversión
+  Imagen→PDF con el archivo capturado se completó con éxito de punta a
+  punta. Sin `FATAL EXCEPTION` en logcat.
+- Gauntlet completo verificado: `compileDebugKotlin`, `detekt`,
+  `lintDebug`, `testDebugUnitTest` y `connectedDebugAndroidTest` (6/6) en
+  verde.
 
 ---
 

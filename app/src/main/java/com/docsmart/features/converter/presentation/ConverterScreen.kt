@@ -3,6 +3,7 @@ package com.docsmart.features.converter.presentation
 import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +40,9 @@ import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.components.BatchConversionSuccess
 import com.docsmart.features.converter.presentation.components.ConversionProgress
 import com.docsmart.features.converter.presentation.components.ConversionSuccess
+import com.docsmart.features.scanner.presentation.ScannerMode
+import com.docsmart.features.scanner.presentation.launchDocumentScanner
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 
 // Extraído de ConverterScreen (detekt: LongMethod) -- las 5 secciones por
 // categoría (Imagen/PDF/Word/Excel/PowerPoint) eran código casi idéntico
@@ -97,6 +101,36 @@ fun ConverterScreen(
     val fileLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris -> if (uris.isNotEmpty()) viewModel.onFilesSelected(uris) }
+
+    // Atajo "Capturar con cámara" (backlog UX 2026-08-30, HU-UX-03) --
+    // reutiliza el mismo escáner de ML Kit ya probado en la pantalla
+    // Escáner (siempre devuelve páginas como imagen, nunca PDF directo).
+    // Cancelar (RESULT_CANCELED) no hace nada, deja el selector como estaba.
+    val scannerStartErrorTemplate = stringResource(R.string.scanner_start_error)
+    val documentScanLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val pages = GmsDocumentScanningResult
+                .fromActivityResultIntent(result.data)
+                ?.pages?.mapNotNull { it.imageUri } ?: emptyList()
+            if (pages.isNotEmpty()) viewModel.onFilesSelected(pages)
+        }
+    }
+    val onCaptureWithCamera: () -> Unit = {
+        activity?.let { act ->
+            launchDocumentScanner(
+                activity   = act,
+                mode       = ScannerMode.DOCUMENT,
+                onLaunched = { intentSender ->
+                    documentScanLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                },
+                onError    = { message ->
+                    viewModel.onScanError(String.format(scannerStartErrorTemplate, message))
+                }
+            )
+        }
+    }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
@@ -209,6 +243,11 @@ fun ConverterScreen(
                         fileName         = uiState.fileName,
                         onFileNameChange = { viewModel.onFileNameChange(it) },
                         onSelectFiles    = { fileLauncher.launch(getMimeForType(uiState.selectedType!!)) },
+                        // La cámara solo puede producir imágenes -- ofrecerla
+                        // como origen no tiene sentido para PDF/Word/Excel/PPT.
+                        onCaptureWithCamera = if (uiState.selectedType!!.fromFormat == "Imagen") {
+                            onCaptureWithCamera
+                        } else null,
                         onRemoveFile     = { viewModel.removeImage(it) },
                         onConvert = { viewModel.convert(context) },
                         onBack    = { viewModel.clearAll() },
@@ -425,15 +464,16 @@ private fun ConversionGridCard(
 // ── Detalle de conversión ─────────────────────────────────────────────────────
 @Composable
 private fun ConversionDetailCard(
-    type            : ConversionType,
-    selectedFiles   : List<Uri>,
-    fileName        : String,
-    onFileNameChange: (String) -> Unit,
-    onSelectFiles   : () -> Unit,
-    onRemoveFile    : (Uri) -> Unit,
-    onConvert       : () -> Unit,
-    onBack          : () -> Unit,
-    modifier        : Modifier = Modifier
+    type               : ConversionType,
+    selectedFiles      : List<Uri>,
+    fileName           : String,
+    onFileNameChange   : (String) -> Unit,
+    onSelectFiles      : () -> Unit,
+    onCaptureWithCamera: (() -> Unit)? = null,
+    onRemoveFile       : (Uri) -> Unit,
+    onConvert          : () -> Unit,
+    onBack             : () -> Unit,
+    modifier           : Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
@@ -490,6 +530,23 @@ private fun ConversionDetailCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+
+        // Atajo "Capturar con cámara" (backlog UX 2026-08-30, HU-UX-03) --
+        // junto a la opción de elegir del dispositivo, solo para origen
+        // Imagen (es lo único que la cámara puede producir) y solo antes de
+        // tener ya un archivo elegido (evita mezclar fuentes a mitad de
+        // camino, fuera del alcance de esta HU).
+        if (onCaptureWithCamera != null && selectedFiles.isEmpty()) {
+            OutlinedButton(
+                onClick  = onCaptureWithCamera,
+                modifier = Modifier.fillMaxWidth(),
+                shape    = MaterialTheme.shapes.medium
+            ) {
+                Icon(Icons.Rounded.CameraAlt, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.converter_capture_camera))
             }
         }
 
