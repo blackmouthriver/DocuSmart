@@ -20,6 +20,8 @@ object AdConstants {
     const val BANNER_SCAN_RESULT_ID = TEST_BANNER_ID
     const val BANNER_SECURITY_ID    = TEST_BANNER_ID
     const val BANNER_VIEWER_ID      = TEST_BANNER_ID
+    const val BANNER_STUDY_ID       = TEST_BANNER_ID
+    const val BANNER_QR_ID          = TEST_BANNER_ID
 
     // ── Interstitial ──────────────────────────────────────────────────────────
     const val INTERSTITIAL_CONVERSION_ID = "ca-app-pub-3940256099942544/1033173712"

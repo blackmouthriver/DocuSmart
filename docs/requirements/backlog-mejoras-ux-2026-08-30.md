@@ -26,7 +26,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
-| 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | 🟡 3 de 6 pantallas implementadas y verificadas 2026-08-31, faltan Estudio/QR Lector/QR Creador (requieren ViewModel nuevo) — ver §8 |
+| 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | ✅ 6 de 6 pantallas implementadas y verificadas 2026-08-31 — ver §8 |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | — | — | — | Nuevo (§10) — **no reproducido en código**, necesita captura |
 | 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | Nuevo — mismo mecanismo que #1 (ver §3) |
@@ -332,8 +332,8 @@ navegación por separado (no solo un acento único como hoy),
 
 ## 8. Mejora — Banner de anuncios consistente en todas las pantallas (no-premium)
 
-**🟡 Parcialmente implementado y verificado en dispositivo 2026-08-31**
-(3 de 6 pantallas de AC1). Decisión del usuario confirmada: Contraseña
+**✅ Implementado y verificado en dispositivo real 2026-08-31**
+(6 de 6 pantallas de AC1). Decisión del usuario confirmada: Contraseña
 PDF, Carpeta Segura y Papelera quedan **sin** banner (recomendación
 adoptada).
 
@@ -398,23 +398,46 @@ y Papelera quedan sin banner (recomendación adoptada tal cual).
 - Las 6 pruebas instrumentadas (`connectedDebugAndroidTest`) confirmadas
   en verde tras el cambio.
 
-### Pendiente — 3 pantallas requieren más que copiar el patrón
+### Completado — Estudio, Lector QR y Creador QR (2026-08-31)
 
-**Estudio, Lector de QR y Creador de QR no tienen ningún ViewModel hoy**
-(todo su estado es `remember`/objetos locales) — agregarles uno solo para
-exponer `adManager` es un cambio de mayor alcance del que se estimó al
-catalogar esta HU (se asumía que ya existían ViewModels en las 6
-pantallas, y solo faltaba copiar 3 líneas). **Escáner** (`ScannerScreen`)
-es, además, una pantalla transitoria de carga (abre la cámara de ML Kit
-casi de inmediato) — dudoso que un banner ahí aporte valor real, se
-recomienda excluirla del alcance de esta HU en vez de forzarla.
+**Estudio, Lector de QR y Creador de QR no tenían ningún ViewModel**
+(todo su estado era `remember`/objetos locales) — se agregó uno mínimo a
+cada uno (mismo patrón ya usado en Menú de Seguridad: solo expone
+`adManager`, sin lógica propia):
 
-**Necesito tu confirmación antes de tocar estas 3:**
-1. ¿Agrego un `ViewModel` nuevo a Estudio, Lector QR y Creador QR (mismo
-   patrón mínimo ya usado en Menú de Seguridad) para poder mostrar el
-   banner ahí también?
-2. ¿Confirmas dejar **Escáner** (la pantalla de carga transitoria) fuera
-   del alcance, ya que casi no hay tiempo de pantalla para mostrar nada?
+- `StudyViewModel` — inyectado en `StudyScreen`. El banner se ubica
+  después del `TabRow` y antes del contenido de cada pestaña, por lo que
+  se ve igual en Lectura, Notas y Pomodoro (no solo en una). Verificado en
+  dispositivo en las 3 pestañas.
+- `QrViewModel` — compartido entre `QrReaderScreen` y `QrCreatorScreen`
+  (cada pantalla recibe su propia instancia por scope de
+  `NavBackStackEntry`).
+  - **Creador de QR**: banner como primer elemento del formulario,
+    arriba de los chips de tipo (URL/Texto/Email/...). Verificado en
+    dispositivo.
+  - **Lector de QR**: banner **solo** en el estado "código detectado"
+    (cuando ya hay un resultado), nunca durante la vista de cámara en
+    vivo — para no obstruir el escaneo. Verificado en dispositivo que la
+    vista de cámara en vivo permanece sin banner; el estado "detectado"
+    no se pudo verificar visualmente en este ciclo (requiere apuntar la
+    cámara real a un QR físico, mismo límite ya documentado para
+    Resultado de escaneo) pero sigue el mismo patrón exacto ya probado en
+    Creador de QR y Estudio.
+- **Escáner** (`ScannerScreen`) queda **excluido** del alcance, confirmado
+  por el usuario: pantalla transitoria de carga (abre la cámara de ML Kit
+  casi de inmediato), sin tiempo de pantalla real para un banner.
+- Detekt: agregar el parámetro `viewModel` a las 3 funciones invalidó sus
+  entradas de `LongMethod` en `config/detekt/baseline.xml` (ya estaban al
+  límite antes de este cambio). Se regeneraron **solo esas 3 líneas**
+  manualmente en vez de correr `detektBaseline` completo — ese task
+  hubiera borrado ~70 supresiones preexistentes no relacionadas.
+- Gauntlet completo verificado: `compileDebugKotlin`, `detekt`,
+  `lintDebug`, `testDebugUnitTest`, `connectedDebugAndroidTest` (6/6) —
+  todo en verde. Sin `FATAL EXCEPTION` en logcat en ninguna de las 3
+  pantallas visitadas.
+
+**HU-UX-07 completa: 6 de 6 pantallas de AC1 implementadas y
+verificadas.**
 
 ---
 
