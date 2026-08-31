@@ -14,6 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.home.presentation.component.HomeBanner
 import com.docsmart.features.home.presentation.component.QuickAccessGrid
 import com.docsmart.features.home.presentation.component.RecentDocuments
@@ -33,6 +34,12 @@ fun HomeScreen(
     onQrReader     : () -> Unit = {},
     onQrCreator    : () -> Unit = {},
     onTrash        : () -> Unit = {},  // ← NUEVO: acceso rápido a la papelera
+    // Atajos desde el menú "⋮" de un documento en Recientes (backlog UX
+    // 2026-08-30, HU-UX-01/02) -- por defecto caen al CTA genérico existente
+    // si la pantalla llamante no pasa una versión que preseleccione el
+    // archivo (mismo criterio ya usado en onQuickConvertImageToPdf).
+    onConvertDocument     : (DocumentUiModel) -> Unit = { onConvert() },
+    onCreateQrFromDocument: (DocumentUiModel) -> Unit = { onQrCreator() },
     viewModel      : HomeViewModel = hiltViewModel()
 ) {
     Timber.d("HomeScreen: iniciando composición")
@@ -114,7 +121,8 @@ fun HomeScreen(
                 onSeeAllClick   = onSeeAll,
                 onOpenFileClick = openFileLauncher,
                 onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
-                onConvertClick  = { doc -> onConvert() },
+                onConvertClick  = onConvertDocument,
+                onCreateQrClick = onCreateQrFromDocument,
                 onDeleteClick   = { id -> viewModel.removeDocument(id) },
                 modifier        = Modifier.padding(horizontal = 20.dp)
             )

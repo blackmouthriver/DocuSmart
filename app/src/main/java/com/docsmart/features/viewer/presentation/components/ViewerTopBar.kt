@@ -27,6 +27,8 @@ fun ViewerTopBar(
     onFavoriteClick: () -> Unit,
     onShareClick: () -> Unit,
     onSearchClick: () -> Unit,
+    onConvertClick: () -> Unit,
+    onCreateQrClick: () -> Unit,
     onRenameClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -115,6 +117,30 @@ fun ViewerTopBar(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
+                        // Atajos "Convertir"/"Crear QR" desde el documento ya
+                        // abierto (backlog UX 2026-08-30, HU-UX-01/02, AC5) --
+                        // van antes de Renombrar/Eliminar por ser acciones no
+                        // destructivas, igual que en DocumentContextMenu.
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.viewer_convert)) },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.SwapHoriz, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onConvertClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.viewer_create_qr)) },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.QrCode, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onCreateQrClick()
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.viewer_rename)) },
                             leadingIcon = {

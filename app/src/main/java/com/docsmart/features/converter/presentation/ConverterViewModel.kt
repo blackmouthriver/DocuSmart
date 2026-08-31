@@ -74,7 +74,21 @@ class ConverterViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ConverterUiState())
     val uiState: StateFlow<ConverterUiState> = _uiState.asStateFlow()
 
+    // Atajo "Convertir" desde el menú "⋮" de un archivo ya elegido (backlog
+    // UX 2026-08-30, HU-UX-02). No va directo a `selectedFiles` porque
+    // todavía no se sabe qué ConversionType exacto va a elegir el usuario
+    // (un mismo origen, p.ej. PDF, tiene varios destinos posibles) -- queda
+    // en espera hasta que `onTypeSelected` reciba un tipo de la misma
+    // categoría, momento en el que se adjunta solo una vez (consumo único).
+    private var pendingPreloadUri     : Uri?    = null
+    private var pendingPreloadCategory: String? = null
+
     init { refreshLimitState() }
+
+    fun preloadFile(uri: Uri, category: String) {
+        pendingPreloadUri      = uri
+        pendingPreloadCategory = category
+    }
 
     private fun refreshLimitState() {
         _uiState.update { it.copy(
@@ -107,10 +121,13 @@ class ConverterViewModel @Inject constructor(
     }
 
     fun onTypeSelected(type: ConversionType) {
+        val preloaded = pendingPreloadUri.takeIf { pendingPreloadCategory == type.fromFormat }
+        pendingPreloadUri      = null
+        pendingPreloadCategory = null
         _uiState.update { state ->
             state.copy(
                 selectedType    = type,
-                selectedFiles   = emptyList(),
+                selectedFiles   = preloaded?.let { listOf(it) } ?: emptyList(),
                 conversionResult = null,
                 errorMessage    = null
             )

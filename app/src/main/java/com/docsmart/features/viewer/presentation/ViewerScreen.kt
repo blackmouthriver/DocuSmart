@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
 import com.docsmart.features.viewer.presentation.components.ViewerDeleteConfirmDialog
@@ -69,6 +70,11 @@ import java.util.zip.ZipInputStream
 fun ViewerScreen(
     documentId: String,
     onBack    : () -> Unit,
+    // Atajos "Convertir"/"Crear QR" desde el menú del Visor (backlog UX
+    // 2026-08-30, HU-UX-01/02, AC5) -- reciben el documento actualmente
+    // abierto para poder precargarlo en la pantalla de destino.
+    onConvertClick : (DocumentUiModel) -> Unit = {},
+    onCreateQrClick: (DocumentUiModel) -> Unit = {},
     viewModel : ViewerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -281,6 +287,8 @@ fun ViewerScreen(
                         if (!showSearch) searchQuery = ""
                     }
                 },
+                onConvertClick  = { onConvertClick(doc) },
+                onCreateQrClick = { onCreateQrClick(doc) },
                 onRenameClick   = { viewModel.onRenameClick() },
                 onDeleteClick   = { viewModel.onDeleteClick() },
                 modifier        = Modifier.align(Alignment.TopCenter)

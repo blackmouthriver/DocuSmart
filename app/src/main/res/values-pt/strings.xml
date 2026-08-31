@@ -151,6 +151,8 @@
     <string name="viewer_unsupported">Este formato não é compatível com o visualizador integrado.</string>
     <string name="viewer_open_other">Abrir com outro aplicativo</string>
     <string name="viewer_more_options">Mais opções</string>
+    <string name="viewer_convert">Converter</string>
+    <string name="viewer_create_qr">Criar QR</string>
     <string name="viewer_rename">Renomear</string>
     <string name="viewer_delete">Excluir</string>
     <string name="viewer_rename_title">Renomear documento</string>

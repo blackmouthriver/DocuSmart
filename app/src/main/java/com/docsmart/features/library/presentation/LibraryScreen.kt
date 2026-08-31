@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.library.presentation.components.*
 
@@ -36,6 +37,11 @@ import com.docsmart.features.library.presentation.components.*
 fun LibraryScreen(
     onDocumentClick: (String) -> Unit = {},
     onTrashClick   : () -> Unit = {},
+    // Atajos desde el menú "⋮" de un documento (backlog UX 2026-08-30,
+    // HU-UX-01/02) -- sin acción por defecto porque, a diferencia de Home,
+    // Biblioteca no tiene un CTA genérico de Convertir/QR al cual caer.
+    onConvertClick : (DocumentUiModel) -> Unit = {},
+    onCreateQrClick: (DocumentUiModel) -> Unit = {},
     viewModel      : LibraryViewModel = hiltViewModel()
 ) {
     val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
@@ -161,6 +167,8 @@ fun LibraryScreen(
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
                 onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
                 onDeleteClick   = { id -> viewModel.removeDocument(id) },
+                onConvertClick  = onConvertClick,
+                onCreateQrClick = onCreateQrClick,
                 searchQuery     = uiState.searchQuery
             )
         }

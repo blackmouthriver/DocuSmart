@@ -25,6 +25,7 @@ fun DocumentListSection(
     onRenameClick  : ((String, String) -> Unit)? = null,
     onDeleteClick  : ((String) -> Unit)? = null,
     onConvertClick : ((DocumentUiModel) -> Unit)? = null,
+    onCreateQrClick: ((DocumentUiModel) -> Unit)? = null,
     modifier       : Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -80,8 +81,9 @@ fun DocumentListSection(
                             { documentToRename = document }
                         } else null,
                         onShareClick    = { shareDocument(context, document) },
-                        onConvertClick  = onConvertClick?.let { cb -> { cb(document) } },
-                        onDeleteClick   = onDeleteClick?.let  { cb -> { cb(document.id) } }
+                        onConvertClick  = onConvertClick?.let  { cb -> { cb(document) } },
+                        onCreateQrClick = onCreateQrClick?.let { cb -> { cb(document) } },
+                        onDeleteClick   = onDeleteClick?.let   { cb -> { cb(document.id) } }
                     )
                 }
             }

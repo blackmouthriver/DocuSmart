@@ -151,6 +151,8 @@
     <string name="viewer_unsupported">This format is not supported by the built-in viewer.</string>
     <string name="viewer_open_other">Open with another app</string>
     <string name="viewer_more_options">More options</string>
+    <string name="viewer_convert">Convert</string>
+    <string name="viewer_create_qr">Create QR</string>
     <string name="viewer_rename">Rename</string>
     <string name="viewer_delete">Delete</string>
     <string name="viewer_rename_title">Rename document</string>

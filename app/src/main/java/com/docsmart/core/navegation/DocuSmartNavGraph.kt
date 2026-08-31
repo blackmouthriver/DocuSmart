@@ -16,6 +16,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.docsmart.core.ui.LanguageManager
+import com.docsmart.core.ui.components.DocumentType
+import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.theme.ThemeManager
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterScreen
@@ -83,14 +85,28 @@ fun DocuSmartNavGraph(
         // ── Converter ─────────────────────────────────────────────────────────
         composable(
             route     = NavRoutes.Converter.route,
-            arguments = listOf(navArgument("initialType") {
-                type         = NavType.StringType
-                nullable     = true
-                defaultValue = null
-            })
+            arguments = listOf(
+                navArgument("initialType") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                },
+                navArgument("initialFileUri") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                },
+                navArgument("initialFileCategory") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                }
+            )
         ) { backStackEntry ->
             ConverterScreen(
-                initialType = backStackEntry.arguments?.getString("initialType")
+                initialType         = backStackEntry.arguments?.getString("initialType"),
+                initialFileUri      = backStackEntry.arguments?.getString("initialFileUri"),
+                initialFileCategory = backStackEntry.arguments?.getString("initialFileCategory")
             )
         }
 
@@ -146,8 +162,32 @@ fun DocuSmartNavGraph(
         }
 
         // ── QR Creator ────────────────────────────────────────────────────────
-        composable(NavRoutes.QrCreator.route) {
-            QrCreatorScreen(onBack = { navController.popBackStack() })
+        composable(
+            route     = NavRoutes.QrCreator.route,
+            arguments = listOf(
+                navArgument("initialFileUri") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                },
+                navArgument("initialFileType") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                },
+                navArgument("initialFileName") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            QrCreatorScreen(
+                onBack          = { navController.popBackStack() },
+                initialFileUri  = backStackEntry.arguments?.getString("initialFileUri"),
+                initialFileType = backStackEntry.arguments?.getString("initialFileType"),
+                initialFileName = backStackEntry.arguments?.getString("initialFileName")
+            )
         }
 
         // ── Papelera (RF-VIS-07) ──────────────────────────────────────────────
@@ -155,6 +195,43 @@ fun DocuSmartNavGraph(
             TrashScreen(onBack = { navController.popBackStack() })
         }
     }
+}
+
+// ── Atajos "Convertir"/"Crear QR" desde un archivo ya elegido (backlog UX
+// 2026-08-30, HU-UX-01/02) -- traducen el `DocumentType` de un archivo real
+// (Biblioteca/Recientes/Visor) al vocabulario que espera cada pantalla de
+// destino. `null` en el Convertidor significa "este tipo no tiene ninguna
+// conversión definida hoy" (Texto, ZIP) -- se navega igual pero sin
+// precargar el archivo, cae al comportamiento manual de siempre.
+private fun DocumentType.toConverterCategoryOrNull(): String? = when (this) {
+    DocumentType.IMAGE                 -> "Imagen"
+    DocumentType.PDF, DocumentType.OCR -> "PDF" // OCR es un PDF escaneado
+    DocumentType.WORD                  -> "Word"
+    DocumentType.EXCEL                 -> "Excel"
+    DocumentType.POWERPOINT            -> "PowerPoint"
+    DocumentType.TEXT, DocumentType.ZIP -> null
+}
+
+private fun DocumentType.toQrFileType(): String =
+    if (this == DocumentType.IMAGE) "image" else "document"
+
+private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
+    navigate(
+        NavRoutes.Converter.createRoute(
+            initialFileUri      = document.id,
+            initialFileCategory = document.type.toConverterCategoryOrNull()
+        )
+    )
+}
+
+private fun NavHostController.navigateToQrCreator(document: DocumentUiModel) {
+    navigate(
+        NavRoutes.QrCreator.createRoute(
+            initialFileUri  = document.id,
+            initialFileType = document.type.toQrFileType(),
+            initialFileName = document.name
+        )
+    )
 }
 
 // ── Splash 1: MouthBlack ────────────────────────────────────────────────────
@@ -235,7 +312,9 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
             onTrash     = { navController.navigate(NavRoutes.Trash.route) },
             onDocumentClick = { documentId ->
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
-            }
+            },
+            onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
+            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) }
         )
     }
 }
@@ -262,7 +341,9 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
                 }
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
             },
-            onTrashClick = { navController.navigate(NavRoutes.Trash.route) }
+            onTrashClick    = { navController.navigate(NavRoutes.Trash.route) },
+            onConvertClick  = { doc -> navController.navigateToConvert(doc) },
+            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) }
         )
     }
 }
@@ -296,7 +377,9 @@ private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
                 } else {
                     navController.popBackStack()
                 }
-            }
+            },
+            onConvertClick  = { doc -> navController.navigateToConvert(doc) },
+            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) }
         )
     }
 }

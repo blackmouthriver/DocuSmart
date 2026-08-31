@@ -26,6 +26,7 @@ fun RecentDocuments(
     onSeeAllClick  : () -> Unit,
     onOpenFileClick: () -> Unit = {},
     onConvertClick : ((DocumentUiModel) -> Unit)? = null,
+    onCreateQrClick: ((DocumentUiModel) -> Unit)? = null,
     onDeleteClick  : ((String) -> Unit)? = null,
     onRenameClick  : ((String, String) -> Unit)? = null,  // ← NUEVO (id, newName)
     modifier       : Modifier = Modifier
@@ -92,7 +93,8 @@ fun RecentDocuments(
                         onFavoriteClick = { onFavoriteClick(document.id) },
                         showDivider     = index < documents.size - 1,
                         onOpenClick     = { onDocumentClick(document) },
-                        onConvertClick  = onConvertClick?.let { cb -> { cb(document) } },
+                        onConvertClick  = onConvertClick?.let  { cb -> { cb(document) } },
+                        onCreateQrClick = onCreateQrClick?.let { cb -> { cb(document) } },
                         onShareClick    = { shareDocument(context, document, shareLabel) },
                         onRenameClick   = if (onRenameClick != null) {
                             { documentToRename = document }

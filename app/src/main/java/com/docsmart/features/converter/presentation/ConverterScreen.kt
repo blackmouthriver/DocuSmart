@@ -59,7 +59,9 @@ private val CONVERSION_CATEGORIES = listOf(
 
 @Composable
 fun ConverterScreen(
-    initialType: String? = null,
+    initialType        : String? = null,
+    initialFileUri      : String? = null,
+    initialFileCategory: String? = null,
     viewModel  : ConverterViewModel = hiltViewModel()
 ) {
     val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,6 +78,16 @@ fun ConverterScreen(
     // usuario ya cambió manualmente dentro de la misma sesión de pantalla.
     LaunchedEffect(initialType) {
         applyInitialType(initialType, uiState.selectedType, viewModel::onTypeSelected)
+    }
+
+    // Atajo "Convertir" desde el menú "⋮" de un archivo ya elegido (backlog
+    // UX 2026-08-30, HU-UX-02) -- precarga el archivo en el ViewModel para
+    // que quede adjunto en cuanto el usuario elija un tipo de conversión de
+    // la misma categoría (ver `ConverterViewModel.preloadFile`).
+    LaunchedEffect(initialFileUri, initialFileCategory) {
+        if (initialFileUri != null && initialFileCategory != null) {
+            viewModel.preloadFile(Uri.parse(initialFileUri), initialFileCategory)
+        }
     }
 
     // RF-CONV-08: selector multi-archivo para todos los tipos, no solo
