@@ -76,6 +76,8 @@
     <string name="settings_theme">Theme</string>
     <string name="settings_accent_color">Accent color</string>
     <string name="settings_select_accent_color">Select accent color</string>
+    <string name="settings_font_scale">Font size</string>
+    <string name="settings_select_font_scale">Select font size</string>
     <string name="settings_storage">Storage</string>
     <string name="settings_storage_subtitle">View generated files</string>
     <string name="settings_about">About</string>
@@ -118,7 +120,7 @@
     <string name="settings_help_a3">Tap the heart icon on any document or use the ⋮ menu.</string>
     <string name="settings_help_q4">Are my documents safe?</string>
     <string name="settings_help_a4">Yes. All processing is local. No file leaves your device.</string>
-    <string name="settings_reset_body">Theme will be reset to light, language to Spanish, and cache will be cleared. Documents will not be deleted. Continue?</string>
+    <string name="settings_reset_body">Theme will be reset to light, language to Spanish, font size to Normal, and cache will be cleared. Documents will not be deleted. Continue?</string>
     <string name="settings_reset_confirm">Reset</string>
     <string name="settings_about_dialog_title">About DocuSmart</string>
     <string name="settings_about_body">Smart document viewer and converter. Manage, convert and organize your files quickly and securely.</string>
@@ -134,6 +136,9 @@
     <string name="accent_color_orange">Orange</string>
     <string name="accent_color_pink">Pink</string>
     <string name="accent_color_teal">Teal</string>
+    <string name="font_scale_normal">Normal</string>
+    <string name="font_scale_large">Large</string>
+    <string name="font_scale_extra_large">Extra large</string>
 
     <!-- ── Scanner ────────────────────────────────── -->
     <string name="scanner_title">Starting scanner</string>

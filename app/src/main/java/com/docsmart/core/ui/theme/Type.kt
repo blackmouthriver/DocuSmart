@@ -81,3 +81,34 @@ val DocuSmartTypography = Typography(
         lineHeight = 14.sp
     )
 )
+
+// HU-UX-05 (backlog UX 2026-08-30): tamaño de letra ajustable -- escala
+// fontSize/lineHeight de los 15 estilos de Typography (no solo los 12 que
+// DocuSmartTypography define explícito; displayMedium/displaySmall/
+// headlineSmall caen al default de Material3 pero igual se usan en la app,
+// ver ScannerScreen/StudyScreen/SecurityScreen/SplitPdfScreen/HomeBanner).
+// letterSpacing no se escala -- ya es mínimo (0.1.sp) y no aporta al riesgo
+// real de esta HU (texto cortado/desbordado).
+fun Typography.scaledBy(factor: Float): Typography {
+    fun TextStyle.scaled() = copy(
+        fontSize   = fontSize * factor,
+        lineHeight = lineHeight * factor
+    )
+    return copy(
+        displayLarge   = displayLarge.scaled(),
+        displayMedium  = displayMedium.scaled(),
+        displaySmall   = displaySmall.scaled(),
+        headlineLarge  = headlineLarge.scaled(),
+        headlineMedium = headlineMedium.scaled(),
+        headlineSmall  = headlineSmall.scaled(),
+        titleLarge     = titleLarge.scaled(),
+        titleMedium    = titleMedium.scaled(),
+        titleSmall     = titleSmall.scaled(),
+        bodyLarge      = bodyLarge.scaled(),
+        bodyMedium     = bodyMedium.scaled(),
+        bodySmall      = bodySmall.scaled(),
+        labelLarge     = labelLarge.scaled(),
+        labelMedium    = labelMedium.scaled(),
+        labelSmall     = labelSmall.scaled()
+    )
+}

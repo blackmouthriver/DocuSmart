@@ -76,6 +76,8 @@
     <string name="settings_theme">Tema</string>
     <string name="settings_accent_color">Color de acento</string>
     <string name="settings_select_accent_color">Seleccionar color de acento</string>
+    <string name="settings_font_scale">Tamaño de letra</string>
+    <string name="settings_select_font_scale">Seleccionar tamaño de letra</string>
     <string name="settings_storage">Almacenamiento</string>
     <string name="settings_storage_subtitle">Ver archivos generados</string>
     <string name="settings_about">Acerca de</string>
@@ -118,7 +120,7 @@
     <string name="settings_help_a3">Toca el ícono de corazón en cualquier documento o usa el menú ⋮.</string>
     <string name="settings_help_q4">¿Mis documentos están seguros?</string>
     <string name="settings_help_a4">Sí. Todo el procesamiento es local. Ningún archivo sale de tu dispositivo.</string>
-    <string name="settings_reset_body">Se restablecerá el tema al modo claro, el idioma al español y se limpiará el caché. Los documentos no se eliminarán. ¿Continuar?</string>
+    <string name="settings_reset_body">Se restablecerá el tema al modo claro, el idioma al español, el tamaño de letra a Normal y se limpiará el caché. Los documentos no se eliminarán. ¿Continuar?</string>
     <string name="settings_reset_confirm">Restablecer</string>
     <string name="settings_about_dialog_title">Acerca de DocuSmart</string>
     <string name="settings_about_body">Visor y convertidor inteligente de documentos. Gestiona, convierte y organiza tus archivos de forma rápida y segura.</string>
@@ -134,6 +136,9 @@
     <string name="accent_color_orange">Naranja</string>
     <string name="accent_color_pink">Rosa</string>
     <string name="accent_color_teal">Turquesa</string>
+    <string name="font_scale_normal">Normal</string>
+    <string name="font_scale_large">Grande</string>
+    <string name="font_scale_extra_large">Muy grande</string>
 
     <!-- ── Escáner ────────────────────────────────── -->
     <string name="scanner_title">Iniciando escáner</string>

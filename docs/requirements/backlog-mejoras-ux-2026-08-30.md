@@ -25,7 +25,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 2 | Capturar archivo desde cámara para convertir | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo 2026-08-31** — ver §4 |
 | 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
-| 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
+| 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | **🟡 HU-UX-05 (tamaño de letra) ✅ implementada 2026-08-31; HU-UX-06 (color por elemento) sin empezar** — ver §7 |
 | 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | ✅ 6 de 6 pantallas implementadas y verificadas 2026-08-31 — ver §8 |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | — | — | — | Nuevo (§10) — **no reproducido en código**, necesita captura |
@@ -356,6 +356,9 @@ partirse.
 
 ## 7. Mejora (épica) — Ampliar "Personalización" en Ajustes
 
+**✅ HU-UX-05 implementada y verificada en dispositivo real 2026-08-31**
+(HU-UX-06 sigue pendiente de diseño, sin empezar — ver más abajo).
+
 **Investigado:** la sección "Personalización" **ya existe** en
 `SettingsScreen.kt:535` con 4 ítems (Idioma, Tutorial, Tema, Color de
 acento) — no hay que crearla, hay que **ampliarla**. Lo pedido (tamaño de
@@ -398,6 +401,74 @@ el sistema operativo.
   patrón que `ThemeManager`/`LanguageManager`).
 - **AC4** "Restablecer configuración" también restablece el tamaño de
   letra a Normal.
+
+### Implementado y verificado en dispositivo real (2026-08-31)
+
+- **`ThemeManager`**: nuevo `enum FontScale(label, scale)` con 3 niveles
+  (NORMAL=1.0, LARGE=1.15, EXTRA_LARGE=1.3) + `StateFlow<FontScale>` +
+  persistencia en `SharedPreferences`, mismo patrón exacto que
+  `AppTheme`/`AccentColor` ya existentes.
+- **`Type.kt`**: nueva función `Typography.scaledBy(factor)` que escala
+  `fontSize`/`lineHeight` de los 15 estilos de `Typography` (no solo los
+  12 que `DocuSmartTypography` define explícito -- `displayMedium`/
+  `displaySmall`/`headlineSmall` caen al default de Material3 pero
+  igual se usan en `ScannerScreen`/`StudyScreen`/`SecurityScreen`/
+  `SplitPdfScreen`/`HomeBanner`, verificado antes de asumir que bastaba
+  con escalar los 12).
+- **`DocuSmartTheme`** ganó un parámetro `fontScale: Float = 1f`
+  aplicado como `DocuSmartTypography.scaledBy(fontScale)` en el
+  `MaterialTheme` de toda la app; `MainActivity.kt` lo alimenta desde
+  `themeManager.fontScale`.
+- **`SettingsScreen.kt`**: nuevo ítem "Tamaño de letra" en Personalización
+  (después de Color de acento) con su diálogo de selección (mismo patrón
+  de `RadioButton` que Tema/Color de acento) y su reset en "Restablecer
+  configuración" (con el texto del diálogo actualizado en los 5 idiomas
+  para mencionarlo).
+- **Hallazgo real durante la verificación (no asumido, encontrado
+  probando en dispositivo):** las 3 pestañas de Biblioteca (Dispositivo/
+  Mis archivos/Papelera, `LibraryTabItem` en `LibraryScreen.kt`) truncaban
+  con "…" desde el nivel "Grande" (1.15x) -- el ancho de 3 columnas
+  compartido entre ícono y texto en una `Row` no alcanzaba. Permitir 2
+  líneas no fue suficiente por sí solo ("Dispositivo" se partía a media
+  palabra, "Mis archivos" seguía truncado) -- se resolvió cambiando el
+  layout de esas 3 tarjetas de "ícono al lado del texto" a "ícono arriba,
+  texto centrado abajo" (mismo patrón que una barra de navegación
+  inferior), que le da al texto todo el ancho de la tarjeta. Decisión
+  confirmada con el usuario antes de tocar el diseño visual de un
+  componente ya afinado en una iteración previa de esta sesión.
+- Verificado en dispositivo real (Motorola Edge 30 Neo) en las 4
+  pantallas auditadas por el AC2, en los 3 niveles:
+  - **Ajustes**: sin cortes, "Tamaño de letra: Normal" visible y
+    seleccionable.
+  - **Home**: banner, accesos rápidos y textos escalan sin desbordar.
+  - **Biblioteca**: tras el fix de layout, "Dispositivo"/"Mis archivos"/
+    "Papelera" se ven completos (sin "…") incluso en "Muy grande".
+  - **Visor**: sin cortes (el nombre de archivo en la barra superior ya
+    se truncaba antes de esta HU para nombres largos -- comportamiento
+    preexistente no relacionado con el escalado).
+  - **AC3** confirmado: el nivel elegido persiste a través de múltiples
+    reinstalaciones/reinicios de la app durante la verificación.
+  - **AC4** confirmado: "Restablecer configuración" vuelve el tamaño de
+    letra a "Normal" (y el resto de la UI, incluida la barra de
+    navegación inferior, vuelve a verse sin envolver).
+- **Trade-off aceptado, documentado, no corregido:** en el nivel más
+  extremo ("Muy grande"), la barra de navegación inferior (`Navigation
+  BarItem` nativo de Material3) envuelve etiquetas largas como
+  "Biblioteca"/"Convertir" a 2 líneas partiendo la palabra, y el badge de
+  tipo de documento (`DocuSmartDocumentItem.kt`, usado en Home/Biblioteca/
+  Papelera/Favoritos) hace lo mismo con "Imagen"/"Imag-en". Ninguno de los
+  dos trunca información (a diferencia del caso de Biblioteca que sí se
+  corrigió) -- se acepta como límite conocido de esta HU en vez de tocar
+  componentes compartidos por más pantallas, de mayor alcance.
+- Gauntlet completo verificado: `compileDebugKotlin`, `detekt`,
+  `lintDebug`, `testDebugUnitTest` en verde. `connectedDebugAndroidTest`
+  reveló 2 fallas preexistentes y no relacionadas (confirmado con
+  `git stash`/`git stash pop` contra `main` limpio) --
+  `ingresarPinIncorrecto_muestraMensajeDeError`
+  (`SecurityScreenTest`) y `convertirImagenAWebp_muestraResultadoExitoso`
+  (`ConverterScreenTest`), ambas con timeout de exactamente 20000ms --
+  flagueadas por separado para investigación, no forman parte del alcance
+  de esta HU.
 
 ### HU-UX-06 — Personalización de color por elemento (banner, íconos, cards, barra de navegación)
 

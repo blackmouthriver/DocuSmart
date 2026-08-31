@@ -29,6 +29,7 @@ import com.docsmart.core.ui.AppLanguage
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.AccentColor
 import com.docsmart.core.ui.theme.AppTheme
+import com.docsmart.core.ui.theme.FontScale
 import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.core.ui.theme.ThemeManager
 import com.docsmart.core.ui.util.findActivity
@@ -48,6 +49,7 @@ fun SettingsScreen(
     val context         = LocalContext.current
     val currentTheme       by themeManager.currentTheme.collectAsState()
     val currentAccentColor by themeManager.accentColor.collectAsState()
+    val currentFontScale   by themeManager.fontScale.collectAsState()
     val currentLanguage    by languageManager.currentLanguage.collectAsState()
     val isPremium          by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
@@ -68,8 +70,16 @@ fun SettingsScreen(
         AccentColor.TEAL   -> stringResource(R.string.accent_color_teal)
     }
 
+    @Composable
+    fun fontScaleLabel(scale: FontScale): String = when (scale) {
+        FontScale.NORMAL      -> stringResource(R.string.font_scale_normal)
+        FontScale.LARGE       -> stringResource(R.string.font_scale_large)
+        FontScale.EXTRA_LARGE -> stringResource(R.string.font_scale_extra_large)
+    }
+
     var showThemeDialog       by remember { mutableStateOf(false) }
     var showAccentColorDialog by remember { mutableStateOf(false) }
+    var showFontScaleDialog   by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showStorageDialog  by remember { mutableStateOf(false) }
     var showAboutDialog    by remember { mutableStateOf(false) }
@@ -226,6 +236,51 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAccentColorDialog = false }) {
+                    Text(stringResource(R.string.settings_close))
+                }
+            }
+        )
+    }
+
+    // ── Diálogo: Tamaño de letra (HU-UX-05) ──────────────────────────────────
+    if (showFontScaleDialog) {
+        AlertDialog(
+            onDismissRequest = { showFontScaleDialog = false },
+            shape = MaterialTheme.shapes.large,
+            title = { Text(stringResource(R.string.settings_select_font_scale),
+                style = MaterialTheme.typography.titleLarge) },
+            text = {
+                Column {
+                    FontScale.entries.forEach { scale ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    themeManager.setFontScale(scale)
+                                    showFontScaleDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentFontScale == scale,
+                                onClick  = {
+                                    themeManager.setFontScale(scale)
+                                    showFontScaleDialog = false
+                                }
+                            )
+                            Text(
+                                text  = fontScaleLabel(scale),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showFontScaleDialog = false }) {
                     Text(stringResource(R.string.settings_close))
                 }
             }
@@ -394,6 +449,7 @@ fun SettingsScreen(
                 TextButton(onClick = {
                     themeManager.setTheme(AppTheme.SYSTEM)
                     themeManager.setAccentColor(AccentColor.BLUE)
+                    themeManager.setFontScale(FontScale.NORMAL)
                     languageManager.setLanguage(languageManager.deviceDefaultLanguage())
                     java.io.File(context.filesDir, "converted").listFiles()?.forEach { it.delete() }
                     java.io.File(context.filesDir, "pdftools").listFiles()?.forEach { it.delete() }
@@ -566,6 +622,14 @@ fun SettingsScreen(
                 title    = stringResource(R.string.settings_accent_color),
                 subtitle = accentColorLabel(currentAccentColor),
                 onClick  = { showAccentColorDialog = true }
+            )
+        }
+        item {
+            SettingsItem(
+                icon     = Icons.Rounded.TextFields,
+                title    = stringResource(R.string.settings_font_scale),
+                subtitle = fontScaleLabel(currentFontScale),
+                onClick  = { showFontScaleDialog = true }
             )
         }
 
