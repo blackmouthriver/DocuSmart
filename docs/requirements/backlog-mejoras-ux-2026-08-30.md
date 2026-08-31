@@ -26,7 +26,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | Nuevo (§7) |
-| 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | Nuevo (§8), ya listado en `CONTEXT.md` §5 transversal |
+| 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | 🟡 3 de 6 pantallas implementadas y verificadas 2026-08-31, faltan Estudio/QR Lector/QR Creador (requieren ViewModel nuevo) — ver §8 |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | — | — | — | Nuevo (§10) — **no reproducido en código**, necesita captura |
 | 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | Nuevo — mismo mecanismo que #1 (ver §3) |
@@ -332,6 +332,11 @@ navegación por separado (no solo un acento único como hoy),
 
 ## 8. Mejora — Banner de anuncios consistente en todas las pantallas (no-premium)
 
+**🟡 Parcialmente implementado y verificado en dispositivo 2026-08-31**
+(3 de 6 pantallas de AC1). Decisión del usuario confirmada: Contraseña
+PDF, Carpeta Segura y Papelera quedan **sin** banner (recomendación
+adoptada).
+
 **Investigado:** `DocuSmartBannerAd` aparece hoy en 5 de 18 rutas: Home,
 Biblioteca, Convertir, Herramientas PDF, Ajustes — todas con el mismo
 criterio de gating (`if (!isPremium) { ... }`, patrón ya establecido y
@@ -361,12 +366,55 @@ incentivo de pasar a Premium sea claro y parejo).
 - **AC3** Premium y las 2 pantallas de Splash quedan explícitamente
   excluidas.
 
-**Decisión que necesito del usuario antes de implementar:** Contraseña
-PDF, Carpeta Segura (ingreso de PIN) y Papelera son pantallas de
-"acción rápida"/seguridad — ¿también quieres el banner ahí, o preferís
-dejarlas sin anuncios por ser interacciones sensibles/breves (ingresar
-una clave, confirmar un borrado)? Recomiendo dejarlas fuera por ahora,
-pero es una decisión de producto, no técnica.
+**✅ Decisión confirmada por el usuario:** Contraseña PDF, Carpeta Segura
+y Papelera quedan sin banner (recomendación adoptada tal cual).
+
+### Implementado y verificado en dispositivo real (2026-08-31)
+
+- **Resultado de escaneo** (`ScanResultScreen.kt`): reutiliza
+  `converterViewModel.adManager` (ya lo recibía como parámetro, sin
+  necesidad de agregar nada nuevo) — riesgo mínimo. **No se pudo
+  verificar visualmente** (requiere una captura real con cámara, mismo
+  límite ya documentado en §9 para esta pantalla).
+- **Menú de Seguridad** (`SecurityMenuScreen.kt`): no tenía ningún
+  ViewModel — se creó `SecurityMenuViewModel` mínimo (solo expone
+  `adManager`, sin lógica propia) inyectado vía `hiltViewModel()`.
+  Verificado en dispositivo: banner visible arriba del banner azul.
+- **Visor** (`ViewerScreen.kt`): `ViewerViewModel` ganó `adManager` en su
+  constructor. El banner se agrupa en una `Column` junto con
+  `ViewerBottomBar`, mostrándose/ocultándose junto con el resto de los
+  controles (`uiState.showControls`) en vez de quedar fijo tapando el
+  documento — el modo de lectura inmersiva del Visor ya oculta/muestra su
+  propia barra de controles, así que el anuncio sigue esa misma
+  convención en vez de romperla. Verificado en dispositivo: banner visible
+  junto a los controles inferiores.
+- Se actualizó `ViewerScreenTest.kt` (prueba instrumentada existente) para
+  pasar el nuevo parámetro `adManager` mockeado — **hallazgo real durante
+  la verificación**: un mock relajado de `AdManager` sin stub explícito de
+  `isPremium`/`isInitialized` causa un `ClassCastException` al leer esos
+  `StateFlow<Boolean>` desde Compose (mismo problema ya documentado antes
+  en `ConverterScreenTest`). Se estabilizó con `isPremium = true` para que
+  el test no dependa de que el anuncio realmente cargue.
+- Las 6 pruebas instrumentadas (`connectedDebugAndroidTest`) confirmadas
+  en verde tras el cambio.
+
+### Pendiente — 3 pantallas requieren más que copiar el patrón
+
+**Estudio, Lector de QR y Creador de QR no tienen ningún ViewModel hoy**
+(todo su estado es `remember`/objetos locales) — agregarles uno solo para
+exponer `adManager` es un cambio de mayor alcance del que se estimó al
+catalogar esta HU (se asumía que ya existían ViewModels en las 6
+pantallas, y solo faltaba copiar 3 líneas). **Escáner** (`ScannerScreen`)
+es, además, una pantalla transitoria de carga (abre la cámara de ML Kit
+casi de inmediato) — dudoso que un banner ahí aporte valor real, se
+recomienda excluirla del alcance de esta HU en vez de forzarla.
+
+**Necesito tu confirmación antes de tocar estas 3:**
+1. ¿Agrego un `ViewModel` nuevo a Estudio, Lector QR y Creador QR (mismo
+   patrón mínimo ya usado en Menú de Seguridad) para poder mostrar el
+   banner ahí también?
+2. ¿Confirmas dejar **Escáner** (la pantalla de carga transitoria) fuera
+   del alcance, ya que casi no hay tiempo de pantalla para mostrar nada?
 
 ---
 

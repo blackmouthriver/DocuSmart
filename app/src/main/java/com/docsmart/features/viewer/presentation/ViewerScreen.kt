@@ -51,6 +51,8 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
 import com.docsmart.features.viewer.presentation.components.ViewerDeleteConfirmDialog
@@ -70,6 +72,7 @@ fun ViewerScreen(
     viewModel : ViewerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     val context       = LocalContext.current
     var showSearch    by remember { mutableStateOf(false) }
     var searchQuery   by remember { mutableStateOf("") }
@@ -310,12 +313,22 @@ fun ViewerScreen(
             }
         }
 
-        ViewerBottomBar(
-            currentPage = uiState.currentPage,
-            totalPages  = uiState.totalPages,
-            visible     = uiState.showControls,
-            modifier    = Modifier.align(Alignment.BottomCenter)
-        )
+        Column(modifier = Modifier.align(Alignment.BottomCenter)) {
+            // ── AdMob — solo para usuarios free (backlog UX §8), oculto/
+            // visible junto con el resto de los controles del Visor en vez
+            // de fijo (rompería el modo de lectura inmersiva) ────────────
+            if (!isPremium && uiState.showControls) {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_VIEWER_ID,
+                    adManager = viewModel.adManager
+                )
+            }
+            ViewerBottomBar(
+                currentPage = uiState.currentPage,
+                totalPages  = uiState.totalPages,
+                visible     = uiState.showControls
+            )
+        }
     }
 }
 

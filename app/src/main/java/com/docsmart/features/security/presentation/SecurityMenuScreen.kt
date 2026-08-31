@@ -6,26 +6,42 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 
 @Composable
 fun SecurityMenuScreen(
     onBack        : () -> Unit = {},
     onSecureFolder: () -> Unit = {},
-    onPdfPassword : () -> Unit = {}
+    onPdfPassword : () -> Unit = {},
+    viewModel     : SecurityMenuViewModel = hiltViewModel()
 ) {
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // ── AdMob — solo para usuarios free (backlog UX §8) ───────────
+        if (!isPremium) {
+            DocuSmartBannerAd(
+                adUnitId  = AdConstants.BANNER_SECURITY_ID,
+                adManager = viewModel.adManager
+            )
+        }
+
         // Header
         DocuSmartTopBanner(
             screenTitle    = stringResource(R.string.security_title),

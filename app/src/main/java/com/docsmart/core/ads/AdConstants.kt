@@ -13,6 +13,13 @@ object AdConstants {
     const val BANNER_TOOLS_ID      = TEST_BANNER_ID
     const val BANNER_CONVERTER_ID  = TEST_BANNER_ID
     const val BANNER_SETTINGS_ID   = TEST_BANNER_ID
+    // Backlog UX 2026-08-30 (HU-UX-07): banner de anuncios consistente en
+    // pantallas de contenido -- se dejan fuera a propósito Premium
+    // (paywall), Contraseña PDF/Carpeta Segura/Papelera (acción rápida o
+    // de seguridad) y los splash.
+    const val BANNER_SCAN_RESULT_ID = TEST_BANNER_ID
+    const val BANNER_SECURITY_ID    = TEST_BANNER_ID
+    const val BANNER_VIEWER_ID      = TEST_BANNER_ID
 
     // ── Interstitial ──────────────────────────────────────────────────────────
     const val INTERSTITIAL_CONVERSION_ID = "ca-app-pub-3940256099942544/1033173712"

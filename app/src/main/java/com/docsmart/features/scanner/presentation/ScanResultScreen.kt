@@ -31,8 +31,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.buttons.DocuSmartPrimaryButton
 import com.docsmart.core.ui.components.buttons.DocuSmartSecondaryButton
@@ -64,6 +67,7 @@ fun ScanResultScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val uiState by converterViewModel.uiState.collectAsState()
+    val isPremium by converterViewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     var fileName by remember { mutableStateOf("") }
     var savedToDownloads by remember { mutableStateOf(false) }
@@ -131,6 +135,16 @@ fun ScanResultScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // ── AdMob — solo para usuarios free (backlog UX §8) ───────
+            if (!isPremium) {
+                item {
+                    DocuSmartBannerAd(
+                        adUnitId  = AdConstants.BANNER_SCAN_RESULT_ID,
+                        adManager = converterViewModel.adManager
+                    )
+                }
+            }
+
             // ── Banner ────────────────────────────────
             item {
                 DocuSmartTopBanner(

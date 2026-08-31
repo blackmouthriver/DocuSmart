@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
@@ -66,7 +67,10 @@ class ViewerViewModel @Inject constructor(
     private val searchPdfText: SearchPdfTextUseCase,
     private val documentHistoryDao: DocumentHistoryDao,
     private val documentRepository: DocumentRepository,
-    private val trashRepository: TrashRepository
+    private val trashRepository: TrashRepository,
+    // Backlog UX 2026-08-30 (HU-UX-07): banner de anuncios consistente en
+    // pantallas de contenido, faltaba en el Visor.
+    val adManager: AdManager
 ) : ViewModel() {
 
     companion object {
