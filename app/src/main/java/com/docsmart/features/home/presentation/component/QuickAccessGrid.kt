@@ -3,8 +3,6 @@ package com.docsmart.features.home.presentation.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -21,12 +19,11 @@ import com.docsmart.R
 import com.docsmart.core.ui.components.cards.DocuSmartQuickAccessCard
 import com.docsmart.core.ui.theme.*
 
-// Ancho fijo por tarjeta -- con 9 accesos no caben todos en una sola fila de
-// ancho igual (como antes, con 4). Se pasó a una fila con scroll horizontal
-// en vez de reducir el tamaño de cada tarjeta hasta hacerla ilegible; el
-// ancho se eligió para que ~4.3 tarjetas queden visibles en un teléfono
-// típico, con la última parcialmente cortada como pista de que hay más.
-private val QUICK_ACCESS_CARD_WIDTH = 82.dp
+// Bug real reportado por el usuario 2026-08-30: con 9 accesos en un
+// carrusel horizontal (LazyRow), varios quedaban fuera de vista y había
+// que descubrirlos deslizando -- se pasó a una grilla fija de 3 columnas
+// (sin scroll propio) para que los 9 se vean de un vistazo.
+private const val QUICK_ACCESS_COLUMNS = 3
 
 data class QuickAccessItem(
     val icon   : ImageVector,
@@ -131,18 +128,29 @@ fun QuickAccessGrid(
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(12.dp))
-        LazyRow(
-            modifier              = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(items) { item ->
-                DocuSmartQuickAccessCard(
-                    icon     = item.icon,
-                    label    = item.label,
-                    onClick  = item.onClick,
-                    iconTint = item.color,
-                    modifier = Modifier.width(QUICK_ACCESS_CARD_WIDTH)
-                )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items.chunked(QUICK_ACCESS_COLUMNS).forEach { rowItems ->
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowItems.forEach { item ->
+                        DocuSmartQuickAccessCard(
+                            icon     = item.icon,
+                            label    = item.label,
+                            onClick  = item.onClick,
+                            iconTint = item.color,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Última fila incompleta (9 items / 3 columnas = exacto,
+                    // pero si se agrega un décimo acceso más adelante esto
+                    // evita que la fila se estire de más) -- rellena con
+                    // espacios vacíos del mismo peso.
+                    repeat(QUICK_ACCESS_COLUMNS - rowItems.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
