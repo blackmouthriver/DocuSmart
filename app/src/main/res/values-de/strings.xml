@@ -502,12 +502,9 @@
     <!-- ── Premium ─────────────────────────────────── -->
     <string name="premium_plan_monthly">Monatlich</string>
     <string name="premium_plan_annual">Jährlich</string>
-    <string name="premium_plan_lifetime">Lebenslang</string>
     <string name="premium_period_month">pro Monat</string>
     <string name="premium_period_year">pro Jahr</string>
-    <string name="premium_period_onetime">einmalige Zahlung</string>
     <string name="premium_savings_44">44 %% sparen</string>
-    <string name="premium_savings_best_value">Bester Wert</string>
     <string name="premium_feature_no_ads_title">Keine Werbung</string>
     <string name="premium_feature_no_ads_desc">Genieße DocuSmart ohne Unterbrechungen</string>
     <string name="premium_feature_pdf_word_title">PDF zu Word</string>

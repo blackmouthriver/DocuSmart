@@ -33,9 +33,9 @@ Dos módulos relacionados por la monetización freemium:
 
 1. **Ajustes** — idioma, tema, almacenamiento/caché, privacidad, ayuda,
    restablecer configuración, acerca de, compartir/calificar la app.
-2. **Premium** — planes (mensual/anual/de por vida), compra, restaurar
-   compras, y el límite diario de uso gratis que empuja hacia Premium
-   (conversiones y herramientas PDF).
+2. **Premium** — planes (mensual/anual, "de por vida" quitado 2026-09-01,
+   ver §8.1), compra, restaurar compras, y el límite diario de uso gratis
+   que empuja hacia Premium (conversiones y herramientas PDF).
 
 ---
 
@@ -175,6 +175,50 @@ Reemplaza `PremiumManager.simulatePurchase()` (eliminado) por
   aplicado a `AdManager` en este proyecto, que tampoco tiene tests.
 - Verificado en verde: `assembleDebug`/`bundleRelease` + `detekt` +
   `testDebugUnitTest` (92 tests, 0 fallos) + `lintDebug` (0 errores).
+
+---
+
+## 8.1 Se quita el plan "De por vida" + bug crítico corregido (2026-09-01)
+
+**Pedido explícito del usuario:** eliminar el plan de pago único ("De por
+vida", `com.docsmart.premium.lifetime`). Quedan solo Mensual y Anual, ambos
+`ProductType.SUBS`.
+
+- **`PremiumRepository.getAvailablePlans()`**: quitada la tercera entrada
+  (`id = "lifetime"`). Recursos de texto asociados quitados en los 5
+  locales (`premium_plan_lifetime`, `premium_period_onetime`,
+  `premium_savings_best_value`).
+- **`BillingManager`**: quitada toda la ruta `ProductType.INAPP` --
+  `PRODUCT_LIFETIME`, la consulta `inAppParams` en `queryProductDetails()`,
+  el caso especial de `resolveOfferToken()`/`hasValidOffer` en
+  `buildPurchaseParams()` (ahora toda compra pasa por `subscriptionOfferDetails`,
+  sin rama condicional), y la consulta `ProductType.INAPP` en
+  `restorePurchases()`.
+
+**Hallazgo real crítico (bug introducido y corregido en la misma sesión,
+no llegó a `main` sin arreglar)**: al simplificar `BillingManager` se quitó
+`.enableOneTimeProducts()` de `PendingPurchasesParams.newBuilder()` por
+parecer código muerto (ya no se vende ningún producto `INAPP`). Play
+Billing Library 9.1.0 exige esa llamada de forma obligatoria pese al
+nombre -- sin ella, `PendingPurchasesParams.Builder.build()` lanza
+`IllegalArgumentException: Pending purchases for one-time products must
+be supported`, y como `BillingManager` es un `@Singleton` de Hilt
+inyectado en `PremiumViewModel`, esa excepción ocurre en el constructor la
+PRIMERA vez que se compone `PremiumScreen` -- **crash real de la app cada
+vez que un usuario real tocara "Premium"**, sin importar el catálogo de
+productos. Se detectó por verificación manual en el dispositivo (no por
+las pruebas automatizadas: `PremiumScreenTest`/todo intento de Compose UI
+Testing sobre esta pantalla mockea `BillingManager` por completo, así que
+ninguna prueba automatizada llega a ejecutar su constructor real -- la
+verificación manual en dispositivo real sigue siendo necesaria para este
+tipo de wrapper de SDK de terceros, tal como ya advierte la fila 3 de la
+tabla en §6). Corregido restaurando `.enableOneTimeProducts()` con un
+comentario explicando por qué es obligatorio pese a no vender productos de
+un solo pago. Verificado en dispositivo real tras el fix: Premium abre sin
+crashear, muestra solo Mensual/Anual.
+
+Gauntlet verde tras ambos cambios: `compileDebugKotlin`, `detekt`,
+`lintDebug`, `testDebugUnitTest`, `connectedDebugAndroidTest` (30/30).
 
 ---
 

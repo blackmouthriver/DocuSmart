@@ -25,15 +25,6 @@ class PremiumRepository @Inject constructor() {
             savingsLabelRes = R.string.premium_savings_44,
             isPopular = true,
             productId = "com.docsmart.premium.annual"
-        ),
-        PremiumPlan(
-            id = "lifetime",
-            titleRes = R.string.premium_plan_lifetime,
-            price = "$49.99",
-            periodRes = R.string.premium_period_onetime,
-            savingsLabelRes = R.string.premium_savings_best_value,
-            isPopular = false,
-            productId = "com.docsmart.premium.lifetime"
         )
     )
 }

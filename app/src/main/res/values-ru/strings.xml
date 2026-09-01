@@ -502,12 +502,9 @@
     <!-- ── Premium ─────────────────────────────────── -->
     <string name="premium_plan_monthly">Ежемесячно</string>
     <string name="premium_plan_annual">Ежегодно</string>
-    <string name="premium_plan_lifetime">Навсегда</string>
     <string name="premium_period_month">в месяц</string>
     <string name="premium_period_year">в год</string>
-    <string name="premium_period_onetime">разовый платёж</string>
     <string name="premium_savings_44">Экономия 44%%</string>
-    <string name="premium_savings_best_value">Лучшая цена</string>
     <string name="premium_feature_no_ads_title">Без рекламы</string>
     <string name="premium_feature_no_ads_desc">Пользуйтесь DocuSmart без прерываний</string>
     <string name="premium_feature_pdf_word_title">PDF в Word</string>

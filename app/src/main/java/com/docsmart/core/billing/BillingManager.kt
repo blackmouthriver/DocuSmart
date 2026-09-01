@@ -45,7 +45,7 @@ sealed interface PurchaseResult {
  * placeholder simulatePurchase() de PremiumManager por Play Billing real.
  *
  * NOTA — no verificable de punta a punta todavía: los productos
- * com.docsmart.premium.{monthly,annual,lifetime} deben existir en Play
+ * com.docsmart.premium.{monthly,annual} deben existir en Play
  * Console (Monetizar → Productos) antes de que queryProductDetails()
  * devuelva algo — y eso requiere que la app ya esté subida al menos a una
  * pista de prueba (ver docs/requirements/deployment.md). Hasta entonces,
@@ -69,7 +69,6 @@ class BillingManager @Inject constructor(
     companion object {
         const val PRODUCT_MONTHLY  = "com.docsmart.premium.monthly"
         const val PRODUCT_ANNUAL   = "com.docsmart.premium.annual"
-        const val PRODUCT_LIFETIME = "com.docsmart.premium.lifetime"
         private val SUBSCRIPTION_PRODUCT_IDS = listOf(PRODUCT_MONTHLY, PRODUCT_ANNUAL)
     }
 
@@ -101,6 +100,11 @@ class BillingManager @Inject constructor(
         }
     }
 
+    // enableOneTimeProducts() es obligatorio para PendingPurchasesParams.Builder.build()
+    // en esta versión de Play Billing (9.1.0) -- lanza IllegalArgumentException
+    // ("Pending purchases for one-time products must be supported") si se omite,
+    // sin importar que el catálogo ya no tenga ningún producto INAPP (se quitó
+    // "De por vida" el 2026-09-01). No es opcional pese al nombre.
     private val billingClient: BillingClient = BillingClient.newBuilder(context)
         .setListener(purchasesUpdatedListener)
         .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
@@ -136,24 +140,14 @@ class BillingManager @Inject constructor(
                     .build()
             })
             .build()
-        val inAppParams = QueryProductDetailsParams.newBuilder()
-            .setProductList(listOf(
-                QueryProductDetailsParams.Product.newBuilder()
-                    .setProductId(PRODUCT_LIFETIME)
-                    .setProductType(BillingClient.ProductType.INAPP)
-                    .build()
-            ))
-            .build()
 
         val subsResult = billingClient.queryProductDetails(subsParams)
-        val inAppResult = billingClient.queryProductDetails(inAppParams)
-        val allDetails = subsResult.productDetailsList.orEmpty() + inAppResult.productDetailsList.orEmpty()
+        val allDetails = subsResult.productDetailsList.orEmpty()
 
         productDetailsCache = allDetails.associateBy { it.productId }
         _formattedPrices.value = allDetails.associate { details ->
-            val price = details.oneTimePurchaseOfferDetails?.formattedPrice
-                ?: details.subscriptionOfferDetails?.firstOrNull()
-                    ?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice
+            val price = details.subscriptionOfferDetails?.firstOrNull()
+                ?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice
                 ?: ""
             details.productId to price
         }
@@ -169,10 +163,9 @@ class BillingManager @Inject constructor(
 
     private fun buildPurchaseParams(productId: String): BillingFlowParams? {
         val details = productDetailsCache[productId]
-        val offerToken = details?.let { resolveOfferToken(productId, it) }
-        val hasValidOffer = productId == PRODUCT_LIFETIME || offerToken != null
+        val offerToken = details?.subscriptionOfferDetails?.firstOrNull()?.offerToken
 
-        if (details == null || !hasValidOffer) {
+        if (details == null || offerToken == null) {
             val message = if (details == null) {
                 "Producto no disponible todavía"
             } else {
@@ -184,26 +177,18 @@ class BillingManager @Inject constructor(
 
         val paramsBuilder = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(details)
-        offerToken?.let { paramsBuilder.setOfferToken(it) }
+            .setOfferToken(offerToken)
 
         return BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(listOf(paramsBuilder.build()))
             .build()
     }
 
-    // INAPP (lifetime) no usa offerToken; SUBS toma la oferta del plan base.
-    private fun resolveOfferToken(productId: String, details: com.android.billingclient.api.ProductDetails): String? =
-        if (productId == PRODUCT_LIFETIME) null
-        else details.subscriptionOfferDetails?.firstOrNull()?.offerToken
-
     suspend fun restorePurchases() {
         val subs = billingClient.queryPurchasesAsync(
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
         )
-        val inApp = billingClient.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build()
-        )
-        val owned = (subs.purchasesList + inApp.purchasesList)
+        val owned = subs.purchasesList
             .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
 
         if (owned.isEmpty()) {
