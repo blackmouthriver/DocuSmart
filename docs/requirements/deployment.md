@@ -254,6 +254,33 @@ ya se justifica.
   reintentar en CI.
 - Octavo intento en verificación tras todos los fixes (ver §2 de
   `CONTEXT.md` para el resultado final una vez confirmado).
+- **Noveno hallazgo, 2026-09-01 — `target: google_apis` reemplazado por
+  `aosp_atd`.** El job pasó en verde con los 3 flujos originales
+  (2026-08-26 en adelante, ver historial de runs), pero volvió a fallar a
+  partir de 2026-08-30 (commit "corrige bugs de QA") -- en ese momento
+  solo por `ConverterScreenTest` (ya documentado como intermitente en
+  `conversion.md` §7, no una regresión nueva). A medida que se agregaron
+  ~27 pruebas más de Compose UI Testing durante los días siguientes (ver
+  `compose-ui-testing.md`), la tasa de fallas creció de 1 prueba
+  intermitente a **14-15 de 30 pruebas fallando de forma consistente**,
+  todas con `ComposeTimeoutException`/"Failed to inject touch input" --
+  pese a que las mismas pruebas pasan de forma confiable en el
+  dispositivo real (Motorola Edge 30 Neo). Se confirmó que
+  `disable-animations: true` sí se aplica correctamente en el emulador
+  (los 3 `adb shell settings put global ..._scale 0.0` aparecen en el
+  log) -- descartado como causa. Diagnóstico: la imagen `google_apis`
+  trae SystemUI, Gmail, Maps y el resto del stack GMS corriendo de fondo,
+  compitiendo por los 2 vCPU del runner -- cuanto más grande la suite, más
+  contención. `aosp_atd` (Android Test Device) es la imagen que Google
+  diseñó específicamente para instrumentación en CI, sin esos componentes
+  (~33% menos tiempo de prueba reportado por terceros). Ningún test de
+  este proyecto llama a Google Play Services/GMS real (`AdManager`/
+  `BillingManager`/`PremiumManager` siempre mockeados en `androidTest/`),
+  así que no depende de las Google APIs que `aosp_atd` tampoco trae.
+  Aplicado en `ci.yml` y `sonarcloud.yml` (mismo AVD, clave de caché
+  actualizada a `avd-34-aosp_atd-x86_64`) -- **verificación pendiente**:
+  este es un cambio de infraestructura de CI que no se puede probar en el
+  dispositivo local, solo con una corrida real de GitHub Actions.
 
 ---
 
