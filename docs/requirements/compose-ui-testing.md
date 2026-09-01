@@ -279,6 +279,31 @@ un golden path).
 - Gauntlet completo verde: `connectedDebugAndroidTest` (26/26), `detekt`,
   `lintDebug`, `testDebugUnitTest`.
 
+### Corrección retroactiva 2026-09-01 — 4 pruebas sin `forceLocale`
+
+**Hallazgo real, no de producción sino de robustez de CI**: al retomar el
+trabajo tras una desconexión del dispositivo de pruebas, se notó que
+`ViewerSearchTest`, `ViewerRenameDeleteTest`, `QrCreatorScreenTest` y
+`StudyScreenTest` (filas 4, 5, 13 y 14, todas ya fusionadas a `main`) no
+usaban `forceLocale` a diferencia de las demás 7 pruebas del proyecto.
+Pasaban en verde en este dispositivo porque su idioma real es español
+(`es-US`, confirmado con `adb shell getprop persist.sys.locale`) -- pero
+el emulador de CI arranca en inglés por defecto (ver
+`com.docsmart.core.ui.test.LocaleTestUtils.kt`), así que las aserciones
+sobre texto en español (`"Buscar en documento"`, `"Notas"`, `"Iniciar"`,
+etc.) habrían fallado ahí sin que nada en este dispositivo lo hiciera
+evidente. Corregido envolviendo las 4 pruebas con `forceLocale(..., "es-ES")`,
+mismo patrón que el resto -- `QrCreatorScreenTest`/`StudyScreenTest`
+además necesitaron reproveer `LocalActivityResultRegistryOwner`/
+`LocalOnBackPressedDispatcherOwner` (usan `rememberLauncherForActivityResult`,
+mismo motivo ya documentado para `ConverterScreenTest`/`PdfToolsScreenTest`).
+Gauntlet completo reverificado en verde tras la corrección:
+`connectedDebugAndroidTest` (26/26 -- un fallo transitorio de Compose
+`performMeasureAndLayout called during measure layout` en la primera
+corrida no se repitió en una segunda corrida inmediata, consistente con
+flakiness ya documentada de corridas completas bajo carga, no con la
+corrección de locale), `detekt`, `lintDebug`, `testDebugUnitTest`.
+
 ## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
 
 `jacocoTestReport` (`app/build.gradle.kts`, tarea usada por
