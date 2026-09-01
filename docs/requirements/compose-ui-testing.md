@@ -76,7 +76,7 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 | 11 | Contraseña PDF (`PdfPasswordScreen`) | Poner/quitar/cambiar contraseña | Media | ⬜ Pendiente |
 | 12 | Escáner (`ScannerScreen`/`ScanResultScreen`) | Delegado a Google ML Kit — probar solo el resultado (guardar/compartir), no la captura en sí | Media | ⬜ Pendiente |
 | 13 | QR (`QrReaderScreen`/`QrCreatorScreen`) | Crear QR con/sin contraseña, leer y navegar a URL | Media | 🟡 Parcial 2026-08-31 (`QrCreatorScreenTest` -- solo crear; leer depende 100% de cámara, ver nota) |
-| 14 | Estudio (`StudyScreen`) | Guardar/eliminar nota, orden de la lista, Pomodoro inicia/pausa | Media | ⬜ Pendiente |
+| 14 | Estudio (`StudyScreen`) | Guardar/eliminar nota, orden de la lista, Pomodoro inicia/pausa | Media | ✅ Cubierto 2026-09-01 (`StudyScreenTest`) |
 | 15 | Ajustes (`SettingsScreen`) | Cambiar tema/idioma/acento, Restablecer configuración | Alta | ✅ Cubierto 2026-08-31 (`SettingsScreenTest`) |
 | 16 | Premium (`PremiumScreen`) | Elegir plan, iniciar compra (mock de `BillingManager`), restaurar compras | Media | ⬜ Pendiente |
 | 17 | Onboarding (`OnboardingScreen`) | Recorrer y completar, navega a Home | Baja | ⬜ Pendiente |
@@ -245,6 +245,38 @@ Primer lote de prioridad Media del backlog restante (filas 5, 11-14, 16-18).
   elaborado de `hasScrollAction().performScrollToNode(...)` usado en
   `SettingsScreenTest` para una `LazyColumn`.
 - Gauntlet completo verde: `connectedDebugAndroidTest` (24/24), `detekt`,
+  `lintDebug`, `testDebugUnitTest`.
+
+### Implementado 2026-09-01 — fila 14 (Estudio)
+
+Segundo lote de prioridad Media. No cubre "orden de la lista" (las notas
+siempre se insertan al inicio, sin control de orden del usuario -- no hay
+nada que ejercitar ahí más allá de guardar dos veces, fuera de alcance de
+un golden path).
+
+- **`StudyScreenTest`** (2 pruebas: guardar nota → aparece en la lista →
+  eliminarla vacía la lista; Pomodoro iniciar → pausar cambia el botón y
+  la etiqueta "en progreso"/"pausado"). `StudyViewModel` solo expone
+  `adManager` (se mockea igual que en `QrCreatorScreenTest`).
+  `StudyNotesStorage` persiste en `SharedPreferences` reales por nombre
+  (`study_notes`) -- se aísla con el mismo `IsolatedPrefsContext` ya usado
+  en `SettingsScreenTest`.
+- **`PomodoroEngine`** es un objeto singleton real (no mockeable) con su
+  propio `CoroutineScope` y un servicio en primer plano real
+  (`PomodoroTimerService`) -- se resetea explícitamente antes y después de
+  la prueba (`PomodoroEngine.reset()`) para no dejar el servicio corriendo
+  ni filtrar estado "en progreso" a otras pruebas del mismo proceso.
+- **Hallazgo real**: entrar directo a la pestaña Pomodoro (`initialTab = 2`)
+  dispara la solicitud real del permiso `POST_NOTIFICATIONS` (Android 13+),
+  y el diálogo real del sistema tapa la Activity -- `getAllSemanticsNodes()`
+  nunca vuelve a encontrar nada
+  (`IllegalStateException: No compose hierarchies found in the app`),
+  porque nada en la prueba puede tocar ese diálogo (mismo hallazgo ya
+  documentado de que los taps no llegan a diálogos de permisos del sistema
+  en este dispositivo). Corregido concediendo el permiso de antemano con
+  `GrantPermissionRule`, mismo patrón ya usado en `LibraryScreenTest` para
+  el permiso de almacenamiento.
+- Gauntlet completo verde: `connectedDebugAndroidTest` (26/26), `detekt`,
   `lintDebug`, `testDebugUnitTest`.
 
 ## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
