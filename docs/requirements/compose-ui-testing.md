@@ -356,6 +356,40 @@ versión de Compose UI Testing, o revisar si `PremiumScreen` tiene algo
 particular en su árbol de layout que dispare el bug conocido de
 `performMeasureAndLayout`).
 
+### Segundo intento 2026-09-01 (misma sesión) — reloj pausado, sigue bloqueada
+
+A pedido del usuario, tras quitar el plan "De por vida" (ver
+`settings-premium.md` §8.1), se probó una idea distinta antes de descartar
+la fila 16 definitivamente: pausar el reloj de composición
+(`composeRule.mainClock.autoAdvance = false`) y avanzar frames a mano
+(`advanceTimeByFrame()`) en vez de depender de la sincronización de "idle"
+automática de `waitUntil()` -- técnica estándar de Compose UI Testing para
+pantallas donde esa sincronización no es confiable.
+
+**Resultado mixto**: la técnica SÍ evitó el `ComposeTimeoutException` --
+las aserciones directas (`assertIsDisplayed()`) después de avanzar frames
+manualmente encontraron el contenido correcto sin colgarse. Pero la
+corrida completa de los 3 tests tardó **53 minutos** (debería tardar
+segundos) -- cada `advanceTimeByFrame()` en esta composición específica
+consume una cantidad de tiempo real anormal. Un test que tarda ~15-20
+minutos por caso es inviable para CI (el job `instrumented-tests` tiene
+presupuesto de 40 min para toda la suite). Se descartó el archivo de
+nuevo; la fila sigue bloqueada.
+
+**Hallazgo real de mucho más valor, encontrado en el camino**: al verificar
+manualmente en el dispositivo (para confirmar visualmente que ya no
+aparece "De por vida"), se descubrió que `PremiumScreen` **crasheaba la
+app real** -- no relacionado con Compose Testing en absoluto, sino un bug
+genuino introducido al simplificar `BillingManager` en el mismo cambio
+(`enableOneTimeProducts()` es obligatorio en Play Billing 9.1.0 pese al
+nombre; sin él, el constructor de `BillingManager` lanza
+`IllegalArgumentException` la primera vez que Hilt lo instancia). Ver el
+detalle completo en `settings-premium.md` §8.1. Esto confirma por qué la
+verificación manual en dispositivo real sigue siendo indispensable para
+`BillingManager`: **ninguna prueba automatizada de este proyecto
+(mockeada) construye jamás su constructor real**, así que ningún test,
+pasando o fallando, podría haber atrapado este crash.
+
 ### Implementado 2026-09-01 — filas 17 y 18 (Onboarding, Splash)
 
 Cierra el backlog de prioridad Baja. Ninguna de las 3 pantallas tiene
