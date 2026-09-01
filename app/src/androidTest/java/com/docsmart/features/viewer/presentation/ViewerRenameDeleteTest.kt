@@ -1,6 +1,10 @@
 package com.docsmart.features.viewer.presentation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -13,6 +17,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
@@ -83,6 +88,17 @@ class ViewerRenameDeleteTest {
         return file
     }
 
+    // Fuerza español -- "Más opciones"/"Renombrar"/"Eliminar" vienen de
+    // stringResource(), y el emulador de CI arranca en inglés por defecto
+    // (ver com.docsmart.core.ui.test.forceLocale).
+    private fun setContentWithLocale(content: @Composable () -> Unit) {
+        composeRule.setContent {
+            val baseContext = LocalContext.current
+            val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
+            CompositionLocalProvider(LocalContext provides localizedContext) { content() }
+        }
+    }
+
     private fun waitForText(text: String) {
         composeRule.waitUntil(timeoutMillis = 20_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
@@ -100,7 +116,7 @@ class ViewerRenameDeleteTest {
         coEvery { documentRepository.renameDocument(any(), any()) } returns pdfFile.absolutePath
         val viewModel = buildViewModel(documentRepository = documentRepository)
 
-        composeRule.setContent {
+        setContentWithLocale {
             ViewerScreen(documentId = pdfFile.absolutePath, onBack = {}, viewModel = viewModel)
         }
         waitForText(pdfFile.name)
@@ -125,7 +141,7 @@ class ViewerRenameDeleteTest {
         val viewModel = buildViewModel(trashRepository = trashRepository)
         var backCalled = false
 
-        composeRule.setContent {
+        setContentWithLocale {
             ViewerScreen(documentId = pdfFile.absolutePath, onBack = { backCalled = true }, viewModel = viewModel)
         }
         waitForText(pdfFile.name)

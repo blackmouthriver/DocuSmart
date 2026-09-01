@@ -6,6 +6,8 @@ import android.content.ContextWrapper
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -20,6 +22,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.features.study.domain.PomodoroEngine
 import io.mockk.Runs
 import io.mockk.every
@@ -104,11 +107,23 @@ class StudyScreenTest {
         return StudyViewModel(adManager = adManager)
     }
 
+    // Fuerza español -- el emulador de CI arranca en inglés por defecto
+    // (ver com.docsmart.core.ui.test.forceLocale). StudyScreen usa
+    // rememberLauncherForActivityResult() para elegir documento/dictado por
+    // voz/permiso de notificaciones -- mismo motivo que
+    // ConverterScreenTest/QrCreatorScreenTest para reproveer estos dos
+    // apuntando a la Activity real.
     private fun setContentIsolated(content: @Composable () -> Unit) {
         composeRule.setContent {
             val baseContext = LocalContext.current
-            val isolatedContext = remember(baseContext) { IsolatedPrefsContext(baseContext) }
-            CompositionLocalProvider(LocalContext provides isolatedContext) { content() }
+            val isolatedContext = remember(baseContext) {
+                IsolatedPrefsContext(forceLocale(baseContext, "es-ES"))
+            }
+            CompositionLocalProvider(
+                LocalContext provides isolatedContext,
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+            ) { content() }
         }
     }
 
