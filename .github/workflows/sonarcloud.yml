@@ -15,7 +15,13 @@ jobs:
   sonar:
     name: Análisis de calidad (SonarCloud)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Presupuesto ampliado (antes 30) para cubrir el emulador de Compose UI
+    # Testing (ci.yml le da 40 min solo a esa parte) sumado a la compilación
+    # y el análisis de Sonar -- ver docs/requirements/compose-ui-testing.md
+    # §4 para el porqué de duplicar el emulador acá en vez de reutilizar el
+    # job `instrumented-tests` de ci.yml (workflows separados no comparten
+    # jobs sin la complejidad de `workflow_run`).
+    timeout-minutes: 60
     steps:
       # Mismo fix ya aplicado en ci.yml (ver deployment.md §3): ubuntu-latest
       # no trae suficiente espacio libre de fábrica para este build (iText7 +
@@ -25,6 +31,8 @@ jobs:
       # antes de instalar JDK/Gradle/SDK (mismo motivo documentado en
       # ci.yml): con tool-cache:false no hay nada en hostedtoolcache que
       # perder, evita depender del orden de pasos para no repetir ese error.
+      # android:false a propósito (igual que en ci.yml): este job también
+      # necesita el SDK de Android preinstalado para el emulador.
       - name: Liberar espacio en disco
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # main
         with:
@@ -60,10 +68,73 @@ jobs:
       - name: Permiso de ejecución para gradlew
         run: chmod +x ./gradlew
 
-      # jacocoTestReport corre los unit tests y genera el XML de cobertura;
-      # sonar lo lee vía sonar.coverage.jacoco.xmlReportPaths (build.gradle.kts raíz).
-      - name: Cobertura + análisis SonarCloud
+      # Compilar ANTES de arrancar el emulador, no durante -- mismo motivo
+      # documentado en ci.yml (el runner solo tiene 2 vCPU, compilar con el
+      # emulador ya corriendo compite por los mismos núcleos y lo cuelga).
+      - name: Compilar APKs de debug y de test
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+
+      # KVM da aceleración por hardware al emulador -- sin esto corre por
+      # software y es demasiado lento para un job de CI (igual que ci.yml).
+      - name: Habilitar permisos de grupo KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Mismo AVD (API 34, google_apis, x86_64) que ci.yml, para compartir
+      # caché entre ambos workflows -- misma clave.
+      - name: Cache de AVD
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-google_apis-x86_64
+
+      - name: Crear snapshot de AVD (si no hay caché)
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Snapshot de AVD generado"
+
+      # jacocoTestReport corre testDebugUnitTest + connectedDebugAndroidTest
+      # (Compose UI Testing) y fusiona ambos reportes de cobertura en un
+      # solo XML (ver app/build.gradle.kts) -- antes solo contaba los unit
+      # tests, dejando en 0% la cobertura real de las pruebas de Compose
+      # (ver docs/requirements/compose-ui-testing.md §4). connectedDebugAndroidTest
+      # necesita el emulador vivo, por eso todo el comando corre dentro del
+      # `script` de la acción del emulador, no en un paso aparte. Sonar lee
+      # el XML fusionado vía sonar.coverage.jacoco.xmlReportPaths
+      # (build.gradle.kts raíz). disable-animations:true replica el mismo
+      # mitigante de flakiness que ci.yml.
+      - name: Cobertura (unit + Compose UI Testing) + análisis SonarCloud
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew jacocoTestReport sonar --no-daemon
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-boot-timeout: 600
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -camera-back none
+          script: ./gradlew jacocoTestReport sonar --no-daemon
+
+      - name: Publicar reporte de pruebas instrumentadas
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: reporte-compose-ui-testing-sonar
+          retention-days: 14
+          path: app/build/reports/androidTests/connected/
+          if-no-files-found: ignore
