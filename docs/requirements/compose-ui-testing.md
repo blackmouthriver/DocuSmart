@@ -78,9 +78,9 @@ que ya dan los ~150+ unit tests JVM para la lógica de negocio.
 | 13 | QR (`QrReaderScreen`/`QrCreatorScreen`) | Crear QR con/sin contraseña, leer y navegar a URL | Media | 🟡 Parcial 2026-08-31 (`QrCreatorScreenTest` -- solo crear; leer depende 100% de cámara, ver nota) |
 | 14 | Estudio (`StudyScreen`) | Guardar/eliminar nota, orden de la lista, Pomodoro inicia/pausa | Media | ✅ Cubierto 2026-09-01 (`StudyScreenTest`) |
 | 15 | Ajustes (`SettingsScreen`) | Cambiar tema/idioma/acento, Restablecer configuración | Alta | ✅ Cubierto 2026-08-31 (`SettingsScreenTest`) |
-| 16 | Premium (`PremiumScreen`) | Elegir plan, iniciar compra (mock de `BillingManager`), restaurar compras | Media | ⬜ Pendiente |
-| 17 | Onboarding (`OnboardingScreen`) | Recorrer y completar, navega a Home | Baja | ⬜ Pendiente |
-| 18 | Splash (`SplashMouthBlackScreen`/`SplashDocuSmartScreen`) | Transición automática a la siguiente pantalla | Baja | ⬜ Pendiente |
+| 16 | Premium (`PremiumScreen`) | Elegir plan, iniciar compra (mock de `BillingManager`), restaurar compras | Media | 🔴 Bloqueada 2026-09-01 -- ver nota |
+| 17 | Onboarding (`OnboardingScreen`) | Recorrer y completar, navega a Home | Baja | ✅ Cubierto 2026-09-01 (`OnboardingScreenTest`) |
+| 18 | Splash (`SplashMouthBlackScreen`/`SplashDocuSmartScreen`) | Transición automática a la siguiente pantalla | Baja | ✅ Cubierto 2026-09-01 (`SplashScreensTest`) |
 
 ### Criterios de aceptación
 
@@ -303,6 +303,89 @@ Gauntlet completo reverificado en verde tras la corrección:
 corrida no se repitió en una segunda corrida inmediata, consistente con
 flakiness ya documentada de corridas completas bajo carga, no con la
 corrección de locale), `detekt`, `lintDebug`, `testDebugUnitTest`.
+
+### Bloqueada 2026-09-01 — fila 16 (Premium)
+
+Se intentó implementar `PremiumScreenTest` (elegir plan, iniciar compra con
+`BillingManager` mockeado, restaurar compras) siguiendo exactamente el
+mismo patrón ya usado en `QrCreatorScreenTest`/`StudyScreenTest`
+(`PremiumManager`/`BillingManager` mockeados completos -- envuelven Play
+Billing real y `SharedPreferences` reales, fuera de alcance por AC4;
+`PremiumRepository` real, sin dependencias).
+
+**El problema**: `composeRule.waitUntil(...)` nunca resuelve al esperar
+CUALQUIER texto de `PremiumScreen` (`ComposeTimeoutException` a los 20s),
+pese a que el contenido correcto SÍ está presente y estable en el árbol de
+semántica -- confirmado repetidas veces con `printToLog` y con sondeos
+manuales directos (`onAllNodesWithText(...).fetchSemanticsNodes()`, sin
+pasar por `waitUntil`) que encuentran el nodo consistentemente. Es decir:
+la pantalla funciona y muestra lo correcto: es específicamente la
+sincronización de "idle" de Compose Testing la que nunca se satisface.
+
+**Bisección realizada** (todas sin éxito para aislar una causa
+accionable):
+- Construir el ViewModel antes de `setContent` vs. inline -- sin diferencia.
+- Con y sin `forceLocale` -- sin diferencia.
+- Compilación limpia (`./gradlew clean`) completa -- sin diferencia.
+- Archivo borrado y recreado desde cero (descarta corrupción del archivo)
+  -- sin diferencia.
+- Test copiado a un paquete distinto (`com.docsmart.premiumtest`, descarta
+  colisión de paquete con la producción) -- sin diferencia.
+- Referencia con nombre completamente calificado a `PremiumScreen`/
+  `PremiumViewModel` en vez de import implícito -- sin diferencia.
+- Una reproducción mínima (`PremiumScreen` invocado directamente desde
+  `ViewerRenameDeleteTest.kt`, un archivo que sí funciona) **pasó una
+  vez**, pero repitiendo exactamente ese mismo código en un archivo nuevo
+  volvió a fallar de forma consistente en corridas posteriores --
+  descartando también que sea 100% determinística y apuntando a una
+  condición de carrera genuina del framework de Compose Testing (de la
+  misma familia que el `IllegalArgumentException: performMeasureAndLayout
+  called during measure layout` ya visto como fallo transitorio en
+  `QrCreatorScreenTest` durante una corrida de la suite completa), con una
+  tasa de reproducción mucho más alta específicamente en la composición de
+  `PremiumScreen` (gradientes, `Card`+`selectable()`+íconos anidados) que
+  en el resto de pantallas ya cubiertas.
+- Se descartó degradación general del dispositivo/entorno: pruebas ya
+  pasando (`ViewerRenameDeleteTest`, `QrCreatorScreenTest`) se re-corrieron
+  exitosamente de forma intercalada durante toda la investigación.
+
+**Decisión**: no se fuerza un workaround con `Thread.sleep` (violaría AC2)
+ni se deja un test conocidamente inestable en el repo. Se documenta como
+bloqueada -- retomar solo con una pista nueva (por ejemplo, actualizar la
+versión de Compose UI Testing, o revisar si `PremiumScreen` tiene algo
+particular en su árbol de layout que dispare el bug conocido de
+`performMeasureAndLayout`).
+
+### Implementado 2026-09-01 — filas 17 y 18 (Onboarding, Splash)
+
+Cierra el backlog de prioridad Baja. Ninguna de las 3 pantallas tiene
+ViewModel/Hilt.
+
+- **`OnboardingScreenTest`** (2 pruebas: recorrer las 4 slides con
+  "Siguiente" hasta "¡Empezar!" marca completado y navega; "Saltar" desde
+  la primera slide también marca completado y navega).
+  `markOnboardingCompleted()`/`hasCompletedOnboarding()` son funciones de
+  nivel de paquete que persisten en `SharedPreferences` reales
+  ("docusmart_onboarding") -- aisladas con el mismo `IsolatedPrefsContext`
+  ya usado en `SettingsScreenTest`/`StudyScreenTest`, construido UNA vez
+  fuera de `setContent` (no con `remember` dentro) para poder releerlo
+  después de la interacción y confirmar que la escritura sí ocurrió.
+- **`SplashScreensTest`** (2 pruebas, una por pantalla: muestra el logo y
+  navega automáticamente). Ambas pantallas leen
+  `Settings.Global.ANIMATOR_DURATION_SCALE` real del dispositivo para
+  decidir `reduceMotion` -- con la escala en 0 (dispositivo de pruebas y
+  CI vía `disable-animations: true`), saltan directo a los valores finales
+  de animación y llaman a `onFinished()` tras un `delay(250)` fijo, sin
+  depender de que la animación realmente corra.
+- Gauntlet completo verde: `connectedDebugAndroidTest` (30/30), `detekt`,
+  `lintDebug`, `testDebugUnitTest`.
+
+Con esto, del backlog Media/Baja original (filas 5, 11-14, 16-18) quedan
+cubiertas todas salvo la fila 11 (Contraseña PDF, requiere una decisión de
+alcance sobre agregar Espresso-Intents) y la fila 16 (Premium, bloqueada
+por un problema de sincronización de Compose Testing, ver nota arriba).
+La fila 12 (Escáner) ya estaba fuera de alcance desde la priorización
+original y la 13 (QR) quedó parcial (solo crear, no leer).
 
 ## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
 
