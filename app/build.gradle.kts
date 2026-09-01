@@ -66,6 +66,10 @@ android {
             isDebuggable = true
             manifestPlaceholders["firebaseAnalyticsDeactivated"] = true
             manifestPlaceholders["firebaseCrashlyticsEnabled"]   = false
+            // Genera datos de cobertura Jacoco durante connectedDebugAndroidTest
+            // (Compose UI Testing) además de testDebugUnitTest -- ver
+            // jacocoTestReport más abajo, que fusiona ambos en un solo XML.
+            enableAndroidTestCoverage = true
         }
         release {
             isMinifyEnabled = true
@@ -169,11 +173,18 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
-// Reporte XML de cobertura para SonarCloud, a partir de los unit tests de
-// la variante debug (no hay tests instrumentados todavía). Excluye clases
+// Reporte XML de cobertura para SonarCloud, fusionando los unit tests
+// JVM (testDebugUnitTest) con las pruebas instrumentadas de Compose UI
+// Testing (connectedDebugAndroidTest, ver docs/requirements/compose-ui-testing.md
+// §4) -- antes solo se contaban los unit tests, dejando en 0% toda la
+// cobertura real que aportan las ~30 pruebas de Compose. Excluye clases
 // generadas (Hilt/Dagger/KSP, R, BuildConfig) que no reflejan cobertura real.
+//
+// connectedDebugAndroidTest requiere un dispositivo/emulador conectado
+// (ver .github/workflows/sonarcloud.yml) -- localmente, corre contra
+// cualquier dispositivo ya conectado por adb.
 tasks.register<JacocoReport>("jacocoTestReport") {
-    dependsOn("testDebugUnitTest")
+    dependsOn("testDebugUnitTest", "connectedDebugAndroidTest")
 
     reports {
         xml.required.set(true)
@@ -195,8 +206,15 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
     executionData.setFrom(
-        fileTree("${layout.buildDirectory.get()}/jacoco") {
-            include("testDebugUnitTest.exec")
+        fileTree("${layout.buildDirectory.get()}") {
+            // testDebugUnitTest.exec: unit tests JVM (Jacoco Gradle plugin,
+            // ubicación por defecto). coverage.ec: connectedDebugAndroidTest
+            // (AGP, un archivo por dispositivo -- el nombre del dispositivo
+            // queda en la ruta, con espacios incluidos, de ahí el comodín).
+            include(
+                "jacoco/testDebugUnitTest.exec",
+                "outputs/code_coverage/debugAndroidTest/connected/**/*.ec"
+            )
         }
     )
 }

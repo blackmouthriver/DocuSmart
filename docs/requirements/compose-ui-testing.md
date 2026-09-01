@@ -2,24 +2,26 @@
 
 ## 1. Contexto y motivación
 
-SonarCloud marca la condición `new_coverage` del Quality Gate en 0.0%
-(umbral exigido: 80%) — ver [`deployment.md`](deployment.md) §7. Esto
-**no es una regresión ni un descuido**: es un límite conocido de la
-arquitectura del proyecto. `jacocoTestReport` (la tarea que alimenta a
-Sonar, ver `.github/workflows/sonarcloud.yml`) solo corre
-`testDebugUnitTest` — pruebas JVM puras (JUnit5 + MockK, en
-`app/src/test/`). El código de Compose (`@Composable`, `ViewModel`s que
-dependen de `Context`/Android framework, navegación) no se puede ejercer
-de forma significativa ahí; requiere pruebas **instrumentadas**
-(`app/src/androidTest/`, JUnit4 + `createAndroidComposeRule`, corren en un
-emulador/dispositivo real).
+**Historial**: SonarCloud marcaba la condición `new_coverage` del Quality
+Gate en 0.0% (umbral exigido: 80%) — ver [`deployment.md`](deployment.md)
+§7. No era una regresión ni un descuido, sino un límite conocido de la
+arquitectura de CI: `jacocoTestReport` (la tarea que alimenta a Sonar, ver
+`.github/workflows/sonarcloud.yml`) solo corría `testDebugUnitTest` —
+pruebas JVM puras (JUnit5 + MockK, en `app/src/test/`). El código de
+Compose (`@Composable`, `ViewModel`s que dependen de `Context`/Android
+framework, navegación) no se puede ejercer de forma significativa ahí;
+requiere pruebas **instrumentadas** (`app/src/androidTest/`, JUnit4 +
+`createAndroidComposeRule`, corren en un emulador/dispositivo real), que
+antes no se contaban para Sonar en absoluto.
 
-Esta HU responde a la pregunta abierta: **¿conviene invertir en Compose UI
-Testing para subir la cobertura de Sonar?** La respuesta corta es
-**parcialmente**: da regresión automática real (valioso por sí solo,
-independiente de Sonar), pero **no mueve la aguja de `new_coverage` sin
-un cambio adicional de CI** — ver §4 "Advertencia técnica" antes de asumir
-que esto cierra la condición del Quality Gate.
+Esta HU responde a la pregunta abierta que existía en ese momento:
+**¿conviene invertir en Compose UI Testing para subir la cobertura de
+Sonar?** La respuesta fue **sí, con una condición**: da regresión
+automática real (valioso por sí solo, independiente de Sonar) Y, desde
+2026-09-01 (ver §4), también mueve la aguja de `new_coverage` -- se
+implementó el cambio de CI necesario (fusionar la cobertura de
+`connectedDebugAndroidTest` con la de `testDebugUnitTest`, ver §4 para el
+detalle completo).
 
 ## 2. Estado actual (auditado 2026-08-30 — no asumir, verificar contra el código)
 
@@ -421,42 +423,67 @@ por un problema de sincronización de Compose Testing, ver nota arriba).
 La fila 12 (Escáner) ya estaba fuera de alcance desde la priorización
 original y la 13 (QR) quedó parcial (solo crear, no leer).
 
-## 4. Advertencia técnica — esto no cierra por sí solo la condición de Sonar
+## 4. Integración con Sonar — implementada 2026-09-01
 
-`jacocoTestReport` (`app/build.gradle.kts`, tarea usada por
-`sonarcloud.yml`) solo agrega los reportes de `testDebugUnitTest`. Las
-pruebas de `androidTest/` corren en un **proceso distinto, dentro del
-emulador**, vía `connectedDebugAndroidTest` — Jacoco puede instrumentar
-también ese proceso, pero requiere:
+`jacocoTestReport` (`app/build.gradle.kts`) antes solo agregaba el reporte
+de `testDebugUnitTest`, dejando en 0% toda la cobertura real que aportan
+las pruebas de `androidTest/` (proceso distinto, dentro del
+emulador/dispositivo, vía `connectedDebugAndroidTest`). A pedido explícito
+del usuario, se implementaron los 3 pasos antes pendientes:
 
-1. Habilitar `testCoverageEnabled = true` (o el mecanismo equivalente en
-   AGP moderno) en el build type de test, para que
-   `connectedDebugAndroidTest` genere su propio reporte Jacoco.
-2. Fusionar ese reporte con el de `testDebugUnitTest` antes de pasárselo a
-   Sonar (`sonar.coverage.jacoco.xmlReportPaths` acepta una lista de
-   archivos).
-3. Mover (o duplicar) el job `instrumented-tests` — con emulador, ~15-20
-   min más de CI — al workflow de `sonarcloud.yml`, hoy sin emulador. Esto
-   aumenta el tiempo y el costo de cómputo de cada análisis de Sonar en
-   `main`/PRs.
+1. **`enableAndroidTestCoverage = true`** en el build type `debug`
+   (`app/build.gradle.kts`) — AGP ahora genera datos de cobertura Jacoco
+   también durante `connectedDebugAndroidTest`
+   (`build/outputs/code_coverage/debugAndroidTest/connected/<dispositivo>/coverage.ec`,
+   un archivo por dispositivo, de ahí el comodín `**` en el patrón).
+2. **`jacocoTestReport` fusiona ambas fuentes** en un solo XML: ahora
+   depende de `testDebugUnitTest` Y `connectedDebugAndroidTest`, y su
+   `executionData` incluye tanto `testDebugUnitTest.exec` (unit tests) como
+   `**/*.ec` bajo `code_coverage/debugAndroidTest/connected/` (Compose UI
+   Testing). `sonar.coverage.jacoco.xmlReportPaths` (`build.gradle.kts`
+   raíz) sigue apuntando a un solo archivo, sin cambios ahí.
+3. **`sonarcloud.yml`** ganó un emulador (API 34, google_apis, x86_64,
+   mismo AVD/caché que `ci.yml`) para poder correr
+   `connectedDebugAndroidTest` antes del análisis — el comando
+   `./gradlew jacocoTestReport sonar` corre dentro del `script` de la
+   acción del emulador (necesita el dispositivo vivo). `timeout-minutes`
+   subido de 30 a 60 para cubrir el tiempo extra del emulador.
 
-Ninguno de estos 3 pasos está hecho hoy. **Decisión pendiente del
-usuario:** si vale la pena ese costo de CI para que Sonar refleje la
-cobertura real, o si el valor de estas pruebas (regresión real, atrapar
-bugs como el de Papelera de §17) es suficiente sin perseguir el número de
-Sonar — en cuyo caso la alternativa más simple es bajar/ajustar el umbral
-de `new_coverage` en la configuración del Quality Gate de SonarCloud
-(decisión de configuración, no de código).
+**Verificado localmente antes de tocar CI** (evita depender de una corrida
+real de GitHub Actions para confirmar que la fusión funciona): tras correr
+`connectedDebugAndroidTest` + `jacocoTestReport` con un dispositivo real
+conectado, clases que antes mostraban 0% de cobertura por no tener ningún
+unit test propio (dependen de `Context`/Android framework) ahora muestran
+cobertura real de las pruebas de Compose UI Testing — por ejemplo
+`ViewerViewModel` (156 líneas cubiertas de 308) y `PdfToolsViewModel` (64
+de 290). El reporte fusionado completo pasó de solo unit tests a
+**LINE 42.5%** global (unit + instrumentado combinados).
+
+**Nota menor, no bloqueante**: Jacoco emite una advertencia de "classes do
+not match" específica para `DocuSmartApplication` (una sola clase,
+probablemente por cómo Hilt genera su jerarquía distinto entre el
+classpath de unit test y el APK real) — no corrompe el resto del reporte,
+confirmado comparando clase por clase antes y después. Se documenta acá
+por si reaparece en otras clases a futuro y hay que investigar más a
+fondo.
+
+**Costo real de CI aceptado**: el job de Sonar ahora también paga el costo
+del emulador (~15-20 min adicionales, duplicando ese trabajo con el job
+`instrumented-tests` de `ci.yml`, que se mantiene sin cambios para feedback
+rápido en cada push/PR). No se intentó compartir el job entre ambos
+workflows -- requeriría la complejidad de `workflow_run` para poco
+beneficio real.
 
 ## 5. Preguntas abiertas
 
-- Con las 7 filas Alta ya cubiertas (2026-08-31), ¿se evalúa ahora la
-  integración con Sonar (§4), se aborda el backlog Media/Baja (filas 5,
-  11-14, 16-18), o ambos quedan en pausa hasta nueva indicación?
-- ¿Vale la pena el costo de CI adicional (emulador en cada análisis de
-  Sonar) para que `new_coverage` refleje pruebas instrumentadas, o se
-  prefiere ajustar el umbral del Quality Gate y dejar Compose UI Testing
-  como iniciativa de calidad independiente?
+- **Resuelto 2026-09-01**: la integración con Sonar (§4) ya está
+  implementada -- `new_coverage` ahora sí refleja las pruebas
+  instrumentadas, a costa del emulador duplicado en `sonarcloud.yml`
+  (aceptado explícitamente por el usuario).
+- Del backlog Media/Baja original solo quedan sin cubrir la fila 11
+  (Contraseña PDF, pendiente de decisión sobre agregar Espresso-Intents) y
+  la fila 16 (Premium, bloqueada por la condición de carrera de Compose
+  Testing documentada arriba) -- ¿se retoma alguna, o quedan en pausa?
 - Fila 12 (Escáner): dado que la captura en sí es 100% Google ML Kit (sin
   código propio que testear ahí), ¿se limita el test a lo que sí es código
   propio (guardar/compartir el resultado), o se considera fuera de alcance
