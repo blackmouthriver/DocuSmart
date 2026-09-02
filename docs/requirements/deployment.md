@@ -278,9 +278,41 @@ ya se justifica.
   `BillingManager`/`PremiumManager` siempre mockeados en `androidTest/`),
   así que no depende de las Google APIs que `aosp_atd` tampoco trae.
   Aplicado en `ci.yml` y `sonarcloud.yml` (mismo AVD, clave de caché
-  actualizada a `avd-34-aosp_atd-x86_64`) -- **verificación pendiente**:
-  este es un cambio de infraestructura de CI que no se puede probar en el
-  dispositivo local, solo con una corrida real de GitHub Actions.
+  actualizada a `avd-34-aosp_atd-x86_64`). **Verificado con una corrida
+  real disparada manualmente contra una rama de prueba (sin tocar
+  `main`): NO tuvo ningún efecto** -- fallan exactamente las mismas 14-15
+  pruebas, en el mismo orden, con los mismos tiempos (~20-21s cada una),
+  tanto con `google_apis` como con `aosp_atd`. Descarta limpiamente la
+  contención de CPU/GMS de fondo como causa. Se mantiene `aosp_atd`
+  igual (no empeora nada, es la imagen recomendada por Google para CI),
+  pero el problema real sigue sin resolver.
+- **Décimo intento, 2026-09-01 — migración a v2 `createAndroidComposeRule`,
+  descartada con datos.** Comparando qué pruebas fallan sistemáticamente
+  contra cuáles pasan siempre (mismo mock de `AdManager` en todas): los
+  tests que fallan dependen de que un `coEvery` de MockK sobre una
+  función `suspend` del repositorio (ej. `loadRecentlyOpened()`) resuelva
+  dentro de un `viewModelScope.launch` antes de que el contenido
+  aparezca; los que no dependen de ningún mock `suspend` para su
+  aserción pasan siempre. Coincide con la descripción oficial de v1
+  (`UnconfinedTestDispatcher`, ejecución inmediata que puede enmascarar
+  condiciones de carrera reales) vs v2 (`StandardTestDispatcher`, más
+  fiel a producción) -- pero un piloto real en CI (`HomeScreenTest`
+  migrado a `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+  sin ningún otro cambio) **falló exactamente igual, mismo patrón de
+  tiempos**. Conclusión técnica: la distinción v1/v2 aplica al
+  dispatcher interno de Compose Testing (`LaunchedEffect` dentro de la
+  composición), no al `Dispatchers.Main` real que usa `viewModelScope` en
+  un test instrumentado sobre dispositivo/emulador real -- v2 no toca en
+  absoluto las corrutinas de los ViewModels, que es donde vive el
+  problema real. Revertido, no se migró el resto de archivos.
+  **Pista nueva para retomar más adelante**: existen issues documentados
+  de MockK (`mockk/mockk#766`, `mockk/mockk#941`) sobre `coEvery`
+  bloqueándose para siempre específicamente en pruebas de instrumentación
+  Android (funcionan bien en JVM/unit tests) -- coincide con el síntoma
+  observado acá. No se investigó más a fondo por costo/beneficio en esta
+  sesión; **el job `instrumented-tests` queda con ~14-15 de 30 pruebas
+  fallando de forma conocida y documentada en CI**, sin afectar la
+  confianza de esas mismas pruebas verificadas en el dispositivo real.
 
 ---
 
