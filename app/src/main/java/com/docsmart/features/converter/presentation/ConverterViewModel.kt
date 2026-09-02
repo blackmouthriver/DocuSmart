@@ -191,6 +191,12 @@ class ConverterViewModel @Inject constructor(
     // ("N archivos → N salidas") aplica al resto de tipos cuando hay más de
     // un archivo elegido.
     fun convert(context: Context) {
+        // Diagnóstico temporal 2026-09-02 (ver deployment.md §3, "Décimo
+        // tercer intento"): confirmar si el click de "Convertir a WebP"
+        // realmente invoca este método en el emulador de CI, o si el
+        // problema es que la inyección de touch nunca llega. Quitar una
+        // vez confirmada o descartada esa hipótesis.
+        Timber.d("CI_HANG_DIAG: convert() invocado")
         val state = _uiState.value
         val type  = state.selectedType ?: return
         val files = state.selectedFiles
