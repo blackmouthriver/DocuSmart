@@ -20,6 +20,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.core.ui.theme.AccentColor
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.FontScale
@@ -105,7 +106,7 @@ class SettingsScreenTest {
     }
 
     private fun waitForText(text: String) {
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntilOrDump("CI_HANG_SettingsScreenTest") {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }

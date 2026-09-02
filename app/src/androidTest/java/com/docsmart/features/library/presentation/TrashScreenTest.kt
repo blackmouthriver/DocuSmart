@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.library.data.TrashedDocumentUiModel
@@ -71,7 +72,7 @@ class TrashScreenTest {
     }
 
     private fun waitForText(text: String) {
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntilOrDump("CI_HANG_TrashScreenTest") {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
