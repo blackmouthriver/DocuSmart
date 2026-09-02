@@ -143,7 +143,7 @@ class ConverterScreenTest {
         // más abajo para "¡Conversión exitosa!". 20s (no 10s) porque en el
         // emulador de CI (swiftshader por software, 2 vCPU) un primer
         // intento con 10s todavía no alcanzaba.
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntil(timeoutMillis = 60_000) {
             composeRule.onAllNodesWithText("Convertir a WebP")
                 .fetchSemanticsNodes().isNotEmpty()
         }
@@ -158,7 +158,7 @@ class ConverterScreenTest {
         // La conversión real corre en un dispositivo de 8x8 px -- rápida,
         // pero es E/S real (comprimir + escribir a disco), así que se
         // espera con margen en vez de asumir que ya terminó tras waitForIdle().
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntil(timeoutMillis = 60_000) {
             composeRule.onAllNodesWithText("¡Conversión exitosa!")
                 .fetchSemanticsNodes().isNotEmpty()
         }

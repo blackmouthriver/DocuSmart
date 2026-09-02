@@ -100,7 +100,7 @@ class ViewerRenameDeleteTest {
     }
 
     private fun waitForText(text: String) {
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntil(timeoutMillis = 60_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
@@ -155,7 +155,7 @@ class ViewerRenameDeleteTest {
         // porque el DropdownMenuItem se desmonta antes de abrir el diálogo).
         composeRule.onNodeWithText("Eliminar").performClick()
 
-        composeRule.waitUntil(timeoutMillis = 20_000) { backCalled }
+        composeRule.waitUntil(timeoutMillis = 60_000) { backCalled }
         assertTrue(backCalled)
     }
 }
