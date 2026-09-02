@@ -187,18 +187,14 @@ jobs:
           # Diagnóstico 2026-09-02 (ver deployment.md §3, "Undécimo
           # intento"): un subconjunto fijo de pruebas cuelga siempre en
           # CI sin causa raíz identificada. Se vuelca logcat completo a
-          # la salida del propio step (set +e conserva el exit code real
-          # de Gradle) -- más simple y confiable que escribirlo a un
-          # archivo y subirlo como artifact (esa ruta no se encontró en
-          # el intento anterior, ver deployment.md).
-          script: |
-            set +e
-            ./gradlew connectedDebugAndroidTest --no-daemon
-            GRADLE_EXIT=$?
-            echo "===== LOGCAT DUMP START ====="
-            adb logcat -d
-            echo "===== LOGCAT DUMP END ====="
-            exit $GRADLE_EXIT
+          # la salida del propio step. IMPORTANTE: android-emulator-runner
+          # parte el "script" por líneas y ejecuta cada línea como un
+          # `sh -c` SEPARADO (ver su script-parser.ts) -- un intento
+          # anterior con varias líneas nunca llegó a volcar logcat porque
+          # el bucle se corta en la primera línea que falla (gradle) antes
+          # de llegar a las siguientes. Por eso va todo en una sola línea
+          # con ";" -- así es un único `sh -c` que sí conserva $? real.
+          script: ./gradlew connectedDebugAndroidTest --no-daemon; GRADLE_EXIT=$?; echo "===== LOGCAT DUMP START ====="; adb logcat -d; echo "===== LOGCAT DUMP END ====="; exit $GRADLE_EXIT
 
       - name: Publicar reporte de pruebas instrumentadas
         if: always()
