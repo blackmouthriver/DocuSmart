@@ -411,6 +411,35 @@ ya se justifica.
   explícita, simplemente no tiene efecto. **No investigado aún**: por qué
   la inyección de touch/acción fallaría silenciosamente solo en estas
   pantallas y no en las que sí pasan.
+- **Décimo tercer intento, 2026-09-02 — confirmado con certeza: el click
+  nunca invoca el handler.** Antes de seguir cambiando código de
+  producción a ciegas, se agregó un único `Timber.d("CI_HANG_DIAG:
+  convert() invocado")` en la primera línea de
+  `ConverterViewModel.convert()` (el método atado a `onClick` del botón
+  "Convertir a WebP") y se corrió una vez más en CI
+  (run [33651702883](https://github.com/blackmouthriver/DocuSmart/actions/runs/33651702883)).
+  **Ese log nunca aparece en el logcat capturado, ni una sola vez** --
+  confirma con certeza (no solo indicios del árbol de UI) que
+  `performClick()` sobre "Convertir a WebP" no logra invocar el método
+  del ViewModel en este emulador de CI. Diagnóstico revertido (cumplió su
+  propósito).
+
+  **Conclusión de esta sesión**: la causa raíz real es que
+  `performClick()` de Compose UI Testing -- que en `AndroidComposeTestRule`
+  inyecta un evento de touch real a través de la ventana, no invoca la
+  acción de semántica directamente -- falla en entregar el evento
+  específicamente para estas 7 pantallas en el emulador de CI (mismo
+  mecanismo, cree, que produce el `AssertionError: Failed to inject touch
+  input` explícito visto en `ViewerRenameDeleteTest`, solo que acá sin
+  excepción visible, simplemente sin efecto). Se descartaron con
+  evidencia real de CI: contención de recursos (`aosp_atd`), dispatcher
+  de Compose Testing (v1 vs v2), timeout insuficiente, corrutinas que no
+  resumen (mockeadas o reales). **Por qué la inyección de touch falla
+  específicamente para estos botones/pantallas y no para los que sí
+  pasan queda sin resolver** -- necesitaría reproducir el problema con
+  herramientas de más bajo nivel que este proyecto no tiene automatizadas
+  todavía (ej. grabación de pantalla del emulador de CI, o Espresso
+  `UiController` con logging de coordenadas reales de inyección).
 
 ---
 
