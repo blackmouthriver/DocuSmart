@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.ui.test.ImmediateDispatcherProvider
 import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.converter.domain.model.ConversionType
@@ -72,7 +73,9 @@ class ConverterScreenTest {
             pdfToText         = mockk(relaxed = true),
             pdfToWord         = mockk(relaxed = true),
             pdfToHtml         = mockk(relaxed = true),
-            imageFormat       = ImageFormatUseCase(appContext), // real, no mock
+            // real, no mock -- dispatcher de prueba (ver deployment.md §3)
+            // en vez de Dispatchers.IO real, que nunca resume en CI.
+            imageFormat       = ImageFormatUseCase(appContext, ImmediateDispatcherProvider()),
             wordToPdf         = mockk(relaxed = true),
             wordToText        = mockk(relaxed = true),
             wordToHtml        = mockk(relaxed = true),

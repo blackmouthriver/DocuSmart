@@ -5,10 +5,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import com.docsmart.core.di.DispatcherProvider
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -18,13 +18,14 @@ import java.util.Locale
 import javax.inject.Inject
 
 class ImageFormatUseCase @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val dispatchers: DispatcherProvider = DispatcherProvider()
 ) {
     suspend operator fun invoke(
         imageUri  : Uri,
         targetType: ConversionType,
         fileName  : String? = null
-    ): ConversionResult = withContext(Dispatchers.IO) {
+    ): ConversionResult = withContext(dispatchers.io) {
         try {
             val bitmap = context.contentResolver.openInputStream(imageUri)?.use {
                 BitmapFactory.decodeStream(it)
