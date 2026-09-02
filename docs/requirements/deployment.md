@@ -254,6 +254,192 @@ ya se justifica.
   reintentar en CI.
 - Octavo intento en verificación tras todos los fixes (ver §2 de
   `CONTEXT.md` para el resultado final una vez confirmado).
+- **Noveno hallazgo, 2026-09-01 — `target: google_apis` reemplazado por
+  `aosp_atd`.** El job pasó en verde con los 3 flujos originales
+  (2026-08-26 en adelante, ver historial de runs), pero volvió a fallar a
+  partir de 2026-08-30 (commit "corrige bugs de QA") -- en ese momento
+  solo por `ConverterScreenTest` (ya documentado como intermitente en
+  `conversion.md` §7, no una regresión nueva). A medida que se agregaron
+  ~27 pruebas más de Compose UI Testing durante los días siguientes (ver
+  `compose-ui-testing.md`), la tasa de fallas creció de 1 prueba
+  intermitente a **14-15 de 30 pruebas fallando de forma consistente**,
+  todas con `ComposeTimeoutException`/"Failed to inject touch input" --
+  pese a que las mismas pruebas pasan de forma confiable en el
+  dispositivo real (Motorola Edge 30 Neo). Se confirmó que
+  `disable-animations: true` sí se aplica correctamente en el emulador
+  (los 3 `adb shell settings put global ..._scale 0.0` aparecen en el
+  log) -- descartado como causa. Diagnóstico: la imagen `google_apis`
+  trae SystemUI, Gmail, Maps y el resto del stack GMS corriendo de fondo,
+  compitiendo por los 2 vCPU del runner -- cuanto más grande la suite, más
+  contención. `aosp_atd` (Android Test Device) es la imagen que Google
+  diseñó específicamente para instrumentación en CI, sin esos componentes
+  (~33% menos tiempo de prueba reportado por terceros). Ningún test de
+  este proyecto llama a Google Play Services/GMS real (`AdManager`/
+  `BillingManager`/`PremiumManager` siempre mockeados en `androidTest/`),
+  así que no depende de las Google APIs que `aosp_atd` tampoco trae.
+  Aplicado en `ci.yml` y `sonarcloud.yml` (mismo AVD, clave de caché
+  actualizada a `avd-34-aosp_atd-x86_64`). **Verificado con una corrida
+  real disparada manualmente contra una rama de prueba (sin tocar
+  `main`): NO tuvo ningún efecto** -- fallan exactamente las mismas 14-15
+  pruebas, en el mismo orden, con los mismos tiempos (~20-21s cada una),
+  tanto con `google_apis` como con `aosp_atd`. Descarta limpiamente la
+  contención de CPU/GMS de fondo como causa. Se mantiene `aosp_atd`
+  igual (no empeora nada, es la imagen recomendada por Google para CI),
+  pero el problema real sigue sin resolver.
+- **Décimo intento, 2026-09-01 — migración a v2 `createAndroidComposeRule`,
+  descartada con datos.** Comparando qué pruebas fallan sistemáticamente
+  contra cuáles pasan siempre (mismo mock de `AdManager` en todas): los
+  tests que fallan dependen de que un `coEvery` de MockK sobre una
+  función `suspend` del repositorio (ej. `loadRecentlyOpened()`) resuelva
+  dentro de un `viewModelScope.launch` antes de que el contenido
+  aparezca; los que no dependen de ningún mock `suspend` para su
+  aserción pasan siempre. Coincide con la descripción oficial de v1
+  (`UnconfinedTestDispatcher`, ejecución inmediata que puede enmascarar
+  condiciones de carrera reales) vs v2 (`StandardTestDispatcher`, más
+  fiel a producción) -- pero un piloto real en CI (`HomeScreenTest`
+  migrado a `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`,
+  sin ningún otro cambio) **falló exactamente igual, mismo patrón de
+  tiempos**. Conclusión técnica: la distinción v1/v2 aplica al
+  dispatcher interno de Compose Testing (`LaunchedEffect` dentro de la
+  composición), no al `Dispatchers.Main` real que usa `viewModelScope` en
+  un test instrumentado sobre dispositivo/emulador real -- v2 no toca en
+  absoluto las corrutinas de los ViewModels, que es donde vive el
+  problema real. Revertido, no se migró el resto de archivos.
+  **Pista nueva para retomar más adelante**: existen issues documentados
+  de MockK (`mockk/mockk#766`, `mockk/mockk#941`) sobre `coEvery`
+  bloqueándose para siempre específicamente en pruebas de instrumentación
+  Android (funcionan bien en JVM/unit tests) -- coincide con el síntoma
+  observado acá. No se investigó más a fondo por costo/beneficio en esta
+  sesión; **el job `instrumented-tests` queda con ~14-15 de 30 pruebas
+  fallando de forma conocida y documentada en CI**, sin afectar la
+  confianza de esas mismas pruebas verificadas en el dispositivo real.
+- **Undécimo intento, 2026-09-02 — la teoría de MockK no explica todo el
+  patrón; probado y descartado que sea simple falta de tiempo.** Al leer
+  el log completo (no solo los nombres) de la corrida de CI más reciente,
+  las 14 pruebas que fallan son siempre las mismas: `ConverterScreenTest`
+  (1), `HomeScreenTest` (3), `LibraryScreenTest` (3), `TrashScreenTest`
+  (2), `QrCreatorScreenTest` (1), `SettingsScreenTest` (2) y
+  `ViewerRenameDeleteTest` (2) -- pero **3 de esos 7 archivos
+  (`ConverterScreenTest`, `QrCreatorScreenTest`, `SettingsScreenTest`) no
+  usan `coEvery` sobre ninguna función `suspend`**, lo que debilita la
+  teoría de MockK como causa única. `ConverterScreenTest` en particular
+  usa a propósito la instancia *real* de `ImageFormatUseCase` (para dar
+  protección de regresión real contra un bug de `WEBP_LOSSLESS`
+  encontrado antes en esta sesión), que hace conversión de `Bitmap` real
+  dentro de `withContext(Dispatchers.IO)`.
+
+  Se probó experimentalmente si era simple falta de tiempo: se subió
+  `timeoutMillis` de 20 000 a 60 000 en los 9 `waitUntil()` de esos 7
+  archivos y se disparó una corrida real de CI
+  (run [33636806671](https://github.com/blackmouthriver/DocuSmart/actions/runs/33636806671)).
+  **Resultado: fallan exactamente las mismas 14 pruebas, y cada una
+  consume el presupuesto completo de 60 s antes de fallar** (antes
+  consumían los 20 s completos) -- descarta limpiamente que sea
+  "necesitan más tiempo en hardware más lento"; es una condición que
+  nunca se cumple, no una que tarda. Cambio revertido (no aporta,
+  solo alarga la corrida cuando falla).
+
+  Se descartó también que fuera por el banner de anuncios real
+  (`DocuSmartBannerAd`/`AdManager.isPremium`): el valor mockeado de
+  `isPremium` no separa limpiamente las pruebas que fallan de las que
+  pasan (ej. `PdfToolsScreenTest` mockea `isPremium = false` igual que
+  `ConverterScreenTest` y pasa sin problema).
+
+  **Estado al cierre de esta sesión**: causa raíz exacta aún sin
+  confirmar. Las dos teorías más plausibles que quedan abiertas son (a)
+  un cuelgue real específico de MockK en instrumentación Android
+  (`mockk/mockk#766`/`#941`, no descartado, solo sin poder explicar los 3
+  archivos sin `coEvery`) y (b) algo compartido entre esos 7 archivos que
+  aún no se identificó (posible candidato: todos renderizan una
+  `LazyColumn` con `DocumentUiModel`/iconos de tipo de documento, o
+  hacen algún trabajo real de `Bitmap`/recursos gráficos, a diferencia de
+  los que sí pasan). Para seguir, hace falta evidencia de más bajo nivel
+  que un log de Gradle -- por ejemplo, un `adb shell am dumpheap`/thread
+  dump del proceso instrumentado en el momento exacto del cuelgue, o
+  logging manual (`Log.d`) agregado temporalmente dentro de las
+  corrutinas sospechosas para ver en qué línea exacta se traban en CI.
+- **Duodécimo intento, 2026-09-02 — esa evidencia de más bajo nivel se
+  consiguió, pero descarta la teoría de "corrutinas que nunca resumen".**
+  Se agregó `waitUntilOrDump()` (`com.docsmart.core.ui.test`), que llama
+  a `printToLog()` justo cuando `ComposeTimeoutException` se dispara, en
+  las 9 llamadas `waitUntil()` de los 7 archivos afectados. Se corrigieron
+  dos problemas reales de infraestructura para poder leer el resultado:
+  (1) el import `androidx.compose.ui.test.waitUntil` no existe como
+  función top-level en esta versión de compose-ui-test -- ya es un
+  miembro heredado de `ComposeTestRule`, no requiere import; (2)
+  `reactivecircus/android-emulator-runner` parte el input `script` por
+  saltos de línea y ejecuta **cada línea como un `sh -c` separado**
+  (`for (const script of scripts) { await exec.exec('sh', ['-c', script]) }`
+  en su `main.ts`/`script-parser.ts`) -- un script de varias líneas con
+  `set +e`/`$?` entre líneas no sirve de nada porque el bucle se corta en
+  la primera línea que falla; hubo que volcar logcat completo a la salida
+  del propio step en **una sola línea** con `;`.
+
+  Con logcat real capturado en el momento exacto del cuelgue
+  (run [33645612376](https://github.com/blackmouthriver/DocuSmart/actions/runs/33645612376)),
+  el árbol de semántica (`printToLog`) mostró en las 4 pantallas
+  capturadas (`HomeScreenTest`, `LibraryScreenTest`, `QrCreatorScreenTest`,
+  `ConverterScreenTest`) el mismo patrón: la pantalla queda congelada en
+  el estado *anterior* a que complete la acción esperada -- en Home falta
+  la sección de documentos recientes, en Library el contador dice "2
+  documentos" pero la lista está vacía, en QrCreator sigue en el
+  formulario sin generar el QR, y en Converter el botón "Convertir a
+  WebP" sigue visible sin ningún cambio, como si el click nunca hubiera
+  ocurrido.
+
+  Se probó la hipótesis más obvia que explicaría esto: que las corrutinas
+  reales que saltan a `Dispatchers.IO`/`Default` (`ImageFormatUseCase` en
+  Converter) nunca resuman en este emulador de CI. Se implementó
+  `DispatcherProvider` (inyectable, real `Dispatchers.IO` en producción)
+  y se probó `ConverterScreenTest` con un `DispatcherProvider` de prueba
+  que usa `Dispatchers.Main.immediate` para `io` -- **sin ningún thread
+  real de por medio**. Verificado con una corrida real de CI
+  (run [33647977125](https://github.com/blackmouthriver/DocuSmart/actions/runs/33647977125)):
+  **falla exactamente igual, con el árbol de semántica capturado
+  IDÉNTICO byte por byte al de antes del fix** -- el botón "Convertir a
+  WebP" sigue mostrándose sin cambios. Esto descarta limpiamente que sea
+  un problema de corrutinas/dispatchers: revertido (commit `35ec071`).
+
+  **Nueva lectura de la evidencia**: dado que la UI queda exactamente en
+  el estado *previo a la acción* (no a mitad de un cálculo, no con un
+  spinner, no con un error) en las 4 pantallas capturadas, la sospecha
+  más consistente con los datos ahora es que el **click/acción del
+  usuario nunca llega a ejecutarse** en este emulador de CI para estos
+  casos puntuales -- coincide con el otro patrón de falla ya visto
+  (`AssertionError: Failed to inject touch input`) en
+  `ViewerRenameDeleteTest`, solo que acá no lanza esa excepción
+  explícita, simplemente no tiene efecto. **No investigado aún**: por qué
+  la inyección de touch/acción fallaría silenciosamente solo en estas
+  pantallas y no en las que sí pasan.
+- **Décimo tercer intento, 2026-09-02 — confirmado con certeza: el click
+  nunca invoca el handler.** Antes de seguir cambiando código de
+  producción a ciegas, se agregó un único `Timber.d("CI_HANG_DIAG:
+  convert() invocado")` en la primera línea de
+  `ConverterViewModel.convert()` (el método atado a `onClick` del botón
+  "Convertir a WebP") y se corrió una vez más en CI
+  (run [33651702883](https://github.com/blackmouthriver/DocuSmart/actions/runs/33651702883)).
+  **Ese log nunca aparece en el logcat capturado, ni una sola vez** --
+  confirma con certeza (no solo indicios del árbol de UI) que
+  `performClick()` sobre "Convertir a WebP" no logra invocar el método
+  del ViewModel en este emulador de CI. Diagnóstico revertido (cumplió su
+  propósito).
+
+  **Conclusión de esta sesión**: la causa raíz real es que
+  `performClick()` de Compose UI Testing -- que en `AndroidComposeTestRule`
+  inyecta un evento de touch real a través de la ventana, no invoca la
+  acción de semántica directamente -- falla en entregar el evento
+  específicamente para estas 7 pantallas en el emulador de CI (mismo
+  mecanismo, cree, que produce el `AssertionError: Failed to inject touch
+  input` explícito visto en `ViewerRenameDeleteTest`, solo que acá sin
+  excepción visible, simplemente sin efecto). Se descartaron con
+  evidencia real de CI: contención de recursos (`aosp_atd`), dispatcher
+  de Compose Testing (v1 vs v2), timeout insuficiente, corrutinas que no
+  resumen (mockeadas o reales). **Por qué la inyección de touch falla
+  específicamente para estos botones/pantallas y no para los que sí
+  pasan queda sin resolver** -- necesitaría reproducir el problema con
+  herramientas de más bajo nivel que este proyecto no tiene automatizadas
+  todavía (ej. grabación de pantalla del emulador de CI, o Espresso
+  `UiController` con logging de coordenadas reales de inyección).
 
 ---
 

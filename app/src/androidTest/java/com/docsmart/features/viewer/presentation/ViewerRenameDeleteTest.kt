@@ -18,6 +18,7 @@ import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
@@ -100,7 +101,7 @@ class ViewerRenameDeleteTest {
     }
 
     private fun waitForText(text: String) {
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntilOrDump("CI_HANG_ViewerRenameDeleteTest_texto") {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
@@ -155,7 +156,7 @@ class ViewerRenameDeleteTest {
         // porque el DropdownMenuItem se desmonta antes de abrir el diálogo).
         composeRule.onNodeWithText("Eliminar").performClick()
 
-        composeRule.waitUntil(timeoutMillis = 20_000) { backCalled }
+        composeRule.waitUntilOrDump("CI_HANG_ViewerRenameDeleteTest_backCalled") { backCalled }
         assertTrue(backCalled)
     }
 }

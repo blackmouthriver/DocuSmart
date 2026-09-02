@@ -17,6 +17,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.domain.usecase.ImageFormatUseCase
 import io.mockk.every
@@ -143,7 +144,7 @@ class ConverterScreenTest {
         // más abajo para "¡Conversión exitosa!". 20s (no 10s) porque en el
         // emulador de CI (swiftshader por software, 2 vCPU) un primer
         // intento con 10s todavía no alcanzaba.
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntilOrDump("CI_HANG_ConverterScreenTest_boton") {
             composeRule.onAllNodesWithText("Convertir a WebP")
                 .fetchSemanticsNodes().isNotEmpty()
         }
@@ -158,7 +159,7 @@ class ConverterScreenTest {
         // La conversión real corre en un dispositivo de 8x8 px -- rápida,
         // pero es E/S real (comprimir + escribir a disco), así que se
         // espera con margen en vez de asumir que ya terminó tras waitForIdle().
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntilOrDump("CI_HANG_ConverterScreenTest_resultado") {
             composeRule.onAllNodesWithText("¡Conversión exitosa!")
                 .fetchSemanticsNodes().isNotEmpty()
         }

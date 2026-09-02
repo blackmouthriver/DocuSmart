@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.waitUntilOrDump
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,7 +66,7 @@ class QrCreatorScreenTest {
     }
 
     private fun waitForText(text: String) {
-        composeRule.waitUntil(timeoutMillis = 20_000) {
+        composeRule.waitUntilOrDump("CI_HANG_QrCreatorScreenTest") {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
