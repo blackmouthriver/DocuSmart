@@ -186,14 +186,18 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -camera-back none
           # Diagnóstico 2026-09-02 (ver deployment.md §3, "Undécimo
           # intento"): un subconjunto fijo de pruebas cuelga siempre en
-          # CI sin causa raíz identificada. Se vuelca logcat completo
-          # a un archivo pase lo que pase (set +e conserva el exit code
-          # real de Gradle para que el job siga fallando si corresponde).
+          # CI sin causa raíz identificada. Se vuelca logcat completo a
+          # la salida del propio step (set +e conserva el exit code real
+          # de Gradle) -- más simple y confiable que escribirlo a un
+          # archivo y subirlo como artifact (esa ruta no se encontró en
+          # el intento anterior, ver deployment.md).
           script: |
             set +e
             ./gradlew connectedDebugAndroidTest --no-daemon
             GRADLE_EXIT=$?
-            adb logcat -d > "$GITHUB_WORKSPACE/logcat-instrumented.txt"
+            echo "===== LOGCAT DUMP START ====="
+            adb logcat -d
+            echo "===== LOGCAT DUMP END ====="
             exit $GRADLE_EXIT
 
       - name: Publicar reporte de pruebas instrumentadas
@@ -203,13 +207,4 @@ jobs:
           name: reporte-compose-ui-testing
           retention-days: 14
           path: app/build/reports/androidTests/connected/
-          if-no-files-found: ignore
-
-      - name: Publicar logcat de pruebas instrumentadas
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: logcat-compose-ui-testing
-          retention-days: 14
-          path: logcat-instrumented.txt
           if-no-files-found: ignore
