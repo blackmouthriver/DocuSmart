@@ -313,6 +313,51 @@ ya se justifica.
   sesión; **el job `instrumented-tests` queda con ~14-15 de 30 pruebas
   fallando de forma conocida y documentada en CI**, sin afectar la
   confianza de esas mismas pruebas verificadas en el dispositivo real.
+- **Undécimo intento, 2026-09-02 — la teoría de MockK no explica todo el
+  patrón; probado y descartado que sea simple falta de tiempo.** Al leer
+  el log completo (no solo los nombres) de la corrida de CI más reciente,
+  las 14 pruebas que fallan son siempre las mismas: `ConverterScreenTest`
+  (1), `HomeScreenTest` (3), `LibraryScreenTest` (3), `TrashScreenTest`
+  (2), `QrCreatorScreenTest` (1), `SettingsScreenTest` (2) y
+  `ViewerRenameDeleteTest` (2) -- pero **3 de esos 7 archivos
+  (`ConverterScreenTest`, `QrCreatorScreenTest`, `SettingsScreenTest`) no
+  usan `coEvery` sobre ninguna función `suspend`**, lo que debilita la
+  teoría de MockK como causa única. `ConverterScreenTest` en particular
+  usa a propósito la instancia *real* de `ImageFormatUseCase` (para dar
+  protección de regresión real contra un bug de `WEBP_LOSSLESS`
+  encontrado antes en esta sesión), que hace conversión de `Bitmap` real
+  dentro de `withContext(Dispatchers.IO)`.
+
+  Se probó experimentalmente si era simple falta de tiempo: se subió
+  `timeoutMillis` de 20 000 a 60 000 en los 9 `waitUntil()` de esos 7
+  archivos y se disparó una corrida real de CI
+  (run [33636806671](https://github.com/blackmouthriver/DocuSmart/actions/runs/33636806671)).
+  **Resultado: fallan exactamente las mismas 14 pruebas, y cada una
+  consume el presupuesto completo de 60 s antes de fallar** (antes
+  consumían los 20 s completos) -- descarta limpiamente que sea
+  "necesitan más tiempo en hardware más lento"; es una condición que
+  nunca se cumple, no una que tarda. Cambio revertido (no aporta,
+  solo alarga la corrida cuando falla).
+
+  Se descartó también que fuera por el banner de anuncios real
+  (`DocuSmartBannerAd`/`AdManager.isPremium`): el valor mockeado de
+  `isPremium` no separa limpiamente las pruebas que fallan de las que
+  pasan (ej. `PdfToolsScreenTest` mockea `isPremium = false` igual que
+  `ConverterScreenTest` y pasa sin problema).
+
+  **Estado al cierre de esta sesión**: causa raíz exacta aún sin
+  confirmar. Las dos teorías más plausibles que quedan abiertas son (a)
+  un cuelgue real específico de MockK en instrumentación Android
+  (`mockk/mockk#766`/`#941`, no descartado, solo sin poder explicar los 3
+  archivos sin `coEvery`) y (b) algo compartido entre esos 7 archivos que
+  aún no se identificó (posible candidato: todos renderizan una
+  `LazyColumn` con `DocumentUiModel`/iconos de tipo de documento, o
+  hacen algún trabajo real de `Bitmap`/recursos gráficos, a diferencia de
+  los que sí pasan). Para seguir, hace falta evidencia de más bajo nivel
+  que un log de Gradle -- por ejemplo, un `adb shell am dumpheap`/thread
+  dump del proceso instrumentado en el momento exacto del cuelgue, o
+  logging manual (`Log.d`) agregado temporalmente dentro de las
+  corrutinas sospechosas para ver en qué línea exacta se traban en CI.
 
 ---
 
