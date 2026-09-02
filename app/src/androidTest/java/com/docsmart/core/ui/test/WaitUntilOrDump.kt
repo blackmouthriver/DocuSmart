@@ -4,7 +4,6 @@ import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToLog
-import androidx.compose.ui.test.waitUntil
 
 /**
  * Diagnóstico temporal 2026-09-02 (ver docs/requirements/deployment.md §3,
