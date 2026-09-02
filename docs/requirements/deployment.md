@@ -358,6 +358,59 @@ ya se justifica.
   dump del proceso instrumentado en el momento exacto del cuelgue, o
   logging manual (`Log.d`) agregado temporalmente dentro de las
   corrutinas sospechosas para ver en qué línea exacta se traban en CI.
+- **Duodécimo intento, 2026-09-02 — esa evidencia de más bajo nivel se
+  consiguió, pero descarta la teoría de "corrutinas que nunca resumen".**
+  Se agregó `waitUntilOrDump()` (`com.docsmart.core.ui.test`), que llama
+  a `printToLog()` justo cuando `ComposeTimeoutException` se dispara, en
+  las 9 llamadas `waitUntil()` de los 7 archivos afectados. Se corrigieron
+  dos problemas reales de infraestructura para poder leer el resultado:
+  (1) el import `androidx.compose.ui.test.waitUntil` no existe como
+  función top-level en esta versión de compose-ui-test -- ya es un
+  miembro heredado de `ComposeTestRule`, no requiere import; (2)
+  `reactivecircus/android-emulator-runner` parte el input `script` por
+  saltos de línea y ejecuta **cada línea como un `sh -c` separado**
+  (`for (const script of scripts) { await exec.exec('sh', ['-c', script]) }`
+  en su `main.ts`/`script-parser.ts`) -- un script de varias líneas con
+  `set +e`/`$?` entre líneas no sirve de nada porque el bucle se corta en
+  la primera línea que falla; hubo que volcar logcat completo a la salida
+  del propio step en **una sola línea** con `;`.
+
+  Con logcat real capturado en el momento exacto del cuelgue
+  (run [33645612376](https://github.com/blackmouthriver/DocuSmart/actions/runs/33645612376)),
+  el árbol de semántica (`printToLog`) mostró en las 4 pantallas
+  capturadas (`HomeScreenTest`, `LibraryScreenTest`, `QrCreatorScreenTest`,
+  `ConverterScreenTest`) el mismo patrón: la pantalla queda congelada en
+  el estado *anterior* a que complete la acción esperada -- en Home falta
+  la sección de documentos recientes, en Library el contador dice "2
+  documentos" pero la lista está vacía, en QrCreator sigue en el
+  formulario sin generar el QR, y en Converter el botón "Convertir a
+  WebP" sigue visible sin ningún cambio, como si el click nunca hubiera
+  ocurrido.
+
+  Se probó la hipótesis más obvia que explicaría esto: que las corrutinas
+  reales que saltan a `Dispatchers.IO`/`Default` (`ImageFormatUseCase` en
+  Converter) nunca resuman en este emulador de CI. Se implementó
+  `DispatcherProvider` (inyectable, real `Dispatchers.IO` en producción)
+  y se probó `ConverterScreenTest` con un `DispatcherProvider` de prueba
+  que usa `Dispatchers.Main.immediate` para `io` -- **sin ningún thread
+  real de por medio**. Verificado con una corrida real de CI
+  (run [33647977125](https://github.com/blackmouthriver/DocuSmart/actions/runs/33647977125)):
+  **falla exactamente igual, con el árbol de semántica capturado
+  IDÉNTICO byte por byte al de antes del fix** -- el botón "Convertir a
+  WebP" sigue mostrándose sin cambios. Esto descarta limpiamente que sea
+  un problema de corrutinas/dispatchers: revertido (commit `35ec071`).
+
+  **Nueva lectura de la evidencia**: dado que la UI queda exactamente en
+  el estado *previo a la acción* (no a mitad de un cálculo, no con un
+  spinner, no con un error) en las 4 pantallas capturadas, la sospecha
+  más consistente con los datos ahora es que el **click/acción del
+  usuario nunca llega a ejecutarse** en este emulador de CI para estos
+  casos puntuales -- coincide con el otro patrón de falla ya visto
+  (`AssertionError: Failed to inject touch input`) en
+  `ViewerRenameDeleteTest`, solo que acá no lanza esa excepción
+  explícita, simplemente no tiene efecto. **No investigado aún**: por qué
+  la inyección de touch/acción fallaría silenciosamente solo en estas
+  pantallas y no en las que sí pasan.
 
 ---
 
