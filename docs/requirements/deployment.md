@@ -440,6 +440,42 @@ ya se justifica.
   herramientas de más bajo nivel que este proyecto no tiene automatizadas
   todavía (ej. grabación de pantalla del emulador de CI, o Espresso
   `UiController` con logging de coordenadas reales de inyección).
+- **`sonarcloud.yml` nunca corría `sonar`, 2026-09-02** -- efecto
+  colateral del mismo problema, encontrado al revisar por qué la
+  integración de cobertura de Compose UI Testing (implementada esta
+  misma sesión, ver §4 de `compose-ui-testing.md`) no se reflejaba.
+  `script: ./gradlew jacocoTestReport sonar --no-daemon` es una sola
+  invocación de Gradle sin `--continue` -- en cuanto
+  `connectedDebugAndroidTest` falla (dependencia de `jacocoTestReport`),
+  Gradle aborta el build completo ahí mismo y la tarea `sonar` (pedida en
+  el mismo comando) **nunca llega a ejecutarse**. Confirmado leyendo el
+  log real de una corrida en `main`: "Task :sonar" no aparecía en ningún
+  lado. Es decir, desde que el job `instrumented-tests` empezó a fallar
+  (2026-08-30), SonarCloud no había vuelto a analizar el proyecto en
+  ningún push a `main`.
+
+  Corregido agregando `--continue` al comando y `continue-on-error: true`
+  al step (mismo criterio que `ci.yml`). Verificado con una corrida real
+  en una rama de prueba
+  (run [33655514654](https://github.com/blackmouthriver/DocuSmart/actions/runs/33655514654)):
+  `Task :sonar` sí corre y el workflow queda en verde.
+
+  **Efecto secundario encontrado, sin arreglar todavía**: como
+  `jacocoTestReport` sigue dependiendo de que `connectedDebugAndroidTest`
+  termine bien, mientras ese job siga fallando el reporte de cobertura
+  fusionado (unit + Compose UI Testing) nunca se genera --
+  `sonar` corre igual (bugs, code smells, duplicación, etc.) pero con el
+  log `No coverage report can be found with
+  sonar.coverage.jacoco.xmlReportPaths=...`, es decir sin cobertura
+  fresca en esas corridas. JaCoCo sí registra cobertura de las pruebas
+  que llegan a correr aunque otras fallen (confirmado por búsqueda
+  externa), así que el arreglo real sería marcar la tarea de tests
+  instrumentados con `ignoreFailures = true` para que se considere
+  "exitosa" a efectos de Gradle pese a tests fallidos, dejando avanzar a
+  `jacocoTestReport`. No implementado esta sesión -- requiere identificar
+  la clase exacta de la tarea (`DeviceProviderInstrumentTestTask` o
+  similar, según la versión de AGP) para no depender de una API interna
+  a ciegas sin poder probarla localmente contra una falla real.
 
 ---
 
