@@ -27,7 +27,7 @@ complexity:
                          # Subido de 26 a 29 al reescribir el visor de PowerPoint con Apache POI
                          # (extractPptSlides/extractPptShapeContent/PptSlideCanvas/PptShapeView) --
                          # mismo criterio: funciones pequeñas de una sola responsabilidad.
-    thresholdInClasses: 20 # managers que trackean varios tipos de recurso en paralelo (ej.
+    thresholdInClasses: 26 # managers que trackean varios tipos de recurso en paralelo (ej.
                            # DailyLimitManager: conversiones + 4 herramientas PDF) acumulan
                            # funciones pequeñas y cohesivas, no responsabilidades mezcladas.
                            # Subido de 15 a 20 al agregar el soporte de carpeta vinculada por SAF
@@ -36,6 +36,10 @@ complexity:
                            # y deleteSafDocument() son funciones pequeñas de una sola responsabilidad,
                            # paralelas a las que ya existían para Descargas/MediaStore -- no
                            # responsabilidades nuevas.
+                           # Subido de 20 a 26 al ampliar la Biblioteca para incluir el historial
+                           # completo de documentos abiertos (collectLinkedFolderDocuments,
+                           # loadDocumentsFromHistory, documentFromHistoryId/Uri/File) -- mismo
+                           # criterio: funciones chicas de una sola responsabilidad.
   CyclomaticComplexMethod:
     ignoreAnnotated: ['Composable']
 

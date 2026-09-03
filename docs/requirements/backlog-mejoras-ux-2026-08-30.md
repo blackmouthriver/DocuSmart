@@ -1426,3 +1426,108 @@ estructurado más robusto (tablas reales, alineación) sin depender de
 regex sobre XML crudo; Excel necesita formato real de celdas
 (`DataFormatter` para fechas/monedas/porcentajes) y pestañas para
 múltiples hojas.
+
+## 19. Bug de compartir + Biblioteca ampliada con historial permanente + hallazgos de investigación
+
+Sesión de seguimiento 2026-09-03: el usuario reportó que compartir un
+documento generado por la app (conversión de Word desde WhatsApp) dejó
+de funcionar, y que tras vincular una carpeta por SAF la Biblioteca
+seguía sin mostrar ningún archivo -- al punto de cuestionar si el
+proyecto tenía sentido seguir sin `MANAGE_EXTERNAL_STORAGE`.
+
+### Bug real: compartir documentos generados por la app
+
+`ViewerViewModel.shareDocument()` pasaba `state.fileUri` (para
+documentos con id = ruta absoluta, un `Uri.fromFile(...)` real) directo
+al `Intent.ACTION_SEND`. Desde Android 7 (API 24) exponer un `file://` a
+otra app así lanza `FileUriExposedException` (hereda de
+`SecurityException`), atrapada por el catch genérico como "No se pudo
+compartir el archivo" -- Biblioteca/Home ya lo resolvían con
+`FileProvider` (`DocumentListSection.kt`/`FavoritesSection.kt`) pero el
+Visor nunca lo hizo. Corregido envolviendo con el mismo
+`FileProvider`/authority ya declarado en el manifest. Verificado en
+dispositivo real: compartir desde el botón del Visor (no solo desde el
+menú "⋮" de Biblioteca, que ya funcionaba) abre el selector del sistema
+con WhatsApp entre las opciones, sin error.
+
+### Bug real: carpeta vinculada sin recorrer subcarpetas
+
+`loadDocumentsFromLinkedFolder()` solo listaba el nivel superior de la
+carpeta vinculada (`DocumentFile.listFiles()`, sin recursión). El
+usuario había vinculado "Documents" (raíz del dispositivo) -- vacía
+salvo una subcarpeta de otra app -- por lo que la Biblioteca mostraba 0
+archivos aunque la vinculación en sí funcionara. Corregido con
+`collectLinkedFolderDocuments()`, recursivo hasta
+`LINKED_FOLDER_MAX_DEPTH` (8, tope de seguridad, no límite esperado en
+uso normal).
+
+### Ampliación: Biblioteca con historial permanente de documentos abiertos
+
+Pregunta del usuario que motivó este cambio: sin vincular una carpeta o
+elegir archivos, ¿de verdad no hay forma de que el dispositivo se vea
+igual que antes? Confirmado que no (ver §17/§18) -- pero se identificó
+que el mecanismo de historial que ya alimenta "Recientes" en Inicio
+(`documentHistoryDao`, registra cada apertura real vía
+`ViewerViewModel.recordHistoryOpen`, incluyendo aperturas por "Abrir con
+DocuSmart" desde otra app) solo se consultaba con un límite acotado para
+esa pantalla. Se agregó `DocumentHistoryDao.allEntries()` (historial
+completo, sin límite) y `DocumentRepository.loadDocumentsFromHistory()`,
+que resuelve cada id del historial a un `DocumentUiModel` real (vía
+`ContentResolver` para `content://`, vía `File` para rutas absolutas) y
+lo suma a `loadAllDocumentsRaw()`. Efecto práctico: cualquier documento
+que el usuario abra alguna vez -- recibido por WhatsApp/Gmail y abierto
+con "Abrir con DocuSmart", o elegido con el selector de archivos -- queda
+visible en Biblioteca de forma permanente, no solo mientras esté entre
+los 5 más recientes de Inicio.
+
+**Corrección relacionada, encontrada en el camino**:
+`LibraryViewModel.isDeviceDocument()` clasificaba como "Mis archivos"
+(app-generado) cualquier `content://` que no viniera de una lista fija
+de prefijos conocidos (`content://media`, `content://com.android`,
+`content://downloads`) -- incorrecto para un documento del historial
+proveniente de un proveedor de contenido de otra app (WhatsApp, Gmail),
+que sí es "del dispositivo". Simplificado a "cualquier `content://` es
+del dispositivo" (los documentos que la app genera siempre usan una ruta
+absoluta como id, nunca un `content://`), regla más simple y más
+correcta que la lista de prefijos.
+
+### Investigado a pedido del usuario, sin cambios de código
+
+- **"En versiones pasadas veía Word/PDF del dispositivo sin vincular nada"**:
+  revisado el historial completo de git de `app/build.gradle.kts` --
+  `targetSdkVersion` fue 35/36 en TODA la historia del proyecto, nunca
+  hubo un `targetSdkVersion` ≤ 28 que hubiera permitido el
+  comportamiento de almacenamiento legado. La explicación más plausible
+  es que lo que el usuario recuerda son PDFs generados por la propia app
+  (herramientas PDF/escáner/conversión, que sí aparecen automático
+  siempre) o imágenes (que también son automáticas) -- no documentos
+  ajenos, que nunca pudieron verse sin acción explícita en ninguna
+  versión de este proyecto.
+- **"¿Podemos pedir el permiso de carpetas desde Ajustes del sistema,
+  como hacen otras apps?"**: se le explicó que eso es exactamente
+  `MANAGE_EXTERNAL_STORAGE` ("Acceso a todos los archivos") visto desde
+  otra puerta (aparece en una sección de "Acceso especial" separada de
+  la pantalla de permisos estándar que compartió, no es un permiso
+  distinto) -- mismo riesgo de política de Play ya evaluado en §17. El
+  usuario decidió no perseguirlo y mantener el enfoque solo-SAF.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `detekt` necesitó: 1 `SwallowedException` corregido (pasar la
+  excepción real a `Timber.w` al leer el mimeType de un documento del
+  historial), subir `TooManyFunctions.thresholdInClasses` de 20 a 26
+  (mismo criterio ya documentado), y una entrada de baseline
+  `NestedBlockDepth` para `collectLinkedFolderDocuments` (recorrido
+  recursivo de árbol, mismo patrón ya baselineado para
+  `loadDocumentsFromDownloads`/`loadDocumentsFromLinkedFolder`).
+  `shareableUri()` se reescribió para tener 2 returns en vez de 3, sin
+  necesitar baseline.
+- 2 fakes de `DocumentHistoryDao` en tests (`DocumentRepositoryTest`,
+  `TrashRepositoryTest`) actualizados para implementar `allEntries()`.
+- `detekt`/`lintDebug`/`testDebugUnitTest` en verde.
+- Compartir desde el botón del Visor: verificado sin error, selector del
+  sistema con WhatsApp disponible.
+- Biblioteca → Mis archivos mostró correctamente `pruebaword.docx`
+  (conversión real desde WhatsApp); Dispositivo pasó de 50 a 52 archivos
+  tras abrir un documento externo vía "Abrir con DocuSmart", confirmando
+  que el historial permanente sí amplía la lista.

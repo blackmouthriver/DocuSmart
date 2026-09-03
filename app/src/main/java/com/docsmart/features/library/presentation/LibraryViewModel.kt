@@ -103,11 +103,18 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    // Un documento es "del dispositivo" si su ID es una content:// URI de MediaStore
+    // Ampliado 2026-09-03 (fila 22 backlog UX): un documento del historial
+    // puede venir de CUALQUIER proveedor de contenido externo (WhatsApp,
+    // Gmail, otro gestor de archivos), no solo MediaStore/SAF de Android --
+    // la lista fija anterior (content://media, content://com.android,
+    // content://downloads) clasificaba esos casos como "Mis archivos" por
+    // defecto, lo cual es incorrecto: no los creó la app. Los documentos que
+    // sí genera la app (loadAppGeneratedFiles()) siempre usan una ruta
+    // absoluta como id, nunca un content:// -- por eso "cualquier content://"
+    // es del dispositivo es una regla más simple y más correcta que una
+    // lista de prefijos conocidos.
     private fun isDeviceDocument(doc: DocumentUiModel): Boolean =
-        doc.id.startsWith("content://media") ||
-                doc.id.startsWith("content://com.android") ||
-                doc.id.startsWith("content://downloads")
+        doc.id.startsWith("content://")
 
     // ── Tab seleccionado ──────────────────────────────────────────────────────
     fun onTabSelected(tab: LibraryTab) {

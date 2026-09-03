@@ -252,6 +252,9 @@ class DocumentRepositoryTest {
         override suspend fun recentDocumentIds(limit: Int): List<String> =
             store.entries.sortedByDescending { it.value }.map { it.key }.take(limit)
 
+        override suspend fun allEntries(): List<DocumentHistoryEntry> =
+            store.entries.sortedByDescending { it.value }.map { DocumentHistoryEntry(it.key, it.value) }
+
         override suspend fun remove(documentId: String) {
             store.remove(documentId)
         }

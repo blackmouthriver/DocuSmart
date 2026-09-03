@@ -23,6 +23,15 @@ interface DocumentHistoryDao {
     @Query("SELECT documentId FROM document_history ORDER BY lastOpenedAt DESC LIMIT :limit")
     suspend fun recentDocumentIds(limit: Int): List<String>
 
+    // Biblioteca (fila 22 backlog UX, ampliación 2026-09-03): a diferencia de
+    // recentDocumentIds() (acotado para "Recientes" en Inicio), esta trae
+    // TODO el historial -- cualquier documento que el usuario haya abierto
+    // alguna vez vía "Abrir con DocuSmart" o el selector de archivos queda
+    // visible en Biblioteca de forma permanente, no solo mientras esté entre
+    // los más recientes.
+    @Query("SELECT * FROM document_history ORDER BY lastOpenedAt DESC")
+    suspend fun allEntries(): List<DocumentHistoryEntry>
+
     @Query("DELETE FROM document_history WHERE documentId = :documentId")
     suspend fun remove(documentId: String)
 }
