@@ -798,6 +798,7 @@
 
     <!-- ── Atalho para a pasta vinculada, ao lado de Dispositivo/Meus arquivos/Lixeira ── -->
     <string name="library_folder_shortcut_label">Pasta vinculada</string>
+    <string name="library_folder_shortcut_subtitle">Abrir</string>
     <string name="library_folder_shortcut_no_app">Não há um app para abrir pastas neste dispositivo</string>
 
     <!-- ── Ajustes: gerenciar pasta vinculada (item 22 backlog UX) ── -->

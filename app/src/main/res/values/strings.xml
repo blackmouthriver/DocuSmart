@@ -798,6 +798,7 @@
 
     <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
     <string name="library_folder_shortcut_label">Carpeta vinculada</string>
+    <string name="library_folder_shortcut_subtitle">Abrir</string>
     <string name="library_folder_shortcut_no_app">No hay una app para abrir carpetas en este dispositivo</string>
 
     <!-- ── Ajustes: gestionar carpeta vinculada (fila 22 backlog UX) ── -->

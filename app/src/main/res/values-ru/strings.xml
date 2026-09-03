@@ -798,6 +798,7 @@
 
     <!-- ── Быстрый доступ к привязанной папке, рядом с Устройство/Мои файлы/Корзина ── -->
     <string name="library_folder_shortcut_label">Привязанная папка</string>
+    <string name="library_folder_shortcut_subtitle">Открыть</string>
     <string name="library_folder_shortcut_no_app">На этом устройстве нет приложения для открытия папок</string>
 
     <!-- ── Настройки: управление привязанной папкой (пункт 22 бэклога UX) ── -->

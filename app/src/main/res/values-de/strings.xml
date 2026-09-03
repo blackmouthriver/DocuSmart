@@ -798,6 +798,7 @@
 
     <!-- ── Verknüpfung zum verknüpften Ordner, neben Gerät/Meine Dateien/Papierkorb ── -->
     <string name="library_folder_shortcut_label">Verknüpfter Ordner</string>
+    <string name="library_folder_shortcut_subtitle">Öffnen</string>
     <string name="library_folder_shortcut_no_app">Es gibt keine App zum Öffnen von Ordnern auf diesem Gerät</string>
 
     <!-- ── Einstellungen: verknüpften Ordner verwalten (UX-Backlog Zeile 22) ── -->

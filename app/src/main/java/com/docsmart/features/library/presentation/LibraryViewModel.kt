@@ -55,6 +55,8 @@ class LibraryViewModel @Inject constructor(
 
     fun downloadsFolderPickerInitialUri(): Uri? = downloadsAccessManager.initialUriHint()
 
+    fun linkedFolderDisplayName(uri: Uri): String? = downloadsAccessManager.folderDisplayName(uri)
+
     fun onDownloadsFolderPicked(uri: Uri) {
         downloadsAccessManager.onFolderPicked(uri)
         loadDocuments()

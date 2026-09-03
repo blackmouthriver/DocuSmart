@@ -78,6 +78,11 @@ fun LibraryScreen(
     // -- en Android 13+ no hay permiso equivalente a READ_MEDIA_IMAGES para
     // documentos que otras apps dejaron en Descargas).
     val linkedFolderUri by viewModel.linkedDownloadsFolderUri.collectAsStateWithLifecycle()
+    // Nombre real de la carpeta (ej. "DMSS") para mostrarlo en el atajo en
+    // vez de un genérico "Carpeta" -- pedido explícito del usuario.
+    val linkedFolderName = remember(linkedFolderUri) {
+        linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
+    }
     val linkFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
@@ -151,6 +156,7 @@ fun LibraryScreen(
                 appFilesCount    = uiState.appDocuments.size,
                 trashCount       = uiState.trashCount,
                 linkedFolderUri  = linkedFolderUri,
+                linkedFolderName = linkedFolderName,
                 onTabSelected    = { viewModel.onTabSelected(it) },
                 onTrashClick     = onTrashClick,
                 onOpenFolderClick = { openLinkedFolder(context, it) }
@@ -222,68 +228,101 @@ private fun LibraryTabs(
     appFilesCount    : Int,
     trashCount       : Int,
     linkedFolderUri  : Uri?,
+    linkedFolderName : String?,
     onTabSelected    : (LibraryTab) -> Unit,
     onTrashClick     : () -> Unit,
     onOpenFolderClick: (Uri) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        // Tab Dispositivo
-        LibraryTabItem(
-            icon     = Icons.Rounded.PhoneAndroid,
-            label    = stringResource(R.string.library_tab_device),
-            subtitle = stringResource(R.string.library_tab_file_count, deviceCount),
-            selected = selectedTab == LibraryTab.DEVICE,
-            onClick  = { onTabSelected(LibraryTab.DEVICE) },
-            modifier = Modifier.weight(1f)
-        )
-        // Tab Mis archivos
-        LibraryTabItem(
-            icon     = Icons.Rounded.Folder,
-            label    = stringResource(R.string.library_tab_app_files),
-            subtitle = stringResource(R.string.library_tab_file_count, appFilesCount),
-            selected = selectedTab == LibraryTab.APP_FILES,
-            onClick  = { onTabSelected(LibraryTab.APP_FILES) },
-            modifier = Modifier.weight(1f)
-        )
-        // Papelera -- mismo componente visual que las pestañas (ícono +
-        // label + contador, weight(1f)) en vez de una tarjeta de ancho fijo
-        // sin texto. Bug real reportado por el usuario 2026-08-30: se veía
-        // solo el ícono, sin título, y de un tamaño distinto a sus vecinas.
-        LibraryTabItem(
-            icon     = Icons.Rounded.DeleteOutline,
-            label    = stringResource(R.string.library_trash),
-            subtitle = stringResource(R.string.library_tab_file_count, trashCount),
-            selected = false,
-            onClick  = onTrashClick,
-            modifier = Modifier.weight(1f)
-        )
-        // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX): solo
-        // aparece si hay una carpeta vinculada -- pedido explícito del
-        // usuario 2026-09-03 para poder entrar directo a esa carpeta sin
-        // pasar por Ajustes. Botón compacto (no weight(1f) como las 3
-        // pestañas) para no angostarlas y forzar "Dispositivo" a partirse
-        // en dos líneas -- es un atajo adicional, no una cuarta pestaña.
-        if (linkedFolderUri != null) {
-            Card(
-                onClick  = { onOpenFolderClick(linkedFolderUri) },
-                modifier = Modifier.fillMaxHeight().width(56.dp),
-                shape    = MaterialTheme.shapes.large,
-                colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    // Sin carpeta vinculada: 1 fila de 3. Con carpeta vinculada: grilla 2x2
+    // -- 4 en una sola fila angostaba tanto las tarjetas que "Dispositivo"
+    // se partía en dos líneas (regresión detectada y corregida a pedido del
+    // usuario 2026-09-03).
+    if (linkedFolderUri == null) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+                .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            LibraryTabItem(
+                icon     = Icons.Rounded.PhoneAndroid,
+                label    = stringResource(R.string.library_tab_device),
+                subtitle = stringResource(R.string.library_tab_file_count, deviceCount),
+                selected = selectedTab == LibraryTab.DEVICE,
+                onClick  = { onTabSelected(LibraryTab.DEVICE) },
+                modifier = Modifier.weight(1f)
+            )
+            LibraryTabItem(
+                icon     = Icons.Rounded.Folder,
+                label    = stringResource(R.string.library_tab_app_files),
+                subtitle = stringResource(R.string.library_tab_file_count, appFilesCount),
+                selected = selectedTab == LibraryTab.APP_FILES,
+                onClick  = { onTabSelected(LibraryTab.APP_FILES) },
+                modifier = Modifier.weight(1f)
+            )
+            // Papelera -- mismo componente visual que las pestañas (ícono +
+            // label + contador, weight(1f)) en vez de una tarjeta de ancho
+            // fijo sin texto. Bug real reportado por el usuario 2026-08-30:
+            // se veía solo el ícono, sin título, y de tamaño distinto.
+            LibraryTabItem(
+                icon     = Icons.Rounded.DeleteOutline,
+                label    = stringResource(R.string.library_trash),
+                subtitle = stringResource(R.string.library_tab_file_count, trashCount),
+                selected = false,
+                onClick  = onTrashClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    } else {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector        = Icons.Rounded.FolderOpen,
-                        contentDescription = stringResource(R.string.library_folder_shortcut_label),
-                        tint               = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                LibraryTabItem(
+                    icon     = Icons.Rounded.PhoneAndroid,
+                    label    = stringResource(R.string.library_tab_device),
+                    subtitle = stringResource(R.string.library_tab_file_count, deviceCount),
+                    selected = selectedTab == LibraryTab.DEVICE,
+                    onClick  = { onTabSelected(LibraryTab.DEVICE) },
+                    modifier = Modifier.weight(1f)
+                )
+                LibraryTabItem(
+                    icon     = Icons.Rounded.Folder,
+                    label    = stringResource(R.string.library_tab_app_files),
+                    subtitle = stringResource(R.string.library_tab_file_count, appFilesCount),
+                    selected = selectedTab == LibraryTab.APP_FILES,
+                    onClick  = { onTabSelected(LibraryTab.APP_FILES) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                LibraryTabItem(
+                    icon     = Icons.Rounded.DeleteOutline,
+                    label    = stringResource(R.string.library_trash),
+                    subtitle = stringResource(R.string.library_tab_file_count, trashCount),
+                    selected = false,
+                    onClick  = onTrashClick,
+                    modifier = Modifier.weight(1f)
+                )
+                // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX):
+                // muestra el nombre real de la carpeta elegida (ej. "DMSS"),
+                // no un genérico "Carpeta" -- pedido explícito del usuario.
+                LibraryTabItem(
+                    icon     = Icons.Rounded.FolderOpen,
+                    label    = linkedFolderName ?: stringResource(R.string.library_folder_shortcut_label),
+                    subtitle = stringResource(R.string.library_folder_shortcut_subtitle),
+                    selected = false,
+                    onClick  = { onOpenFolderClick(linkedFolderUri) },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

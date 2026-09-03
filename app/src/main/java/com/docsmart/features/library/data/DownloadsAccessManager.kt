@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,6 +57,11 @@ class DownloadsAccessManager @Inject constructor(
             Timber.e(e, "DownloadsAccessManager: no se pudo persistir el permiso de $uri")
         }
     }
+
+    // Nombre real de la carpeta que el usuario eligió (ej. "DMSS"), para
+    // mostrarlo en el atajo de Biblioteca en vez de un genérico "Carpeta" --
+    // pedido explícito del usuario 2026-09-03.
+    fun folderDisplayName(uri: Uri): String? = DocumentFile.fromTreeUri(context, uri)?.name
 
     fun unlink() {
         val uri = _linkedFolderUri.value ?: return
