@@ -604,11 +604,6 @@
     <string name="security_no_protected_files_hint">Нажмите «Защитить новый файл», чтобы добавить файлы</string>
     <string name="security_restore">Восстановить</string>
     <string name="security_protect_file_dialog_title">Защитить файл</string>
-    <string name="security_import_source_question">Откуда вы хотите взять файл?</string>
-    <string name="security_from_device">С устройства</string>
-    <string name="security_browse_system_files">Просмотреть системные файлы</string>
-    <string name="security_from_library">Из библиотеки DocuSmart</string>
-    <string name="security_no_library_files">В библиотеке приложения нет файлов</string>
     <string name="pdf_pw_screen_subtitle">Защитите или разблокируйте свои PDF</string>
     <string name="pdf_pw_mode_protect_title">Защитить PDF</string>
     <string name="pdf_pw_mode_protect_desc">Добавьте пароль к PDF-файлу. Открыть его сможет только тот, у кого есть пароль.</string>
@@ -788,4 +783,11 @@
     <string name="trash_delete_all_confirm_body">"%1$d файлов будут удалены навсегда и их больше нельзя будет восстановить."</string>
     <string name="trash_total_size">%1$s в корзине</string>
     <string name="trash_delete_forever_permission_note">Android может попросить подтвердить удаление фото, которые создало не это приложение.</string>
+
+    <!-- ── Выбор файла из библиотеки приложения (пункт #15, FileSourcePickerDialog) ── -->
+    <string name="filepicker_source_question">Откуда взять файл?</string>
+    <string name="filepicker_from_device">С устройства</string>
+    <string name="filepicker_browse_system_files">Просмотреть файлы системы</string>
+    <string name="filepicker_from_library">Из библиотеки DocuSmart</string>
+    <string name="filepicker_no_library_files">В вашей библиотеке пока нет файлов</string>
 </resources>

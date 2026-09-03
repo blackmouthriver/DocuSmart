@@ -35,7 +35,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 12 | Hallazgos de seguridad diferidos de SonarCloud (external storage x5, biometric CryptoObject, dependency verification) | Bug/Deuda técnica | Media | Media-Alta | Medio | Ya listado en `deployment.md` §7 |
 | 13 | Umbral de cobertura `new_coverage` 0% en SonarCloud | Decisión de config | — | — | — | Ya listado en `deployment.md` §7 y `compose-ui-testing.md` §4 |
 | 14 | i18n: agregar ja/ko/zh/it/fr | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5, `settings-premium.md` |
-| 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
+| 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-03** — ver §14 |
 | 16 | Encriptar/quitar contraseña de archivo individual en Seguridad | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug (no verificado) | Media | — | — | Ya listado en `CONTEXT.md` §5 — pendiente reproducir |
@@ -943,3 +943,106 @@ con el contenido nuevo.
    sugerido) empezamos, o hay una prioridad de negocio distinta que deba
    pasar primero (por ejemplo, si hay una fecha de publicación en Play
    Store que condicione qué se aborda antes)?
+
+---
+
+## 14. Mejora — Selector de archivo desde la biblioteca de la app (item #15)
+
+**✅ Implementado y verificado en dispositivo real 2026-09-03.** Seguridad
+y Herramientas PDF solo ofrecían el selector de archivos del sistema
+(`ActivityResultContracts.OpenDocument()`/`GetContent()`) -- ahora
+también pueden elegir un documento ya indexado por la app (la misma
+Biblioteca completa que usa la pantalla Biblioteca, no solo los archivos
+que la app misma generó).
+
+**Investigado antes de construir:** ya existía un intento parcial en
+`SecureFolderContent` (Carpeta Segura) con una sección "Desde mi
+biblioteca", pero solo listaba `uiState.appFiles` -- archivos en las
+carpetas internas `converted`/`pdftools`, es decir, únicamente lo que la
+propia app generó, no Downloads/Imágenes de MediaStore como sí hace la
+Biblioteca real. Contraseña PDF (Proteger/Quitar) y las 12 herramientas
+de un solo PDF de Herramientas PDF no tenían ninguna opción de biblioteca
+en absoluto.
+
+### Qué se hizo
+
+- **`AppLibraryPickerViewModel`** (nuevo, `core/ui/components`): ViewModel
+  mínimo que carga `DocumentRepository.loadAllDocuments()` (mismo
+  inventario que la Biblioteca real, ya excluye lo que está en la
+  Papelera).
+- **`FileSourcePickerDialog`** (nuevo, `core/ui/components`): diálogo
+  compartido con las dos opciones ("Desde el dispositivo" / "Desde la
+  biblioteca de DocuSmart" con lista filtrable) -- reemplaza la UI que ya
+  existía en `SecureFolderContent`, generalizada para reusarse en los
+  demás call sites. Acepta un `filter: (DocumentUiModel) -> Boolean` para
+  restringir tipos (p.ej. solo PDF).
+- **`DocumentUiModel.toContentUri()`** (nuevo, junto al modelo): `id`
+  mezcla `content://...` (Downloads/Imágenes) y rutas absolutas
+  (archivos generados por la app) -- este helper resuelve ambos a un
+  `Uri` legible por `ContentResolver` sin que cada call site tenga que
+  saber la diferencia.
+- **Seguridad → Carpeta Segura**: `SecureFolderContent` migrado al nuevo
+  diálogo compartido -- ahora sí ve la Biblioteca completa, no solo
+  archivos generados por la app. `uiState.appFiles`/`loadAppFiles()`
+  (en `SecurityViewModel`) eliminados por completo al quedar sin ningún
+  uso, junto con las 5 claves de string `security_from_library`/
+  `security_no_library_files`/`security_from_device`/
+  `security_browse_system_files`/`security_import_source_question`
+  (reemplazadas por las nuevas `filepicker_*`, genéricas y compartidas).
+- **Seguridad → Contraseña PDF** (`ProtectPdfForm`/`RemovePdfPasswordForm`
+  en `PdfPasswordScreen.kt`): ganaron la opción de biblioteca (antes no
+  tenían ninguna), filtrada a `DocumentType.PDF`.
+- **Herramientas PDF** (`PdfToolsScreen.kt`): las 12 herramientas de un
+  solo PDF (Dividir, Comprimir, Rotar, etc.) comparten el mismo
+  `singlePdfLauncher`/`onPdfsSelected()`, así que se agregó un único
+  diálogo compartido (`showPdfSourceChooser`) en vez de duplicarlo 12
+  veces -- los 12 `onSelectPdf = { singlePdfLauncher.launch(MIME_PDF) }`
+  pasaron a `onSelectPdf = { showPdfSourceChooser = true }`.
+  **Fuera de alcance a propósito**: Combinar (`multiPdfLauncher`,
+  selección múltiple) y Comparar (`comparePdfALauncher`/
+  `comparePdfBLauncher`, dos selectores independientes) quedan solo con
+  el selector del sistema -- extender el patrón ahí es un esfuerzo aparte
+  (selección múltiple desde biblioteca, o dos diálogos idénticos
+  simultáneos) que no se justificaba en esta pasada.
+
+### Hallazgo real encontrado durante la verificación (no relacionado con este ítem, no corregido)
+
+Al verificar en dispositivo real, el filtro a PDF en Contraseña PDF
+mostraba **"No hay archivos en tu biblioteca todavía"** pese a que el
+dispositivo tiene decenas de PDFs reales (confirmado con
+`adb shell content query --uri content://media/external/downloads`).
+Diagnosticado con los logs de `DocumentRepository`
+(`Timber.d("Downloads: ${documents.size} documentos")`): **la consulta a
+`MediaStore.Downloads` devuelve 0 filas en este dispositivo**, mientras
+que `Imágenes: 50` sí carga bien -- confirmado que el selector nuevo
+funciona correctamente probándolo sin el filtro de PDF (Carpeta Segura),
+donde sí mostró y protegió con éxito un archivo real de la Biblioteca.
+
+Causa probable: todos los PDFs de Downloads en este dispositivo tienen
+`owner_package_name=NULL` (confirmado por consulta directa) -- es decir,
+ninguno fue insertado vía `MediaStore.insert()` desde la propia app, sino
+escrito directo a `/sdcard/Download/` y detectado después por el escáner
+de medios. Bajo almacenamiento con ámbito (scoped storage, Android 10+),
+un app sin `READ_EXTERNAL_STORAGE` (o con él pero sin efecto real en
+API 33+) generalmente no puede enumerar filas de Downloads que no posee,
+a diferencia de Imágenes que sí quedó visible vía `READ_MEDIA_IMAGES`
+(ya concedido). **Esto no es un bug de este ítem** -- es una limitación
+preexistente de `DocumentRepository.loadPdfsFromDownloads()` que
+probablemente afecta también al conteo de la categoría "PDF" en la
+pantalla Biblioteca real, sin relación con el trabajo de hoy. Catalogado
+como hallazgo nuevo para investigar aparte, no corregido en esta pasada.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo)
+
+- `compileDebugKotlin`, `detekt`, `lintDebug`, `testDebugUnitTest` en
+  verde tras corregir 2 imports con wildcard (`WildcardImport` de
+  detekt) en `FileSourcePickerDialog.kt`.
+- `connectedDebugAndroidTest` de `SecurityScreenTest` y
+  `PdfToolsScreenTest` (3/3, 0 fallos) -- sin regresiones tras eliminar
+  `appFiles`.
+- Flujo completo verificado a mano: Seguridad → Contraseña PDF → Proteger
+  PDF → selector nuevo (muestra "No hay archivos" para PDF por el
+  hallazgo de arriba, esperado); Seguridad → Carpeta Segura → Proteger
+  nuevo archivo → selector nuevo → biblioteca muestra 4 archivos reales
+  (imágenes) con nombre y tamaño correctos → seleccionar uno lo protege
+  de punta a punta (aparece en "Archivos protegidos").
