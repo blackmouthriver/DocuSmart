@@ -166,6 +166,11 @@
     <string name="viewer_delete_confirm_title">Dieses Dokument löschen?</string>
     <string name="viewer_delete_confirm_body">"%1$s wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."</string>
 
+    <!-- ── Dokumentmenü (Home/Bibliothek, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">Zu Favoriten hinzufügen</string>
+    <string name="doc_item_remove_favorite">Aus Favoriten entfernen</string>
+    <string name="doc_item_rename_title">Datei umbenennen</string>
+
     <!-- ── Allgemein ────────────────────────────────── -->
     <string name="general_save">Speichern</string>
     <string name="general_cancel">Abbrechen</string>
@@ -781,4 +786,6 @@
     <string name="trash_delete_all">Alle löschen</string>
     <string name="trash_delete_all_confirm_title">Papierkorb leeren?</string>
     <string name="trash_delete_all_confirm_body">"%1$d Dateien werden endgültig gelöscht und können nicht mehr wiederhergestellt werden."</string>
+    <string name="trash_total_size">%1$s im Papierkorb</string>
+    <string name="trash_delete_forever_permission_note">Android bittet dich möglicherweise, das Löschen von Fotos zu bestätigen, die diese App nicht erstellt hat.</string>
 </resources>

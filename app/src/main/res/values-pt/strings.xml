@@ -166,6 +166,11 @@
     <string name="viewer_delete_confirm_title">Excluir este documento?</string>
     <string name="viewer_delete_confirm_body">"%1$s será excluído permanentemente. Esta ação não pode ser desfeita."</string>
 
+    <!-- ── Menu do documento (Início/Biblioteca, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">Adicionar aos favoritos</string>
+    <string name="doc_item_remove_favorite">Remover dos favoritos</string>
+    <string name="doc_item_rename_title">Renomear arquivo</string>
+
     <!-- ── Geral ────────────────────────────────── -->
     <string name="general_save">Salvar</string>
     <string name="general_cancel">Cancelar</string>
@@ -781,4 +786,6 @@
     <string name="trash_delete_all">Excluir tudo</string>
     <string name="trash_delete_all_confirm_title">Esvaziar a lixeira?</string>
     <string name="trash_delete_all_confirm_body">"%1$d arquivos serão excluídos para sempre e não poderão mais ser recuperados."</string>
+    <string name="trash_total_size">%1$s na lixeira</string>
+    <string name="trash_delete_forever_permission_note">O Android pode pedir que você confirme a exclusão de fotos que este app não criou.</string>
 </resources>

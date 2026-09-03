@@ -27,6 +27,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -50,6 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import java.util.Locale
 
 /**
  * RF-VIS-07: papelera de reciclaje -- documentos "eliminados" desde
@@ -129,6 +131,16 @@ fun TrashScreen(
 
         if (uiState.items.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
+            // H5 (backlog-mejoras-ux-2026-08-30.md §12): a diferencia de
+            // Ajustes → Almacenamiento, la Papelera no comunicaba cuánto
+            // espacio liberaría "Borrar todo".
+            val totalSize = formatTrashSize(uiState.items.sumOf { it.document.sizeBytes })
+            Text(
+                text  = stringResource(R.string.trash_total_size, totalSize),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick  = { pendingDeleteAll = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -250,7 +262,12 @@ private fun TrashItemCard(
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onRestore, modifier = Modifier.weight(1f)) {
+                // H3 (backlog-mejoras-ux-2026-08-30.md §12): antes ambos
+                // botones eran OutlinedButton con el mismo peso visual --
+                // "Restaurar" (reversible) pasa a relleno/tonal para que
+                // destaque más que "Eliminar ahora" (irreversible), en vez
+                // de diferenciarse solo por el color de texto.
+                FilledTonalButton(onClick = onRestore, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.trash_restore))
@@ -302,7 +319,20 @@ private fun TrashDeleteForeverDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.trash_delete_forever_confirm_title)) },
-        text  = { Text(stringResource(R.string.trash_delete_forever_confirm_body, fileName)) },
+        text  = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.trash_delete_forever_confirm_body, fileName))
+                // H2 (backlog-mejoras-ux-2026-08-30.md §12): Android puede
+                // pedir un permiso del sistema para borrar fotos que la
+                // app no creó (MediaStore) -- se avisa antes de que
+                // aparezca, para que no se sienta como un paso inesperado.
+                Text(
+                    text  = stringResource(R.string.trash_delete_forever_permission_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
@@ -315,4 +345,14 @@ private fun TrashDeleteForeverDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
         }
     )
+}
+
+// H5 (backlog-mejoras-ux-2026-08-30.md §12): mismo formato que
+// DocumentRepository.formatSize(), duplicado acá a propósito -- es
+// privado en DocumentRepository y esta pantalla solo necesita el total,
+// no vale la pena exponer la función solo para reusar 4 líneas.
+private fun formatTrashSize(bytes: Long): String = when {
+    bytes < 1024        -> "$bytes B"
+    bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+    else                -> String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
 }
