@@ -2,10 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- ── Almacenamiento — API 28 y menor ───────────── -->
+    <!-- ── Almacenamiento — API 32 y menor ───────────── -->
+    <!-- Hallazgo real 2026-09-03 (fila 22, backlog-mejoras-ux-2026-08-30.md
+         §14): antes topaba en maxSdkVersion=28, dejando API 29-32 sin este
+         permiso pese a que en esas versiones SÍ es necesario y SÍ tiene
+         efecto real para ver documentos de Descargas creados por otras
+         apps (a diferencia de API 33+, donde este permiso ya no tiene
+         ningún efecto — confirmado, no es una suposición). -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+        android:maxSdkVersion="32" />
 
     <!-- ── Almacenamiento — API 29 a 32 ─────────────── -->
     <uses-permission
@@ -20,10 +26,15 @@
     <uses-permission
         android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
         android:minSdkVersion="34" />
-    <!-- Para leer documentos PDF en Android 13+ -->
-    <uses-permission
-        android:name="android.permission.READ_MEDIA_DOCUMENTS"
-        android:minSdkVersion="33" />
+    <!-- android.permission.READ_MEDIA_DOCUMENTS — ELIMINADO 2026-09-03:
+         no existe como permiso real de Android (confirmado). Documentos
+         (PDF/Word/Excel/PowerPoint/Texto) de otras apps en Descargas no
+         tienen ningún permiso equivalente a READ_MEDIA_IMAGES en API 33+
+         — solo Storage Access Framework (ACTION_OPEN_DOCUMENT, ya usado
+         por "Desde el dispositivo") o MANAGE_EXTERNAL_STORAGE (acceso a
+         todos los archivos, restringido por política de Play Store, no
+         solicitado a propósito). Ver
+         backlog-mejoras-ux-2026-08-30.md §16/fila 22 para el detalle. -->
     <!-- ── Requerido por AdMob ───────────────────────── -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />

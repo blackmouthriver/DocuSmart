@@ -35,14 +35,14 @@ priorización para decidir qué se aborda y en qué orden.
 | 12 | Hallazgos de seguridad diferidos de SonarCloud (external storage x5, biometric CryptoObject, dependency verification) | Bug/Deuda técnica | Media | Media-Alta | Medio | Ya listado en `deployment.md` §7 |
 | 13 | Umbral de cobertura `new_coverage` 0% en SonarCloud | Decisión de config | — | — | — | Ya listado en `deployment.md` §7 y `compose-ui-testing.md` §4 |
 | 14 | i18n: agregar ja/ko/zh/it/fr | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5, `settings-premium.md` |
-| 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-03** — ver §14 |
+| 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-03** — ver §15 |
 | 16 | Encriptar/quitar contraseña de archivo individual en Seguridad | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug (no verificado) | Media | — | — | Ya listado en `CONTEXT.md` §5 — pendiente reproducir |
 | 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-30** — ver §13 |
 | 20 | H1: texto "Eliminar del historial" engañoso (en realidad mueve a la papelera real) | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §12, hallazgo H1 |
 | 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | **✅ Corregido y verificado 2026-09-03** — ver §12, hallazgo H6 |
-| 22 | `DocumentRepository.loadPdfsFromDownloads()` no ve PDF/Word/Excel/PowerPoint reales de Descargas sin `owner_package_name` propio (scoped storage); Texto ni siquiera está en el filtro de mimeTypes de esa consulta | Bug | Media-Alta | Media | Medio | Nuevo, encontrado 2026-09-03 al verificar #15, confirmado por el usuario que afecta los 5 formatos — ver §14 |
+| 22 | `DocumentRepository.loadPdfsFromDownloads()` no ve PDF/Word/Excel/PowerPoint reales de Descargas sin `owner_package_name` propio (scoped storage); Texto ni siquiera está en el filtro de mimeTypes de esa consulta | Bug | Media-Alta | Media | Medio | **🟡 Corregido lo corregible 2026-09-03 (Texto + permiso falso + API 29-32); la limitación de scoped storage en API 33+ es de la plataforma, sin fix de código posible** — ver §16 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -947,7 +947,7 @@ con el contenido nuevo.
 
 ---
 
-## 14. Mejora — Selector de archivo desde la biblioteca de la app (item #15)
+## 15. Mejora — Selector de archivo desde la biblioteca de la app (item #15)
 
 **✅ Implementado y verificado en dispositivo real 2026-09-03.** Seguridad
 y Herramientas PDF solo ofrecían el selector de archivos del sistema
@@ -1089,3 +1089,75 @@ problemas distintos** dentro de la misma función, no uno:
   nuevo archivo → selector nuevo → biblioteca muestra 4 archivos reales
   (imágenes) con nombre y tamaño correctos → seleccionar uno lo protege
   de punta a punta (aparece en "Archivos protegidos").
+
+## 16. Bug — Fila 22: `loadDocumentsFromDownloads()` no ve documentos reales de Descargas
+
+**🟡 Corregido lo corregible en dispositivo real 2026-09-03 -- la parte de
+fondo (scoped storage en API 33+) es una restricción real de la
+plataforma, no un bug de código, confirmado por búsqueda externa antes
+de tocar nada.**
+
+### Investigado antes de corregir
+
+Confirmado con una búsqueda externa (no asumido) que
+`android.permission.READ_MEDIA_DOCUMENTS` -- ya declarado en
+`AndroidManifest.xml` con el comentario "Para leer documentos PDF en
+Android 13+" -- **no existe como permiso real de Android**. Es decir, un
+intento de arreglo de una sesión anterior declaró un permiso que
+Android nunca reconoce, sin ningún efecto (ni bueno ni malo) sobre la
+consulta real. También confirmado: "Starting in API level 33, the
+READ_EXTERNAL_STORAGE permission has no effect anymore" -- en Android
+13+ no existe ningún permiso equivalente a `READ_MEDIA_IMAGES` para
+documentos (PDF/Word/Excel/PowerPoint/Texto) de otras apps; la única vía
+oficial es Storage Access Framework (`ACTION_OPEN_DOCUMENT`, ya usado
+por "Desde el dispositivo") o `MANAGE_EXTERNAL_STORAGE` (acceso a todos
+los archivos, restringido por política de Play Store).
+
+### Qué se corrigió
+
+- **`AndroidManifest.xml`**: `android.permission.READ_MEDIA_DOCUMENTS`
+  eliminado (no existe, no hacía nada). `READ_EXTERNAL_STORAGE` amplió su
+  `maxSdkVersion` de 28 a 32 -- en API 29-32 este permiso **sí** sigue
+  teniendo efecto real para ver documentos de Descargas creados por
+  otras apps (el corte real a "sin efecto" es específicamente API 33+,
+  no antes), así que estaba dejando sin cubrir un rango de versiones
+  donde el fix sí funciona.
+- **`DocumentRepository.kt`**: función renombrada de
+  `loadPdfsFromDownloads()` a `loadDocumentsFromDownloads()` -- el
+  nombre anterior era engañoso, siempre consultó PDF+Word+Excel+
+  PowerPoint juntos en una sola consulta, nunca solo PDF. Se agregó
+  `"text/plain"`/`"text/markdown"` a la lista `mimeTypes` -- antes ni
+  siquiera estaban en el filtro, así que un `.txt`/`.md` de Descargas no
+  llegaba a evaluarse sin importar el propietario (bug independiente del
+  de scoped storage, con arreglo real y completo sin importar la
+  versión de Android).
+- `config/detekt/baseline.xml`: la entrada `NestedBlockDepth` para esta
+  función se actualizó a mano con el nuevo nombre (el detekt existente
+  ya estaba baselineado, solo quedó huérfano por el rename).
+
+### Qué sigue sin arreglo posible (limitación de la plataforma, no de código)
+
+En Android 13+ (API 33+, incluido el Motorola Edge 30 Neo usado para
+verificar esta sesión), **ningún cambio de código puede hacer que la app
+vea PDF/Word/Excel/PowerPoint de Descargas que ella misma no creó** --
+es una restricción deliberada de scoped storage sin permiso equivalente
+disponible. Las únicas rutas reales para ese caso son Storage Access
+Framework (ya cubierto por "Desde el dispositivo") o
+`MANAGE_EXTERNAL_STORAGE` (decisión de producto/política, no tomada acá
+sin pedirlo explícitamente). El fix de "Texto" sí es completo y real,
+pero en la práctica solo se notará para archivos de texto que la propia
+app cree vía `MediaStore.insert()` correctamente atribuido (ningún flujo
+actual de DocuSmart genera `.txt` a Descargas todavía) o en dispositivos
+API 29-32 reales.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `compileDebugKotlin`, `detekt` (tras actualizar el baseline),
+  `lintDebug`, `testDebugUnitTest` en verde.
+- `connectedDebugAndroidTest` de Biblioteca/Seguridad/Herramientas PDF
+  (9/9, 0 fallos) -- sin regresiones por el rename ni por el cambio de
+  manifest.
+- No se pudo demostrar visualmente "ahora sí aparecen documentos
+  externos" en este dispositivo a propósito -- es API 34, exactamente el
+  caso donde la limitación de plataforma sigue aplicando después del
+  fix (comportamiento esperado, no una falla de la corrección).
