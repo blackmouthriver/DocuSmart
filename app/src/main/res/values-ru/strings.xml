@@ -790,4 +790,17 @@
     <string name="filepicker_browse_system_files">Просмотреть файлы системы</string>
     <string name="filepicker_from_library">Из библиотеки DocuSmart</string>
     <string name="filepicker_no_library_files">В вашей библиотеке пока нет файлов</string>
+
+    <!-- ── Привязка папки Загрузки через SAF (пункт 22 бэклога UX) ── -->
+    <string name="library_link_downloads_title">Смотрите больше документов здесь</string>
+    <string name="library_link_downloads_body">Android не позволяет приложениям автоматически показывать PDF, Word, Excel, PowerPoint или текстовые файлы других приложений, а также привязать всю папку Загрузки целиком. Выберите или создайте вложенную папку (например, внутри Загрузок), чтобы видеть их здесь.</string>
+    <string name="library_link_downloads_button">Привязать папку</string>
+
+    <!-- ── Настройки: управление привязанной папкой (пункт 22 бэклога UX) ── -->
+    <string name="settings_linked_downloads_title">Привязанная папка</string>
+    <string name="settings_linked_downloads_linked">Привязана · нажмите, чтобы отвязать</string>
+    <string name="settings_linked_downloads_not_linked">Не привязана · нажмите, чтобы привязать</string>
+    <string name="settings_unlink_downloads_title">Отвязать папку?</string>
+    <string name="settings_unlink_downloads_body">Вы перестанете видеть файлы из Загрузок на вкладке Устройство в Библиотеке. Вы можете привязать её снова в любое время.</string>
+    <string name="settings_unlink_downloads_confirm">Отвязать</string>
 </resources>

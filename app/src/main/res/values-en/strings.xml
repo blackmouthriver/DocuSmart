@@ -789,4 +789,17 @@
     <string name="filepicker_browse_system_files">Browse system files</string>
     <string name="filepicker_from_library">From DocuSmart\'s library</string>
     <string name="filepicker_no_library_files">You don\'t have any files in your library yet</string>
+
+    <!-- ── Link Downloads folder via SAF (UX backlog row 22) ── -->
+    <string name="library_link_downloads_title">See more documents here</string>
+    <string name="library_link_downloads_body">Android doesn\'t let apps automatically show PDF, Word, Excel, PowerPoint or Text files from other apps, or link the whole Downloads folder. Choose or create a subfolder (for example, inside Downloads) to see them here.</string>
+    <string name="library_link_downloads_button">Link folder</string>
+
+    <!-- ── Settings: manage linked folder (UX backlog row 22) ── -->
+    <string name="settings_linked_downloads_title">Linked folder</string>
+    <string name="settings_linked_downloads_linked">Linked · tap to unlink</string>
+    <string name="settings_linked_downloads_not_linked">Not linked · tap to link</string>
+    <string name="settings_unlink_downloads_title">Unlink folder?</string>
+    <string name="settings_unlink_downloads_body">You\'ll stop seeing Downloads files in Library\'s Device tab. You can link it again anytime.</string>
+    <string name="settings_unlink_downloads_confirm">Unlink</string>
 </resources>

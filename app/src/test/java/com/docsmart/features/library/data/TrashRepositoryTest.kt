@@ -47,7 +47,10 @@ class TrashRepositoryTest {
         favorites = mockk()
         coEvery { favorites.removeAlias(any()) } just Runs
         val mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
-        documentRepository = DocumentRepository(context, favorites, historyDao, trashDao, mediaDeletePermission)
+        documentRepository = DocumentRepository(
+            context, favorites, historyDao, trashDao, mediaDeletePermission,
+            mockk<DownloadsAccessManager>(relaxed = true)
+        )
         repository = TrashRepository(documentRepository, trashDao, historyDao, favorites, mediaDeletePermission)
     }
 

@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.PhoneAndroid
@@ -65,6 +66,15 @@ fun LibraryScreen(
         permissionDenied = permissions.values.all { !it }
         if (hasPermission) viewModel.loadDocuments()
     }
+
+    // Fila 22 del backlog UX: vincular Descargas por SAF para ver PDF/Word/
+    // Excel/PowerPoint/Texto reales del dispositivo (ver DownloadsAccessManager
+    // -- en Android 13+ no hay permiso equivalente a READ_MEDIA_IMAGES para
+    // documentos que otras apps dejaron en Descargas).
+    val linkedFolderUri by viewModel.linkedDownloadsFolderUri.collectAsStateWithLifecycle()
+    val linkFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
 
     LaunchedEffect(Unit) {
         if (!hasPermission) permissionLauncher.launch(getRequiredPermissions())
@@ -136,6 +146,20 @@ fun LibraryScreen(
                 onTabSelected = { viewModel.onTabSelected(it) },
                 onTrashClick  = onTrashClick
             )
+        }
+
+        // ── Vincular Descargas (fila 22 backlog UX): solo en la pestaña
+        // Dispositivo y mientras no haya carpeta vinculada -- una vez vinculada,
+        // loadDocumentsFromLinkedFolder() ya trae PDF/Word/Excel/PowerPoint/
+        // Texto reales y esta tarjeta deja de tener sentido.
+        if (uiState.selectedTab == LibraryTab.DEVICE && linkedFolderUri == null) {
+            item {
+                LinkDownloadsFolderCard(
+                    onLinkClick = {
+                        linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
+                    }
+                )
+            }
         }
 
         // ── Filtros de categoría (FlowRow) ────────────────────────────────────
@@ -298,6 +322,60 @@ private fun LibraryTabItem(
                 maxLines  = 1,
                 overflow  = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+// ── Vincular carpeta de Descargas (SAF) ────────────────────────────────────────
+// Fila 22 del backlog UX: en Android 13+ no hay forma de que la app vea, solo
+// con permisos, los PDF/Word/Excel/PowerPoint/Texto que otras apps (el
+// navegador, WhatsApp, etc.) dejaron en Descargas -- la única alternativa real
+// (sin pedir "acceso a todos los archivos") es que el usuario vincule la
+// carpeta una vez con el selector nativo de Android.
+@Composable
+private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        shape  = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier            = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment    = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector        = Icons.Rounded.CreateNewFolder,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text       = stringResource(R.string.library_link_downloads_title),
+                    style      = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Text(
+                text  = stringResource(R.string.library_link_downloads_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Button(
+                onClick = onLinkClick,
+                shape   = MaterialTheme.shapes.medium,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text(stringResource(R.string.library_link_downloads_button))
+            }
         }
     }
 }

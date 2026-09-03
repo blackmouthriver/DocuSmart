@@ -790,4 +790,17 @@
     <string name="filepicker_browse_system_files">Explorar archivos del sistema</string>
     <string name="filepicker_from_library">Desde la biblioteca de DocuSmart</string>
     <string name="filepicker_no_library_files">No hay archivos en tu biblioteca todavía</string>
+
+    <!-- ── Vincular carpeta de Descargas por SAF (fila 22 backlog UX) ── -->
+    <string name="library_link_downloads_title">Ver más documentos aquí</string>
+    <string name="library_link_downloads_body">Android no permite mostrar automáticamente los PDF, Word, Excel, PowerPoint o Texto de otras apps, ni vincular la carpeta Descargas completa. Elige o crea una subcarpeta (por ejemplo, dentro de Descargas) para verlos aquí.</string>
+    <string name="library_link_downloads_button">Vincular carpeta</string>
+
+    <!-- ── Ajustes: gestionar carpeta vinculada (fila 22 backlog UX) ── -->
+    <string name="settings_linked_downloads_title">Carpeta vinculada</string>
+    <string name="settings_linked_downloads_linked">Vinculada · toca para desvincular</string>
+    <string name="settings_linked_downloads_not_linked">Sin vincular · toca para vincular</string>
+    <string name="settings_unlink_downloads_title">¿Desvincular carpeta?</string>
+    <string name="settings_unlink_downloads_body">Dejarás de ver los archivos de Descargas en la pestaña Dispositivo de Biblioteca. Puedes volver a vincularla cuando quieras.</string>
+    <string name="settings_unlink_downloads_confirm">Desvincular</string>
 </resources>

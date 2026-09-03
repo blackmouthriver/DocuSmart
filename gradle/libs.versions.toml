@@ -16,12 +16,14 @@ foundation = "1.11.0"
 compiler = "3.2.0-alpha11"
 room = "2.8.4"
 sqlite = "2.7.0"
+documentfile = "1.0.1"
 billing = "9.1.0"
 detekt = "1.23.7"
 sonarqube = "7.4.0.8496"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
+androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }

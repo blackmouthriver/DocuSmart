@@ -790,4 +790,17 @@
     <string name="filepicker_browse_system_files">Explorar arquivos do sistema</string>
     <string name="filepicker_from_library">Da biblioteca do DocuSmart</string>
     <string name="filepicker_no_library_files">Você ainda não tem arquivos na sua biblioteca</string>
+
+    <!-- ── Vincular pasta de Downloads via SAF (item 22 do backlog UX) ── -->
+    <string name="library_link_downloads_title">Veja mais documentos aqui</string>
+    <string name="library_link_downloads_body">O Android não permite que apps mostrem automaticamente PDF, Word, Excel, PowerPoint ou Texto de outros apps, nem vincular a pasta Downloads inteira. Escolha ou crie uma subpasta (por exemplo, dentro de Downloads) para vê-los aqui.</string>
+    <string name="library_link_downloads_button">Vincular pasta</string>
+
+    <!-- ── Ajustes: gerenciar pasta vinculada (item 22 backlog UX) ── -->
+    <string name="settings_linked_downloads_title">Pasta vinculada</string>
+    <string name="settings_linked_downloads_linked">Vinculada · toque para desvincular</string>
+    <string name="settings_linked_downloads_not_linked">Não vinculada · toque para vincular</string>
+    <string name="settings_unlink_downloads_title">Desvincular pasta?</string>
+    <string name="settings_unlink_downloads_body">Você deixará de ver os arquivos de Downloads na aba Dispositivo da Biblioteca. Pode vincular novamente quando quiser.</string>
+    <string name="settings_unlink_downloads_confirm">Desvincular</string>
 </resources>

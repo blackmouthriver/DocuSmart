@@ -790,4 +790,17 @@
     <string name="filepicker_browse_system_files">Systemdateien durchsuchen</string>
     <string name="filepicker_from_library">Aus der DocuSmart-Bibliothek</string>
     <string name="filepicker_no_library_files">Du hast noch keine Dateien in deiner Bibliothek</string>
+
+    <!-- ── Downloads-Ordner per SAF verknüpfen (UX-Backlog Zeile 22) ── -->
+    <string name="library_link_downloads_title">Mehr Dokumente hier sehen</string>
+    <string name="library_link_downloads_body">Android erlaubt Apps nicht, PDF-, Word-, Excel-, PowerPoint- oder Textdateien anderer Apps automatisch anzuzeigen, oder den kompletten Downloads-Ordner zu verknüpfen. Wähle oder erstelle einen Unterordner (z. B. innerhalb von Downloads), um sie hier zu sehen.</string>
+    <string name="library_link_downloads_button">Ordner verknüpfen</string>
+
+    <!-- ── Einstellungen: verknüpften Ordner verwalten (UX-Backlog Zeile 22) ── -->
+    <string name="settings_linked_downloads_title">Verknüpfter Ordner</string>
+    <string name="settings_linked_downloads_linked">Verknüpft · zum Trennen tippen</string>
+    <string name="settings_linked_downloads_not_linked">Nicht verknüpft · zum Verknüpfen tippen</string>
+    <string name="settings_unlink_downloads_title">Ordner trennen?</string>
+    <string name="settings_unlink_downloads_body">Du siehst die Downloads-Dateien dann nicht mehr im Geräte-Tab der Bibliothek. Du kannst den Ordner jederzeit erneut verknüpfen.</string>
+    <string name="settings_unlink_downloads_confirm">Trennen</string>
 </resources>

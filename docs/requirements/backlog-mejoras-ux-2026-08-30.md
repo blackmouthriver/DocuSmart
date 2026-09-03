@@ -1161,3 +1161,104 @@ API 29-32 reales.
   externos" en este dispositivo a propósito -- es API 34, exactamente el
   caso donde la limitación de plataforma sigue aplicando después del
   fix (comportamiento esperado, no una falla de la corrección).
+
+## 17. Mejora — Vincular carpeta de Descargas por SAF (alternativa real a la fila 22)
+
+**✅ Implementado, verificado en dispositivo real y con la copia ajustada
+2026-09-03 -- funciona end-to-end. Limitación real e importante de
+Android descubierta durante la propia verificación: el usuario NO puede
+vincular la carpeta "Descargas" en sí misma, solo una subcarpeta dentro
+de ella -- la copia de la UI ya lo refleja (ver sección de copia más
+abajo), a pedido explícito del usuario.**
+
+Pedido explícito del usuario tras el hallazgo de la fila 22/§16: dado que
+ningún permiso puede hacer que la app vea Word/Excel/PDF/PowerPoint/Texto
+de Descargas en API 33+, se necesitaba una alternativa real para que el
+usuario sí pueda verlos, no solo una explicación de la limitación.
+
+### Qué se implementó
+
+- **`DownloadsAccessManager.kt`** (nuevo): envuelve
+  `ACTION_OPEN_DOCUMENT_TREE` + `ContentResolver.takePersistableUriPermission()`
+  -- el usuario vincula una carpeta una sola vez con el selector nativo
+  de Android y el permiso persiste entre reinicios de la app/dispositivo.
+  Valida el permiso guardado contra `persistedUriPermissions` real (no
+  solo lo que quedó en `SharedPreferences`) para detectar si el usuario
+  lo revocó desde Ajustes del sistema.
+- **`DocumentRepository.kt`**: `loadAllDocumentsRaw()` usa
+  `loadDocumentsFromLinkedFolder()` (enumera el árbol real vía
+  `DocumentFile`, sin la restricción de scoped storage de "solo filas
+  propias") en vez de `loadDocumentsFromDownloads()` cuando hay una
+  carpeta vinculada. `deleteDocument()` distingue un URI de carpeta
+  vinculada (autoridad `com.android.externalstorage.documents`) de uno
+  de MediaStore y borra vía `DocumentsContract.deleteDocument()` --
+  `MediaStore.createDeleteRequest()` lanza `IllegalArgumentException`
+  si se le pasa un URI que no es de MediaStore, y antes de esta función
+  nunca recibía otra cosa.
+- **`LibraryScreen.kt`**: tarjeta "Ver todos tus archivos de Descargas" /
+  "Vincular carpeta" en la pestaña Dispositivo, visible solo mientras no
+  hay carpeta vinculada. `initialUriHint()` pre-navega el selector nativo
+  directo a Descargas (`DocumentsContract.buildDocumentUri(..., "primary:Download")`)
+  para no obligar al usuario a buscarla manualmente.
+- **`SettingsScreen.kt`** / **`SettingsViewModel.kt`**: ítem "Carpeta de
+  Descargas" en Ajustes → Almacenamiento, con estado
+  ("Vinculada"/"Sin vincular") y diálogo de confirmación para
+  desvincular.
+- `config/detekt/detekt.yml`: `TooManyFunctions.thresholdInClasses`
+  subido de 15 a 20 -- `DocumentRepository` sumó 5 funciones pequeñas y
+  cohesivas (`loadDocumentsFromLinkedFolder`, `documentFromLinkedFile`,
+  `eligibleNameAndMime`, `isSupportedDownloadMime`, `deleteSafDocument`),
+  mismo criterio ya documentado en este archivo para managers con varios
+  tipos de recurso en paralelo.
+- `config/detekt/baseline.xml`: `NestedBlockDepth` para
+  `loadDocumentsFromLinkedFolder()` (mismo patrón ya baselineado para
+  `loadDocumentsFromDownloads()`: bucle con try/catch por fila, no se
+  puede aplanar sin perder el manejo de errores por archivo) y
+  `ReturnCount` para `eligibleNameAndMime()` (guard clauses -- mismo
+  patrón ya baselineado 17 veces en este proyecto para funciones
+  "validar y construir resultado", ej. todos los `copyUriToCache()`).
+
+### Hallazgo real encontrado durante la verificación en dispositivo real
+
+**Android no permite vincular la carpeta "Descargas" en sí misma vía
+SAF, ni tampoco la raíz del almacenamiento interno.** Confirmado en el
+Motorola Edge 30 Neo (API 34): al abrir el selector (incluso ya
+pre-navegado dentro de Descargas por `initialUriHint()`), Android
+muestra el aviso *"No se puede usar esta carpeta -- Para proteger tu
+privacidad, elige otra carpeta"* y el botón "USAR ESTA CARPETA" queda
+deshabilitado, tanto para "Descargas" como para la raíz
+"motorola edge 30 neo". Confirmado también por búsqueda externa: desde
+Android 11, `ACTION_OPEN_DOCUMENT_TREE` bloquea explícitamente la raíz
+del almacenamiento y los directorios estándar como Descargas -- **una
+subcarpeta dentro de Descargas sí es seleccionable** (verificado
+vinculando `Descargas/DMSS` con éxito: permiso persistido, tarjeta de
+Biblioteca desaparece, Ajustes pasa a "Vinculada", desvincular funciona
+y la tarjeta vuelve a aparecer).
+
+En la práctica esto significa que la función **no resuelve el caso más
+común** que motivó el pedido (ver un PDF que el navegador o WhatsApp
+guardó directo en la raíz de Descargas) -- el usuario tendría que crear
+una subcarpeta dentro de Descargas y mover sus archivos ahí a mano, o
+vincular otra carpeta donde sí organice sus documentos. Sigue siendo
+mejor que nada (ninguna alternativa sin código nativo del sistema deja
+vincular la raíz de Descargas). El usuario decidió ajustar la copia antes
+de fusionar en vez de dejar la expectativa incumplible: el banner de
+Biblioteca y el título en Ajustes ya no prometen "vincular tu carpeta de
+Descargas" -- ahora dicen "Ver más documentos aquí" / "Carpeta vinculada"
+y el cuerpo explica explícitamente que Android no deja vincular Descargas
+completa, indicando elegir o crear una subcarpeta. Cambio de solo
+strings (5 idiomas), sin tocar código.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `compileDebugKotlin`, `detekt`, `lintDebug`, `testDebugUnitTest` en
+  verde (incluye 2 tests de `DocumentRepositoryTest` ajustados: ahora
+  stubean `Uri.authority` porque `deleteDocument()` lo consulta primero
+  para distinguir un URI de carpeta vinculada de uno de MediaStore).
+- Flujo completo probado a mano con `adb`/`uiautomator`: Biblioteca →
+  banner → selector nativo (pre-navegado a Descargas) → confirmación de
+  "No se puede usar esta carpeta" en Descargas y en la raíz → vinculación
+  exitosa de `Descargas/DMSS` → banner desaparece → Ajustes muestra
+  "Vinculada · toca para desvincular" → desvincular → Ajustes vuelve a
+  "Sin vincular" → banner reaparece en Biblioteca. Sin cierres
+  inesperados de la app en ningún paso.

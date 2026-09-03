@@ -1,5 +1,6 @@
 package com.docsmart.features.library.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
@@ -7,6 +8,7 @@ import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
+import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,11 +41,29 @@ class LibraryViewModel @Inject constructor(
     val adManager          : AdManager,
     private val repository : DocumentRepository,
     private val trashRepository: TrashRepository,
-    private val favoritesRepository: FavoritesRepository
+    private val favoritesRepository: FavoritesRepository,
+    private val downloadsAccessManager: DownloadsAccessManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
+
+    // Fila 22 del backlog UX: si el usuario vinculó Descargas por SAF, la
+    // Biblioteca ve todos los PDF/Word/Excel/PowerPoint/Texto de esa
+    // carpeta, no solo los que la app misma generó (ver DownloadsAccessManager).
+    val linkedDownloadsFolderUri: StateFlow<Uri?> = downloadsAccessManager.linkedFolderUri
+
+    fun downloadsFolderPickerInitialUri(): Uri? = downloadsAccessManager.initialUriHint()
+
+    fun onDownloadsFolderPicked(uri: Uri) {
+        downloadsAccessManager.onFolderPicked(uri)
+        loadDocuments()
+    }
+
+    fun unlinkDownloadsFolder() {
+        downloadsAccessManager.unlink()
+        loadDocuments()
+    }
 
     init {
         loadDocuments()
