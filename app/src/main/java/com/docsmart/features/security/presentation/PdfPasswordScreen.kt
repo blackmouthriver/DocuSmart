@@ -23,7 +23,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.docsmart.R
+import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.FileSourcePickerDialog
+import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.features.security.domain.PdfPasswordMessages
 
 @Composable
@@ -239,6 +242,7 @@ private fun ProtectPdfForm(
     var password     by remember { mutableStateOf("") }
     var confirmPass  by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var showSourceChooser by remember { mutableStateOf(false) }
 
     val pdfLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -255,6 +259,25 @@ private fun ProtectPdfForm(
                 }
             }
         }
+    }
+
+    // Item #15 del backlog UX: ofrece elegir un PDF ya indexado por la app
+    // (Biblioteca completa), no solo el selector del sistema.
+    if (showSourceChooser) {
+        FileSourcePickerDialog(
+            title              = stringResource(R.string.pdf_pw_protect_section_title),
+            onDismiss          = { showSourceChooser = false },
+            onChooseFromDevice = {
+                showSourceChooser = false
+                pdfLauncher.launch("application/pdf")
+            },
+            onChooseDocument   = { document ->
+                showSourceChooser = false
+                selectedUri = document.toContentUri()
+                fileName    = document.name.removeSuffix(".pdf")
+            },
+            filter = { it.type == DocumentType.PDF }
+        )
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -277,7 +300,7 @@ private fun ProtectPdfForm(
 
         // Selector PDF
         Card(
-            modifier  = Modifier.fillMaxWidth().clickable { pdfLauncher.launch("application/pdf") },
+            modifier  = Modifier.fillMaxWidth().clickable { showSourceChooser = true },
             shape     = MaterialTheme.shapes.large,
             colors    = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -479,6 +502,7 @@ private fun RemovePdfPasswordForm(
     var fileName     by remember { mutableStateOf("") }
     var password     by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var showSourceChooser by remember { mutableStateOf(false) }
 
     val pdfLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -495,6 +519,24 @@ private fun RemovePdfPasswordForm(
                 }
             }
         }
+    }
+
+    // Item #15 del backlog UX: mismo criterio que ProtectPdfForm.
+    if (showSourceChooser) {
+        FileSourcePickerDialog(
+            title              = stringResource(R.string.pdf_pw_remove_section_title),
+            onDismiss          = { showSourceChooser = false },
+            onChooseFromDevice = {
+                showSourceChooser = false
+                pdfLauncher.launch("application/pdf")
+            },
+            onChooseDocument   = { document ->
+                showSourceChooser = false
+                selectedUri = document.toContentUri()
+                fileName    = document.name.removeSuffix(".pdf")
+            },
+            filter = { it.type == DocumentType.PDF }
+        )
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -516,7 +558,7 @@ private fun RemovePdfPasswordForm(
 
         // Selector PDF
         Card(
-            modifier  = Modifier.fillMaxWidth().clickable { pdfLauncher.launch("application/pdf") },
+            modifier  = Modifier.fillMaxWidth().clickable { showSourceChooser = true },
             shape     = MaterialTheme.shapes.large,
             colors    = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)

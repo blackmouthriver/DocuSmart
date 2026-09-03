@@ -33,7 +33,6 @@ data class SecurityUiState(
     val isBiometricAvailable : Boolean             = false,
     val isBiometricEnabled   : Boolean             = false,
     val secureFiles          : List<File>          = emptyList(),
-    val appFiles             : List<File>          = emptyList(),
     val error                : String?             = null,
     val successMessage       : String?             = null,
     // ── PDF Password ──────────────────────────────────────────────────────────
@@ -127,26 +126,14 @@ class SecurityViewModel @Inject constructor(
     private fun unlockAndLoadFiles() {
         viewModelScope.launch(Dispatchers.IO) {
             val secureFiles = securityManager.getSecureFiles()
-            val appFiles    = loadAppFiles()
             _uiState.update {
                 it.copy(
                     screenState = SecurityScreenState.UNLOCKED,
                     secureFiles = secureFiles,
-                    appFiles    = appFiles,
                     error       = null
                 )
             }
         }
-    }
-
-    private fun loadAppFiles(): List<File> {
-        val dirs = listOf(
-            File(securityManager.secureFolder.parentFile, "converted"),
-            File(securityManager.secureFolder.parentFile, "pdftools")
-        )
-        return dirs.flatMap { dir ->
-            dir.listFiles()?.filter { it.exists() && it.length() > 0 } ?: emptyList()
-        }.sortedByDescending { it.lastModified() }
     }
 
     // RF-SEC-05: proteger un archivo debe copiarlo a la carpeta segura Y eliminar
@@ -160,11 +147,9 @@ class SecurityViewModel @Inject constructor(
             val result = securityManager.moveToSecure(file)
             if (result.success) {
                 val secureFiles = securityManager.getSecureFiles()
-                val appFiles    = loadAppFiles()
                 _uiState.update {
                     it.copy(
                         secureFiles    = secureFiles,
-                        appFiles       = appFiles,
                         successMessage = if (result.originalDeleted) successMessage else originalKeptMessage
                     )
                 }

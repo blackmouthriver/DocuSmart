@@ -20,7 +20,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DailyLimitDialog
+import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.FileSourcePickerDialog
+import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
@@ -295,6 +298,31 @@ fun PdfToolsScreen(
         uri?.let { viewModel.onPdfsSelected(listOf(it)) }
     }
 
+    // Item #15 del backlog UX: las 12 herramientas de un solo PDF ofrecen
+    // elegir un archivo ya indexado por la app (Biblioteca completa), no
+    // solo el selector del sistema -- un único diálogo compartido en vez
+    // de duplicarlo 12 veces, ya que las 12 llaman al mismo
+    // `singlePdfLauncher`/`viewModel.onPdfsSelected()`. Fuera de alcance
+    // en esta pasada: Combinar (selección múltiple) y Comparar (dos
+    // selectores independientes) -- quedan solo con el selector del
+    // sistema, documentado en backlog-mejoras-ux-2026-08-30.md §2.
+    var showPdfSourceChooser by remember { mutableStateOf(false) }
+    if (showPdfSourceChooser) {
+        FileSourcePickerDialog(
+            title              = stringResource(R.string.pdf_tools_title),
+            onDismiss          = { showPdfSourceChooser = false },
+            onChooseFromDevice = {
+                showPdfSourceChooser = false
+                singlePdfLauncher.launch(MIME_PDF)
+            },
+            onChooseDocument   = { document ->
+                showPdfSourceChooser = false
+                viewModel.onPdfsSelected(listOf(document.toContentUri()))
+            },
+            filter = { it.type == DocumentType.PDF }
+        )
+    }
+
     val comparePdfALauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -454,7 +482,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onFromPageChange = {
                                         viewModel.onSplitFromPageChange(it)
@@ -473,7 +501,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onQualityChange = {
                                         viewModel.onCompressionQualityChange(it)
@@ -489,7 +517,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onDegreesChange = {
                                         viewModel.onRotationDegreesChange(it)
@@ -505,7 +533,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onFormatChange = {
                                         viewModel.onPageNumberFormatChange(it)
@@ -521,7 +549,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onWatermarkTextChange = {
                                         viewModel.onWatermarkTextChange(it)
@@ -537,7 +565,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onPagesLoaded = {
                                         viewModel.onPagesLoaded(it)
@@ -577,7 +605,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onTotalPagesLoaded = {
                                         viewModel.onRedactionTotalPagesLoaded(it)
@@ -601,7 +629,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onMarginChange = {
                                         viewModel.onCropMarginChange(it)
@@ -618,7 +646,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onSearchTextChange = {
                                         viewModel.onEditSearchTextChange(it)
@@ -639,7 +667,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onTotalPagesLoaded = {
                                         viewModel.onSignatureTotalPagesLoaded(it)
@@ -664,7 +692,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onDetectFields = {
                                         viewModel.onDetectFormFields(it)
@@ -682,7 +710,7 @@ fun PdfToolsScreen(
                                         viewModel.onOutputFileNameChange(it)
                                     },
                                     onSelectPdf = {
-                                        singlePdfLauncher.launch(MIME_PDF)
+                                        showPdfSourceChooser = true
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )

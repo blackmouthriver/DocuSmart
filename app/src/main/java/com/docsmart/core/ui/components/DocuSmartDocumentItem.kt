@@ -1,5 +1,6 @@
 package com.docsmart.core.ui.components
 
+import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.*
+import java.io.File
 
 data class DocumentUiModel(
     val id        : String,
@@ -34,6 +36,18 @@ data class DocumentUiModel(
     // string formateado (frágil entre locales por el separador decimal).
     val sizeBytes : Long = 0L
 )
+
+/**
+ * `id` mezcla dos formatos según el origen real del documento
+ * (`DocumentRepository.loadAllDocumentsRaw()`): `content://...` para
+ * Downloads/Imágenes de MediaStore, o una ruta absoluta de archivo para
+ * los generados por la app (`converted`/`pdftools`). Agregado para el
+ * selector de archivo desde la biblioteca de la app (item #15 del
+ * backlog UX) -- los `ContentResolver` de Android leen ambos esquemas de
+ * Uri de forma transparente.
+ */
+fun DocumentUiModel.toContentUri(): Uri =
+    if (id.startsWith("content://")) Uri.parse(id) else Uri.fromFile(File(id))
 
 enum class DocumentType(val label: String, val color: Color) {
     PDF        ("PDF",    ColorPdf),

@@ -31,6 +31,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.FileSourcePickerDialog
+import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.PremiumGold
@@ -522,96 +524,27 @@ private fun SecureFolderContent(
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { onImportFile(it) } }
 
+    // Item #15 del backlog UX: antes "Desde mi biblioteca" acá solo listaba
+    // uiState.appFiles (archivos generados por la app en converted/pdftools),
+    // no la Biblioteca completa (Downloads/Imágenes de MediaStore incluidos)
+    // -- FileSourcePickerDialog reusa la misma fuente que la pantalla
+    // Biblioteca. Cualquier tipo de archivo es válido para proteger, así
+    // que no se pasa `filter`.
     if (showImportDialog) {
-        AlertDialog(
-            onDismissRequest = { showImportDialog = false },
-            shape = MaterialTheme.shapes.large,
-            title = { Text(stringResource(R.string.security_protect_file_dialog_title), style = MaterialTheme.typography.titleLarge) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.security_import_source_question),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(8.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            showImportDialog = false
-                            fileLauncher.launch(arrayOf("*/*"))
-                        },
-                        shape  = MaterialTheme.shapes.medium,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                        )
-                    ) {
-                        Row(
-                            modifier              = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment     = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Rounded.PhoneAndroid, null,
-                                tint = MaterialTheme.colorScheme.primary)
-                            Column {
-                                Text(stringResource(R.string.security_from_device),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurface)
-                                Text(stringResource(R.string.security_browse_system_files),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
-
-                    if (uiState.appFiles.isNotEmpty()) {
-                        Text(stringResource(R.string.security_from_library),
-                            style    = MaterialTheme.typography.titleSmall,
-                            color    = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(top = 8.dp))
-                        LazyColumn(
-                            modifier            = Modifier.heightIn(max = 200.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            itemsIndexed(uiState.appFiles) { _, file ->
-                                Card(
-                                    modifier  = Modifier.fillMaxWidth().clickable {
-                                        showImportDialog = false
-                                        onImportLocalFile(file)
-                                    },
-                                    shape     = MaterialTheme.shapes.medium,
-                                    colors    = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surface
-                                    ),
-                                    elevation = CardDefaults.cardElevation(1.dp)
-                                ) {
-                                    Row(
-                                        modifier              = Modifier.fillMaxWidth().padding(12.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment     = Alignment.CenterVertically
-                                    ) {
-                                        Icon(Icons.Rounded.InsertDriveFile, null,
-                                            tint     = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(file.name,
-                                                style    = MaterialTheme.typography.bodySmall,
-                                                color    = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1)
-                                            Text("${file.length() / 1024} KB",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        Text(stringResource(R.string.security_no_library_files),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
+        FileSourcePickerDialog(
+            title              = stringResource(R.string.security_protect_file_dialog_title),
+            onDismiss          = { showImportDialog = false },
+            onChooseFromDevice = {
+                showImportDialog = false
+                fileLauncher.launch(arrayOf("*/*"))
             },
-            confirmButton = {
-                TextButton(onClick = { showImportDialog = false }) { Text(stringResource(R.string.general_cancel)) }
+            onChooseDocument   = { document ->
+                showImportDialog = false
+                if (document.id.startsWith("content://")) {
+                    onImportFile(document.toContentUri())
+                } else {
+                    onImportLocalFile(java.io.File(document.id))
+                }
             }
         )
     }

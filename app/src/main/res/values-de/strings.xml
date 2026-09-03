@@ -604,11 +604,6 @@
     <string name="security_no_protected_files_hint">Tippe auf „Neue Datei schützen“, um Dateien hinzuzufügen</string>
     <string name="security_restore">Wiederherstellen</string>
     <string name="security_protect_file_dialog_title">Datei schützen</string>
-    <string name="security_import_source_question">Woher möchtest du die Datei holen?</string>
-    <string name="security_from_device">Vom Gerät</string>
-    <string name="security_browse_system_files">Systemdateien durchsuchen</string>
-    <string name="security_from_library">Aus der DocuSmart-Bibliothek</string>
-    <string name="security_no_library_files">Keine Dateien in der App-Bibliothek</string>
     <string name="pdf_pw_screen_subtitle">Schütze oder entsperre deine PDFs</string>
     <string name="pdf_pw_mode_protect_title">PDF schützen</string>
     <string name="pdf_pw_mode_protect_desc">Füge einer PDF-Datei ein Passwort hinzu. Nur wer das Passwort kennt, kann sie öffnen.</string>
@@ -788,4 +783,11 @@
     <string name="trash_delete_all_confirm_body">"%1$d Dateien werden endgültig gelöscht und können nicht mehr wiederhergestellt werden."</string>
     <string name="trash_total_size">%1$s im Papierkorb</string>
     <string name="trash_delete_forever_permission_note">Android bittet dich möglicherweise, das Löschen von Fotos zu bestätigen, die diese App nicht erstellt hat.</string>
+
+    <!-- ── Dateiauswahl mit Bibliothek der App (Punkt #15, FileSourcePickerDialog) ── -->
+    <string name="filepicker_source_question">Woher möchtest du die Datei holen?</string>
+    <string name="filepicker_from_device">Vom Gerät</string>
+    <string name="filepicker_browse_system_files">Systemdateien durchsuchen</string>
+    <string name="filepicker_from_library">Aus der DocuSmart-Bibliothek</string>
+    <string name="filepicker_no_library_files">Du hast noch keine Dateien in deiner Bibliothek</string>
 </resources>
