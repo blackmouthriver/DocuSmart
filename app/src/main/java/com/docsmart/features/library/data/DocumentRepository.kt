@@ -84,7 +84,7 @@ class DocumentRepository @Inject constructor(
     internal suspend fun loadAllDocumentsRaw(): List<DocumentUiModel> {
         return try {
             val documents = mutableListOf<DocumentUiModel>()
-            documents.addAll(loadPdfsFromDownloads())
+            documents.addAll(loadDocumentsFromDownloads())
             documents.addAll(loadImagesFromMediaStore())
             documents.addAll(loadAppGeneratedFiles())
 
@@ -193,7 +193,16 @@ class DocumentRepository @Inject constructor(
         }
     }
 
-    private fun loadPdfsFromDownloads(): List<DocumentUiModel> {
+    // Renombrada 2026-09-03 (fila 22 del backlog UX): el nombre anterior
+    // (loadPdfsFromDownloads) era engañoso -- siempre consultó PDF, Word,
+    // Excel Y PowerPoint juntos en una sola consulta a MediaStore.Downloads,
+    // no solo PDF. De paso se agregó "text/plain"/"text/markdown" al
+    // filtro: nunca habían estado en la lista, así que un .txt/.md real de
+    // Descargas no llegaba ni siquiera a evaluarse (bug aparte, no
+    // relacionado con el permiso). mimeToDocumentType() ya sabía mapear
+    // texto a DocumentType.TEXT -- ese código era inalcanzable para
+    // archivos reales de Descargas por esta omisión.
+    private fun loadDocumentsFromDownloads(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return documents
 
@@ -212,7 +221,9 @@ class DocumentRepository @Inject constructor(
             "application/vnd.ms-excel",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "application/vnd.ms-powerpoint",
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "text/plain",
+            "text/markdown"
         )
         val selection = mimeTypes.joinToString(" OR ") {
             "${MediaStore.Downloads.MIME_TYPE} = ?"
