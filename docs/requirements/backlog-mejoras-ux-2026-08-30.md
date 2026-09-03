@@ -42,6 +42,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-30** — ver §13 |
 | 20 | H1: texto "Eliminar del historial" engañoso (en realidad mueve a la papelera real) | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §12, hallazgo H1 |
 | 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | **✅ Corregido y verificado 2026-09-03** — ver §12, hallazgo H6 |
+| 22 | `DocumentRepository.loadPdfsFromDownloads()` no ve PDF/Word/Excel/PowerPoint reales de Descargas sin `owner_package_name` propio (scoped storage); Texto ni siquiera está en el filtro de mimeTypes de esa consulta | Bug | Media-Alta | Media | Medio | Nuevo, encontrado 2026-09-03 al verificar #15, confirmado por el usuario que afecta los 5 formatos — ver §14 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -1027,10 +1028,52 @@ un app sin `READ_EXTERNAL_STORAGE` (o con él pero sin efecto real en
 API 33+) generalmente no puede enumerar filas de Downloads que no posee,
 a diferencia de Imágenes que sí quedó visible vía `READ_MEDIA_IMAGES`
 (ya concedido). **Esto no es un bug de este ítem** -- es una limitación
-preexistente de `DocumentRepository.loadPdfsFromDownloads()` que
-probablemente afecta también al conteo de la categoría "PDF" en la
-pantalla Biblioteca real, sin relación con el trabajo de hoy. Catalogado
+preexistente de `DocumentRepository.loadPdfsFromDownloads()`. Catalogado
 como hallazgo nuevo para investigar aparte, no corregido en esta pasada.
+
+**Ampliado 2026-09-03, a pedido del usuario (confirmó que ve el mismo
+síntoma con Excel/Word/Texto/PowerPoint desde el dispositivo real, no
+solo PDF)** -- revisando el código a fondo, en realidad son **dos
+problemas distintos** dentro de la misma función, no uno:
+
+1. **La misma limitación de scoped storage de arriba también afecta a
+   Word, Excel y PowerPoint** -- pese a llamarse `loadPdfsFromDownloads()`,
+   la función consulta un único `mimeTypes` con los 7 tipos de Office
+   juntos (`application/pdf`, `application/msword`,
+   `.../wordprocessingml.document`, `application/vnd.ms-excel`,
+   `.../spreadsheetml.sheet`, `application/vnd.ms-powerpoint`,
+   `.../presentationml.presentation`) en una sola consulta a
+   `MediaStore.Downloads` -- el log `Downloads: 0 documentos` ya contaba
+   los 4 formatos juntos, no solo PDF. Mismo diagnóstico, mismo arreglo
+   pendiente para los 4.
+2. **Hallazgo nuevo, causa distinta (no es scoped storage): "Texto" no
+   está en absoluto en la lista `mimeTypes` de esa consulta.** No es un
+   problema de permisos ni de propiedad de la fila -- es que
+   `"text/plain"` (ni `"text/markdown"`) nunca se incluyó en el filtro
+   `selection`/`selectionArgs` de `loadPdfsFromDownloads()`, así que un
+   `.txt`/`.md` en Descargas **nunca llega ni siquiera a evaluarse**,
+   sin importar quién lo creó. `mimeToDocumentType()`/
+   `extensionToDocumentType()` sí saben mapear texto a
+   `DocumentType.TEXT` (línea usada para archivos generados por la app),
+   pero ese código es inalcanzable para archivos reales de Descargas por
+   esta omisión en la consulta.
+
+**Resumen para retomar en otra sesión:**
+- PDF, Word, Excel, PowerPoint: mismo síntoma, misma causa (visibilidad
+  de scoped storage para filas sin `owner_package_name` propio) --
+  necesita decidir el enfoque correcto (¿`READ_EXTERNAL_STORAGE` con
+  `requestLegacyExternalStorage`? ¿asumir que solo se ven archivos que
+  la propia app generó y aceptarlo como límite conocido? ¿migrar a SAF/
+  `ACTION_OPEN_DOCUMENT_TREE` para el caso general?).
+- Texto (.txt/.md): causa distinta y más simple -- agregar
+  `"text/plain"` (y opcionalmente `"text/markdown"`) a la lista
+  `mimeTypes` de `loadPdfsFromDownloads()`. Esto por sí solo no
+  resolvería el problema de fondo #1 si el archivo tampoco tiene
+  `owner_package_name` propio, pero es un arreglo independiente y
+  necesario de todos modos.
+- Probablemente afecta también al conteo real de las categorías
+  "PDF"/"Word"/"Excel"/"PowerPoint"/"Texto" en la pantalla Biblioteca,
+  sin relación con el selector de archivo de este ítem #15.
 
 ### Verificado en dispositivo real (Motorola Edge 30 Neo)
 
