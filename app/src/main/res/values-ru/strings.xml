@@ -793,8 +793,12 @@
 
     <!-- ── Привязка папки Загрузки через SAF (пункт 22 бэклога UX) ── -->
     <string name="library_link_downloads_title">Смотрите больше документов здесь</string>
-    <string name="library_link_downloads_body">Android не позволяет приложениям автоматически показывать PDF, Word, Excel, PowerPoint или текстовые файлы других приложений, а также привязать всю папку Загрузки целиком. Выберите или создайте вложенную папку (например, внутри Загрузок), чтобы видеть их здесь.</string>
+    <string name="library_link_downloads_body">Выберите папку по вашему выбору, чтобы найти документы с вашего устройства и привязать её к DocuSmart</string>
     <string name="library_link_downloads_button">Привязать папку</string>
+
+    <!-- ── Быстрый доступ к привязанной папке, рядом с Устройство/Мои файлы/Корзина ── -->
+    <string name="library_folder_shortcut_label">Привязанная папка</string>
+    <string name="library_folder_shortcut_no_app">На этом устройстве нет приложения для открытия папок</string>
 
     <!-- ── Настройки: управление привязанной папкой (пункт 22 бэклога UX) ── -->
     <string name="settings_linked_downloads_title">Привязанная папка</string>

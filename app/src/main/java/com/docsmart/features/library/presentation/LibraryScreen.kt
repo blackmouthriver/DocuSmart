@@ -1,7 +1,11 @@
 package com.docsmart.features.library.presentation
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -10,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.FolderOff
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.*
@@ -33,6 +38,7 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.library.presentation.components.*
+import timber.log.Timber
 
 @Composable
 fun LibraryScreen(
@@ -136,15 +142,18 @@ fun LibraryScreen(
             )
         }
 
-        // ── Tabs: Dispositivo / Mis archivos + Papelera ────────────────────────
+        // ── Tabs: Dispositivo / Mis archivos + Papelera (+ atajo a la carpeta
+        // vinculada, si hay una) ────────────────────────────────────────────────
         item {
             LibraryTabs(
-                selectedTab   = uiState.selectedTab,
-                deviceCount   = uiState.deviceDocuments.size,
-                appFilesCount = uiState.appDocuments.size,
-                trashCount    = uiState.trashCount,
-                onTabSelected = { viewModel.onTabSelected(it) },
-                onTrashClick  = onTrashClick
+                selectedTab      = uiState.selectedTab,
+                deviceCount      = uiState.deviceDocuments.size,
+                appFilesCount    = uiState.appDocuments.size,
+                trashCount       = uiState.trashCount,
+                linkedFolderUri  = linkedFolderUri,
+                onTabSelected    = { viewModel.onTabSelected(it) },
+                onTrashClick     = onTrashClick,
+                onOpenFolderClick = { openLinkedFolder(context, it) }
             )
         }
 
@@ -208,12 +217,14 @@ fun LibraryScreen(
 // no un elemento suelto.
 @Composable
 private fun LibraryTabs(
-    selectedTab  : LibraryTab,
-    deviceCount  : Int,
-    appFilesCount: Int,
-    trashCount   : Int,
-    onTabSelected: (LibraryTab) -> Unit,
-    onTrashClick : () -> Unit
+    selectedTab      : LibraryTab,
+    deviceCount      : Int,
+    appFilesCount    : Int,
+    trashCount       : Int,
+    linkedFolderUri  : Uri?,
+    onTabSelected    : (LibraryTab) -> Unit,
+    onTrashClick     : () -> Unit,
+    onOpenFolderClick: (Uri) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -226,7 +237,7 @@ private fun LibraryTabs(
         LibraryTabItem(
             icon     = Icons.Rounded.PhoneAndroid,
             label    = stringResource(R.string.library_tab_device),
-            count    = deviceCount,
+            subtitle = stringResource(R.string.library_tab_file_count, deviceCount),
             selected = selectedTab == LibraryTab.DEVICE,
             onClick  = { onTabSelected(LibraryTab.DEVICE) },
             modifier = Modifier.weight(1f)
@@ -235,7 +246,7 @@ private fun LibraryTabs(
         LibraryTabItem(
             icon     = Icons.Rounded.Folder,
             label    = stringResource(R.string.library_tab_app_files),
-            count    = appFilesCount,
+            subtitle = stringResource(R.string.library_tab_file_count, appFilesCount),
             selected = selectedTab == LibraryTab.APP_FILES,
             onClick  = { onTabSelected(LibraryTab.APP_FILES) },
             modifier = Modifier.weight(1f)
@@ -247,11 +258,34 @@ private fun LibraryTabs(
         LibraryTabItem(
             icon     = Icons.Rounded.DeleteOutline,
             label    = stringResource(R.string.library_trash),
-            count    = trashCount,
+            subtitle = stringResource(R.string.library_tab_file_count, trashCount),
             selected = false,
             onClick  = onTrashClick,
             modifier = Modifier.weight(1f)
         )
+        // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX): solo
+        // aparece si hay una carpeta vinculada -- pedido explícito del
+        // usuario 2026-09-03 para poder entrar directo a esa carpeta sin
+        // pasar por Ajustes. Botón compacto (no weight(1f) como las 3
+        // pestañas) para no angostarlas y forzar "Dispositivo" a partirse
+        // en dos líneas -- es un atajo adicional, no una cuarta pestaña.
+        if (linkedFolderUri != null) {
+            Card(
+                onClick  = { onOpenFolderClick(linkedFolderUri) },
+                modifier = Modifier.fillMaxHeight().width(56.dp),
+                shape    = MaterialTheme.shapes.large,
+                colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector        = Icons.Rounded.FolderOpen,
+                        contentDescription = stringResource(R.string.library_folder_shortcut_label),
+                        tint               = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -259,7 +293,7 @@ private fun LibraryTabs(
 private fun LibraryTabItem(
     icon    : androidx.compose.ui.graphics.vector.ImageVector,
     label   : String,
-    count   : Int,
+    subtitle: String,
     selected: Boolean,
     onClick : () -> Unit,
     modifier: Modifier = Modifier
@@ -293,7 +327,7 @@ private fun LibraryTabItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 12.dp),
+                .padding(horizontal = 4.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -306,7 +340,11 @@ private fun LibraryTabItem(
             )
             Text(
                 text       = label,
-                style      = MaterialTheme.typography.labelLarge,
+                // Card angostada por el atajo de carpeta agregado en la fila
+                // 22 del backlog UX -- labelMedium en vez de labelLarge para
+                // que "Dispositivo"/"Mis archivos" sigan entrando en una
+                // línea con las 4 columnas.
+                style      = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color      = if (selected) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurface,
@@ -315,7 +353,7 @@ private fun LibraryTabItem(
                 overflow   = TextOverflow.Ellipsis
             )
             Text(
-                text      = stringResource(R.string.library_tab_file_count, count),
+                text      = subtitle,
                 style     = MaterialTheme.typography.labelSmall,
                 color     = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -432,3 +470,25 @@ private fun checkStoragePermission(context: android.content.Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PermissionChecker.PERMISSION_GRANTED
     else
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PermissionChecker.PERMISSION_GRANTED
+
+// Atajo a la carpeta vinculada por SAF (fila 22 backlog UX): delega en
+// cualquier app que sepa abrir un árbol de documentos (normalmente el
+// gestor de archivos del sistema) en vez de reimplementar un navegador de
+// carpetas propio -- ningún dispositivo probado carece de una app así,
+// pero se cubre igual el caso raro con un aviso en vez de un cierre.
+private fun openLinkedFolder(context: android.content.Context, folderUri: Uri) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(folderUri, DocumentsContract.Document.MIME_TYPE_DIR)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(intent)
+    } catch (e: ActivityNotFoundException) {
+        Timber.w(e, "openLinkedFolder: sin app que maneje ACTION_VIEW para un árbol de documentos")
+        android.widget.Toast.makeText(
+            context,
+            context.getString(R.string.library_folder_shortcut_no_app),
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+}

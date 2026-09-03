@@ -1241,13 +1241,34 @@ guardó directo en la raíz de Descargas) -- el usuario tendría que crear
 una subcarpeta dentro de Descargas y mover sus archivos ahí a mano, o
 vincular otra carpeta donde sí organice sus documentos. Sigue siendo
 mejor que nada (ninguna alternativa sin código nativo del sistema deja
-vincular la raíz de Descargas). El usuario decidió ajustar la copia antes
-de fusionar en vez de dejar la expectativa incumplible: el banner de
-Biblioteca y el título en Ajustes ya no prometen "vincular tu carpeta de
-Descargas" -- ahora dicen "Ver más documentos aquí" / "Carpeta vinculada"
-y el cuerpo explica explícitamente que Android no deja vincular Descargas
-completa, indicando elegir o crear una subcarpeta. Cambio de solo
-strings (5 idiomas), sin tocar código.
+vincular la raíz de Descargas). Antes de fusionar, el usuario pidió
+reemplazar el texto del banner por una copia propia más simple y amable
+("Elije tu carpeta preferida para encontrar tus documentos de tu
+dispositivo y vincularlo a DocuSmart"), sin la explicación técnica de la
+restricción de Android -- decisión consciente, ya que si el usuario
+intenta vincular Descargas igual, es el propio Android el que se lo
+impide con su aviso de sistema. Cambio de solo strings (5 idiomas).
+
+### Atajo a la carpeta vinculada (pedido explícito del usuario)
+
+Botón adicional junto a Dispositivo/Mis archivos/Papelera, visible solo
+mientras hay una carpeta vinculada: ícono de carpeta compacto (no
+`weight(1f)` como las otras 3 pestañas, para no angostarlas al punto de
+partir "Dispositivo" en dos líneas -- ver la vuelta a `labelMedium` para
+la etiqueta de las 4 tarjetas por el mismo motivo). Al tocarlo lanza
+`Intent(ACTION_VIEW)` con la URI del árbol vinculado y
+`DocumentsContract.Document.MIME_TYPE_DIR`, delegando en el gestor de
+archivos del dispositivo (con aviso vía `Toast` si ninguna app lo
+maneja, en vez de un cierre).
+
+**Hallazgo menor de esta verificación**: en el Motorola Edge 30 Neo, la
+app Archivos de Google no navega directo a la subcarpeta vinculada
+(`Descargas/DMSS`) -- abre su propia vista de "Descargas" (la carpeta
+padre), donde `DMSS` ya aparece listada y es un toque más llegar. No hay
+una API estándar de Android para forzar que cualquier gestor de archivos
+salte exactamente a una URI de árbol arbitraria; el comportamiento puede
+variar según el gestor de archivos predeterminado de cada fabricante. Se
+documenta como limitación conocida, no como bug de la app.
 
 ### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
 
@@ -1256,9 +1277,11 @@ strings (5 idiomas), sin tocar código.
   stubean `Uri.authority` porque `deleteDocument()` lo consulta primero
   para distinguir un URI de carpeta vinculada de uno de MediaStore).
 - Flujo completo probado a mano con `adb`/`uiautomator`: Biblioteca →
-  banner → selector nativo (pre-navegado a Descargas) → confirmación de
-  "No se puede usar esta carpeta" en Descargas y en la raíz → vinculación
-  exitosa de `Descargas/DMSS` → banner desaparece → Ajustes muestra
-  "Vinculada · toca para desvincular" → desvincular → Ajustes vuelve a
-  "Sin vincular" → banner reaparece en Biblioteca. Sin cierres
-  inesperados de la app en ningún paso.
+  banner con la copia final → selector nativo (pre-navegado a Descargas)
+  → confirmación de "No se puede usar esta carpeta" en Descargas y en la
+  raíz → vinculación exitosa de `Descargas/DMSS` → banner desaparece y
+  aparece el atajo de carpeta junto a Dispositivo/Mis archivos/Papelera
+  → atajo abre la app Archivos del sistema → Ajustes muestra "Vinculada
+  · toca para desvincular" → desvincular → Ajustes vuelve a "Sin
+  vincular" → banner reaparece y el atajo desaparece en Biblioteca. Sin
+  cierres inesperados de la app en ningún paso.

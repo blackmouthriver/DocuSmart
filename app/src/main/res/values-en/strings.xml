@@ -792,8 +792,12 @@
 
     <!-- ── Link Downloads folder via SAF (UX backlog row 22) ── -->
     <string name="library_link_downloads_title">See more documents here</string>
-    <string name="library_link_downloads_body">Android doesn\'t let apps automatically show PDF, Word, Excel, PowerPoint or Text files from other apps, or link the whole Downloads folder. Choose or create a subfolder (for example, inside Downloads) to see them here.</string>
+    <string name="library_link_downloads_body">Choose your preferred folder to find your device\'s documents and link it to DocuSmart</string>
     <string name="library_link_downloads_button">Link folder</string>
+
+    <!-- ── Shortcut to the linked folder, next to Device/My files/Trash ── -->
+    <string name="library_folder_shortcut_label">Linked folder</string>
+    <string name="library_folder_shortcut_no_app">There\'s no app to open folders on this device</string>
 
     <!-- ── Settings: manage linked folder (UX backlog row 22) ── -->
     <string name="settings_linked_downloads_title">Linked folder</string>

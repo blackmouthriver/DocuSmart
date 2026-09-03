@@ -793,8 +793,12 @@
 
     <!-- ── Vincular carpeta de Descargas por SAF (fila 22 backlog UX) ── -->
     <string name="library_link_downloads_title">Ver más documentos aquí</string>
-    <string name="library_link_downloads_body">Android no permite mostrar automáticamente los PDF, Word, Excel, PowerPoint o Texto de otras apps, ni vincular la carpeta Descargas completa. Elige o crea una subcarpeta (por ejemplo, dentro de Descargas) para verlos aquí.</string>
+    <string name="library_link_downloads_body">Elije tu carpeta preferida para encontrar tus documentos de tu dispositivo y vincularlo a DocuSmart</string>
     <string name="library_link_downloads_button">Vincular carpeta</string>
+
+    <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
+    <string name="library_folder_shortcut_label">Carpeta vinculada</string>
+    <string name="library_folder_shortcut_no_app">No hay una app para abrir carpetas en este dispositivo</string>
 
     <!-- ── Ajustes: gestionar carpeta vinculada (fila 22 backlog UX) ── -->
     <string name="settings_linked_downloads_title">Carpeta vinculada</string>

@@ -793,8 +793,12 @@
 
     <!-- ── Vincular pasta de Downloads via SAF (item 22 do backlog UX) ── -->
     <string name="library_link_downloads_title">Veja mais documentos aqui</string>
-    <string name="library_link_downloads_body">O Android não permite que apps mostrem automaticamente PDF, Word, Excel, PowerPoint ou Texto de outros apps, nem vincular a pasta Downloads inteira. Escolha ou crie uma subpasta (por exemplo, dentro de Downloads) para vê-los aqui.</string>
+    <string name="library_link_downloads_body">Escolha a pasta de sua preferência para encontrar os documentos do seu dispositivo e vinculá-la ao DocuSmart</string>
     <string name="library_link_downloads_button">Vincular pasta</string>
+
+    <!-- ── Atalho para a pasta vinculada, ao lado de Dispositivo/Meus arquivos/Lixeira ── -->
+    <string name="library_folder_shortcut_label">Pasta vinculada</string>
+    <string name="library_folder_shortcut_no_app">Não há um app para abrir pastas neste dispositivo</string>
 
     <!-- ── Ajustes: gerenciar pasta vinculada (item 22 backlog UX) ── -->
     <string name="settings_linked_downloads_title">Pasta vinculada</string>
