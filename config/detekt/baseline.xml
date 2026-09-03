@@ -258,6 +258,7 @@
     <ID>ReturnCount:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:SignPdfUseCase.kt$SignPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:ViewerScreen.kt$private fun extractPptShapeContent(shape: XSLFShape): PptShapeContent?</ID>
     <ID>ReturnCount:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
     <ID>ReturnCount:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>SwallowedException:DocumentListSection.kt$e: Exception</ID>

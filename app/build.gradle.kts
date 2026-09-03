@@ -291,6 +291,13 @@ dependencies {
         exclude(group = "org.junit.jupiter")
         exclude(group = "com.zaxxer")
     }
+    // El visor de PowerPoint (XSLFTextShape/XSLFPictureShape) sí necesita
+    // SparseBitSet en tiempo de ejecución -- confirmado con un
+    // ClassNotFoundException real en dispositivo al excluirlo (el exclude de
+    // arriba es de una sesión anterior, para Word/Excel; PPTX toca una ruta
+    // distinta de POI). Se agrega de vuelta como dependencia explícita en
+    // vez de quitar el exclude de poi/poi-ooxml/poi-scratchpad.
+    implementation("com.zaxxer:SparseBitSet:1.3")
 
     // ── AdMob ─────────────────────────────────────────────────────────────────
     implementation("com.google.android.gms:play-services-ads:23.3.0")

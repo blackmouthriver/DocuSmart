@@ -1331,16 +1331,98 @@ Play Store. Descartado; no se implementó.
 
 Fuentes consultadas: [Use of All files access (MANAGE_EXTERNAL_STORAGE) permission – Play Console Help](https://support.google.com/googleplay/android-developer/answer/10467955?hl=en), [Permissions and APIs that Access Sensitive Information – Play Console Help](https://support.google.com/googleplay/android-developer/answer/9888170?hl=en).
 
-### Pendiente: calidad de visualización de Word/Excel/PowerPoint
+## 18. Calidad de visualización de Word/Excel/PowerPoint (renderer propio con Apache POI)
 
 El usuario señaló que el visor actual de estos formatos no se ve como el
 archivo original. Confirmado leyendo el código, no de memoria:
-`ViewerScreen.kt` abre el `.docx`/`.pptx`/`.xlsx` como zip y extrae texto
-crudo de su XML con expresiones regulares (PowerPoint: título + párrafos
-por slide, sin imágenes/diseño/tablas; Word: algo mejor, respeta
+`ViewerScreen.kt` abría el `.docx`/`.pptx`/`.xlsx` como zip y extraía
+texto crudo de su XML con expresiones regulares (PowerPoint: título +
+párrafos por slide, sin imágenes/diseño/tablas; Word: algo mejor, respeta
 negrita/cursiva y encabezados; Excel: grilla, no una réplica de la hoja
-real). Es una extracción de texto, no un renderizador real. Lograrlo
-requiere una inversión aparte (librería de renderizado comercial,
-conversión server-side con un motor real, o delegar a otra app instalada
-vía Intent) -- evaluación de alcance/costo pendiente, no iniciada
-todavía a pedido del usuario (siguiente paso después del onboarding).
+real). Era una extracción de texto, no un renderizador real.
+
+### Decisión de enfoque
+
+El usuario preguntó por la viabilidad de construir una librería de
+renderizado propia (incluso ofreciéndola después como producto
+comercial) y, mientras tanto, renderizar el documento como imagen. Se le
+explicó honestamente que un renderizador OOXML desde cero es un proyecto
+de años (lo que Microsoft/LibreOffice/Aspose llevan más de una década
+construyendo), y que "mostrarlo como imagen" no evita el problema difícil
+-- alguien tiene que decidir qué dibujar y dónde primero. Se plantearon 3
+caminos reales (Apache POI + renderer propio en Compose / LibreOffice
+headless en servidor propio / seguir investigando ambos) y el usuario
+eligió **Apache POI + renderer propio en Compose**: gratis, sin servidor,
+sin depender de licencias de terceros.
+
+**Hallazgo clave antes de empezar**: Apache POI **ya es una dependencia
+de este proyecto** (`app/build.gradle.kts`), usada en producción por
+`WordToTextUseCase`/`WordToPdfUseCase`/`ExcelToPdfUseCase`/
+`ExcelToCsvUseCase` para las conversiones -- es decir, la compatibilidad
+de POI con Android en este dispositivo ya estaba probada de antemano, no
+hacía falta un spike de viabilidad desde cero.
+
+### PowerPoint (primero, por ser el visor más pobre de los tres)
+
+Reescrito con `XMLSlideShow`/`XSLFShape` (`extractPptSlides`/
+`extractPptShapeContent` en `ViewerScreen.kt`): cada forma real de la
+diapositiva (texto con negrita/cursiva/tamaño real vía
+`XSLFTextRun`, e imágenes reales vía `XSLFPictureShape.pictureData`) en
+vez de solo título+viñetas por regex. Los párrafos de una misma caja de
+texto se separan con salto de línea real (antes "Punto uno" y "Punto
+dos" quedaban pegados: "Punto unoPunto dos") y los de cuerpo llevan
+"• " -- el título de la diapositiva se distingue por tamaño/color/negrita
+vía el placeholder (`shape.isPlaceholder` + `shape.textType`).
+
+**Alcance descartado explícitamente**: la posición/tamaño real de cada
+forma (`XSLFShape.anchor`, tipo `java.awt.geom.Rectangle2D`) -- confirmado
+que el compilador de Kotlin **ni siquiera puede resolver esa clase**
+contra el classpath de Android ("Cannot access class 'Rectangle2D'"), lo
+mismo para `XMLSlideShow.pageSize` (`java.awt.Dimension`). Las formas se
+muestran apiladas en su orden original, no en su posición exacta -- sigue
+siendo una mejora real (formato real por forma, imágenes reales) sin
+pelear contra una API que no compila en este proyecto.
+
+**Bug real encontrado y corregido en dispositivo real**: `ClassNotFoundException:
+com.zaxxer.sparsebits.SparseBitSet` -- crash real al abrir cualquier
+.pptx (confirmado con logcat, no solo en el emulador). Causa: una sesión
+anterior había excluido `com.zaxxer` de `poi`/`poi-ooxml`/`poi-scratchpad`
+para las conversiones de Word/Excel (que nunca tocan esa ruta), pero el
+visor de PowerPoint sí la necesita en tiempo de ejecución. Se agregó
+`com.zaxxer:SparseBitSet:1.3` como dependencia explícita en vez de quitar
+el exclude existente (que sigue siendo válido para Word/Excel).
+
+**Pendiente cosmético, no bloqueante**: el color del texto de cuerpo se
+ve más azul de lo esperado (debería verse gris oscuro, distinto del
+título) -- probablemente la detección de `shape.textType` para el
+placeholder de cuerpo necesita ajuste; no se investigó a fondo para no
+demorar la entrega de la corrección del crash real y la separación de
+párrafos, que eran los problemas más importantes.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `compileDebugKotlin` confirmó en un primer intento que `Rectangle2D`/
+  `Dimension` no compilan contra el SDK de Android (error real, no
+  hipótesis) -- llevó a descartar el posicionamiento exacto antes de
+  invertir más tiempo en esa vía.
+- `detekt` necesitó: subir `TooManyFunctions.thresholdInFiles` de 26 a 29
+  (mismo criterio ya documentado para `ViewerScreen.kt`), corregir 2
+  `SwallowedException` (pasar la excepción real a `Timber.w`, no solo su
+  mensaje), y una entrada de baseline `ReturnCount` para
+  `extractPptShapeContent` (guard clauses, mismo patrón ya usado 18+
+  veces en el proyecto).
+- Abrir `formatted-viewer-sample.pptx` real desde Descargas vía "Abrir
+  con DocuSmart": crash reproducido y confirmado con logcat
+  (`SparseBitSet`), corregido, y reverificado sin crash con el título y
+  los párrafos de cada diapositiva mostrados correctamente separados.
+- `detekt`/`lintDebug`/`testDebugUnitTest` en verde en la versión final.
+
+### Pendiente (Word y Excel)
+
+Mismo enfoque (Apache POI, ya probado) aplicado solo a PowerPoint por ser
+el caso más pobre -- Word y Excel quedan para una siguiente sesión:
+Word ya tiene negrita/cursiva/tamaño vía regex propio, POI daría acceso
+estructurado más robusto (tablas reales, alineación) sin depender de
+regex sobre XML crudo; Excel necesita formato real de celdas
+(`DataFormatter` para fechas/monedas/porcentajes) y pestañas para
+múltiples hojas.

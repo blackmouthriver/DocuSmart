@@ -62,8 +62,13 @@ import com.docsmart.features.viewer.presentation.components.ViewerTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.apache.poi.xslf.usermodel.XMLSlideShow
+import org.apache.poi.xslf.usermodel.XSLFPictureShape
+import org.apache.poi.xslf.usermodel.XSLFShape
+import org.apache.poi.xslf.usermodel.XSLFTextShape
 import timber.log.Timber
 import java.io.File
+import java.io.InputStream
 import java.util.zip.ZipInputStream
 
 @Composable
@@ -1121,6 +1126,82 @@ private fun ExcelGridRow(
 }
 
 // ── Visor de PowerPoint ───────────────────────────────────────────────────────
+// Antes: cada .pptx se abría como zip y se extraía título+cuerpo por regex
+// sobre el XML crudo de cada slide -- sin imágenes, sin diseño real (RF
+// pedido por el usuario 2026-09-03: "no se visualizan como el archivo
+// original"). Ahora se usa Apache POI (XMLSlideShow/XSLFShape, ya probado en
+// producción por WordToPdfUseCase/ExcelToPdfUseCase) para leer cada forma
+// real de la diapositiva -- texto con su formato real e imágenes reales --
+// en vez de solo título+viñetas.
+//
+// Nota de alcance: NO se usa la posición/tamaño real de cada forma
+// (`XSLFShape.anchor`) porque esa API devuelve `java.awt.geom.Rectangle2D` --
+// el compilador de Kotlin ni siquiera puede resolver esa clase contra el
+// classpath de Android ("Cannot access class 'Rectangle2D'"), confirmado
+// al intentarlo. Las formas se muestran apiladas en su orden original, no
+// en su posición exacta -- sigue siendo una mejora real (formato real por
+// forma, imágenes reales) sin depender de una API que no compila en Android.
+internal data class PptShapeContent(
+    val runs      : List<WordRun>,
+    val isTitle   : Boolean,
+    val imageBytes: ByteArray?
+)
+internal data class PptSlideModel(val number: Int, val shapes: List<PptShapeContent>)
+
+private fun extractPptSlides(input: InputStream): List<PptSlideModel> {
+    val slideShow = XMLSlideShow(input)
+    val slides = slideShow.slides.mapIndexed { index, slide ->
+        val shapes = slide.shapes.mapNotNull { shape -> extractPptShapeContent(shape) }
+        PptSlideModel(index + 1, shapes)
+    }
+    slideShow.close()
+    return slides
+}
+
+private fun extractPptShapeContent(shape: XSLFShape): PptShapeContent? {
+    if (shape is XSLFPictureShape) {
+        val bytes = try {
+            shape.pictureData?.data
+        } catch (e: Exception) {
+            Timber.w(e, "extractPptShapeContent: no se pudo leer una imagen")
+            null
+        }
+        return bytes?.let { PptShapeContent(runs = emptyList(), isTitle = false, imageBytes = it) }
+    }
+
+    if (shape !is XSLFTextShape) return null
+    val isTitle = try {
+        shape.isPlaceholder && shape.textType?.name?.contains("TITLE", ignoreCase = true) == true
+    } catch (e: Exception) {
+        Timber.w(e, "extractPptShapeContent: no se pudo determinar si la forma es un título")
+        false
+    }
+    // Cada `XSLFTextParagraph` es un punto/viñeta separado (RF pedido por el
+    // usuario 2026-09-03) -- sin un salto de línea entre ellos, "Punto uno"
+    // y "Punto dos" quedaban pegados como "Punto unoPunto dos". En cuerpos
+    // (no títulos) se antepone "• " a cada punto -- PowerPoint dibuja la
+    // viñeta aparte, no la incluye en el texto del run.
+    val paragraphRuns = shape.textParagraphs.mapNotNull { paragraph ->
+        val runs = paragraph.textRuns.mapNotNull { run ->
+            val text = run.rawText
+            if (text.isNullOrBlank()) return@mapNotNull null
+            WordRun(
+                text       = text,
+                bold       = run.isBold,
+                italic     = run.isItalic,
+                fontSizeSp = run.fontSize?.toInt()
+            )
+        }
+        if (runs.isEmpty()) return@mapNotNull null
+        if (isTitle) runs else listOf(WordRun("• ", bold = false, italic = false, fontSizeSp = null)) + runs
+    }
+    if (paragraphRuns.isEmpty()) return null
+    val runs = paragraphRuns.reduce { acc, paragraph ->
+        acc + WordRun("\n", bold = false, italic = false, fontSizeSp = null) + paragraph
+    }
+    return PptShapeContent(runs = runs, isTitle = isTitle, imageBytes = null)
+}
+
 @Composable
 private fun PptViewerContent(
     uri        : Uri?,
@@ -1129,9 +1210,7 @@ private fun PptViewerContent(
 ) {
     val context = LocalContext.current
 
-    data class SlideContent(val number: Int, val title: String, val body: String)
-
-    var slides    by remember { mutableStateOf<List<SlideContent>>(emptyList()) }
+    var slides    by remember { mutableStateOf<List<PptSlideModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(uri) {
@@ -1139,38 +1218,10 @@ private fun PptViewerContent(
         slides = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    val zip      = ZipInputStream(input)
-                    var entry    = zip.nextEntry
-                    val slideMap = mutableMapOf<Int, SlideContent>()
-
-                    while (entry != null) {
-                        if (entry.name.startsWith("ppt/slides/slide") &&
-                            entry.name.endsWith(".xml") &&
-                            !entry.name.contains("_rels")
-                        ) {
-                            val num       = entry.name.removePrefix("ppt/slides/slide").removeSuffix(".xml").toIntOrNull() ?: 0
-                            val xml       = zip.readBytes().toString(Charsets.UTF_8)
-                            val paraRegex = Regex("<a:p[ >](.*?)</a:p>", RegexOption.DOT_MATCHES_ALL)
-                            val lines     = paraRegex.findAll(xml).mapNotNull { match ->
-                                val text = match.value
-                                    .replace(Regex("<a:rPr[^/]*/?>|</a:rPr>"), "")
-                                    .replace(Regex("<[^>]+>"), "")
-                                    .replace("&lt;","<").replace("&gt;",">").replace("&amp;","&")
-                                    .replace(Regex("\\s+"), " ").trim()
-                                if (text.isNotBlank()) text else null
-                            }.toList()
-
-                            if (lines.isNotEmpty()) {
-                                slideMap[num] = SlideContent(num, lines.first(), lines.drop(1).joinToString("\n"))
-                            }
-                        }
-                        entry = zip.nextEntry
-                    }
-                    zip.close()
-                    slideMap.toSortedMap().values.toList()
+                    extractPptSlides(input)
                 } ?: emptyList()
             } catch (e: Exception) {
-                Timber.e("Error leyendo PPT: ${e.message}")
+                Timber.e(e, "Error leyendo PPT")
                 emptyList()
             } finally {
                 isLoading = false
@@ -1178,11 +1229,12 @@ private fun PptViewerContent(
         }
     }
 
-    val displaySlides = if (searchQuery.isBlank()) slides
-    else slides.filter {
-        it.title.contains(searchQuery, ignoreCase = true) ||
-                it.body.contains(searchQuery, ignoreCase = true)
+    fun slideText(slide: PptSlideModel) = slide.shapes.joinToString(" ") { shape ->
+        shape.runs.joinToString(" ") { it.text }
     }
+
+    val displaySlides = if (searchQuery.isBlank()) slides
+    else slides.filter { slideText(it).contains(searchQuery, ignoreCase = true) }
 
     Box(
         modifier = Modifier
@@ -1236,54 +1288,61 @@ private fun PptViewerContent(
                                 containerColor = if (searchQuery.isNotBlank())
                                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
                                 else
-                                    MaterialTheme.colorScheme.surface
+                                    Color.White
                             ),
                             border    = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             elevation = CardDefaults.cardElevation(3.dp)
                         ) {
-                            Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-                                Text(
-                                    text       = slide.title,
-                                    style      = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color      = MaterialTheme.colorScheme.primary,
-                                    maxLines   = 2
-                                )
-                                if (slide.body.isNotBlank()) {
-                                    Spacer(Modifier.height(8.dp))
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                    Spacer(Modifier.height(10.dp))
-                                    Column(
-                                        modifier            = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        slide.body.split("\n").forEach { line ->
-                                            if (line.isNotBlank()) {
-                                                Row(
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                    modifier              = Modifier.fillMaxWidth()
-                                                ) {
-                                                    Text("•", color = MaterialTheme.colorScheme.primary,
-                                                        style = MaterialTheme.typography.bodySmall)
-                                                    Text(
-                                                        text       = line,
-                                                        style      = MaterialTheme.typography.bodySmall,
-                                                        color      = MaterialTheme.colorScheme.onSurface,
-                                                        lineHeight = 18.sp,
-                                                        modifier   = Modifier.weight(1f)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            PptSlideCanvas(slide)
                         }
                     }
                 }
             }
         }
     }
+}
+
+// Lista apilada en el orden original de las formas -- no la posición exacta
+// (ver nota de alcance sobre `Rectangle2D` más arriba), pero cada forma
+// mantiene su propio formato real (negrita/cursiva/tamaño) y las imágenes
+// se muestran de verdad, algo que el regex anterior ni siquiera intentaba.
+@Composable
+private fun PptSlideCanvas(slide: PptSlideModel) {
+    Column(
+        modifier            = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        slide.shapes.forEach { shapeContent -> PptShapeView(shapeContent) }
+    }
+}
+
+@Composable
+private fun PptShapeView(shape: PptShapeContent) {
+    val imageBytes = shape.imageBytes
+    if (imageBytes != null) {
+        val bitmap = remember(imageBytes) {
+            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+        }
+        if (bitmap != null) {
+            Image(
+                bitmap             = bitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier           = Modifier.fillMaxWidth(),
+                contentScale       = androidx.compose.ui.layout.ContentScale.FillWidth
+            )
+        }
+        return
+    }
+    Text(
+        text       = wordParagraphAnnotatedString(
+            WordParagraph(shape.runs, isHeading = shape.isTitle),
+            baseSizeSp = if (shape.isTitle) 20.sp else 13.sp
+        ),
+        style      = MaterialTheme.typography.bodyMedium,
+        fontWeight = if (shape.isTitle) FontWeight.Bold else FontWeight.Normal,
+        color      = if (shape.isTitle) MaterialTheme.colorScheme.primary else Color(0xFF222222),
+        maxLines   = if (shape.isTitle) 3 else Int.MAX_VALUE
+    )
 }
 
 // ── Visor de texto plano ──────────────────────────────────────────────────────
