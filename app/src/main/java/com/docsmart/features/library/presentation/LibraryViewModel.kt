@@ -1,5 +1,6 @@
 package com.docsmart.features.library.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
@@ -7,6 +8,7 @@ import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
+import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,11 +41,31 @@ class LibraryViewModel @Inject constructor(
     val adManager          : AdManager,
     private val repository : DocumentRepository,
     private val trashRepository: TrashRepository,
-    private val favoritesRepository: FavoritesRepository
+    private val favoritesRepository: FavoritesRepository,
+    private val downloadsAccessManager: DownloadsAccessManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
+
+    // Fila 22 del backlog UX: si el usuario vinculó Descargas por SAF, la
+    // Biblioteca ve todos los PDF/Word/Excel/PowerPoint/Texto de esa
+    // carpeta, no solo los que la app misma generó (ver DownloadsAccessManager).
+    val linkedDownloadsFolderUri: StateFlow<Uri?> = downloadsAccessManager.linkedFolderUri
+
+    fun downloadsFolderPickerInitialUri(): Uri? = downloadsAccessManager.initialUriHint()
+
+    fun linkedFolderDisplayName(uri: Uri): String? = downloadsAccessManager.folderDisplayName(uri)
+
+    fun onDownloadsFolderPicked(uri: Uri) {
+        downloadsAccessManager.onFolderPicked(uri)
+        loadDocuments()
+    }
+
+    fun unlinkDownloadsFolder() {
+        downloadsAccessManager.unlink()
+        loadDocuments()
+    }
 
     init {
         loadDocuments()
@@ -81,11 +103,18 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    // Un documento es "del dispositivo" si su ID es una content:// URI de MediaStore
+    // Ampliado 2026-09-03 (fila 22 backlog UX): un documento del historial
+    // puede venir de CUALQUIER proveedor de contenido externo (WhatsApp,
+    // Gmail, otro gestor de archivos), no solo MediaStore/SAF de Android --
+    // la lista fija anterior (content://media, content://com.android,
+    // content://downloads) clasificaba esos casos como "Mis archivos" por
+    // defecto, lo cual es incorrecto: no los creó la app. Los documentos que
+    // sí genera la app (loadAppGeneratedFiles()) siempre usan una ruta
+    // absoluta como id, nunca un content:// -- por eso "cualquier content://"
+    // es del dispositivo es una regla más simple y más correcta que una
+    // lista de prefijos conocidos.
     private fun isDeviceDocument(doc: DocumentUiModel): Boolean =
-        doc.id.startsWith("content://media") ||
-                doc.id.startsWith("content://com.android") ||
-                doc.id.startsWith("content://downloads")
+        doc.id.startsWith("content://")
 
     // ── Tab seleccionado ──────────────────────────────────────────────────────
     fun onTabSelected(tab: LibraryTab) {

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
@@ -695,6 +696,22 @@ class ViewerViewModel @Inject constructor(
         }
     }
 
+    // Bug real reportado por el usuario 2026-09-03: compartir un documento
+    // generado por la app (id = ruta absoluta, ver resolveUri()) dejó de
+    // funcionar porque fileUri queda como Uri.fromFile(...) -- un file://
+    // real. Desde Android 7 (API 24) exponer un file:// a otra app vía
+    // Intent lanza FileUriExposedException (hereda de SecurityException),
+    // que el catch genérico de abajo atrapaba silenciosamente como "No se
+    // pudo compartir". Biblioteca/Home ya resolvían esto con FileProvider
+    // (ver DocumentListSection.kt/FavoritesSection.kt) -- el Visor nunca lo
+    // hizo. Se envuelve acá con el mismo FileProvider/authority ya
+    // declarado en el manifest.
+    private fun shareableUri(context: Context, uri: Uri): Uri {
+        val path = uri.path
+        if (uri.scheme != "file" || path == null) return uri
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(path))
+    }
+
     fun shareDocument(context: Context) {
         val state    = _uiState.value
         val document = state.document ?: return
@@ -702,7 +719,7 @@ class ViewerViewModel @Inject constructor(
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = state.mimeType ?: MIME_PDF
                 state.fileUri?.let { uri ->
-                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_STREAM, shareableUri(context, uri))
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 putExtra(Intent.EXTRA_SUBJECT, document.name)

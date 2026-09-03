@@ -500,6 +500,11 @@
     <string name="onboarding_3_desc">Храните файлы в личном сейфе с PIN-кодом или отпечатком пальца. Ваша конфиденциальность превыше всего.</string>
     <string name="onboarding_4_title">Режим учёбы</string>
     <string name="onboarding_4_desc">Слушайте текст с помощью Text-to-Speech, выделяйте абзацы, делайте голосовые заметки и используйте таймер Помодоро.</string>
+    <string name="onboarding_5_title">Привяжите свои документы</string>
+    <string name="onboarding_5_desc">Выберите папку на устройстве, где вы храните файлы, чтобы видеть их в Библиотеке. Доступ к ним будете иметь только вы — это можно сделать сейчас или позже в Настройках.</string>
+    <string name="onboarding_folder_linked">Привязана: %1$s</string>
+    <string name="onboarding_folder_change">Сменить папку</string>
+    <string name="onboarding_folder_link_button">Привязать папку</string>
     <string name="onboarding_skip">Пропустить</string>
     <string name="onboarding_start">Начать!</string>
     <string name="onboarding_next">Далее</string>
@@ -790,4 +795,22 @@
     <string name="filepicker_browse_system_files">Просмотреть файлы системы</string>
     <string name="filepicker_from_library">Из библиотеки DocuSmart</string>
     <string name="filepicker_no_library_files">В вашей библиотеке пока нет файлов</string>
+
+    <!-- ── Привязка папки Загрузки через SAF (пункт 22 бэклога UX) ── -->
+    <string name="library_link_downloads_title">Смотрите больше документов здесь</string>
+    <string name="library_link_downloads_body">Выберите папку по вашему выбору, чтобы найти документы с вашего устройства и привязать её к DocuSmart</string>
+    <string name="library_link_downloads_button">Привязать папку</string>
+
+    <!-- ── Быстрый доступ к привязанной папке, рядом с Устройство/Мои файлы/Корзина ── -->
+    <string name="library_folder_shortcut_label">Привязанная папка</string>
+    <string name="library_folder_shortcut_subtitle">Открыть</string>
+    <string name="library_folder_shortcut_no_app">На этом устройстве нет приложения для открытия папок</string>
+
+    <!-- ── Настройки: управление привязанной папкой (пункт 22 бэклога UX) ── -->
+    <string name="settings_linked_downloads_title">Привязанная папка</string>
+    <string name="settings_linked_downloads_linked">Привязана · нажмите, чтобы отвязать</string>
+    <string name="settings_linked_downloads_not_linked">Не привязана · нажмите, чтобы привязать</string>
+    <string name="settings_unlink_downloads_title">Отвязать папку?</string>
+    <string name="settings_unlink_downloads_body">Вы перестанете видеть файлы из Загрузок на вкладке Устройство в Библиотеке. Вы можете привязать её снова в любое время.</string>
+    <string name="settings_unlink_downloads_confirm">Отвязать</string>
 </resources>

@@ -1,6 +1,9 @@
 package com.docsmart.features.onboarding.presentation
 
 import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -26,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.IndigoAccent
@@ -40,7 +45,11 @@ data class OnboardingSlide(
     val iconColor    : Color,
     @StringRes val titleRes: Int,
     @StringRes val descRes : Int,
-    val gradient     : List<Color>
+    val gradient     : List<Color>,
+    // Fila 22 del backlog UX: la última slide deja vincular una carpeta del
+    // dispositivo (SAF) directo desde el onboarding, en vez de que el
+    // usuario tenga que descubrir el banner de Biblioteca por su cuenta.
+    val isFolderLinkSlide: Boolean = false
 )
 
 private val slides = listOf(
@@ -71,6 +80,14 @@ private val slides = listOf(
         titleRes  = R.string.onboarding_4_title,
         descRes   = R.string.onboarding_4_desc,
         gradient  = listOf(DocuBlue, IndigoAccent, SmartBlue)
+    ),
+    OnboardingSlide(
+        icon              = Icons.Rounded.CreateNewFolder,
+        iconColor         = Color.White,
+        titleRes          = R.string.onboarding_5_title,
+        descRes           = R.string.onboarding_5_desc,
+        gradient          = listOf(IndigoAccent, SmartBlue, DocuBlue),
+        isFolderLinkSlide = true
     )
 )
 
@@ -92,11 +109,22 @@ fun resetOnboarding(context: Context) {
 // ── Pantalla principal ────────────────────────────────────────────────────────
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun OnboardingScreen(onFinished: () -> Unit) {
+fun OnboardingScreen(
+    onFinished: () -> Unit,
+    viewModel : OnboardingViewModel = hiltViewModel()
+) {
     val context    = LocalContext.current
     val pagerState = rememberPagerState(pageCount = { slides.size })
     val scope      = rememberCoroutineScope()
     val isLastPage = pagerState.currentPage == slides.size - 1
+
+    val linkedFolderUri by viewModel.linkedFolderUri.collectAsStateWithLifecycle()
+    val linkedFolderName = remember(linkedFolderUri) {
+        linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
+    }
+    val linkFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -105,7 +133,13 @@ fun OnboardingScreen(onFinished: () -> Unit) {
             state    = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
-            OnboardingSlideContent(slide = slides[page])
+            OnboardingSlideContent(
+                slide             = slides[page],
+                linkedFolderName  = linkedFolderName,
+                onLinkFolderClick = {
+                    linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
+                }
+            )
         }
 
         // ── Controles inferiores ──────────────────────────────────────────────
@@ -200,7 +234,11 @@ private fun OnboardingNextButton(
 
 // ── Contenido de cada slide ───────────────────────────────────────────────────
 @Composable
-private fun OnboardingSlideContent(slide: OnboardingSlide) {
+private fun OnboardingSlideContent(
+    slide            : OnboardingSlide,
+    linkedFolderName : String? = null,
+    onLinkFolderClick: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -258,7 +296,72 @@ private fun OnboardingSlideContent(slide: OnboardingSlide) {
                 lineHeight = 26.sp
             )
 
-            Spacer(Modifier.weight(2f))
+            if (slide.isFolderLinkSlide) {
+                Spacer(Modifier.height(28.dp))
+                OnboardingFolderLinkAction(
+                    linkedFolderName = linkedFolderName,
+                    onLinkClick      = onLinkFolderClick
+                )
+            }
+
+            Spacer(Modifier.weight(if (slide.isFolderLinkSlide) 1f else 2f))
+        }
+    }
+}
+
+// ── Acción de vincular carpeta (fila 22 backlog UX) ────────────────────────────
+@Composable
+private fun OnboardingFolderLinkAction(
+    linkedFolderName: String?,
+    onLinkClick     : () -> Unit
+) {
+    if (linkedFolderName != null) {
+        Row(
+            modifier = Modifier
+                .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector        = Icons.Rounded.CheckCircle,
+                contentDescription = null,
+                tint               = SuccessGreen
+            )
+            Text(
+                text       = stringResource(R.string.onboarding_folder_linked, linkedFolderName),
+                style      = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color      = Color.White
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = onLinkClick) {
+            Text(
+                text  = stringResource(R.string.onboarding_folder_change),
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White.copy(alpha = 0.8f)
+            )
+        }
+    } else {
+        Button(
+            onClick = onLinkClick,
+            shape   = RoundedCornerShape(16.dp),
+            colors  = ButtonDefaults.buttonColors(
+                containerColor = Color.White,
+                contentColor   = DocuBlue
+            )
+        ) {
+            Icon(
+                imageVector        = Icons.Rounded.CreateNewFolder,
+                contentDescription = null,
+                modifier           = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text       = stringResource(R.string.onboarding_folder_link_button),
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

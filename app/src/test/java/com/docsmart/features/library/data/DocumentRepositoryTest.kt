@@ -53,7 +53,7 @@ class DocumentRepositoryTest {
         trashDao = FakeTrashDao()
         repository = DocumentRepository(
             context, mockk<FavoritesRepository>(relaxed = true), historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true)
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
         )
         mockkStatic(Uri::class)
     }
@@ -89,6 +89,7 @@ class DocumentRepositoryTest {
         val uriString = "content://media/external/downloads/12345"
         val mockUri = mockk<Uri>()
         every { Uri.parse(uriString) } returns mockUri
+        every { mockUri.authority } returns "media"
         val resolver = mockk<ContentResolver>()
         every { resolver.delete(mockUri, null, null) } returns 1
         every { context.contentResolver } returns resolver
@@ -103,6 +104,7 @@ class DocumentRepositoryTest {
         val uriString = "content://media/external/downloads/99999"
         val mockUri = mockk<Uri>()
         every { Uri.parse(uriString) } returns mockUri
+        every { mockUri.authority } returns "media"
         val resolver = mockk<ContentResolver>()
         every { resolver.delete(mockUri, null, null) } returns 0
         every { context.contentResolver } returns resolver
@@ -117,6 +119,7 @@ class DocumentRepositoryTest {
         val uriString = "content://media/external/images/1"
         val mockUri = mockk<Uri>()
         every { Uri.parse(uriString) } returns mockUri
+        every { mockUri.authority } returns "media"
         val resolver = mockk<ContentResolver>()
         every { resolver.delete(mockUri, null, null) } throws SecurityException("no permission")
         every { context.contentResolver } returns resolver
@@ -145,7 +148,8 @@ class DocumentRepositoryTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.removeAlias(any()) } just Runs
         val repo = DocumentRepository(
-            context, favorites, historyDao, trashDao, mockk<MediaDeletePermission>(relaxed = true)
+            context, favorites, historyDao, trashDao,
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
         )
         val dir  = File(filesDir, "converted").apply { mkdirs() }
         val file = File(dir, "original.pdf").apply { writeText("contenido") }
@@ -163,7 +167,8 @@ class DocumentRepositoryTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.saveAlias(any(), any()) } just Runs
         val repo = DocumentRepository(
-            context, favorites, historyDao, trashDao, mockk<MediaDeletePermission>(relaxed = true)
+            context, favorites, historyDao, trashDao,
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
         )
         val uriString = "content://media/external/downloads/12345"
 
@@ -178,7 +183,8 @@ class DocumentRepositoryTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.saveAlias(any(), any()) } just Runs
         val repo = DocumentRepository(
-            context, favorites, historyDao, trashDao, mockk<MediaDeletePermission>(relaxed = true)
+            context, favorites, historyDao, trashDao,
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
         )
         val missing = File(filesDir, "no_existe.pdf") // File.renameTo() sobre un origen inexistente devuelve false
 
@@ -245,6 +251,9 @@ class DocumentRepositoryTest {
 
         override suspend fun recentDocumentIds(limit: Int): List<String> =
             store.entries.sortedByDescending { it.value }.map { it.key }.take(limit)
+
+        override suspend fun allEntries(): List<DocumentHistoryEntry> =
+            store.entries.sortedByDescending { it.value }.map { DocumentHistoryEntry(it.key, it.value) }
 
         override suspend fun remove(documentId: String) {
             store.remove(documentId)

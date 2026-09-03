@@ -500,6 +500,11 @@
     <string name="onboarding_3_desc">Guarde arquivos no seu cofre pessoal com PIN ou impressão digital. Sua privacidade em primeiro lugar.</string>
     <string name="onboarding_4_title">Modo Estudo</string>
     <string name="onboarding_4_desc">Leia com Text-to-Speech, destaque parágrafos, faça notas de voz e use o temporizador Pomodoro.</string>
+    <string name="onboarding_5_title">Vincule seus documentos</string>
+    <string name="onboarding_5_desc">Escolha a pasta do seu dispositivo onde guarda seus arquivos para vê-los na Biblioteca. Só você terá acesso a eles — pode fazer isso agora ou depois em Ajustes.</string>
+    <string name="onboarding_folder_linked">Vinculada: %1$s</string>
+    <string name="onboarding_folder_change">Trocar pasta</string>
+    <string name="onboarding_folder_link_button">Vincular pasta</string>
     <string name="onboarding_skip">Pular</string>
     <string name="onboarding_start">Começar!</string>
     <string name="onboarding_next">Próximo</string>
@@ -790,4 +795,22 @@
     <string name="filepicker_browse_system_files">Explorar arquivos do sistema</string>
     <string name="filepicker_from_library">Da biblioteca do DocuSmart</string>
     <string name="filepicker_no_library_files">Você ainda não tem arquivos na sua biblioteca</string>
+
+    <!-- ── Vincular pasta de Downloads via SAF (item 22 do backlog UX) ── -->
+    <string name="library_link_downloads_title">Veja mais documentos aqui</string>
+    <string name="library_link_downloads_body">Escolha a pasta de sua preferência para encontrar os documentos do seu dispositivo e vinculá-la ao DocuSmart</string>
+    <string name="library_link_downloads_button">Vincular pasta</string>
+
+    <!-- ── Atalho para a pasta vinculada, ao lado de Dispositivo/Meus arquivos/Lixeira ── -->
+    <string name="library_folder_shortcut_label">Pasta vinculada</string>
+    <string name="library_folder_shortcut_subtitle">Abrir</string>
+    <string name="library_folder_shortcut_no_app">Não há um app para abrir pastas neste dispositivo</string>
+
+    <!-- ── Ajustes: gerenciar pasta vinculada (item 22 backlog UX) ── -->
+    <string name="settings_linked_downloads_title">Pasta vinculada</string>
+    <string name="settings_linked_downloads_linked">Vinculada · toque para desvincular</string>
+    <string name="settings_linked_downloads_not_linked">Não vinculada · toque para vincular</string>
+    <string name="settings_unlink_downloads_title">Desvincular pasta?</string>
+    <string name="settings_unlink_downloads_body">Você deixará de ver os arquivos de Downloads na aba Dispositivo da Biblioteca. Pode vincular novamente quando quiser.</string>
+    <string name="settings_unlink_downloads_confirm">Desvincular</string>
 </resources>

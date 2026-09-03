@@ -500,6 +500,11 @@
     <string name="onboarding_3_desc">Guarda archivos en tu caja fuerte personal con PIN o huella dactilar. Tu privacidad es lo primero.</string>
     <string name="onboarding_4_title">Modo Estudio</string>
     <string name="onboarding_4_desc">Lee con Text-to-Speech, resalta párrafos, toma notas con voz y usa el temporizador Pomodoro.</string>
+    <string name="onboarding_5_title">Vincula tus documentos</string>
+    <string name="onboarding_5_desc">Elige la carpeta de tu dispositivo donde guardas tus archivos para verlos en Biblioteca. Solo tú tendrás acceso a ellos — puedes hacerlo ahora o más tarde desde Ajustes.</string>
+    <string name="onboarding_folder_linked">Vinculada: %1$s</string>
+    <string name="onboarding_folder_change">Cambiar carpeta</string>
+    <string name="onboarding_folder_link_button">Vincular carpeta</string>
     <string name="onboarding_skip">Saltar</string>
     <string name="onboarding_start">¡Empezar!</string>
     <string name="onboarding_next">Siguiente</string>
@@ -790,4 +795,22 @@
     <string name="filepicker_browse_system_files">Explorar archivos del sistema</string>
     <string name="filepicker_from_library">Desde la biblioteca de DocuSmart</string>
     <string name="filepicker_no_library_files">No hay archivos en tu biblioteca todavía</string>
+
+    <!-- ── Vincular carpeta de Descargas por SAF (fila 22 backlog UX) ── -->
+    <string name="library_link_downloads_title">Ver más documentos aquí</string>
+    <string name="library_link_downloads_body">Elije tu carpeta preferida para encontrar tus documentos de tu dispositivo y vincularlo a DocuSmart</string>
+    <string name="library_link_downloads_button">Vincular carpeta</string>
+
+    <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
+    <string name="library_folder_shortcut_label">Carpeta vinculada</string>
+    <string name="library_folder_shortcut_subtitle">Abrir</string>
+    <string name="library_folder_shortcut_no_app">No hay una app para abrir carpetas en este dispositivo</string>
+
+    <!-- ── Ajustes: gestionar carpeta vinculada (fila 22 backlog UX) ── -->
+    <string name="settings_linked_downloads_title">Carpeta vinculada</string>
+    <string name="settings_linked_downloads_linked">Vinculada · toca para desvincular</string>
+    <string name="settings_linked_downloads_not_linked">Sin vincular · toca para vincular</string>
+    <string name="settings_unlink_downloads_title">¿Desvincular carpeta?</string>
+    <string name="settings_unlink_downloads_body">Dejarás de ver los archivos de Descargas en la pestaña Dispositivo de Biblioteca. Puedes volver a vincularla cuando quieras.</string>
+    <string name="settings_unlink_downloads_confirm">Desvincular</string>
 </resources>

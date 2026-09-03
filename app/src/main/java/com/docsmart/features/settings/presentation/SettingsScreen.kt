@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -87,6 +89,14 @@ fun SettingsScreen(
     var showHelpDialog     by remember { mutableStateOf(false) }
     var showResetDialog    by remember { mutableStateOf(false) }
     var showShareDialog    by remember { mutableStateOf(false) }
+    var showUnlinkDownloadsDialog by remember { mutableStateOf(false) }
+
+    // Fila 22 del backlog UX: estado de la carpeta de Descargas vinculada por
+    // SAF (ver DownloadsAccessManager / LibraryScreen).
+    val linkedDownloadsFolderUri by viewModel.linkedDownloadsFolderUri.collectAsStateWithLifecycle()
+    val linkDownloadsFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
 
     // ── UMP: solo mostrar la entrada de consentimiento de anuncios si Google
     // determinó que hace falta un punto de acceso (usuarios en UE/Reino
@@ -346,6 +356,33 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+                }
+            }
+        )
+    }
+
+    // ── Diálogo: Desvincular carpeta de Descargas (fila 22 backlog UX) ─────────
+    if (showUnlinkDownloadsDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnlinkDownloadsDialog = false },
+            shape = MaterialTheme.shapes.large,
+            title = { Text(stringResource(R.string.settings_unlink_downloads_title),
+                style = MaterialTheme.typography.titleLarge) },
+            text  = { Text(stringResource(R.string.settings_unlink_downloads_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.unlinkDownloadsFolder()
+                    showUnlinkDownloadsDialog = false
+                }) {
+                    Text(
+                        text  = stringResource(R.string.settings_unlink_downloads_confirm),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnlinkDownloadsDialog = false }) {
+                    Text(stringResource(R.string.general_cancel))
                 }
             }
         )
@@ -641,6 +678,26 @@ fun SettingsScreen(
                 title    = stringResource(R.string.settings_storage),
                 subtitle = stringResource(R.string.settings_storage_subtitle),
                 onClick  = { showStorageDialog = true }
+            )
+        }
+        // Fila 22 del backlog UX: gestionar (vincular/desvincular) la carpeta
+        // de Descargas para ver PDF/Word/Excel/PowerPoint/Texto reales en la
+        // pestaña Dispositivo de Biblioteca (ver LibraryScreen).
+        item {
+            SettingsItem(
+                icon     = Icons.Rounded.FolderOpen,
+                title    = stringResource(R.string.settings_linked_downloads_title),
+                subtitle = if (linkedDownloadsFolderUri != null)
+                    stringResource(R.string.settings_linked_downloads_linked)
+                else
+                    stringResource(R.string.settings_linked_downloads_not_linked),
+                onClick  = {
+                    if (linkedDownloadsFolderUri != null) {
+                        showUnlinkDownloadsDialog = true
+                    } else {
+                        linkDownloadsFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
+                    }
+                }
             )
         }
 

@@ -130,6 +130,8 @@
     <ID>NestedBlockDepth:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadImagesFromMediaStore(): List&lt;DocumentUiModel&gt;</ID>
     <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadDocumentsFromDownloads(): List&lt;DocumentUiModel&gt;</ID>
+    <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun loadDocumentsFromLinkedFolder(treeUri: Uri): List&lt;DocumentUiModel&gt;</ID>
+    <ID>NestedBlockDepth:DocumentRepository.kt$DocumentRepository$private fun collectLinkedFolderDocuments(folder: DocumentFile, depth: Int, into: MutableList&lt;DocumentUiModel&gt;)</ID>
     <ID>NestedBlockDepth:EditTextPdfUseCase.kt$EditTextPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:FillFormUseCase.kt$FillFormUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NestedBlockDepth:MergePdfUseCase.kt$MergePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -245,6 +247,7 @@
     <ID>ReturnCount:ConverterViewModel.kt$ConverterViewModel$fun convert(context: Context)</ID>
     <ID>ReturnCount:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:DocumentRepository.kt$DocumentRepository$private fun eligibleNameAndMime(file: DocumentFile): Pair&lt;String, String&gt;?</ID>
     <ID>ReturnCount:EditTextPdfUseCase.kt$EditTextPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:FillFormUseCase.kt$FillFormUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:MainActivity.kt$MainActivity$private fun resolveExternalIntent(intent: Intent?): Uri?</ID>
@@ -256,6 +259,7 @@
     <ID>ReturnCount:RotatePdfUseCase.kt$RotatePdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:SignPdfUseCase.kt$SignPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:SplitPdfUseCase.kt$SplitPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
+    <ID>ReturnCount:ViewerScreen.kt$private fun extractPptShapeContent(shape: XSLFShape): PptShapeContent?</ID>
     <ID>ReturnCount:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
     <ID>ReturnCount:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>SwallowedException:DocumentListSection.kt$e: Exception</ID>

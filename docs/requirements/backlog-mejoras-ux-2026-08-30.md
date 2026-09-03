@@ -1161,3 +1161,373 @@ API 29-32 reales.
   externos" en este dispositivo a propósito -- es API 34, exactamente el
   caso donde la limitación de plataforma sigue aplicando después del
   fix (comportamiento esperado, no una falla de la corrección).
+
+## 17. Mejora — Vincular carpeta de Descargas por SAF (alternativa real a la fila 22)
+
+**✅ Implementado, verificado en dispositivo real y con la copia ajustada
+2026-09-03 -- funciona end-to-end. Limitación real e importante de
+Android descubierta durante la propia verificación: el usuario NO puede
+vincular la carpeta "Descargas" en sí misma, solo una subcarpeta dentro
+de ella -- la copia de la UI ya lo refleja (ver sección de copia más
+abajo), a pedido explícito del usuario.**
+
+Pedido explícito del usuario tras el hallazgo de la fila 22/§16: dado que
+ningún permiso puede hacer que la app vea Word/Excel/PDF/PowerPoint/Texto
+de Descargas en API 33+, se necesitaba una alternativa real para que el
+usuario sí pueda verlos, no solo una explicación de la limitación.
+
+### Qué se implementó
+
+- **`DownloadsAccessManager.kt`** (nuevo): envuelve
+  `ACTION_OPEN_DOCUMENT_TREE` + `ContentResolver.takePersistableUriPermission()`
+  -- el usuario vincula una carpeta una sola vez con el selector nativo
+  de Android y el permiso persiste entre reinicios de la app/dispositivo.
+  Valida el permiso guardado contra `persistedUriPermissions` real (no
+  solo lo que quedó en `SharedPreferences`) para detectar si el usuario
+  lo revocó desde Ajustes del sistema.
+- **`DocumentRepository.kt`**: `loadAllDocumentsRaw()` usa
+  `loadDocumentsFromLinkedFolder()` (enumera el árbol real vía
+  `DocumentFile`, sin la restricción de scoped storage de "solo filas
+  propias") en vez de `loadDocumentsFromDownloads()` cuando hay una
+  carpeta vinculada. `deleteDocument()` distingue un URI de carpeta
+  vinculada (autoridad `com.android.externalstorage.documents`) de uno
+  de MediaStore y borra vía `DocumentsContract.deleteDocument()` --
+  `MediaStore.createDeleteRequest()` lanza `IllegalArgumentException`
+  si se le pasa un URI que no es de MediaStore, y antes de esta función
+  nunca recibía otra cosa.
+- **`LibraryScreen.kt`**: tarjeta "Ver todos tus archivos de Descargas" /
+  "Vincular carpeta" en la pestaña Dispositivo, visible solo mientras no
+  hay carpeta vinculada. `initialUriHint()` pre-navega el selector nativo
+  directo a Descargas (`DocumentsContract.buildDocumentUri(..., "primary:Download")`)
+  para no obligar al usuario a buscarla manualmente.
+- **`SettingsScreen.kt`** / **`SettingsViewModel.kt`**: ítem "Carpeta de
+  Descargas" en Ajustes → Almacenamiento, con estado
+  ("Vinculada"/"Sin vincular") y diálogo de confirmación para
+  desvincular.
+- `config/detekt/detekt.yml`: `TooManyFunctions.thresholdInClasses`
+  subido de 15 a 20 -- `DocumentRepository` sumó 5 funciones pequeñas y
+  cohesivas (`loadDocumentsFromLinkedFolder`, `documentFromLinkedFile`,
+  `eligibleNameAndMime`, `isSupportedDownloadMime`, `deleteSafDocument`),
+  mismo criterio ya documentado en este archivo para managers con varios
+  tipos de recurso en paralelo.
+- `config/detekt/baseline.xml`: `NestedBlockDepth` para
+  `loadDocumentsFromLinkedFolder()` (mismo patrón ya baselineado para
+  `loadDocumentsFromDownloads()`: bucle con try/catch por fila, no se
+  puede aplanar sin perder el manejo de errores por archivo) y
+  `ReturnCount` para `eligibleNameAndMime()` (guard clauses -- mismo
+  patrón ya baselineado 17 veces en este proyecto para funciones
+  "validar y construir resultado", ej. todos los `copyUriToCache()`).
+
+### Hallazgo real encontrado durante la verificación en dispositivo real
+
+**Android no permite vincular la carpeta "Descargas" en sí misma vía
+SAF, ni tampoco la raíz del almacenamiento interno.** Confirmado en el
+Motorola Edge 30 Neo (API 34): al abrir el selector (incluso ya
+pre-navegado dentro de Descargas por `initialUriHint()`), Android
+muestra el aviso *"No se puede usar esta carpeta -- Para proteger tu
+privacidad, elige otra carpeta"* y el botón "USAR ESTA CARPETA" queda
+deshabilitado, tanto para "Descargas" como para la raíz
+"motorola edge 30 neo". Confirmado también por búsqueda externa: desde
+Android 11, `ACTION_OPEN_DOCUMENT_TREE` bloquea explícitamente la raíz
+del almacenamiento y los directorios estándar como Descargas -- **una
+subcarpeta dentro de Descargas sí es seleccionable** (verificado
+vinculando `Descargas/DMSS` con éxito: permiso persistido, tarjeta de
+Biblioteca desaparece, Ajustes pasa a "Vinculada", desvincular funciona
+y la tarjeta vuelve a aparecer).
+
+En la práctica esto significa que la función **no resuelve el caso más
+común** que motivó el pedido (ver un PDF que el navegador o WhatsApp
+guardó directo en la raíz de Descargas) -- el usuario tendría que crear
+una subcarpeta dentro de Descargas y mover sus archivos ahí a mano, o
+vincular otra carpeta donde sí organice sus documentos. Sigue siendo
+mejor que nada (ninguna alternativa sin código nativo del sistema deja
+vincular la raíz de Descargas). Antes de fusionar, el usuario pidió
+reemplazar el texto del banner por una copia propia más simple y amable
+("Elije tu carpeta preferida para encontrar tus documentos de tu
+dispositivo y vincularlo a DocuSmart"), sin la explicación técnica de la
+restricción de Android -- decisión consciente, ya que si el usuario
+intenta vincular Descargas igual, es el propio Android el que se lo
+impide con su aviso de sistema. Cambio de solo strings (5 idiomas).
+
+### Atajo a la carpeta vinculada (pedido explícito del usuario)
+
+Botón adicional junto a Dispositivo/Mis archivos/Papelera, visible solo
+mientras hay una carpeta vinculada: ícono de carpeta compacto (no
+`weight(1f)` como las otras 3 pestañas, para no angostarlas al punto de
+partir "Dispositivo" en dos líneas -- ver la vuelta a `labelMedium` para
+la etiqueta de las 4 tarjetas por el mismo motivo). Al tocarlo lanza
+`Intent(ACTION_VIEW)` con la URI del árbol vinculado y
+`DocumentsContract.Document.MIME_TYPE_DIR`, delegando en el gestor de
+archivos del dispositivo (con aviso vía `Toast` si ninguna app lo
+maneja, en vez de un cierre).
+
+**Hallazgo menor de esta verificación**: en el Motorola Edge 30 Neo, la
+app Archivos de Google no navega directo a la subcarpeta vinculada
+(`Descargas/DMSS`) -- abre su propia vista de "Descargas" (la carpeta
+padre), donde `DMSS` ya aparece listada y es un toque más llegar. No hay
+una API estándar de Android para forzar que cualquier gestor de archivos
+salte exactamente a una URI de árbol arbitraria; el comportamiento puede
+variar según el gestor de archivos predeterminado de cada fabricante. Se
+documenta como limitación conocida, no como bug de la app.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `compileDebugKotlin`, `detekt`, `lintDebug`, `testDebugUnitTest` en
+  verde (incluye 2 tests de `DocumentRepositoryTest` ajustados: ahora
+  stubean `Uri.authority` porque `deleteDocument()` lo consulta primero
+  para distinguir un URI de carpeta vinculada de uno de MediaStore).
+- Flujo completo probado a mano con `adb`/`uiautomator`: Biblioteca →
+  banner con la copia final → selector nativo (pre-navegado a Descargas)
+  → confirmación de "No se puede usar esta carpeta" en Descargas y en la
+  raíz → vinculación exitosa de `Descargas/DMSS` → banner desaparece y
+  aparece el atajo de carpeta junto a Dispositivo/Mis archivos/Papelera
+  → atajo abre la app Archivos del sistema → Ajustes muestra "Vinculada
+  · toca para desvincular" → desvincular → Ajustes vuelve a "Sin
+  vincular" → banner reaparece y el atajo desaparece en Biblioteca. Sin
+  cierres inesperados de la app en ningún paso.
+
+### Onboarding: vincular carpeta desde el inicio (pedido explícito del usuario)
+
+El usuario preguntó explícitamente si, sin vincular una carpeta o elegir
+archivos uno por uno, DocuSmart podría traer solo PDF/Word/Excel/
+PowerPoint/Texto de otras apps automáticamente en Android 13+. Se
+confirmó que no: es una regla de la plataforma para toda app externa que
+no sea un gestor de archivos del sistema (imágenes sí, vía
+`READ_MEDIA_IMAGES`; documentos de terceros no, sin excepción salvo
+`MANAGE_EXTERNAL_STORAGE`, descartado por política de Play -- ver
+sección de abajo). Decisión: en vez de dejar que el usuario descubra el
+banner de Biblioteca por su cuenta, se agregó una 5ª slide al onboarding
+(`OnboardingScreen.kt`) que ofrece vincular la carpeta ahí mismo, con
+`OnboardingViewModel` nuevo envolviendo `DownloadsAccessManager` (mismo
+patrón que `LibraryViewModel`/`SettingsViewModel`). Estado reactivo: si
+ya hay una carpeta vinculada muestra "Vinculada: <nombre real>" con un
+botón "Cambiar carpeta"; si no, un botón "Vincular carpeta". El usuario
+puede saltarse este paso (los botones Saltar/Siguiente/Empezar del
+onboarding no lo bloquean) y vincular después desde Ajustes o Biblioteca.
+
+Verificado en dispositivo real: desvincular desde Ajustes → reabrir el
+tutorial (Ajustes → Ver tutorial) → 5ª slide muestra el botón "Vincular
+carpeta" → selector nativo → elegir `Descargas/DMSS` → confirmar permiso
+→ la slide actualiza en el momento a "Vinculada: DMSS" con check verde y
+botón "Cambiar carpeta", sin salir ni recargar la pantalla.
+
+### Sobre `MANAGE_EXTERNAL_STORAGE` como alternativa (evaluado y descartado)
+
+El usuario preguntó si, aplicando una buena política de permisos y
+solicitándolo desde el onboarding, se podría usar
+`MANAGE_EXTERNAL_STORAGE` para evitar la fricción de vincular carpetas.
+Investigado con búsqueda externa antes de responder: el criterio de
+revisión de Google Play **no es la calidad del consentimiento del
+usuario** -- es un criterio técnico: *"solo debes pedir este permiso
+cuando tu app no puede lograr su función con SAF o MediaStore"*. Como
+esta misma función (SAF) ya demuestra que sí se puede, pedir
+`MANAGE_EXTERNAL_STORAGE` sería evidencia en contra en una eventual
+revisión, no a favor. El permiso además está reservado de facto para
+apps cuya función principal es administrar archivos (gestores de
+archivos, backup, antivirus) -- no encaja con el enfoque de DocuSmart
+(visor + herramientas PDF + escáner). El castigo por incumplir la
+política no es perder el permiso: es que remueven la app completa de
+Play Store. Descartado; no se implementó.
+
+Fuentes consultadas: [Use of All files access (MANAGE_EXTERNAL_STORAGE) permission – Play Console Help](https://support.google.com/googleplay/android-developer/answer/10467955?hl=en), [Permissions and APIs that Access Sensitive Information – Play Console Help](https://support.google.com/googleplay/android-developer/answer/9888170?hl=en).
+
+## 18. Calidad de visualización de Word/Excel/PowerPoint (renderer propio con Apache POI)
+
+El usuario señaló que el visor actual de estos formatos no se ve como el
+archivo original. Confirmado leyendo el código, no de memoria:
+`ViewerScreen.kt` abría el `.docx`/`.pptx`/`.xlsx` como zip y extraía
+texto crudo de su XML con expresiones regulares (PowerPoint: título +
+párrafos por slide, sin imágenes/diseño/tablas; Word: algo mejor, respeta
+negrita/cursiva y encabezados; Excel: grilla, no una réplica de la hoja
+real). Era una extracción de texto, no un renderizador real.
+
+### Decisión de enfoque
+
+El usuario preguntó por la viabilidad de construir una librería de
+renderizado propia (incluso ofreciéndola después como producto
+comercial) y, mientras tanto, renderizar el documento como imagen. Se le
+explicó honestamente que un renderizador OOXML desde cero es un proyecto
+de años (lo que Microsoft/LibreOffice/Aspose llevan más de una década
+construyendo), y que "mostrarlo como imagen" no evita el problema difícil
+-- alguien tiene que decidir qué dibujar y dónde primero. Se plantearon 3
+caminos reales (Apache POI + renderer propio en Compose / LibreOffice
+headless en servidor propio / seguir investigando ambos) y el usuario
+eligió **Apache POI + renderer propio en Compose**: gratis, sin servidor,
+sin depender de licencias de terceros.
+
+**Hallazgo clave antes de empezar**: Apache POI **ya es una dependencia
+de este proyecto** (`app/build.gradle.kts`), usada en producción por
+`WordToTextUseCase`/`WordToPdfUseCase`/`ExcelToPdfUseCase`/
+`ExcelToCsvUseCase` para las conversiones -- es decir, la compatibilidad
+de POI con Android en este dispositivo ya estaba probada de antemano, no
+hacía falta un spike de viabilidad desde cero.
+
+### PowerPoint (primero, por ser el visor más pobre de los tres)
+
+Reescrito con `XMLSlideShow`/`XSLFShape` (`extractPptSlides`/
+`extractPptShapeContent` en `ViewerScreen.kt`): cada forma real de la
+diapositiva (texto con negrita/cursiva/tamaño real vía
+`XSLFTextRun`, e imágenes reales vía `XSLFPictureShape.pictureData`) en
+vez de solo título+viñetas por regex. Los párrafos de una misma caja de
+texto se separan con salto de línea real (antes "Punto uno" y "Punto
+dos" quedaban pegados: "Punto unoPunto dos") y los de cuerpo llevan
+"• " -- el título de la diapositiva se distingue por tamaño/color/negrita
+vía el placeholder (`shape.isPlaceholder` + `shape.textType`).
+
+**Alcance descartado explícitamente**: la posición/tamaño real de cada
+forma (`XSLFShape.anchor`, tipo `java.awt.geom.Rectangle2D`) -- confirmado
+que el compilador de Kotlin **ni siquiera puede resolver esa clase**
+contra el classpath de Android ("Cannot access class 'Rectangle2D'"), lo
+mismo para `XMLSlideShow.pageSize` (`java.awt.Dimension`). Las formas se
+muestran apiladas en su orden original, no en su posición exacta -- sigue
+siendo una mejora real (formato real por forma, imágenes reales) sin
+pelear contra una API que no compila en este proyecto.
+
+**Bug real encontrado y corregido en dispositivo real**: `ClassNotFoundException:
+com.zaxxer.sparsebits.SparseBitSet` -- crash real al abrir cualquier
+.pptx (confirmado con logcat, no solo en el emulador). Causa: una sesión
+anterior había excluido `com.zaxxer` de `poi`/`poi-ooxml`/`poi-scratchpad`
+para las conversiones de Word/Excel (que nunca tocan esa ruta), pero el
+visor de PowerPoint sí la necesita en tiempo de ejecución. Se agregó
+`com.zaxxer:SparseBitSet:1.3` como dependencia explícita en vez de quitar
+el exclude existente (que sigue siendo válido para Word/Excel).
+
+**Pendiente cosmético, no bloqueante**: el color del texto de cuerpo se
+ve más azul de lo esperado (debería verse gris oscuro, distinto del
+título) -- probablemente la detección de `shape.textType` para el
+placeholder de cuerpo necesita ajuste; no se investigó a fondo para no
+demorar la entrega de la corrección del crash real y la separación de
+párrafos, que eran los problemas más importantes.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `compileDebugKotlin` confirmó en un primer intento que `Rectangle2D`/
+  `Dimension` no compilan contra el SDK de Android (error real, no
+  hipótesis) -- llevó a descartar el posicionamiento exacto antes de
+  invertir más tiempo en esa vía.
+- `detekt` necesitó: subir `TooManyFunctions.thresholdInFiles` de 26 a 29
+  (mismo criterio ya documentado para `ViewerScreen.kt`), corregir 2
+  `SwallowedException` (pasar la excepción real a `Timber.w`, no solo su
+  mensaje), y una entrada de baseline `ReturnCount` para
+  `extractPptShapeContent` (guard clauses, mismo patrón ya usado 18+
+  veces en el proyecto).
+- Abrir `formatted-viewer-sample.pptx` real desde Descargas vía "Abrir
+  con DocuSmart": crash reproducido y confirmado con logcat
+  (`SparseBitSet`), corregido, y reverificado sin crash con el título y
+  los párrafos de cada diapositiva mostrados correctamente separados.
+- `detekt`/`lintDebug`/`testDebugUnitTest` en verde en la versión final.
+
+### Pendiente (Word y Excel)
+
+Mismo enfoque (Apache POI, ya probado) aplicado solo a PowerPoint por ser
+el caso más pobre -- Word y Excel quedan para una siguiente sesión:
+Word ya tiene negrita/cursiva/tamaño vía regex propio, POI daría acceso
+estructurado más robusto (tablas reales, alineación) sin depender de
+regex sobre XML crudo; Excel necesita formato real de celdas
+(`DataFormatter` para fechas/monedas/porcentajes) y pestañas para
+múltiples hojas.
+
+## 19. Bug de compartir + Biblioteca ampliada con historial permanente + hallazgos de investigación
+
+Sesión de seguimiento 2026-09-03: el usuario reportó que compartir un
+documento generado por la app (conversión de Word desde WhatsApp) dejó
+de funcionar, y que tras vincular una carpeta por SAF la Biblioteca
+seguía sin mostrar ningún archivo -- al punto de cuestionar si el
+proyecto tenía sentido seguir sin `MANAGE_EXTERNAL_STORAGE`.
+
+### Bug real: compartir documentos generados por la app
+
+`ViewerViewModel.shareDocument()` pasaba `state.fileUri` (para
+documentos con id = ruta absoluta, un `Uri.fromFile(...)` real) directo
+al `Intent.ACTION_SEND`. Desde Android 7 (API 24) exponer un `file://` a
+otra app así lanza `FileUriExposedException` (hereda de
+`SecurityException`), atrapada por el catch genérico como "No se pudo
+compartir el archivo" -- Biblioteca/Home ya lo resolvían con
+`FileProvider` (`DocumentListSection.kt`/`FavoritesSection.kt`) pero el
+Visor nunca lo hizo. Corregido envolviendo con el mismo
+`FileProvider`/authority ya declarado en el manifest. Verificado en
+dispositivo real: compartir desde el botón del Visor (no solo desde el
+menú "⋮" de Biblioteca, que ya funcionaba) abre el selector del sistema
+con WhatsApp entre las opciones, sin error.
+
+### Bug real: carpeta vinculada sin recorrer subcarpetas
+
+`loadDocumentsFromLinkedFolder()` solo listaba el nivel superior de la
+carpeta vinculada (`DocumentFile.listFiles()`, sin recursión). El
+usuario había vinculado "Documents" (raíz del dispositivo) -- vacía
+salvo una subcarpeta de otra app -- por lo que la Biblioteca mostraba 0
+archivos aunque la vinculación en sí funcionara. Corregido con
+`collectLinkedFolderDocuments()`, recursivo hasta
+`LINKED_FOLDER_MAX_DEPTH` (8, tope de seguridad, no límite esperado en
+uso normal).
+
+### Ampliación: Biblioteca con historial permanente de documentos abiertos
+
+Pregunta del usuario que motivó este cambio: sin vincular una carpeta o
+elegir archivos, ¿de verdad no hay forma de que el dispositivo se vea
+igual que antes? Confirmado que no (ver §17/§18) -- pero se identificó
+que el mecanismo de historial que ya alimenta "Recientes" en Inicio
+(`documentHistoryDao`, registra cada apertura real vía
+`ViewerViewModel.recordHistoryOpen`, incluyendo aperturas por "Abrir con
+DocuSmart" desde otra app) solo se consultaba con un límite acotado para
+esa pantalla. Se agregó `DocumentHistoryDao.allEntries()` (historial
+completo, sin límite) y `DocumentRepository.loadDocumentsFromHistory()`,
+que resuelve cada id del historial a un `DocumentUiModel` real (vía
+`ContentResolver` para `content://`, vía `File` para rutas absolutas) y
+lo suma a `loadAllDocumentsRaw()`. Efecto práctico: cualquier documento
+que el usuario abra alguna vez -- recibido por WhatsApp/Gmail y abierto
+con "Abrir con DocuSmart", o elegido con el selector de archivos -- queda
+visible en Biblioteca de forma permanente, no solo mientras esté entre
+los 5 más recientes de Inicio.
+
+**Corrección relacionada, encontrada en el camino**:
+`LibraryViewModel.isDeviceDocument()` clasificaba como "Mis archivos"
+(app-generado) cualquier `content://` que no viniera de una lista fija
+de prefijos conocidos (`content://media`, `content://com.android`,
+`content://downloads`) -- incorrecto para un documento del historial
+proveniente de un proveedor de contenido de otra app (WhatsApp, Gmail),
+que sí es "del dispositivo". Simplificado a "cualquier `content://` es
+del dispositivo" (los documentos que la app genera siempre usan una ruta
+absoluta como id, nunca un `content://`), regla más simple y más
+correcta que la lista de prefijos.
+
+### Investigado a pedido del usuario, sin cambios de código
+
+- **"En versiones pasadas veía Word/PDF del dispositivo sin vincular nada"**:
+  revisado el historial completo de git de `app/build.gradle.kts` --
+  `targetSdkVersion` fue 35/36 en TODA la historia del proyecto, nunca
+  hubo un `targetSdkVersion` ≤ 28 que hubiera permitido el
+  comportamiento de almacenamiento legado. La explicación más plausible
+  es que lo que el usuario recuerda son PDFs generados por la propia app
+  (herramientas PDF/escáner/conversión, que sí aparecen automático
+  siempre) o imágenes (que también son automáticas) -- no documentos
+  ajenos, que nunca pudieron verse sin acción explícita en ninguna
+  versión de este proyecto.
+- **"¿Podemos pedir el permiso de carpetas desde Ajustes del sistema,
+  como hacen otras apps?"**: se le explicó que eso es exactamente
+  `MANAGE_EXTERNAL_STORAGE` ("Acceso a todos los archivos") visto desde
+  otra puerta (aparece en una sección de "Acceso especial" separada de
+  la pantalla de permisos estándar que compartió, no es un permiso
+  distinto) -- mismo riesgo de política de Play ya evaluado en §17. El
+  usuario decidió no perseguirlo y mantener el enfoque solo-SAF.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `detekt` necesitó: 1 `SwallowedException` corregido (pasar la
+  excepción real a `Timber.w` al leer el mimeType de un documento del
+  historial), subir `TooManyFunctions.thresholdInClasses` de 20 a 26
+  (mismo criterio ya documentado), y una entrada de baseline
+  `NestedBlockDepth` para `collectLinkedFolderDocuments` (recorrido
+  recursivo de árbol, mismo patrón ya baselineado para
+  `loadDocumentsFromDownloads`/`loadDocumentsFromLinkedFolder`).
+  `shareableUri()` se reescribió para tener 2 returns en vez de 3, sin
+  necesitar baseline.
+- 2 fakes de `DocumentHistoryDao` en tests (`DocumentRepositoryTest`,
+  `TrashRepositoryTest`) actualizados para implementar `allEntries()`.
+- `detekt`/`lintDebug`/`testDebugUnitTest` en verde.
+- Compartir desde el botón del Visor: verificado sin error, selector del
+  sistema con WhatsApp disponible.
+- Biblioteca → Mis archivos mostró correctamente `pruebaword.docx`
+  (conversión real desde WhatsApp); Dispositivo pasó de 50 a 52 archivos
+  tras abrir un documento externo vía "Abrir con DocuSmart", confirmando
+  que el historial permanente sí amplía la lista.

@@ -500,6 +500,11 @@
     <string name="onboarding_3_desc">Speichere Dateien in deinem persönlichen Safe mit PIN oder Fingerabdruck. Deine Privatsphäre steht an erster Stelle.</string>
     <string name="onboarding_4_title">Lernmodus</string>
     <string name="onboarding_4_desc">Lies mit Text-to-Speech, markiere Absätze, mach Sprachnotizen und nutze den Pomodoro-Timer.</string>
+    <string name="onboarding_5_title">Verknüpfe deine Dokumente</string>
+    <string name="onboarding_5_desc">Wähle den Ordner auf deinem Gerät, in dem du deine Dateien aufbewahrst, um sie in der Bibliothek zu sehen. Nur du hast Zugriff darauf — du kannst das jetzt oder später in den Einstellungen tun.</string>
+    <string name="onboarding_folder_linked">Verknüpft: %1$s</string>
+    <string name="onboarding_folder_change">Ordner ändern</string>
+    <string name="onboarding_folder_link_button">Ordner verknüpfen</string>
     <string name="onboarding_skip">Überspringen</string>
     <string name="onboarding_start">Loslegen!</string>
     <string name="onboarding_next">Weiter</string>
@@ -790,4 +795,22 @@
     <string name="filepicker_browse_system_files">Systemdateien durchsuchen</string>
     <string name="filepicker_from_library">Aus der DocuSmart-Bibliothek</string>
     <string name="filepicker_no_library_files">Du hast noch keine Dateien in deiner Bibliothek</string>
+
+    <!-- ── Downloads-Ordner per SAF verknüpfen (UX-Backlog Zeile 22) ── -->
+    <string name="library_link_downloads_title">Mehr Dokumente hier sehen</string>
+    <string name="library_link_downloads_body">Wähle deinen bevorzugten Ordner, um die Dokumente deines Geräts zu finden und ihn mit DocuSmart zu verknüpfen</string>
+    <string name="library_link_downloads_button">Ordner verknüpfen</string>
+
+    <!-- ── Verknüpfung zum verknüpften Ordner, neben Gerät/Meine Dateien/Papierkorb ── -->
+    <string name="library_folder_shortcut_label">Verknüpfter Ordner</string>
+    <string name="library_folder_shortcut_subtitle">Öffnen</string>
+    <string name="library_folder_shortcut_no_app">Es gibt keine App zum Öffnen von Ordnern auf diesem Gerät</string>
+
+    <!-- ── Einstellungen: verknüpften Ordner verwalten (UX-Backlog Zeile 22) ── -->
+    <string name="settings_linked_downloads_title">Verknüpfter Ordner</string>
+    <string name="settings_linked_downloads_linked">Verknüpft · zum Trennen tippen</string>
+    <string name="settings_linked_downloads_not_linked">Nicht verknüpft · zum Verknüpfen tippen</string>
+    <string name="settings_unlink_downloads_title">Ordner trennen?</string>
+    <string name="settings_unlink_downloads_body">Du siehst die Downloads-Dateien dann nicht mehr im Geräte-Tab der Bibliothek. Du kannst den Ordner jederzeit erneut verknüpfen.</string>
+    <string name="settings_unlink_downloads_confirm">Trennen</string>
 </resources>

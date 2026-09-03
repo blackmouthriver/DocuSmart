@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.IntentSender
 import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
 import android.provider.MediaStore
+import androidx.documentfile.provider.DocumentFile
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.TrashDao
@@ -21,13 +23,40 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
+// Autoridad real de Android para SAF sobre almacenamiento externo -- se usa
+// para distinguir un Uri de carpeta vinculada (fila 22 del backlog UX) de un
+// Uri de MediaStore, ya que ambos comparten el esquema "content://".
+private const val EXTERNAL_STORAGE_DOCUMENTS_AUTHORITY = "com.android.externalstorage.documents"
+
+// Compartida entre loadDocumentsFromDownloads() (consulta a MediaStore) y
+// loadDocumentsFromLinkedFolder() (enumeración SAF) -- un único lugar para
+// no repetir la lista y arriesgar que se desincronicen.
+private val SUPPORTED_DOWNLOAD_MIME_TYPES = listOf(
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "text/plain",
+    "text/markdown"
+)
+
+// Tope de profundidad al recorrer subcarpetas de una carpeta vinculada por
+// SAF -- solo para evitar un recorrido descontrolado en árboles anormalmente
+// profundos, no un límite real esperado en uso normal (Descargas/Documentos
+// del usuario rara vez pasan de 2-3 niveles).
+private const val LINKED_FOLDER_MAX_DEPTH = 8
+
 @Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val favoritesRepository: FavoritesRepository,  // ← NUEVO
     private val documentHistoryDao: DocumentHistoryDao,
     private val trashDao: TrashDao,
-    private val mediaDeletePermission: MediaDeletePermission
+    private val mediaDeletePermission: MediaDeletePermission,
+    private val downloadsAccessManager: DownloadsAccessManager
 ) {
     // Buffer sobre el límite pedido: algunos ids del historial pueden
     // apuntar a archivos que ya no existen (borrados/movidos fuera de la
@@ -84,9 +113,29 @@ class DocumentRepository @Inject constructor(
     internal suspend fun loadAllDocumentsRaw(): List<DocumentUiModel> {
         return try {
             val documents = mutableListOf<DocumentUiModel>()
-            documents.addAll(loadDocumentsFromDownloads())
+            // Fila 22 del backlog UX: si el usuario vinculó la carpeta
+            // Descargas por SAF, esa fuente reemplaza la consulta a
+            // MediaStore.Downloads -- ve TODO lo que hay en la carpeta real
+            // sin importar quién lo creó (a diferencia de MediaStore, que en
+            // Android 13+ solo expone filas propias de la app). Sin vincular,
+            // se mantiene el comportamiento anterior sin cambios.
+            val linkedFolder = downloadsAccessManager.linkedFolderUri.value
+            if (linkedFolder != null) {
+                documents.addAll(loadDocumentsFromLinkedFolder(linkedFolder))
+            } else {
+                documents.addAll(loadDocumentsFromDownloads())
+            }
             documents.addAll(loadImagesFromMediaStore())
             documents.addAll(loadAppGeneratedFiles())
+            // Ampliación 2026-09-03 (fila 22 backlog UX): sin esto, la
+            // Biblioteca "olvidaba" un documento externo en cuanto dejaba de
+            // estar entre los más recientes de Inicio -- un PDF/Word abierto
+            // una sola vez vía "Abrir con DocuSmart" o el selector de
+            // archivos ahora queda visible en Biblioteca de forma
+            // permanente, no solo mientras esté en "Recientes". Va al final:
+            // el `seen.add()` de abajo ya conserva la versión de MediaStore/
+            // carpeta vinculada/app si el mismo id vino de una fuente previa.
+            documents.addAll(loadDocumentsFromHistory())
 
             val seen = mutableSetOf<String>()
             val unique = documents.filter { seen.add(it.id) }
@@ -134,6 +183,17 @@ class DocumentRepository @Inject constructor(
      * sin depender de si la fila es propia o no.
      */
     suspend fun deleteDocument(documentId: String): DeleteOutcome = withContext(Dispatchers.IO) {
+        // Fila 22 del backlog UX: un documento de la carpeta vinculada por
+        // SAF también empieza con "content://" pero NO es un Uri de
+        // MediaStore -- MediaStore.createDeleteRequest() lanza
+        // IllegalArgumentException si se le pasa uno (antes esta rama nunca
+        // recibía nada que no fuera de MediaStore, así que no hacía falta
+        // distinguir). Se borra directo vía DocumentsContract, la API real
+        // para documentos SAF.
+        val uri = if (documentId.startsWith("content://")) Uri.parse(documentId) else null
+        if (uri?.authority == EXTERNAL_STORAGE_DOCUMENTS_AUTHORITY) {
+            return@withContext deleteSafDocument(uri, documentId)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && documentId.startsWith("content://")) {
             val intentSender = mediaDeletePermission.createBulkDeleteRequest(listOf(Uri.parse(documentId)))
             return@withContext if (intentSender != null) {
@@ -161,6 +221,19 @@ class DocumentRepository @Inject constructor(
             DeleteOutcome.Failed
         }
     }
+
+    // Fila 22 del backlog UX: borra un documento de la carpeta vinculada por
+    // SAF vía DocumentsContract -- extraída de deleteDocument() para no subir
+    // su complejidad ciclomática por una rama que ya está resuelta.
+    private suspend fun deleteSafDocument(uri: Uri, documentId: String): DeleteOutcome =
+        try {
+            val deleted = DocumentsContract.deleteDocument(context.contentResolver, uri)
+            if (deleted) documentHistoryDao.remove(documentId)
+            if (deleted) DeleteOutcome.Deleted else DeleteOutcome.Failed
+        } catch (e: Exception) {
+            Timber.e(e, "Error eliminando documento de la carpeta vinculada: $documentId")
+            DeleteOutcome.Failed
+        }
 
     /**
      * RF-VIS-06: renombra un documento -- intenta un rename real del
@@ -214,17 +287,7 @@ class DocumentRepository @Inject constructor(
             MediaStore.Downloads.DATE_MODIFIED,
             MediaStore.Downloads.MIME_TYPE
         )
-        val mimeTypes = listOf(
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-powerpoint",
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            "text/plain",
-            "text/markdown"
-        )
+        val mimeTypes = SUPPORTED_DOWNLOAD_MIME_TYPES
         val selection = mimeTypes.joinToString(" OR ") {
             "${MediaStore.Downloads.MIME_TYPE} = ?"
         }
@@ -272,6 +335,71 @@ class DocumentRepository @Inject constructor(
         Timber.d("Downloads: ${documents.size} documentos")
         return documents
     }
+
+    /**
+     * Fila 22 del backlog UX (`backlog-mejoras-ux-2026-08-30.md` §16-17):
+     * cuando el usuario vinculó una carpeta vía SAF (`DownloadsAccessManager`),
+     * se enumera la carpeta real en vez de consultar MediaStore.Downloads --
+     * ve TODOS los archivos ahí, sin la restricción de "solo filas propias
+     * de la app" de scoped storage en Android 13+. `DocumentFile` solo lista
+     * los mismos 8 mimeTypes de Office/PDF/Texto que ya reconoce
+     * `loadDocumentsFromDownloads()`.
+     *
+     * Recorre subcarpetas (hasta [LINKED_FOLDER_MAX_DEPTH] niveles, tope de
+     * seguridad para árboles anormalmente profundos) -- bug real reportado
+     * por el usuario 2026-09-03: había vinculado una carpeta real pero sus
+     * documentos estaban organizados en subcarpetas, así que la Biblioteca
+     * seguía mostrando 0 archivos aunque la carpeta sí tenía contenido.
+     */
+    private fun loadDocumentsFromLinkedFolder(treeUri: Uri): List<DocumentUiModel> {
+        val documents = mutableListOf<DocumentUiModel>()
+        try {
+            val root = DocumentFile.fromTreeUri(context, treeUri) ?: return documents
+            collectLinkedFolderDocuments(root, depth = 0, into = documents)
+        } catch (e: Exception) {
+            Timber.e(e, "Error consultando la carpeta vinculada")
+        }
+        Timber.d("Carpeta vinculada: ${documents.size} documentos")
+        return documents
+    }
+
+    private fun collectLinkedFolderDocuments(folder: DocumentFile, depth: Int, into: MutableList<DocumentUiModel>) {
+        if (depth > LINKED_FOLDER_MAX_DEPTH) return
+        folder.listFiles().forEach { child ->
+            try {
+                if (child.isDirectory) {
+                    collectLinkedFolderDocuments(child, depth + 1, into)
+                } else {
+                    documentFromLinkedFile(child)?.let { into.add(it) }
+                }
+            } catch (e: Exception) {
+                Timber.w("Error leyendo archivo de la carpeta vinculada: ${e.message}")
+            }
+        }
+    }
+
+    private fun documentFromLinkedFile(file: DocumentFile): DocumentUiModel? {
+        val (name, mime) = eligibleNameAndMime(file) ?: return null
+        return DocumentUiModel(
+            id         = file.uri.toString(),
+            name       = name,
+            type       = mimeToDocumentType(mime, name),
+            size       = formatSize(file.length()),
+            date       = formatDate(file.lastModified()),
+            isFavorite = false,
+            sizeBytes  = file.length()
+        )
+    }
+
+    private fun eligibleNameAndMime(file: DocumentFile): Pair<String, String>? {
+        if (!file.isFile) return null
+        val name = file.name ?: return null
+        val mime = file.type ?: return null
+        if (name.startsWith(".") || !isSupportedDownloadMime(mime)) return null
+        return name to mime
+    }
+
+    private fun isSupportedDownloadMime(mime: String): Boolean = mime in SUPPORTED_DOWNLOAD_MIME_TYPES
 
     private fun loadImagesFromMediaStore(): List<DocumentUiModel> {
         val documents = mutableListOf<DocumentUiModel>()
@@ -358,6 +486,80 @@ class DocumentRepository @Inject constructor(
         }
         Timber.d("App files: ${documents.size}")
         return documents
+    }
+
+    /**
+     * Fila 22 del backlog UX (ampliación 2026-09-03): documentos que el
+     * usuario abrió alguna vez (vía "Abrir con DocuSmart" o el selector de
+     * archivos) pero que ninguna otra fuente ya trae -- típicamente un PDF/
+     * Word/Excel que vive fuera de cualquier carpeta vinculada. Se apoya en
+     * `documentHistoryDao`, que ya registra cada apertura real
+     * (`ViewerViewModel.recordHistoryOpen`) para "Recientes" en Inicio; acá
+     * se usa el historial COMPLETO, no solo los últimos N.
+     */
+    private suspend fun loadDocumentsFromHistory(): List<DocumentUiModel> {
+        val documents = mutableListOf<DocumentUiModel>()
+        documentHistoryDao.allEntries().forEach { entry ->
+            try {
+                documentFromHistoryId(entry.documentId, entry.lastOpenedAt)?.let { documents.add(it) }
+            } catch (e: Exception) {
+                Timber.w("Error leyendo documento del historial: ${e.message}")
+            }
+        }
+        Timber.d("Historial: ${documents.size} documentos")
+        return documents
+    }
+
+    private fun documentFromHistoryId(id: String, lastOpenedAt: Long): DocumentUiModel? =
+        if (id.startsWith("content://")) {
+            documentFromHistoryUri(Uri.parse(id), lastOpenedAt)
+        } else {
+            documentFromHistoryFile(File(id), lastOpenedAt)
+        }
+
+    private fun documentFromHistoryUri(uri: Uri, lastOpenedAt: Long): DocumentUiModel? {
+        val cursor = try {
+            context.contentResolver.query(uri, null, null, null, null)
+        } catch (e: Exception) {
+            Timber.w("documentFromHistoryUri: no se pudo consultar $uri -- ${e.message}")
+            null
+        } ?: return null
+        return cursor.use {
+            if (!it.moveToFirst()) return@use null
+            val nameCol = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            val sizeCol = it.getColumnIndex(android.provider.OpenableColumns.SIZE)
+            val name = if (nameCol >= 0) it.getString(nameCol) else null
+            if (name == null) return@use null
+            val size = if (sizeCol >= 0) it.getLong(sizeCol) else 0L
+            val mime = try {
+                context.contentResolver.getType(uri)
+            } catch (e: Exception) {
+                Timber.w(e, "documentFromHistoryUri: no se pudo leer el mimeType de $uri")
+                null
+            } ?: ""
+            DocumentUiModel(
+                id         = uri.toString(),
+                name       = name,
+                type       = mimeToDocumentType(mime, name),
+                size       = formatSize(size),
+                date       = formatDate(lastOpenedAt),
+                isFavorite = false,
+                sizeBytes  = size
+            )
+        }
+    }
+
+    private fun documentFromHistoryFile(file: File, lastOpenedAt: Long): DocumentUiModel? {
+        if (!file.exists()) return null
+        return DocumentUiModel(
+            id         = file.absolutePath,
+            name       = file.name,
+            type       = extensionToDocumentType(file.extension),
+            size       = formatSize(file.length()),
+            date       = formatDate(lastOpenedAt),
+            isFavorite = false,
+            sizeBytes  = file.length()
+        )
     }
 
     private fun mimeToDocumentType(mime: String, name: String): DocumentType = when {

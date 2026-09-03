@@ -499,6 +499,11 @@
     <string name="onboarding_3_desc">Store files in your personal vault with PIN or fingerprint. Your privacy comes first.</string>
     <string name="onboarding_4_title">Study Mode</string>
     <string name="onboarding_4_desc">Read with Text-to-Speech, highlight paragraphs, take voice notes, and use the Pomodoro timer.</string>
+    <string name="onboarding_5_title">Link your documents</string>
+    <string name="onboarding_5_desc">Choose the folder on your device where you keep your files to see them in Library. Only you will have access to them — you can do this now or later from Settings.</string>
+    <string name="onboarding_folder_linked">Linked: %1$s</string>
+    <string name="onboarding_folder_change">Change folder</string>
+    <string name="onboarding_folder_link_button">Link folder</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_start">Get started!</string>
     <string name="onboarding_next">Next</string>
@@ -789,4 +794,22 @@
     <string name="filepicker_browse_system_files">Browse system files</string>
     <string name="filepicker_from_library">From DocuSmart\'s library</string>
     <string name="filepicker_no_library_files">You don\'t have any files in your library yet</string>
+
+    <!-- ── Link Downloads folder via SAF (UX backlog row 22) ── -->
+    <string name="library_link_downloads_title">See more documents here</string>
+    <string name="library_link_downloads_body">Choose your preferred folder to find your device\'s documents and link it to DocuSmart</string>
+    <string name="library_link_downloads_button">Link folder</string>
+
+    <!-- ── Shortcut to the linked folder, next to Device/My files/Trash ── -->
+    <string name="library_folder_shortcut_label">Linked folder</string>
+    <string name="library_folder_shortcut_subtitle">Open</string>
+    <string name="library_folder_shortcut_no_app">There\'s no app to open folders on this device</string>
+
+    <!-- ── Settings: manage linked folder (UX backlog row 22) ── -->
+    <string name="settings_linked_downloads_title">Linked folder</string>
+    <string name="settings_linked_downloads_linked">Linked · tap to unlink</string>
+    <string name="settings_linked_downloads_not_linked">Not linked · tap to link</string>
+    <string name="settings_unlink_downloads_title">Unlink folder?</string>
+    <string name="settings_unlink_downloads_body">You\'ll stop seeing Downloads files in Library\'s Device tab. You can link it again anytime.</string>
+    <string name="settings_unlink_downloads_confirm">Unlink</string>
 </resources>
