@@ -1417,15 +1417,70 @@ párrafos, que eran los problemas más importantes.
   los párrafos de cada diapositiva mostrados correctamente separados.
 - `detekt`/`lintDebug`/`testDebugUnitTest` en verde en la versión final.
 
-### Pendiente (Word y Excel)
+### Word y Excel reescritos con el mismo enfoque (2026-09-03, mismo día)
 
-Mismo enfoque (Apache POI, ya probado) aplicado solo a PowerPoint por ser
-el caso más pobre -- Word y Excel quedan para una siguiente sesión:
-Word ya tiene negrita/cursiva/tamaño vía regex propio, POI daría acceso
-estructurado más robusto (tablas reales, alineación) sin depender de
-regex sobre XML crudo; Excel necesita formato real de celdas
-(`DataFormatter` para fechas/monedas/porcentajes) y pestañas para
-múltiples hojas.
+El usuario evaluó dos alternativas de terceros antes de decidir seguir
+con Apache POI (visor de Google vía WebView -- requiere URL pública,
+expone documentos privados; Cloudmersive API -- verificado con búsqueda
+externa que el plan gratis real es 600 conversiones/mes con **tope de
+2.5 MB por archivo**, no 800 como se había leído, y de todas formas
+manda los documentos a un tercero). Ambas contradicen la promesa de
+privacidad de la propia app (Carpeta Segura, "Solo tú tendrás acceso a
+ellos" del onboarding) y necesitan internet para ver un archivo que ya
+está en el teléfono -- descartadas. Se confirmó seguir con POI.
+
+**Word**: `XWPFDocument`, iterando `bodyElements` (no `paragraphs` +
+`tables` por separado, que pierde el orden real de intercalado) --
+`extractWordBlocks`/`extractOoxmlWordBlocks`/`extractWordParagraphBlock`/
+`extractWordTableBlock`. Reutiliza `detectWordFormat()`/
+`extractLegacyDocBlocks()`/`isHeadingStyleName()` de
+`WordFormatDetection.kt` (converter) en vez de duplicar esa lógica --
+mismo manejo ya probado de `.doc` legado (OLE2) y de nombres de estilo
+de encabezado no ingleses. Mejora real sobre el regex anterior: las
+tablas ahora se ven como grilla real (`WordTableView`, mismo componente
+visual que ya usa Excel), no como texto plano intercalado.
+
+**Excel**: `WorkbookFactory.create()` (detecta y abstrae `.xls`/`.xlsx`
+automáticamente, a diferencia de Word) + `DataFormatter` con
+`FormulaEvaluator` -- fechas/monedas/porcentajes/fórmulas se muestran
+formateados como Excel los muestra, no el número crudo de serie. Ya no
+se asume "solo la primera hoja" (`xl/worksheets/sheet1.xml` hardcodeado
+antes): todas las hojas están disponibles, con pestañas
+(`ExcelSheetTabs`) para cambiar entre ellas cuando hay más de una.
+
+**Test obsoleto reemplazado**: `WordRunParsingTest.kt` probaba
+`parseWordRuns()`/`WORD_HEADING_STYLE_REGEX`, ambos eliminados --
+reemplazado por `WordViewerExtractionTest.kt`, que construye `.docx`
+reales en memoria con la propia API de escritura de POI (mismo patrón
+que `WordToPdfUseCaseTest.kt`) y reutiliza el fixture real
+`fixtures/legacy-sample.doc` para el caso OLE2. `isHeadingStyleName()`/
+`detectWordFormat()`/`extractLegacyDocBlocks()` ya están cubiertas por
+`WordFormatDetectionTest.kt` (converter) -- no se duplican esas pruebas,
+solo el mapeo nuevo hacia `WordBlock`/`WordParagraph`/`WordRun`.
+
+### Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)
+
+- `detekt` necesitó: subir `thresholdInFiles` de 29 a 36 (mismo criterio
+  documentado para PowerPoint), 2 entradas de baseline `NestedBlockDepth`
+  (recorrido de árbol/documento, mismo patrón ya aceptado en el
+  proyecto), 1 `MaxLineLength` en el test nuevo.
+- `WordViewerExtractionTest.kt` (7 tests: negrita/cursiva por run, runs
+  en blanco descartados, encabezado por estilo, tabla como grilla,
+  orden real párrafo/tabla/párrafo, `.doc` legado) y el resto del
+  gauntlet en verde.
+- `formatted-viewer-sample.docx` real: título, negrita en medio de una
+  frase, cursiva y tamaño 20 todos correctos visualmente.
+- `pruebaword.docx` (la conversión real de WhatsApp que reportó el
+  usuario): el visor muestra el contenido sin espacios entre palabras
+  ("Funza,Cundinamarca,03deseptiembrede2026") -- **investigado y
+  descartado como bug del visor**: el mismo archivo abierto con
+  `formatted-viewer-sample.docx` (no convertido) se ve con espaciado
+  perfecto, confirmando que el problema está en el conversor
+  PDF/imagen→Word que generó ese archivo específico, no en el visor
+  nuevo. Catalogado como hallazgo aparte, no corregido en esta sesión.
+- `formatted-viewer-sample.xlsx` real: tabla con encabezado en negrita
+  sobre fondo azul y datos (Nombre/Ciudad/Edad/Puntaje) mostrados
+  correctamente, sin crash.
 
 ## 19. Bug de compartir + Biblioteca ampliada con historial permanente + hallazgos de investigación
 

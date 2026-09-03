@@ -148,6 +148,7 @@
     <ID>NestedBlockDepth:StudyScreen.kt$private fun extractPdfText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
     <ID>NestedBlockDepth:StudyScreen.kt$private fun extractPptText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
     <ID>NestedBlockDepth:StudyScreen.kt$private fun extractWordText(context: Context, uri: Uri, messages: StudyExtractionMessages): List&lt;String&gt;</ID>
+    <ID>NestedBlockDepth:ViewerScreen.kt$internal fun extractOoxmlWordBlocks(stream: java.io.InputStream): List&lt;WordBlock&gt;</ID>
     <ID>NestedBlockDepth:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri : Uri, context : Context, originalId: String = "" ): Boolean</ID>
     <ID>NestedBlockDepth:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>NewLineAtEndOfFile:AdBanner.kt$com.docsmart.features.home.presentation.component.AdBanner.kt</ID>

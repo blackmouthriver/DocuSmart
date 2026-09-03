@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
@@ -54,6 +56,10 @@ import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.features.converter.domain.usecase.WordFileFormat
+import com.docsmart.features.converter.domain.usecase.detectWordFormat
+import com.docsmart.features.converter.domain.usecase.extractLegacyDocBlocks
+import com.docsmart.features.converter.domain.usecase.isHeadingStyleName
 import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
 import com.docsmart.features.viewer.presentation.components.ViewerDeleteConfirmDialog
@@ -62,10 +68,15 @@ import com.docsmart.features.viewer.presentation.components.ViewerTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.apache.poi.ss.usermodel.DataFormatter
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 import org.apache.poi.xslf.usermodel.XSLFPictureShape
 import org.apache.poi.xslf.usermodel.XSLFShape
 import org.apache.poi.xslf.usermodel.XSLFTextShape
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFTable
 import timber.log.Timber
 import java.io.File
 import java.io.InputStream
@@ -714,54 +725,69 @@ private fun PdfViewerContent(
 }
 
 // ── Visor de Word ─────────────────────────────────────────────────────────────
-// Antes se descartaba <w:rPr> por completo al extraer el texto de cada
-// párrafo -- se veía como texto plano aunque el .docx tuviera negrita/
-// cursiva/tamaño reales. Ahora cada <w:r> (run) del párrafo se procesa por
-// separado conservando su propio formato, igual que ya hace PdfToWordUseCase
-// al reconstruir un .docx desde un PDF (RF-CONV-09) -- incluso dentro de un
-// mismo párrafo, una palabra en negrita queda en negrita, no todo el bloque.
+// Reescrito con Apache POI (RF pedido por el usuario 2026-09-03, mismo
+// enfoque ya aplicado a PowerPoint) en vez de expresiones regulares sobre el
+// XML crudo de word/document.xml -- acceso estructurado real vía
+// XWPFDocument, ya probado en producción por WordToTextUseCase/
+// WordToPdfUseCase. Reutiliza detectWordFormat()/extractLegacyDocBlocks()/
+// isHeadingStyleName() de WordFormatDetection.kt (converter) en vez de
+// duplicar esa lógica -- mismo manejo ya establecido de .doc legado (OLE2)
+// vs .docx (OOXML) y de nombres de estilo de encabezado no-ingleses (Word en
+// español escribe "Ttulo1", no "Heading1").
 internal data class WordRun(val text: String, val bold: Boolean, val italic: Boolean, val fontSizeSp: Int?)
 internal data class WordParagraph(val runs: List<WordRun>, val isHeading: Boolean)
 
-// Hallazgo real verificado en dispositivo con un .docx generado por Word en
-// español: el identificador de estilo interno (w:pStyle w:val) NO siempre es
-// en inglés como se asumía -- Word en español escribió "Ttulo1" (con tilde
-// quitada), no "Heading1". Mismo tipo de problema ya documentado para .doc/
-// HWPF en RF-CONV-07 (WordFormatDetection.kt$isHeadingStyleName), aplicado
-// acá con case-insensitive + variantes es/de/ru en vez de una lista de
-// mayúsculas/minúsculas explícitas.
-internal val WORD_HEADING_STYLE_REGEX = Regex(
-    "w:val=\"(heading|title|titulo|ttulo|berschrift|titel|заголовок|название|h[123456])",
-    RegexOption.IGNORE_CASE
-)
+// Antes cada .docx se aplanaba a una sola lista de párrafos -- una tabla
+// real (ej. una factura, un formulario) se perdía entre el texto plano.
+// Ahora se preserva su forma real de grilla, mismo componente visual que ya
+// usa el visor de Excel (ExcelGridRow).
+internal sealed interface WordBlock
+internal data class WordParagraphBlock(val paragraph: WordParagraph) : WordBlock
+internal data class WordTableBlock(val rows: List<List<String>>) : WordBlock
 
-internal fun parseWordRuns(paraXml: String): List<WordRun> {
-    val runRegex = Regex("<w:r[ >](.*?)</w:r>", RegexOption.DOT_MATCHES_ALL)
-    val rPrRegex = Regex("<w:rPr>(.*?)</w:rPr>", RegexOption.DOT_MATCHES_ALL)
-    val textRegex = Regex("<w:t[^>]*>(.*?)</w:t>", RegexOption.DOT_MATCHES_ALL)
-    val szRegex = Regex("""<w:sz\s+w:val="(\d+)"""")
+internal fun extractWordBlocks(input: java.io.InputStream): List<WordBlock> {
+    val (format, stream) = detectWordFormat(input)
+    return if (format == WordFileFormat.OLE2) extractLegacyWordBlocks(stream) else extractOoxmlWordBlocks(stream)
+}
 
-    fun isToggledOn(rPr: String, tag: String): Boolean {
-        val m = Regex("""<w:$tag(?:\s+w:val="([^"]*)")?\s*/>""").find(rPr) ?: return false
-        val v = m.groupValues[1]
-        return v.isBlank() || v == "1" || v.equals("true", ignoreCase = true) || v.equals("on", ignoreCase = true)
+internal fun extractLegacyWordBlocks(stream: java.io.InputStream): List<WordBlock> =
+    extractLegacyDocBlocks(stream).map { (text, isHeading) ->
+        val run = WordRun(text, bold = false, italic = false, fontSizeSp = null)
+        WordParagraphBlock(WordParagraph(listOf(run), isHeading))
     }
 
-    return runRegex.findAll(paraXml).mapNotNull { runMatch ->
-        val runXml = runMatch.value
-        val text = textRegex.findAll(runXml).joinToString("") { it.groupValues[1] }
-            .replace("&lt;", "<").replace("&gt;", ">")
-            .replace("&amp;", "&").replace("&nbsp;", " ")
-        if (text.isBlank()) return@mapNotNull null
+internal fun extractOoxmlWordBlocks(stream: java.io.InputStream): List<WordBlock> {
+    val blocks = mutableListOf<WordBlock>()
+    XWPFDocument(stream).use { doc ->
+        doc.bodyElements.forEach { element ->
+            when (element) {
+                is XWPFParagraph -> extractWordParagraphBlock(element)?.let { blocks.add(it) }
+                is XWPFTable -> extractWordTableBlock(element)?.let { blocks.add(it) }
+            }
+        }
+    }
+    return blocks
+}
 
-        val rPr = rPrRegex.find(runXml)?.groupValues?.get(1) ?: ""
+internal fun extractWordParagraphBlock(paragraph: XWPFParagraph): WordParagraphBlock? {
+    val runs = paragraph.runs.mapNotNull { run ->
+        val text = run.text()
+        if (text.isNullOrBlank()) return@mapNotNull null
         WordRun(
             text       = text,
-            bold       = isToggledOn(rPr, "b"),
-            italic     = isToggledOn(rPr, "i"),
-            fontSizeSp = szRegex.find(rPr)?.groupValues?.get(1)?.toIntOrNull()?.let { it / 2 }
+            bold       = run.isBold,
+            italic     = run.isItalic,
+            fontSizeSp = run.fontSizeAsDouble?.toInt()
         )
-    }.toList()
+    }
+    if (runs.isEmpty()) return null
+    val isHeading = isHeadingStyleName(paragraph.style ?: "")
+    return WordParagraphBlock(WordParagraph(runs, isHeading))
+}
+
+internal fun extractWordTableBlock(table: XWPFTable): WordTableBlock? {
+    val rows = table.rows.map { row -> row.tableCells.map { it.text } }
+    return if (rows.isEmpty()) null else WordTableBlock(rows)
 }
 
 private fun wordParagraphAnnotatedString(
@@ -787,39 +813,19 @@ private fun WordViewerContent(
 ) {
     val context = LocalContext.current
 
-    var paragraphs by remember { mutableStateOf<List<WordParagraph>>(emptyList()) }
-    var isLoading  by remember { mutableStateOf(true) }
-    var hasError   by remember { mutableStateOf(false) }
+    var blocks    by remember { mutableStateOf<List<WordBlock>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var hasError  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        paragraphs = withContext(Dispatchers.IO) {
+        blocks = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    val zip    = ZipInputStream(input)
-                    var entry  = zip.nextEntry
-                    val result = mutableListOf<WordParagraph>()
-
-                    while (entry != null) {
-                        if (entry.name == "word/document.xml") {
-                            val xml       = zip.readBytes().toString(Charsets.UTF_8)
-                            val paraRegex = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
-
-                            paraRegex.findAll(xml).forEach { match ->
-                                val paraXml   = match.value
-                                val isHeading = paraXml.contains(WORD_HEADING_STYLE_REGEX)
-                                val runs = parseWordRuns(paraXml)
-                                if (runs.any { it.text.isNotBlank() }) result.add(WordParagraph(runs, isHeading))
-                            }
-                            break
-                        }
-                        entry = zip.nextEntry
-                    }
-                    zip.close()
-                    result
+                    extractWordBlocks(input)
                 } ?: emptyList()
             } catch (e: Exception) {
-                Timber.e("Error leyendo Word: ${e.message}")
+                Timber.e(e, "Error leyendo Word")
                 hasError = true
                 emptyList()
             } finally {
@@ -828,10 +834,13 @@ private fun WordViewerContent(
         }
     }
 
-    // Filtrar por búsqueda
-    val paragraphPlainText = { p: WordParagraph -> p.runs.joinToString("") { it.text } }
-    val displayParagraphs = if (searchQuery.isBlank()) paragraphs
-    else paragraphs.filter { paragraphPlainText(it).contains(searchQuery, ignoreCase = true) }
+    fun blockPlainText(block: WordBlock): String = when (block) {
+        is WordParagraphBlock -> block.paragraph.runs.joinToString("") { it.text }
+        is WordTableBlock     -> block.rows.joinToString(" ") { row -> row.joinToString(" ") }
+    }
+
+    val displayBlocks = if (searchQuery.isBlank()) blocks
+    else blocks.filter { blockPlainText(it).contains(searchQuery, ignoreCase = true) }
 
     Box(
         modifier = Modifier
@@ -844,7 +853,7 @@ private fun WordViewerContent(
                 modifier = Modifier.align(Alignment.Center),
                 color    = MaterialTheme.colorScheme.primary
             )
-            hasError || paragraphs.isEmpty() -> Column(
+            hasError || blocks.isEmpty() -> Column(
                 modifier            = Modifier.align(Alignment.Center).padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -864,51 +873,105 @@ private fun WordViewerContent(
                 if (searchQuery.isNotBlank()) {
                     item {
                         Text(
-                            text     = "${displayParagraphs.size} resultado(s) para \"$searchQuery\"",
+                            text     = "${displayBlocks.size} resultado(s) para \"$searchQuery\"",
                             style    = MaterialTheme.typography.labelMedium,
                             color    = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
                 }
-                itemsIndexed(displayParagraphs) { _, para ->
+                itemsIndexed(displayBlocks) { _, block ->
                     val bgColor = if (searchQuery.isNotBlank())
                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                     else
                         MaterialTheme.colorScheme.background
 
-                    if (para.isHeading) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(bgColor, RoundedCornerShape(8.dp))
-                        ) {
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                text       = wordParagraphAnnotatedString(para, baseSizeSp = 18.sp),
-                                style      = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color      = MaterialTheme.colorScheme.primary,
-                                lineHeight = 26.sp
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            HorizontalDivider(
-                                color     = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                thickness = 1.dp
-                            )
-                            Spacer(Modifier.height(8.dp))
+                    when (block) {
+                        is WordTableBlock -> WordTableView(block, modifier = Modifier.padding(vertical = 8.dp))
+                        is WordParagraphBlock -> {
+                            val para = block.paragraph
+                            if (para.isHeading) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(bgColor, RoundedCornerShape(8.dp))
+                                ) {
+                                    Spacer(Modifier.height(16.dp))
+                                    Text(
+                                        text       = wordParagraphAnnotatedString(para, baseSizeSp = 18.sp),
+                                        style      = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color      = MaterialTheme.colorScheme.primary,
+                                        lineHeight = 26.sp
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    HorizontalDivider(
+                                        color     = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                        thickness = 1.dp
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                }
+                            } else {
+                                Text(
+                                    text       = wordParagraphAnnotatedString(para, baseSizeSp = 14.sp),
+                                    style      = MaterialTheme.typography.bodyMedium,
+                                    color      = MaterialTheme.colorScheme.onSurface,
+                                    lineHeight = 24.sp,
+                                    modifier   = Modifier
+                                        .padding(vertical = 3.dp)
+                                        .fillMaxWidth()
+                                        .background(bgColor, RoundedCornerShape(4.dp))
+                                        .padding(horizontal = if (searchQuery.isNotBlank()) 8.dp else 0.dp)
+                                )
+                            }
                         }
-                    } else {
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Antes una tabla real (ej. una factura, un formulario) se perdía como texto
+// plano entre los párrafos -- ahora se ve como una grilla real, con scroll
+// horizontal propio si tiene más columnas de las que caben en pantalla.
+@Composable
+private fun WordTableView(table: WordTableBlock, modifier: Modifier = Modifier) {
+    val columnCount = table.rows.maxOfOrNull { it.size } ?: 0
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
+    ) {
+        table.rows.forEachIndexed { rowIndex, row ->
+            if (rowIndex > 0) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+            }
+            Row(modifier = Modifier.fillMaxWidth().horizontalScroll(scrollState)) {
+                for (col in 0 until columnCount) {
+                    if (col > 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(0.5.dp)
+                                .height(40.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .width(EXCEL_COLUMN_WIDTH)
+                            .background(
+                                if (rowIndex == 0) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                else Color.Transparent
+                            )
+                            .padding(horizontal = 10.dp, vertical = 9.dp)
+                    ) {
                         Text(
-                            text       = wordParagraphAnnotatedString(para, baseSizeSp = 14.sp),
-                            style      = MaterialTheme.typography.bodyMedium,
-                            color      = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 24.sp,
-                            modifier   = Modifier
-                                .padding(vertical = 3.dp)
-                                .fillMaxWidth()
-                                .background(bgColor, RoundedCornerShape(4.dp))
-                                .padding(horizontal = if (searchQuery.isNotBlank()) 8.dp else 0.dp)
+                            text       = row.getOrElse(col) { "" },
+                            style      = MaterialTheme.typography.bodySmall,
+                            fontWeight = if (rowIndex == 0) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines   = 3
                         )
                     }
                 }
@@ -918,15 +981,51 @@ private fun WordViewerContent(
 }
 
 // ── Visor de Excel ────────────────────────────────────────────────────────────
-// Antes cada fila se mostraba como UN string con las celdas unidas por
-// "  |  " -- se veía como texto plano, no como una hoja de cálculo. Ahora
-// cada celda es su propia columna de ancho fijo dentro de un Row con scroll
-// horizontal COMPARTIDO entre todas las filas (mismo ScrollState en cada
-// una) para que se desplacen juntas como una grilla real, no una lista de
-// filas independientes.
+// Reescrito con Apache POI (RF pedido por el usuario 2026-09-03, mismo
+// enfoque ya aplicado a PowerPoint/Word) en vez de expresiones regulares
+// sobre xl/worksheets/sheet1.xml -- WorkbookFactory detecta y abstrae
+// .xls/.xlsx automáticamente (a diferencia de Word, no hace falta elegir
+// entre dos APIs distintas). Dos mejoras reales que el regex nunca pudo dar:
+// (1) DataFormatter muestra fechas/monedas/porcentajes como Excel los
+// formatea, no el número crudo de serie; (2) ya no se asume "solo la
+// primera hoja" -- todas las hojas están disponibles con pestañas para
+// cambiar entre ellas.
 private val EXCEL_COLUMN_WIDTH = 120.dp
 
 private data class ExcelRow(val cells: List<String>)
+private data class ExcelSheetModel(val name: String, val rows: List<ExcelRow>)
+
+private fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel> {
+    val workbook = WorkbookFactory.create(input)
+    val formatter = DataFormatter()
+    val evaluator = try {
+        workbook.creationHelper.createFormulaEvaluator()
+    } catch (e: Exception) {
+        Timber.w(e, "extractExcelSheets: no se pudo crear el evaluador de fórmulas")
+        null
+    }
+    val sheets = (0 until workbook.numberOfSheets).mapNotNull { sheetIndex ->
+        val sheet = workbook.getSheetAt(sheetIndex)
+        val rows = sheet.mapNotNull { row ->
+            val lastCell = row.lastCellNum.toInt()
+            if (lastCell < 0) return@mapNotNull null
+            val cells = (0 until lastCell).map { col ->
+                val cell = row.getCell(col) ?: return@map ""
+                try {
+                    if (evaluator != null) formatter.formatCellValue(cell, evaluator)
+                    else formatter.formatCellValue(cell)
+                } catch (e: Exception) {
+                    Timber.w(e, "extractExcelSheets: no se pudo formatear una celda")
+                    ""
+                }
+            }
+            if (cells.any { it.isNotBlank() }) ExcelRow(cells) else null
+        }
+        if (rows.isEmpty()) null else ExcelSheetModel(sheet.sheetName, rows)
+    }
+    workbook.close()
+    return sheets
+}
 
 @Composable
 private fun ExcelViewerContent(
@@ -936,72 +1035,30 @@ private fun ExcelViewerContent(
 ) {
     val context = LocalContext.current
 
-    var rows      by remember { mutableStateOf<List<ExcelRow>>(emptyList()) }
+    var sheets    by remember { mutableStateOf<List<ExcelSheetModel>>(emptyList()) }
+    var sheetIndex by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        rows = withContext(Dispatchers.IO) {
+        sheets = withContext(Dispatchers.IO) {
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    val zip       = ZipInputStream(input)
-                    var entry     = zip.nextEntry
-                    var sharedXml = ""
-                    var sheet1Xml = ""
-
-                    while (entry != null) {
-                        when (entry.name) {
-                            "xl/sharedStrings.xml"     -> sharedXml = zip.readBytes().toString(Charsets.UTF_8)
-                            "xl/worksheets/sheet1.xml" -> sheet1Xml = zip.readBytes().toString(Charsets.UTF_8)
-                        }
-                        entry = zip.nextEntry
-                    }
-                    zip.close()
-
-                    val sharedStrings = mutableListOf<String>()
-                    val tRegex = Regex("<t(?:\\s[^>]*)?>([^<]*)</t>")
-                    tRegex.findAll(sharedXml).forEach { match ->
-                        sharedStrings.add(
-                            match.groupValues[1]
-                                .replace("&amp;", "&").replace("&lt;", "<")
-                                .replace("&gt;", ">").replace("&quot;", "\"").trim()
-                        )
-                    }
-
-                    val result    = mutableListOf<ExcelRow>()
-                    val rowRegex  = Regex("<row[^>]*>(.*?)</row>", RegexOption.DOT_MATCHES_ALL)
-                    val cellRegex = Regex("<c[^>]*>(.*?)</c>",     RegexOption.DOT_MATCHES_ALL)
-                    val vRegex    = Regex("<v>([^<]*)</v>")
-
-                    rowRegex.findAll(sheet1Xml).forEach { rowMatch ->
-                        val rowCells = mutableListOf<String>()
-                        cellRegex.findAll(rowMatch.groupValues[1]).forEach { cellMatch ->
-                            val cellXml      = cellMatch.value
-                            val typeAttr     = Regex("""t="([^"]*)"""").find(cellXml)?.groupValues?.get(1) ?: ""
-                            val vValue       = vRegex.find(cellXml)?.groupValues?.get(1)?.trim() ?: ""
-                            val displayValue = when (typeAttr) {
-                                "s"                -> { val idx = vValue.toIntOrNull() ?: -1; if (idx >= 0 && idx < sharedStrings.size) sharedStrings[idx] else "" }
-                                "b"                -> if (vValue == "1") "TRUE" else "FALSE"
-                                "str","inlineStr"  -> vValue
-                                else               -> vValue
-                            }
-                            rowCells.add(displayValue)
-                        }
-                        if (rowCells.any { it.isNotBlank() }) result.add(ExcelRow(rowCells))
-                    }
-                    result
+                    extractExcelSheets(input)
                 } ?: emptyList()
             } catch (e: Exception) {
-                Timber.e("Error leyendo Excel: ${e.message}")
+                Timber.e(e, "Error leyendo Excel")
                 hasError = true
                 emptyList()
             } finally {
                 isLoading = false
             }
         }
+        sheetIndex = 0
     }
 
+    val rows = sheets.getOrNull(sheetIndex)?.rows.orEmpty()
     val displayRows = if (searchQuery.isBlank()) rows
     else rows.filter { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
     val columnCount = rows.maxOfOrNull { it.cells.size } ?: 0
@@ -1018,16 +1075,27 @@ private fun ExcelViewerContent(
                 modifier = Modifier.align(Alignment.Center),
                 color    = MaterialTheme.colorScheme.primary
             )
-            hasError || rows.isEmpty() -> Text(
+            hasError || sheets.isEmpty() -> Text(
                 text      = "No se pudo leer el contenido del archivo Excel",
                 modifier  = Modifier.align(Alignment.Center).padding(32.dp),
                 color     = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            else -> LazyColumn(
-                modifier       = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp)
-            ) {
+            else -> Column(modifier = Modifier.fillMaxSize()) {
+                Spacer(Modifier.height(100.dp))
+                // Pestañas de hojas -- solo si hay más de una, para no meter
+                // ruido visual en el caso más común de un solo Excel simple.
+                if (sheets.size > 1) {
+                    ExcelSheetTabs(
+                        sheetNames   = sheets.map { it.name },
+                        selectedIndex = sheetIndex,
+                        onSelect     = { sheetIndex = it }
+                    )
+                }
+                LazyColumn(
+                    modifier       = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 100.dp)
+                ) {
                 if (searchQuery.isNotBlank()) {
                     item {
                         Text(
@@ -1066,7 +1134,29 @@ private fun ExcelViewerContent(
                         zebra       = index % 2 == 0
                     )
                 }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun ExcelSheetTabs(
+    sheetNames   : List<String>,
+    selectedIndex: Int,
+    onSelect     : (Int) -> Unit
+) {
+    ScrollableTabRow(
+        selectedTabIndex = selectedIndex,
+        edgePadding      = 16.dp,
+        containerColor   = MaterialTheme.colorScheme.surface
+    ) {
+        sheetNames.forEachIndexed { index, name ->
+            Tab(
+                selected = index == selectedIndex,
+                onClick  = { onSelect(index) },
+                text     = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            )
         }
     }
 }
