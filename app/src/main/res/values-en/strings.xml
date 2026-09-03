@@ -499,6 +499,11 @@
     <string name="onboarding_3_desc">Store files in your personal vault with PIN or fingerprint. Your privacy comes first.</string>
     <string name="onboarding_4_title">Study Mode</string>
     <string name="onboarding_4_desc">Read with Text-to-Speech, highlight paragraphs, take voice notes, and use the Pomodoro timer.</string>
+    <string name="onboarding_5_title">Link your documents</string>
+    <string name="onboarding_5_desc">Choose the folder on your device where you keep your files to see them in Library. Only you will have access to them — you can do this now or later from Settings.</string>
+    <string name="onboarding_folder_linked">Linked: %1$s</string>
+    <string name="onboarding_folder_change">Change folder</string>
+    <string name="onboarding_folder_link_button">Link folder</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_start">Get started!</string>
     <string name="onboarding_next">Next</string>

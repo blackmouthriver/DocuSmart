@@ -1285,3 +1285,62 @@ documenta como limitación conocida, no como bug de la app.
   · toca para desvincular" → desvincular → Ajustes vuelve a "Sin
   vincular" → banner reaparece y el atajo desaparece en Biblioteca. Sin
   cierres inesperados de la app en ningún paso.
+
+### Onboarding: vincular carpeta desde el inicio (pedido explícito del usuario)
+
+El usuario preguntó explícitamente si, sin vincular una carpeta o elegir
+archivos uno por uno, DocuSmart podría traer solo PDF/Word/Excel/
+PowerPoint/Texto de otras apps automáticamente en Android 13+. Se
+confirmó que no: es una regla de la plataforma para toda app externa que
+no sea un gestor de archivos del sistema (imágenes sí, vía
+`READ_MEDIA_IMAGES`; documentos de terceros no, sin excepción salvo
+`MANAGE_EXTERNAL_STORAGE`, descartado por política de Play -- ver
+sección de abajo). Decisión: en vez de dejar que el usuario descubra el
+banner de Biblioteca por su cuenta, se agregó una 5ª slide al onboarding
+(`OnboardingScreen.kt`) que ofrece vincular la carpeta ahí mismo, con
+`OnboardingViewModel` nuevo envolviendo `DownloadsAccessManager` (mismo
+patrón que `LibraryViewModel`/`SettingsViewModel`). Estado reactivo: si
+ya hay una carpeta vinculada muestra "Vinculada: <nombre real>" con un
+botón "Cambiar carpeta"; si no, un botón "Vincular carpeta". El usuario
+puede saltarse este paso (los botones Saltar/Siguiente/Empezar del
+onboarding no lo bloquean) y vincular después desde Ajustes o Biblioteca.
+
+Verificado en dispositivo real: desvincular desde Ajustes → reabrir el
+tutorial (Ajustes → Ver tutorial) → 5ª slide muestra el botón "Vincular
+carpeta" → selector nativo → elegir `Descargas/DMSS` → confirmar permiso
+→ la slide actualiza en el momento a "Vinculada: DMSS" con check verde y
+botón "Cambiar carpeta", sin salir ni recargar la pantalla.
+
+### Sobre `MANAGE_EXTERNAL_STORAGE` como alternativa (evaluado y descartado)
+
+El usuario preguntó si, aplicando una buena política de permisos y
+solicitándolo desde el onboarding, se podría usar
+`MANAGE_EXTERNAL_STORAGE` para evitar la fricción de vincular carpetas.
+Investigado con búsqueda externa antes de responder: el criterio de
+revisión de Google Play **no es la calidad del consentimiento del
+usuario** -- es un criterio técnico: *"solo debes pedir este permiso
+cuando tu app no puede lograr su función con SAF o MediaStore"*. Como
+esta misma función (SAF) ya demuestra que sí se puede, pedir
+`MANAGE_EXTERNAL_STORAGE` sería evidencia en contra en una eventual
+revisión, no a favor. El permiso además está reservado de facto para
+apps cuya función principal es administrar archivos (gestores de
+archivos, backup, antivirus) -- no encaja con el enfoque de DocuSmart
+(visor + herramientas PDF + escáner). El castigo por incumplir la
+política no es perder el permiso: es que remueven la app completa de
+Play Store. Descartado; no se implementó.
+
+Fuentes consultadas: [Use of All files access (MANAGE_EXTERNAL_STORAGE) permission – Play Console Help](https://support.google.com/googleplay/android-developer/answer/10467955?hl=en), [Permissions and APIs that Access Sensitive Information – Play Console Help](https://support.google.com/googleplay/android-developer/answer/9888170?hl=en).
+
+### Pendiente: calidad de visualización de Word/Excel/PowerPoint
+
+El usuario señaló que el visor actual de estos formatos no se ve como el
+archivo original. Confirmado leyendo el código, no de memoria:
+`ViewerScreen.kt` abre el `.docx`/`.pptx`/`.xlsx` como zip y extrae texto
+crudo de su XML con expresiones regulares (PowerPoint: título + párrafos
+por slide, sin imágenes/diseño/tablas; Word: algo mejor, respeta
+negrita/cursiva y encabezados; Excel: grilla, no una réplica de la hoja
+real). Es una extracción de texto, no un renderizador real. Lograrlo
+requiere una inversión aparte (librería de renderizado comercial,
+conversión server-side con un motor real, o delegar a otra app instalada
+vía Intent) -- evaluación de alcance/costo pendiente, no iniciada
+todavía a pedido del usuario (siguiente paso después del onboarding).

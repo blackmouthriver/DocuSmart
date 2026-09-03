@@ -500,6 +500,11 @@
     <string name="onboarding_3_desc">Храните файлы в личном сейфе с PIN-кодом или отпечатком пальца. Ваша конфиденциальность превыше всего.</string>
     <string name="onboarding_4_title">Режим учёбы</string>
     <string name="onboarding_4_desc">Слушайте текст с помощью Text-to-Speech, выделяйте абзацы, делайте голосовые заметки и используйте таймер Помодоро.</string>
+    <string name="onboarding_5_title">Привяжите свои документы</string>
+    <string name="onboarding_5_desc">Выберите папку на устройстве, где вы храните файлы, чтобы видеть их в Библиотеке. Доступ к ним будете иметь только вы — это можно сделать сейчас или позже в Настройках.</string>
+    <string name="onboarding_folder_linked">Привязана: %1$s</string>
+    <string name="onboarding_folder_change">Сменить папку</string>
+    <string name="onboarding_folder_link_button">Привязать папку</string>
     <string name="onboarding_skip">Пропустить</string>
     <string name="onboarding_start">Начать!</string>
     <string name="onboarding_next">Далее</string>
