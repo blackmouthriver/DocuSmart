@@ -14,8 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.theme.*
 
 data class DocumentUiModel(
@@ -24,7 +26,13 @@ data class DocumentUiModel(
     val type      : DocumentType,
     val size      : String,
     val date      : String,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    // Bytes reales detrás de `size` (ya formateado para mostrar) -- 0L por
+    // defecto para no romper los call sites que no lo necesitan hoy.
+    // Agregado para H5 (backlog-mejoras-ux-2026-08-30.md §12): sumar el
+    // espacio real ocupado en la Papelera sin tener que re-parsear el
+    // string formateado (frágil entre locales por el separador decimal).
+    val sizeBytes : Long = 0L
 )
 
 enum class DocumentType(val label: String, val color: Color) {
@@ -122,8 +130,8 @@ fun DocuSmartDocumentItem(
                 Icon(
                     imageVector        = if (document.isFavorite) Icons.Rounded.Favorite
                     else Icons.Rounded.FavoriteBorder,
-                    contentDescription = if (document.isFavorite) "Quitar de favoritos"
-                    else "Agregar a favoritos",
+                    contentDescription = if (document.isFavorite) stringResource(R.string.doc_item_remove_favorite)
+                    else stringResource(R.string.doc_item_add_favorite),
                     tint               = if (document.isFavorite) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier           = Modifier.size(20.dp)
@@ -133,7 +141,7 @@ fun DocuSmartDocumentItem(
             IconButton(onClick = { showMenu = true }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector        = Icons.Rounded.MoreVert,
-                    contentDescription = "Más opciones",
+                    contentDescription = stringResource(R.string.viewer_more_options),
                     tint               = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier           = Modifier.size(20.dp)
                 )
@@ -183,14 +191,14 @@ fun DocumentContextMenu(
 
             ContextMenuItem(
                 icon    = Icons.Rounded.OpenInNew,
-                label   = "Abrir documento",
+                label   = stringResource(R.string.qr_open_document),
                 onClick = onOpen
             )
             ContextMenuItem(
                 icon    = if (document.isFavorite) Icons.Rounded.Favorite
                 else Icons.Rounded.FavoriteBorder,
-                label   = if (document.isFavorite) "Quitar de favoritos"
-                else "Agregar a favoritos",
+                label   = if (document.isFavorite) stringResource(R.string.doc_item_remove_favorite)
+                else stringResource(R.string.doc_item_add_favorite),
                 tint    = if (document.isFavorite) MaterialTheme.colorScheme.error else null,
                 onClick = onFavorite
             )
@@ -249,28 +257,28 @@ private fun OptionalContextMenuItems(
     if (onRename != null) {
         ContextMenuItem(
             icon    = Icons.Rounded.DriveFileRenameOutline,
-            label   = "Renombrar",
+            label   = stringResource(R.string.viewer_rename),
             onClick = onRename
         )
     }
     if (onConvert != null) {
         ContextMenuItem(
             icon    = Icons.Rounded.SwapHoriz,
-            label   = "Convertir",
+            label   = stringResource(R.string.viewer_convert),
             onClick = onConvert
         )
     }
     if (onCreateQr != null) {
         ContextMenuItem(
             icon    = Icons.Rounded.QrCode,
-            label   = "Crear QR",
+            label   = stringResource(R.string.viewer_create_qr),
             onClick = onCreateQr
         )
     }
     if (onShare != null) {
         ContextMenuItem(
             icon    = Icons.Rounded.Share,
-            label   = "Compartir",
+            label   = stringResource(R.string.general_share),
             onClick = onShare
         )
     }
@@ -282,7 +290,7 @@ private fun OptionalContextMenuItems(
         )
         ContextMenuItem(
             icon    = Icons.Rounded.DeleteOutline,
-            label   = "Eliminar",
+            label   = stringResource(R.string.general_delete),
             tint    = MaterialTheme.colorScheme.error,
             onClick = onDelete
         )
@@ -337,7 +345,7 @@ fun RenameDocumentDialog(
         shape            = MaterialTheme.shapes.large,
         title = {
             Text(
-                text  = "Renombrar archivo",
+                text  = stringResource(R.string.doc_item_rename_title),
                 style = MaterialTheme.typography.titleMedium
             )
         },
@@ -345,14 +353,14 @@ fun RenameDocumentDialog(
             OutlinedTextField(
                 value          = textValue,
                 onValueChange  = { textValue = it },
-                label          = { Text("Nombre del archivo") },
+                label          = { Text(stringResource(R.string.viewer_rename_label)) },
                 suffix         = if (extension.isNotEmpty()) {
                     { Text(extension, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 } else null,
                 singleLine     = true,
                 isError        = !isValid,
                 supportingText = if (!isValid) {
-                    { Text("El nombre no puede estar vacío") }
+                    { Text(stringResource(R.string.viewer_rename_empty_error)) }
                 } else null,
                 shape    = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
@@ -362,10 +370,10 @@ fun RenameDocumentDialog(
             TextButton(
                 onClick = { if (isValid) onConfirm(textValue.trim() + extension) },
                 enabled = isValid
-            ) { Text("Renombrar") }
+            ) { Text(stringResource(R.string.viewer_rename)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
         }
     )
 }

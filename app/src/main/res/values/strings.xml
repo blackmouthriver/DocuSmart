@@ -166,6 +166,11 @@
     <string name="viewer_delete_confirm_title">¿Eliminar este documento?</string>
     <string name="viewer_delete_confirm_body">"%1$s se eliminará de forma permanente. Esta acción no se puede deshacer."</string>
 
+    <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">Agregar a favoritos</string>
+    <string name="doc_item_remove_favorite">Quitar de favoritos</string>
+    <string name="doc_item_rename_title">Renombrar archivo</string>
+
     <!-- ── General ────────────────────────────────── -->
     <string name="general_save">Guardar</string>
     <string name="general_cancel">Cancelar</string>
@@ -781,4 +786,6 @@
     <string name="trash_delete_all">Borrar todo</string>
     <string name="trash_delete_all_confirm_title">¿Vaciar la papelera?</string>
     <string name="trash_delete_all_confirm_body">"Se eliminarán %1$d archivos para siempre y ya no se podrán recuperar."</string>
+    <string name="trash_total_size">%1$s en la papelera</string>
+    <string name="trash_delete_forever_permission_note">Android puede pedirte que confirmes el borrado de fotos que no creó esta app.</string>
 </resources>

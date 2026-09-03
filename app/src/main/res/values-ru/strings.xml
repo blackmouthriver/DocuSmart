@@ -166,6 +166,11 @@
     <string name="viewer_delete_confirm_title">Удалить этот документ?</string>
     <string name="viewer_delete_confirm_body">"%1$s будет удалён навсегда. Это действие нельзя отменить."</string>
 
+    <!-- ── Меню документа (Главная/Библиотека, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">Добавить в избранное</string>
+    <string name="doc_item_remove_favorite">Убрать из избранного</string>
+    <string name="doc_item_rename_title">Переименовать файл</string>
+
     <!-- ── Общее ────────────────────────────────── -->
     <string name="general_save">Сохранить</string>
     <string name="general_cancel">Отмена</string>
@@ -781,4 +786,6 @@
     <string name="trash_delete_all">Удалить всё</string>
     <string name="trash_delete_all_confirm_title">Очистить корзину?</string>
     <string name="trash_delete_all_confirm_body">"%1$d файлов будут удалены навсегда и их больше нельзя будет восстановить."</string>
+    <string name="trash_total_size">%1$s в корзине</string>
+    <string name="trash_delete_forever_permission_note">Android может попросить подтвердить удаление фото, которые создало не это приложение.</string>
 </resources>

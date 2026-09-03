@@ -41,7 +41,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug (no verificado) | Media | — | — | Ya listado en `CONTEXT.md` §5 — pendiente reproducir |
 | 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-30** — ver §13 |
 | 20 | H1: texto "Eliminar del historial" engañoso (en realidad mueve a la papelera real) | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §12, hallazgo H1 |
-| 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | Nuevo, encontrado al corregir #20 — ver §12, hallazgo H6 |
+| 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | **✅ Corregido y verificado 2026-09-03** — ver §12, hallazgo H6 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -727,9 +727,19 @@ sobre lo que realmente pasa.
   Biblioteca) tiene **todos sus labels hardcodeados en español**
   ("Renombrar", "Convertir", "Compartir", "Agregar/Quitar de favoritos",
   ahora "Eliminar") — no pasa por `stringResource()` como el resto de la
-  app. No se tocó en esta pasada (habría sido un cambio mucho más grande
-  que el bug puntual pedido) pero queda catalogado como fila 21 de la
-  tabla de §2 — afecta a los usuarios en, de, pt, ru por igual.
+  app. Catalogado como fila 21 de la tabla de §2 — afecta a los usuarios
+  en, de, pt, ru por igual.
+  - **✅ Corregido y verificado en dispositivo real 2026-09-03.** Todos
+    los labels del menú "⋮" y del diálogo `RenameDocumentDialog`
+    (título, campo, botones) pasan a `stringResource()`, reusando claves
+    ya existentes donde el texto coincidía exactamente
+    (`viewer_rename`/`viewer_convert`/`viewer_create_qr`/`general_share`/
+    `general_delete`/`qr_open_document`/`general_cancel`) y agregando 3
+    claves nuevas (`doc_item_add_favorite`, `doc_item_remove_favorite`,
+    `doc_item_rename_title`) en los 5 idiomas donde no había ninguna
+    equivalente. `DocumentType.label` (PDF/Word/Excel/etc.) queda sin
+    tocar a propósito -- son nombres de formato, no se traducen en
+    ningún otro lugar de la app.
 
 **H2 — Botón "Eliminar ahora" en Papelera no aclara que puede pedir un
 permiso del sistema.** Tras el fix de hoy (§17 de `visor-biblioteca.md`),
@@ -739,7 +749,10 @@ inesperado. Sugerencia de copy: agregar una nota breve en el diálogo de
 confirmación ("Android puede pedirte que confirmes el borrado de fotos
 que no creó esta app") — mejora de claridad, no de funcionalidad.
 
-- **Mejora menor, prioridad Baja, dificultad Baja, riesgo Bajo.**
+- **✅ Corregido y verificado en dispositivo real 2026-09-03.** Nota
+  agregada en `TrashDeleteForeverDialog` (texto exacto sugerido acá,
+  traducido a los 5 idiomas), debajo del cuerpo principal del diálogo, en
+  un tono más tenue (`bodySmall`/`onSurfaceVariant`).
 
 **H3 — Botones "Restaurar"/"Eliminar ahora" en Papelera usan el mismo
 estilo visual (`OutlinedButton`) para una acción reversible y una
@@ -750,9 +763,11 @@ requerir un gesto ligeramente distinto, para reducir toques accidentales
 sobre "Eliminar ahora" en vez de "Restaurar" (están uno al lado del otro,
 mismo tamaño).
 
-- **Mejora menor, prioridad Baja, dificultad Baja, riesgo Bajo** — ya
-  existe confirmación (`TrashDeleteForeverDialog`) que mitiga el riesgo
-  real de borrado accidental, así que esto es refinamiento, no urgente.
+- **✅ Corregido y verificado en dispositivo real 2026-09-03.** "Restaurar"
+  pasa de `OutlinedButton` a `FilledTonalButton` (más peso visual, acción
+  segura/reversible); "Eliminar ahora" queda igual (`OutlinedButton` +
+  color de error), ahora con menos peso relativo que "Restaurar" en vez
+  de compartir el mismo estilo.
 
 **H4 — Accesos rápidos de Home (9 ítems) vs. Ajustes con secciones
 colapsadas por header.** Home no agrupa sus 9 accesos por categoría
@@ -770,9 +785,15 @@ comunica cuánto espacio liberaría "Borrar todo" — dato relevante
 considerando que es justamente la acción que el usuario pediría para
 "limpiar espacio".
 
-- **Mejora menor, prioridad Baja, dificultad Baja, riesgo Bajo** — sumar
-  el tamaño total de los ítems en la papelera (mismo patrón ya usado en
-  `StorageRow` de Ajustes) y mostrarlo junto al botón "Borrar todo".
+- **✅ Corregido y verificado en dispositivo real 2026-09-03.** Se agregó
+  `sizeBytes: Long = 0L` a `DocumentUiModel` (los 3 call sites reales de
+  `DocumentRepository` ya tenían el byte count en scope antes de
+  formatearlo a string) para poder sumar el total real sin re-parsear el
+  string ya formateado (frágil entre locales por el separador decimal).
+  Texto "%1$s en la papelera" (mismo formato que `formatSize()`,
+  duplicado localmente en `TrashScreen.kt` a propósito -- es privado en
+  `DocumentRepository`) mostrado arriba de "Borrar todo". Verificado:
+  "501 KB en la papelera" con 1 archivo real en la papelera.
 
 ### Plan de mejoras UX — orden sugerido (no vinculante, para discutir)
 

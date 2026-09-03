@@ -247,7 +247,8 @@ class DocumentRepository @Inject constructor(
                             type       = mimeToDocumentType(mime, name),
                             size       = formatSize(size),
                             date       = formatDate(dateMs),
-                            isFavorite = false // se aplica luego en loadAllDocuments
+                            isFavorite = false, // se aplica luego en loadAllDocuments
+                            sizeBytes  = size
                         ))
                     } catch (e: Exception) {
                         Timber.w("Error leyendo fila Downloads: ${e.message}")
@@ -301,7 +302,8 @@ class DocumentRepository @Inject constructor(
                             type       = DocumentType.IMAGE,
                             size       = formatSize(size),
                             date       = formatDate(dateMs),
-                            isFavorite = false
+                            isFavorite = false,
+                            sizeBytes  = size
                         ))
                         count++
                     } catch (e: Exception) {
@@ -335,7 +337,8 @@ class DocumentRepository @Inject constructor(
                             type       = extensionToDocumentType(file.extension),
                             size       = formatSize(file.length()),
                             date       = formatDate(file.lastModified()),
-                            isFavorite = false
+                            isFavorite = false,
+                            sizeBytes  = file.length()
                         ))
                     } catch (e: Exception) {
                         Timber.w("Error leyendo archivo app: ${e.message}")
