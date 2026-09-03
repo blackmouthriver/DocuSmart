@@ -1477,7 +1477,8 @@ solo el mapeo nuevo hacia `WordBlock`/`WordParagraph`/`WordRun`.
   `formatted-viewer-sample.docx` (no convertido) se ve con espaciado
   perfecto, confirmando que el problema está en el conversor
   PDF/imagen→Word que generó ese archivo específico, no en el visor
-  nuevo. Catalogado como hallazgo aparte, no corregido en esta sesión.
+  nuevo. **Corregido 2026-09-03** -- ver "Bug real: conversor PDF→Word
+  pegaba palabras en la misma línea" en §19.
 - `formatted-viewer-sample.xlsx` real: tabla con encabezado en negrita
   sobre fondo azul y datos (Nombre/Ciudad/Edad/Puntaje) mostrados
   correctamente, sin crash.
@@ -1586,3 +1587,39 @@ correcta que la lista de prefijos.
   (conversión real desde WhatsApp); Dispositivo pasó de 50 a 52 archivos
   tras abrir un documento externo vía "Abrir con DocuSmart", confirmando
   que el historial permanente sí amplía la lista.
+
+### Bug real: conversor PDF→Word pegaba palabras en la misma línea
+
+Investigación pedida por el usuario 2026-09-03 sobre el hallazgo de
+`pruebaword.docx` (ver §18): el visor NO tenía el bug -- el `.docx` que
+generaba `PdfToWordUseCase` (conversión PDF→Word, RF-CONV-09) sí. Causa
+raíz: muchos generadores de PDF (el que produjo el PDF original recibido
+por WhatsApp, entre ellos) no codifican el espacio entre palabras como un
+carácter `" "` real -- dibujan cada palabra como una operación de texto
+(`Tj`) separada y simplemente desplazan el cursor horizontalmente para
+crear el hueco visual, sin ningún glifo de por medio.
+`TextRenderInfo.getText()` solo devuelve los glifos de CADA operación por
+separado, así que `FormattedTextListener`/`buildDocx()` solo insertaban
+un espacio cuando detectaban un salto de línea real dentro del mismo
+párrafo (`isWrappedLine`) -- nunca cuando dos fragmentos compartían la
+MISMA línea con ese hueco horizontal, que es exactamente el caso de
+"Funza," + "Cundinamarca," → "Funza,Cundinamarca,".
+
+Corregido: `TextChunk` ahora también registra `xStart`/`xEnd` (extremos
+horizontales de la línea base de cada fragmento, vía
+`TextRenderInfo.baseline`). `buildDocx()` (refactorizado en
+`classifyChunkPlacement()` para no exceder la complejidad ciclomática
+permitida) calcula, cuando dos fragmentos comparten línea, el hueco entre
+el `xEnd` del anterior y el `xStart` del actual; si supera
+`WORD_GAP_MULTIPLIER` (0.2, empírico -- el ancho de un espacio real ronda
+0.2-0.3x el tamaño de fuente; un valor menor separaría letras con kerning
+normal dentro de una palabra) se antepone un espacio al nuevo fragmento,
+igual que ya se hacía para los saltos de línea envueltos.
+
+Test nuevo en `PdfToWordUseCaseTest.kt` que reproduce el caso exacto (dos
+`showText()` en la misma Y, con 100pt de separación en X, sin espacio
+literal) y verifica que el `.docx` resultante contiene "Funza,
+Cundinamarca," con el espacio insertado. `detekt`/`lintDebug`/
+`testDebugUnitTest` en verde tras el refactor. **Pendiente**: verificación
+en dispositivo real reconvirtiendo el PDF original de WhatsApp -- no
+había ningún dispositivo conectado por `adb` al momento de este fix.

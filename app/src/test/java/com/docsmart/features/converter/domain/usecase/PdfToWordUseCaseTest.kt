@@ -93,6 +93,24 @@ class PdfToWordUseCaseTest {
         assertEquals(16, italicRun.fontSize)
     }
 
+    // Bug real reportado por el usuario 2026-09-03 (conversión desde un PDF
+    // recibido por WhatsApp): dos fragmentos de texto en la MISMA línea,
+    // separados por un hueco horizontal real pero sin ningún carácter " "
+    // literal entre ellos (así codifican el espaciado muchos generadores de
+    // PDF) -- antes del fix quedaban pegados: "Funza,Cundinamarca,".
+    @Test
+    fun `un hueco horizontal real entre fragmentos de la misma linea se convierte en espacio`() = runTest {
+        stubResolver(createSameLineGapPdf())
+
+        val result = useCase(mockk<Uri>(), "salida")
+
+        val outputFile = (result as ConversionResult.Success).outputFile
+        val doc = XWPFDocument(outputFile.inputStream())
+        val texto = doc.paragraphs.joinToString(" ") { it.text }
+
+        assertTrue(texto.contains("Funza, Cundinamarca,"))
+    }
+
     @Test
     fun `PDF sin texto extraible devuelve Error`() = runTest {
         stubResolver(createBlankPdf())
@@ -153,6 +171,30 @@ class PdfToWordUseCaseTest {
         // Gap de 14pt con tamaño 16 (< 1.6*16=25.6) -- misma línea lógica.
         canvas.beginText().setFontAndSize(italic, 16f).moveText(50.0, 632.0)
             .showText("Esta linea es cursiva y mas grande.").endText()
+
+        pdfDoc.close()
+        return out.toByteArray()
+    }
+
+    private fun createSameLineGapPdf(): ByteArray {
+        val out = ByteArrayOutputStream()
+        val pdfDoc = PdfDocument(PdfWriter(out))
+        val normal = PdfFontFactory.createFont(
+            com.itextpdf.io.font.constants.StandardFonts.HELVETICA,
+            "", EmbeddingStrategy.PREFER_EMBEDDED
+        )
+
+        val page = pdfDoc.addNewPage()
+        val canvas = PdfCanvas(page)
+
+        // Misma Y (misma línea), sin espacio literal entre "Funza," y
+        // "Cundinamarca," -- el hueco de 100pt entre el fin del primer
+        // fragmento y el inicio del segundo es puramente un desplazamiento
+        // de cursor, como hacen muchos conversores de WhatsApp/PDF.
+        canvas.beginText().setFontAndSize(normal, 12f).moveText(50.0, 700.0)
+            .showText("Funza,").endText()
+        canvas.beginText().setFontAndSize(normal, 12f).moveText(150.0, 700.0)
+            .showText("Cundinamarca,").endText()
 
         pdfDoc.close()
         return out.toByteArray()

@@ -53,6 +53,23 @@ class PdfToWordUseCase @Inject constructor(
         // la misma línea (misma coordenada Y de línea base, con margen por
         // redondeos de punto flotante).
         private const val SAME_LINE_TOLERANCE = 1f
+
+        // Bug real reportado por el usuario 2026-09-03: un .docx generado
+        // por esta conversión mostraba palabras pegadas ("Funza,Cundinamarca,
+        // 03deseptiembrede2026"). Causa: muchos generadores de PDF NO
+        // codifican el espacio entre palabras como un carácter " " real --
+        // en vez de eso, dibujan "Funza," y "Cundinamarca," como dos
+        // operaciones de texto separadas, simplemente moviendo el cursor
+        // horizontalmente entre una y otra (el espacio es un hueco visual,
+        // no un carácter). `TextRenderInfo.getText()` solo devuelve los
+        // glifos de CADA operación por separado, así que un salto de línea
+        // dentro del mismo párrafo ya insertaba un espacio (`isWrappedLine`
+        // más abajo), pero dos fragmentos en la MISMA línea con ese mismo
+        // hueco se pegaban sin nada entre ellos. Umbral empírico: el ancho
+        // de un espacio real ronda 0.2-0.3x el tamaño de fuente; un valor
+        // menor evita separar letras con kerning normal dentro de una
+        // palabra.
+        private const val WORD_GAP_MULTIPLIER = 0.2f
     }
 
     suspend operator fun invoke(
@@ -109,35 +126,56 @@ class PdfToWordUseCase @Inject constructor(
         XWPFDocument().use { doc ->
             var paragraph = doc.createParagraph()
             var previousY: Float? = null
+            var previousXEnd: Float? = null
 
             pages.forEachIndexed { pageIndex, chunks ->
                 if (pageIndex > 0) {
                     paragraph.createRun().addBreak(BreakType.PAGE)
                     paragraph = doc.createParagraph()
                     previousY = null
+                    previousXEnd = null
                 }
                 chunks.forEach { chunk ->
                     if (chunk.text.isBlank()) return@forEach
 
-                    val sameLine = previousY != null && abs(previousY!! - chunk.y) <= SAME_LINE_TOLERANCE
-                    val isNewParagraph = previousY != null && !sameLine &&
-                        (previousY!! - chunk.y) > PARAGRAPH_GAP_MULTIPLIER * chunk.fontSize
-                    val isWrappedLine = previousY != null && !sameLine && !isNewParagraph
-
-                    if (isNewParagraph) paragraph = doc.createParagraph()
+                    val placement = classifyChunkPlacement(chunk, previousY, previousXEnd)
+                    if (placement.isNewParagraph) paragraph = doc.createParagraph()
 
                     val run = paragraph.createRun()
-                    val prefix = if (isWrappedLine && !chunk.text.startsWith(" ")) " " else ""
+                    val prefix = if (placement.needsLeadingSpace && !chunk.text.startsWith(" ")) " " else ""
                     run.setText(prefix + chunk.text)
                     run.isBold = chunk.bold
                     run.isItalic = chunk.italic
                     run.fontSize = chunk.fontSize.toInt().coerceAtLeast(1)
 
                     previousY = chunk.y
+                    previousXEnd = chunk.xEnd
                 }
             }
             outputFile.outputStream().use { doc.write(it) }
         }
+    }
+
+    private data class ChunkPlacement(val isNewParagraph: Boolean, val needsLeadingSpace: Boolean)
+
+    /**
+     * Decide si `chunk` empieza un párrafo nuevo (salto vertical grande),
+     * continúa una línea envuelta dentro del mismo párrafo (salto vertical
+     * chico), o comparte línea con el fragmento anterior (`previousY`) --
+     * en cuyo caso un hueco horizontal real frente a `previousXEnd` (ver
+     * WORD_GAP_MULTIPLIER) también amerita un espacio, aunque no haya salto
+     * de línea de por medio.
+     */
+    private fun classifyChunkPlacement(chunk: TextChunk, previousY: Float?, previousXEnd: Float?): ChunkPlacement {
+        if (previousY == null) return ChunkPlacement(isNewParagraph = false, needsLeadingSpace = false)
+
+        val sameLine = abs(previousY - chunk.y) <= SAME_LINE_TOLERANCE
+        val wordGapThreshold = WORD_GAP_MULTIPLIER * chunk.fontSize
+        val hasWordGap = sameLine && previousXEnd != null && (chunk.xStart - previousXEnd) > wordGapThreshold
+        val isNewParagraph = !sameLine && (previousY - chunk.y) > PARAGRAPH_GAP_MULTIPLIER * chunk.fontSize
+        val isWrappedLine = !sameLine && !isNewParagraph
+
+        return ChunkPlacement(isNewParagraph = isNewParagraph, needsLeadingSpace = isWrappedLine || hasWordGap)
     }
 
     private data class TextChunk(
@@ -145,7 +183,9 @@ class PdfToWordUseCase @Inject constructor(
         val fontSize: Float,
         val bold: Boolean,
         val italic: Boolean,
-        val y: Float
+        val y: Float,
+        val xStart: Float,
+        val xEnd: Float
     )
 
     /**
@@ -174,7 +214,9 @@ class PdfToWordUseCase @Inject constructor(
                     italic = fontNames?.isItalic == true ||
                         fontName.contains("italic", ignoreCase = true) ||
                         fontName.contains("oblique", ignoreCase = true),
-                    y = info.baseline.startPoint.get(Vector.I2)
+                    y = info.baseline.startPoint.get(Vector.I2),
+                    xStart = info.baseline.startPoint.get(Vector.I1),
+                    xEnd = info.baseline.endPoint.get(Vector.I1)
                 )
             )
         }
