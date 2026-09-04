@@ -1620,6 +1620,16 @@ Test nuevo en `PdfToWordUseCaseTest.kt` que reproduce el caso exacto (dos
 `showText()` en la misma Y, con 100pt de separación en X, sin espacio
 literal) y verifica que el `.docx` resultante contiene "Funza,
 Cundinamarca," con el espacio insertado. `detekt`/`lintDebug`/
-`testDebugUnitTest` en verde tras el refactor. **Pendiente**: verificación
-en dispositivo real reconvirtiendo el PDF original de WhatsApp -- no
-había ningún dispositivo conectado por `adb` al momento de este fix.
+`testDebugUnitTest` en verde tras el refactor.
+
+**Verificado en dispositivo real (Motorola Edge 30 Neo, API 34)**:
+reconvertido el PDF real recibido por WhatsApp (`VACACIONES ADILA.pdf`,
+`Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Documents/`,
+53.07 kB) usando el flujo normal de la app (Convertir → PDF → Word,
+seleccionando el archivo con el selector del sistema). El `.docx`
+resultante se extrajo directamente del almacenamiento de la app
+(`run-as com.docsmart`) para inspeccionar el XML crudo: el texto ahora
+dice "Funza, Cundinamarca, 03 de septiembres de 2026" con todos los
+espacios correctos, en vez de "Funza,Cundinamarca,03deseptiembrede2026"
+como antes del fix. Confirmado con el resto del cuerpo de la carta
+(fechas, "Señores", "Asunto:", firma) también correctamente espaciado.
