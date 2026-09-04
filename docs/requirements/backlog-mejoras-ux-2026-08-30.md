@@ -2033,35 +2033,53 @@ físico a mano.
 
 **Implementado**: nuevo workflow
 `.github/workflows/firebase-test-lab.yml`. Disparo **manual**
-(`workflow_dispatch`) a propósito, no en cada push/PR -- Test Lab
-requiere el plan de facturación Blaze del proyecto Firebase (cuota
-gratis diaria compartida por todo el proyecto de GCP, correrlo en cada
-push la agotaría rápido y podría generar cargos reales sin que nadie lo
-decida). El job compila `assembleDebug assembleDebugAndroidTest`,
-autentica con `google-github-actions/auth` usando una cuenta de
-servicio, y ejecuta
+(`workflow_dispatch`) a propósito, no en cada push/PR.
+
+**Corrección importante 2026-09-04**: la primera versión de esta
+sección (y del comentario en el propio YAML) decía que Test Lab
+requiere el plan de pago **Blaze** -- **investigado y confirmado que
+es incorrecto** tras la pregunta del usuario sobre el costo (no puede
+costear un plan de pago por ahora). Fuente:
+[documentación oficial de cuotas y precios de Test Lab](https://firebase.google.com/docs/test-lab/usage-quotas-pricing).
+El plan **Spark** (gratis, sin tarjeta de crédito) sí puede usar Test
+Lab, con una cuota diaria real de **hasta 15 pruebas/día en total: 10
+en dispositivos virtuales + 5 en físicos**, compartida por todo el
+proyecto de GCP. Vincular una cuenta de facturación al proyecto lo
+sube automáticamente a Blaze -- para quedarse en el plan gratis basta
+con no hacer eso. El disparo manual del workflow se mantiene de todos
+modos porque esa cuota de 15/día es compartida con cualquier otro uso
+de Test Lab del proyecto (incluida la consola web), no porque haga
+falta evitar cargos de un plan de pago.
+
+El job compila `assembleDebug assembleDebugAndroidTest`, autentica con
+`google-github-actions/auth` usando una cuenta de servicio, y ejecuta
 `gcloud firebase test android run --type instrumentation` contra un
-dispositivo virtual `MediumPhone.arm` en API 34 (mismo Android que el
-dispositivo real de desarrollo). El job entero está gateado con
+dispositivo **virtual** `MediumPhone.arm` en API 34 (mismo Android que
+el dispositivo real de desarrollo) -- elegido a propósito sobre uno
+físico porque los virtuales tienen el doble de cuota gratis diaria
+(10 vs. 5). El job entero está gateado con
 `if: ${{ secrets.GCP_SA_KEY != '' }}` -- se puede fusionar ya mismo sin
 romper nada; se activa solo cuando el secret exista.
 
 **Pendiente del lado del usuario, no se puede hacer desde acá** (son
-pasos de consola web de Firebase/Google Cloud, no de código):
-1. Confirmar que el proyecto "docusmart-8904e" está en el plan de
-   facturación **Blaze** (Test Lab no funciona en el plan gratis
-   Spark) -- Firebase Console → ⚙️ → Uso y facturación.
-2. Crear una cuenta de servicio de Google Cloud con el rol "Firebase
-   Test Lab Admin" -- Google Cloud Console → IAM y administración →
-   Cuentas de servicio → Crear cuenta de servicio.
-3. Generar una clave JSON para esa cuenta de servicio (Cuentas de
+pasos de consola web de Google Cloud, no de código, y **no requieren
+tarjeta ni plan de pago**):
+1. Crear una cuenta de servicio de Google Cloud (proyecto
+   "docusmart-8904e") con el rol "Firebase Test Lab Admin" -- Google
+   Cloud Console → IAM y administración → Cuentas de servicio → Crear
+   cuenta de servicio.
+2. Generar una clave JSON para esa cuenta de servicio (Cuentas de
    servicio → la cuenta creada → Claves → Agregar clave → JSON).
-4. Guardar el contenido completo de ese JSON como secret de este
+3. Guardar el contenido completo de ese JSON como secret de este
    repositorio en GitHub: Settings → Secrets and variables → Actions →
    New repository secret, nombre `GCP_SA_KEY`.
-5. Una vez configurado, correr el workflow manualmente desde la
+4. Una vez configurado, correr el workflow manualmente desde la
    pestaña Actions de GitHub ("Firebase Test Lab" → Run workflow) para
    confirmar que funciona de punta a punta.
+5. Importante: al crear el proyecto de GCP/cuenta de servicio, NO
+   vincular ninguna cuenta de facturación si se quiere permanecer en
+   el plan gratis Spark -- eso es lo único que dispararía la subida
+   automática a Blaze.
 
 No verificado de punta a punta en esta sesión (no se puede sin el
 secret, que solo el usuario puede crear) -- el YAML se validó

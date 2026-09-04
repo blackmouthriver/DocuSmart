@@ -10,27 +10,35 @@ name: Firebase Test Lab
 # señal de CI confiable para esas mismas pruebas sin depender del
 # dispositivo físico del desarrollador.
 #
-# Disparo manual (workflow_dispatch) a propósito, NO en cada push/PR: Test
-# Lab requiere el plan de facturación Blaze del proyecto Firebase
-# (pago por uso, con una cuota gratis diaria compartida por todo el
-# proyecto de GCP -- históricamente algo así como 5 pruebas/día en
-# dispositivos físicos + 10/día en virtuales, sujeto a cambios). Correrlo
-# en cada push agotaría esa cuota rápido y podría generar cargos reales sin
-# que nadie lo decida explícitamente.
+# Disparo manual (workflow_dispatch) a propósito, NO en cada push/PR:
+# **corregido 2026-09-04** -- Test Lab SÍ tiene una cuota gratis real en el
+# plan Spark (el plan gratis de Firebase, sin tarjeta de crédito): hasta 15
+# pruebas por día en total -- 10 en dispositivos virtuales + 5 en físicos,
+# compartidas por todo el proyecto de GCP (no hace falta el plan de pago
+# Blaze para esto, al contrario de lo que se documentó primero acá; ojo:
+# vincular una cuenta de facturación al proyecto lo sube automáticamente a
+# Blaze, así que para quedarse en la cuota gratis hay que evitar ese paso).
+# Aun así, el disparo queda manual porque esa cuota de 15/día es compartida
+# con cualquier otro uso de Test Lab del proyecto -- correrlo en cada
+# push/PR la agotaría rápido sin necesidad. Se puede cambiar a `push`/
+# `pull_request` más adelante si hace falta una señal automática y la
+# cuota diaria alcanza cómodamente.
 #
 # ── Configuración manual pendiente (no se puede hacer desde acá) ──────────
-# 1. En la consola de Firebase/Google Cloud del proyecto "docusmart-8904e",
-#    confirmar que el plan de facturación es Blaze (Test Lab no funciona en
-#    el plan gratis Spark).
-# 2. Crear una cuenta de servicio de Google Cloud con el rol "Firebase Test
-#    Lab Admin" (o "Cloud Testing Service Agent" / "Editor" si se prefiere
-#    algo más amplio) -- IAM y administración → Cuentas de servicio.
-# 3. Generar una clave JSON para esa cuenta de servicio y guardarla como
+# 1. Crear una cuenta de servicio de Google Cloud (proyecto
+#    "docusmart-8904e") con el rol "Firebase Test Lab Admin" -- Google
+#    Cloud Console → IAM y administración → Cuentas de servicio → Crear
+#    cuenta de servicio. Esto no requiere el plan Blaze ni tarjeta.
+# 2. Generar una clave JSON para esa cuenta de servicio y guardarla como
 #    secret de este repositorio en GitHub: Settings → Secrets and
 #    variables → Actions → New repository secret, nombre GCP_SA_KEY,
 #    valor: el contenido completo del archivo JSON de la clave.
 # Sin el secret GCP_SA_KEY configurado, este job se salta solo (no rompe
 # nada) -- se puede fusionar este workflow ya mismo y activarlo después.
+#
+# Nota sobre el dispositivo: con solo 5 pruebas/día gratis en dispositivos
+# FÍSICOS, este workflow usa uno VIRTUAL a propósito (10/día gratis,
+# el doble de cuota) -- ver el paso "Ejecutar pruebas" más abajo.
 
 on:
   workflow_dispatch:

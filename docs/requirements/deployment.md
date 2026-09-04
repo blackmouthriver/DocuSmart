@@ -482,11 +482,14 @@ ya se justifica.
   intentos reales ya descartados con evidencia, ver arriba), se agregó
   `.github/workflows/firebase-test-lab.yml`, que corre las mismas
   pruebas instrumentadas en dispositivos reales/virtuales de Google en
-  vez de ese emulador. Disparo manual a propósito (consume cuota
-  pagada de Test Lab más allá de un límite gratis diario). Detalle
-  completo, incluidos los pasos de configuración manual pendientes del
-  lado del usuario (plan de facturación Blaze, cuenta de servicio,
-  secret de GitHub), en `backlog-mejoras-ux-2026-08-30.md` §22.
+  vez de ese emulador. Disparo manual a propósito (la cuota gratis
+  diaria de Test Lab es compartida por todo el proyecto). **No requiere
+  el plan de pago Blaze** -- corregido 2026-09-04 tras preguntar el
+  usuario por el costo: el plan gratis Spark ya incluye hasta 15
+  pruebas/día (10 virtuales + 5 físicas), sin tarjeta de crédito.
+  Detalle completo, incluidos los pasos de configuración manual
+  pendientes del lado del usuario (cuenta de servicio, secret de
+  GitHub), en `backlog-mejoras-ux-2026-08-30.md` §22.
 
 ---
 
