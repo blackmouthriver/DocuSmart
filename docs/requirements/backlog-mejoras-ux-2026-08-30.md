@@ -25,7 +25,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 2 | Capturar archivo desde cámara para convertir | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo 2026-08-31** — ver §4 |
 | 3 | Accesos rápidos: carrusel → grilla + "Img→PDF" pre-filtrado | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado 2026-08-30** — ver §5 |
 | 4 | Botón Papelera sin título y de tamaño inconsistente en Biblioteca | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §6 |
-| 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | **🟡 HU-UX-05 (tamaño de letra) ✅ implementada 2026-08-31; HU-UX-06 (color por elemento) sin empezar** — ver §7 |
+| 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | **🟡 HU-UX-05 (tamaño de letra) ✅ implementada 2026-08-31; HU-UX-06 acotada a propósito 2026-09-04 a un bug real (banner de Home ignoraba el acento elegido) — épica completa de colores por zona descartada por el usuario** — ver §7 |
 | 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | ✅ 6 de 6 pantallas implementadas y verificadas 2026-08-31 — ver §8 |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | Baja | Baja | Bajo | **✅ Reproducido y corregido en dispositivo real 2026-09-03** — ver §10 |
@@ -488,6 +488,45 @@ navegación por separado (no solo un acento único como hoy),
   evitar que el usuario arme una combinación ilegible) vs. selector de
   color libre (más riesgo de accesibilidad, requeriría validar contraste
   automáticamente).
+
+### Retomado 2026-09-04: bug real encontrado, alcance reducido a propósito
+
+Antes de diseñar la épica completa, se investigó el sistema de theming
+actual para fundamentar la pregunta de diseño pendiente. Hallazgo real:
+`HomeBanner.kt` tenía su degradado de color **fijo en tonos de azul**
+(`DocuBlue`/`SmartBlue`/`IndigoAccent`) y el botón "Abrir" su texto
+fijo en `DocuBlue` -- ambos **ignoraban por completo** el "Color de
+acento" que el usuario ya puede elegir en Ajustes desde antes de esta
+sesión. Era el único elemento de Home que no respetaba esa elección
+(la barra de navegación inferior sí, vía los valores por defecto de
+Material3 que ya leen `colorScheme.primary`; los íconos de Accesos
+rápidos usan colores fijos por diseño, uno distinto por categoría, algo
+intencional y no relacionado).
+
+Presentado este hallazgo al usuario, con las 3 opciones de alcance
+originales (arreglar solo el bug / colores independientes por zona /
+selector libre), **eligió arreglar solo el bug** -- no la épica
+completa de colores independientes por banner/íconos/cards/nav bar.
+
+**Corregido**: `HomeBanner.kt` deriva su degradado y el color del texto
+del botón "Abrir" de `MaterialTheme.colorScheme.primary` (ya resuelto
+al acento + tema claro/oscuro correctos por `DocuSmartTheme`) en vez de
+constantes fijas -- `listOf(lerp(primary, White, 0.12f), primary,
+lerp(primary, Black, 0.22f))` reproduce el mismo efecto visual de
+degradado de 3 tonos que tenía el diseño original, ahora anclado al
+acento real elegido en vez de siempre azul.
+
+**Verificado en dispositivo real (Motorola Edge 30 Neo)**: gauntlet
+completo en verde. Con el acento en "Rosa", el banner de Home cambia a
+un degradado rosa y el botón "Abrir" muestra su texto/ícono en rosa,
+en vez de quedarse azul como antes del fix. Con el acento de vuelta en
+"Azul" (el valor por defecto), el banner se ve visualmente idéntico al
+diseño original -- sin regresión para quien nunca toca este ajuste.
+
+**HU-UX-06 (colores independientes por banner/íconos/cards/nav bar)
+sigue sin implementar** -- el usuario decidió no abordar esa épica más
+grande por ahora; queda tal cual estaba documentada arriba si se
+retoma más adelante.
 
 ---
 
