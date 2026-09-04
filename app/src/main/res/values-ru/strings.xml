@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">DocuSmart</string>
 
     <!-- ── Навигация ─────────────────────────────── -->
@@ -514,7 +514,7 @@
     <string name="premium_plan_annual">Ежегодно</string>
     <string name="premium_period_month">в месяц</string>
     <string name="premium_period_year">в год</string>
-    <string name="premium_savings_44">Экономия 44%%</string>
+    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Экономия 44%</string>
     <string name="premium_feature_no_ads_title">Без рекламы</string>
     <string name="premium_feature_no_ads_desc">Пользуйтесь DocuSmart без прерываний</string>
     <string name="premium_feature_pdf_word_title">PDF в Word</string>
@@ -528,7 +528,7 @@
     <string name="premium_feature_cloud_title">Облачная интеграция</string>
     <string name="premium_feature_cloud_desc">Синхронизация с Google Drive и Dropbox</string>
     <string name="premium_feature_compress_title">Расширенное сжатие</string>
-    <string name="premium_feature_compress_desc">Уменьшайте PDF до 90%% без заметной потери качества</string>
+    <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">Уменьшайте PDF до 90% без заметной потери качества</string>
     <string name="premium_feature_unlimited_title">Неограниченные конвертации</string>
     <string name="premium_feature_unlimited_desc">Без дневного лимита конвертаций</string>
     <string name="premium_you_are_premium">Вы Premium!</string>

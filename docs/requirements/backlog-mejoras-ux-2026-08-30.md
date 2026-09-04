@@ -702,10 +702,26 @@ rango de emoji son los checkmarks "✓" de "Imagen/Documento seleccionado"
 fuera de alcance, no se tocaron. Verificado en dispositivo real
 (Motorola Edge 30 Neo): el chip de Pomodoro ahora dice solo "Estudio" y
 el badge de Premium solo "Recomendado". Gauntlet completo en verde.
-**Hallazgo aparte encontrado durante la verificación, no corregido**: la
-tarjeta del plan Anual en Premium muestra "Ahorra 44%%" (doble signo de
-porcentaje) -- bug de formato independiente, catalogado para corregir
-aparte.
+**Hallazgo aparte corregido 2026-09-03 (mismo día)**: la tarjeta del plan
+Anual en Premium mostraba "Ahorra 44%%" (doble signo de porcentaje).
+Causa raíz: `premium_savings_44` se lee con `stringResource(labelRes)`
+plano en `PremiumPlanCards.kt:144` -- sin argumentos de formato, así que
+el `%%` nunca se colapsa a un solo `%` (eso solo pasa cuando el string se
+pasa por `String.format`/`getString(id, args)`, que no es el caso acá).
+Al revisar el resto de `strings.xml` en busca del mismo patrón se
+encontró un segundo caso idéntico: `premium_feature_compress_desc`
+("Reduce PDFs hasta un 90%%..."), leído igual con `stringResource(feature
+.descRes)` plano en `PremiumFeatureList.kt:103`. Ambos corregidos a un
+solo `%` en los 5 idiomas. Lint (`StringFormatInvalid`) marca cualquier
+`%` suelto como potencial format string por defecto -- se agregó
+`xmlns:tools` a los 5 `strings.xml` y `tools:ignore="StringFormatInvalid"`
+puntual en ambos strings, con comentario explicando que se confirmó por
+código que nunca pasan por `String.format`. Se descartó tocar
+`pdf_compress_success`/`pdf_crop_success` (mismo patrón `%%` a primera
+vista) porque esos sí se formatean después con argumentos reales
+(`%1$d`/`%2$d`/`%3$d`) -- su `%%` es el escape correcto. Verificado en
+dispositivo real: "Reduce PDFs hasta un 90%" y "Ahorra 44%" ya con un
+solo signo. Gauntlet completo en verde.
 
 ---
 
