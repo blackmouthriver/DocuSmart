@@ -1,0 +1,89 @@
+name: Firebase Test Lab
+
+# Corre las mismas pruebas instrumentadas de connectedDebugAndroidTest, pero
+# en dispositivos reales/virtuales de Firebase Test Lab en vez del emulador
+# de GitHub Actions -- el job "instrumented-tests" de ci.yml es
+# `continue-on-error: true` desde 2026-09-02 porque 14-15/30 pruebas fallan
+# de forma reproducible SOLO en ese emulador (ComposeTimeoutException al
+# inyectar touch, ver docs/requirements/deployment.md §3), pese a pasar de
+# forma confiable en dispositivo real. Test Lab es la forma de tener una
+# señal de CI confiable para esas mismas pruebas sin depender del
+# dispositivo físico del desarrollador.
+#
+# Disparo manual (workflow_dispatch) a propósito, NO en cada push/PR: Test
+# Lab requiere el plan de facturación Blaze del proyecto Firebase
+# (pago por uso, con una cuota gratis diaria compartida por todo el
+# proyecto de GCP -- históricamente algo así como 5 pruebas/día en
+# dispositivos físicos + 10/día en virtuales, sujeto a cambios). Correrlo
+# en cada push agotaría esa cuota rápido y podría generar cargos reales sin
+# que nadie lo decida explícitamente.
+#
+# ── Configuración manual pendiente (no se puede hacer desde acá) ──────────
+# 1. En la consola de Firebase/Google Cloud del proyecto "docusmart-8904e",
+#    confirmar que el plan de facturación es Blaze (Test Lab no funciona en
+#    el plan gratis Spark).
+# 2. Crear una cuenta de servicio de Google Cloud con el rol "Firebase Test
+#    Lab Admin" (o "Cloud Testing Service Agent" / "Editor" si se prefiere
+#    algo más amplio) -- IAM y administración → Cuentas de servicio.
+# 3. Generar una clave JSON para esa cuenta de servicio y guardarla como
+#    secret de este repositorio en GitHub: Settings → Secrets and
+#    variables → Actions → New repository secret, nombre GCP_SA_KEY,
+#    valor: el contenido completo del archivo JSON de la clave.
+# Sin el secret GCP_SA_KEY configurado, este job se salta solo (no rompe
+# nada) -- se puede fusionar este workflow ya mismo y activarlo después.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-test-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-lab:
+    name: Pruebas instrumentadas en Firebase Test Lab
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ secrets.GCP_SA_KEY != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: JDK 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@4733eaac7c1b0da527e4206b7671e0061de1ce37 # v6
+
+      - name: Permiso de ejecución para gradlew
+        run: chmod +x ./gradlew
+
+      - name: Compilar APKs de debug y de test
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+
+      - name: Autenticar con Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configurar gcloud CLI
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      # Modelo/versión elegidos para igualar el dispositivo real usado en
+      # desarrollo (Motorola Edge 30 Neo, Android 14/API 34). "MediumPhone.arm"
+      # es un dispositivo virtual de Test Lab -- más barato y con más cuota
+      # gratis diaria que un dispositivo físico; cambiar a un modelo físico
+      # real (ver `gcloud firebase test android models list`) si hace falta
+      # más fidelidad más adelante.
+      - name: Ejecutar pruebas en Firebase Test Lab
+        run: |
+          gcloud firebase test android run \
+            --type instrumentation \
+            --project docusmart-8904e \
+            --app app/build/outputs/apk/debug/app-debug.apk \
+            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --device model=MediumPhone.arm,version=34,locale=es,orientation=portrait \
+            --timeout 20m

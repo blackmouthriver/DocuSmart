@@ -1960,3 +1960,114 @@ correctamente a japonés natural ("ドキュメントを すべてこの一か�
 "Docu Smart"/"DocuSmart" intactos sin traducir. Confirmado también que
 el diálogo de idioma en sí se traduce (título "言語を選択"). Idioma
 devuelto a español al terminar.
+
+---
+
+## 22. Monetización: Firebase Remote Config + Firebase Test Lab en CI
+
+Segunda mitad de lo pedido junto con Firebase Analytics/Crashlytics
+(§20) -- quedó en cola explícitamente para una siguiente sesión, ahora
+retomada a pedido del usuario.
+
+### Remote Config para el paywall de Premium
+
+Antes de esto, qué plan se destaca como "Recomendado" y si se muestra
+el badge de ahorro estaban fijos en el código
+(`PremiumRepository.getAvailablePlans()`: `isPopular = true` siempre
+para el anual, `savingsLabelRes` siempre presente) -- para cambiar
+cualquiera de los dos había que publicar una actualización.
+
+**Implementado**:
+- `RemoteConfigManager` (nuevo, `core/remoteconfig/`): wrapper de
+  `FirebaseRemoteConfig` con 2 parámetros: `premium_annual_highlighted`
+  (bool) y `premium_show_savings_badge` (bool). Valores por defecto en
+  `res/xml/remote_config_defaults.xml` iguales al comportamiento previo
+  (ambos `true`) -- nada cambia hasta que alguien configure algo
+  distinto en la consola de Firebase. `minimumFetchIntervalInSeconds`
+  en 0 en debug (para poder iterar sin esperar caché), 3600 en release.
+- `DocuSmartApplication.onCreate()` llama `remoteConfigManager.refresh()`
+  al arrancar -- `fetchAndActivate()` es best-effort, nunca bloquea ni
+  rompe la app si falla (sin red, etc.).
+- `PremiumRepository.getAvailablePlans()` ahora lee ambos valores y
+  arma los planes en base a eso: `isPopular` del mensual/anual se
+  intercambia según `isAnnualPlanHighlighted()`, y `savingsLabelRes`
+  del anual queda `null` (oculta el badge, `PremiumPlanCards.kt` ya
+  manejaba `null` de antes) si `showSavingsBadge()` es falso.
+- **Deliberadamente NO se hizo dinámico el precio mostrado** ($2.99/
+  $19.99): el cargo real siempre lo determina Play Billing vía
+  `queryProductDetails()` (que ya sobreescribe el precio fijo en
+  `PremiumViewModel.observePrices()`) -- mostrar un precio distinto por
+  Remote Config sin que coincida con lo que Play realmente cobra sería
+  engañoso y un riesgo de política, no un ajuste cosmético seguro.
+- Test unitario nuevo (`PremiumRepositoryTest.kt`, 3 casos): plan anual
+  destacado + badge visible por defecto; Remote Config puede destacar
+  el mensual en vez del anual; Remote Config puede ocultar el badge.
+
+**Verificado en dispositivo real**: sin ningún parámetro configurado
+todavía en la consola (como está ahora), la pantalla Premium se ve
+idéntica a antes -- Anual destacado, badge "Ahorra 44%" visible, sin
+errores. Logcat sin ningún error de Remote Config relacionado con las
+2 claves nuevas (un warning de una clave interna de Firebase no
+relacionada, `useCCJForAutoRestoreEncryption`, es ruido normal del SDK).
+
+**Pendiente del lado del usuario, no se puede hacer desde acá**:
+configurar valores reales en Firebase Console → Remote Config
+(https://console.firebase.google.com/project/docusmart-8904e/config)
+para efectivamente correr un experimento -- por ejemplo, usar la
+funcionalidad de A/B Testing de Firebase para repartir tráfico entre
+`premium_show_savings_badge=true` y `=false` y medir cuál convierte
+mejor en `premium_purchase_attempt` (ya instrumentado, ver §20).
+
+### Firebase Test Lab en CI
+
+`ci.yml` ya tiene un job `instrumented-tests` marcado
+`continue-on-error: true` desde 2026-09-02 porque 14-15/30 pruebas de
+Compose UI Testing fallan de forma reproducible SOLO en el emulador de
+GitHub Actions (`ComposeTimeoutException` al inyectar touch), pese a
+pasar de forma confiable en el dispositivo real -- ver
+`deployment.md` §3 para el historial completo de intentos de
+diagnóstico. Firebase Test Lab corre las mismas pruebas en dispositivos
+reales/virtuales de Google en vez de ese emulador, dando una señal de
+CI potencialmente más confiable sin depender de tener el dispositivo
+físico a mano.
+
+**Implementado**: nuevo workflow
+`.github/workflows/firebase-test-lab.yml`. Disparo **manual**
+(`workflow_dispatch`) a propósito, no en cada push/PR -- Test Lab
+requiere el plan de facturación Blaze del proyecto Firebase (cuota
+gratis diaria compartida por todo el proyecto de GCP, correrlo en cada
+push la agotaría rápido y podría generar cargos reales sin que nadie lo
+decida). El job compila `assembleDebug assembleDebugAndroidTest`,
+autentica con `google-github-actions/auth` usando una cuenta de
+servicio, y ejecuta
+`gcloud firebase test android run --type instrumentation` contra un
+dispositivo virtual `MediumPhone.arm` en API 34 (mismo Android que el
+dispositivo real de desarrollo). El job entero está gateado con
+`if: ${{ secrets.GCP_SA_KEY != '' }}` -- se puede fusionar ya mismo sin
+romper nada; se activa solo cuando el secret exista.
+
+**Pendiente del lado del usuario, no se puede hacer desde acá** (son
+pasos de consola web de Firebase/Google Cloud, no de código):
+1. Confirmar que el proyecto "docusmart-8904e" está en el plan de
+   facturación **Blaze** (Test Lab no funciona en el plan gratis
+   Spark) -- Firebase Console → ⚙️ → Uso y facturación.
+2. Crear una cuenta de servicio de Google Cloud con el rol "Firebase
+   Test Lab Admin" -- Google Cloud Console → IAM y administración →
+   Cuentas de servicio → Crear cuenta de servicio.
+3. Generar una clave JSON para esa cuenta de servicio (Cuentas de
+   servicio → la cuenta creada → Claves → Agregar clave → JSON).
+4. Guardar el contenido completo de ese JSON como secret de este
+   repositorio en GitHub: Settings → Secrets and variables → Actions →
+   New repository secret, nombre `GCP_SA_KEY`.
+5. Una vez configurado, correr el workflow manualmente desde la
+   pestaña Actions de GitHub ("Firebase Test Lab" → Run workflow) para
+   confirmar que funciona de punta a punta.
+
+No verificado de punta a punta en esta sesión (no se puede sin el
+secret, que solo el usuario puede crear) -- el YAML se validó
+sintácticamente (parseable, misma estructura que `ci.yml`/`release.yml`
+ya en uso) y las versiones de las 2 GitHub Actions nuevas
+(`google-github-actions/auth`, `google-github-actions/setup-gcloud`) se
+confirmaron como las últimas disponibles al momento, ancladas por
+commit SHA siguiendo la misma convención que el resto de los
+workflows del proyecto.

@@ -477,6 +477,17 @@ ya se justifica.
   similar, según la versión de AGP) para no depender de una API interna
   a ciegas sin poder probarla localmente contra una falla real.
 
+- **Firebase Test Lab agregado como alternativa, 2026-09-04**: en vez de
+  seguir intentando arreglar el emulador de GitHub Actions (varios
+  intentos reales ya descartados con evidencia, ver arriba), se agregó
+  `.github/workflows/firebase-test-lab.yml`, que corre las mismas
+  pruebas instrumentadas en dispositivos reales/virtuales de Google en
+  vez de ese emulador. Disparo manual a propósito (consume cuota
+  pagada de Test Lab más allá de un límite gratis diario). Detalle
+  completo, incluidos los pasos de configuración manual pendientes del
+  lado del usuario (plan de facturación Blaze, cuenta de servicio,
+  secret de GitHub), en `backlog-mejoras-ux-2026-08-30.md` §22.
+
 ---
 
 ## 4. Camino a la primera publicación (checklist)

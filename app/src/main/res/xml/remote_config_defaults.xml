@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Valores de respaldo para Firebase Remote Config: se usan si todavía
+     no hay ningún parámetro configurado en la consola de Firebase, o si el
+     fetch falla (sin conexión, etc.). Coinciden con el comportamiento que
+     la app ya tenía antes de agregar Remote Config, así que no cambia nada
+     hasta que alguien configure valores distintos en la consola. -->
+<defaultsMap>
+    <entry>
+        <key>premium_annual_highlighted</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>premium_show_savings_badge</key>
+        <value>true</value>
+    </entry>
+</defaultsMap>
