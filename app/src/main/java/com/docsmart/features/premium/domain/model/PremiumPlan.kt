@@ -27,21 +27,9 @@ enum class PremiumFeature(
         titleRes = R.string.premium_feature_pdf_word_title,
         descRes  = R.string.premium_feature_pdf_word_desc
     ),
-    PDF_TO_EXCEL(
-        titleRes = R.string.premium_feature_pdf_excel_title,
-        descRes  = R.string.premium_feature_pdf_excel_desc
-    ),
-    PDF_TO_PPT(
-        titleRes = R.string.premium_feature_pdf_ppt_title,
-        descRes  = R.string.premium_feature_pdf_ppt_desc
-    ),
     ADVANCED_OCR(
         titleRes = R.string.premium_feature_ocr_title,
         descRes  = R.string.premium_feature_ocr_desc
-    ),
-    CLOUD_SYNC(
-        titleRes = R.string.premium_feature_cloud_title,
-        descRes  = R.string.premium_feature_cloud_desc
     ),
     ADVANCED_COMPRESS(
         titleRes = R.string.premium_feature_compress_title,

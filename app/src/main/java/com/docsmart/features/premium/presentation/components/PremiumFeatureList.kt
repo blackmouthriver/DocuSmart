@@ -19,10 +19,7 @@ private fun getFeatureIcon(feature: PremiumFeature): ImageVector {
     return when (feature) {
         PremiumFeature.NO_ADS            -> Icons.Rounded.Block
         PremiumFeature.PDF_TO_WORD       -> Icons.Rounded.Description
-        PremiumFeature.PDF_TO_EXCEL      -> Icons.Rounded.TableChart
-        PremiumFeature.PDF_TO_PPT        -> Icons.Rounded.Slideshow
         PremiumFeature.ADVANCED_OCR      -> Icons.Rounded.Scanner
-        PremiumFeature.CLOUD_SYNC        -> Icons.Rounded.Cloud
         PremiumFeature.ADVANCED_COMPRESS -> Icons.Rounded.Compress
         PremiumFeature.UNLIMITED_CONVERT -> Icons.Rounded.AllInclusive
     }

@@ -519,14 +519,8 @@
     <string name="premium_feature_no_ads_desc">Пользуйтесь DocuSmart без прерываний</string>
     <string name="premium_feature_pdf_word_title">PDF в Word</string>
     <string name="premium_feature_pdf_word_desc">Конвертируйте PDF в редактируемые документы</string>
-    <string name="premium_feature_pdf_excel_title">PDF в Excel</string>
-    <string name="premium_feature_pdf_excel_desc">Извлекайте таблицы из PDF в электронные таблицы</string>
-    <string name="premium_feature_pdf_ppt_title">PDF в PowerPoint</string>
-    <string name="premium_feature_pdf_ppt_desc">Легко конвертируйте презентации</string>
-    <string name="premium_feature_ocr_title">Расширенное OCR</string>
-    <string name="premium_feature_ocr_desc">Распознавание текста на более чем 50 языках</string>
-    <string name="premium_feature_cloud_title">Облачная интеграция</string>
-    <string name="premium_feature_cloud_desc">Синхронизация с Google Drive и Dropbox</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">Превращает сканированные PDF в документы с настоящим текстом для поиска</string>
     <string name="premium_feature_compress_title">Расширенное сжатие</string>
     <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">Уменьшайте PDF до 90% без заметной потери качества</string>
     <string name="premium_feature_unlimited_title">Неограниченные конвертации</string>

@@ -723,6 +723,46 @@ vista) porque esos sí se formatean después con argumentos reales
 dispositivo real: "Reduce PDFs hasta un 90%" y "Ahorra 44%" ya con un
 solo signo. Gauntlet completo en verde.
 
+### Auditoría honesta de los beneficios de Premium, a pedido del usuario
+
+El usuario preguntó, dado que esta sesión confirmó que "Nube integrada"
+y ciertas mejoras del visor **no se han construido**, si conviene
+mantener esas promesas en el plan Premium o ajustarlo para reflejar lo
+que la app realmente hace hoy. Se auditó cada uno de los 8 beneficios
+listados (`PremiumFeature` enum) contra el código real, no solo
+"Nube integrada":
+
+| Beneficio prometido | Estado real confirmado por código |
+|---|---|
+| Sin anuncios | ✅ Real |
+| PDF a Word | ✅ Real (recién reescrito, muy verificado esta sesión) |
+| **PDF a Excel** | ❌ **No existe.** Solo `ExcelToPdfUseCase` (dirección contraria). Ningún `PdfToExcelUseCase` en todo el proyecto. |
+| **PDF a PowerPoint** | ❌ **No existe.** Solo `PptToPdfUseCase` (dirección contraria). Ningún `PdfToPptUseCase`. |
+| OCR "50+ idiomas" | 🟡 OCR real (`OcrPdfUseCase`, ML Kit), pero la cifra es falsa: solo depende de `com.google.mlkit:text-recognition` (reconocedor **latino únicamente**, sin los módulos chino/japonés/coreano/devanagari) -- no llega a 50 idiomas. |
+| **Nube integrada (Drive/Dropbox)** | ❌ **No existe.** `CLOUD_SYNC` solo aparecía en la lista de marketing y el mapeo de ícono -- cero lógica de integración real, coherente con la decisión de esta sesión de quedarse en SAF-only (§17/§19). |
+| Compresión avanzada 90% | ✅ Real |
+| Conversiones ilimitadas | ✅ Real |
+
+**Recomendación dada**: no se trataba de una función faltante aislada,
+sino de **dos beneficios completamente inventados** (PDF a Excel/
+PowerPoint) más uno exagerado (OCR), en la pantalla de una compra real
+-- riesgo de reembolsos/reseñas negativas y de política de Play Store
+(publicidad engañosa en una ficha de compra dentro de la app), no solo
+de UX. El usuario eligió **quitar las 3 promesas falsas/exageradas
+ahora** en vez de marcarlas "próximamente" o dejarlas.
+
+**Corregido**: eliminadas del enum `PremiumFeature`
+(`PremiumPlan.kt`) las entradas `PDF_TO_EXCEL`, `PDF_TO_PPT` y
+`CLOUD_SYNC` (y su mapeo de ícono en `PremiumFeatureList.kt`) -- la
+lista se renderiza automáticamente vía `PremiumFeature.values()`, sin
+necesidad de tocar la pantalla. Los 6 strings de esas 3 entradas
+eliminados de los 5 idiomas. `premium_feature_ocr_desc` reescrito sin
+la cifra de idiomas, describiendo lo que el OCR real sí hace ("convierte
+PDFs escaneados en documentos con texto real y buscable"). El plan
+Premium ahora solo promete: sin anuncios, PDF a Word, OCR, compresión
+avanzada 90%, conversiones ilimitadas -- las 5 funciones verificadas
+como reales.
+
 ---
 
 ## 11. Compose UI Testing en toda la app

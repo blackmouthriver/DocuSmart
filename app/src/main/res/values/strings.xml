@@ -523,14 +523,8 @@
     <string name="premium_feature_no_ads_desc">Disfruta DocuSmart sin interrupciones</string>
     <string name="premium_feature_pdf_word_title">PDF a Word</string>
     <string name="premium_feature_pdf_word_desc">Convierte PDFs a documentos editables</string>
-    <string name="premium_feature_pdf_excel_title">PDF a Excel</string>
-    <string name="premium_feature_pdf_excel_desc">Extrae tablas de PDFs a hojas de cálculo</string>
-    <string name="premium_feature_pdf_ppt_title">PDF a PowerPoint</string>
-    <string name="premium_feature_pdf_ppt_desc">Convierte presentaciones fácilmente</string>
-    <string name="premium_feature_ocr_title">OCR avanzado</string>
-    <string name="premium_feature_ocr_desc">Reconocimiento de texto en 50+ idiomas</string>
-    <string name="premium_feature_cloud_title">Nube integrada</string>
-    <string name="premium_feature_cloud_desc">Sincroniza con Google Drive y Dropbox</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">Convierte PDFs escaneados en documentos con texto real y buscable</string>
     <string name="premium_feature_compress_title">Compresión avanzada</string>
     <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">Reduce PDFs hasta un 90% sin pérdida visible</string>
     <string name="premium_feature_unlimited_title">Conversiones ilimitadas</string>
