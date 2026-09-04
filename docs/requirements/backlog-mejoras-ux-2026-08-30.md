@@ -34,7 +34,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 11 | Auditoría UX/UI experta + plan de mejoras | Entregable | — | — | — | Nuevo — ver §12 (findings + HUs propias) |
 | 12 | Hallazgos de seguridad diferidos de SonarCloud (external storage x5, biometric CryptoObject, dependency verification) | Bug/Deuda técnica | Media | Media-Alta | Medio | Ya listado en `deployment.md` §7 |
 | 13 | Umbral de cobertura `new_coverage` 0% en SonarCloud | Decisión de config | — | — | — | Ya listado en `deployment.md` §7 y `compose-ui-testing.md` §4 |
-| 14 | i18n: agregar ja/ko/zh/it/fr | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5, `settings-premium.md` |
+| 14 | i18n: agregar ja/ko/zh/it/fr | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado 2026-09-04** — ver §21 |
 | 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-03** — ver §15 |
 | 16 | Encriptar/quitar contraseña de archivo individual en Seguridad | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | Ya listado en `CONTEXT.md` §5 |
@@ -1894,3 +1894,69 @@ Store.
     este dispositivo/versión de Android ante taps sintéticos.
   - Dispositivo devuelto a un build `debug` normal al terminar (mismo
     proceso: desinstalar + instalar, por la firma distinta).
+
+---
+
+## 21. i18n — 5 idiomas nuevos (ja/ko/zh/it/fr)
+
+Ítem #14 de la tabla de §2, ya catalogado desde antes en `CONTEXT.md` y
+`settings-premium.md` pero nunca implementado. La app ya soportaba
+es/en/de/pt/ru; el usuario pidió sumar japonés, coreano, chino, italiano
+y francés.
+
+**Implementado**: agregadas 5 entradas al enum `AppLanguage`
+(`LanguageManager.kt`) -- `JAPANESE("ja", ...)`, `KOREAN("ko", ...)`,
+`CHINESE("zh", ...)`, `ITALIAN("it", ...)`, `FRENCH("fr", ...)`. La
+pantalla de selección de idioma en Ajustes itera `AppLanguage.entries`
+automáticamente, así que no hizo falta tocar ninguna UI aparte.
+
+**Traducción de los 724 strings existentes**: dado el volumen (724
+strings × 5 idiomas), se delegó la traducción a 5 agentes en paralelo
+(uno por idioma), cada uno con instrucciones estrictas: mismas 724
+claves `name` en el mismo orden, preservar especificadores de formato
+(`%1$d`/`%2$s`/etc., reordenables si la gramática del idioma lo pide,
+pero nunca alterados en tipo/cantidad), preservar los 2
+`tools:ignore="StringFormatInvalid"` con un solo `%` literal (no `%%`),
+nunca traducir "DocuSmart"/"mouthblack technology", comentarios XML sin
+la secuencia `--` (rompe el parser), apóstrofes escapados donde aplica
+(crítico en italiano/francés). Cada agente verificó su propio archivo
+(conteo de entradas, diff de `name`s contra el fuente, parseo XML,
+verificación de especificadores) antes de reportar. Verificación
+independiente después: los 5 archivos parsean como XML válido con
+exactamente 724 elementos `<string>` cada uno, mismos `name`s en el
+mismo orden que el fuente en español.
+
+**Bug de test encontrado y corregido en el camino**:
+`LanguageManagerTest.kt` tenía 2 tests que usaban `Locale("ja")`
+(japonés) como ejemplo de "idioma NO soportado" -- al agregar japonés
+real al enum, esos tests correctamente empezaron a fallar (el
+comportamiento del código cambió bien, el supuesto del test quedó
+obsoleto). Corregido cambiando el locale de prueba a `Locale("ar")`
+(árabe, que sigue sin soporte). Mismo ajuste reflejado en el AC2 de
+`settings-premium.md` (que también citaba japonés como ejemplo de
+idioma no soportado).
+
+**Bug real encontrado y corregido durante la verificación en dispositivo**:
+el diálogo "Seleccionar idioma" (`SettingsScreen.kt`) renderiza su lista
+con un `Column` simple dentro del slot `text` de un `AlertDialog`, sin
+scroll. Con 5 idiomas cabía todo sin problema; al llegar a 10, el
+diálogo (que no crece más allá de un alto máximo fijado por
+`AlertDialog`) no alcanzaba para mostrar la última fila (Francés) --
+confirmado con volcado de accesibilidad (`uiautomator dump`): el
+`RadioButton` de esa fila SÍ se dibujaba, pero su `Text` (nombre e
+código del idioma) tenía texto vacío, invisible e imposible de
+seleccionar. Corregido agregando
+`Modifier.verticalScroll(rememberScrollState())` al `Column` -- ahora
+los 10 idiomas son alcanzables con scroll dentro del diálogo, y el
+mismo fix cubre cualquier idioma futuro que se agregue.
+
+**Verificado en dispositivo real (Motorola Edge 30 Neo)**: gauntlet
+completo en verde (`compileDebugKotlin`, `detekt`, `lintDebug`,
+`testDebugUnitTest`, 268 tests) tras el fix. Con scroll, "Français"
+queda completamente visible y seleccionable. Se seleccionó 日本語
+(japonés) desde el diálogo y toda la UI de Home/Ajustes cambió
+correctamente a japonés natural ("ドキュメントを すべてこの一か所に",
+"開く", "変換", "クイックアクセス", "スキャン", "設定", etc.), con
+"Docu Smart"/"DocuSmart" intactos sin traducir. Confirmado también que
+el diálogo de idioma en sí se traduce (título "言語を選択"). Idioma
+devuelto a español al terminar.

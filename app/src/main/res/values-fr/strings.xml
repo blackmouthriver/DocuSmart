@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── Navigation ─────────────────────────────── -->
+    <string name="nav_home">Accueil</string>
+    <string name="nav_library">Bibliothèque</string>
+    <string name="nav_converter">Convertir</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">Réglages</string>
+
+    <!-- ── Accueil ───────────────────────────────── -->
+    <string name="home_title">Tes documents\nen un seul endroit</string>
+    <string name="home_subtitle">Ouvre, convertis et gère\ntes fichiers facilement</string>
+    <string name="home_open">Ouvrir</string>
+    <string name="home_convert">Convertir</string>
+    <string name="home_quick_access">Accès rapides</string>
+    <string name="home_scan">Scanner</string>
+    <string name="home_img_pdf">Img→PDF</string>
+    <string name="home_security">Sécurité</string>
+    <string name="home_study">Étude</string>
+    <string name="home_recent">Récents</string>
+    <string name="home_see_all">Tout voir</string>
+    <string name="home_no_recent_title">Aucun document récent</string>
+    <string name="home_no_recent_desc">Ouvre un fichier pour le voir ici</string>
+    <string name="home_open_file_action">Ouvrir un fichier</string>
+    <string name="home_share_document">Partager %1$s</string>
+    <string name="home_qr_read">Lire le QR</string>
+    <string name="home_qr_create">Créer un QR</string>
+    <string name="home_scanner_sheet_title">Scanner</string>
+    <string name="home_scanner_sheet_subtitle">Choisis une option</string>
+    <string name="home_scanner_option_scan_title">Scanner un document</string>
+    <string name="home_scanner_option_scan_subtitle">Capture automatique avec ML Kit</string>
+    <string name="home_scanner_option_qr_read_subtitle">Détecte URL, texte et plus</string>
+
+    <!-- ── Bibliothèque ─────────────────────────────── -->
+    <string name="library_title">Bibliothèque</string>
+    <string name="library_subtitle">Tous tes documents</string>
+    <string name="library_search">Rechercher dans la bibliothèque…</string>
+    <string name="library_documents">documents</string>
+    <string name="library_tab_device">Appareil</string>
+    <string name="library_tab_app_files">Mes fichiers</string>
+    <string name="library_tab_file_count">%1$d fichiers</string>
+
+    <!-- ── Convertisseur ────────────────────────────── -->
+    <string name="converter_title">Convertisseur</string>
+    <string name="converter_subtitle">Convertis tes documents facilement</string>
+    <string name="converter_select">Que veux-tu convertir ?</string>
+    <string name="converter_save">Enregistrer dans Téléchargements</string>
+
+    <!-- ── Outils PDF ──────────────────────────────── -->
+    <string name="pdf_tools_title">Outils PDF</string>
+    <string name="pdf_tools_subtitle">Gère tes PDF rapidement</string>
+    <string name="pdf_tools_ad_not_available">La publicité n\'est pas disponible. Réessaie dans quelques secondes.</string>
+    <string name="pdf_merge">Fusionner des PDF</string>
+    <string name="pdf_split">Diviser un PDF</string>
+    <string name="pdf_compress">Compresser un PDF</string>
+    <string name="pdf_rotate">Faire pivoter un PDF</string>
+    <string name="pdf_number_pages">Numéroter les pages</string>
+    <string name="pdf_watermark">Filigrane</string>
+    <string name="pdf_reorder_pages">Réorganiser les pages</string>
+    <string name="pdf_compare">Comparer des PDF</string>
+    <string name="pdf_redact">Censurer du contenu</string>
+    <string name="pdf_crop">Rogner les pages</string>
+    <string name="pdf_edit_text">Modifier le texte</string>
+    <string name="pdf_sign">Signer un PDF</string>
+    <string name="pdf_fill_form">Remplir un formulaire</string>
+    <string name="pdf_ocr">OCR avancé</string>
+
+    <!-- ── Réglages ────────────────────────────────── -->
+    <string name="settings_title">Réglages</string>
+    <string name="settings_subtitle">Personnalise ton expérience</string>
+    <string name="settings_premium">DocuSmart Premium</string>
+    <string name="settings_premium_subtitle">Débloque toutes les fonctionnalités</string>
+    <string name="settings_language">Langue</string>
+    <string name="settings_theme">Thème</string>
+    <string name="settings_accent_color">Couleur d\'accent</string>
+    <string name="settings_select_accent_color">Choisir la couleur d\'accent</string>
+    <string name="settings_font_scale">Taille du texte</string>
+    <string name="settings_select_font_scale">Choisir la taille du texte</string>
+    <string name="settings_storage">Stockage</string>
+    <string name="settings_storage_subtitle">Voir les fichiers générés</string>
+    <string name="settings_about">À propos</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">Choisir la langue</string>
+    <string name="settings_select_theme">Choisir le thème</string>
+    <string name="settings_close">Fermer</string>
+    <string name="settings_language_subtitle">Choisis la langue de l\'application</string>
+    <string name="settings_section_personalization">Personnalisation</string>
+    <string name="settings_tutorial">Voir le tutoriel</string>
+    <string name="settings_tutorial_subtitle">Revois les fonctionnalités principales</string>
+    <string name="settings_section_privacy">Confidentialité et sécurité</string>
+    <string name="settings_privacy_item">Confidentialité</string>
+    <string name="settings_privacy_item_subtitle">Politique de données et permissions</string>
+    <string name="settings_ads_privacy_options">Consentement publicitaire</string>
+    <string name="settings_ads_privacy_options_subtitle">Modifie tes préférences de confidentialité pour les publicités</string>
+    <string name="settings_share_app">Partager DocuSmart</string>
+    <string name="settings_share_app_subtitle">Recommande l\'application à tes contacts</string>
+    <string name="settings_rate">Noter sur le Play Store</string>
+    <string name="settings_rate_subtitle">Tu aimes DocuSmart ? Laisse-nous un avis !</string>
+    <string name="settings_section_support">Assistance</string>
+    <string name="settings_help">Aide</string>
+    <string name="settings_help_subtitle">Questions fréquentes</string>
+    <string name="settings_section_system">Système</string>
+    <string name="settings_reset">Réinitialiser la configuration</string>
+    <string name="settings_reset_subtitle">Revenir aux valeurs par défaut</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">Compris</string>
+    <string name="settings_storage_conversions">Conversions</string>
+    <string name="settings_storage_total">Total</string>
+    <string name="settings_storage_files_unit">fichiers</string>
+    <string name="settings_storage_clear_cache">Vider le cache</string>
+    <string name="settings_privacy_body">DocuSmart respecte ta vie privée. Tes documents ne sont jamais envoyés vers des serveurs externes. Tout le traitement se fait localement sur ton appareil.</string>
+    <string name="settings_privacy_manage_permissions">Gérer les autorisations système</string>
+    <string name="settings_help_q1">Comment convertir des images en PDF ?</string>
+    <string name="settings_help_a1">Va dans Convertir → Image → sélectionne tes images → appuie sur Convertir.</string>
+    <string name="settings_help_q2">Où sont enregistrés les fichiers ?</string>
+    <string name="settings_help_a2">Les fichiers générés sont enregistrés dans le dossier Téléchargements de ton appareil.</string>
+    <string name="settings_help_q3">Comment ajouter un favori ?</string>
+    <string name="settings_help_a3">Appuie sur l\'icône cœur sur n\'importe quel document ou utilise le menu ⋮.</string>
+    <string name="settings_help_q4">Mes documents sont-ils en sécurité ?</string>
+    <string name="settings_help_a4">Oui. Tout le traitement est local. Aucun fichier ne quitte ton appareil.</string>
+    <string name="settings_reset_body">Le thème sera réinitialisé en mode clair, la langue en espagnol, la taille du texte à Normal et le cache sera vidé. Les documents ne seront pas supprimés. Continuer ?</string>
+    <string name="settings_reset_confirm">Réinitialiser</string>
+    <string name="settings_about_dialog_title">À propos de DocuSmart</string>
+    <string name="settings_about_body">Visionneuse et convertisseur intelligent de documents. Gère, convertis et organise tes fichiers rapidement et en toute sécurité.</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── Thèmes ──────────────────────────────────── -->
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_system">Système</string>
+    <string name="accent_color_blue">Bleu</string>
+    <string name="accent_color_purple">Violet</string>
+    <string name="accent_color_green">Vert</string>
+    <string name="accent_color_orange">Orange</string>
+    <string name="accent_color_pink">Rose</string>
+    <string name="accent_color_teal">Turquoise</string>
+    <string name="font_scale_normal">Normal</string>
+    <string name="font_scale_large">Grand</string>
+    <string name="font_scale_extra_large">Très grand</string>
+
+    <!-- ── Scanner ────────────────────────────────── -->
+    <string name="scanner_title">Démarrage du scanner</string>
+    <string name="scanner_hint">Prépare le document et\npointe la caméra vers lui</string>
+    <string name="scanner_result_title">Document scanné</string>
+    <string name="scanner_generate">Générer le PDF</string>
+    <string name="scanner_again">Scanner à nouveau</string>
+    <string name="scanner_share">Partager le PDF</string>
+    <string name="scanner_back">Retour à l\'accueil</string>
+
+    <!-- ── Visionneuse ──────────────────────────────────── -->
+    <string name="viewer_error">Erreur lors de l\'ouverture du document</string>
+    <string name="viewer_back">Retour</string>
+    <string name="viewer_rendering">Rendu du document en cours…</string>
+    <string name="viewer_unsupported">Ce format n\'est pas compatible avec la visionneuse intégrée.</string>
+    <string name="viewer_open_other">Ouvrir avec une autre application</string>
+    <string name="viewer_more_options">Plus d\'options</string>
+    <string name="viewer_convert">Convertir</string>
+    <string name="viewer_create_qr">Créer un QR</string>
+    <string name="viewer_rename">Renommer</string>
+    <string name="viewer_delete">Supprimer</string>
+    <string name="viewer_rename_title">Renommer le document</string>
+    <string name="viewer_rename_label">Nom du fichier</string>
+    <string name="viewer_rename_empty_error">Le nom ne peut pas être vide</string>
+    <string name="viewer_delete_confirm_title">Supprimer ce document ?</string>
+    <string name="viewer_delete_confirm_body">"%1$s sera supprimé définitivement. Cette action est irréversible."</string>
+
+    <!-- ── Menu du document (Accueil/Bibliothèque, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">Ajouter aux favoris</string>
+    <string name="doc_item_remove_favorite">Retirer des favoris</string>
+    <string name="doc_item_rename_title">Renommer le fichier</string>
+
+    <!-- ── Général ────────────────────────────────── -->
+    <string name="general_save">Enregistrer</string>
+    <string name="general_cancel">Annuler</string>
+    <string name="general_back">Retour</string>
+    <string name="general_share">Partager</string>
+    <string name="general_delete">Supprimer</string>
+    <string name="general_close">Fermer</string>
+    <string name="general_saved_downloads">Enregistré dans Téléchargements</string>
+
+    <!-- ── Descriptions des outils PDF ─────────────────────── -->
+    <string name="pdf_merge_desc">Combine plusieurs PDF en un seul</string>
+    <string name="pdf_split_desc">Extrait des pages d\'un PDF</string>
+    <string name="pdf_compress_desc">Réduit la taille du fichier</string>
+    <string name="pdf_rotate_desc">Fait pivoter les pages du document</string>
+    <string name="pdf_number_pages_desc">Ajoute la numérotation en pied de page</string>
+    <string name="pdf_watermark_desc">Superpose un texte sur le document</string>
+    <string name="pdf_reorder_pages_desc">Fais glisser ou supprime des pages individuelles</string>
+    <string name="pdf_compare_desc">Trouve les différences entre deux versions</string>
+    <string name="pdf_redact_desc">Supprime du texte et des images sensibles de façon irréversible</string>
+    <string name="pdf_crop_desc">Supprime la marge excédentaire de chaque page</string>
+    <string name="pdf_edit_text_desc">Recherche et remplace du texte existant dans le document</string>
+    <string name="pdf_sign_desc">Dessine ta signature et appose-la sur le document</string>
+    <string name="pdf_fill_form_desc">Détecte et remplit les champs de texte d\'un formulaire PDF</string>
+    <string name="pdf_ocr_desc">Reconnaît le texte d\'un PDF scanné pour le rendre consultable</string>
+
+    <!-- ── Boîte de dialogue de limite quotidienne (partagé : Convertisseur et Outils PDF) ── -->
+    <string name="daily_limit_title">Limite quotidienne atteinte</string>
+    <string name="daily_limit_body">Tu as utilisé %1$d %3$s sur %2$d aujourd\'hui.</string>
+    <string name="daily_limit_resets_tomorrow">La limite se réinitialise demain.</string>
+    <string name="daily_limit_watch_ad">Regarder une pub → +1 utilisation</string>
+    <string name="daily_limit_ad_not_ready">Publicité pas encore disponible</string>
+    <string name="daily_limit_get_premium">Obtenir Premium → sans limites</string>
+    <string name="pdf_tools_daily_limit_label">utilisations de cet outil</string>
+    <string name="converter_daily_limit_label">conversions</string>
+
+    <!-- ── Outils PDF : écran principal et carte de résultat ── -->
+    <string name="pdf_tools_back_to_tools">Retour aux outils</string>
+    <string name="pdf_tools_usage_today">Utilisations aujourd\'hui : %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">Enregistrer dans Téléchargements</string>
+    <string name="pdf_tools_share">Partager le PDF</string>
+    <string name="pdf_tools_share_error">Impossible de partager le fichier</string>
+    <string name="pdf_tools_save_error">Impossible d\'enregistrer dans Téléchargements</string>
+    <string name="pdf_tools_new_operation">Nouvelle opération</string>
+    <string name="pdf_tools_default_filename">fichier.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">Sélectionner un PDF</string>
+    <string name="pdf_tools_filename_label">Nom du fichier de sortie</string>
+    <string name="pdf_tools_filename_placeholder">Ex : Documents_Fusionnés</string>
+    <string name="pdf_tools_filename_hint">Si tu le laisses vide, un nom automatique sera généré</string>
+
+    <!-- ── Fusionner des PDF ── -->
+    <string name="pdf_merge_subtitle">Sélectionne 2 PDF ou plus pour les combiner en un seul</string>
+    <string name="pdf_merge_select_prompt">Appuie pour sélectionner des PDF</string>
+    <string name="pdf_merge_add_more">Ajouter d\'autres PDF</string>
+    <string name="pdf_merge_order_hint">Les PDF seront fusionnés dans l\'ordre affiché</string>
+    <string name="pdf_merge_remove_desc">Retirer</string>
+    <string name="pdf_merge_file_fallback">Fichier %1$d</string>
+    <string name="pdf_merge_progress">Fusion de %1$d PDF…</string>
+    <string name="pdf_merge_select_at_least_2">Sélectionne au moins 2 PDF</string>
+    <string name="pdf_merge_execute">Fusionner %1$d PDF</string>
+    <string name="pdf_merge_min_pdfs_error">Sélectionne au moins 2 PDF à fusionner</string>
+    <string name="pdf_merge_read_error">Impossible de lire une seule page des PDF sélectionnés.</string>
+    <string name="pdf_merge_generate_error">Erreur lors de la génération du PDF combiné.</string>
+    <string name="pdf_merge_success">PDF fusionnés avec succès — %1$d fichiers, %2$d pages</string>
+    <string name="pdf_merge_error">Erreur lors de la fusion des PDF : %1$s</string>
+
+    <!-- ── Diviser un PDF ── -->
+    <string name="pdf_split_subtitle">Extrait une plage de pages de ton PDF</string>
+    <string name="pdf_split_selected">PDF sélectionné</string>
+    <string name="pdf_split_range_title">Plage de pages à extraire</string>
+    <string name="pdf_split_from_page">De la page</string>
+    <string name="pdf_split_to_page">À la page</string>
+    <string name="pdf_split_summary">%1$d page(s) seront extraites · Pages : %2$d à %3$d</string>
+    <string name="pdf_split_progress">Division du PDF…</string>
+    <string name="pdf_split_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_split_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_split_range_too_small">La plage doit inclure au moins 2 pages. Le PDF contient %1$d pages.</string>
+    <string name="pdf_split_generate_error">Erreur lors de la génération du PDF divisé.</string>
+    <string name="pdf_split_success">PDF divisé : %1$d page(s) extraites · %2$d Ko</string>
+    <string name="pdf_split_error">Erreur lors de la division : %1$s</string>
+
+    <!-- ── Compresser un PDF ── -->
+    <string name="pdf_compress_subtitle">Réduit la taille de ton PDF tout en conservant la lisibilité</string>
+    <string name="pdf_compress_ready">PDF prêt à être compressé</string>
+    <string name="pdf_compress_level_title">Niveau de compression</string>
+    <string name="pdf_compress_level_high_quality">Haute qualité</string>
+    <string name="pdf_compress_level_balanced">Équilibré</string>
+    <string name="pdf_compress_level_high_compression">Compression élevée</string>
+    <string name="pdf_compress_level_max_compression">Compression maximale</string>
+    <string name="pdf_compress_smaller">Plus petit</string>
+    <string name="pdf_compress_better_quality">Meilleure qualité</string>
+    <string name="pdf_compress_reduction_10_20">Réduction estimée : 10-20 %</string>
+    <string name="pdf_compress_reduction_30_50">Réduction estimée : 30-50 %</string>
+    <string name="pdf_compress_reduction_50_70">Réduction estimée : 50-70 %</string>
+    <string name="pdf_compress_reduction_70_85">Réduction estimée : 70-85 %</string>
+    <string name="pdf_compress_progress">Compression du PDF…</string>
+    <string name="pdf_compress_read_error">Impossible de lire le fichier. Vérifie qu\'il s\'agit d\'un PDF valide.</string>
+    <string name="pdf_compress_empty_file">Le fichier PDF est vide ou corrompu.</string>
+    <string name="pdf_compress_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_compress_generate_error">Erreur lors de la génération du PDF compressé.</string>
+    <string name="pdf_compress_already_optimized">Le PDF est déjà optimisé · Taille : %1$d Ko</string>
+    <string name="pdf_compress_success">Avant : %1$d Ko → Après : %2$d Ko · Réduction : %3$d%%</string>
+    <string name="pdf_compress_error">Erreur lors de la compression : %1$s</string>
+
+    <!-- ── Faire pivoter un PDF ── -->
+    <string name="pdf_rotate_subtitle">Fait pivoter toutes les pages du document</string>
+    <string name="pdf_rotate_ready">PDF prêt à pivoter</string>
+    <string name="pdf_rotate_preview_title">Aperçu et angle de rotation</string>
+    <string name="pdf_rotate_preview_placeholder">Sélectionne un PDF\npour voir l\'aperçu</string>
+    <string name="pdf_rotate_loading_preview">Chargement de l\'aperçu…</string>
+    <string name="pdf_rotate_preview_desc">Aperçu pivoté</string>
+    <string name="pdf_rotate_angle_90">Rotation de 90° dans le sens horaire</string>
+    <string name="pdf_rotate_angle_180">Rotation d\'un demi-tour (à l\'envers)</string>
+    <string name="pdf_rotate_angle_270">Rotation de 90° dans le sens antihoraire</string>
+    <string name="pdf_rotate_progress">Rotation du PDF de %1$d°…</string>
+    <string name="pdf_rotate_execute">Faire pivoter le PDF de %1$d°</string>
+    <string name="pdf_rotate_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_rotate_generate_error">Erreur lors de la génération du PDF pivoté.</string>
+    <string name="pdf_rotate_success">PDF pivoté de %1$d° avec succès</string>
+    <string name="pdf_rotate_error">Erreur lors de la rotation du PDF : %1$s</string>
+
+    <!-- ── Numéroter les pages ── -->
+    <string name="pdf_number_pages_subtitle">Ajoute le numéro de page en pied de chaque page</string>
+    <string name="pdf_number_pages_ready">PDF prêt à être numéroté</string>
+    <string name="pdf_number_pages_format_title">Format de numérotation</string>
+    <string name="pdf_number_pages_format_number_only">Numéro</string>
+    <string name="pdf_number_pages_format_number_of_total">N° / Total</string>
+    <string name="pdf_number_pages_format_page_of_total">Page X</string>
+    <string name="pdf_number_pages_example_number_only">Exemple : 3</string>
+    <string name="pdf_number_pages_example_number_of_total">Exemple : 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">Exemple : Page 3 sur 10</string>
+    <string name="pdf_number_pages_progress">Numérotation des pages…</string>
+    <string name="pdf_number_pages_execute">Numéroter les pages</string>
+    <string name="pdf_number_pages_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_number_pages_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_number_pages_generate_error">Erreur lors de la génération du PDF numéroté.</string>
+    <string name="pdf_number_pages_success">PDF numéroté avec succès — %1$d pages</string>
+    <string name="pdf_number_pages_error">Erreur lors de la numérotation des pages : %1$s</string>
+    <string name="pdf_number_pages_footer_template">Page %1$d sur %2$d</string>
+
+    <!-- ── Filigrane ── -->
+    <string name="pdf_watermark_subtitle">Superpose un texte diagonal et semi-transparent sur chaque page</string>
+    <string name="pdf_watermark_ready">PDF prêt pour le filigrane</string>
+    <string name="pdf_watermark_text_label">Texte du filigrane</string>
+    <string name="pdf_watermark_text_placeholder">Ex : CONFIDENTIEL</string>
+    <string name="pdf_watermark_hint">Le texte apparaîtra en diagonale et semi-transparent sur chaque page</string>
+    <string name="pdf_watermark_progress">Application du filigrane…</string>
+    <string name="pdf_watermark_execute">Appliquer le filigrane</string>
+    <string name="pdf_watermark_empty_text_error">Écris un texte pour le filigrane</string>
+    <string name="pdf_watermark_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_watermark_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_watermark_generate_error">Erreur lors de la génération du PDF avec filigrane.</string>
+    <string name="pdf_watermark_success">Filigrane appliqué avec succès — %1$d pages</string>
+    <string name="pdf_watermark_error">Erreur lors de l\'application du filigrane : %1$s</string>
+
+    <!-- ── Réorganiser les pages ── -->
+    <string name="pdf_reorder_pages_subtitle">Fais glisser les miniatures pour réorganiser ou supprimer des pages</string>
+    <string name="pdf_reorder_pages_ready">PDF prêt à être réorganisé</string>
+    <string name="pdf_reorder_pages_hint">Maintiens l\'icône de glissement appuyée pour déplacer une page vers une autre position</string>
+    <string name="pdf_reorder_pages_page_label">Page %1$d</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">Glisser pour réorganiser</string>
+    <string name="pdf_reorder_pages_progress">Enregistrement du nouvel ordre…</string>
+    <string name="pdf_reorder_pages_execute">Enregistrer les modifications</string>
+    <string name="pdf_reorder_pages_empty_order_error">Tu dois conserver au moins une page</string>
+    <string name="pdf_reorder_pages_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_reorder_pages_generate_error">Erreur lors de la génération du PDF réorganisé.</string>
+    <string name="pdf_reorder_pages_success">PDF mis à jour avec succès — %1$d pages</string>
+    <string name="pdf_reorder_pages_error">Erreur lors de la réorganisation des pages : %1$s</string>
+
+    <!-- ── Comparer des PDF ── -->
+    <string name="pdf_compare_subtitle">Sélectionne deux PDF pour comparer leur contenu</string>
+    <string name="pdf_compare_document_a">Document A</string>
+    <string name="pdf_compare_document_b">Document B</string>
+    <string name="pdf_compare_ready">PDF prêt à être comparé</string>
+    <string name="pdf_compare_progress">Comparaison des documents…</string>
+    <string name="pdf_compare_execute">Comparer les PDF</string>
+    <string name="pdf_compare_read_error_a">Impossible de lire le Document A. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_compare_read_error_b">Impossible de lire le Document B. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_compare_generate_error">Erreur lors de la génération du rapport de comparaison.</string>
+    <string name="pdf_compare_identical">Les deux documents sont identiques</string>
+    <string name="pdf_compare_differences_found">%1$d pages sur %2$d présentent des différences</string>
+    <string name="pdf_compare_error">Erreur lors de la comparaison des PDF : %1$s</string>
+    <string name="pdf_compare_report_title">Rapport de comparaison</string>
+    <string name="pdf_compare_report_page_header">Page %1$d</string>
+    <string name="pdf_compare_report_page_only_in_a">Cette page n\'existe que dans le Document A</string>
+    <string name="pdf_compare_report_page_only_in_b">Cette page n\'existe que dans le Document B</string>
+    <string name="pdf_compare_report_only_in_a_line">Uniquement dans A : %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">Uniquement dans B : %1$s</string>
+
+    <!-- ── Censurer du contenu ── -->
+    <string name="pdf_redact_subtitle">Dessine des rectangles sur les zones que tu veux censurer</string>
+    <string name="pdf_redact_ready">PDF prêt à être censuré</string>
+    <string name="pdf_redact_page_indicator">Page %1$d sur %2$d</string>
+    <string name="pdf_redact_prev_page">Page précédente</string>
+    <string name="pdf_redact_next_page">Page suivante</string>
+    <string name="pdf_redact_loading_preview">Chargement de l\'aperçu…</string>
+    <string name="pdf_redact_preview_desc">Aperçu de la page</string>
+    <string name="pdf_redact_draw_hint">Fais glisser sur l\'aperçu pour marquer une zone à censurer</string>
+    <string name="pdf_redact_zones_marked">%1$d zones marquées</string>
+    <string name="pdf_redact_undo">Annuler</string>
+    <string name="pdf_redact_clear_all">Tout effacer</string>
+    <string name="pdf_redact_execute">Censurer le PDF</string>
+    <string name="pdf_redact_progress">Censure du contenu…</string>
+    <string name="pdf_redact_empty_rects_error">Marque au moins une zone à censurer</string>
+    <string name="pdf_redact_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_redact_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_redact_generate_error">Erreur lors de la génération du PDF censuré.</string>
+    <string name="pdf_redact_success">%1$d zones censurées avec succès</string>
+    <string name="pdf_redact_error">Erreur lors de la censure du PDF : %1$s</string>
+
+    <!-- ── Rogner les pages ── -->
+    <string name="pdf_crop_subtitle">Ajuste la marge à rogner et prévisualise le résultat</string>
+    <string name="pdf_crop_ready">PDF prêt à être rogné</string>
+    <string name="pdf_crop_preview_title">Aperçu</string>
+    <string name="pdf_crop_preview_placeholder">Sélectionne un PDF pour voir l\'aperçu</string>
+    <string name="pdf_crop_loading_preview">Chargement de l\'aperçu…</string>
+    <string name="pdf_crop_preview_desc">Aperçu rogné</string>
+    <string name="pdf_crop_margin_label">Marge à rogner : %1$d%%</string>
+    <string name="pdf_crop_execute">Rogner le PDF</string>
+    <string name="pdf_crop_progress">Rognage des pages…</string>
+    <string name="pdf_crop_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_crop_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_crop_generate_error">Erreur lors de la génération du PDF rogné.</string>
+    <string name="pdf_crop_success">PDF rogné avec succès — %1$d%% de marge</string>
+    <string name="pdf_crop_error">Erreur lors du rognage du PDF : %1$s</string>
+
+    <!-- ── Modifier le texte ── -->
+    <string name="pdf_edit_text_subtitle">Écris le texte à rechercher et le texte de remplacement</string>
+    <string name="pdf_edit_text_ready">PDF prêt à être modifié</string>
+    <string name="pdf_edit_text_search_label">Rechercher</string>
+    <string name="pdf_edit_text_search_placeholder">Texte à rechercher</string>
+    <string name="pdf_edit_text_replace_label">Remplacer par</string>
+    <string name="pdf_edit_text_replace_placeholder">Texte de remplacement (vide pour supprimer)</string>
+    <string name="pdf_edit_text_hint">Le texte est recherché sans distinction majuscules/minuscules et remplacé dans toutes ses occurrences</string>
+    <string name="pdf_edit_text_execute">Appliquer les modifications</string>
+    <string name="pdf_edit_text_progress">Modification du texte…</string>
+    <string name="pdf_edit_text_empty_search_error">Écris le texte que tu veux rechercher</string>
+    <string name="pdf_edit_text_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_edit_text_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_edit_text_no_matches_error">Ce texte n\'a pas été trouvé dans le document</string>
+    <string name="pdf_edit_text_generate_error">Erreur lors de la génération du PDF modifié.</string>
+    <string name="pdf_edit_text_success">%1$d occurrences remplacées avec succès</string>
+    <string name="pdf_edit_text_error">Erreur lors de la modification du PDF : %1$s</string>
+
+    <!-- ── Signer un PDF ── -->
+    <string name="pdf_sign_subtitle">Choisis la page et dessine ta signature avec le doigt</string>
+    <string name="pdf_sign_ready">PDF prêt à être signé</string>
+    <string name="pdf_sign_page_indicator">Page %1$d sur %2$d</string>
+    <string name="pdf_sign_prev_page">Page précédente</string>
+    <string name="pdf_sign_next_page">Page suivante</string>
+    <string name="pdf_sign_draw_label">Ta signature</string>
+    <string name="pdf_sign_draw_hint">Dessine ta signature avec le doigt dans le cadre ci-dessus</string>
+    <string name="pdf_sign_hint">Tu n\'as pas encore dessiné ta signature</string>
+    <string name="pdf_sign_captured">Signature capturée</string>
+    <string name="pdf_sign_clear">Effacer</string>
+    <string name="pdf_sign_execute">Signer le PDF</string>
+    <string name="pdf_sign_progress">Signature du document…</string>
+    <string name="pdf_sign_empty_signature_error">Dessine ta signature avant de continuer</string>
+    <string name="pdf_sign_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_sign_no_pages">Le PDF ne contient aucune page.</string>
+    <string name="pdf_sign_generate_error">Erreur lors de la génération du PDF signé.</string>
+    <string name="pdf_sign_success">PDF signé avec succès — page %1$d</string>
+    <string name="pdf_sign_error">Erreur lors de la signature du PDF : %1$s</string>
+
+    <!-- ── Remplir un formulaire ── -->
+    <string name="pdf_fill_form_subtitle">Sélectionne un PDF avec des champs de formulaire et remplis-les</string>
+    <string name="pdf_fill_form_ready">PDF prêt à être rempli</string>
+    <string name="pdf_fill_form_detecting">Détection des champs du formulaire…</string>
+    <string name="pdf_fill_form_no_fields">Ce PDF ne contient aucun champ de formulaire de texte</string>
+    <string name="pdf_fill_form_fields_title">%1$d champs détectés</string>
+    <string name="pdf_fill_form_execute">Remplir le formulaire</string>
+    <string name="pdf_fill_form_progress">Remplissage du formulaire…</string>
+    <string name="pdf_fill_form_empty_values_error">Aucune valeur à remplir</string>
+    <string name="pdf_fill_form_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_fill_form_no_fields_error">Ce PDF ne contient aucun champ de formulaire à remplir</string>
+    <string name="pdf_fill_form_generate_error">Erreur lors de la génération du PDF avec le formulaire rempli.</string>
+    <string name="pdf_fill_form_success">%1$d champs remplis avec succès</string>
+    <string name="pdf_fill_form_error">Erreur lors du remplissage du formulaire : %1$s</string>
+    <string name="pdf_ocr_subtitle">Sélectionne un PDF scanné pour en reconnaître le texte</string>
+    <string name="pdf_ocr_ready">PDF prêt pour la reconnaissance</string>
+    <string name="pdf_ocr_info">Une couche de texte invisible sera ajoutée sur chaque page scannée, sans changer son apparence — le PDF obtenu devient consultable avec du texte sélectionnable. Cela peut prendre plusieurs secondes par page.</string>
+    <string name="pdf_ocr_execute">Reconnaître le texte</string>
+    <string name="pdf_ocr_progress">Reconnaissance du texte…</string>
+    <string name="pdf_ocr_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_ocr_no_pages">Le PDF ne contient aucune page à traiter</string>
+    <string name="pdf_ocr_already_has_text">Ce PDF contient déjà du texte sélectionnable sur toutes ses pages — l\'OCR n\'est pas nécessaire</string>
+    <string name="pdf_ocr_no_text_found">Aucun texte n\'a été reconnu dans le PDF scanné</string>
+    <string name="pdf_ocr_generate_error">Erreur lors de la génération du PDF avec le texte reconnu.</string>
+    <string name="pdf_ocr_success">%1$d pages traitées, %2$d mots reconnus</string>
+    <string name="pdf_ocr_error">Erreur lors de la reconnaissance du texte : %1$s</string>
+
+    <!-- ── État vide de l'accueil ───────────────────────────── -->
+
+    <!-- ── Catégories du convertisseur ──────────────────────── -->
+    <string name="converter_select_files">Appuie pour sélectionner %1$s</string>
+    <string name="converter_files_selected">%1$d fichier(s) sélectionné(s)</string>
+    <string name="converter_formats">Formats : %1$s</string>
+    <string name="converter_capture_camera">Capturer avec l\'appareil photo</string>
+    <string name="converter_to_format">Convertir en %1$s</string>
+    <string name="converter_file_name_label">Nom du fichier</string>
+    <string name="converter_file_name_placeholder">Nom automatique</string>
+    <string name="format_name_image">Image</string>
+    <string name="converter_success_title">Conversion réussie !</string>
+    <string name="converter_success_page_count_size">%1$d page(s) · %2$d Ko</string>
+    <string name="converter_saved_to_downloads">Enregistré dans Téléchargements</string>
+    <string name="converter_share">Partager le fichier</string>
+    <string name="converter_convert_another">Convertir un autre fichier</string>
+    <string name="general_back_action">Retour</string>
+
+    <!-- ── Convertisseur : conversion par lot (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">Le nom original de chaque fichier sera conservé</string>
+    <string name="converter_convert_batch_button">Convertir %1$d fichiers</string>
+    <string name="converter_batch_success_title">%1$d fichiers convertis sur %2$d</string>
+    <string name="converter_batch_save_all">Tout enregistrer dans Téléchargements</string>
+    <string name="converter_batch_convert_another">Convertir un autre lot</string>
+    <string name="converter_progress_title">Conversion en cours…</string>
+    <string name="converter_progress_subtitle">Traitement de %1$d fichier(s)</string>
+    <string name="converter_progress_footer">Merci de patienter, ne ferme pas l\'application</string>
+
+    <string name="splash_tagline">SCANNE · ORGANISE</string>
+
+    <!-- ── Onboarding ─────────────────────────────────── -->
+    <string name="onboarding_1_title">Bienvenue sur DocuSmart</string>
+    <string name="onboarding_1_desc">Ton gestionnaire intelligent de documents. Ouvre, organise et convertis tes fichiers rapidement et en toute sécurité.</string>
+    <string name="onboarding_2_title">Convertis n\'importe quel format</string>
+    <string name="onboarding_2_desc">PDF, Word, Excel, PowerPoint, images et plus. Plus de 17 types de conversion à portée de main.</string>
+    <string name="onboarding_3_title">Protège tes documents</string>
+    <string name="onboarding_3_desc">Enregistre des fichiers dans ton coffre-fort personnel avec un code PIN ou une empreinte digitale. Ta vie privée passe avant tout.</string>
+    <string name="onboarding_4_title">Mode Étude</string>
+    <string name="onboarding_4_desc">Lis avec la synthèse vocale, surligne des paragraphes, prends des notes vocales et utilise le minuteur Pomodoro.</string>
+    <string name="onboarding_5_title">Associe tes documents</string>
+    <string name="onboarding_5_desc">Choisis le dossier de ton appareil où tu conserves tes fichiers pour les voir dans Bibliothèque. Toi seul y auras accès — tu peux le faire maintenant ou plus tard depuis Réglages.</string>
+    <string name="onboarding_folder_linked">Associé : %1$s</string>
+    <string name="onboarding_folder_change">Changer de dossier</string>
+    <string name="onboarding_folder_link_button">Associer un dossier</string>
+    <string name="onboarding_skip">Passer</string>
+    <string name="onboarding_start">Commencer !</string>
+    <string name="onboarding_next">Suivant</string>
+
+    <!-- ── Premium ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">Mensuel</string>
+    <string name="premium_plan_annual">Annuel</string>
+    <string name="premium_period_month">par mois</string>
+    <string name="premium_period_year">par an</string>
+    <!-- Lu avec stringResource() brut, jamais avec des arguments de format : le
+         "%" est littéral, pas un espace réservé (bug réel corrigé le 2026-09-03 :
+         avant il était écrit "44%%" car quelqu'un l'avait échappé comme s'il
+         devait passer par String.format, affichant le "%" en double à l'écran). -->
+    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Économise 44 %</string>
+    <string name="premium_feature_no_ads_title">Sans publicité</string>
+    <string name="premium_feature_no_ads_desc">Profite de DocuSmart sans interruption</string>
+    <string name="premium_feature_pdf_word_title">PDF vers Word</string>
+    <string name="premium_feature_pdf_word_desc">Convertit les PDF en documents modifiables</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">Convertit les PDF scannés en documents avec du texte réel et consultable</string>
+    <string name="premium_feature_compress_title">Compression avancée</string>
+    <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">Réduit les PDF jusqu\'à 90 % sans perte visible</string>
+    <string name="premium_feature_unlimited_title">Conversions illimitées</string>
+    <string name="premium_feature_unlimited_desc">Aucune limite quotidienne de conversions</string>
+    <string name="premium_you_are_premium">Tu es Premium !</string>
+    <string name="premium_enjoy_unlimited">Profite de toutes les fonctionnalités sans limites</string>
+    <string name="premium_processing_purchase">Traitement de l\'achat…</string>
+    <string name="premium_get_plan">Obtenir %1$s — %2$s</string>
+    <string name="premium_select_plan">Sélectionne une formule</string>
+    <string name="premium_restore_purchases">Restaurer les achats</string>
+    <string name="premium_continue_free">Continuer avec la version gratuite</string>
+    <string name="premium_terms">En t\'abonnant, tu acceptes les Conditions d\'utilisation et la Politique de confidentialité. L\'abonnement se renouvelle automatiquement. Annule quand tu veux.</string>
+    <string name="premium_active_title">Ton abonnement est actif</string>
+    <string name="premium_active_body">Tu as un accès complet à toutes les fonctionnalités de DocuSmart Premium</string>
+    <string name="premium_continue">Continuer</string>
+    <string name="premium_all_you_get">Tout ce que tu obtiens</string>
+    <string name="premium_choose_plan">Choisis ta formule</string>
+    <string name="premium_recommended">Recommandé</string>
+    <string name="premium_purchase_error">Impossible de finaliser l\'achat. Réessaie.</string>
+    <string name="premium_no_purchases_found">Aucun achat antérieur trouvé</string>
+    <string name="premium_purchase_pending">Ton achat est en attente de confirmation (par exemple, paiement en espèces). Il s\'activera automatiquement une fois terminé.</string>
+    <string name="premium_restore_success">Achat restauré — tu as maintenant Premium</string>
+
+    <!-- ── Scanner (complément) ─────────────────────────── -->
+    <string name="scanner_start_error">Impossible de démarrer le scanner : %1$s</string>
+
+    <!-- ── Sécurité ─────────────────────────────────── -->
+    <string name="security_title">Sécurité</string>
+    <string name="security_subtitle">Protège tes documents</string>
+    <string name="security_what_to_do">Que souhaites-tu faire ?</string>
+    <string name="security_secure_folder">Dossier sécurisé</string>
+    <string name="security_secure_folder_desc">Enregistre des fichiers protégés par code PIN et biométrie. Toi seul peux y accéder.</string>
+    <string name="security_pin_required">Code PIN requis</string>
+    <string name="security_pdf_password">Mot de passe PDF</string>
+    <string name="security_pdf_password_desc">Ajoute ou retire un mot de passe des fichiers PDF. Accès immédiat sans code PIN.</string>
+    <string name="security_no_pin">Sans code PIN</string>
+    <string name="security_pin_incorrect">Code PIN incorrect</string>
+    <string name="security_biometric_error">Erreur : %1$s</string>
+    <string name="security_biometric_not_recognized">La biométrie n\'a pas été reconnue</string>
+    <string name="security_biometric_title">DocuSmart — Dossier sécurisé</string>
+    <string name="security_biometric_subtitle">Utilise ton empreinte ou ton visage pour accéder</string>
+    <string name="security_biometric_use_pin">Utiliser le code PIN</string>
+    <string name="security_file_protected_success">Fichier protégé avec succès</string>
+    <string name="security_file_protect_error">Impossible de protéger le fichier</string>
+    <string name="security_save_downloads_success">Enregistré dans Téléchargements : %1$s</string>
+    <string name="security_save_downloads_error">Impossible d\'enregistrer dans Téléchargements</string>
+    <string name="pdf_pw_read_error">Impossible de lire le fichier</string>
+    <string name="pdf_pw_empty_file">Le fichier est vide</string>
+    <string name="pdf_pw_protect_success">PDF protégé avec succès</string>
+    <string name="pdf_pw_protect_generate_error">Le fichier protégé n\'a pas été généré correctement (%1$d octets)</string>
+    <string name="pdf_pw_protect_error">Impossible de protéger le PDF : %1$s</string>
+    <string name="pdf_pw_remove_success">Mot de passe supprimé avec succès</string>
+    <string name="pdf_pw_remove_generate_error">Le fichier sans mot de passe n\'a pas été généré correctement (%1$d octets)</string>
+    <string name="pdf_pw_remove_error">Impossible de traiter le PDF : %1$s</string>
+    <string name="pdf_pw_wrong_password">Mot de passe incorrect</string>
+    <string name="pdf_pw_wrong_password_retry">Mot de passe incorrect. Vérifie et réessaie.</string>
+    <string name="security_enter_pin">Entre ton code PIN</string>
+    <string name="security_setup_pin_title">Configure ton code PIN</string>
+    <string name="security_setup_pin_desc">Protège tes fichiers avec un code PIN à 4 chiffres</string>
+    <string name="security_configure_pin_button">Configurer le code PIN</string>
+    <string name="security_use_biometric">Utiliser la biométrie</string>
+    <string name="security_delete_desc">Effacer</string>
+    <string name="security_confirm_pin">Confirme ton code PIN</string>
+    <string name="security_create_pin">Crée ton code PIN</string>
+    <string name="security_confirm_pin_desc">Entre à nouveau le code PIN pour confirmer</string>
+    <string name="security_create_pin_desc">Choisis un code PIN à 4 chiffres pour protéger ton dossier</string>
+    <string name="security_pins_dont_match">Les codes PIN ne correspondent pas</string>
+    <string name="security_setup_pin_error">Impossible d\'enregistrer le code PIN. Réessaie.</string>
+    <string name="security_forgot_pin">Tu as oublié ton code PIN ?</string>
+    <string name="security_reset_pin_dialog_title">Réinitialiser le code PIN</string>
+    <string name="security_reset_pin_dialog_body">Tous les fichiers de ton Dossier sécurisé seront supprimés. Cette action est irréversible.</string>
+    <string name="security_reset_pin_confirm">Réinitialiser et effacer</string>
+    <string name="security_files_protected_count">%1$d fichiers protégés</string>
+    <string name="security_protect_new_file">Protéger un nouveau fichier</string>
+    <string name="security_config_section">Configuration</string>
+    <string name="security_change_pin">Changer le code PIN</string>
+    <string name="security_biometric_unlock">Déverrouillage biométrique</string>
+    <string name="security_protected_files_title">Fichiers protégés</string>
+    <string name="security_no_protected_files">Aucun fichier protégé</string>
+    <string name="security_no_protected_files_hint">Appuie sur « Protéger un nouveau fichier » pour ajouter des fichiers</string>
+    <string name="security_restore">Restaurer</string>
+    <string name="security_protect_file_dialog_title">Protéger un fichier</string>
+    <string name="pdf_pw_screen_subtitle">Protège ou déverrouille tes PDF</string>
+    <string name="pdf_pw_mode_protect_title">Protéger un PDF</string>
+    <string name="pdf_pw_mode_protect_desc">Ajoute un mot de passe à un fichier PDF. Seule la personne qui a le mot de passe pourra l\'ouvrir.</string>
+    <string name="pdf_pw_mode_remove_title">Retirer le mot de passe</string>
+    <string name="pdf_pw_mode_remove_desc">Supprime la protection d\'un PDF. Tu auras besoin du mot de passe actuel pour le déverrouiller.</string>
+    <string name="pdf_pw_protect_section_title">Protéger un PDF avec un mot de passe</string>
+    <string name="pdf_pw_selected_placeholder">PDF sélectionné</string>
+    <string name="pdf_pw_tap_to_select">Appuie pour sélectionner un PDF</string>
+    <string name="pdf_pw_ready_to_protect">PDF prêt à être protégé</string>
+    <string name="pdf_pw_new_password_label">Nouveau mot de passe</string>
+    <string name="pdf_pw_confirm_password_label">Confirmer le mot de passe</string>
+    <string name="pdf_pw_passwords_dont_match">Les mots de passe ne correspondent pas</string>
+    <string name="pdf_pw_protected_success_title">PDF protégé avec succès</string>
+    <string name="pdf_pw_save_downloads_button">Enregistrer dans Téléchargements</string>
+    <string name="pdf_pw_protect_button">Protéger le PDF</string>
+    <string name="pdf_pw_remove_section_title">Retirer le mot de passe d\'un PDF</string>
+    <string name="pdf_pw_tap_to_select_protected">Appuie pour sélectionner un PDF protégé</string>
+    <string name="pdf_pw_ready">PDF prêt</string>
+    <string name="pdf_pw_current_password_label">Mot de passe actuel du PDF</string>
+    <string name="pdf_pw_current_password_placeholder">Entre le mot de passe pour déverrouiller</string>
+    <string name="pdf_pw_remove_warning">Le PDF obtenu n\'aura pas de mot de passe et pourra être ouvert par n\'importe qui.</string>
+    <string name="pdf_pw_removed_success_title">Mot de passe supprimé avec succès</string>
+    <string name="pdf_pw_remove_button">Retirer le mot de passe</string>
+    <string name="pdf_pw_default_document_name">document</string>
+    <string name="scan_result_title">Résultat du scan</string>
+    <string name="scan_result_subtitle_pages">%1$d page(s)</string>
+    <string name="scan_result_preview">Aperçu</string>
+    <string name="scan_result_page_content_desc">Page %1$d</string>
+    <string name="scan_result_filename_label">Nom du fichier</string>
+    <string name="scan_result_filename_placeholder">Ex : Document_scanné</string>
+    <string name="scan_result_filename_hint">Si tu le laisses vide, un nom automatique sera généré</string>
+    <string name="scan_result_generating_pdf">Génération du PDF…</string>
+    <string name="scan_result_default_name_prefix">Scan_%1$s</string>
+    <string name="scan_edit_page_content_desc">Modifier la page %1$d</string>
+    <string name="scan_edit_title">Modifier la page</string>
+    <string name="scan_edit_brightness">Luminosité : %1$d</string>
+    <string name="scan_edit_contrast">Contraste : %1$d</string>
+    <string name="scan_edit_scale">Échelle</string>
+    <string name="scan_edit_apply">Appliquer</string>
+    <string name="security_file_protected_original_kept">Fichier protégé. Impossible de supprimer l\'original de son emplacement — supprime-le manuellement si tu veux le retirer complètement.</string>
+    <string name="qr_protected_title">Code QR protégé</string>
+    <string name="qr_protected_desc">Ce contenu est protégé par un mot de passe. Entre-le pour le voir.</string>
+    <string name="qr_unlock">Déverrouiller</string>
+
+    <!-- ── QR ─────────────────────────────────── -->
+    <string name="qr_reader_title">Lire un code QR</string>
+    <string name="qr_reader_subtitle">Pointe la caméra vers le code QR</string>
+    <string name="qr_camera_permission_needed">L\'accès à la caméra est nécessaire pour scanner des codes QR</string>
+    <string name="qr_allow_camera_access">Autoriser l\'accès à la caméra</string>
+    <string name="qr_center_in_frame">Centre le code QR dans le cadre</string>
+    <string name="qr_type_url_detected">URL détectée</string>
+    <string name="qr_type_image_detected">Image détectée</string>
+    <string name="qr_type_document_detected">Document détecté</string>
+    <string name="qr_type_email_detected">E-mail détecté</string>
+    <string name="qr_type_phone_detected">Téléphone détecté</string>
+    <string name="qr_type_text_detected">Texte détecté</string>
+    <string name="qr_detected_title">Code QR détecté !</string>
+    <string name="qr_image_content_desc">Image du QR</string>
+    <string name="qr_loading_image">Chargement de l\'image…</string>
+    <string name="qr_copied_clipboard">Copié dans le presse-papiers</string>
+    <string name="qr_open_browser">Ouvrir dans le navigateur</string>
+    <string name="qr_copy_url">Copier l\'URL</string>
+    <string name="qr_open_image">Ouvrir l\'image</string>
+    <string name="qr_copy_link">Copier le lien</string>
+    <string name="qr_open_document">Ouvrir le document</string>
+    <string name="qr_copy_path">Copier le chemin</string>
+    <string name="qr_send_email">Envoyer un e-mail</string>
+    <string name="qr_copy_email">Copier l\'e-mail</string>
+    <string name="qr_call">Appeler</string>
+    <string name="qr_copy_number">Copier le numéro</string>
+    <string name="qr_copy_text">Copier le texte</string>
+    <string name="qr_scan_another">Scanner un autre code</string>
+    <string name="qr_creator_title">Créer un code QR</string>
+    <string name="qr_creator_subtitle">Génère un QR pour URL, texte, fichiers et plus</string>
+    <string name="qr_chip_url">URL</string>
+    <string name="qr_chip_text">Texte</string>
+    <string name="qr_chip_email">E-mail</string>
+    <string name="qr_chip_phone">Tél</string>
+    <string name="qr_chip_image">Image</string>
+    <string name="qr_chip_document">Doc</string>
+    <string name="qr_select_image">Sélectionner une image</string>
+    <string name="qr_image_selected">Image sélectionnée ✓</string>
+    <string name="qr_select_document">Sélectionner un document</string>
+    <string name="qr_document_selected">Document sélectionné ✓</string>
+    <string name="qr_label_url">URL du site web</string>
+    <string name="qr_label_text">Texte du message</string>
+    <string name="qr_label_email">Adresse e-mail</string>
+    <string name="qr_label_phone">Numéro de téléphone</string>
+    <string name="qr_placeholder_text">Écris ton message…</string>
+    <string name="qr_protect_password">Protéger par mot de passe</string>
+    <string name="qr_protect_password_desc">Seule la personne qui a la clé peut voir le contenu</string>
+    <string name="qr_password_label">Mot de passe</string>
+    <string name="qr_password_min_chars">Minimum 4 caractères</string>
+    <string name="qr_error_select_image">Sélectionne une image</string>
+    <string name="qr_error_select_document">Sélectionne un document</string>
+    <string name="qr_error_empty_content">Écris le contenu du QR</string>
+    <string name="qr_error_password_short">Le mot de passe doit contenir au moins 4 caractères</string>
+    <string name="qr_generate">Générer le QR</string>
+    <string name="qr_your_code">Ton code QR</string>
+    <string name="qr_generated_content_desc">Code QR généré</string>
+    <string name="qr_protected_badge">Protégé</string>
+    <string name="qr_share_chooser_title">Partager le QR</string>
+
+    <!-- ── Étude ─────────────────────────────────── -->
+    <string name="study_tab_reading">Lecture</string>
+    <string name="study_tab_notes">Notes</string>
+    <string name="study_tab_pomodoro">Pomodoro</string>
+    <string name="study_no_document">Aucun document</string>
+    <string name="study_title">Mode Étude</string>
+    <string name="study_empty_state_desc">Ouvre un document pour commencer à étudier</string>
+    <string name="study_reading_document">Lecture du document…</string>
+    <string name="study_paragraphs_highlighted_count">%1$d paragraphes · %2$d surlignés</string>
+    <string name="study_stop">Arrêter</string>
+    <string name="study_read_all">Tout lire</string>
+    <string name="study_delete_all_notes_title">Supprimer toutes les notes</string>
+    <string name="study_delete_all_notes_body">Es-tu sûr de vouloir supprimer toutes les notes ? Cette action est irréversible.</string>
+    <string name="study_highlighted_paragraphs_count">Paragraphes surlignés (%1$d)</string>
+    <string name="study_new_note">Nouvelle note</string>
+    <string name="study_note_title_label">Titre de la note</string>
+    <string name="study_note_title_placeholder">Ex : Concepts clés du chapitre 3</string>
+    <string name="study_note_content_placeholder">Écris ou dicte ta note…</string>
+    <string name="study_dictate_note">Dicter la note à la voix</string>
+    <string name="study_listening">Écoute en cours… parle maintenant</string>
+    <string name="study_save_note">Enregistrer la note</string>
+    <string name="study_untitled_note">Note sans titre</string>
+    <string name="study_no_saved_notes">Aucune note enregistrée</string>
+    <string name="study_saved_notes_count">Notes enregistrées (%1$d)</string>
+    <string name="study_delete_all">Tout supprimer</string>
+    <string name="study_no_notes_yet">Tu n\'as pas encore de notes enregistrées</string>
+    <string name="study_delete_note_desc">Supprimer la note</string>
+    <string name="study_voice_prompt">Parle pour rédiger ta note…</string>
+    <string name="study_break_label">Pause</string>
+    <string name="study_study_label">Étude</string>
+    <string name="study_in_progress">en cours</string>
+    <string name="study_paused">en pause</string>
+    <string name="study_restart">Redémarrer</string>
+    <string name="study_pause">Mettre en pause</string>
+    <string name="study_start">Démarrer</string>
+    <string name="study_pomodoros_completed">Pomodoros terminés</string>
+    <string name="study_pomodoros_hint">Tous les 4 pomodoros = pause longue</string>
+    <string name="study_pomodoro_technique_info">Technique Pomodoro : 25 min d\'étude + 5 min de pause</string>
+    <string name="study_extract_no_text_found">Aucun texte trouvé</string>
+    <string name="study_extract_could_not_open">Impossible d\'ouvrir le fichier</string>
+    <string name="study_extract_could_not_read">Impossible de lire le fichier</string>
+    <string name="study_extract_pdf_no_text">Ce PDF ne contient aucun texte extractible. Il s\'agit peut-être d\'un PDF scanné.</string>
+    <string name="study_extract_pdf_error">Erreur lors de la lecture du PDF : %1$s</string>
+    <string name="study_extract_generic_error">Erreur : %1$s</string>
+    <string name="study_default_document_name">Document</string>
+    <string name="study_pomodoro_notification_channel">Pomodoro</string>
+    <string name="study_pomodoro_notification_text">%1$s restantes</string>
+    <string name="study_export_notes">Exporter les notes</string>
+    <string name="study_export_as_text">En texte</string>
+    <string name="study_export_as_pdf">En PDF</string>
+    <string name="study_export_share_title">Partager les notes</string>
+    <string name="study_stats_icon_desc">Voir les statistiques</string>
+    <string name="study_stats_title">Statistiques d\'étude</string>
+    <string name="study_stats_total_reading">Temps total de lecture</string>
+    <string name="study_stats_reading_value">%1$dh %2$dmin</string>
+    <string name="study_stats_pomodoros_this_week">Pomodoros cette semaine</string>
+    <string name="study_stats_pomodoros_total">Pomodoros terminés au total</string>
+    <string name="study_stats_empty">Pas encore de statistiques — commence à lire à voix haute ou termine ton premier Pomodoro.</string>
+
+    <!-- ── Corbeille (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">Corbeille</string>
+    <string name="trash_title">Corbeille</string>
+    <string name="trash_subtitle">Suppression définitive après 30 jours</string>
+    <string name="trash_empty_title">La corbeille est vide</string>
+    <string name="trash_empty_body">Les documents que tu supprimes depuis Bibliothèque, Accueil ou la Visionneuse apparaîtront ici avant d\'être supprimés pour toujours.</string>
+    <string name="trash_deletes_today">Suppression aujourd\'hui</string>
+    <string name="trash_days_remaining">%1$d jours restants</string>
+    <string name="trash_restore">Restaurer</string>
+    <string name="trash_delete_forever">Supprimer maintenant</string>
+    <string name="trash_delete_forever_confirm_title">Supprimer définitivement ?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s sera supprimé pour toujours et ne pourra plus être récupéré."</string>
+    <string name="trash_delete_all">Tout supprimer</string>
+    <string name="trash_delete_all_confirm_title">Vider la corbeille ?</string>
+    <string name="trash_delete_all_confirm_body">"%1$d fichiers seront supprimés pour toujours et ne pourront plus être récupérés."</string>
+    <string name="trash_total_size">%1$s dans la corbeille</string>
+    <string name="trash_delete_forever_permission_note">Android peut te demander de confirmer la suppression de photos que cette application n\'a pas créées.</string>
+
+    <!-- ── Sélecteur de fichier avec bibliothèque de l'application (élément #15, FileSourcePickerDialog) ── -->
+    <string name="filepicker_source_question">D\'où veux-tu importer le fichier ?</string>
+    <string name="filepicker_from_device">Depuis l\'appareil</string>
+    <string name="filepicker_browse_system_files">Parcourir les fichiers du système</string>
+    <string name="filepicker_from_library">Depuis la bibliothèque de DocuSmart</string>
+    <string name="filepicker_no_library_files">Il n\'y a pas encore de fichiers dans ta bibliothèque</string>
+
+    <!-- ── Associer le dossier Téléchargements via SAF (ligne 22 backlog UX) ── -->
+    <string name="library_link_downloads_title">Voir plus de documents ici</string>
+    <string name="library_link_downloads_body">Choisis ton dossier préféré pour retrouver tes documents depuis ton appareil et l\'associer à DocuSmart</string>
+    <string name="library_link_downloads_button">Associer un dossier</string>
+
+    <!-- ── Raccourci vers le dossier associé, à côté de Appareil/Mes fichiers/Corbeille ── -->
+    <string name="library_folder_shortcut_label">Dossier associé</string>
+    <string name="library_folder_shortcut_subtitle">Ouvrir</string>
+    <string name="library_folder_shortcut_no_app">Aucune application pour ouvrir des dossiers sur cet appareil</string>
+
+    <!-- ── Réglages : gérer le dossier associé (ligne 22 backlog UX) ── -->
+    <string name="settings_linked_downloads_title">Dossier associé</string>
+    <string name="settings_linked_downloads_linked">Associé · appuie pour dissocier</string>
+    <string name="settings_linked_downloads_not_linked">Non associé · appuie pour associer</string>
+    <string name="settings_unlink_downloads_title">Dissocier le dossier ?</string>
+    <string name="settings_unlink_downloads_body">Tu ne verras plus les fichiers de Téléchargements dans l\'onglet Appareil de Bibliothèque. Tu peux le réassocier quand tu veux.</string>
+    <string name="settings_unlink_downloads_confirm">Dissocier</string>
+</resources>

@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── 导航 ─────────────────────────────── -->
+    <string name="nav_home">首页</string>
+    <string name="nav_library">资料库</string>
+    <string name="nav_converter">转换</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- ── 首页 ───────────────────────────────────── -->
+    <string name="home_title">你的文档\n一站式管理</string>
+    <string name="home_subtitle">轻松打开、转换\n并管理你的文件</string>
+    <string name="home_open">打开</string>
+    <string name="home_convert">转换</string>
+    <string name="home_quick_access">快捷方式</string>
+    <string name="home_scan">扫描</string>
+    <string name="home_img_pdf">图片→PDF</string>
+    <string name="home_security">安全</string>
+    <string name="home_study">学习</string>
+    <string name="home_recent">最近</string>
+    <string name="home_see_all">查看全部</string>
+    <string name="home_no_recent_title">暂无最近文档</string>
+    <string name="home_no_recent_desc">打开一个文件即可在此查看</string>
+    <string name="home_open_file_action">打开文件</string>
+    <string name="home_share_document">分享 %1$s</string>
+    <string name="home_qr_read">读取二维码</string>
+    <string name="home_qr_create">生成二维码</string>
+    <string name="home_scanner_sheet_title">扫描仪</string>
+    <string name="home_scanner_sheet_subtitle">选择一个选项</string>
+    <string name="home_scanner_option_scan_title">扫描文档</string>
+    <string name="home_scanner_option_scan_subtitle">使用 ML Kit 自动拍摄</string>
+    <string name="home_scanner_option_qr_read_subtitle">识别网址、文本等内容</string>
+
+    <!-- ── 资料库 ─────────────────────────────── -->
+    <string name="library_title">资料库</string>
+    <string name="library_subtitle">你的所有文档</string>
+    <string name="library_search">在资料库中搜索…</string>
+    <string name="library_documents">个文档</string>
+    <string name="library_tab_device">设备</string>
+    <string name="library_tab_app_files">我的文件</string>
+    <string name="library_tab_file_count">%1$d 个文件</string>
+
+    <!-- ── 转换器 ────────────────────────────── -->
+    <string name="converter_title">转换器</string>
+    <string name="converter_subtitle">轻松转换你的文档</string>
+    <string name="converter_select">你想转换什么？</string>
+    <string name="converter_save">保存到下载</string>
+
+    <!-- ── PDF 工具 ──────────────────────────────── -->
+    <string name="pdf_tools_title">PDF 工具</string>
+    <string name="pdf_tools_subtitle">快速管理你的 PDF</string>
+    <string name="pdf_tools_ad_not_available">广告暂不可用，请稍后再试。</string>
+    <string name="pdf_merge">合并 PDF</string>
+    <string name="pdf_split">拆分 PDF</string>
+    <string name="pdf_compress">压缩 PDF</string>
+    <string name="pdf_rotate">旋转 PDF</string>
+    <string name="pdf_number_pages">页码编号</string>
+    <string name="pdf_watermark">水印</string>
+    <string name="pdf_reorder_pages">重新排序页面</string>
+    <string name="pdf_compare">比较 PDF</string>
+    <string name="pdf_redact">遮盖内容</string>
+    <string name="pdf_crop">裁剪页面</string>
+    <string name="pdf_edit_text">编辑文本</string>
+    <string name="pdf_sign">签署 PDF</string>
+    <string name="pdf_fill_form">填写表单</string>
+    <string name="pdf_ocr">高级 OCR</string>
+
+    <!-- ── 设置 ────────────────────────────────── -->
+    <string name="settings_title">设置</string>
+    <string name="settings_subtitle">个性化你的体验</string>
+    <string name="settings_premium">DocuSmart 高级版</string>
+    <string name="settings_premium_subtitle">解锁全部功能</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_accent_color">强调色</string>
+    <string name="settings_select_accent_color">选择强调色</string>
+    <string name="settings_font_scale">字体大小</string>
+    <string name="settings_select_font_scale">选择字体大小</string>
+    <string name="settings_storage">存储空间</string>
+    <string name="settings_storage_subtitle">查看已生成的文件</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">选择语言</string>
+    <string name="settings_select_theme">选择主题</string>
+    <string name="settings_close">关闭</string>
+    <string name="settings_language_subtitle">选择应用语言</string>
+    <string name="settings_section_personalization">个性化</string>
+    <string name="settings_tutorial">查看教程</string>
+    <string name="settings_tutorial_subtitle">回顾主要功能</string>
+    <string name="settings_section_privacy">隐私与安全</string>
+    <string name="settings_privacy_item">隐私</string>
+    <string name="settings_privacy_item_subtitle">数据政策与权限</string>
+    <string name="settings_ads_privacy_options">广告同意设置</string>
+    <string name="settings_ads_privacy_options_subtitle">更改你的广告隐私偏好设置</string>
+    <string name="settings_share_app">分享 DocuSmart</string>
+    <string name="settings_share_app_subtitle">向你的联系人推荐这款应用</string>
+    <string name="settings_rate">在 Play 商店评分</string>
+    <string name="settings_rate_subtitle">喜欢 DocuSmart 吗？给我们留个评价吧！</string>
+    <string name="settings_section_support">支持</string>
+    <string name="settings_help">帮助</string>
+    <string name="settings_help_subtitle">常见问题</string>
+    <string name="settings_section_system">系统</string>
+    <string name="settings_reset">重置设置</string>
+    <string name="settings_reset_subtitle">恢复为默认值</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">知道了</string>
+    <string name="settings_storage_conversions">转换记录</string>
+    <string name="settings_storage_total">总计</string>
+    <string name="settings_storage_files_unit">个文件</string>
+    <string name="settings_storage_clear_cache">清除缓存</string>
+    <string name="settings_privacy_body">DocuSmart 尊重你的隐私。你的文档绝不会上传到外部服务器，所有处理都在你的设备本地完成。</string>
+    <string name="settings_privacy_manage_permissions">管理系统权限</string>
+    <string name="settings_help_q1">如何将图片转换为 PDF？</string>
+    <string name="settings_help_a1">进入“转换”→“图片”→选择你的图片→点击“转换”。</string>
+    <string name="settings_help_q2">文件保存在哪里？</string>
+    <string name="settings_help_a2">生成的文件会保存在设备的“下载”文件夹中。</string>
+    <string name="settings_help_q3">如何添加收藏？</string>
+    <string name="settings_help_a3">点击任意文档上的心形图标，或使用 ⋮ 菜单。</string>
+    <string name="settings_help_q4">我的文档安全吗？</string>
+    <string name="settings_help_a4">是的。所有处理都在本地完成，任何文件都不会离开你的设备。</string>
+    <string name="settings_reset_body">主题将恢复为浅色模式，语言恢复为西班牙语，字体大小恢复为“正常”，并清除缓存。文档不会被删除。是否继续？</string>
+    <string name="settings_reset_confirm">重置</string>
+    <string name="settings_about_dialog_title">关于 DocuSmart</string>
+    <string name="settings_about_body">智能文档查看器和转换器。快速、安全地管理、转换和整理你的文件。</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── 主题 ──────────────────────────────────── -->
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="accent_color_blue">蓝色</string>
+    <string name="accent_color_purple">紫色</string>
+    <string name="accent_color_green">绿色</string>
+    <string name="accent_color_orange">橙色</string>
+    <string name="accent_color_pink">粉色</string>
+    <string name="accent_color_teal">青绿色</string>
+    <string name="font_scale_normal">正常</string>
+    <string name="font_scale_large">大</string>
+    <string name="font_scale_extra_large">特大</string>
+
+    <!-- ── 扫描仪 ────────────────────────────────── -->
+    <string name="scanner_title">正在启动扫描仪</string>
+    <string name="scanner_hint">准备好文档\n将摄像头对准它</string>
+    <string name="scanner_result_title">文档已扫描</string>
+    <string name="scanner_generate">生成 PDF</string>
+    <string name="scanner_again">重新扫描</string>
+    <string name="scanner_share">分享 PDF</string>
+    <string name="scanner_back">返回首页</string>
+
+    <!-- ── 查看器 ──────────────────────────────────── -->
+    <string name="viewer_error">打开文档时出错</string>
+    <string name="viewer_back">返回</string>
+    <string name="viewer_rendering">正在渲染文档…</string>
+    <string name="viewer_unsupported">内置查看器不支持此格式。</string>
+    <string name="viewer_open_other">用其他应用打开</string>
+    <string name="viewer_more_options">更多选项</string>
+    <string name="viewer_convert">转换</string>
+    <string name="viewer_create_qr">生成二维码</string>
+    <string name="viewer_rename">重命名</string>
+    <string name="viewer_delete">删除</string>
+    <string name="viewer_rename_title">重命名文档</string>
+    <string name="viewer_rename_label">文件名</string>
+    <string name="viewer_rename_empty_error">文件名不能为空</string>
+    <string name="viewer_delete_confirm_title">删除此文档？</string>
+    <string name="viewer_delete_confirm_body">"%1$s 将被永久删除，此操作无法撤销。"</string>
+
+    <!-- ── 文档菜单（首页/资料库，DocuSmartDocumentItem） ── -->
+    <string name="doc_item_add_favorite">添加到收藏</string>
+    <string name="doc_item_remove_favorite">从收藏中移除</string>
+    <string name="doc_item_rename_title">重命名文件</string>
+
+    <!-- ── 通用 ────────────────────────────────── -->
+    <string name="general_save">保存</string>
+    <string name="general_cancel">取消</string>
+    <string name="general_back">返回</string>
+    <string name="general_share">分享</string>
+    <string name="general_delete">删除</string>
+    <string name="general_close">关闭</string>
+    <string name="general_saved_downloads">已保存到下载</string>
+
+    <!-- ── PDF 工具说明 ─────────────────────── -->
+    <string name="pdf_merge_desc">将多个 PDF 合并为一个</string>
+    <string name="pdf_split_desc">从 PDF 中提取页面</string>
+    <string name="pdf_compress_desc">减小文件大小</string>
+    <string name="pdf_rotate_desc">旋转文档页面</string>
+    <string name="pdf_number_pages_desc">在页脚添加页码</string>
+    <string name="pdf_watermark_desc">在文档上叠加文字</string>
+    <string name="pdf_reorder_pages_desc">拖动或删除单个页面</string>
+    <string name="pdf_compare_desc">查找两个版本之间的差异</string>
+    <string name="pdf_redact_desc">不可逆地删除敏感文本和图片</string>
+    <string name="pdf_crop_desc">去除每页多余的边距</string>
+    <string name="pdf_edit_text_desc">查找并替换文档中的现有文本</string>
+    <string name="pdf_sign_desc">绘制你的签名并盖在文档上</string>
+    <string name="pdf_fill_form_desc">检测并填写 PDF 表单中的文本字段</string>
+    <string name="pdf_ocr_desc">识别扫描版 PDF 中的文字，使其可被搜索</string>
+
+    <!-- ── 每日限额对话框（转换器与 PDF 工具共用） ── -->
+    <string name="daily_limit_title">已达到每日限额</string>
+    <string name="daily_limit_body">你今天已使用 %1$d/%2$d 次%3$s。</string>
+    <string name="daily_limit_resets_tomorrow">限额将于明天重置。</string>
+    <string name="daily_limit_watch_ad">观看广告 → 获得 +1 次</string>
+    <string name="daily_limit_ad_not_ready">广告暂不可用</string>
+    <string name="daily_limit_get_premium">升级高级版 → 无限制</string>
+    <string name="pdf_tools_daily_limit_label">该工具</string>
+    <string name="converter_daily_limit_label">转换</string>
+
+    <!-- ── PDF 工具：主界面与结果卡片 ── -->
+    <string name="pdf_tools_back_to_tools">返回工具列表</string>
+    <string name="pdf_tools_usage_today">今日使用次数：%1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">保存到下载</string>
+    <string name="pdf_tools_share">分享 PDF</string>
+    <string name="pdf_tools_share_error">无法分享文件</string>
+    <string name="pdf_tools_save_error">无法保存到下载</string>
+    <string name="pdf_tools_new_operation">新操作</string>
+    <string name="pdf_tools_default_filename">文件.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">选择 PDF</string>
+    <string name="pdf_tools_filename_label">输出文件名</string>
+    <string name="pdf_tools_filename_placeholder">例如：合并后的文档</string>
+    <string name="pdf_tools_filename_hint">留空将自动生成文件名</string>
+
+    <!-- ── 合并 PDF ── -->
+    <string name="pdf_merge_subtitle">选择 2 个或更多 PDF 合并为一个</string>
+    <string name="pdf_merge_select_prompt">点击选择 PDF</string>
+    <string name="pdf_merge_add_more">添加更多 PDF</string>
+    <string name="pdf_merge_order_hint">PDF 将按显示的顺序合并</string>
+    <string name="pdf_merge_remove_desc">移除</string>
+    <string name="pdf_merge_file_fallback">文件 %1$d</string>
+    <string name="pdf_merge_progress">正在合并 %1$d 个 PDF…</string>
+    <string name="pdf_merge_select_at_least_2">请至少选择 2 个 PDF</string>
+    <string name="pdf_merge_execute">合并 %1$d 个 PDF</string>
+    <string name="pdf_merge_min_pdfs_error">请至少选择 2 个 PDF 进行合并</string>
+    <string name="pdf_merge_read_error">无法读取所选 PDF 中的任何页面。</string>
+    <string name="pdf_merge_generate_error">生成合并后的 PDF 时出错。</string>
+    <string name="pdf_merge_success">PDF 合并成功 — %1$d 个文件，共 %2$d 页</string>
+    <string name="pdf_merge_error">合并 PDF 时出错：%1$s</string>
+
+    <!-- ── 拆分 PDF ── -->
+    <string name="pdf_split_subtitle">从你的 PDF 中提取一段页面范围</string>
+    <string name="pdf_split_selected">已选择 PDF</string>
+    <string name="pdf_split_range_title">要提取的页面范围</string>
+    <string name="pdf_split_from_page">起始页</string>
+    <string name="pdf_split_to_page">结束页</string>
+    <string name="pdf_split_summary">将提取 %1$d 页 · 页面：%2$d 至 %3$d</string>
+    <string name="pdf_split_progress">正在拆分 PDF…</string>
+    <string name="pdf_split_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_split_no_pages">该 PDF 没有页面。</string>
+    <string name="pdf_split_range_too_small">范围至少应包含 2 页。该 PDF 共有 %1$d 页。</string>
+    <string name="pdf_split_generate_error">生成拆分后的 PDF 时出错。</string>
+    <string name="pdf_split_success">PDF 拆分完成：已提取 %1$d 页 · %2$d KB</string>
+    <string name="pdf_split_error">拆分时出错：%1$s</string>
+
+    <!-- ── 压缩 PDF ── -->
+    <string name="pdf_compress_subtitle">在保持清晰度的同时减小 PDF 大小</string>
+    <string name="pdf_compress_ready">PDF 已准备好压缩</string>
+    <string name="pdf_compress_level_title">压缩级别</string>
+    <string name="pdf_compress_level_high_quality">高质量</string>
+    <string name="pdf_compress_level_balanced">均衡</string>
+    <string name="pdf_compress_level_high_compression">高压缩</string>
+    <string name="pdf_compress_level_max_compression">最大压缩</string>
+    <string name="pdf_compress_smaller">更小</string>
+    <string name="pdf_compress_better_quality">更好的质量</string>
+    <string name="pdf_compress_reduction_10_20">预计减小：10-20%</string>
+    <string name="pdf_compress_reduction_30_50">预计减小：30-50%</string>
+    <string name="pdf_compress_reduction_50_70">预计减小：50-70%</string>
+    <string name="pdf_compress_reduction_70_85">预计减小：70-85%</string>
+    <string name="pdf_compress_progress">正在压缩 PDF…</string>
+    <string name="pdf_compress_read_error">无法读取文件，请确认它是有效的 PDF。</string>
+    <string name="pdf_compress_empty_file">PDF 文件为空或已损坏。</string>
+    <string name="pdf_compress_no_pages">该 PDF 不包含任何页面。</string>
+    <string name="pdf_compress_generate_error">生成压缩后的 PDF 时出错。</string>
+    <string name="pdf_compress_already_optimized">PDF 已经是最优状态 · 大小：%1$d KB</string>
+    <string name="pdf_compress_success">压缩前：%1$d KB → 压缩后：%2$d KB · 减小：%3$d%%</string>
+    <string name="pdf_compress_error">压缩时出错：%1$s</string>
+
+    <!-- ── 旋转 PDF ── -->
+    <string name="pdf_rotate_subtitle">旋转文档的所有页面</string>
+    <string name="pdf_rotate_ready">PDF 已准备好旋转</string>
+    <string name="pdf_rotate_preview_title">预览与旋转角度</string>
+    <string name="pdf_rotate_preview_placeholder">选择一个 PDF\n以查看预览</string>
+    <string name="pdf_rotate_loading_preview">正在加载预览…</string>
+    <string name="pdf_rotate_preview_desc">旋转后的预览</string>
+    <string name="pdf_rotate_angle_90">顺时针旋转 90°</string>
+    <string name="pdf_rotate_angle_180">旋转半圈（上下颠倒）</string>
+    <string name="pdf_rotate_angle_270">逆时针旋转 90°</string>
+    <string name="pdf_rotate_progress">正在旋转 PDF %1$d°…</string>
+    <string name="pdf_rotate_execute">旋转 PDF %1$d°</string>
+    <string name="pdf_rotate_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_rotate_generate_error">生成旋转后的 PDF 时出错。</string>
+    <string name="pdf_rotate_success">PDF 已成功旋转 %1$d°</string>
+    <string name="pdf_rotate_error">旋转 PDF 时出错：%1$s</string>
+
+    <!-- ── 页码编号 ── -->
+    <string name="pdf_number_pages_subtitle">在每页页脚添加页码</string>
+    <string name="pdf_number_pages_ready">PDF 已准备好编号</string>
+    <string name="pdf_number_pages_format_title">编号格式</string>
+    <string name="pdf_number_pages_format_number_only">数字</string>
+    <string name="pdf_number_pages_format_number_of_total">页码 / 总数</string>
+    <string name="pdf_number_pages_format_page_of_total">第 X 页</string>
+    <string name="pdf_number_pages_example_number_only">示例：3</string>
+    <string name="pdf_number_pages_example_number_of_total">示例：3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">示例：第 3 页，共 10 页</string>
+    <string name="pdf_number_pages_progress">正在添加页码…</string>
+    <string name="pdf_number_pages_execute">添加页码</string>
+    <string name="pdf_number_pages_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_number_pages_no_pages">该 PDF 没有页面。</string>
+    <string name="pdf_number_pages_generate_error">生成带页码的 PDF 时出错。</string>
+    <string name="pdf_number_pages_success">PDF 页码添加成功 — 共 %1$d 页</string>
+    <string name="pdf_number_pages_error">添加页码时出错：%1$s</string>
+    <string name="pdf_number_pages_footer_template">第 %1$d 页，共 %2$d 页</string>
+
+    <!-- ── 水印 ── -->
+    <string name="pdf_watermark_subtitle">在每页上叠加一个半透明的对角文字</string>
+    <string name="pdf_watermark_ready">PDF 已准备好添加水印</string>
+    <string name="pdf_watermark_text_label">水印文字</string>
+    <string name="pdf_watermark_text_placeholder">例如：机密</string>
+    <string name="pdf_watermark_hint">文字将以半透明对角形式出现在每一页上</string>
+    <string name="pdf_watermark_progress">正在添加水印…</string>
+    <string name="pdf_watermark_execute">添加水印</string>
+    <string name="pdf_watermark_empty_text_error">请输入水印文字</string>
+    <string name="pdf_watermark_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_watermark_no_pages">该 PDF 没有页面。</string>
+    <string name="pdf_watermark_generate_error">生成带水印的 PDF 时出错。</string>
+    <string name="pdf_watermark_success">水印添加成功 — 共 %1$d 页</string>
+    <string name="pdf_watermark_error">添加水印时出错：%1$s</string>
+
+    <!-- ── 重新排序页面 ── -->
+    <string name="pdf_reorder_pages_subtitle">拖动缩略图重新排序，或删除页面</string>
+    <string name="pdf_reorder_pages_ready">PDF 已准备好重新排序</string>
+    <string name="pdf_reorder_pages_hint">长按拖动图标，将页面移动到其他位置</string>
+    <string name="pdf_reorder_pages_page_label">第 %1$d 页</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">拖动以重新排序</string>
+    <string name="pdf_reorder_pages_progress">正在保存新顺序…</string>
+    <string name="pdf_reorder_pages_execute">保存更改</string>
+    <string name="pdf_reorder_pages_empty_order_error">你必须至少保留一页</string>
+    <string name="pdf_reorder_pages_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_reorder_pages_generate_error">生成重新排序后的 PDF 时出错。</string>
+    <string name="pdf_reorder_pages_success">PDF 更新成功 — 共 %1$d 页</string>
+    <string name="pdf_reorder_pages_error">重新排序页面时出错：%1$s</string>
+
+    <!-- ── 比较 PDF ── -->
+    <string name="pdf_compare_subtitle">选择两个 PDF 以比较其内容</string>
+    <string name="pdf_compare_document_a">文档 A</string>
+    <string name="pdf_compare_document_b">文档 B</string>
+    <string name="pdf_compare_ready">PDF 已准备好比较</string>
+    <string name="pdf_compare_progress">正在比较文档…</string>
+    <string name="pdf_compare_execute">比较 PDF</string>
+    <string name="pdf_compare_read_error_a">无法读取文档 A，请确认它是有效文件。</string>
+    <string name="pdf_compare_read_error_b">无法读取文档 B，请确认它是有效文件。</string>
+    <string name="pdf_compare_generate_error">生成比较报告时出错。</string>
+    <string name="pdf_compare_identical">两个文档完全相同</string>
+    <string name="pdf_compare_differences_found">%2$d 页中有 %1$d 页存在差异</string>
+    <string name="pdf_compare_error">比较 PDF 时出错：%1$s</string>
+    <string name="pdf_compare_report_title">比较报告</string>
+    <string name="pdf_compare_report_page_header">第 %1$d 页</string>
+    <string name="pdf_compare_report_page_only_in_a">此页仅存在于文档 A 中</string>
+    <string name="pdf_compare_report_page_only_in_b">此页仅存在于文档 B 中</string>
+    <string name="pdf_compare_report_only_in_a_line">仅 A 中有：%1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">仅 B 中有：%1$s</string>
+
+    <!-- ── 遮盖内容 ── -->
+    <string name="pdf_redact_subtitle">在需要遮盖的区域上绘制矩形</string>
+    <string name="pdf_redact_ready">PDF 已准备好遮盖</string>
+    <string name="pdf_redact_page_indicator">第 %1$d 页，共 %2$d 页</string>
+    <string name="pdf_redact_prev_page">上一页</string>
+    <string name="pdf_redact_next_page">下一页</string>
+    <string name="pdf_redact_loading_preview">正在加载预览…</string>
+    <string name="pdf_redact_preview_desc">页面预览</string>
+    <string name="pdf_redact_draw_hint">在预览上拖动以标记要遮盖的区域</string>
+    <string name="pdf_redact_zones_marked">已标记 %1$d 个区域</string>
+    <string name="pdf_redact_undo">撤销</string>
+    <string name="pdf_redact_clear_all">全部清除</string>
+    <string name="pdf_redact_execute">遮盖 PDF</string>
+    <string name="pdf_redact_progress">正在遮盖内容…</string>
+    <string name="pdf_redact_empty_rects_error">请至少标记一个要遮盖的区域</string>
+    <string name="pdf_redact_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_redact_no_pages">该 PDF 没有页面。</string>
+    <string name="pdf_redact_generate_error">生成遮盖后的 PDF 时出错。</string>
+    <string name="pdf_redact_success">已成功遮盖 %1$d 个区域</string>
+    <string name="pdf_redact_error">遮盖 PDF 时出错：%1$s</string>
+
+    <!-- ── 裁剪页面 ── -->
+    <string name="pdf_crop_subtitle">调整要裁剪的边距并预览结果</string>
+    <string name="pdf_crop_ready">PDF 已准备好裁剪</string>
+    <string name="pdf_crop_preview_title">预览</string>
+    <string name="pdf_crop_preview_placeholder">选择一个 PDF 以查看预览</string>
+    <string name="pdf_crop_loading_preview">正在加载预览…</string>
+    <string name="pdf_crop_preview_desc">裁剪后的预览</string>
+    <string name="pdf_crop_margin_label">要裁剪的边距：%1$d%%</string>
+    <string name="pdf_crop_execute">裁剪 PDF</string>
+    <string name="pdf_crop_progress">正在裁剪页面…</string>
+    <string name="pdf_crop_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_crop_no_pages">该 PDF 没有页面。</string>
+    <string name="pdf_crop_generate_error">生成裁剪后的 PDF 时出错。</string>
+    <string name="pdf_crop_success">PDF 裁剪成功 — 边距 %1$d%%</string>
+    <string name="pdf_crop_error">裁剪 PDF 时出错：%1$s</string>
+
+    <!-- ── 编辑文本 ── -->
+    <string name="pdf_edit_text_subtitle">输入要查找的文本和替换文本</string>
+    <string name="pdf_edit_text_ready">PDF 已准备好编辑</string>
+    <string name="pdf_edit_text_search_label">查找</string>
+    <string name="pdf_edit_text_search_placeholder">要查找的文本</string>
+    <string name="pdf_edit_text_replace_label">替换为</string>
+    <string name="pdf_edit_text_replace_placeholder">替换文本（留空表示删除）</string>
+    <string name="pdf_edit_text_hint">查找时不区分大小写，将替换所有匹配项</string>
+    <string name="pdf_edit_text_execute">应用更改</string>
+    <string name="pdf_edit_text_progress">正在编辑文本…</string>
+    <string name="pdf_edit_text_empty_search_error">请输入要查找的文本</string>
+    <string name="pdf_edit_text_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_edit_text_no_pages">该 PDF 没有页面。</string>
+    <string name="pdf_edit_text_no_matches_error">在文档中未找到该文本</string>
+    <string name="pdf_edit_text_generate_error">生成编辑后的 PDF 时出错。</string>
+    <string name="pdf_edit_text_success">已成功替换 %1$d 处</string>
+    <string name="pdf_edit_text_error">编辑 PDF 时出错：%1$s</string>
+
+    <!-- ── 签署 PDF ── -->
+    <string name="pdf_sign_subtitle">选择页面，用手指绘制你的签名</string>
+    <string name="pdf_sign_ready">PDF 已准备好签署</string>
+    <string name="pdf_sign_page_indicator">第 %1$d 页，共 %2$d 页</string>
+    <string name="pdf_sign_prev_page">上一页</string>
+    <string name="pdf_sign_next_page">下一页</string>
+    <string name="pdf_sign_draw_label">你的签名</string>
+    <string name="pdf_sign_draw_hint">在上方框中用手指绘制你的签名</string>
+    <string name="pdf_sign_hint">你还没有绘制签名</string>
+    <string name="pdf_sign_captured">已捕获签名</string>
+    <string name="pdf_sign_clear">清除</string>
+    <string name="pdf_sign_execute">签署 PDF</string>
+    <string name="pdf_sign_progress">正在签署文档…</string>
+    <string name="pdf_sign_empty_signature_error">请先绘制签名再继续</string>
+    <string name="pdf_sign_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_sign_no_pages">该 PDF 没有页面。</string>
+    <string name="pdf_sign_generate_error">生成已签署的 PDF 时出错。</string>
+    <string name="pdf_sign_success">PDF 签署成功 — 第 %1$d 页</string>
+    <string name="pdf_sign_error">签署 PDF 时出错：%1$s</string>
+
+    <!-- ── 填写表单 ── -->
+    <string name="pdf_fill_form_subtitle">选择一个带表单字段的 PDF 并进行填写</string>
+    <string name="pdf_fill_form_ready">PDF 已准备好填写</string>
+    <string name="pdf_fill_form_detecting">正在检测表单字段…</string>
+    <string name="pdf_fill_form_no_fields">该 PDF 没有文本表单字段</string>
+    <string name="pdf_fill_form_fields_title">检测到 %1$d 个字段</string>
+    <string name="pdf_fill_form_execute">填写表单</string>
+    <string name="pdf_fill_form_progress">正在填写表单…</string>
+    <string name="pdf_fill_form_empty_values_error">没有可填写的内容</string>
+    <string name="pdf_fill_form_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_fill_form_no_fields_error">该 PDF 没有可填写的表单字段</string>
+    <string name="pdf_fill_form_generate_error">生成填写完成的 PDF 时出错。</string>
+    <string name="pdf_fill_form_success">已成功填写 %1$d 个字段</string>
+    <string name="pdf_fill_form_error">填写表单时出错：%1$s</string>
+    <string name="pdf_ocr_subtitle">选择一个扫描版 PDF 以识别其文字</string>
+    <string name="pdf_ocr_ready">PDF 已准备好识别</string>
+    <string name="pdf_ocr_info">系统会在每页扫描内容上添加一层不可见文本，不改变其外观 — 生成的 PDF 将可被搜索并可选中文字。每页可能需要数秒时间。</string>
+    <string name="pdf_ocr_execute">识别文字</string>
+    <string name="pdf_ocr_progress">正在识别文字…</string>
+    <string name="pdf_ocr_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_ocr_no_pages">该 PDF 没有可处理的页面</string>
+    <string name="pdf_ocr_already_has_text">该 PDF 所有页面都已包含可选中的文字 — 无需进行 OCR</string>
+    <string name="pdf_ocr_no_text_found">未能在该扫描版 PDF 中识别出任何文字</string>
+    <string name="pdf_ocr_generate_error">生成含识别文字的 PDF 时出错。</string>
+    <string name="pdf_ocr_success">已处理 %1$d 页，识别出 %2$d 个词</string>
+    <string name="pdf_ocr_error">识别文字时出错：%1$s</string>
+
+    <!-- ── 首页空状态 ───────────────────────────────── -->
+
+    <!-- ── 转换器分类 ──────────────────────── -->
+    <string name="converter_select_files">点击选择%1$s</string>
+    <string name="converter_files_selected">已选择 %1$d 个文件</string>
+    <string name="converter_formats">格式：%1$s</string>
+    <string name="converter_capture_camera">用相机拍摄</string>
+    <string name="converter_to_format">转换为 %1$s</string>
+    <string name="converter_file_name_label">文件名</string>
+    <string name="converter_file_name_placeholder">自动命名</string>
+    <string name="format_name_image">图片</string>
+    <string name="converter_success_title">转换成功！</string>
+    <string name="converter_success_page_count_size">%1$d 页 · %2$d KB</string>
+    <string name="converter_saved_to_downloads">已保存到下载</string>
+    <string name="converter_share">分享文件</string>
+    <string name="converter_convert_another">转换其他文件</string>
+    <string name="general_back_action">返回</string>
+
+    <!-- ── 转换器：批量转换（RF-CONV-08） ── -->
+    <string name="converter_batch_hint">将保留每个文件的原始名称</string>
+    <string name="converter_convert_batch_button">转换 %1$d 个文件</string>
+    <string name="converter_batch_success_title">已转换 %2$d 个文件中的 %1$d 个</string>
+    <string name="converter_batch_save_all">全部保存到下载</string>
+    <string name="converter_batch_convert_another">转换另一批文件</string>
+    <string name="converter_progress_title">正在转换…</string>
+    <string name="converter_progress_subtitle">正在处理 %1$d 个文件</string>
+    <string name="converter_progress_footer">请稍候，不要关闭应用</string>
+
+    <string name="splash_tagline">扫描 · 整理</string>
+
+    <!-- ── 引导流程 ─────────────────────────────────── -->
+    <string name="onboarding_1_title">欢迎使用 DocuSmart</string>
+    <string name="onboarding_1_desc">你的智能文档管理助手。快速、安全地打开、整理和转换你的文件。</string>
+    <string name="onboarding_2_title">转换任意格式</string>
+    <string name="onboarding_2_desc">PDF、Word、Excel、PowerPoint、图片等等。超过 17 种转换类型触手可及。</string>
+    <string name="onboarding_3_title">保护你的文档</string>
+    <string name="onboarding_3_desc">使用 PIN 码或指纹将文件保存在你的私人保险箱中，隐私至上。</string>
+    <string name="onboarding_4_title">学习模式</string>
+    <string name="onboarding_4_desc">通过文字转语音朗读、高亮段落、用语音记笔记，并使用番茄工作法计时器。</string>
+    <string name="onboarding_5_title">关联你的文档</string>
+    <string name="onboarding_5_desc">选择设备上存放文件的文件夹，即可在资料库中查看。只有你能访问它们 — 你可以现在关联，也可以稍后在设置中进行。</string>
+    <string name="onboarding_folder_linked">已关联：%1$s</string>
+    <string name="onboarding_folder_change">更换文件夹</string>
+    <string name="onboarding_folder_link_button">关联文件夹</string>
+    <string name="onboarding_skip">跳过</string>
+    <string name="onboarding_start">开始使用！</string>
+    <string name="onboarding_next">下一步</string>
+
+    <!-- ── 高级版 ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">月付</string>
+    <string name="premium_plan_annual">年付</string>
+    <string name="premium_period_month">每月</string>
+    <string name="premium_period_year">每年</string>
+    <!-- 使用不带格式参数的 stringResource() 直接读取："%" 是字面字符，
+         不是占位符（2026-09-03 修复的真实 bug：此前写成 "44%%"，
+         因为有人按 String.format 的方式对其进行了转义，
+         导致界面上显示出重复的 "%"）。 -->
+    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">节省 44%</string>
+    <string name="premium_feature_no_ads_title">无广告</string>
+    <string name="premium_feature_no_ads_desc">畅享无干扰的 DocuSmart 体验</string>
+    <string name="premium_feature_pdf_word_title">PDF 转 Word</string>
+    <string name="premium_feature_pdf_word_desc">将 PDF 转换为可编辑文档</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">将扫描版 PDF 转换为包含真实可搜索文字的文档</string>
+    <string name="premium_feature_compress_title">高级压缩</string>
+    <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">将 PDF 缩小最多 90%，且不损失明显画质</string>
+    <string name="premium_feature_unlimited_title">无限次转换</string>
+    <string name="premium_feature_unlimited_desc">不限每日转换次数</string>
+    <string name="premium_you_are_premium">你已是高级版用户！</string>
+    <string name="premium_enjoy_unlimited">尽享所有功能，无任何限制</string>
+    <string name="premium_processing_purchase">正在处理购买…</string>
+    <string name="premium_get_plan">订阅 %1$s — %2$s</string>
+    <string name="premium_select_plan">选择一个套餐</string>
+    <string name="premium_restore_purchases">恢复购买</string>
+    <string name="premium_continue_free">继续使用免费版</string>
+    <string name="premium_terms">订阅即表示你同意《服务条款》和《隐私政策》。订阅将自动续费，你可以随时取消。</string>
+    <string name="premium_active_title">你的订阅已激活</string>
+    <string name="premium_active_body">你已获得 DocuSmart 高级版的全部功能</string>
+    <string name="premium_continue">继续</string>
+    <string name="premium_all_you_get">你将获得的一切</string>
+    <string name="premium_choose_plan">选择你的套餐</string>
+    <string name="premium_recommended">推荐</string>
+    <string name="premium_purchase_error">无法完成购买，请重试。</string>
+    <string name="premium_no_purchases_found">未找到以往的购买记录</string>
+    <string name="premium_purchase_pending">你的购买正在等待确认（例如现金支付）。完成后将自动激活。</string>
+    <string name="premium_restore_success">购买已恢复 — 你现在已是高级版用户</string>
+
+    <!-- ── 扫描仪（补充） ─────────────────────────────── -->
+    <string name="scanner_start_error">无法启动扫描仪：%1$s</string>
+
+    <!-- ── 安全 ─────────────────────────────────── -->
+    <string name="security_title">安全</string>
+    <string name="security_subtitle">保护你的文档</string>
+    <string name="security_what_to_do">你想做什么？</string>
+    <string name="security_secure_folder">安全文件夹</string>
+    <string name="security_secure_folder_desc">使用 PIN 和生物识别保存受保护的文件，只有你能访问。</string>
+    <string name="security_pin_required">需要 PIN 码</string>
+    <string name="security_pdf_password">PDF 密码</string>
+    <string name="security_pdf_password_desc">为 PDF 文件添加或移除密码，无需 PIN 即可立即访问。</string>
+    <string name="security_no_pin">未设置 PIN</string>
+    <string name="security_pin_incorrect">PIN 码错误</string>
+    <string name="security_biometric_error">错误：%1$s</string>
+    <string name="security_biometric_not_recognized">未能识别生物特征</string>
+    <string name="security_biometric_title">DocuSmart — 安全文件夹</string>
+    <string name="security_biometric_subtitle">使用指纹或面容解锁</string>
+    <string name="security_biometric_use_pin">使用 PIN</string>
+    <string name="security_file_protected_success">文件保护成功</string>
+    <string name="security_file_protect_error">无法保护该文件</string>
+    <string name="security_save_downloads_success">已保存到下载：%1$s</string>
+    <string name="security_save_downloads_error">无法保存到下载</string>
+    <string name="pdf_pw_read_error">无法读取文件</string>
+    <string name="pdf_pw_empty_file">文件为空</string>
+    <string name="pdf_pw_protect_success">PDF 保护成功</string>
+    <string name="pdf_pw_protect_generate_error">受保护的文件未能正确生成（%1$d 字节）</string>
+    <string name="pdf_pw_protect_error">无法保护该 PDF：%1$s</string>
+    <string name="pdf_pw_remove_success">密码删除成功</string>
+    <string name="pdf_pw_remove_generate_error">无密码文件未能正确生成（%1$d 字节）</string>
+    <string name="pdf_pw_remove_error">无法处理该 PDF：%1$s</string>
+    <string name="pdf_pw_wrong_password">密码错误</string>
+    <string name="pdf_pw_wrong_password_retry">密码错误，请检查后重试。</string>
+    <string name="security_enter_pin">输入你的 PIN</string>
+    <string name="security_setup_pin_title">设置你的 PIN</string>
+    <string name="security_setup_pin_desc">用 4 位 PIN 码保护你的文件</string>
+    <string name="security_configure_pin_button">设置 PIN</string>
+    <string name="security_use_biometric">使用生物识别</string>
+    <string name="security_delete_desc">删除</string>
+    <string name="security_confirm_pin">确认你的 PIN</string>
+    <string name="security_create_pin">创建你的 PIN</string>
+    <string name="security_confirm_pin_desc">请再次输入 PIN 以确认</string>
+    <string name="security_create_pin_desc">选择一个 4 位 PIN 码来保护你的文件夹</string>
+    <string name="security_pins_dont_match">两次输入的 PIN 不一致</string>
+    <string name="security_setup_pin_error">无法保存 PIN，请重试。</string>
+    <string name="security_forgot_pin">忘记 PIN 了？</string>
+    <string name="security_reset_pin_dialog_title">重置 PIN</string>
+    <string name="security_reset_pin_dialog_body">你安全文件夹中的所有文件都将被删除，此操作无法撤销。</string>
+    <string name="security_reset_pin_confirm">重置并删除</string>
+    <string name="security_files_protected_count">%1$d 个受保护文件</string>
+    <string name="security_protect_new_file">保护新文件</string>
+    <string name="security_config_section">配置</string>
+    <string name="security_change_pin">更改 PIN</string>
+    <string name="security_biometric_unlock">生物识别解锁</string>
+    <string name="security_protected_files_title">受保护文件</string>
+    <string name="security_no_protected_files">没有受保护的文件</string>
+    <string name="security_no_protected_files_hint">点击 \"保护新文件\" 来添加文件</string>
+    <string name="security_restore">恢复</string>
+    <string name="security_protect_file_dialog_title">保护文件</string>
+    <string name="pdf_pw_screen_subtitle">保护或解锁你的 PDF</string>
+    <string name="pdf_pw_mode_protect_title">保护 PDF</string>
+    <string name="pdf_pw_mode_protect_desc">为 PDF 文件添加密码，只有拥有密码的人才能打开它。</string>
+    <string name="pdf_pw_mode_remove_title">移除密码</string>
+    <string name="pdf_pw_mode_remove_desc">移除 PDF 的保护，你需要当前密码才能解锁它。</string>
+    <string name="pdf_pw_protect_section_title">用密码保护 PDF</string>
+    <string name="pdf_pw_selected_placeholder">已选择 PDF</string>
+    <string name="pdf_pw_tap_to_select">点击选择 PDF</string>
+    <string name="pdf_pw_ready_to_protect">PDF 已准备好保护</string>
+    <string name="pdf_pw_new_password_label">新密码</string>
+    <string name="pdf_pw_confirm_password_label">确认密码</string>
+    <string name="pdf_pw_passwords_dont_match">两次输入的密码不一致</string>
+    <string name="pdf_pw_protected_success_title">PDF 保护成功</string>
+    <string name="pdf_pw_save_downloads_button">保存到下载</string>
+    <string name="pdf_pw_protect_button">保护 PDF</string>
+    <string name="pdf_pw_remove_section_title">移除 PDF 密码</string>
+    <string name="pdf_pw_tap_to_select_protected">点击选择受保护的 PDF</string>
+    <string name="pdf_pw_ready">PDF 已就绪</string>
+    <string name="pdf_pw_current_password_label">PDF 当前密码</string>
+    <string name="pdf_pw_current_password_placeholder">输入密码以解锁</string>
+    <string name="pdf_pw_remove_warning">生成的 PDF 将不再有密码，任何人都可以打开它。</string>
+    <string name="pdf_pw_removed_success_title">密码删除成功</string>
+    <string name="pdf_pw_remove_button">移除密码</string>
+    <string name="pdf_pw_default_document_name">文档</string>
+    <string name="scan_result_title">扫描结果</string>
+    <string name="scan_result_subtitle_pages">共 %1$d 页</string>
+    <string name="scan_result_preview">预览</string>
+    <string name="scan_result_page_content_desc">第 %1$d 页</string>
+    <string name="scan_result_filename_label">文件名</string>
+    <string name="scan_result_filename_placeholder">例如：扫描文档</string>
+    <string name="scan_result_filename_hint">留空将自动生成文件名</string>
+    <string name="scan_result_generating_pdf">正在生成 PDF…</string>
+    <string name="scan_result_default_name_prefix">扫描_%1$s</string>
+    <string name="scan_edit_page_content_desc">编辑第 %1$d 页</string>
+    <string name="scan_edit_title">编辑页面</string>
+    <string name="scan_edit_brightness">亮度：%1$d</string>
+    <string name="scan_edit_contrast">对比度：%1$d</string>
+    <string name="scan_edit_scale">缩放</string>
+    <string name="scan_edit_apply">应用</string>
+    <string name="security_file_protected_original_kept">文件已受保护。无法从原位置删除原文件 — 如需彻底移除，请手动删除。</string>
+    <string name="qr_protected_title">受保护的二维码</string>
+    <string name="qr_protected_desc">此内容已用密码保护，请输入密码以查看。</string>
+    <string name="qr_unlock">解锁</string>
+
+    <!-- ── 二维码 ─────────────────────────────────── -->
+    <string name="qr_reader_title">扫描二维码</string>
+    <string name="qr_reader_subtitle">将摄像头对准二维码</string>
+    <string name="qr_camera_permission_needed">需要相机权限才能扫描二维码</string>
+    <string name="qr_allow_camera_access">允许访问相机</string>
+    <string name="qr_center_in_frame">将二维码置于框内居中位置</string>
+    <string name="qr_type_url_detected">检测到网址</string>
+    <string name="qr_type_image_detected">检测到图片</string>
+    <string name="qr_type_document_detected">检测到文档</string>
+    <string name="qr_type_email_detected">检测到邮箱</string>
+    <string name="qr_type_phone_detected">检测到电话</string>
+    <string name="qr_type_text_detected">检测到文本</string>
+    <string name="qr_detected_title">已检测到二维码！</string>
+    <string name="qr_image_content_desc">二维码图片</string>
+    <string name="qr_loading_image">正在加载图片…</string>
+    <string name="qr_copied_clipboard">已复制到剪贴板</string>
+    <string name="qr_open_browser">在浏览器中打开</string>
+    <string name="qr_copy_url">复制网址</string>
+    <string name="qr_open_image">打开图片</string>
+    <string name="qr_copy_link">复制链接</string>
+    <string name="qr_open_document">打开文档</string>
+    <string name="qr_copy_path">复制路径</string>
+    <string name="qr_send_email">发送邮件</string>
+    <string name="qr_copy_email">复制邮箱</string>
+    <string name="qr_call">拨打电话</string>
+    <string name="qr_copy_number">复制号码</string>
+    <string name="qr_copy_text">复制文本</string>
+    <string name="qr_scan_another">扫描另一个二维码</string>
+    <string name="qr_creator_title">生成二维码</string>
+    <string name="qr_creator_subtitle">为网址、文本、文件等生成二维码</string>
+    <string name="qr_chip_url">网址</string>
+    <string name="qr_chip_text">文本</string>
+    <string name="qr_chip_email">邮箱</string>
+    <string name="qr_chip_phone">电话</string>
+    <string name="qr_chip_image">图片</string>
+    <string name="qr_chip_document">文档</string>
+    <string name="qr_select_image">选择图片</string>
+    <string name="qr_image_selected">已选择图片 ✓</string>
+    <string name="qr_select_document">选择文档</string>
+    <string name="qr_document_selected">已选择文档 ✓</string>
+    <string name="qr_label_url">网站网址</string>
+    <string name="qr_label_text">消息文本</string>
+    <string name="qr_label_email">邮箱地址</string>
+    <string name="qr_label_phone">电话号码</string>
+    <string name="qr_placeholder_text">输入你的消息…</string>
+    <string name="qr_protect_password">用密码保护</string>
+    <string name="qr_protect_password_desc">只有拥有密码的人才能查看内容</string>
+    <string name="qr_password_label">密码</string>
+    <string name="qr_password_min_chars">至少 4 个字符</string>
+    <string name="qr_error_select_image">请选择一张图片</string>
+    <string name="qr_error_select_document">请选择一个文档</string>
+    <string name="qr_error_empty_content">请输入二维码内容</string>
+    <string name="qr_error_password_short">密码至少需要 4 个字符</string>
+    <string name="qr_generate">生成二维码</string>
+    <string name="qr_your_code">你的二维码</string>
+    <string name="qr_generated_content_desc">已生成二维码</string>
+    <string name="qr_protected_badge">已保护</string>
+    <string name="qr_share_chooser_title">分享二维码</string>
+
+    <!-- ── 学习模式 ─────────────────────────────────── -->
+    <string name="study_tab_reading">阅读</string>
+    <string name="study_tab_notes">笔记</string>
+    <string name="study_tab_pomodoro">番茄钟</string>
+    <string name="study_no_document">无文档</string>
+    <string name="study_title">学习模式</string>
+    <string name="study_empty_state_desc">打开一个文档以开始学习</string>
+    <string name="study_reading_document">正在朗读文档…</string>
+    <string name="study_paragraphs_highlighted_count">%1$d 个段落 · %2$d 处高亮</string>
+    <string name="study_stop">停止</string>
+    <string name="study_read_all">朗读全部</string>
+    <string name="study_delete_all_notes_title">删除所有笔记</string>
+    <string name="study_delete_all_notes_body">确定要删除所有笔记吗？此操作无法撤销。</string>
+    <string name="study_highlighted_paragraphs_count">已高亮段落（%1$d）</string>
+    <string name="study_new_note">新建笔记</string>
+    <string name="study_note_title_label">笔记标题</string>
+    <string name="study_note_title_placeholder">例如：第 3 章核心概念</string>
+    <string name="study_note_content_placeholder">输入或口述你的笔记…</string>
+    <string name="study_dictate_note">语音输入笔记</string>
+    <string name="study_listening">正在聆听…请开始说话</string>
+    <string name="study_save_note">保存笔记</string>
+    <string name="study_untitled_note">无标题笔记</string>
+    <string name="study_no_saved_notes">没有已保存的笔记</string>
+    <string name="study_saved_notes_count">已保存笔记（%1$d）</string>
+    <string name="study_delete_all">全部删除</string>
+    <string name="study_no_notes_yet">你还没有保存任何笔记</string>
+    <string name="study_delete_note_desc">删除笔记</string>
+    <string name="study_voice_prompt">说话以撰写你的笔记…</string>
+    <string name="study_break_label">休息</string>
+    <string name="study_study_label">学习</string>
+    <string name="study_in_progress">进行中</string>
+    <string name="study_paused">已暂停</string>
+    <string name="study_restart">重新开始</string>
+    <string name="study_pause">暂停</string>
+    <string name="study_start">开始</string>
+    <string name="study_pomodoros_completed">已完成的番茄钟</string>
+    <string name="study_pomodoros_hint">每完成 4 个番茄钟 = 一次长休息</string>
+    <string name="study_pomodoro_technique_info">番茄工作法：学习 25 分钟 + 休息 5 分钟</string>
+    <string name="study_extract_no_text_found">未找到文本</string>
+    <string name="study_extract_could_not_open">无法打开文件</string>
+    <string name="study_extract_could_not_read">无法读取文件</string>
+    <string name="study_extract_pdf_no_text">此 PDF 不包含可提取的文本，可能是扫描版 PDF。</string>
+    <string name="study_extract_pdf_error">读取 PDF 时出错：%1$s</string>
+    <string name="study_extract_generic_error">出错：%1$s</string>
+    <string name="study_default_document_name">文档</string>
+    <string name="study_pomodoro_notification_channel">番茄钟</string>
+    <string name="study_pomodoro_notification_text">剩余 %1$s</string>
+    <string name="study_export_notes">导出笔记</string>
+    <string name="study_export_as_text">导出为文本</string>
+    <string name="study_export_as_pdf">导出为 PDF</string>
+    <string name="study_export_share_title">分享笔记</string>
+    <string name="study_stats_icon_desc">查看统计信息</string>
+    <string name="study_stats_title">学习统计</string>
+    <string name="study_stats_total_reading">总朗读时长</string>
+    <string name="study_stats_reading_value">%1$d 小时 %2$d 分钟</string>
+    <string name="study_stats_pomodoros_this_week">本周番茄钟数</string>
+    <string name="study_stats_pomodoros_total">累计完成的番茄钟数</string>
+    <string name="study_stats_empty">暂无统计数据 — 开始朗读或完成你的第一个番茄钟吧。</string>
+
+    <!-- ── 回收站（RF-VIS-07） ───────────────────────── -->
+    <string name="library_trash">回收站</string>
+    <string name="trash_title">回收站</string>
+    <string name="trash_subtitle">30 天后将被永久删除</string>
+    <string name="trash_empty_title">回收站是空的</string>
+    <string name="trash_empty_body">你从资料库、首页或查看器中删除的文档会先出现在这里，然后才会被永久删除。</string>
+    <string name="trash_deletes_today">今天将被删除</string>
+    <string name="trash_days_remaining">还剩 %1$d 天</string>
+    <string name="trash_restore">恢复</string>
+    <string name="trash_delete_forever">立即删除</string>
+    <string name="trash_delete_forever_confirm_title">永久删除？</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s 将被永久删除，无法恢复。"</string>
+    <string name="trash_delete_all">全部清空</string>
+    <string name="trash_delete_all_confirm_title">清空回收站？</string>
+    <string name="trash_delete_all_confirm_body">"将永久删除 %1$d 个文件，且无法恢复。"</string>
+    <string name="trash_total_size">回收站中共 %1$s</string>
+    <string name="trash_delete_forever_permission_note">Android 可能会要求你确认删除非本应用创建的照片。</string>
+
+    <!-- ── 应用内文件选择器（第 15 项，FileSourcePickerDialog） ── -->
+    <string name="filepicker_source_question">你想从哪里获取文件？</string>
+    <string name="filepicker_from_device">从设备</string>
+    <string name="filepicker_browse_system_files">浏览系统文件</string>
+    <string name="filepicker_from_library">从 DocuSmart 资料库</string>
+    <string name="filepicker_no_library_files">你的资料库中还没有文件</string>
+
+    <!-- ── 通过 SAF 关联下载文件夹（UX 待办第 22 行） ── -->
+    <string name="library_link_downloads_title">在这里查看更多文档</string>
+    <string name="library_link_downloads_body">选择你偏好的文件夹以查找设备中的文档，并将其关联到 DocuSmart</string>
+    <string name="library_link_downloads_button">关联文件夹</string>
+
+    <!-- ── 已关联文件夹的快捷方式，位于设备/我的文件/回收站旁 ── -->
+    <string name="library_folder_shortcut_label">已关联的文件夹</string>
+    <string name="library_folder_shortcut_subtitle">打开</string>
+    <string name="library_folder_shortcut_no_app">此设备上没有可打开文件夹的应用</string>
+
+    <!-- ── 设置：管理已关联的文件夹（UX 待办第 22 行） ── -->
+    <string name="settings_linked_downloads_title">关联的文件夹</string>
+    <string name="settings_linked_downloads_linked">已关联 · 点击取消关联</string>
+    <string name="settings_linked_downloads_not_linked">未关联 · 点击关联</string>
+    <string name="settings_unlink_downloads_title">取消关联文件夹？</string>
+    <string name="settings_unlink_downloads_body">你将无法在“资料库”的“设备”标签页中看到“下载”文件夹中的文件，你可以随时重新关联。</string>
+    <string name="settings_unlink_downloads_confirm">取消关联</string>
+</resources>

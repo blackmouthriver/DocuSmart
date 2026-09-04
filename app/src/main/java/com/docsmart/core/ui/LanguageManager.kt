@@ -20,7 +20,12 @@ enum class AppLanguage(
     ENGLISH("en", "English", "English"),
     PORTUGUESE("pt", "Portugués", "Português"),
     GERMAN("de", "Alemán", "Deutsch"),
-    RUSSIAN("ru", "Ruso", "Русский")
+    RUSSIAN("ru", "Ruso", "Русский"),
+    JAPANESE("ja", "Japonés", "日本語"),
+    KOREAN("ko", "Coreano", "한국어"),
+    CHINESE("zh", "Chino", "中文"),
+    ITALIAN("it", "Italiano", "Italiano"),
+    FRENCH("fr", "Francés", "Français")
 }
 
 @Singleton

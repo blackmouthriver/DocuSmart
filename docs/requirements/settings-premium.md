@@ -76,8 +76,8 @@ Dos módulos relacionados por la monetización freemium:
 **quiero** que "Restablecer configuración" no me cambie el idioma a español sin razón,
 **para** no tener que volver a configurar el idioma cada vez que restablezco.
 
-- **AC1** Dado que mi dispositivo tiene un idioma soportado por la app (es/en/de/pt/ru) configurado como idioma del sistema, cuando toco "Restablecer configuración" y confirmo, entonces la app queda en ese idioma, no en español.
-- **AC2** Dado que mi dispositivo tiene un idioma no soportado (por ejemplo, japonés), cuando restablezco, entonces la app usa español como respaldo — no falla ni queda en un estado inconsistente.
+- **AC1** Dado que mi dispositivo tiene un idioma soportado por la app (es/en/de/pt/ru/ja/ko/zh/it/fr, ampliado 2026-09-04) configurado como idioma del sistema, cuando toco "Restablecer configuración" y confirmo, entonces la app queda en ese idioma, no en español.
+- **AC2** Dado que mi dispositivo tiene un idioma no soportado (por ejemplo, árabe), cuando restablezco, entonces la app usa español como respaldo — no falla ni queda en un estado inconsistente.
 - **AC3** El tema (claro/oscuro/sistema) y el borrado de archivos generados por la app siguen funcionando igual que antes.
 
 *(Corrige bug real: el botón llamaba `languageManager.setLanguage(AppLanguage.SPANISH)` incondicionalmente — mismo patrón que forzaba español en TTS y reconocimiento de voz.)*

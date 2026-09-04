@@ -46,7 +46,7 @@ class LanguageManagerTest {
 
     @Test
     fun `deviceDefaultLanguage devuelve espanol si el idioma del dispositivo no esta soportado`() {
-        Locale.setDefault(Locale("ja")) // japonés — no está en AppLanguage
+        Locale.setDefault(Locale("ar")) // árabe — no está en AppLanguage
 
         assertEquals(AppLanguage.SPANISH, manager.deviceDefaultLanguage())
     }
@@ -77,7 +77,7 @@ class LanguageManagerTest {
 
     @Test
     fun `instalacion nueva cae a espanol si el idioma del dispositivo no esta soportado`() {
-        Locale.setDefault(Locale("ja"))
+        Locale.setDefault(Locale("ar"))
         val context = mockk<Context>()
         every { context.getSharedPreferences(any(), any()) } returns fakeSharedPreferences()
 

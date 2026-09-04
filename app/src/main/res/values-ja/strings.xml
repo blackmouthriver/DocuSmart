@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── ナビゲーション ─────────────────────────────── -->
+    <string name="nav_home">ホーム</string>
+    <string name="nav_library">ライブラリ</string>
+    <string name="nav_converter">変換</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">設定</string>
+
+    <!-- ── ホーム ───────────────────────────────────── -->
+    <string name="home_title">ドキュメントを\nすべてこの一か所に</string>
+    <string name="home_subtitle">ファイルを簡単に\n開く・変換・管理</string>
+    <string name="home_open">開く</string>
+    <string name="home_convert">変換</string>
+    <string name="home_quick_access">クイックアクセス</string>
+    <string name="home_scan">スキャン</string>
+    <string name="home_img_pdf">画像→PDF</string>
+    <string name="home_security">セキュリティ</string>
+    <string name="home_study">学習</string>
+    <string name="home_recent">最近使った項目</string>
+    <string name="home_see_all">すべて表示</string>
+    <string name="home_no_recent_title">最近使ったドキュメントはありません</string>
+    <string name="home_no_recent_desc">ファイルを開くとここに表示されます</string>
+    <string name="home_open_file_action">ファイルを開く</string>
+    <string name="home_share_document">%1$sを共有</string>
+    <string name="home_qr_read">QRを読み取る</string>
+    <string name="home_qr_create">QRを作成</string>
+    <string name="home_scanner_sheet_title">スキャナー</string>
+    <string name="home_scanner_sheet_subtitle">オプションを選択してください</string>
+    <string name="home_scanner_option_scan_title">ドキュメントをスキャン</string>
+    <string name="home_scanner_option_scan_subtitle">ML Kitによる自動キャプチャ</string>
+    <string name="home_scanner_option_qr_read_subtitle">URL、テキストなどを検出</string>
+
+    <!-- ── ライブラリ ─────────────────────────────── -->
+    <string name="library_title">ライブラリ</string>
+    <string name="library_subtitle">すべてのドキュメント</string>
+    <string name="library_search">ライブラリを検索…</string>
+    <string name="library_documents">ドキュメント</string>
+    <string name="library_tab_device">デバイス</string>
+    <string name="library_tab_app_files">マイファイル</string>
+    <string name="library_tab_file_count">%1$d件のファイル</string>
+
+    <!-- ── コンバーター ────────────────────────────── -->
+    <string name="converter_title">コンバーター</string>
+    <string name="converter_subtitle">ドキュメントを簡単に変換</string>
+    <string name="converter_select">何を変換しますか?</string>
+    <string name="converter_save">ダウンロードに保存</string>
+
+    <!-- ── PDFツール ──────────────────────────────── -->
+    <string name="pdf_tools_title">PDFツール</string>
+    <string name="pdf_tools_subtitle">PDFをすばやく管理</string>
+    <string name="pdf_tools_ad_not_available">広告が利用できません。数秒後にもう一度お試しください。</string>
+    <string name="pdf_merge">PDFを結合</string>
+    <string name="pdf_split">PDFを分割</string>
+    <string name="pdf_compress">PDFを圧縮</string>
+    <string name="pdf_rotate">PDFを回転</string>
+    <string name="pdf_number_pages">ページ番号を追加</string>
+    <string name="pdf_watermark">透かし</string>
+    <string name="pdf_reorder_pages">ページの並べ替え</string>
+    <string name="pdf_compare">PDFを比較</string>
+    <string name="pdf_redact">内容を黒塗り</string>
+    <string name="pdf_crop">ページの切り抜き</string>
+    <string name="pdf_edit_text">テキストを編集</string>
+    <string name="pdf_sign">PDFに署名</string>
+    <string name="pdf_fill_form">フォームに入力</string>
+    <string name="pdf_ocr">高度なOCR</string>
+
+    <!-- ── 設定 ────────────────────────────────── -->
+    <string name="settings_title">設定</string>
+    <string name="settings_subtitle">使い方に合わせてカスタマイズ</string>
+    <string name="settings_premium">DocuSmart Premium</string>
+    <string name="settings_premium_subtitle">すべての機能をアンロック</string>
+    <string name="settings_language">言語</string>
+    <string name="settings_theme">テーマ</string>
+    <string name="settings_accent_color">アクセントカラー</string>
+    <string name="settings_select_accent_color">アクセントカラーを選択</string>
+    <string name="settings_font_scale">文字サイズ</string>
+    <string name="settings_select_font_scale">文字サイズを選択</string>
+    <string name="settings_storage">ストレージ</string>
+    <string name="settings_storage_subtitle">生成されたファイルを表示</string>
+    <string name="settings_about">アプリについて</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">言語を選択</string>
+    <string name="settings_select_theme">テーマを選択</string>
+    <string name="settings_close">閉じる</string>
+    <string name="settings_language_subtitle">アプリの言語を選択してください</string>
+    <string name="settings_section_personalization">パーソナライズ</string>
+    <string name="settings_tutorial">チュートリアルを見る</string>
+    <string name="settings_tutorial_subtitle">主な機能をおさらいする</string>
+    <string name="settings_section_privacy">プライバシーとセキュリティ</string>
+    <string name="settings_privacy_item">プライバシー</string>
+    <string name="settings_privacy_item_subtitle">データポリシーと権限</string>
+    <string name="settings_ads_privacy_options">広告の同意設定</string>
+    <string name="settings_ads_privacy_options_subtitle">広告に関するプライバシー設定を変更</string>
+    <string name="settings_share_app">DocuSmartを共有</string>
+    <string name="settings_share_app_subtitle">友達にアプリをおすすめしよう</string>
+    <string name="settings_rate">Playストアで評価する</string>
+    <string name="settings_rate_subtitle">DocuSmartを気に入っていただけましたか?レビューをお願いします!</string>
+    <string name="settings_section_support">サポート</string>
+    <string name="settings_help">ヘルプ</string>
+    <string name="settings_help_subtitle">よくある質問</string>
+    <string name="settings_section_system">システム</string>
+    <string name="settings_reset">設定をリセット</string>
+    <string name="settings_reset_subtitle">デフォルト設定に戻す</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">了解</string>
+    <string name="settings_storage_conversions">変換</string>
+    <string name="settings_storage_total">合計</string>
+    <string name="settings_storage_files_unit">ファイル</string>
+    <string name="settings_storage_clear_cache">キャッシュを削除</string>
+    <string name="settings_privacy_body">DocuSmartはあなたのプライバシーを尊重します。ドキュメントが外部サーバーにアップロードされることはありません。すべての処理はお使いの端末内でローカルに行われます。</string>
+    <string name="settings_privacy_manage_permissions">システム権限を管理</string>
+    <string name="settings_help_q1">画像をPDFに変換するにはどうすればいいですか?</string>
+    <string name="settings_help_a1">「変換」→「画像」に進み、画像を選択して「変換」をタップしてください。</string>
+    <string name="settings_help_q2">ファイルはどこに保存されますか?</string>
+    <string name="settings_help_a2">生成されたファイルは端末の「ダウンロード」フォルダに保存されます。</string>
+    <string name="settings_help_q3">お気に入りはどうやって追加しますか?</string>
+    <string name="settings_help_a3">ドキュメントのハートアイコンをタップするか、⋮メニューを使用してください。</string>
+    <string name="settings_help_q4">ドキュメントは安全ですか?</string>
+    <string name="settings_help_a4">はい。すべての処理はローカルで行われます。ファイルが端末の外に出ることはありません。</string>
+    <string name="settings_reset_body">テーマはライトモード、言語はスペイン語、文字サイズは「標準」にリセットされ、キャッシュが削除されます。ドキュメントは削除されません。続けますか?</string>
+    <string name="settings_reset_confirm">リセット</string>
+    <string name="settings_about_dialog_title">DocuSmartについて</string>
+    <string name="settings_about_body">スマートなドキュメントビューア&amp;コンバーター。ファイルをすばやく安全に管理・変換・整理できます。</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── テーマ ──────────────────────────────────── -->
+    <string name="theme_light">ライト</string>
+    <string name="theme_dark">ダーク</string>
+    <string name="theme_system">システム</string>
+    <string name="accent_color_blue">ブルー</string>
+    <string name="accent_color_purple">パープル</string>
+    <string name="accent_color_green">グリーン</string>
+    <string name="accent_color_orange">オレンジ</string>
+    <string name="accent_color_pink">ピンク</string>
+    <string name="accent_color_teal">ティール</string>
+    <string name="font_scale_normal">標準</string>
+    <string name="font_scale_large">大</string>
+    <string name="font_scale_extra_large">特大</string>
+
+    <!-- ── スキャナー ────────────────────────────────── -->
+    <string name="scanner_title">スキャナーを起動中</string>
+    <string name="scanner_hint">ドキュメントを準備して\nカメラを向けてください</string>
+    <string name="scanner_result_title">スキャンしたドキュメント</string>
+    <string name="scanner_generate">PDFを生成</string>
+    <string name="scanner_again">もう一度スキャン</string>
+    <string name="scanner_share">PDFを共有</string>
+    <string name="scanner_back">ホームに戻る</string>
+
+    <!-- ── ビューア ──────────────────────────────────── -->
+    <string name="viewer_error">ドキュメントを開けませんでした</string>
+    <string name="viewer_back">戻る</string>
+    <string name="viewer_rendering">ドキュメントをレンダリング中…</string>
+    <string name="viewer_unsupported">この形式は内蔵ビューアでサポートされていません。</string>
+    <string name="viewer_open_other">別のアプリで開く</string>
+    <string name="viewer_more_options">その他のオプション</string>
+    <string name="viewer_convert">変換</string>
+    <string name="viewer_create_qr">QRを作成</string>
+    <string name="viewer_rename">名前を変更</string>
+    <string name="viewer_delete">削除</string>
+    <string name="viewer_rename_title">ドキュメント名を変更</string>
+    <string name="viewer_rename_label">ファイル名</string>
+    <string name="viewer_rename_empty_error">名前を空にすることはできません</string>
+    <string name="viewer_delete_confirm_title">このドキュメントを削除しますか?</string>
+    <string name="viewer_delete_confirm_body">"%1$sは完全に削除されます。この操作は取り消せません。"</string>
+
+    <!-- ── ドキュメントメニュー(ホーム/ライブラリ、DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">お気に入りに追加</string>
+    <string name="doc_item_remove_favorite">お気に入りから削除</string>
+    <string name="doc_item_rename_title">ファイル名を変更</string>
+
+    <!-- ── 共通 ────────────────────────────── -->
+    <string name="general_save">保存</string>
+    <string name="general_cancel">キャンセル</string>
+    <string name="general_back">戻る</string>
+    <string name="general_share">共有</string>
+    <string name="general_delete">削除</string>
+    <string name="general_close">閉じる</string>
+    <string name="general_saved_downloads">ダウンロードに保存しました</string>
+
+    <!-- ── PDFツールの説明 ─────────────────────── -->
+    <string name="pdf_merge_desc">複数のPDFを1つに結合します</string>
+    <string name="pdf_split_desc">PDFからページを抽出します</string>
+    <string name="pdf_compress_desc">ファイルサイズを縮小します</string>
+    <string name="pdf_rotate_desc">ドキュメントのページを回転します</string>
+    <string name="pdf_number_pages_desc">ページ下部にページ番号を追加します</string>
+    <string name="pdf_watermark_desc">ドキュメントにテキストを重ねます</string>
+    <string name="pdf_reorder_pages_desc">ページをドラッグまたは削除します</string>
+    <string name="pdf_compare_desc">2つのバージョンの違いを見つけます</string>
+    <string name="pdf_redact_desc">機密のテキストや画像を復元不可能な形で削除します</string>
+    <string name="pdf_crop_desc">各ページの余分な余白を削除します</string>
+    <string name="pdf_edit_text_desc">ドキュメント内の既存のテキストを検索して置換します</string>
+    <string name="pdf_sign_desc">署名を描いてドキュメントに押印します</string>
+    <string name="pdf_fill_form_desc">PDFフォームのテキストフィールドを検出して入力します</string>
+    <string name="pdf_ocr_desc">スキャンしたPDFのテキストを認識し、検索できるようにします</string>
+
+    <!-- ── 1日の利用上限ダイアログ(コンバーターとPDFツールで共有) ── -->
+    <string name="daily_limit_title">本日の上限に達しました</string>
+    <string name="daily_limit_body">本日は%2$d回中%1$d回の%3$sを使用しました。</string>
+    <string name="daily_limit_resets_tomorrow">上限は明日リセットされます。</string>
+    <string name="daily_limit_watch_ad">広告を見る → +1回</string>
+    <string name="daily_limit_ad_not_ready">広告はまだ利用できません</string>
+    <string name="daily_limit_get_premium">Premiumを入手 → 上限なし</string>
+    <string name="pdf_tools_daily_limit_label">このツールの利用回数</string>
+    <string name="converter_daily_limit_label">変換回数</string>
+
+    <!-- ── PDFツール: メイン画面と結果カード ── -->
+    <string name="pdf_tools_back_to_tools">ツール一覧に戻る</string>
+    <string name="pdf_tools_usage_today">本日の利用回数: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">ダウンロードに保存</string>
+    <string name="pdf_tools_share">PDFを共有</string>
+    <string name="pdf_tools_share_error">ファイルを共有できませんでした</string>
+    <string name="pdf_tools_save_error">ダウンロードに保存できませんでした</string>
+    <string name="pdf_tools_new_operation">新しい操作</string>
+    <string name="pdf_tools_default_filename">ファイル.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">PDFを選択</string>
+    <string name="pdf_tools_filename_label">出力ファイル名</string>
+    <string name="pdf_tools_filename_placeholder">例: 結合したドキュメント</string>
+    <string name="pdf_tools_filename_hint">空欄の場合は自動的に名前が生成されます</string>
+
+    <!-- ── PDFを結合 ── -->
+    <string name="pdf_merge_subtitle">2つ以上のPDFを選択して1つに結合します</string>
+    <string name="pdf_merge_select_prompt">タップしてPDFを選択</string>
+    <string name="pdf_merge_add_more">PDFを追加</string>
+    <string name="pdf_merge_order_hint">PDFは表示されている順序で結合されます</string>
+    <string name="pdf_merge_remove_desc">削除</string>
+    <string name="pdf_merge_file_fallback">ファイル%1$d</string>
+    <string name="pdf_merge_progress">%1$d個のPDFを結合中…</string>
+    <string name="pdf_merge_select_at_least_2">2つ以上のPDFを選択してください</string>
+    <string name="pdf_merge_execute">%1$d個のPDFを結合</string>
+    <string name="pdf_merge_min_pdfs_error">結合するには2つ以上のPDFを選択してください</string>
+    <string name="pdf_merge_read_error">選択したPDFのページを読み取れませんでした。</string>
+    <string name="pdf_merge_generate_error">結合したPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_merge_success">PDFの結合が完了しました — %1$d個のファイル、%2$dページ</string>
+    <string name="pdf_merge_error">PDFの結合中にエラーが発生しました: %1$s</string>
+
+    <!-- ── PDFを分割 ── -->
+    <string name="pdf_split_subtitle">PDFからページの範囲を抽出します</string>
+    <string name="pdf_split_selected">選択したPDF</string>
+    <string name="pdf_split_range_title">抽出するページの範囲</string>
+    <string name="pdf_split_from_page">開始ページ</string>
+    <string name="pdf_split_to_page">終了ページ</string>
+    <string name="pdf_split_summary">%1$dページを抽出します · ページ: %2$d〜%3$d</string>
+    <string name="pdf_split_progress">PDFを分割中…</string>
+    <string name="pdf_split_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_split_no_pages">このPDFにはページがありません。</string>
+    <string name="pdf_split_range_too_small">範囲には少なくとも2ページ含める必要があります。このPDFには%1$dページあります。</string>
+    <string name="pdf_split_generate_error">分割したPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_split_success">PDFを分割しました: %1$dページを抽出 · %2$d KB</string>
+    <string name="pdf_split_error">分割中にエラーが発生しました: %1$s</string>
+
+    <!-- ── PDFを圧縮 ── -->
+    <string name="pdf_compress_subtitle">読みやすさを保ちながらPDFのサイズを縮小します</string>
+    <string name="pdf_compress_ready">圧縮の準備ができたPDF</string>
+    <string name="pdf_compress_level_title">圧縮レベル</string>
+    <string name="pdf_compress_level_high_quality">高画質</string>
+    <string name="pdf_compress_level_balanced">バランス</string>
+    <string name="pdf_compress_level_high_compression">高圧縮</string>
+    <string name="pdf_compress_level_max_compression">最大圧縮</string>
+    <string name="pdf_compress_smaller">より小さく</string>
+    <string name="pdf_compress_better_quality">より高画質</string>
+    <string name="pdf_compress_reduction_10_20">推定削減率: 10〜20%</string>
+    <string name="pdf_compress_reduction_30_50">推定削減率: 30〜50%</string>
+    <string name="pdf_compress_reduction_50_70">推定削減率: 50〜70%</string>
+    <string name="pdf_compress_reduction_70_85">推定削減率: 70〜85%</string>
+    <string name="pdf_compress_progress">PDFを圧縮中…</string>
+    <string name="pdf_compress_read_error">ファイルを読み取れませんでした。有効なPDFか確認してください。</string>
+    <string name="pdf_compress_empty_file">PDFファイルが空か破損しています。</string>
+    <string name="pdf_compress_no_pages">このPDFにはページが含まれていません。</string>
+    <string name="pdf_compress_generate_error">圧縮したPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_compress_already_optimized">PDFはすでに最適化されています · サイズ: %1$d KB</string>
+    <string name="pdf_compress_success">圧縮前: %1$d KB → 圧縮後: %2$d KB · 削減率: %3$d%%</string>
+    <string name="pdf_compress_error">圧縮中にエラーが発生しました: %1$s</string>
+
+    <!-- ── PDFを回転 ── -->
+    <string name="pdf_rotate_subtitle">ドキュメントのすべてのページを回転します</string>
+    <string name="pdf_rotate_ready">回転の準備ができたPDF</string>
+    <string name="pdf_rotate_preview_title">プレビューと回転角度</string>
+    <string name="pdf_rotate_preview_placeholder">PDFを選択すると\nプレビューが表示されます</string>
+    <string name="pdf_rotate_loading_preview">プレビューを読み込み中…</string>
+    <string name="pdf_rotate_preview_desc">回転後のプレビュー</string>
+    <string name="pdf_rotate_angle_90">時計回りに90°回転</string>
+    <string name="pdf_rotate_angle_180">180°回転(上下逆さま)</string>
+    <string name="pdf_rotate_angle_270">反時計回りに90°回転</string>
+    <string name="pdf_rotate_progress">PDFを%1$d°回転中…</string>
+    <string name="pdf_rotate_execute">PDFを%1$d°回転</string>
+    <string name="pdf_rotate_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_rotate_generate_error">回転したPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_rotate_success">PDFを%1$d°回転しました</string>
+    <string name="pdf_rotate_error">PDFの回転中にエラーが発生しました: %1$s</string>
+
+    <!-- ── ページ番号を追加 ── -->
+    <string name="pdf_number_pages_subtitle">各ページの下部にページ番号を追加します</string>
+    <string name="pdf_number_pages_ready">番号付けの準備ができたPDF</string>
+    <string name="pdf_number_pages_format_title">番号の形式</string>
+    <string name="pdf_number_pages_format_number_only">番号</string>
+    <string name="pdf_number_pages_format_number_of_total">番号 / 合計</string>
+    <string name="pdf_number_pages_format_page_of_total">ページ X</string>
+    <string name="pdf_number_pages_example_number_only">例: 3</string>
+    <string name="pdf_number_pages_example_number_of_total">例: 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">例: 10ページ中3ページ目</string>
+    <string name="pdf_number_pages_progress">ページ番号を追加中…</string>
+    <string name="pdf_number_pages_execute">ページ番号を追加</string>
+    <string name="pdf_number_pages_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_number_pages_no_pages">このPDFにはページがありません。</string>
+    <string name="pdf_number_pages_generate_error">番号を追加したPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_number_pages_success">ページ番号の追加が完了しました — %1$dページ</string>
+    <string name="pdf_number_pages_error">ページ番号の追加中にエラーが発生しました: %1$s</string>
+    <string name="pdf_number_pages_footer_template">%2$dページ中%1$dページ目</string>
+
+    <!-- ── 透かし ── -->
+    <string name="pdf_watermark_subtitle">各ページに斜めの半透明テキストを重ねます</string>
+    <string name="pdf_watermark_ready">透かしの準備ができたPDF</string>
+    <string name="pdf_watermark_text_label">透かしのテキスト</string>
+    <string name="pdf_watermark_text_placeholder">例: 機密</string>
+    <string name="pdf_watermark_hint">テキストは各ページに斜めの半透明で表示されます</string>
+    <string name="pdf_watermark_progress">透かしを適用中…</string>
+    <string name="pdf_watermark_execute">透かしを適用</string>
+    <string name="pdf_watermark_empty_text_error">透かしのテキストを入力してください</string>
+    <string name="pdf_watermark_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_watermark_no_pages">このPDFにはページがありません。</string>
+    <string name="pdf_watermark_generate_error">透かし入りPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_watermark_success">透かしの適用が完了しました — %1$dページ</string>
+    <string name="pdf_watermark_error">透かしの適用中にエラーが発生しました: %1$s</string>
+
+    <!-- ── ページの並べ替え ── -->
+    <string name="pdf_reorder_pages_subtitle">サムネイルをドラッグして並べ替えるか、ページを削除します</string>
+    <string name="pdf_reorder_pages_ready">並べ替えの準備ができたPDF</string>
+    <string name="pdf_reorder_pages_hint">ドラッグアイコンを長押しして、ページを別の位置に移動します</string>
+    <string name="pdf_reorder_pages_page_label">%1$dページ目</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">ドラッグして並べ替え</string>
+    <string name="pdf_reorder_pages_progress">新しい順序を保存中…</string>
+    <string name="pdf_reorder_pages_execute">変更を保存</string>
+    <string name="pdf_reorder_pages_empty_order_error">少なくとも1ページは残す必要があります</string>
+    <string name="pdf_reorder_pages_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_reorder_pages_generate_error">並べ替えたPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_reorder_pages_success">PDFの更新が完了しました — %1$dページ</string>
+    <string name="pdf_reorder_pages_error">ページの並べ替え中にエラーが発生しました: %1$s</string>
+
+    <!-- ── PDFを比較 ── -->
+    <string name="pdf_compare_subtitle">2つのPDFを選択して内容を比較します</string>
+    <string name="pdf_compare_document_a">ドキュメントA</string>
+    <string name="pdf_compare_document_b">ドキュメントB</string>
+    <string name="pdf_compare_ready">比較の準備ができたPDF</string>
+    <string name="pdf_compare_progress">ドキュメントを比較中…</string>
+    <string name="pdf_compare_execute">PDFを比較</string>
+    <string name="pdf_compare_read_error_a">ドキュメントAを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_compare_read_error_b">ドキュメントBを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_compare_generate_error">比較レポートの生成中にエラーが発生しました。</string>
+    <string name="pdf_compare_identical">2つのドキュメントは同一です</string>
+    <string name="pdf_compare_differences_found">%2$dページ中%1$dページに違いがあります</string>
+    <string name="pdf_compare_error">PDFの比較中にエラーが発生しました: %1$s</string>
+    <string name="pdf_compare_report_title">比較レポート</string>
+    <string name="pdf_compare_report_page_header">%1$dページ目</string>
+    <string name="pdf_compare_report_page_only_in_a">このページはドキュメントAにのみ存在します</string>
+    <string name="pdf_compare_report_page_only_in_b">このページはドキュメントBにのみ存在します</string>
+    <string name="pdf_compare_report_only_in_a_line">Aのみ: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">Bのみ: %1$s</string>
+
+    <!-- ── 内容を黒塗り ── -->
+    <string name="pdf_redact_subtitle">黒塗りにしたい部分に四角形を描きます</string>
+    <string name="pdf_redact_ready">黒塗りの準備ができたPDF</string>
+    <string name="pdf_redact_page_indicator">%2$dページ中%1$dページ目</string>
+    <string name="pdf_redact_prev_page">前のページ</string>
+    <string name="pdf_redact_next_page">次のページ</string>
+    <string name="pdf_redact_loading_preview">プレビューを読み込み中…</string>
+    <string name="pdf_redact_preview_desc">ページのプレビュー</string>
+    <string name="pdf_redact_draw_hint">プレビュー上をドラッグして黒塗りする部分を指定してください</string>
+    <string name="pdf_redact_zones_marked">%1$d箇所を指定済み</string>
+    <string name="pdf_redact_undo">元に戻す</string>
+    <string name="pdf_redact_clear_all">すべて消去</string>
+    <string name="pdf_redact_execute">PDFを黒塗り</string>
+    <string name="pdf_redact_progress">内容を黒塗り中…</string>
+    <string name="pdf_redact_empty_rects_error">黒塗りする部分を少なくとも1つ指定してください</string>
+    <string name="pdf_redact_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_redact_no_pages">このPDFにはページがありません。</string>
+    <string name="pdf_redact_generate_error">黒塗りしたPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_redact_success">%1$d箇所の黒塗りが完了しました</string>
+    <string name="pdf_redact_error">PDFの黒塗り中にエラーが発生しました: %1$s</string>
+
+    <!-- ── ページの切り抜き ── -->
+    <string name="pdf_crop_subtitle">切り抜く余白を調整し、結果をプレビューします</string>
+    <string name="pdf_crop_ready">切り抜きの準備ができたPDF</string>
+    <string name="pdf_crop_preview_title">プレビュー</string>
+    <string name="pdf_crop_preview_placeholder">PDFを選択するとプレビューが表示されます</string>
+    <string name="pdf_crop_loading_preview">プレビューを読み込み中…</string>
+    <string name="pdf_crop_preview_desc">切り抜き後のプレビュー</string>
+    <string name="pdf_crop_margin_label">切り抜く余白: %1$d%%</string>
+    <string name="pdf_crop_execute">PDFを切り抜く</string>
+    <string name="pdf_crop_progress">ページを切り抜き中…</string>
+    <string name="pdf_crop_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_crop_no_pages">このPDFにはページがありません。</string>
+    <string name="pdf_crop_generate_error">切り抜いたPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_crop_success">PDFの切り抜きが完了しました — 余白%1$d%%</string>
+    <string name="pdf_crop_error">PDFの切り抜き中にエラーが発生しました: %1$s</string>
+
+    <!-- ── テキストを編集 ── -->
+    <string name="pdf_edit_text_subtitle">検索するテキストと置換後のテキストを入力してください</string>
+    <string name="pdf_edit_text_ready">編集の準備ができたPDF</string>
+    <string name="pdf_edit_text_search_label">検索</string>
+    <string name="pdf_edit_text_search_placeholder">検索するテキスト</string>
+    <string name="pdf_edit_text_replace_label">置換後</string>
+    <string name="pdf_edit_text_replace_placeholder">置換後のテキスト(空欄で削除)</string>
+    <string name="pdf_edit_text_hint">テキストは大文字・小文字を区別せずに検索され、すべての出現箇所が置換されます</string>
+    <string name="pdf_edit_text_execute">変更を適用</string>
+    <string name="pdf_edit_text_progress">テキストを編集中…</string>
+    <string name="pdf_edit_text_empty_search_error">検索したいテキストを入力してください</string>
+    <string name="pdf_edit_text_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_edit_text_no_pages">このPDFにはページがありません。</string>
+    <string name="pdf_edit_text_no_matches_error">ドキュメント内にそのテキストは見つかりませんでした</string>
+    <string name="pdf_edit_text_generate_error">編集したPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_edit_text_success">%1$d件の置換が完了しました</string>
+    <string name="pdf_edit_text_error">PDFの編集中にエラーが発生しました: %1$s</string>
+
+    <!-- ── PDFに署名 ── -->
+    <string name="pdf_sign_subtitle">ページを選び、指で署名を描いてください</string>
+    <string name="pdf_sign_ready">署名の準備ができたPDF</string>
+    <string name="pdf_sign_page_indicator">%2$dページ中%1$dページ目</string>
+    <string name="pdf_sign_prev_page">前のページ</string>
+    <string name="pdf_sign_next_page">次のページ</string>
+    <string name="pdf_sign_draw_label">あなたの署名</string>
+    <string name="pdf_sign_draw_hint">上の枠内に指で署名を描いてください</string>
+    <string name="pdf_sign_hint">まだ署名が描かれていません</string>
+    <string name="pdf_sign_captured">署名を取得しました</string>
+    <string name="pdf_sign_clear">消去</string>
+    <string name="pdf_sign_execute">PDFに署名</string>
+    <string name="pdf_sign_progress">ドキュメントに署名中…</string>
+    <string name="pdf_sign_empty_signature_error">続ける前に署名を描いてください</string>
+    <string name="pdf_sign_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_sign_no_pages">このPDFにはページがありません。</string>
+    <string name="pdf_sign_generate_error">署名したPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_sign_success">PDFへの署名が完了しました — %1$dページ目</string>
+    <string name="pdf_sign_error">PDFの署名中にエラーが発生しました: %1$s</string>
+
+    <!-- ── フォームに入力 ── -->
+    <string name="pdf_fill_form_subtitle">フォームフィールドのあるPDFを選択して入力します</string>
+    <string name="pdf_fill_form_ready">入力の準備ができたPDF</string>
+    <string name="pdf_fill_form_detecting">フォームフィールドを検出中…</string>
+    <string name="pdf_fill_form_no_fields">このPDFにはテキストフォームフィールドがありません</string>
+    <string name="pdf_fill_form_fields_title">%1$d個のフィールドを検出しました</string>
+    <string name="pdf_fill_form_execute">フォームに入力</string>
+    <string name="pdf_fill_form_progress">フォームに入力中…</string>
+    <string name="pdf_fill_form_empty_values_error">入力する値がありません</string>
+    <string name="pdf_fill_form_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_fill_form_no_fields_error">このPDFには入力できるフォームフィールドがありません</string>
+    <string name="pdf_fill_form_generate_error">フォーム入力済みPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_fill_form_success">%1$d個のフィールドの入力が完了しました</string>
+    <string name="pdf_fill_form_error">フォームの入力中にエラーが発生しました: %1$s</string>
+    <string name="pdf_ocr_subtitle">テキストを認識したいスキャン済みPDFを選択してください</string>
+    <string name="pdf_ocr_ready">認識の準備ができたPDF</string>
+    <string name="pdf_ocr_info">見た目を変えずに、スキャンした各ページに不可視のテキストレイヤーが追加されます。生成されるPDFは検索可能になり、テキストを選択できるようになります。ページごとに数秒かかる場合があります。</string>
+    <string name="pdf_ocr_execute">テキストを認識</string>
+    <string name="pdf_ocr_progress">テキストを認識中…</string>
+    <string name="pdf_ocr_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_ocr_no_pages">処理するページがこのPDFにはありません</string>
+    <string name="pdf_ocr_already_has_text">このPDFはすべてのページにすでに選択可能なテキストがあります — OCRを適用する必要はありません</string>
+    <string name="pdf_ocr_no_text_found">スキャンしたPDFからテキストを認識できませんでした</string>
+    <string name="pdf_ocr_generate_error">テキスト認識済みPDFの生成中にエラーが発生しました。</string>
+    <string name="pdf_ocr_success">%1$dページを処理、%2$d語を認識しました</string>
+    <string name="pdf_ocr_error">テキストの認識中にエラーが発生しました: %1$s</string>
+
+    <!-- ── ホームの空の状態 ───────────────────────────── -->
+
+    <!-- ── コンバーターのカテゴリー ──────────────────────── -->
+    <string name="converter_select_files">タップして%1$sを選択</string>
+    <string name="converter_files_selected">%1$d個のファイルを選択済み</string>
+    <string name="converter_formats">形式: %1$s</string>
+    <string name="converter_capture_camera">カメラで撮影</string>
+    <string name="converter_to_format">%1$sに変換</string>
+    <string name="converter_file_name_label">ファイル名</string>
+    <string name="converter_file_name_placeholder">自動生成された名前</string>
+    <string name="format_name_image">画像</string>
+    <string name="converter_success_title">変換が完了しました!</string>
+    <string name="converter_success_page_count_size">%1$dページ · %2$d KB</string>
+    <string name="converter_saved_to_downloads">ダウンロードに保存しました</string>
+    <string name="converter_share">ファイルを共有</string>
+    <string name="converter_convert_another">別のファイルを変換</string>
+    <string name="general_back_action">戻る</string>
+
+    <!-- ── コンバーター: 一括変換(RF-CONV-08) ── -->
+    <string name="converter_batch_hint">各ファイルの元の名前が保持されます</string>
+    <string name="converter_convert_batch_button">%1$d個のファイルを変換</string>
+    <string name="converter_batch_success_title">%2$d個中%1$d個のファイルを変換しました</string>
+    <string name="converter_batch_save_all">すべてダウンロードに保存</string>
+    <string name="converter_batch_convert_another">別のバッチを変換</string>
+    <string name="converter_progress_title">変換中…</string>
+    <string name="converter_progress_subtitle">%1$d個のファイルを処理中</string>
+    <string name="converter_progress_footer">しばらくお待ちください。アプリを閉じないでください</string>
+
+    <string name="splash_tagline">スキャン・整理</string>
+
+    <!-- ── オンボーディング ─────────────────────────────── -->
+    <string name="onboarding_1_title">DocuSmartへようこそ</string>
+    <string name="onboarding_1_desc">あなたのスマートなドキュメント管理アプリです。ファイルをすばやく安全に開いて、整理して、変換できます。</string>
+    <string name="onboarding_2_title">あらゆる形式を変換</string>
+    <string name="onboarding_2_desc">PDF、Word、Excel、PowerPoint、画像など。17種類以上の変換が手元で行えます。</string>
+    <string name="onboarding_3_title">ドキュメントを保護</string>
+    <string name="onboarding_3_desc">PINまたは指紋で保護された専用の金庫にファイルを保存できます。プライバシーを第一に。</string>
+    <string name="onboarding_4_title">学習モード</string>
+    <string name="onboarding_4_desc">読み上げ機能で聞く、段落をハイライトする、音声でメモを取る、ポモドーロタイマーを使うことができます。</string>
+    <string name="onboarding_5_title">ドキュメントを連携</string>
+    <string name="onboarding_5_desc">ファイルを保存している端末内のフォルダを選択すると、ライブラリで表示できます。アクセスできるのはあなただけです — 今すぐ設定することも、後で「設定」から行うこともできます。</string>
+    <string name="onboarding_folder_linked">連携済み: %1$s</string>
+    <string name="onboarding_folder_change">フォルダを変更</string>
+    <string name="onboarding_folder_link_button">フォルダを連携</string>
+    <string name="onboarding_skip">スキップ</string>
+    <string name="onboarding_start">始める!</string>
+    <string name="onboarding_next">次へ</string>
+
+    <!-- ── Premium ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">月額</string>
+    <string name="premium_plan_annual">年額</string>
+    <string name="premium_period_month">月あたり</string>
+    <string name="premium_period_year">年あたり</string>
+    <!-- stringResource()でそのまま読み込まれ、書式引数は使用しない。
+         「%」はプレースホルダーではなくリテラル文字(2026年09月03日に修正された実際のバグ:
+         誰かがString.formatを通すかのようにエスケープしたため以前は「44%%」となっており、
+         画面に「%」が重複して表示されていた)。 -->
+    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44%お得</string>
+    <string name="premium_feature_no_ads_title">広告なし</string>
+    <string name="premium_feature_no_ads_desc">広告に邪魔されずDocuSmartをお楽しみいただけます</string>
+    <string name="premium_feature_pdf_word_title">PDFからWordへ</string>
+    <string name="premium_feature_pdf_word_desc">PDFを編集可能なドキュメントに変換します</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">スキャンしたPDFを実際に検索できるテキスト付きドキュメントに変換します</string>
+    <string name="premium_feature_compress_title">高度な圧縮</string>
+    <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">見た目をほぼ損なわずにPDFを最大90%圧縮します</string>
+    <string name="premium_feature_unlimited_title">無制限の変換</string>
+    <string name="premium_feature_unlimited_desc">変換回数の1日の上限なし</string>
+    <string name="premium_you_are_premium">あなたはPremiumユーザーです!</string>
+    <string name="premium_enjoy_unlimited">すべての機能を制限なくお楽しみください</string>
+    <string name="premium_processing_purchase">購入を処理中…</string>
+    <string name="premium_get_plan">%1$sを入手 — %2$s</string>
+    <string name="premium_select_plan">プランを選択してください</string>
+    <string name="premium_restore_purchases">購入を復元</string>
+    <string name="premium_continue_free">無料版を続ける</string>
+    <string name="premium_terms">登録すると利用規約とプライバシーポリシーに同意したものとみなされます。サブスクリプションは自動的に更新されます。いつでも解約できます。</string>
+    <string name="premium_active_title">サブスクリプションは有効です</string>
+    <string name="premium_active_body">DocuSmart Premiumのすべての機能にフルアクセスできます</string>
+    <string name="premium_continue">続ける</string>
+    <string name="premium_all_you_get">ご利用いただける内容</string>
+    <string name="premium_choose_plan">プランを選択</string>
+    <string name="premium_recommended">おすすめ</string>
+    <string name="premium_purchase_error">購入を完了できませんでした。もう一度お試しください。</string>
+    <string name="premium_no_purchases_found">過去の購入は見つかりませんでした</string>
+    <string name="premium_purchase_pending">ご購入は確認待ちです(例: 現金でのお支払いなど)。完了すると自動的に有効化されます。</string>
+    <string name="premium_restore_success">購入を復元しました — Premiumが有効です</string>
+
+    <!-- ── スキャナー(追加) ─────────────────────────── -->
+    <string name="scanner_start_error">スキャナーを起動できませんでした: %1$s</string>
+
+    <!-- ── セキュリティ ─────────────────────────────────── -->
+    <string name="security_title">セキュリティ</string>
+    <string name="security_subtitle">ドキュメントを保護</string>
+    <string name="security_what_to_do">何をしますか?</string>
+    <string name="security_secure_folder">セキュアフォルダ</string>
+    <string name="security_secure_folder_desc">PINと生体認証で保護されたファイルを保存します。アクセスできるのはあなただけです。</string>
+    <string name="security_pin_required">PINが必要です</string>
+    <string name="security_pdf_password">PDFパスワード</string>
+    <string name="security_pdf_password_desc">PDFファイルにパスワードを設定・解除します。PINなしですぐにアクセスできます。</string>
+    <string name="security_no_pin">PINなし</string>
+    <string name="security_pin_incorrect">PINが正しくありません</string>
+    <string name="security_biometric_error">エラー: %1$s</string>
+    <string name="security_biometric_not_recognized">生体認証を認識できませんでした</string>
+    <string name="security_biometric_title">DocuSmart — セキュアフォルダ</string>
+    <string name="security_biometric_subtitle">指紋または顔でアクセス</string>
+    <string name="security_biometric_use_pin">PINを使用</string>
+    <string name="security_file_protected_success">ファイルを保護しました</string>
+    <string name="security_file_protect_error">ファイルを保護できませんでした</string>
+    <string name="security_save_downloads_success">ダウンロードに保存しました: %1$s</string>
+    <string name="security_save_downloads_error">ダウンロードに保存できませんでした</string>
+    <string name="pdf_pw_read_error">ファイルを読み取れませんでした</string>
+    <string name="pdf_pw_empty_file">ファイルが空です</string>
+    <string name="pdf_pw_protect_success">PDFを保護しました</string>
+    <string name="pdf_pw_protect_generate_error">保護されたファイルが正しく生成されませんでした(%1$dバイト)</string>
+    <string name="pdf_pw_protect_error">PDFを保護できませんでした: %1$s</string>
+    <string name="pdf_pw_remove_success">パスワードを削除しました</string>
+    <string name="pdf_pw_remove_generate_error">パスワードなしのファイルが正しく生成されませんでした(%1$dバイト)</string>
+    <string name="pdf_pw_remove_error">PDFを処理できませんでした: %1$s</string>
+    <string name="pdf_pw_wrong_password">パスワードが正しくありません</string>
+    <string name="pdf_pw_wrong_password_retry">パスワードが正しくありません。確認してもう一度お試しください。</string>
+    <string name="security_enter_pin">PINを入力してください</string>
+    <string name="security_setup_pin_title">PINを設定</string>
+    <string name="security_setup_pin_desc">4桁のPINでファイルを保護します</string>
+    <string name="security_configure_pin_button">PINを設定</string>
+    <string name="security_use_biometric">生体認証を使用</string>
+    <string name="security_delete_desc">削除</string>
+    <string name="security_confirm_pin">PINを確認</string>
+    <string name="security_create_pin">PINを作成</string>
+    <string name="security_confirm_pin_desc">確認のためPINをもう一度入力してください</string>
+    <string name="security_create_pin_desc">フォルダを保護する4桁のPINを選んでください</string>
+    <string name="security_pins_dont_match">PINが一致しません</string>
+    <string name="security_setup_pin_error">PINを保存できませんでした。もう一度お試しください。</string>
+    <string name="security_forgot_pin">PINをお忘れですか?</string>
+    <string name="security_reset_pin_dialog_title">PINをリセット</string>
+    <string name="security_reset_pin_dialog_body">セキュアフォルダ内のすべてのファイルが削除されます。この操作は取り消せません。</string>
+    <string name="security_reset_pin_confirm">リセットして削除</string>
+    <string name="security_files_protected_count">%1$d件の保護されたファイル</string>
+    <string name="security_protect_new_file">新しいファイルを保護</string>
+    <string name="security_config_section">設定</string>
+    <string name="security_change_pin">PINを変更</string>
+    <string name="security_biometric_unlock">生体認証によるロック解除</string>
+    <string name="security_protected_files_title">保護されたファイル</string>
+    <string name="security_no_protected_files">保護されたファイルはありません</string>
+    <string name="security_no_protected_files_hint">「新しいファイルを保護」をタップしてファイルを追加してください</string>
+    <string name="security_restore">復元</string>
+    <string name="security_protect_file_dialog_title">ファイルを保護</string>
+    <string name="pdf_pw_screen_subtitle">PDFを保護またはロック解除します</string>
+    <string name="pdf_pw_mode_protect_title">PDFを保護</string>
+    <string name="pdf_pw_mode_protect_desc">PDFファイルにパスワードを追加します。パスワードを知っている人だけが開けます。</string>
+    <string name="pdf_pw_mode_remove_title">パスワードを削除</string>
+    <string name="pdf_pw_mode_remove_desc">PDFの保護を解除します。ロックを解除するには現在のパスワードが必要です。</string>
+    <string name="pdf_pw_protect_section_title">パスワードでPDFを保護</string>
+    <string name="pdf_pw_selected_placeholder">選択したPDF</string>
+    <string name="pdf_pw_tap_to_select">タップしてPDFを選択</string>
+    <string name="pdf_pw_ready_to_protect">保護の準備ができたPDF</string>
+    <string name="pdf_pw_new_password_label">新しいパスワード</string>
+    <string name="pdf_pw_confirm_password_label">パスワードを確認</string>
+    <string name="pdf_pw_passwords_dont_match">パスワードが一致しません</string>
+    <string name="pdf_pw_protected_success_title">PDFの保護が完了しました</string>
+    <string name="pdf_pw_save_downloads_button">ダウンロードに保存</string>
+    <string name="pdf_pw_protect_button">PDFを保護</string>
+    <string name="pdf_pw_remove_section_title">PDFのパスワードを削除</string>
+    <string name="pdf_pw_tap_to_select_protected">タップして保護されたPDFを選択</string>
+    <string name="pdf_pw_ready">準備ができたPDF</string>
+    <string name="pdf_pw_current_password_label">PDFの現在のパスワード</string>
+    <string name="pdf_pw_current_password_placeholder">ロック解除するパスワードを入力</string>
+    <string name="pdf_pw_remove_warning">生成されるPDFにはパスワードが設定されず、誰でも開けるようになります。</string>
+    <string name="pdf_pw_removed_success_title">パスワードの削除が完了しました</string>
+    <string name="pdf_pw_remove_button">パスワードを削除</string>
+    <string name="pdf_pw_default_document_name">ドキュメント</string>
+    <string name="scan_result_title">スキャン結果</string>
+    <string name="scan_result_subtitle_pages">%1$dページ</string>
+    <string name="scan_result_preview">プレビュー</string>
+    <string name="scan_result_page_content_desc">%1$dページ目</string>
+    <string name="scan_result_filename_label">ファイル名</string>
+    <string name="scan_result_filename_placeholder">例: スキャンしたドキュメント</string>
+    <string name="scan_result_filename_hint">空欄の場合は自動的に名前が生成されます</string>
+    <string name="scan_result_generating_pdf">PDFを生成中…</string>
+    <string name="scan_result_default_name_prefix">スキャン_%1$s</string>
+    <string name="scan_edit_page_content_desc">%1$dページ目を編集</string>
+    <string name="scan_edit_title">ページを編集</string>
+    <string name="scan_edit_brightness">明るさ: %1$d</string>
+    <string name="scan_edit_contrast">コントラスト: %1$d</string>
+    <string name="scan_edit_scale">スケール</string>
+    <string name="scan_edit_apply">適用</string>
+    <string name="security_file_protected_original_kept">ファイルを保護しました。元のファイルをその場所から削除できませんでした — 完全に削除したい場合は手動で削除してください。</string>
+    <string name="qr_protected_title">保護されたQRコード</string>
+    <string name="qr_protected_desc">このコンテンツはパスワードで保護されています。表示するには入力してください。</string>
+    <string name="qr_unlock">ロック解除</string>
+
+    <!-- ── QR ─────────────────────────────────── -->
+    <string name="qr_reader_title">QRコードを読み取る</string>
+    <string name="qr_reader_subtitle">カメラをQRコードに向けてください</string>
+    <string name="qr_camera_permission_needed">QRコードをスキャンするにはカメラへのアクセスが必要です</string>
+    <string name="qr_allow_camera_access">カメラへのアクセスを許可</string>
+    <string name="qr_center_in_frame">QRコードを枠の中央に合わせてください</string>
+    <string name="qr_type_url_detected">URLを検出しました</string>
+    <string name="qr_type_image_detected">画像を検出しました</string>
+    <string name="qr_type_document_detected">ドキュメントを検出しました</string>
+    <string name="qr_type_email_detected">メールアドレスを検出しました</string>
+    <string name="qr_type_phone_detected">電話番号を検出しました</string>
+    <string name="qr_type_text_detected">テキストを検出しました</string>
+    <string name="qr_detected_title">QRコードを検出しました!</string>
+    <string name="qr_image_content_desc">QRの画像</string>
+    <string name="qr_loading_image">画像を読み込み中…</string>
+    <string name="qr_copied_clipboard">クリップボードにコピーしました</string>
+    <string name="qr_open_browser">ブラウザで開く</string>
+    <string name="qr_copy_url">URLをコピー</string>
+    <string name="qr_open_image">画像を開く</string>
+    <string name="qr_copy_link">リンクをコピー</string>
+    <string name="qr_open_document">ドキュメントを開く</string>
+    <string name="qr_copy_path">パスをコピー</string>
+    <string name="qr_send_email">メールを送信</string>
+    <string name="qr_copy_email">メールアドレスをコピー</string>
+    <string name="qr_call">発信</string>
+    <string name="qr_copy_number">番号をコピー</string>
+    <string name="qr_copy_text">テキストをコピー</string>
+    <string name="qr_scan_another">別のコードをスキャン</string>
+    <string name="qr_creator_title">QRコードを作成</string>
+    <string name="qr_creator_subtitle">URL、テキスト、ファイルなどからQRを生成します</string>
+    <string name="qr_chip_url">URL</string>
+    <string name="qr_chip_text">テキスト</string>
+    <string name="qr_chip_email">メール</string>
+    <string name="qr_chip_phone">電話</string>
+    <string name="qr_chip_image">画像</string>
+    <string name="qr_chip_document">ドキュメント</string>
+    <string name="qr_select_image">画像を選択</string>
+    <string name="qr_image_selected">画像を選択しました ✓</string>
+    <string name="qr_select_document">ドキュメントを選択</string>
+    <string name="qr_document_selected">ドキュメントを選択しました ✓</string>
+    <string name="qr_label_url">ウェブサイトのURL</string>
+    <string name="qr_label_text">メッセージのテキスト</string>
+    <string name="qr_label_email">メールアドレス</string>
+    <string name="qr_label_phone">電話番号</string>
+    <string name="qr_placeholder_text">メッセージを入力…</string>
+    <string name="qr_protect_password">パスワードで保護</string>
+    <string name="qr_protect_password_desc">パスワードを知っている人だけが内容を見られます</string>
+    <string name="qr_password_label">パスワード</string>
+    <string name="qr_password_min_chars">4文字以上</string>
+    <string name="qr_error_select_image">画像を選択してください</string>
+    <string name="qr_error_select_document">ドキュメントを選択してください</string>
+    <string name="qr_error_empty_content">QRの内容を入力してください</string>
+    <string name="qr_error_password_short">パスワードは4文字以上にしてください</string>
+    <string name="qr_generate">QRを生成</string>
+    <string name="qr_your_code">あなたのQRコード</string>
+    <string name="qr_generated_content_desc">生成されたQRコード</string>
+    <string name="qr_protected_badge">保護済み</string>
+    <string name="qr_share_chooser_title">QRを共有</string>
+
+    <!-- ── 学習 ─────────────────────────────────── -->
+    <string name="study_tab_reading">読書</string>
+    <string name="study_tab_notes">メモ</string>
+    <string name="study_tab_pomodoro">ポモドーロ</string>
+    <string name="study_no_document">ドキュメントがありません</string>
+    <string name="study_title">学習モード</string>
+    <string name="study_empty_state_desc">ドキュメントを開いて学習を始めましょう</string>
+    <string name="study_reading_document">ドキュメントを読み上げ中…</string>
+    <string name="study_paragraphs_highlighted_count">%1$d段落 · %2$d件ハイライト</string>
+    <string name="study_stop">停止</string>
+    <string name="study_read_all">すべて読み上げる</string>
+    <string name="study_delete_all_notes_title">すべてのメモを削除</string>
+    <string name="study_delete_all_notes_body">すべてのメモを削除してもよろしいですか?この操作は取り消せません。</string>
+    <string name="study_highlighted_paragraphs_count">ハイライトした段落(%1$d)</string>
+    <string name="study_new_note">新しいメモ</string>
+    <string name="study_note_title_label">メモのタイトル</string>
+    <string name="study_note_title_placeholder">例: 第3章の重要ポイント</string>
+    <string name="study_note_content_placeholder">メモを入力または音声で入力…</string>
+    <string name="study_dictate_note">音声でメモを入力</string>
+    <string name="study_listening">聞き取り中… 話してください</string>
+    <string name="study_save_note">メモを保存</string>
+    <string name="study_untitled_note">無題のメモ</string>
+    <string name="study_no_saved_notes">保存されたメモはありません</string>
+    <string name="study_saved_notes_count">保存されたメモ(%1$d)</string>
+    <string name="study_delete_all">すべて削除</string>
+    <string name="study_no_notes_yet">まだ保存されたメモはありません</string>
+    <string name="study_delete_note_desc">メモを削除</string>
+    <string name="study_voice_prompt">メモを話してください…</string>
+    <string name="study_break_label">休憩</string>
+    <string name="study_study_label">学習</string>
+    <string name="study_in_progress">進行中</string>
+    <string name="study_paused">一時停止中</string>
+    <string name="study_restart">再開始</string>
+    <string name="study_pause">一時停止</string>
+    <string name="study_start">開始</string>
+    <string name="study_pomodoros_completed">完了したポモドーロ</string>
+    <string name="study_pomodoros_hint">4回ごとに長い休憩があります</string>
+    <string name="study_pomodoro_technique_info">ポモドーロ・テクニック: 25分学習 + 5分休憩</string>
+    <string name="study_extract_no_text_found">テキストが見つかりませんでした</string>
+    <string name="study_extract_could_not_open">ファイルを開けませんでした</string>
+    <string name="study_extract_could_not_read">ファイルを読み取れませんでした</string>
+    <string name="study_extract_pdf_no_text">このPDFには抽出可能なテキストが含まれていません。スキャンされたPDFの可能性があります。</string>
+    <string name="study_extract_pdf_error">PDFの読み取り中にエラーが発生しました: %1$s</string>
+    <string name="study_extract_generic_error">エラー: %1$s</string>
+    <string name="study_default_document_name">ドキュメント</string>
+    <string name="study_pomodoro_notification_channel">ポモドーロ</string>
+    <string name="study_pomodoro_notification_text">残り%1$s</string>
+    <string name="study_export_notes">メモをエクスポート</string>
+    <string name="study_export_as_text">テキストとして</string>
+    <string name="study_export_as_pdf">PDFとして</string>
+    <string name="study_export_share_title">メモを共有</string>
+    <string name="study_stats_icon_desc">統計を見る</string>
+    <string name="study_stats_title">学習統計</string>
+    <string name="study_stats_total_reading">合計読み上げ時間</string>
+    <string name="study_stats_reading_value">%1$d時間%2$d分</string>
+    <string name="study_stats_pomodoros_this_week">今週のポモドーロ</string>
+    <string name="study_stats_pomodoros_total">完了したポモドーロの合計</string>
+    <string name="study_stats_empty">まだ統計はありません — 音読を始めるか、最初のポモドーロを完了しましょう。</string>
+
+    <!-- ── ゴミ箱(RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">ゴミ箱</string>
+    <string name="trash_title">ゴミ箱</string>
+    <string name="trash_subtitle">30日後に完全に削除されます</string>
+    <string name="trash_empty_title">ゴミ箱は空です</string>
+    <string name="trash_empty_body">ライブラリ、ホーム、ビューアから削除したドキュメントは、完全に削除される前にここに表示されます。</string>
+    <string name="trash_deletes_today">本日削除されます</string>
+    <string name="trash_days_remaining">残り%1$d日</string>
+    <string name="trash_restore">復元</string>
+    <string name="trash_delete_forever">今すぐ削除</string>
+    <string name="trash_delete_forever_confirm_title">完全に削除しますか?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$sは完全に削除され、復元できなくなります。"</string>
+    <string name="trash_delete_all">すべて削除</string>
+    <string name="trash_delete_all_confirm_title">ゴミ箱を空にしますか?</string>
+    <string name="trash_delete_all_confirm_body">"%1$d個のファイルが完全に削除され、復元できなくなります。"</string>
+    <string name="trash_total_size">ゴミ箱内: %1$s</string>
+    <string name="trash_delete_forever_permission_note">このアプリで作成されていない写真を削除する場合、Androidが確認を求めることがあります。</string>
+
+    <!-- ── アプリのライブラリを使ったファイル選択(item #15、FileSourcePickerDialog) ── -->
+    <string name="filepicker_source_question">ファイルの取得元を選択してください</string>
+    <string name="filepicker_from_device">端末から</string>
+    <string name="filepicker_browse_system_files">システムのファイルを参照</string>
+    <string name="filepicker_from_library">DocuSmartのライブラリから</string>
+    <string name="filepicker_no_library_files">ライブラリにファイルがまだありません</string>
+
+    <!-- ── SAFによるダウンロードフォルダの連携(バックログUX 22行目) ── -->
+    <string name="library_link_downloads_title">もっとドキュメントを見る</string>
+    <string name="library_link_downloads_body">お好みのフォルダを選択して端末内のドキュメントを見つけ、DocuSmartと連携させましょう</string>
+    <string name="library_link_downloads_button">フォルダを連携</string>
+
+    <!-- ── 連携済みフォルダへのショートカット(デバイス/マイファイル/ゴミ箱の隣) ── -->
+    <string name="library_folder_shortcut_label">連携済みフォルダ</string>
+    <string name="library_folder_shortcut_subtitle">開く</string>
+    <string name="library_folder_shortcut_no_app">この端末にはフォルダを開くアプリがありません</string>
+
+    <!-- ── 設定: 連携済みフォルダの管理(バックログUX 22行目) ── -->
+    <string name="settings_linked_downloads_title">連携済みフォルダ</string>
+    <string name="settings_linked_downloads_linked">連携済み · タップして連携を解除</string>
+    <string name="settings_linked_downloads_not_linked">未連携 · タップして連携</string>
+    <string name="settings_unlink_downloads_title">フォルダの連携を解除しますか?</string>
+    <string name="settings_unlink_downloads_body">ライブラリの「デバイス」タブでダウンロードのファイルが表示されなくなります。いつでも再度連携できます。</string>
+    <string name="settings_unlink_downloads_confirm">連携を解除</string>
+</resources>

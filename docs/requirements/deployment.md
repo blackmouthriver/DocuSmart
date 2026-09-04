@@ -533,9 +533,9 @@ detalle de qué se revisó.
   anuncios y eventualmente compras, vale la pena que alguien con criterio
   legal le eche un vistazo antes de publicar, sobre todo si en el futuro se
   agregan más categorías de datos.
-- Solo en español por ahora — la app soporta 5 idiomas, pero la URL única ya
-  desbloquea la publicación; traducir la política es una mejora aparte, no
-  bloqueante.
+- Solo en español por ahora — la app soporta 10 idiomas (es/en/de/pt/ru/
+  ja/ko/zh/it/fr, ampliado 2026-09-04), pero la URL única ya desbloquea la
+  publicación; traducir la política es una mejora aparte, no bloqueante.
 
 ### 5.2 Formulario de seguridad de datos de Play Console
 

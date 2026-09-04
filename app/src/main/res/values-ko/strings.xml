@@ -1,0 +1,814 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── 내비게이션 ─────────────────────────────── -->
+    <string name="nav_home">홈</string>
+    <string name="nav_library">보관함</string>
+    <string name="nav_converter">변환</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">설정</string>
+
+    <!-- ── 홈 ───────────────────────────────────── -->
+    <string name="home_title">나만의 문서를\n한곳에서</string>
+    <string name="home_subtitle">파일을 열고, 변환하고\n쉽게 관리하세요</string>
+    <string name="home_open">열기</string>
+    <string name="home_convert">변환</string>
+    <string name="home_quick_access">빠른 실행</string>
+    <string name="home_scan">스캔</string>
+    <string name="home_img_pdf">이미지→PDF</string>
+    <string name="home_security">보안</string>
+    <string name="home_study">학습</string>
+    <string name="home_recent">최근 항목</string>
+    <string name="home_see_all">전체 보기</string>
+    <string name="home_no_recent_title">최근 문서 없음</string>
+    <string name="home_no_recent_desc">파일을 열면 여기에 표시됩니다</string>
+    <string name="home_open_file_action">파일 열기</string>
+    <string name="home_share_document">%1$s 공유</string>
+    <string name="home_qr_read">QR 읽기</string>
+    <string name="home_qr_create">QR 만들기</string>
+    <string name="home_scanner_sheet_title">스캐너</string>
+    <string name="home_scanner_sheet_subtitle">옵션을 선택하세요</string>
+    <string name="home_scanner_option_scan_title">문서 스캔</string>
+    <string name="home_scanner_option_scan_subtitle">ML Kit로 자동 촬영</string>
+    <string name="home_scanner_option_qr_read_subtitle">URL, 텍스트 등 감지</string>
+
+    <!-- ── 보관함 ─────────────────────────────── -->
+    <string name="library_title">보관함</string>
+    <string name="library_subtitle">모든 문서</string>
+    <string name="library_search">보관함에서 검색…</string>
+    <string name="library_documents">문서</string>
+    <string name="library_tab_device">기기</string>
+    <string name="library_tab_app_files">내 파일</string>
+    <string name="library_tab_file_count">파일 %1$d개</string>
+
+    <!-- ── 변환기 ────────────────────────────── -->
+    <string name="converter_title">변환기</string>
+    <string name="converter_subtitle">문서를 쉽게 변환하세요</string>
+    <string name="converter_select">무엇을 변환하시겠어요?</string>
+    <string name="converter_save">다운로드에 저장</string>
+
+    <!-- ── PDF 도구 ──────────────────────────────── -->
+    <string name="pdf_tools_title">PDF 도구</string>
+    <string name="pdf_tools_subtitle">PDF를 빠르게 관리하세요</string>
+    <string name="pdf_tools_ad_not_available">광고를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="pdf_merge">PDF 합치기</string>
+    <string name="pdf_split">PDF 분할</string>
+    <string name="pdf_compress">PDF 압축</string>
+    <string name="pdf_rotate">PDF 회전</string>
+    <string name="pdf_number_pages">페이지 번호 매기기</string>
+    <string name="pdf_watermark">워터마크</string>
+    <string name="pdf_reorder_pages">페이지 재정렬</string>
+    <string name="pdf_compare">PDF 비교</string>
+    <string name="pdf_redact">콘텐츠 가리기</string>
+    <string name="pdf_crop">페이지 자르기</string>
+    <string name="pdf_edit_text">텍스트 편집</string>
+    <string name="pdf_sign">PDF 서명</string>
+    <string name="pdf_fill_form">양식 작성</string>
+    <string name="pdf_ocr">고급 OCR</string>
+
+    <!-- ── 설정 ────────────────────────────────── -->
+    <string name="settings_title">설정</string>
+    <string name="settings_subtitle">나만의 환경으로 꾸며보세요</string>
+    <string name="settings_premium">DocuSmart 프리미엄</string>
+    <string name="settings_premium_subtitle">모든 기능 잠금 해제</string>
+    <string name="settings_language">언어</string>
+    <string name="settings_theme">테마</string>
+    <string name="settings_accent_color">강조 색상</string>
+    <string name="settings_select_accent_color">강조 색상 선택</string>
+    <string name="settings_font_scale">글자 크기</string>
+    <string name="settings_select_font_scale">글자 크기 선택</string>
+    <string name="settings_storage">저장 공간</string>
+    <string name="settings_storage_subtitle">생성된 파일 보기</string>
+    <string name="settings_about">정보</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">언어 선택</string>
+    <string name="settings_select_theme">테마 선택</string>
+    <string name="settings_close">닫기</string>
+    <string name="settings_language_subtitle">앱 언어를 선택하세요</string>
+    <string name="settings_section_personalization">개인 설정</string>
+    <string name="settings_tutorial">튜토리얼 보기</string>
+    <string name="settings_tutorial_subtitle">주요 기능 다시보기</string>
+    <string name="settings_section_privacy">개인정보 및 보안</string>
+    <string name="settings_privacy_item">개인정보</string>
+    <string name="settings_privacy_item_subtitle">데이터 정책 및 권한</string>
+    <string name="settings_ads_privacy_options">광고 동의</string>
+    <string name="settings_ads_privacy_options_subtitle">광고 개인정보 보호 설정 변경</string>
+    <string name="settings_share_app">DocuSmart 공유</string>
+    <string name="settings_share_app_subtitle">지인에게 앱을 추천해 보세요</string>
+    <string name="settings_rate">스토어에서 평가하기</string>
+    <string name="settings_rate_subtitle">DocuSmart가 마음에 드시나요? 리뷰를 남겨주세요!</string>
+    <string name="settings_section_support">지원</string>
+    <string name="settings_help">도움말</string>
+    <string name="settings_help_subtitle">자주 묻는 질문</string>
+    <string name="settings_section_system">시스템</string>
+    <string name="settings_reset">설정 초기화</string>
+    <string name="settings_reset_subtitle">기본값으로 되돌리기</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">확인</string>
+    <string name="settings_storage_conversions">변환</string>
+    <string name="settings_storage_total">전체</string>
+    <string name="settings_storage_files_unit">파일</string>
+    <string name="settings_storage_clear_cache">캐시 지우기</string>
+    <string name="settings_privacy_body">DocuSmart는 사용자의 개인정보를 소중히 여깁니다. 문서는 외부 서버에 업로드되지 않으며, 모든 처리는 기기 내에서 로컬로 이루어집니다.</string>
+    <string name="settings_privacy_manage_permissions">시스템 권한 관리</string>
+    <string name="settings_help_q1">이미지를 PDF로 변환하려면 어떻게 하나요?</string>
+    <string name="settings_help_a1">변환 → 이미지 → 이미지 선택 → 변환 터치 순서로 진행하세요.</string>
+    <string name="settings_help_q2">파일은 어디에 저장되나요?</string>
+    <string name="settings_help_a2">생성된 파일은 기기의 다운로드 폴더에 저장됩니다.</string>
+    <string name="settings_help_q3">즐겨찾기는 어떻게 추가하나요?</string>
+    <string name="settings_help_a3">문서의 하트 아이콘을 터치하거나 ⋮ 메뉴를 이용하세요.</string>
+    <string name="settings_help_q4">내 문서는 안전한가요?</string>
+    <string name="settings_help_a4">네. 모든 처리는 로컬에서 이루어지며, 어떤 파일도 기기 밖으로 나가지 않습니다.</string>
+    <string name="settings_reset_body">테마는 라이트 모드로, 언어는 스페인어로, 글자 크기는 보통으로 초기화되고 캐시가 삭제됩니다. 문서는 삭제되지 않습니다. 계속하시겠습니까?</string>
+    <string name="settings_reset_confirm">초기화</string>
+    <string name="settings_about_dialog_title">DocuSmart 정보</string>
+    <string name="settings_about_body">스마트 문서 뷰어 및 변환기입니다. 파일을 빠르고 안전하게 관리, 변환, 정리하세요.</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── 테마 ──────────────────────────────────── -->
+    <string name="theme_light">라이트</string>
+    <string name="theme_dark">다크</string>
+    <string name="theme_system">시스템</string>
+    <string name="accent_color_blue">파랑</string>
+    <string name="accent_color_purple">보라</string>
+    <string name="accent_color_green">초록</string>
+    <string name="accent_color_orange">주황</string>
+    <string name="accent_color_pink">분홍</string>
+    <string name="accent_color_teal">청록</string>
+    <string name="font_scale_normal">보통</string>
+    <string name="font_scale_large">크게</string>
+    <string name="font_scale_extra_large">아주 크게</string>
+
+    <!-- ── 스캐너 ────────────────────────────────── -->
+    <string name="scanner_title">스캐너 시작 중</string>
+    <string name="scanner_hint">문서를 준비하고\n카메라를 향하게 하세요</string>
+    <string name="scanner_result_title">스캔된 문서</string>
+    <string name="scanner_generate">PDF 생성</string>
+    <string name="scanner_again">다시 스캔</string>
+    <string name="scanner_share">PDF 공유</string>
+    <string name="scanner_back">홈으로 돌아가기</string>
+
+    <!-- ── 뷰어 ──────────────────────────────────── -->
+    <string name="viewer_error">문서를 여는 중 오류가 발생했습니다</string>
+    <string name="viewer_back">뒤로</string>
+    <string name="viewer_rendering">문서를 렌더링하는 중…</string>
+    <string name="viewer_unsupported">이 형식은 내장 뷰어에서 지원되지 않습니다.</string>
+    <string name="viewer_open_other">다른 앱으로 열기</string>
+    <string name="viewer_more_options">더보기</string>
+    <string name="viewer_convert">변환</string>
+    <string name="viewer_create_qr">QR 만들기</string>
+    <string name="viewer_rename">이름 바꾸기</string>
+    <string name="viewer_delete">삭제</string>
+    <string name="viewer_rename_title">문서 이름 바꾸기</string>
+    <string name="viewer_rename_label">파일 이름</string>
+    <string name="viewer_rename_empty_error">이름을 비워둘 수 없습니다</string>
+    <string name="viewer_delete_confirm_title">이 문서를 삭제하시겠어요?</string>
+    <string name="viewer_delete_confirm_body">"%1$s이(가) 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다."</string>
+
+    <!-- ── 문서 메뉴 (홈/보관함, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">즐겨찾기에 추가</string>
+    <string name="doc_item_remove_favorite">즐겨찾기에서 제거</string>
+    <string name="doc_item_rename_title">파일 이름 바꾸기</string>
+
+    <!-- ── 공통 ────────────────────────────────── -->
+    <string name="general_save">저장</string>
+    <string name="general_cancel">취소</string>
+    <string name="general_back">뒤로</string>
+    <string name="general_share">공유</string>
+    <string name="general_delete">삭제</string>
+    <string name="general_close">닫기</string>
+    <string name="general_saved_downloads">다운로드에 저장됨</string>
+
+    <!-- ── PDF 도구 설명 ─────────────────────── -->
+    <string name="pdf_merge_desc">여러 PDF를 하나로 합칩니다</string>
+    <string name="pdf_split_desc">PDF에서 페이지를 추출합니다</string>
+    <string name="pdf_compress_desc">파일 크기를 줄입니다</string>
+    <string name="pdf_rotate_desc">문서의 페이지를 회전합니다</string>
+    <string name="pdf_number_pages_desc">페이지 하단에 번호를 추가합니다</string>
+    <string name="pdf_watermark_desc">문서 위에 텍스트를 겹쳐 표시합니다</string>
+    <string name="pdf_reorder_pages_desc">개별 페이지를 끌어서 옮기거나 삭제합니다</string>
+    <string name="pdf_compare_desc">두 버전 간의 차이를 찾습니다</string>
+    <string name="pdf_redact_desc">민감한 텍스트와 이미지를 되돌릴 수 없게 제거합니다</string>
+    <string name="pdf_crop_desc">각 페이지의 불필요한 여백을 제거합니다</string>
+    <string name="pdf_edit_text_desc">문서에서 기존 텍스트를 찾아 바꿉니다</string>
+    <string name="pdf_sign_desc">서명을 그려서 문서에 찍습니다</string>
+    <string name="pdf_fill_form_desc">PDF 양식의 텍스트 필드를 감지하고 채웁니다</string>
+    <string name="pdf_ocr_desc">스캔된 PDF의 텍스트를 인식하여 검색 가능하게 만듭니다</string>
+
+    <!-- ── 일일 한도 다이얼로그 (변환기 및 PDF 도구 공용) ── -->
+    <string name="daily_limit_title">일일 한도 도달</string>
+    <string name="daily_limit_body">오늘 %3$s을(를) %2$d회 중 %1$d회 사용했습니다.</string>
+    <string name="daily_limit_resets_tomorrow">한도는 내일 초기화됩니다.</string>
+    <string name="daily_limit_watch_ad">광고 보기 → +1회 사용</string>
+    <string name="daily_limit_ad_not_ready">아직 광고를 사용할 수 없습니다</string>
+    <string name="daily_limit_get_premium">프리미엄으로 업그레이드 → 한도 없음</string>
+    <string name="pdf_tools_daily_limit_label">이 도구의 사용 횟수</string>
+    <string name="converter_daily_limit_label">변환</string>
+
+    <!-- ── PDF 도구: 메인 화면 및 결과 카드 ── -->
+    <string name="pdf_tools_back_to_tools">도구로 돌아가기</string>
+    <string name="pdf_tools_usage_today">오늘 사용량: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">다운로드에 저장</string>
+    <string name="pdf_tools_share">PDF 공유</string>
+    <string name="pdf_tools_share_error">파일을 공유할 수 없습니다</string>
+    <string name="pdf_tools_save_error">다운로드에 저장할 수 없습니다</string>
+    <string name="pdf_tools_new_operation">새 작업</string>
+    <string name="pdf_tools_default_filename">파일.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">PDF 선택</string>
+    <string name="pdf_tools_filename_label">출력 파일 이름</string>
+    <string name="pdf_tools_filename_placeholder">예: 통합_문서</string>
+    <string name="pdf_tools_filename_hint">비워두면 자동으로 이름이 생성됩니다</string>
+
+    <!-- ── PDF 합치기 ── -->
+    <string name="pdf_merge_subtitle">PDF 2개 이상을 선택하여 하나로 합치세요</string>
+    <string name="pdf_merge_select_prompt">터치하여 PDF 선택</string>
+    <string name="pdf_merge_add_more">PDF 추가</string>
+    <string name="pdf_merge_order_hint">PDF는 표시된 순서대로 합쳐집니다</string>
+    <string name="pdf_merge_remove_desc">제거</string>
+    <string name="pdf_merge_file_fallback">파일 %1$d</string>
+    <string name="pdf_merge_progress">PDF %1$d개를 합치는 중…</string>
+    <string name="pdf_merge_select_at_least_2">PDF를 2개 이상 선택하세요</string>
+    <string name="pdf_merge_execute">PDF %1$d개 합치기</string>
+    <string name="pdf_merge_min_pdfs_error">합치려면 PDF를 2개 이상 선택하세요</string>
+    <string name="pdf_merge_read_error">선택한 PDF에서 페이지를 하나도 읽을 수 없습니다.</string>
+    <string name="pdf_merge_generate_error">병합된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_merge_success">PDF 병합 완료 — 파일 %1$d개, 페이지 %2$d개</string>
+    <string name="pdf_merge_error">PDF 병합 오류: %1$s</string>
+
+    <!-- ── PDF 분할 ── -->
+    <string name="pdf_split_subtitle">PDF에서 페이지 범위를 추출하세요</string>
+    <string name="pdf_split_selected">선택된 PDF</string>
+    <string name="pdf_split_range_title">추출할 페이지 범위</string>
+    <string name="pdf_split_from_page">시작 페이지</string>
+    <string name="pdf_split_to_page">끝 페이지</string>
+    <string name="pdf_split_summary">페이지 %1$d개가 추출됩니다 · 페이지: %2$d ~ %3$d</string>
+    <string name="pdf_split_progress">PDF 분할 중…</string>
+    <string name="pdf_split_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_split_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_split_range_too_small">범위는 최소 2페이지를 포함해야 합니다. PDF에는 %1$d페이지가 있습니다.</string>
+    <string name="pdf_split_generate_error">분할된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_split_success">PDF 분할 완료: 페이지 %1$d개 추출됨 · %2$d KB</string>
+    <string name="pdf_split_error">분할 오류: %1$s</string>
+
+    <!-- ── PDF 압축 ── -->
+    <string name="pdf_compress_subtitle">가독성을 유지하며 PDF 크기를 줄이세요</string>
+    <string name="pdf_compress_ready">압축할 PDF 준비 완료</string>
+    <string name="pdf_compress_level_title">압축 수준</string>
+    <string name="pdf_compress_level_high_quality">고화질</string>
+    <string name="pdf_compress_level_balanced">균형</string>
+    <string name="pdf_compress_level_high_compression">고압축</string>
+    <string name="pdf_compress_level_max_compression">최대 압축</string>
+    <string name="pdf_compress_smaller">더 작게</string>
+    <string name="pdf_compress_better_quality">더 좋은 화질</string>
+    <string name="pdf_compress_reduction_10_20">예상 감소율: 10-20%</string>
+    <string name="pdf_compress_reduction_30_50">예상 감소율: 30-50%</string>
+    <string name="pdf_compress_reduction_50_70">예상 감소율: 50-70%</string>
+    <string name="pdf_compress_reduction_70_85">예상 감소율: 70-85%</string>
+    <string name="pdf_compress_progress">PDF 압축 중…</string>
+    <string name="pdf_compress_read_error">파일을 읽을 수 없습니다. 올바른 PDF인지 확인하세요.</string>
+    <string name="pdf_compress_empty_file">PDF 파일이 비어 있거나 손상되었습니다.</string>
+    <string name="pdf_compress_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_compress_generate_error">압축된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_compress_already_optimized">PDF가 이미 최적화되어 있습니다 · 크기: %1$d KB</string>
+    <string name="pdf_compress_success">압축 전: %1$d KB → 압축 후: %2$d KB · 감소율: %3$d%%</string>
+    <string name="pdf_compress_error">압축 오류: %1$s</string>
+
+    <!-- ── PDF 회전 ── -->
+    <string name="pdf_rotate_subtitle">문서의 모든 페이지를 회전합니다</string>
+    <string name="pdf_rotate_ready">회전할 PDF 준비 완료</string>
+    <string name="pdf_rotate_preview_title">미리보기 및 회전 각도</string>
+    <string name="pdf_rotate_preview_placeholder">PDF를 선택하면\n미리보기가 표시됩니다</string>
+    <string name="pdf_rotate_loading_preview">미리보기 불러오는 중…</string>
+    <string name="pdf_rotate_preview_desc">회전된 미리보기</string>
+    <string name="pdf_rotate_angle_90">시계 방향 90° 회전</string>
+    <string name="pdf_rotate_angle_180">180° 회전 (거꾸로)</string>
+    <string name="pdf_rotate_angle_270">반시계 방향 90° 회전</string>
+    <string name="pdf_rotate_progress">PDF %1$d° 회전 중…</string>
+    <string name="pdf_rotate_execute">PDF %1$d° 회전</string>
+    <string name="pdf_rotate_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_rotate_generate_error">회전된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_rotate_success">PDF가 %1$d° 회전되었습니다</string>
+    <string name="pdf_rotate_error">PDF 회전 오류: %1$s</string>
+
+    <!-- ── 페이지 번호 매기기 ── -->
+    <string name="pdf_number_pages_subtitle">각 페이지 하단에 페이지 번호를 추가합니다</string>
+    <string name="pdf_number_pages_ready">번호를 매길 PDF 준비 완료</string>
+    <string name="pdf_number_pages_format_title">번호 형식</string>
+    <string name="pdf_number_pages_format_number_only">번호</string>
+    <string name="pdf_number_pages_format_number_of_total">번호 / 전체</string>
+    <string name="pdf_number_pages_format_page_of_total">페이지 X</string>
+    <string name="pdf_number_pages_example_number_only">예시: 3</string>
+    <string name="pdf_number_pages_example_number_of_total">예시: 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">예시: 10페이지 중 3페이지</string>
+    <string name="pdf_number_pages_progress">페이지 번호 매기는 중…</string>
+    <string name="pdf_number_pages_execute">페이지 번호 매기기</string>
+    <string name="pdf_number_pages_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_number_pages_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_number_pages_generate_error">번호가 매겨진 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_number_pages_success">PDF에 번호 매기기 완료 — 페이지 %1$d개</string>
+    <string name="pdf_number_pages_error">페이지 번호 매기기 오류: %1$s</string>
+    <string name="pdf_number_pages_footer_template">%1$d / %2$d 페이지</string>
+
+    <!-- ── 워터마크 ── -->
+    <string name="pdf_watermark_subtitle">각 페이지에 대각선의 반투명 텍스트를 겹쳐 표시합니다</string>
+    <string name="pdf_watermark_ready">워터마크를 적용할 PDF 준비 완료</string>
+    <string name="pdf_watermark_text_label">워터마크 텍스트</string>
+    <string name="pdf_watermark_text_placeholder">예: 기밀</string>
+    <string name="pdf_watermark_hint">텍스트가 각 페이지에 대각선의 반투명 형태로 표시됩니다</string>
+    <string name="pdf_watermark_progress">워터마크 적용 중…</string>
+    <string name="pdf_watermark_execute">워터마크 적용</string>
+    <string name="pdf_watermark_empty_text_error">워터마크에 사용할 텍스트를 입력하세요</string>
+    <string name="pdf_watermark_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_watermark_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_watermark_generate_error">워터마크가 적용된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_watermark_success">워터마크 적용 완료 — 페이지 %1$d개</string>
+    <string name="pdf_watermark_error">워터마크 적용 오류: %1$s</string>
+
+    <!-- ── 페이지 재정렬 ── -->
+    <string name="pdf_reorder_pages_subtitle">미리보기를 끌어서 순서를 바꾸거나 페이지를 삭제하세요</string>
+    <string name="pdf_reorder_pages_ready">재정렬할 PDF 준비 완료</string>
+    <string name="pdf_reorder_pages_hint">드래그 아이콘을 길게 눌러 페이지를 다른 위치로 이동하세요</string>
+    <string name="pdf_reorder_pages_page_label">페이지 %1$d</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">드래그하여 순서 변경</string>
+    <string name="pdf_reorder_pages_progress">새로운 순서 저장 중…</string>
+    <string name="pdf_reorder_pages_execute">변경 사항 저장</string>
+    <string name="pdf_reorder_pages_empty_order_error">최소 한 페이지는 남겨야 합니다</string>
+    <string name="pdf_reorder_pages_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_reorder_pages_generate_error">재정렬된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_reorder_pages_success">PDF 업데이트 완료 — 페이지 %1$d개</string>
+    <string name="pdf_reorder_pages_error">페이지 재정렬 오류: %1$s</string>
+
+    <!-- ── PDF 비교 ── -->
+    <string name="pdf_compare_subtitle">비교할 PDF 두 개를 선택하세요</string>
+    <string name="pdf_compare_document_a">문서 A</string>
+    <string name="pdf_compare_document_b">문서 B</string>
+    <string name="pdf_compare_ready">비교할 PDF 준비 완료</string>
+    <string name="pdf_compare_progress">문서 비교 중…</string>
+    <string name="pdf_compare_execute">PDF 비교</string>
+    <string name="pdf_compare_read_error_a">문서 A를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_compare_read_error_b">문서 B를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_compare_generate_error">비교 리포트를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_compare_identical">두 문서가 동일합니다</string>
+    <string name="pdf_compare_differences_found">%2$d페이지 중 %1$d페이지에서 차이가 발견되었습니다</string>
+    <string name="pdf_compare_error">PDF 비교 오류: %1$s</string>
+    <string name="pdf_compare_report_title">비교 리포트</string>
+    <string name="pdf_compare_report_page_header">페이지 %1$d</string>
+    <string name="pdf_compare_report_page_only_in_a">이 페이지는 문서 A에만 존재합니다</string>
+    <string name="pdf_compare_report_page_only_in_b">이 페이지는 문서 B에만 존재합니다</string>
+    <string name="pdf_compare_report_only_in_a_line">A에만 있음: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">B에만 있음: %1$s</string>
+
+    <!-- ── 콘텐츠 가리기 ── -->
+    <string name="pdf_redact_subtitle">가리고 싶은 영역 위에 사각형을 그리세요</string>
+    <string name="pdf_redact_ready">가릴 PDF 준비 완료</string>
+    <string name="pdf_redact_page_indicator">%2$d페이지 중 %1$d페이지</string>
+    <string name="pdf_redact_prev_page">이전 페이지</string>
+    <string name="pdf_redact_next_page">다음 페이지</string>
+    <string name="pdf_redact_loading_preview">미리보기 불러오는 중…</string>
+    <string name="pdf_redact_preview_desc">페이지 미리보기</string>
+    <string name="pdf_redact_draw_hint">미리보기 위에서 드래그하여 가릴 영역을 표시하세요</string>
+    <string name="pdf_redact_zones_marked">%1$d개 영역 표시됨</string>
+    <string name="pdf_redact_undo">실행 취소</string>
+    <string name="pdf_redact_clear_all">모두 지우기</string>
+    <string name="pdf_redact_execute">PDF 가리기</string>
+    <string name="pdf_redact_progress">콘텐츠 가리는 중…</string>
+    <string name="pdf_redact_empty_rects_error">가릴 영역을 하나 이상 표시하세요</string>
+    <string name="pdf_redact_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_redact_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_redact_generate_error">가려진 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_redact_success">%1$d개 영역이 성공적으로 가려졌습니다</string>
+    <string name="pdf_redact_error">PDF 가리기 오류: %1$s</string>
+
+    <!-- ── 페이지 자르기 ── -->
+    <string name="pdf_crop_subtitle">자를 여백을 조절하고 결과를 미리 확인하세요</string>
+    <string name="pdf_crop_ready">자를 PDF 준비 완료</string>
+    <string name="pdf_crop_preview_title">미리보기</string>
+    <string name="pdf_crop_preview_placeholder">PDF를 선택하면 미리보기가 표시됩니다</string>
+    <string name="pdf_crop_loading_preview">미리보기 불러오는 중…</string>
+    <string name="pdf_crop_preview_desc">잘린 미리보기</string>
+    <string name="pdf_crop_margin_label">자를 여백: %1$d%%</string>
+    <string name="pdf_crop_execute">PDF 자르기</string>
+    <string name="pdf_crop_progress">페이지 자르는 중…</string>
+    <string name="pdf_crop_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_crop_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_crop_generate_error">잘린 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_crop_success">PDF 자르기 완료 — 여백 %1$d%%</string>
+    <string name="pdf_crop_error">PDF 자르기 오류: %1$s</string>
+
+    <!-- ── 텍스트 편집 ── -->
+    <string name="pdf_edit_text_subtitle">찾을 텍스트와 바꿀 텍스트를 입력하세요</string>
+    <string name="pdf_edit_text_ready">편집할 PDF 준비 완료</string>
+    <string name="pdf_edit_text_search_label">찾기</string>
+    <string name="pdf_edit_text_search_placeholder">찾을 텍스트</string>
+    <string name="pdf_edit_text_replace_label">바꿀 내용</string>
+    <string name="pdf_edit_text_replace_placeholder">바꿀 텍스트 (삭제하려면 비워두세요)</string>
+    <string name="pdf_edit_text_hint">대소문자를 구분하지 않고 검색하며, 모든 항목이 바뀝니다</string>
+    <string name="pdf_edit_text_execute">변경 사항 적용</string>
+    <string name="pdf_edit_text_progress">텍스트 편집 중…</string>
+    <string name="pdf_edit_text_empty_search_error">찾을 텍스트를 입력하세요</string>
+    <string name="pdf_edit_text_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_edit_text_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_edit_text_no_matches_error">문서에서 해당 텍스트를 찾을 수 없습니다</string>
+    <string name="pdf_edit_text_generate_error">편집된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_edit_text_success">%1$d개 항목이 성공적으로 바뀌었습니다</string>
+    <string name="pdf_edit_text_error">PDF 편집 오류: %1$s</string>
+
+    <!-- ── PDF 서명 ── -->
+    <string name="pdf_sign_subtitle">페이지를 선택하고 손가락으로 서명을 그리세요</string>
+    <string name="pdf_sign_ready">서명할 PDF 준비 완료</string>
+    <string name="pdf_sign_page_indicator">%2$d페이지 중 %1$d페이지</string>
+    <string name="pdf_sign_prev_page">이전 페이지</string>
+    <string name="pdf_sign_next_page">다음 페이지</string>
+    <string name="pdf_sign_draw_label">서명</string>
+    <string name="pdf_sign_draw_hint">위 상자 안에 손가락으로 서명을 그리세요</string>
+    <string name="pdf_sign_hint">아직 서명을 그리지 않았습니다</string>
+    <string name="pdf_sign_captured">서명이 등록되었습니다</string>
+    <string name="pdf_sign_clear">지우기</string>
+    <string name="pdf_sign_execute">PDF 서명</string>
+    <string name="pdf_sign_progress">문서 서명 중…</string>
+    <string name="pdf_sign_empty_signature_error">계속하기 전에 서명을 그리세요</string>
+    <string name="pdf_sign_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_sign_no_pages">PDF에 페이지가 없습니다.</string>
+    <string name="pdf_sign_generate_error">서명된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_sign_success">PDF 서명 완료 — %1$d페이지</string>
+    <string name="pdf_sign_error">PDF 서명 오류: %1$s</string>
+
+    <!-- ── 양식 작성 ── -->
+    <string name="pdf_fill_form_subtitle">양식 필드가 있는 PDF를 선택하고 내용을 채우세요</string>
+    <string name="pdf_fill_form_ready">작성할 PDF 준비 완료</string>
+    <string name="pdf_fill_form_detecting">양식 필드 감지 중…</string>
+    <string name="pdf_fill_form_no_fields">이 PDF에는 텍스트 양식 필드가 없습니다</string>
+    <string name="pdf_fill_form_fields_title">%1$d개 필드 감지됨</string>
+    <string name="pdf_fill_form_execute">양식 작성</string>
+    <string name="pdf_fill_form_progress">양식 작성 중…</string>
+    <string name="pdf_fill_form_empty_values_error">채울 값이 없습니다</string>
+    <string name="pdf_fill_form_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_fill_form_no_fields_error">이 PDF에는 작성할 양식 필드가 없습니다</string>
+    <string name="pdf_fill_form_generate_error">양식이 채워진 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_fill_form_success">%1$d개 필드가 성공적으로 채워졌습니다</string>
+    <string name="pdf_fill_form_error">양식 작성 오류: %1$s</string>
+    <string name="pdf_ocr_subtitle">텍스트를 인식할 스캔 PDF를 선택하세요</string>
+    <string name="pdf_ocr_ready">인식할 PDF 준비 완료</string>
+    <string name="pdf_ocr_info">스캔된 각 페이지 위에 보이지 않는 텍스트 레이어가 추가되어 겉모습은 그대로 유지됩니다 — 결과 PDF는 검색과 텍스트 선택이 가능해집니다. 페이지당 몇 초가 걸릴 수 있습니다.</string>
+    <string name="pdf_ocr_execute">텍스트 인식</string>
+    <string name="pdf_ocr_progress">텍스트 인식 중…</string>
+    <string name="pdf_ocr_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_ocr_no_pages">처리할 페이지가 PDF에 없습니다</string>
+    <string name="pdf_ocr_already_has_text">이 PDF는 모든 페이지에 이미 선택 가능한 텍스트가 있습니다 — OCR을 적용할 필요가 없습니다</string>
+    <string name="pdf_ocr_no_text_found">스캔된 PDF에서 텍스트를 인식하지 못했습니다</string>
+    <string name="pdf_ocr_generate_error">인식된 텍스트가 포함된 PDF를 생성하는 중 오류가 발생했습니다.</string>
+    <string name="pdf_ocr_success">%1$d페이지 처리 완료, %2$d개 단어 인식됨</string>
+    <string name="pdf_ocr_error">텍스트 인식 오류: %1$s</string>
+
+    <!-- ── 홈 빈 상태 ───────────────────────────── -->
+
+    <!-- ── 변환기 카테고리 ──────────────────────── -->
+    <string name="converter_select_files">터치하여 %1$s 선택</string>
+    <string name="converter_files_selected">파일 %1$d개 선택됨</string>
+    <string name="converter_formats">형식: %1$s</string>
+    <string name="converter_capture_camera">카메라로 촬영</string>
+    <string name="converter_to_format">%1$s(으)로 변환</string>
+    <string name="converter_file_name_label">파일 이름</string>
+    <string name="converter_file_name_placeholder">자동 이름</string>
+    <string name="format_name_image">이미지</string>
+    <string name="converter_success_title">변환 완료!</string>
+    <string name="converter_success_page_count_size">%1$d페이지 · %2$d KB</string>
+    <string name="converter_saved_to_downloads">다운로드에 저장됨</string>
+    <string name="converter_share">파일 공유</string>
+    <string name="converter_convert_another">다른 파일 변환</string>
+    <string name="general_back_action">뒤로</string>
+
+    <!-- ── 변환기: 일괄 변환 (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">각 파일의 원래 이름이 유지됩니다</string>
+    <string name="converter_convert_batch_button">파일 %1$d개 변환</string>
+    <string name="converter_batch_success_title">%2$d개 중 %1$d개 파일 변환됨</string>
+    <string name="converter_batch_save_all">모두 다운로드에 저장</string>
+    <string name="converter_batch_convert_another">다른 배치 변환</string>
+    <string name="converter_progress_title">변환 중…</string>
+    <string name="converter_progress_subtitle">파일 %1$d개 처리 중</string>
+    <string name="converter_progress_footer">잠시만 기다려 주세요. 앱을 종료하지 마세요</string>
+
+    <string name="splash_tagline">스캔 · 정리</string>
+
+    <!-- ── 온보딩 ─────────────────────────────────── -->
+    <string name="onboarding_1_title">DocuSmart에 오신 것을 환영합니다</string>
+    <string name="onboarding_1_desc">스마트한 문서 관리 도구입니다. 파일을 빠르고 안전하게 열고, 정리하고, 변환하세요.</string>
+    <string name="onboarding_2_title">모든 형식을 변환하세요</string>
+    <string name="onboarding_2_desc">PDF, Word, Excel, PowerPoint, 이미지 등 17가지가 넘는 변환 유형을 손쉽게 이용하세요.</string>
+    <string name="onboarding_3_title">문서를 안전하게 보호하세요</string>
+    <string name="onboarding_3_desc">PIN이나 지문으로 보호되는 개인 보관함에 파일을 저장하세요. 개인정보 보호가 최우선입니다.</string>
+    <string name="onboarding_4_title">학습 모드</string>
+    <string name="onboarding_4_desc">텍스트 음성 변환으로 읽고, 단락을 강조 표시하고, 음성으로 메모하고, 뽀모도로 타이머를 사용하세요.</string>
+    <string name="onboarding_5_title">문서를 연결하세요</string>
+    <string name="onboarding_5_desc">파일이 저장된 기기 폴더를 선택하면 보관함에서 확인할 수 있습니다. 본인만 접근할 수 있으며, 지금 하거나 나중에 설정에서 할 수 있습니다.</string>
+    <string name="onboarding_folder_linked">연결됨: %1$s</string>
+    <string name="onboarding_folder_change">폴더 변경</string>
+    <string name="onboarding_folder_link_button">폴더 연결</string>
+    <string name="onboarding_skip">건너뛰기</string>
+    <string name="onboarding_start">시작하기!</string>
+    <string name="onboarding_next">다음</string>
+
+    <!-- ── 프리미엄 ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">월간</string>
+    <string name="premium_plan_annual">연간</string>
+    <string name="premium_period_month">월</string>
+    <string name="premium_period_year">년</string>
+    <!-- stringResource()로 그대로 읽히며 포맷 인자를 사용하지 않습니다. 이
+         "%"는 플레이스홀더가 아닌 리터럴입니다 (2026-09-03에 수정된 실제 버그:
+         String.format을 거칠 것으로 착각해 "44%%"로 이스케이프해 두는 바람에
+         화면에 "%"가 두 번 표시되었습니다). -->
+    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44% 절약</string>
+    <string name="premium_feature_no_ads_title">광고 없음</string>
+    <string name="premium_feature_no_ads_desc">방해 없이 DocuSmart를 이용하세요</string>
+    <string name="premium_feature_pdf_word_title">PDF를 Word로</string>
+    <string name="premium_feature_pdf_word_desc">PDF를 편집 가능한 문서로 변환하세요</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">스캔된 PDF를 실제 검색 가능한 텍스트가 있는 문서로 변환하세요</string>
+    <string name="premium_feature_compress_title">고급 압축</string>
+    <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">눈에 띄는 화질 저하 없이 PDF를 최대 90%까지 줄이세요</string>
+    <string name="premium_feature_unlimited_title">무제한 변환</string>
+    <string name="premium_feature_unlimited_desc">일일 변환 한도 없음</string>
+    <string name="premium_you_are_premium">프리미엄 회원입니다!</string>
+    <string name="premium_enjoy_unlimited">모든 기능을 제한 없이 이용하세요</string>
+    <string name="premium_processing_purchase">구매 처리 중…</string>
+    <string name="premium_get_plan">%1$s 시작하기 — %2$s</string>
+    <string name="premium_select_plan">요금제를 선택하세요</string>
+    <string name="premium_restore_purchases">구매 복원</string>
+    <string name="premium_continue_free">무료 버전으로 계속하기</string>
+    <string name="premium_terms">구독하면 서비스 약관과 개인정보처리방침에 동의하는 것으로 간주됩니다. 구독은 자동으로 갱신되며 언제든지 취소할 수 있습니다.</string>
+    <string name="premium_active_title">구독이 활성화되어 있습니다</string>
+    <string name="premium_active_body">DocuSmart 프리미엄의 모든 기능을 이용할 수 있습니다</string>
+    <string name="premium_continue">계속</string>
+    <string name="premium_all_you_get">제공되는 모든 혜택</string>
+    <string name="premium_choose_plan">요금제를 선택하세요</string>
+    <string name="premium_recommended">추천</string>
+    <string name="premium_purchase_error">구매를 완료할 수 없습니다. 다시 시도해 주세요.</string>
+    <string name="premium_no_purchases_found">이전 구매 내역을 찾을 수 없습니다</string>
+    <string name="premium_purchase_pending">구매가 확인 대기 중입니다 (예: 현금 결제). 완료되면 자동으로 활성화됩니다.</string>
+    <string name="premium_restore_success">구매가 복원되었습니다 — 이제 프리미엄을 이용할 수 있습니다</string>
+
+    <!-- ── 스캐너 (추가) ─────────────────────────── -->
+    <string name="scanner_start_error">스캐너를 시작할 수 없습니다: %1$s</string>
+
+    <!-- ── 보안 ─────────────────────────────────── -->
+    <string name="security_title">보안</string>
+    <string name="security_subtitle">문서를 보호하세요</string>
+    <string name="security_what_to_do">무엇을 하시겠어요?</string>
+    <string name="security_secure_folder">보안 폴더</string>
+    <string name="security_secure_folder_desc">PIN과 생체 인증으로 보호되는 파일을 저장하세요. 본인만 접근할 수 있습니다.</string>
+    <string name="security_pin_required">PIN 필요</string>
+    <string name="security_pdf_password">PDF 비밀번호</string>
+    <string name="security_pdf_password_desc">PDF 파일에 비밀번호를 추가하거나 제거하세요. PIN 없이 바로 접근 가능합니다.</string>
+    <string name="security_no_pin">PIN 없음</string>
+    <string name="security_pin_incorrect">PIN이 올바르지 않습니다</string>
+    <string name="security_biometric_error">오류: %1$s</string>
+    <string name="security_biometric_not_recognized">생체 인증을 인식하지 못했습니다</string>
+    <string name="security_biometric_title">DocuSmart — 보안 폴더</string>
+    <string name="security_biometric_subtitle">지문이나 얼굴로 접근하세요</string>
+    <string name="security_biometric_use_pin">PIN 사용</string>
+    <string name="security_file_protected_success">파일이 성공적으로 보호되었습니다</string>
+    <string name="security_file_protect_error">파일을 보호할 수 없습니다</string>
+    <string name="security_save_downloads_success">다운로드에 저장됨: %1$s</string>
+    <string name="security_save_downloads_error">다운로드에 저장할 수 없습니다</string>
+    <string name="pdf_pw_read_error">파일을 읽을 수 없습니다</string>
+    <string name="pdf_pw_empty_file">파일이 비어 있습니다</string>
+    <string name="pdf_pw_protect_success">PDF가 성공적으로 보호되었습니다</string>
+    <string name="pdf_pw_protect_generate_error">보호된 파일이 올바르게 생성되지 않았습니다 (%1$d바이트)</string>
+    <string name="pdf_pw_protect_error">PDF를 보호할 수 없습니다: %1$s</string>
+    <string name="pdf_pw_remove_success">비밀번호가 성공적으로 제거되었습니다</string>
+    <string name="pdf_pw_remove_generate_error">비밀번호가 제거된 파일이 올바르게 생성되지 않았습니다 (%1$d바이트)</string>
+    <string name="pdf_pw_remove_error">PDF를 처리할 수 없습니다: %1$s</string>
+    <string name="pdf_pw_wrong_password">비밀번호가 올바르지 않습니다</string>
+    <string name="pdf_pw_wrong_password_retry">비밀번호가 올바르지 않습니다. 확인 후 다시 시도하세요.</string>
+    <string name="security_enter_pin">PIN을 입력하세요</string>
+    <string name="security_setup_pin_title">PIN을 설정하세요</string>
+    <string name="security_setup_pin_desc">4자리 PIN으로 파일을 보호하세요</string>
+    <string name="security_configure_pin_button">PIN 설정</string>
+    <string name="security_use_biometric">생체 인증 사용</string>
+    <string name="security_delete_desc">삭제</string>
+    <string name="security_confirm_pin">PIN을 확인하세요</string>
+    <string name="security_create_pin">PIN을 만드세요</string>
+    <string name="security_confirm_pin_desc">확인을 위해 PIN을 다시 입력하세요</string>
+    <string name="security_create_pin_desc">폴더를 보호할 4자리 PIN을 선택하세요</string>
+    <string name="security_pins_dont_match">PIN이 일치하지 않습니다</string>
+    <string name="security_setup_pin_error">PIN을 저장할 수 없습니다. 다시 시도해 주세요.</string>
+    <string name="security_forgot_pin">PIN을 잊으셨나요?</string>
+    <string name="security_reset_pin_dialog_title">PIN 재설정</string>
+    <string name="security_reset_pin_dialog_body">보안 폴더의 모든 파일이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="security_reset_pin_confirm">재설정 후 삭제</string>
+    <string name="security_files_protected_count">보호된 파일 %1$d개</string>
+    <string name="security_protect_new_file">새 파일 보호</string>
+    <string name="security_config_section">설정</string>
+    <string name="security_change_pin">PIN 변경</string>
+    <string name="security_biometric_unlock">생체 인증 잠금 해제</string>
+    <string name="security_protected_files_title">보호된 파일</string>
+    <string name="security_no_protected_files">보호된 파일이 없습니다</string>
+    <string name="security_no_protected_files_hint">\"새 파일 보호\"를 눌러 파일을 추가하세요</string>
+    <string name="security_restore">복원</string>
+    <string name="security_protect_file_dialog_title">파일 보호</string>
+    <string name="pdf_pw_screen_subtitle">PDF를 보호하거나 잠금 해제하세요</string>
+    <string name="pdf_pw_mode_protect_title">PDF 보호</string>
+    <string name="pdf_pw_mode_protect_desc">PDF 파일에 비밀번호를 추가합니다. 비밀번호를 아는 사람만 열 수 있습니다.</string>
+    <string name="pdf_pw_mode_remove_title">비밀번호 제거</string>
+    <string name="pdf_pw_mode_remove_desc">PDF의 보호를 해제합니다. 잠금을 해제하려면 현재 비밀번호가 필요합니다.</string>
+    <string name="pdf_pw_protect_section_title">비밀번호로 PDF 보호</string>
+    <string name="pdf_pw_selected_placeholder">선택된 PDF</string>
+    <string name="pdf_pw_tap_to_select">터치하여 PDF 선택</string>
+    <string name="pdf_pw_ready_to_protect">보호할 PDF 준비 완료</string>
+    <string name="pdf_pw_new_password_label">새 비밀번호</string>
+    <string name="pdf_pw_confirm_password_label">비밀번호 확인</string>
+    <string name="pdf_pw_passwords_dont_match">비밀번호가 일치하지 않습니다</string>
+    <string name="pdf_pw_protected_success_title">PDF가 성공적으로 보호되었습니다</string>
+    <string name="pdf_pw_save_downloads_button">다운로드에 저장</string>
+    <string name="pdf_pw_protect_button">PDF 보호</string>
+    <string name="pdf_pw_remove_section_title">PDF 비밀번호 제거</string>
+    <string name="pdf_pw_tap_to_select_protected">터치하여 보호된 PDF 선택</string>
+    <string name="pdf_pw_ready">PDF 준비 완료</string>
+    <string name="pdf_pw_current_password_label">PDF의 현재 비밀번호</string>
+    <string name="pdf_pw_current_password_placeholder">잠금 해제를 위한 비밀번호 입력</string>
+    <string name="pdf_pw_remove_warning">결과 PDF에는 비밀번호가 없으며 누구나 열 수 있습니다.</string>
+    <string name="pdf_pw_removed_success_title">비밀번호가 성공적으로 제거되었습니다</string>
+    <string name="pdf_pw_remove_button">비밀번호 제거</string>
+    <string name="pdf_pw_default_document_name">문서</string>
+    <string name="scan_result_title">스캔 결과</string>
+    <string name="scan_result_subtitle_pages">%1$d페이지</string>
+    <string name="scan_result_preview">미리보기</string>
+    <string name="scan_result_page_content_desc">페이지 %1$d</string>
+    <string name="scan_result_filename_label">파일 이름</string>
+    <string name="scan_result_filename_placeholder">예: 스캔한_문서</string>
+    <string name="scan_result_filename_hint">비워두면 자동으로 이름이 생성됩니다</string>
+    <string name="scan_result_generating_pdf">PDF 생성 중…</string>
+    <string name="scan_result_default_name_prefix">스캔_%1$s</string>
+    <string name="scan_edit_page_content_desc">페이지 %1$d 편집</string>
+    <string name="scan_edit_title">페이지 편집</string>
+    <string name="scan_edit_brightness">밝기: %1$d</string>
+    <string name="scan_edit_contrast">대비: %1$d</string>
+    <string name="scan_edit_scale">크기 조절</string>
+    <string name="scan_edit_apply">적용</string>
+    <string name="security_file_protected_original_kept">파일이 보호되었습니다. 원본 파일을 원래 위치에서 삭제할 수 없었습니다 — 완전히 제거하려면 직접 삭제하세요.</string>
+    <string name="qr_protected_title">보호된 QR 코드</string>
+    <string name="qr_protected_desc">이 콘텐츠는 비밀번호로 보호되어 있습니다. 확인하려면 비밀번호를 입력하세요.</string>
+    <string name="qr_unlock">잠금 해제</string>
+
+    <!-- ── QR ─────────────────────────────────── -->
+    <string name="qr_reader_title">QR 코드 읽기</string>
+    <string name="qr_reader_subtitle">QR 코드에 카메라를 비추세요</string>
+    <string name="qr_camera_permission_needed">QR 코드를 스캔하려면 카메라 접근 권한이 필요합니다</string>
+    <string name="qr_allow_camera_access">카메라 접근 허용</string>
+    <string name="qr_center_in_frame">QR 코드를 프레임 중앙에 맞추세요</string>
+    <string name="qr_type_url_detected">URL 감지됨</string>
+    <string name="qr_type_image_detected">이미지 감지됨</string>
+    <string name="qr_type_document_detected">문서 감지됨</string>
+    <string name="qr_type_email_detected">이메일 감지됨</string>
+    <string name="qr_type_phone_detected">전화번호 감지됨</string>
+    <string name="qr_type_text_detected">텍스트 감지됨</string>
+    <string name="qr_detected_title">QR 코드가 감지되었습니다!</string>
+    <string name="qr_image_content_desc">QR 이미지</string>
+    <string name="qr_loading_image">이미지 불러오는 중…</string>
+    <string name="qr_copied_clipboard">클립보드에 복사됨</string>
+    <string name="qr_open_browser">브라우저에서 열기</string>
+    <string name="qr_copy_url">URL 복사</string>
+    <string name="qr_open_image">이미지 열기</string>
+    <string name="qr_copy_link">링크 복사</string>
+    <string name="qr_open_document">문서 열기</string>
+    <string name="qr_copy_path">경로 복사</string>
+    <string name="qr_send_email">이메일 보내기</string>
+    <string name="qr_copy_email">이메일 복사</string>
+    <string name="qr_call">전화 걸기</string>
+    <string name="qr_copy_number">번호 복사</string>
+    <string name="qr_copy_text">텍스트 복사</string>
+    <string name="qr_scan_another">다른 코드 스캔</string>
+    <string name="qr_creator_title">QR 코드 만들기</string>
+    <string name="qr_creator_subtitle">URL, 텍스트, 파일 등을 위한 QR을 생성하세요</string>
+    <string name="qr_chip_url">URL</string>
+    <string name="qr_chip_text">텍스트</string>
+    <string name="qr_chip_email">이메일</string>
+    <string name="qr_chip_phone">전화</string>
+    <string name="qr_chip_image">이미지</string>
+    <string name="qr_chip_document">문서</string>
+    <string name="qr_select_image">이미지 선택</string>
+    <string name="qr_image_selected">이미지 선택됨 ✓</string>
+    <string name="qr_select_document">문서 선택</string>
+    <string name="qr_document_selected">문서 선택됨 ✓</string>
+    <string name="qr_label_url">웹사이트 URL</string>
+    <string name="qr_label_text">메시지 텍스트</string>
+    <string name="qr_label_email">이메일 주소</string>
+    <string name="qr_label_phone">전화번호</string>
+    <string name="qr_placeholder_text">메시지를 입력하세요…</string>
+    <string name="qr_protect_password">비밀번호로 보호</string>
+    <string name="qr_protect_password_desc">비밀번호를 아는 사람만 콘텐츠를 볼 수 있습니다</string>
+    <string name="qr_password_label">비밀번호</string>
+    <string name="qr_password_min_chars">최소 4자</string>
+    <string name="qr_error_select_image">이미지를 선택하세요</string>
+    <string name="qr_error_select_document">문서를 선택하세요</string>
+    <string name="qr_error_empty_content">QR의 내용을 입력하세요</string>
+    <string name="qr_error_password_short">비밀번호는 최소 4자 이상이어야 합니다</string>
+    <string name="qr_generate">QR 생성</string>
+    <string name="qr_your_code">내 QR 코드</string>
+    <string name="qr_generated_content_desc">생성된 QR 코드</string>
+    <string name="qr_protected_badge">보호됨</string>
+    <string name="qr_share_chooser_title">QR 공유</string>
+
+    <!-- ── 학습 ─────────────────────────────────── -->
+    <string name="study_tab_reading">읽기</string>
+    <string name="study_tab_notes">메모</string>
+    <string name="study_tab_pomodoro">뽀모도로</string>
+    <string name="study_no_document">문서 없음</string>
+    <string name="study_title">학습 모드</string>
+    <string name="study_empty_state_desc">문서를 열어 학습을 시작하세요</string>
+    <string name="study_reading_document">문서를 읽는 중…</string>
+    <string name="study_paragraphs_highlighted_count">%1$d단락 · %2$d개 강조 표시</string>
+    <string name="study_stop">중지</string>
+    <string name="study_read_all">전체 읽기</string>
+    <string name="study_delete_all_notes_title">모든 메모 삭제</string>
+    <string name="study_delete_all_notes_body">정말 모든 메모를 삭제하시겠어요? 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="study_highlighted_paragraphs_count">강조 표시된 단락 (%1$d개)</string>
+    <string name="study_new_note">새 메모</string>
+    <string name="study_note_title_label">메모 제목</string>
+    <string name="study_note_title_placeholder">예: 3장 핵심 개념</string>
+    <string name="study_note_content_placeholder">메모를 입력하거나 음성으로 받아쓰세요…</string>
+    <string name="study_dictate_note">음성으로 메모 받아쓰기</string>
+    <string name="study_listening">듣고 있어요… 지금 말씀하세요</string>
+    <string name="study_save_note">메모 저장</string>
+    <string name="study_untitled_note">제목 없는 메모</string>
+    <string name="study_no_saved_notes">저장된 메모 없음</string>
+    <string name="study_saved_notes_count">저장된 메모 (%1$d개)</string>
+    <string name="study_delete_all">모두 삭제</string>
+    <string name="study_no_notes_yet">아직 저장된 메모가 없습니다</string>
+    <string name="study_delete_note_desc">메모 삭제</string>
+    <string name="study_voice_prompt">메모를 말씀해 주세요…</string>
+    <string name="study_break_label">휴식</string>
+    <string name="study_study_label">학습</string>
+    <string name="study_in_progress">진행 중</string>
+    <string name="study_paused">일시 정지됨</string>
+    <string name="study_restart">다시 시작</string>
+    <string name="study_pause">일시 정지</string>
+    <string name="study_start">시작</string>
+    <string name="study_pomodoros_completed">완료한 뽀모도로</string>
+    <string name="study_pomodoros_hint">뽀모도로 4회마다 긴 휴식</string>
+    <string name="study_pomodoro_technique_info">뽀모도로 기법: 학습 25분 + 휴식 5분</string>
+    <string name="study_extract_no_text_found">텍스트를 찾을 수 없습니다</string>
+    <string name="study_extract_could_not_open">파일을 열 수 없습니다</string>
+    <string name="study_extract_could_not_read">파일을 읽을 수 없습니다</string>
+    <string name="study_extract_pdf_no_text">이 PDF에는 추출 가능한 텍스트가 없습니다. 스캔된 PDF일 수 있습니다.</string>
+    <string name="study_extract_pdf_error">PDF 읽기 오류: %1$s</string>
+    <string name="study_extract_generic_error">오류: %1$s</string>
+    <string name="study_default_document_name">문서</string>
+    <string name="study_pomodoro_notification_channel">뽀모도로</string>
+    <string name="study_pomodoro_notification_text">%1$s 남음</string>
+    <string name="study_export_notes">메모 내보내기</string>
+    <string name="study_export_as_text">텍스트로</string>
+    <string name="study_export_as_pdf">PDF로</string>
+    <string name="study_export_share_title">메모 공유</string>
+    <string name="study_stats_icon_desc">통계 보기</string>
+    <string name="study_stats_title">학습 통계</string>
+    <string name="study_stats_total_reading">총 읽은 시간</string>
+    <string name="study_stats_reading_value">%1$d시간 %2$d분</string>
+    <string name="study_stats_pomodoros_this_week">이번 주 뽀모도로</string>
+    <string name="study_stats_pomodoros_total">완료한 전체 뽀모도로</string>
+    <string name="study_stats_empty">아직 통계가 없습니다 — 소리 내어 읽기를 시작하거나 첫 뽀모도로를 완료해 보세요.</string>
+
+    <!-- ── 휴지통 (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">휴지통</string>
+    <string name="trash_title">휴지통</string>
+    <string name="trash_subtitle">30일 후 영구적으로 삭제됩니다</string>
+    <string name="trash_empty_title">휴지통이 비어 있습니다</string>
+    <string name="trash_empty_body">보관함, 홈 또는 뷰어에서 삭제한 문서가 영구 삭제되기 전에 여기에 표시됩니다.</string>
+    <string name="trash_deletes_today">오늘 삭제됨</string>
+    <string name="trash_days_remaining">%1$d일 남음</string>
+    <string name="trash_restore">복원</string>
+    <string name="trash_delete_forever">지금 삭제</string>
+    <string name="trash_delete_forever_confirm_title">영구적으로 삭제하시겠어요?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s이(가) 영구적으로 삭제되며 복구할 수 없습니다."</string>
+    <string name="trash_delete_all">모두 삭제</string>
+    <string name="trash_delete_all_confirm_title">휴지통을 비우시겠어요?</string>
+    <string name="trash_delete_all_confirm_body">"%1$d개 파일이 영구적으로 삭제되며 복구할 수 없습니다."</string>
+    <string name="trash_total_size">휴지통에 %1$s</string>
+    <string name="trash_delete_forever_permission_note">Android가 이 앱에서 생성하지 않은 사진의 삭제를 확인하도록 요청할 수 있습니다.</string>
+
+    <!-- ── 앱 보관함을 포함한 파일 선택기 (항목 #15, FileSourcePickerDialog) ── -->
+    <string name="filepicker_source_question">파일을 어디에서 가져올까요?</string>
+    <string name="filepicker_from_device">기기에서</string>
+    <string name="filepicker_browse_system_files">시스템 파일 탐색</string>
+    <string name="filepicker_from_library">DocuSmart 보관함에서</string>
+    <string name="filepicker_no_library_files">아직 보관함에 파일이 없습니다</string>
+
+    <!-- ── SAF를 통한 다운로드 폴더 연결 (UX 백로그 22번 항목) ── -->
+    <string name="library_link_downloads_title">여기에서 더 많은 문서 보기</string>
+    <string name="library_link_downloads_body">기기에서 문서를 찾을 폴더를 선택하고 DocuSmart에 연결하세요</string>
+    <string name="library_link_downloads_button">폴더 연결</string>
+
+    <!-- ── 연결된 폴더 바로가기 (기기/내 파일/휴지통 옆) ── -->
+    <string name="library_folder_shortcut_label">연결된 폴더</string>
+    <string name="library_folder_shortcut_subtitle">열기</string>
+    <string name="library_folder_shortcut_no_app">이 기기에는 폴더를 열 수 있는 앱이 없습니다</string>
+
+    <!-- ── 설정: 연결된 폴더 관리 (UX 백로그 22번 항목) ── -->
+    <string name="settings_linked_downloads_title">연결된 폴더</string>
+    <string name="settings_linked_downloads_linked">연결됨 · 터치하여 연결 해제</string>
+    <string name="settings_linked_downloads_not_linked">연결 안 됨 · 터치하여 연결</string>
+    <string name="settings_unlink_downloads_title">폴더 연결을 해제하시겠어요?</string>
+    <string name="settings_unlink_downloads_body">보관함의 기기 탭에서 다운로드 파일이 더 이상 보이지 않습니다. 언제든지 다시 연결할 수 있습니다.</string>
+    <string name="settings_unlink_downloads_confirm">연결 해제</string>
+</resources>
