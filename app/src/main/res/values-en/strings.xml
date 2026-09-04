@@ -543,7 +543,7 @@
     <string name="premium_continue">Continue</string>
     <string name="premium_all_you_get">Everything you get</string>
     <string name="premium_choose_plan">Choose your plan</string>
-    <string name="premium_recommended">⭐ Recommended</string>
+    <string name="premium_recommended">Recommended</string>
     <string name="premium_purchase_error">Couldn\'t complete the purchase. Please try again.</string>
     <string name="premium_no_purchases_found">No previous purchases found</string>
     <string name="premium_purchase_pending">Your purchase is pending confirmation (e.g. cash payment). It will activate automatically once completed.</string>
@@ -739,8 +739,8 @@
     <string name="study_no_notes_yet">You don\'t have any saved notes yet</string>
     <string name="study_delete_note_desc">Delete note</string>
     <string name="study_voice_prompt">Speak to write your note…</string>
-    <string name="study_break_label">🌿 Break</string>
-    <string name="study_study_label">📚 Study</string>
+    <string name="study_break_label">Break</string>
+    <string name="study_study_label">Study</string>
     <string name="study_in_progress">in progress</string>
     <string name="study_paused">paused</string>
     <string name="study_restart">Restart</string>

@@ -28,7 +28,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 5 | Ajustes → ampliar "Personalización" (tamaño de letra, colores por elemento) | Mejora (épica) | Media | Alta | Medio-Alto | **🟡 HU-UX-05 (tamaño de letra) ✅ implementada 2026-08-31; HU-UX-06 (color por elemento) sin empezar** — ver §7 |
 | 6 | Banner de anuncios inconsistente entre pantallas | Mejora | Media | Media | Bajo | ✅ 6 de 6 pantallas implementadas y verificadas 2026-08-31 — ver §8 |
 | 7 | Banner azul: ancho/alto uniforme + flecha "Volver" con texto | Mejora | Alta | Media-Alta | Medio | **✅ Implementado y verificado 2026-08-30** — ver §9 |
-| 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | — | — | — | Nuevo (§10) — **no reproducido en código**, necesita captura |
+| 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | Baja | Baja | Bajo | **✅ Reproducido y corregido en dispositivo real 2026-09-03** — ver §10 |
 | 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | **✅ Implementado y verificado 2026-08-31** — mismo mecanismo que #1 (ver §3, AC5) |
 | 10 | Compose UI Testing en toda la app | Mejora (épica) | Mixta por flujo | Mixta por flujo | Bajo | Ya catalogado en [`compose-ui-testing.md`](compose-ui-testing.md) — no duplicar, ver §11 |
 | 11 | Auditoría UX/UI experta + plan de mejoras | Entregable | — | — | — | Nuevo — ver §12 (findings + HUs propias) |
@@ -38,7 +38,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-03** — ver §15 |
 | 16 | Encriptar/quitar contraseña de archivo individual en Seguridad | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
 | 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | Ya listado en `CONTEXT.md` §5 |
-| 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug (no verificado) | Media | — | — | Ya listado en `CONTEXT.md` §5 — pendiente reproducir |
+| 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug | Media | Media-Alta | Medio | **✅ Reescrito con Apache POI y verificado en dispositivo real 2026-09-03** (incluye fix del bug de espaciado del conversor PDF→Word encontrado en el camino) — ver §18/§19 |
 | 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-30** — ver §13 |
 | 20 | H1: texto "Eliminar del historial" engañoso (en realidad mueve a la papelera real) | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §12, hallazgo H1 |
 | 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | **✅ Corregido y verificado 2026-09-03** — ver §12, hallazgo H6 |
@@ -682,6 +682,30 @@ texto, en una `Column`, no al lado del título en un `Row`).
 de pantalla o una descripción más específica de qué imagen ves y en qué
 pestaña exacta de Estudio (Lectura/Notas/Pomodoro) para poder ubicarla en
 el código antes de tocar nada.
+
+**Reproducido y corregido 2026-09-03**, tras navegar en el dispositivo
+real a Estudio → Pomodoro: el `TopAppBar` en sí sigue siendo texto puro
+("Modo Estudio"), pero **debajo de las pestañas hay un chip** (`Pomodoro
+TypeIndicator`, `StudyScreen.kt:1240-1256`) cuyo texto viene de
+`R.string.study_study_label`/`study_break_label` -- que en los 5 idiomas
+tenían un emoji pegado a la palabra ("📚 Estudio", "🌿 Descanso"). El
+usuario confirmó que esto es lo que veía y pidió eliminarlo, más
+cualquier otro emoji en un título de la app. Búsqueda adicional en los 5
+`strings.xml` encontró un segundo caso: `premium_recommended` ("⭐
+Recomendado", badge de la tarjeta de plan recomendado en Premium) --
+confirmado por el usuario para eliminar también. Ambos strings
+corregidos a texto plano en `values/`, `values-de/`, `values-en/`,
+`values-pt/`, `values-ru/`. Los únicos símbolos restantes que matchean un
+rango de emoji son los checkmarks "✓" de "Imagen/Documento seleccionado"
+(estado funcional, no un título) y las flechas "→" de textos como
+"Img→PDF"/"Ver anuncio → +1 uso" (tipográficas, no decorativas) --
+fuera de alcance, no se tocaron. Verificado en dispositivo real
+(Motorola Edge 30 Neo): el chip de Pomodoro ahora dice solo "Estudio" y
+el badge de Premium solo "Recomendado". Gauntlet completo en verde.
+**Hallazgo aparte encontrado durante la verificación, no corregido**: la
+tarjeta del plan Anual en Premium muestra "Ahorra 44%%" (doble signo de
+porcentaje) -- bug de formato independiente, catalogado para corregir
+aparte.
 
 ---
 

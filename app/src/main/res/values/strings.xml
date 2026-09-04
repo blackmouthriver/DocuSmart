@@ -544,7 +544,7 @@
     <string name="premium_continue">Continuar</string>
     <string name="premium_all_you_get">Todo lo que obtienes</string>
     <string name="premium_choose_plan">Elige tu plan</string>
-    <string name="premium_recommended">⭐ Recomendado</string>
+    <string name="premium_recommended">Recomendado</string>
     <string name="premium_purchase_error">No se pudo completar la compra. Intenta de nuevo.</string>
     <string name="premium_no_purchases_found">No se encontraron compras anteriores</string>
     <string name="premium_purchase_pending">Tu compra está pendiente de confirmación (por ejemplo, pago en efectivo). Se activará automáticamente cuando se complete.</string>
@@ -740,8 +740,8 @@
     <string name="study_no_notes_yet">Aún no tienes notas guardadas</string>
     <string name="study_delete_note_desc">Eliminar nota</string>
     <string name="study_voice_prompt">Habla para redactar tu nota…</string>
-    <string name="study_break_label">🌿 Descanso</string>
-    <string name="study_study_label">📚 Estudio</string>
+    <string name="study_break_label">Descanso</string>
+    <string name="study_study_label">Estudio</string>
     <string name="study_in_progress">en progreso</string>
     <string name="study_paused">pausado</string>
     <string name="study_restart">Reiniciar</string>

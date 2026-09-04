@@ -544,7 +544,7 @@
     <string name="premium_continue">Продолжить</string>
     <string name="premium_all_you_get">Всё, что вы получаете</string>
     <string name="premium_choose_plan">Выберите план</string>
-    <string name="premium_recommended">⭐ Рекомендуется</string>
+    <string name="premium_recommended">Рекомендуется</string>
     <string name="premium_purchase_error">Не удалось завершить покупку. Попробуйте снова.</string>
     <string name="premium_no_purchases_found">Предыдущие покупки не найдены</string>
     <string name="premium_purchase_pending">Ваша покупка ожидает подтверждения (например, оплата наличными). Она активируется автоматически после завершения.</string>
@@ -740,8 +740,8 @@
     <string name="study_no_notes_yet">У вас пока нет сохранённых заметок</string>
     <string name="study_delete_note_desc">Удалить заметку</string>
     <string name="study_voice_prompt">Продиктуйте текст своей заметки…</string>
-    <string name="study_break_label">🌿 Перерыв</string>
-    <string name="study_study_label">📚 Учёба</string>
+    <string name="study_break_label">Перерыв</string>
+    <string name="study_study_label">Учёба</string>
     <string name="study_in_progress">выполняется</string>
     <string name="study_paused">на паузе</string>
     <string name="study_restart">Заново</string>
