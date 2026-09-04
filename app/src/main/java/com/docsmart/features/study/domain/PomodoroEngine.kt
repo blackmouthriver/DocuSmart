@@ -3,6 +3,7 @@ package com.docsmart.features.study.domain
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -91,6 +92,7 @@ object PomodoroEngine {
 
     private fun start(context: Context) {
         if (_state.value.isRunning) return
+        if (!_state.value.isBreak) DocuSmartAnalytics.logStudySessionStarted()
         _state.value = _state.value.copy(isRunning = true)
         startService(context)
         tickerJob = scope.launch {
@@ -109,10 +111,11 @@ object PomodoroEngine {
 
     private fun tick(context: Context) {
         val current = _state.value
+        val next = tickPomodoro(current)
         if (tickCompletesStudyBlock(current)) {
             StudyStatsStorage.recordPomodoroCompletion(context)
+            DocuSmartAnalytics.logPomodoroCompleted(next.pomodoroCount)
         }
-        val next = tickPomodoro(current)
         _state.value = next
         if (!next.isRunning) stopService(context)
     }

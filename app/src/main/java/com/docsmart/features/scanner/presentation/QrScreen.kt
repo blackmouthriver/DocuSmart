@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.features.scanner.domain.QrCrypto
@@ -276,6 +277,7 @@ fun QrReaderScreen(
                                                         } else {
                                                             qrResult = value
                                                             qrType   = detectQrContentType(value)
+                                                            DocuSmartAnalytics.logQrScanned(qrType.name)
                                                             // Si es imagen URL, cargarla
                                                             if (qrType == QrContentType.IMAGE) {
                                                                 scope.launch {
@@ -1071,6 +1073,15 @@ fun QrCreatorScreen(
                         else rawContent
                         qrBitmap     = generateQrBitmap(finalContent)
                         isGenerating = false
+                        val createdContentType = when (selectedType) {
+                            0    -> QrContentType.URL
+                            2    -> QrContentType.EMAIL
+                            3    -> QrContentType.PHONE
+                            4    -> QrContentType.IMAGE
+                            5    -> QrContentType.DOCUMENT
+                            else -> QrContentType.TEXT
+                        }
+                        DocuSmartAnalytics.logQrCreated(createdContentType.name, usePassword)
                     }
                 },
                 enabled  = hasContent,

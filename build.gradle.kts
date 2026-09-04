@@ -8,7 +8,14 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.sonarqube)
     id("com.google.gms.google-services")    version "4.4.2" apply false
-    id("com.google.firebase.crashlytics")   version "2.9.9" apply false
+    // Bug real corregido 2026-09-03: 2.9.9 fallaba `assembleRelease` con
+    // "groovy/util/XmlSlurper" en uploadCrashlyticsMappingFileRelease --
+    // esa versión depende de Groovy en el classpath de build, que Gradle
+    // 9.x ya no incluye por defecto. 3.0.6 (plugin v3, sin esa dependencia)
+    // resuelve el problema; no usa ninguna de las opciones eliminadas en el
+    // salto de versión mayor (mappingFile/strippedNativeLibsDir/
+    // symbolGenerator), así que no hace falta ningún otro cambio.
+    id("com.google.firebase.crashlytics")   version "3.0.6" apply false
 }
 
 // SonarCloud — se ejecuta con `./gradlew sonar` (requiere SONAR_TOKEN en el

@@ -63,6 +63,16 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <!-- Firebase Analytics/Crashlytics: activados solo en el build type
+             release (ver manifestPlaceholders en app/build.gradle.kts); en
+             debug, ningún dato de desarrollo/pruebas llega a Firebase. -->
+        <meta-data
+            android:name="firebase_analytics_collection_deactivated"
+            android:value="${firebaseAnalyticsDeactivated}" />
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="${firebaseCrashlyticsEnabled}" />
         <property
             android:name="android.adservices.AD_SERVICES_CONFIG"
             android:resource="@xml/gma_ad_services_config"

@@ -22,6 +22,15 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
     jacoco
+    // Bug real corregido 2026-09-03: google-services.json ya estaba en el
+    // repo y las dependencias de Firebase Analytics/Crashlytics ya estaban
+    // agregadas, pero estos 2 plugins (declarados con apply false en el
+    // build.gradle.kts raíz) nunca se aplicaban acá -- sin ellos,
+    // google-services.json nunca se procesa y Firebase no tiene con qué
+    // inicializarse de verdad, pese a que deployment.md ya declaraba (para
+    // Play Store) que la app envía datos de uso/fallas a Firebase.
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 configurations.all {

@@ -43,6 +43,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 20 | H1: texto "Eliminar del historial" engañoso (en realidad mueve a la papelera real) | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §12, hallazgo H1 |
 | 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | **✅ Corregido y verificado 2026-09-03** — ver §12, hallazgo H6 |
 | 22 | `DocumentRepository.loadPdfsFromDownloads()` no ve PDF/Word/Excel/PowerPoint reales de Descargas sin `owner_package_name` propio (scoped storage); Texto ni siquiera está en el filtro de mimeTypes de esa consulta | Bug | Media-Alta | Media | Medio | **🟡 Corregido lo corregible 2026-09-03 (Texto + permiso falso + API 29-32); la limitación de scoped storage en API 33+ es de la plataforma, sin fix de código posible** — ver §16 |
+| 23 | Firebase Analytics/Crashlytics ya declarados a Play Store pero nunca funcionaron (plugin de Gradle sin aplicar, 15 eventos sin conectar, sin árbol de Timber en release) | Bug | Alta | Media | Medio | **✅ Corregido y verificado en dispositivo real (build release firmado) 2026-09-03** — ver §20 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -1713,3 +1714,183 @@ dice "Funza, Cundinamarca, 03 de septiembres de 2026" con todos los
 espacios correctos, en vez de "Funza,Cundinamarca,03deseptiembrede2026"
 como antes del fix. Confirmado con el resto del cuerpo de la carta
 (fechas, "Señores", "Asunto:", firma) también correctamente espaciado.
+
+---
+
+## 20. Firebase Analytics + Crashlytics: de "declarado pero roto" a funcionando de verdad
+
+El usuario pidió sumar Firebase a la app para aprovechar analítica,
+revisión de errores y (a futuro) monetización. Antes de agregar nada
+nuevo se investigó qué tanto ya existía -- y resultó que **ya había una
+integración de Firebase hecha en una sesión anterior, pero nunca llegó a
+funcionar**:
+
+- Ya existía un proyecto Firebase real (`docusmart-8904e`) con
+  `google-services.json` en el repo, dependencias de
+  `firebase-analytics`/`firebase-crashlytics` en `app/build.gradle.kts`,
+  y una clase `DocuSmartAnalytics.kt` con 15 eventos ya escritos.
+- **Pero los plugins de Gradle que procesan `google-services.json`**
+  (`com.google.gms.google-services`, `com.google.firebase.crashlytics`,
+  declarados con `apply false` en el `build.gradle.kts` raíz) **nunca se
+  aplicaban** en `app/build.gradle.kts` -- sin ellos, Firebase no tiene
+  con qué inicializarse de verdad pese a que el archivo de configuración
+  esté presente.
+- Los 15 eventos de `DocuSmartAnalytics` tenían **cero call sites** en
+  toda la app -- escritos, nunca invocados desde ningún flujo real.
+- Crashlytics no tenía ninguna instrumentación (`recordException`,
+  `setCustomKey`) y, más grave: `DocuSmartApplication.onCreate()` solo
+  plantaba un árbol de Timber (`Timber.DebugTree()`) en builds `DEBUG` --
+  en `release` **no había ningún árbol plantado**, así que los cientos de
+  `Timber.e`/`Timber.w` ya existentes en el proyecto (muchos agregados
+  esta misma sesión al corregir `SwallowedException` de detekt) se
+  perdían por completo en producción, sin llegar ni a Logcat ni a
+  ningún lado.
+- Hallazgo más serio: `docs/requirements/deployment.md` (la declaración
+  de "Seguridad de los datos" que se sube a Play Store) **ya afirmaba**
+  que la app envía datos de uso y de fallas a Firebase -- una promesa a
+  Google que, según el código, nunca se estaba cumpliendo.
+
+Dado el alcance (arreglar lo roto + agregar Test Lab + Remote Config
+para monetización sería una sola tanda enorme), el usuario eligió
+**arreglar primero Analytics + Crashlytics** y dejar Test Lab/Remote
+Config para después.
+
+### Corregido
+
+- **Plugins aplicados** en `app/build.gradle.kts` (`plugins { ... }`):
+  `com.google.gms.google-services`, `com.google.firebase.crashlytics`.
+- **Meta-data del manifest conectado**: `AndroidManifest.xml` ganó
+  `firebase_analytics_collection_deactivated` y
+  `firebase_crashlytics_collection_enabled`, ambos apuntando a los
+  `manifestPlaceholders` que ya existían en `app/build.gradle.kts`
+  (`firebaseAnalyticsDeactivated`/`firebaseCrashlyticsEnabled` -- ya
+  estaban definidos por build type, debug=desactivado/release=activado,
+  pero nunca se leían desde ningún lado).
+- **`CrashlyticsTree.kt`** (nuevo, `core/analytics/`): un `Timber.Tree`
+  que reenvía cualquier `Timber.w`/`Timber.e` con una excepción real
+  hacia `FirebaseCrashlytics.recordException()` (no fatal, visible en la
+  consola sin tumbar la app), y todo `INFO`+ como breadcrumb
+  (`Crashlytics.log()`) para dar contexto. Se planta en
+  `DocuSmartApplication.onCreate()` solo en builds no-`DEBUG` -- cubre
+  automáticamente TODOS los `Timber.e`/`Timber.w` ya existentes en el
+  proyecto, sin tener que agregar una llamada manual en cada `catch`.
+- **Los 15 eventos de `DocuSmartAnalytics` conectados a flujos reales**:
+  - `logScreenView`: centralizado en un único
+    `NavController.OnDestinationChangedListener` dentro de
+    `DocuSmartNavGraph` -- cubre las ~19 pantallas del grafo sin tocar
+    cada `composable {}` una por una. `screenNameForRoute()` (un mapa,
+    no un `when` de 19 ramas -- refactor necesario tras el primer intento
+    exceder el límite de complejidad ciclomática de detekt) recorta el
+    `route` (que conserva placeholders tipo `{documentId}`) al nombre
+    base de la pantalla.
+  - `logConversion`/`logConversionSuccess`/`logConversionError`:
+    `ConverterViewModel.convert()` (ruta de un solo archivo) y
+    `runBatchConversion()` (por archivo, en un lote).
+  - `logPdfTool`: `PdfToolsViewModel.selectTool()` (solo cuando
+    `tool != PdfTool.NONE`, para no contar el reset).
+  - `logDocumentOpened`: `ViewerViewModel.publishLoadedDocument()`.
+  - `logDocumentFavorited`: `ViewerViewModel.toggleFavorite()` (solo al
+    marcar como favorito, no al desmarcar).
+  - `logScanCompleted`: `onScanComplete` en `DocuSmartNavGraph`
+    (`uris.size` = páginas escaneadas).
+  - `logQrScanned`: el listener de éxito de `BarcodeScanning` en
+    `QrScreen.kt` (`QrReaderScreen`).
+  - `logQrCreated`: el botón "Generar" de `QrCreatorScreen`, con
+    `usePassword` real.
+  - `logStudySessionStarted`/`logPomodoroCompleted`: `PomodoroEngine`
+    (`start()` cuando no es un descanso; `tick()` al cerrar un bloque de
+    estudio, con el conteo ya actualizado).
+  - `logNoteCreated`: el botón "Guardar nota" de `StudyScreen.kt`
+    (no el de eliminar ni el de borrar todas).
+  - `logPremiumScreenViewed`: `LaunchedEffect(Unit)` en `PremiumScreen`.
+  - `logPremiumPurchaseAttempt`: `PremiumViewModel.purchase()`, con
+    `plan.id` ("monthly"/"annual", estable, no localizado).
+  - `logError` (el 16° método, genérico) se dejó **sin conectar a
+    propósito** -- para "revisar errores" `CrashlyticsTree` ya cubre esto
+    mejor (con stack trace real por excepción), conectar además el
+    evento de Analytics genérico sería redundante.
+- **`deployment.md` actualizado** para reflejar que la declaración de
+  Seguridad de los datos ahora sí es cierta, no solo la intención.
+
+### Pendiente para una siguiente sesión (a pedido del usuario, no en esta tanda)
+
+Firebase Test Lab (pruebas en dispositivos reales en la nube, requiere
+revisar plan de facturación del proyecto Firebase y una cuenta de
+servicio para CI) y Firebase Remote Config/A-B Testing (experimentos de
+precio/paywall para monetización) quedan explícitamente fuera de esta
+tanda -- el usuario pidió arreglar primero lo que ya se prometía a Play
+Store.
+
+### Verificado
+
+- **Gauntlet completo en verde** (`compileDebugKotlin`, `detekt`, `lintDebug`,
+  `testDebugUnitTest`, 268 tests) tras dos rondas de fixes reales
+  encontrados en el camino:
+  - 4 tests de `ConverterViewModelBatchTest` empezaron a fallar con
+    `RuntimeException: Method putString in android.os.BaseBundle not
+    mocked` -- los tests unitarios JVM puros (sin Robolectric) no pueden
+    ejecutar código real de `android.os.Bundle`. Causa raíz: analítica
+    nunca debe poder tumbar al que la llama, ni en producción ni en un
+    test. Corregido envolviendo el cuerpo de cada evento de
+    `DocuSmartAnalytics` en un `safely { }` que atrapa cualquier
+    excepción y solo la registra con Timber -- nunca la relanza.
+  - `screenNameForRoute()` (el primer intento, un `when` de 19 ramas)
+    excedía el límite de complejidad ciclomática de detekt -- refactor a
+    un `Map<String, String>` (`SCREEN_NAMES_BY_ROUTE`), más simple de
+    paso.
+- **`assembleRelease` falló dos veces antes de compilar, ambos bugs reales
+  preexistentes, no causados por este cambio** (nunca se había compilado
+  un release exitoso con Firebase antes de esta sesión):
+  1. R8 fallaba (fatal, no solo warning) por `Missing class
+     java.awt.Dimension` y ~20 clases más de `java.awt.image`/
+     `java.awt.color`, referenciadas por `org.apache.commons.imaging`
+     (transitiva de Apache POI, parsers de formatos de imagen exóticos
+     como PCX/RGBE que DocuSmart nunca ejercita) -- mismo límite ya
+     documentado para `Rectangle2D`/`Dimension` en el visor de
+     PowerPoint (§18), pero esta vez a nivel de R8 en vez de compilación
+     Kotlin. Corregido con `-dontwarn java.awt.**` en
+     `proguard-rules.pro`.
+  2. `uploadCrashlyticsMappingFileRelease` fallaba con
+     `groovy/util/XmlSlurper` -- el plugin de Crashlytics 2.9.9 (el que
+     ya estaba declarado desde antes) depende de Groovy en el classpath
+     de build, que Gradle 9.5 ya no incluye por defecto. Corregido
+     subiendo el plugin a 3.0.6 (plugin v3, sin esa dependencia;
+     confirmado por búsqueda externa que no usa ninguna de las opciones
+     eliminadas en el salto de versión mayor -- `mappingFile`,
+     `strippedNativeLibsDir`, `symbolGenerator` -- ninguna presente en
+     este proyecto).
+- **Verificado en dispositivo real (Motorola Edge 30 Neo) con un build
+  `release` firmado real** (`assembleRelease`, instalado tras desinstalar
+  el debug previo por firmas distintas) -- necesario porque en `debug`
+  `firebaseAnalyticsDeactivated=true` desactiva la recolección a
+  propósito:
+  - Logcat confirmó inicialización real de Firebase por primera vez en
+    la historia del proyecto: `FirebaseApp: ... initializing all
+    Firebase APIs`, `FirebaseInitProvider: FirebaseApp initialization
+    successful`, `FirebaseCrashlytics: Initializing Firebase Crashlytics
+    20.1.0`.
+  - Con `adb shell setprop debug.firebase.analytics.app com.docsmart` +
+    `adb shell setprop log.tag.FA VERBOSE`: navegando por Inicio →
+    Biblioteca → Herramientas PDF, logcat mostró exactamente `Logging
+    screen view with name, class: Home, Home`, luego `Library, Library`,
+    luego `PdfTools, PdfTools` -- coincide exacto con
+    `SCREEN_NAMES_BY_ROUTE`, confirmando que el listener centralizado
+    de `logScreenView` funciona de punta a punta.
+  - Al tocar "Comprimir PDF" (`PdfToolsViewModel.selectTool()`), logcat
+    registró un nuevo `Logging telemetry for logEvent from database`
+    inmediatamente después -- el evento personalizado `pdf_tool_used`
+    quedó encolado para subir.
+  - Confirmada una solicitud HTTPS real desde el proceso de la app hacia
+    `firebaselogging-pa.googleapis.com/v1/firelog/legacy/batchlog` (el
+    transporte real de Firebase) -- evidencia de red, no solo de logs
+    locales.
+  - **Hallazgo de testing, no de producto**: el diálogo estándar de
+    Android para permiso de fotos (`GrantPermissionsActivity`) no
+    respondió a `adb shell input tap`/`touchscreen tap` en ningún
+    intento -- sí respondió a `KEYCODE_BACK`. Se resolvió para efectos de
+    esta verificación concediendo el permiso directo con `adb shell pm
+    grant` en vez de interactuar con el diálogo. No es un bug de
+    DocuSmart, es un comportamiento del propio diálogo del sistema en
+    este dispositivo/versión de Android ante taps sintéticos.
+  - Dispositivo devuelto a un build `debug` normal al terminar (mismo
+    proceso: desinstalar + instalar, por la firma distinta).

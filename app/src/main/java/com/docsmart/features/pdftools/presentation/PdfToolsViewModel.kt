@@ -46,6 +46,7 @@ import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkPdfUseCase
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -143,6 +144,7 @@ class PdfToolsViewModel @Inject constructor(
     val uiState: StateFlow<PdfToolsUiState> = _uiState.asStateFlow()
 
     fun selectTool(tool: PdfTool) {
+        if (tool != PdfTool.NONE) DocuSmartAnalytics.logPdfTool(tool.name)
         _uiState.update {
             PdfToolsUiState(
                 selectedTool = tool,

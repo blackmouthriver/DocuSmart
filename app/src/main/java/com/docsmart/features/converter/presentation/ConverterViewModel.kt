@@ -16,6 +16,7 @@ import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.domain.model.getCategoryLabel
 import com.docsmart.features.converter.domain.usecase.*
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -205,6 +206,8 @@ class ConverterViewModel @Inject constructor(
         val customName = state.fileName.trim().ifBlank { generateDefaultName() }
         val isBatch    = type != ConversionType.IMAGE_TO_PDF && files.size > 1
 
+        DocuSmartAnalytics.logConversion(type.name)
+
         viewModelScope.launch {
             _uiState.update { it.copy(isConverting = true, errorMessage = null) }
 
@@ -225,6 +228,14 @@ class ConverterViewModel @Inject constructor(
                 runConversionForUri(type, files.first(), customName)
 
             Timber.d("ConverterViewModel: resultado $type → $result")
+
+            when (result) {
+                is ConversionResult.Success ->
+                    DocuSmartAnalytics.logConversionSuccess(type.name, result.fileSizeKb)
+                is ConversionResult.Error ->
+                    DocuSmartAnalytics.logConversionError(type.name, result.message)
+                else -> Unit
+            }
 
             _uiState.update { state ->
                 when (result) {
@@ -290,6 +301,13 @@ class ConverterViewModel @Inject constructor(
                 runConversionForUri(type, uri, baseName).also {
                     if (it is ConversionResult.Success) dailyLimitManager.registerConversion()
                 }
+            }
+            when (result) {
+                is ConversionResult.Success ->
+                    DocuSmartAnalytics.logConversionSuccess(type.name, result.fileSizeKb)
+                is ConversionResult.Error ->
+                    DocuSmartAnalytics.logConversionError(type.name, result.message)
+                else -> Unit
             }
             BatchConversionItem(originalFileName = originalName, result = result)
         }

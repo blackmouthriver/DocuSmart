@@ -39,6 +39,16 @@
 -dontwarn edu.umd.cs.findbugs.annotations.**
 -dontwarn com.github.luben.zstd.**
 
+# Bug real corregido 2026-09-03: assembleRelease fallaba en R8 (fatal, no
+# solo warning) — org.apache.commons.imaging (transitiva de POI, parsers de
+# formatos de imagen exóticos como PCX/RGBE que DocuSmart nunca ejercita)
+# referencia java.awt.image.*/java.awt.color.* -- clases que directamente
+# no existen en el android.jar de compileSdk (mismo límite ya documentado
+# para Rectangle2D/Dimension en el visor de PowerPoint), así que R8 no
+# puede resolverlas al minificar. Nunca se llega a esos code paths en
+# runtime real, igual que el resto de dependencias opcionales de POI.
+-dontwarn java.awt.**
+
 # ZXing
 -keep class com.google.zxing.** { *; }
 -dontwarn com.google.zxing.**

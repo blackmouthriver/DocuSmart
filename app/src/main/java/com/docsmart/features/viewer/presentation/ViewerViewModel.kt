@@ -8,6 +8,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
@@ -214,6 +215,7 @@ class ViewerViewModel @Inject constructor(
             )
         }
         recordHistoryOpen(uriString)
+        DocuSmartAnalytics.logDocumentOpened(documentType.name)
     }
 
     // RF-VIS/HOME: registra el acceso real para que "recientes" en Home
@@ -572,16 +574,17 @@ class ViewerViewModel @Inject constructor(
     }
 
     fun toggleFavorite() {
-        val documentId = _uiState.value.document?.id ?: return
+        val document = _uiState.value.document ?: return
         viewModelScope.launch {
-            val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
+            val isNowFavorite = favoritesRepository.toggleFavorite(document.id)
+            if (isNowFavorite) DocuSmartAnalytics.logDocumentFavorited(document.type.name)
             _uiState.update { state ->
                 state.copy(
                     isFavorite = isNowFavorite,
                     document   = state.document?.copy(isFavorite = isNowFavorite)
                 )
             }
-            Timber.d("$TAG: toggleFavorite $documentId → $isNowFavorite")
+            Timber.d("$TAG: toggleFavorite ${document.id} → $isNowFavorite")
         }
     }
 

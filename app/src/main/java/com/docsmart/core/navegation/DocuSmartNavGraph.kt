@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraphBuilder
@@ -41,6 +42,7 @@ import com.docsmart.features.library.presentation.TrashScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
 import com.docsmart.features.security.presentation.SecurityMenuScreen
 import com.docsmart.features.security.presentation.PdfPasswordScreen
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import timber.log.Timber
 
 @Composable
@@ -58,6 +60,19 @@ fun DocuSmartNavGraph(
     // una. Es puramente de movimiento -- no cambia ningún color ni estilo.
     val transitionSpec = tween<Float>(280)
     val slideSpec       = tween<androidx.compose.ui.unit.IntOffset>(280)
+
+    // logScreenView centralizado acá en vez de en cada pantalla individual
+    // (~17 destinos) -- un único listener de Navigation-Compose cubre todo
+    // el grafo sin tocar cada `composable {}` uno por uno.
+    DisposableEffect(navController) {
+        val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, _ ->
+            destination.route?.let { route ->
+                DocuSmartAnalytics.logScreenView(screenNameForRoute(route))
+            }
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
+    }
 
     NavHost(
         navController      = navController,
@@ -203,6 +218,37 @@ fun DocuSmartNavGraph(
 // destino. `null` en el Convertidor significa "este tipo no tiene ninguna
 // conversión definida hoy" (Texto, ZIP) -- se navega igual pero sin
 // precargar el archivo, cae al comportamiento manual de siempre.
+// El `route` de un destino conserva el patrón con placeholders (p.ej.
+// "converter?initialType={initialType}&...", "viewer/{documentId}"), nunca
+// los valores reales -- se recorta antes del primer "?"/"/" para agrupar
+// todas las variantes de una misma pantalla bajo un solo nombre en Firebase.
+private val SCREEN_NAMES_BY_ROUTE = mapOf(
+    "splash_mouthblack" to "SplashMouthBlack",
+    "splash_docusmart"  to "SplashDocuSmart",
+    "onboarding"        to "Onboarding",
+    "home"              to "Home",
+    "library"           to "Library",
+    "viewer"            to "Viewer",
+    "converter"         to "Converter",
+    "pdf_tools"         to "PdfTools",
+    "settings"          to "Settings",
+    "premium"           to "Premium",
+    "scanner"           to "Scanner",
+    "scan_result"       to "ScanResult",
+    "security"          to "SecurityMenu",
+    "secure_folder"     to "SecureFolder",
+    "pdf_password"      to "PdfPassword",
+    "study"             to "Study",
+    "qr_reader"         to "QrReader",
+    "qr_creator"        to "QrCreator",
+    "trash"             to "Trash"
+)
+
+private fun screenNameForRoute(route: String): String {
+    val base = route.substringBefore("?").substringBefore("/")
+    return SCREEN_NAMES_BY_ROUTE[base] ?: route
+}
+
 private fun DocumentType.toConverterCategoryOrNull(): String? = when (this) {
     DocumentType.IMAGE                 -> "Imagen"
     DocumentType.PDF, DocumentType.OCR -> "PDF" // OCR es un PDF escaneado
@@ -417,6 +463,7 @@ private fun NavGraphBuilder.scannerComposable(navController: NavHostController) 
                     uris.map { it.toString() }
                 scanResultEntry.savedStateHandle["is_pdf"] =
                     uris.size == 1 && uris.first().toString().endsWith(".pdf")
+                DocuSmartAnalytics.logScanCompleted(uris.size)
                 navController.navigate(NavRoutes.ScanResult.route)
             }
         )

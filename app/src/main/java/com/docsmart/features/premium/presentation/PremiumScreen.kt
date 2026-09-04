@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.ui.util.findActivity
 import com.docsmart.features.premium.presentation.components.*
 import timber.log.Timber
@@ -42,6 +43,8 @@ fun PremiumScreen(
     // launchBillingFlow necesita el Activity real, no el Context envuelto
     // que entrega LocalContext.
     val activity = remember(context) { context.findActivity() }
+
+    LaunchedEffect(Unit) { DocuSmartAnalytics.logPremiumScreenViewed() }
 
     // Muestra errores
     LaunchedEffect(uiState.errorMessage) {

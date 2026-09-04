@@ -3,6 +3,7 @@ package com.docsmart.features.premium.presentation
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.billing.BillingManager
 import com.docsmart.core.billing.PurchaseResult
 import com.docsmart.core.premium.PremiumManager
@@ -121,6 +122,7 @@ class PremiumViewModel @Inject constructor(
         this.purchaseErrorMessage = purchaseErrorMessage
         this.pendingMessage = pendingMessage
 
+        DocuSmartAnalytics.logPremiumPurchaseAttempt(plan.id)
         _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
         val launched = billingManager.launchPurchase(activity, plan.productId)
         if (!launched) {

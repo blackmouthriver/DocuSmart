@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.features.study.domain.PomodoroEngine
 import com.docsmart.features.study.domain.SavedNote
 import com.docsmart.features.study.domain.StudyNotesExporter
@@ -904,6 +905,7 @@ private fun NotesTab(
                         )
                         val updated = listOf(newNote) + savedNotes
                         StudyNotesStorage.saveNotes(context, updated)
+                        DocuSmartAnalytics.logNoteCreated()
                         savedNotes   = updated
                         currentNote  = ""
                         currentTitle = ""
