@@ -21,9 +21,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.DocuBlue
-import com.docsmart.core.ui.theme.IndigoAccent
-import com.docsmart.core.ui.theme.SmartBlue
+import com.docsmart.core.ui.theme.rememberAccentGradient
 
 @Composable
 fun DocuSmartTopBanner(
@@ -43,15 +41,17 @@ fun DocuSmartTopBanner(
     // igual que antes.
     onBack        : (() -> Unit)? = null
 ) {
+    // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): este
+    // degradado estaba fijo en tonos de azul, ignorando el "Color de
+    // acento" elegido en Ajustes -- este banner lo comparten 9 pantallas,
+    // así que el fix aplica a todas de una sola vez.
+    val bannerGradient = rememberAccentGradient()
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(DocuBlue, SmartBlue, IndigoAccent)
-                )
-            )
+            .background(brush = Brush.linearGradient(colors = bannerGradient))
             .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
         // ── Círculos decorativos ──────────────────────────────────────────────

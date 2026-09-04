@@ -50,10 +50,9 @@ import com.docsmart.features.study.domain.StudyStatsStorage
 import com.docsmart.features.study.domain.millisToHoursAndMinutes
 import com.docsmart.features.study.domain.pomodoroCountsByWeekday
 import com.docsmart.core.ui.theme.DocuBlue
-import com.docsmart.core.ui.theme.IndigoAccent
-import com.docsmart.core.ui.theme.SmartBlue
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
+import com.docsmart.core.ui.theme.rememberAccentGradient
 import com.itextpdf.kernel.geom.Vector
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
@@ -454,9 +453,11 @@ private fun ReadingTab(
                         modifier = Modifier
                             .size(80.dp)
                             .background(
-                                brush = Brush.linearGradient(
-                                    listOf(DocuBlue, IndigoAccent)
-                                ),
+                                // Bug real corregido 2026-09-04 (backlog UX
+                                // §7, HU-UX-06): fijo en tonos de azul,
+                                // ignorando el "Color de acento" elegido en
+                                // Ajustes.
+                                brush = Brush.linearGradient(rememberAccentGradient()),
                                 shape = MaterialTheme.shapes.extraLarge
                             ),
                         contentAlignment = Alignment.Center
@@ -1199,7 +1200,10 @@ private fun StudyWeekBars(labels: List<String>, counts: IntArray) {
                     modifier = Modifier
                         .width(18.dp)
                         .height((32 * counts[index] / maxCount).coerceAtLeast(4).dp)
-                        .background(DocuBlue, RoundedCornerShape(4.dp))
+                        // Bug real corregido 2026-09-04 (backlog UX §7,
+                        // HU-UX-06): fijo en azul, ignorando el "Color de
+                        // acento" elegido en Ajustes.
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
                 )
                 Text(
                     text = label,

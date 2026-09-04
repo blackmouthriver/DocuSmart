@@ -21,15 +21,16 @@ fun PremiumBanner(
     isPremium: Boolean,
     modifier: Modifier = Modifier
 ) {
+    // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): este
+    // degradado estaba fijo en tonos de azul, ignorando el "Color de
+    // acento" elegido en Ajustes.
+    val bannerGradient = rememberAccentGradient()
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(DocuBlue, SmartBlue, IndigoAccent)
-                )
-            ),
+            .background(brush = Brush.linearGradient(colors = bannerGradient)),
         contentAlignment = Alignment.Center
     ) {
         // Círculos decorativos

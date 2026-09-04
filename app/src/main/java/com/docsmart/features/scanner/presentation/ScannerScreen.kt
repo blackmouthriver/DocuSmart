@@ -22,9 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.docsmart.R
-import com.docsmart.core.ui.theme.DocuBlue
-import com.docsmart.core.ui.theme.IndigoAccent
-import com.docsmart.core.ui.theme.SmartBlue
+import com.docsmart.core.ui.theme.rememberAccentGradient
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import timber.log.Timber
 
@@ -93,14 +91,14 @@ fun ScannerScreen(
     }
 
     // ── UI mientras carga el escáner ──────────────────
+    // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): fondo fijo
+    // en tonos de azul, ignorando el "Color de acento" elegido en Ajustes.
+    val bannerGradient = rememberAccentGradient()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(DocuBlue, SmartBlue, IndigoAccent)
-                )
-            ),
+            .background(brush = Brush.linearGradient(colors = bannerGradient)),
         contentAlignment = Alignment.Center
     ) {
         Column(

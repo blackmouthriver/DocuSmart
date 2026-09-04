@@ -8,18 +8,17 @@ import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
+import com.docsmart.core.ui.theme.rememberAccentGradient
 
 @Composable
 fun HomeBanner(
@@ -31,18 +30,8 @@ fun HomeBanner(
     // degradado estaba fijo en tonos de azul (DocuBlue/SmartBlue/
     // IndigoAccent) sin importar el "Color de acento" elegido en Ajustes
     // -- era el único elemento de Home que no respetaba esa elección.
-    // Derivado de colorScheme.primary (ya resuelto al acento + tema
-    // claro/oscuro correctos por DocuSmartTheme) en vez de codificarlo de
-    // nuevo acá, para no duplicar esa lógica ni arriesgar una combinación
-    // de colores no probada.
     val primary = MaterialTheme.colorScheme.primary
-    val bannerGradient = remember(primary) {
-        listOf(
-            lerp(primary, Color.White, 0.12f),
-            primary,
-            lerp(primary, Color.Black, 0.22f)
-        )
-    }
+    val bannerGradient = rememberAccentGradient()
 
     Box(
         modifier = modifier

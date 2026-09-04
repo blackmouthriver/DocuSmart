@@ -33,10 +33,8 @@ import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
-import com.docsmart.core.ui.theme.DocuBlue
-import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.PremiumGold
-import com.docsmart.core.ui.theme.SmartBlue
+import com.docsmart.core.ui.theme.rememberAccentGradient
 import timber.log.Timber
 
 @Composable
@@ -212,14 +210,14 @@ private fun PinUnlockScreen(
         )
     }
 
+    // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): fondo fijo
+    // en tonos de azul, ignorando el "Color de acento" elegido en Ajustes.
+    val securityBannerGradient = rememberAccentGradient()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(DocuBlue, SmartBlue, IndigoAccent)
-                )
-            )
+            .background(brush = Brush.linearGradient(colors = securityBannerGradient))
     ) {
         IconButton(
             onClick  = onBack,
@@ -261,7 +259,7 @@ private fun PinUnlockScreen(
                     onClick = onSetupPin,
                     colors  = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
-                        contentColor   = DocuBlue
+                        contentColor   = MaterialTheme.colorScheme.primary
                     ),
                     shape = MaterialTheme.shapes.medium
                 ) {
@@ -408,10 +406,14 @@ private fun SetupPinScreen(
         }
     }
 
+    // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): fondo fijo
+    // en tonos de azul, ignorando el "Color de acento" elegido en Ajustes.
+    val pinBannerGradient = rememberAccentGradient()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.linearGradient(listOf(DocuBlue, SmartBlue, IndigoAccent))),
+            .background(Brush.linearGradient(pinBannerGradient)),
         contentAlignment = Alignment.Center
     ) {
         Column(

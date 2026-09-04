@@ -9,13 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.core.ui.theme.DocuBlue
-import com.docsmart.core.ui.theme.IndigoAccent
 
 // ── Card base reutilizable ────────────────────────────
 // Úsala como contenedor para cualquier contenido
@@ -46,27 +44,6 @@ fun DocuSmartCard(
             content = content
         )
     }
-}
-
-// ── Card con gradiente (banner hero) ─────────────────
-// Uso: banner principal del Home
-@Composable
-fun DocuSmartGradientCard(
-    modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(DocuBlue, IndigoAccent)
-                )
-            )
-            .padding(20.dp),
-        content = content
-    )
 }
 
 // ── Card de acceso rápido (grid home) ────────────────

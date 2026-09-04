@@ -528,6 +528,65 @@ sigue sin implementar** -- el usuario decidió no abordar esa épica más
 grande por ahora; queda tal cual estaba documentada arriba si se
 retoma más adelante.
 
+### Ampliado 2026-09-04: el mismo bug estaba en más banners, no solo Home
+
+Al ver el fix del banner de Home, el usuario pidió extenderlo a
+**todos** los banners azules de la app, no solo ese. Se buscó
+`DocuBlue`/`SmartBlue`/`IndigoAccent` en degradados y fondos de toda la
+app (no solo donde ya se sabía que había código duplicado) y se
+encontraron varios más con el mismo problema exacto:
+
+- **`DocuSmartTopBanner.kt`** -- el componente **compartido por 9
+  pantallas** (Ajustes, Seguridad, Herramientas PDF y sus
+  sub-pantallas, etc.), el de mayor impacto de todos.
+- **`PremiumBanner.kt`** -- el banner hero de la pantalla Premium.
+- **`ScannerScreen.kt`** -- el fondo de pantalla completa mientras
+  carga el escáner.
+- **`SecurityScreen.kt`** (2 lugares) -- el fondo de pantalla completa
+  del menú principal de Seguridad, y el de la pantalla "Configura tu
+  PIN" (esta última también con su botón "Configurar PIN" en texto
+  azul fijo, mismo patrón que el botón "Abrir" de Home).
+- **`StudyScreen.kt`** -- el ícono decorativo del estado vacío de Modo
+  Estudio, y las barras del gráfico "Pomodoros esta semana".
+
+**Refactor**: se extrajo la lógica de degradado a un helper compartido
+`rememberAccentGradient()` (nuevo, `core/ui/theme/AccentGradient.kt`)
+para no duplicar el cálculo de `lerp` en cada archivo -- `HomeBanner.kt`
+también se actualizó para usarlo, sin cambiar su comportamiento.
+
+**Hallazgo adicional en el camino**: `DocuSmartCards.kt` tenía una
+función `DocuSmartGradientCard` con el mismo bug, comentada como "banner
+principal del Home" -- pero resultó ser **código muerto**, sin ningún
+call site en toda la app (`HomeBanner.kt` ya tiene su propia
+implementación desde antes, esta función quedó huérfana). Eliminada en
+vez de corregida.
+
+**Dejado a propósito sin tocar** (no son banners decorativos, son
+colores con significado semántico o de marca fija):
+- **`StudyScreen.kt`**: el indicador de "leyendo en voz alta" (TTS
+  activo) y el reloj/badge de Pomodoro (azul = estudio, verde =
+  descanso) usan `DocuBlue` para codificar un ESTADO, no como color de
+  marca decorativo -- cambiarlos rompería esa asociación de color
+  aprendida por el usuario entre pantallas.
+- **`SplashDocuSmartScreen.kt`** y **`OnboardingScreen.kt`**: pantallas
+  de identidad de marca / primer contacto con la app, antes de que el
+  usuario explore Ajustes -- se mantienen con la paleta azul original
+  a propósito, mismo criterio que cualquier splash/onboarding de marca.
+- Íconos con color fijo por categoría en Accesos rápidos
+  (`QuickAccessGrid.kt`) y menús similares -- diseño intencional de
+  variedad visual por tipo de función, ya confirmado fuera de alcance
+  en la ronda anterior de esta misma HU.
+
+**Verificado en dispositivo real (Motorola Edge 30 Neo)** con acento
+"Verde": el banner de Ajustes (vía `DocuSmartTopBanner`), el menú
+principal y la pantalla "Configura tu PIN" de Seguridad (fondo +
+botón), y el banner hero de Premium cambiaron correctamente a verde.
+El fondo de carga de Escáner comparte el mismo código exacto ya
+verificado en Seguridad, no se forzó la cámara real del dispositivo
+para no arriesgar quedar atascado en un flujo externo de ML Kit.
+Devuelto el acento a "Azul" al terminar: todo se ve idéntico al diseño
+original, sin regresión. Gauntlet completo en verde.
+
 ---
 
 ## 8. Mejora — Banner de anuncios consistente en todas las pantallas (no-premium)
