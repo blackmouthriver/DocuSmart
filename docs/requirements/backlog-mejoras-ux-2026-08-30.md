@@ -2304,6 +2304,37 @@ Azul) confirmando que la pastilla lo sigue sin tocar código. Gauntlet
 en verde en ambas iteraciones: `compileDebugKotlin` + `detekt` +
 `lintDebug` + `testDebugUnitTest`.
 
+**Tercera iteración — feedback del usuario, mismo día (2026-09-06)**:
+dos problemas más reportados: (1) los títulos habían desaparecido por
+completo (ninguna de las 5 pestañas los mostraba, activa o no); (2) no
+se percibía animación/transición al cambiar de pestaña, se sentía
+instantáneo. **Causa real del (1)**: el `Row` de ítems tenía un alto
+fijo (`BarHeight` = 100dp) y `.navigationBarsPadding()` aplicado
+*dentro* de ese mismo alto fijo — en un dispositivo con navegación de 3
+botones, el padding real del sistema dejaba muy poco alto disponible
+dentro de esos 100dp, y el `Text` del título (último elemento del
+`Column`, después del ícono) se quedaba sin espacio. Corregido de raíz:
+el `Row` ya no tiene alto fijo (crece según su contenido real +
+`.navigationBarsPadding()` + `.padding(vertical = 14.dp)`); el fondo
+del bar usa `Modifier.matchParentSize()` dentro de un `Box` sin alto
+fijo, ajustándose automáticamente al alto real que el `Row` necesite en
+cada dispositivo, sin adivinar un número que pueda no alcanzar. De
+paso se aprovechó para otro pedido explícito del usuario: el título
+ahora solo se muestra para la pestaña **activa** (antes intentaba
+mostrarse en las 5 permanentemente), con `AnimatedVisibility` (fade +
+slide, 160ms de demora tras el ícono para que se sienta en dos tiempos
+en vez de todo a la vez). Para el (2): springs de
+`stiffness = Spring.StiffnessLow` (200f) a `130f` (más lento); tweens
+de color/tamaño de 420ms a 480ms; sumado a la demora del título, que
+por sí sola ya hace mucho más perceptible la transición al animar dos
+elementos en secuencia en vez de uno solo. Verificado en dispositivo
+real -- nota: esta vuelta se probó en un **Moto E22 (ZY32HFP5QL)**, no
+el Motorola Edge 30 Neo de iteraciones anteriores (el usuario cambió de
+dispositivo de prueba) -- en 3 de las 5 pestañas
+(Inicio/Convertir/Ajustes): título visible correctamente solo en la
+pestaña activa, círculo limpio, sin regresiones. Gauntlet en verde una
+vez más.
+
 **Hallazgo colateral — limpieza de datos de prueba**: durante la
 verificación en dispositivo, el usuario notó capturas propias
 (`screen15.png`...`screen21.png`) mezcladas con sus fotos reales en

@@ -1,6 +1,7 @@
 package com.docsmart.core.ui.components
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -8,6 +9,10 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -93,16 +98,17 @@ private val routesWithBottomBar = setOf(
 // apenas del bar con un spring suave (feedback 2026-09-05: el diseño
 // anterior lo elevaba muy por encima del bar y el hueco extra reservado
 // para eso se veía como una franja plana que tapaba el contenido/fondo
-// real detrás -- ahora el Box exterior mide justo BarHeight, así que el
-// círculo activo sobresale por overflow natural del Box, sin reservar
-// espacio extra ni pintar un color de relleno detrás). Los colores NO
-// viven acá -- salen de MaterialTheme.colorScheme (acento + tema
-// claro/oscuro) para no repetir el bug real corregido 2026-09-04 en
+// real detrás -- ahora el fondo del bar se ajusta al alto real del
+// contenido (Row) en vez de un alto fijo, así que el círculo activo
+// sobresale por overflow natural, sin reservar espacio extra ni pintar
+// un color de relleno detrás). Los colores NO viven acá -- salen de
+// MaterialTheme.colorScheme (acento + tema claro/oscuro) para no
+// repetir el bug real corregido 2026-09-04 en
 // HomeBanner/DocuSmartTopBanner/etc. (gradientes con azul fijo que
 // ignoraban el "Color de acento" elegido).
 private object BottomBarSizes {
-    val BarHeight = 100.dp
     val BarCorner = 30.dp
+    val BarVerticalPadding = 14.dp
     val ItemBox = 64.dp
     val ItemCorner = ItemBox / 2   // siempre circular, activo e inactivo
     val LiftOffset = (-14).dp      // sobresale poco, se mantiene casi dentro del bar
@@ -128,20 +134,20 @@ fun DocuSmartBottomBar(
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            // Mide justo la altura visible del bar -- el círculo activo
-            // sobresale por overflow (Box no recorta a sus hijos por
-            // defecto), sin reservarle a Scaffold espacio extra que
-            // quedaría como franja vacía.
-            .height(BottomBarSizes.BarHeight),
+        modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Superficie del bar
+        // Superficie del bar -- se ajusta al alto real del Row (el único
+        // hijo sin matchParentSize), en vez de un alto fijo adivinado que
+        // podía chocar con el navigationBarsPadding real del dispositivo y
+        // recortar el título (bug real encontrado 2026-09-06: con un alto
+        // fijo, en 3-botones el padding del sistema dejaba muy poco alto
+        // disponible y el label quedaba sin espacio). El círculo activo
+        // sigue sobresaliendo por overflow natural (Box no recorta a sus
+        // hijos por defecto), sin reservarle a Scaffold espacio extra.
         Box(
             Modifier
-                .fillMaxWidth()
-                .height(BottomBarSizes.BarHeight)
+                .matchParentSize()
                 .shadow(
                     elevation = 18.dp,
                     shape = barShape,
@@ -156,9 +162,8 @@ fun DocuSmartBottomBar(
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(BottomBarSizes.BarHeight)
                 .navigationBarsPadding()
-                .padding(horizontal = 4.dp),
+                .padding(horizontal = 4.dp, vertical = BottomBarSizes.BarVerticalPadding),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -188,13 +193,14 @@ private fun BottomNavAnimatedItem(
     // Springs suaves y sin rebote (feedback 2026-09-05: la versión anterior
     // con DampingRatioMediumBouncy se sentía brusca/con rebote elástico) --
     // DampingRatioLowBouncy asienta con una transición suave, casi sin
-    // overshoot.
+    // overshoot. Duraciones subidas de nuevo (feedback 2026-09-06: "no pasa
+    // tan rápido") para que la transición se note, no sea instantánea.
     val liftSpec = spring<Dp>(
         dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = Spring.StiffnessLow
+        stiffness = 130f
     )
-    val colorTween = tween<Color>(durationMillis = 420, easing = FastOutSlowInEasing)
-    val sizeTween = tween<Dp>(durationMillis = 420, easing = FastOutSlowInEasing)
+    val colorTween = tween<Color>(durationMillis = 480, easing = FastOutSlowInEasing)
+    val sizeTween = tween<Dp>(durationMillis = 480, easing = FastOutSlowInEasing)
 
     val lift by animateDpAsState(
         targetValue = if (active) BottomBarSizes.LiftOffset else 0.dp,
@@ -203,16 +209,8 @@ private fun BottomNavAnimatedItem(
     )
     val scale by animateFloatAsState(
         targetValue = if (active) 1f else 0.9f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = 130f),
         label = "scale"
-    )
-    val labelLift by animateDpAsState(
-        targetValue = if (active) (-3).dp else 0.dp,
-        animationSpec = liftSpec,
-        label = "labelLift"
     )
     val iconSize by animateDpAsState(
         targetValue = if (active) BottomBarSizes.ActiveIconSize else BottomBarSizes.InactiveIconSize,
@@ -225,15 +223,9 @@ private fun BottomNavAnimatedItem(
         animationSpec = colorTween,
         label = "iconColor"
     )
-    val labelColor by animateColorAsState(
-        targetValue = if (active) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = colorTween,
-        label = "labelColor"
-    )
     val pillAlpha by animateFloatAsState(
         targetValue = if (active) 1f else 0f,
-        animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
         label = "pillAlpha"
     )
 
@@ -277,13 +269,43 @@ private fun BottomNavAnimatedItem(
                 modifier = Modifier.size(iconSize)
             )
         }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            color = labelColor,
-            fontSize = 11.sp,
-            fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-            modifier = Modifier.offset(y = labelLift)
-        )
+        // El título solo aparece para la pestaña activa (feedback
+        // 2026-09-06: "ya no tiene los títulos... agrégalos cuando se haga
+        // clic"), con una pequeña demora tras el ícono para que la
+        // revelación se sienta en dos tiempos, no todo instantáneo a la vez
+        // (feedback del mismo mensaje: "que tenga una demora y no pase tan
+        // rápido").
+        AnimatedVisibility(
+            visible = active,
+            enter = fadeIn(
+                animationSpec = tween(
+                    durationMillis = 260,
+                    delayMillis = 160,
+                    easing = FastOutSlowInEasing
+                )
+            ) + slideInVertically(
+                animationSpec = tween(
+                    durationMillis = 260,
+                    delayMillis = 160,
+                    easing = FastOutSlowInEasing
+                ),
+                initialOffsetY = { it / 2 }
+            ),
+            exit = fadeOut(animationSpec = tween(durationMillis = 160)) +
+                slideOutVertically(
+                    animationSpec = tween(durationMillis = 160),
+                    targetOffsetY = { it / 2 }
+                )
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = label,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }

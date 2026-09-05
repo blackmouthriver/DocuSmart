@@ -1047,6 +1047,37 @@ nuevo en dispositivo real en las 5 pestañas: círculo limpio sin franja,
 sobresale apenas y se superpone de forma natural al contenido debajo
 sin artefactos de color. Gauntlet en verde otra vez.
 
+**Segunda corrección tras feedback del usuario, mismo día (2026-09-06):**
+el usuario notó dos problemas más: (1) los títulos ("Inicio",
+"Biblioteca", etc.) habían desaparecido por completo, para las 5
+pestañas, activa o no; (2) no se percibía animación/transición al
+cambiar de pestaña, como si el cambio fuera instantáneo. **Causa real
+del (1)**: el `Row` de ítems tenía un alto fijo (`BarHeight` = 100dp) y
+además `.navigationBarsPadding()` dentro de ese mismo alto fijo -- en
+un dispositivo con navegación de 3 botones, el padding real del
+sistema dejaba muy poco alto disponible dentro de esos 100dp, y el
+`Text` del título (el último elemento del `Column`, después del ícono)
+se quedaba sin espacio. Corregido de raíz: el `Row` ya no tiene un alto
+fijo -- ahora usa `.padding(vertical = 14.dp)` + `.navigationBarsPadding()`
+y se deja crecer según su contenido real; el fondo del bar (antes con
+el mismo alto fijo) ahora usa `Modifier.matchParentSize()` dentro de un
+`Box` sin alto fijo, así que se ajusta automáticamente al alto real que
+el `Row` termine necesitando en cada dispositivo, sin adivinar un
+número que pueda no alcanzar. De paso, se aprovechó para cumplir otro
+pedido explícito del usuario: el título ahora solo se muestra para la
+pestaña **activa** (no las 5 permanentemente), con `AnimatedVisibility`
+(fade + slide, con 160ms de demora tras el ícono para que se sienta en
+dos tiempos en vez de todo a la vez). Para el (2), se subieron aún más
+las duraciones (springs de `stiffness = Spring.StiffnessLow` a `130f`
+más lento; tweens de color/tamaño de 420ms a 480ms) además del efecto
+de la demora del título, que por sí solo ya hace mucho más perceptible
+la transición al tener dos elementos animando en secuencia en vez de
+uno solo. Verificado en dispositivo real (nota: esta vuelta se probó en
+un Moto E22, ZY32HFP5QL, no el Motorola Edge 30 Neo de sesiones
+anteriores -- el usuario cambió de dispositivo de prueba) en 3 de las 5
+pestañas (Inicio/Convertir/Ajustes): título visible correctamente solo
+en la pestaña activa, círculo limpio. Gauntlet en verde una vez más.
+
 **Hallazgo colateral durante la verificación en dispositivo — limpieza
 de datos:** el usuario notó capturas propias (`screen15.png`...
 `screen21.png`) mezcladas con sus fotos reales en Biblioteca/Favoritos.
