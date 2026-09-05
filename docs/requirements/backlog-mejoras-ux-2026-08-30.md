@@ -44,6 +44,8 @@ priorización para decidir qué se aborda y en qué orden.
 | 21 | `DocuSmartDocumentItem.kt` (menú "⋮" de Home/Biblioteca) sin i18n — todos los labels hardcodeados en español | Bug (i18n) | Media | Media | Bajo | **✅ Corregido y verificado 2026-09-03** — ver §12, hallazgo H6 |
 | 22 | `DocumentRepository.loadPdfsFromDownloads()` no ve PDF/Word/Excel/PowerPoint reales de Descargas sin `owner_package_name` propio (scoped storage); Texto ni siquiera está en el filtro de mimeTypes de esa consulta | Bug | Media-Alta | Media | Medio | **🟡 Corregido lo corregible 2026-09-03 (Texto + permiso falso + API 29-32); la limitación de scoped storage en API 33+ es de la plataforma, sin fix de código posible** — ver §16 |
 | 23 | Firebase Analytics/Crashlytics ya declarados a Play Store pero nunca funcionaron (plugin de Gradle sin aplicar, 15 eventos sin conectar, sin árbol de Timber en release) | Bug | Alta | Media | Medio | **✅ Corregido y verificado en dispositivo real (build release firmado) 2026-09-03** — ver §20 |
+| 24 | `DocuSmartBottomBar.kt`: pestaña activa sin animación de tamaño/forma/color | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-05** — ver §24 |
+| 25 | Miniatura real del archivo (no solo ícono/color por tipo) en Biblioteca, Recientes, Convertir y demás listados de documentos | Mejora | Media | Alta | Medio | Pedido explícitamente por el usuario 2026-09-05, "para después" — no implementado, requiere generar/cachear miniaturas por documento (portada PDF, primera diapositiva, contenido de imagen, etc.) |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -2241,3 +2243,84 @@ real que corregir (evitar tocar código sin una causa raíz confirmada).
 Si en el futuro se observa el problema de nuevo, lo más útil sería una
 captura de pantalla del momento exacto en que ocurre, para comparar
 tarjeta por tarjeta.
+
+## 24. Mejora — Animación de tamaño/forma/color en la barra de navegación inferior
+
+El usuario pidió un ajuste visual a `DocuSmartBottomBar.kt`: que la
+pestaña activa cambie de tamaño, forma y color con una animación al
+tocarla, aportando un diseño de referencia (código Kotlin + captura)
+con una pastilla que se eleva del bar con un spring.
+
+**Adaptado, no copiado tal cual**: el diseño de referencia traía
+colores fijos (`Color(0xFF2338A8)`, etc.), lo que habría reintroducido
+el mismo bug corregido más temprano en la misma sesión en
+HomeBanner/DocuSmartTopBanner/PremiumBanner/ScannerScreen/
+SecurityScreen (gradientes con azul fijo que ignoraban el "Color de
+acento" elegido en Ajustes, HU-UX-06 §7). Se conectó la pastilla activa
+a `rememberAccentGradient()` (mismo helper de
+`core/ui/theme/AccentGradient.kt`) y el resto de colores a
+`MaterialTheme.colorScheme`, manteniendo intacta la lógica real de
+navegación (`BottomNavItem`, `bottomNavItems`, `routesWithBottomBar`,
+`stringResource()`, `NavRoutes`) para no romper la integración con
+`MainActivity.kt`/`NavController` ni el i18n corregido en 2026-08-24
+(ver `CONTEXT.md` §"Limpieza de lint + i18n de la barra inferior").
+
+**Primera iteración y feedback del usuario**: la primera versión
+elevaba la pastilla activa muy por fuera del bar (`-34dp` de offset) y
+reservaba 40dp extra de alto en el `Box` exterior para no recortarla.
+El usuario reportó que esto se veía mal: "queda una franja blanca que
+tapa la imagen de fondo". Causa: ese hueco extra se rellenaba con un
+halo de color plano (`MaterialTheme.colorScheme.background`) que no
+siempre coincidía visualmente con lo que había detrás. Pidió además:
+que la pastilla se mantenga casi dentro del bar y sobresalga poco (no
+que "se eleve por la parte superior"); que si sobresale, se vea el
+fondo real y no una franja de color; forma circular fija (no
+"pastilla" ovalada); transiciones más suaves, no bruscas; y un bar en
+general más grande.
+
+**Corrección aplicada**:
+- El `Box` exterior ahora mide exactamente `BarHeight` (sin hueco
+  extra reservado a `Scaffold`) — la pastilla activa sobresale por
+  *overflow* natural (un `Box` de Compose no recorta a sus hijos sin
+  un `.clip()` explícito), así que lo que asoma por encima del bar es
+  el contenido real de la pantalla, ligeramente tapado, no un color
+  sintético.
+- Se eliminó el halo (`background(color = haloColor...)`) por
+  completo.
+- Forma circular fija: `ItemCorner = ItemBox / 2` siempre, en vez de
+  animar entre círculo (inactivo) y cuadrado redondeado (activo).
+- Bar más grande: `BarHeight` 84dp → 100dp, `ItemBox` 58dp → 64dp,
+  íconos 22/26dp → 24/28dp.
+- Elevación más discreta: `LiftOffset` -34dp → -14dp.
+- Transiciones más suaves: springs `Spring.DampingRatioMediumBouncy`
+  (rebote elástico notorio) → `Spring.DampingRatioLowBouncy`; tweens de
+  color/tamaño de 300ms lineales → 420ms con `FastOutSlowInEasing`.
+
+**Verificado en dispositivo real** (Motorola Edge 30 Neo, ZY22G7SB77)
+en ambas iteraciones: las 5 pestañas (Inicio/Biblioteca/Convertir/PDF/
+Ajustes) elevan, cambian de forma y de color correctamente; probado
+cambiando el "Color de acento" en vivo (Azul → Naranja → Morado →
+Azul) confirmando que la pastilla lo sigue sin tocar código. Gauntlet
+en verde en ambas iteraciones: `compileDebugKotlin` + `detekt` +
+`lintDebug` + `testDebugUnitTest`.
+
+**Hallazgo colateral — limpieza de datos de prueba**: durante la
+verificación en dispositivo, el usuario notó capturas propias
+(`screen15.png`...`screen21.png`) mezcladas con sus fotos reales en
+Biblioteca/Favoritos. Causa: los `adb shell screencap` de esta y
+sesiones anteriores se guardaban directo en `/sdcard/`, que la
+pestaña "Dispositivo" de Biblioteca escanea e indexa como documentos
+reales. Se encontraron y eliminaron **134 archivos `.png`/`.xml` de
+prueba** acumulados de sesiones de QA anteriores (idiomas, editor,
+visor, escáner, Pomodoro, seguridad, ajustes, etc.), y se desmarcó
+(sin borrar) una foto real de WhatsApp del usuario que había quedado
+favorita por error durante esta prueba. Corrección de proceso: los
+screenshots de ahora en adelante se guardan en `/data/local/tmp/`
+(no escaneado por la app), nunca directo en `/sdcard/`.
+
+**Pendiente para después (#25 en la tabla)**: el usuario pidió,
+explícitamente para más adelante y no en esta sesión, mostrar una
+miniatura real del archivo (portada del PDF, primera diapositiva,
+contenido de la imagen, etc.) en vez de solo el ícono/color por tipo,
+en Biblioteca, Recientes, Convertir y en general donde se listan
+documentos.

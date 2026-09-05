@@ -988,6 +988,91 @@ que fija Hilt en 2.60.1 seguirá bloqueado mientras el proyecto no migre a
 AGP 9.x (decisión deliberada de esta migración: quedarse en AGP 8.x hasta
 que KSP/Hilt maduren sobre el modo de Kotlin integrado de AGP 9).
 
+### Barra de navegación inferior con animación de elevación (2026-09-05)
+
+El usuario pidió un ajuste visual a `DocuSmartBottomBar.kt` (la misma
+barra i18n-izada en la sesión del 2026-08-24, ver arriba): que la
+pestaña activa cambie de tamaño, forma y color con una animación al
+tocarla, en vez del `NavigationBar`/`NavigationBarItem` plano de
+Material3 usado hasta ahora. Aportó un diseño de referencia (código +
+captura) con una pastilla que se eleva por fuera del bar con un
+spring, cambia de círculo (inactivo) a cuadrado redondeado (activo),
+crece de 22dp a 26dp de ícono y pasa de gris a un degradado de color.
+
+**Adaptado, no copiado tal cual** — el diseño de referencia traía
+colores fijos (`Color(0xFF2338A8)` etc.), lo que habría reintroducido
+exactamente el mismo bug corregido hoy más temprano en
+HomeBanner/DocuSmartTopBanner/PremiumBanner/etc. (gradientes con azul
+fijo que ignoran el "Color de acento" elegido en Ajustes). Se conectó
+la pastilla activa a `rememberAccentGradient()` (mismo helper de
+`core/ui/theme/AccentGradient.kt` que ya usan los demás banners) y los
+demás colores a `MaterialTheme.colorScheme` (`primary`/`onPrimary`
+para la pastilla activa, `onSurfaceVariant` para inactivos,
+`surface`/`surfaceVariant` para el fondo del bar) — así el bar respeta
+acento y tema claro/oscuro/sistema automáticamente, igual que el resto
+de la app. Se mantuvo intacta la lógica real de navegación
+(`BottomNavItem`, `bottomNavItems`, `routesWithBottomBar`,
+`stringResource()` para los labels, `NavRoutes`) para no romper la
+integración con `MainActivity.kt`/`NavController` ni el i18n ya
+corregido en 2026-08-24.
+
+Verificado en dispositivo real (Motorola Edge 30 Neo, ZY22G7SB77): las
+5 pestañas (Inicio/Biblioteca/Convertir/PDF/Ajustes) elevan, cambian de
+forma y de color correctamente al seleccionarse; probado además
+cambiando el "Color de acento" en vivo (Azul → Naranja → Morado →
+Azul) confirmando que la pastilla sigue el acento elegido sin volver a
+tocar código. Gauntlet en verde: `compileDebugKotlin` + `detekt` +
+`lintDebug` + `testDebugUnitTest`.
+
+**Ajuste tras feedback del usuario (mismo día, misma sesión):** la
+primera versión elevaba la pastilla activa muy por fuera del bar
+(-34dp) y reservaba 40dp extra de alto en el Box exterior para no
+recortarla -- esto se veía mal, "una franja blanca que tapa el fondo",
+porque ese hueco extra se rellenaba con un halo de color plano
+(`colorScheme.background`) que no siempre coincidía con lo que
+realmente había detrás. Corregido: el Box exterior ahora mide
+exactamente `BarHeight` (sin hueco extra reservado a Scaffold), la
+pastilla activa sobresale por *overflow* natural (Compose no recorta
+hijos de un `Box` sin `.clip()`), y se eliminó el halo por completo --
+lo que asoma por encima del bar es simplemente el contenido real de la
+pantalla (se ve tapado un poco, no cubierto por un color falso). Otros
+cambios pedidos: forma circular fija (antes animaba de círculo a
+cuadrado redondeado; ahora `ItemCorner = ItemBox / 2` siempre, nunca
+"pastilla"), bar más grande (`BarHeight` 84dp → 100dp, `ItemBox` 58dp →
+64dp), elevación más discreta (`LiftOffset` -34dp → -14dp, se mantiene
+casi dentro del bar) y transiciones más suaves (springs
+`DampingRatioMediumBouncy` → `DampingRatioLowBouncy`, tweens de color/
+tamaño 300ms lineales → 420ms con `FastOutSlowInEasing`). Verificado de
+nuevo en dispositivo real en las 5 pestañas: círculo limpio sin franja,
+sobresale apenas y se superpone de forma natural al contenido debajo
+sin artefactos de color. Gauntlet en verde otra vez.
+
+**Hallazgo colateral durante la verificación en dispositivo — limpieza
+de datos:** el usuario notó capturas propias (`screen15.png`...
+`screen21.png`) mezcladas con sus fotos reales en Biblioteca/Favoritos.
+Causa: los `adb shell screencap` de esta y sesiones anteriores se
+guardaban directo en `/sdcard/` (raíz de almacenamiento compartido),
+que la pestaña "Dispositivo" de Biblioteca escanea e indexa como
+documentos reales. Se encontraron **134 archivos `.png`/`.xml` de
+prueba** acumulados en `/sdcard/` de sesiones de QA anteriores
+(idiomas, editor, visor, escáner, Pomodoro, seguridad, ajustes, etc.),
+todos eliminados, más una foto real de WhatsApp del usuario que había
+quedado marcada como favorita por error durante esta prueba (solo se
+desmarcó, no se borró -- es su archivo real). Corrección de proceso:
+los screenshots de esta sesión en adelante se guardan en
+`/data/local/tmp/` (no escaneado por la app), nunca directo en
+`/sdcard/`.
+
+**Pendiente para después (pedido explícitamente por el usuario, no
+implementado aún):** miniatura real del archivo en vez de solo el
+ícono/color por tipo -- que se vea una vista previa real del documento
+(portada del PDF, primera diapositiva, contenido de la imagen, etc.)
+en Biblioteca, Recientes, Convertir y en general donde se listan
+documentos. Es un cambio más grande (requiere generar/cachear
+miniaturas por documento, no solo leer `document.type`) -- queda
+anotado como candidato a un nuevo ítem del backlog de UX, no abordado
+en esta sesión.
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)
