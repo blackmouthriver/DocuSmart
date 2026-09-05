@@ -37,7 +37,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 14 | i18n: agregar ja/ko/zh/it/fr | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado 2026-09-04** — ver §21 |
 | 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-03** — ver §15 |
 | 16 | Encriptar/quitar contraseña de archivo individual en Seguridad | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
-| 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | Ya listado en `CONTEXT.md` §5 |
+| 17 | Tarjetas de favoritos con tamaños inconsistentes | Bug (visual) | Baja | Baja | Bajo | **🟢 Verificado en dispositivo real 2026-09-05 — no reproducible con el código actual** — ver §23 |
 | 18 | Word/Excel/PowerPoint en el Visor con inconvenientes | Bug | Media | Media-Alta | Medio | **✅ Reescrito con Apache POI y verificado en dispositivo real 2026-09-03** (incluye fix del bug de espaciado del conversor PDF→Word encontrado en el camino) — ver §18/§19 |
 | 19 | Actualizar splash (marca empresa + marca app) e íconos (lanzador + banner azul) con el nuevo diseño | Mejora | Alta (marca/identidad) | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo 2026-08-30** — ver §13 |
 | 20 | H1: texto "Eliminar del historial" engañoso (en realidad mueve a la papelera real) | Bug | Media | Baja | Bajo | **✅ Corregido 2026-08-30** — ver §12, hallazgo H1 |
@@ -2187,3 +2187,57 @@ ya en uso) y las versiones de las 2 GitHub Actions nuevas
 confirmaron como las últimas disponibles al momento, ancladas por
 commit SHA siguiendo la misma convención que el resto de los
 workflows del proyecto.
+
+## 23. Bug backlog #17 — Tarjetas de favoritos con tamaños inconsistentes
+
+**Investigado y no reproducido en dispositivo real 2026-09-05.**
+
+El código de `FavoriteDocumentCard` (composable privado en
+[`FavoritesSection.kt`](../../app/src/main/java/com/docsmart/features/library/presentation/components/FavoritesSection.kt))
+ya tiene un tamaño fijo explícito para cada tarjeta:
+
+```kotlin
+Card(
+    modifier = Modifier
+        .width(150.dp)
+        .height(160.dp),
+    ...
+)
+```
+
+Esto contradice de entrada el síntoma reportado ("tamaños
+inconsistentes"), ya que un `Modifier.width/height` fijo no puede
+variar de una tarjeta a otra por código. Se confirmó además que
+`FavoritesSection` se usa en un único lugar de toda la app
+(`LibraryScreen.kt`), descartando que exista una segunda
+implementación de tarjeta de favoritos con otra lógica.
+
+**Prueba en dispositivo real** (Motorola Edge 30 Neo, ZY22G7SB77,
+Android 14): se marcaron como favoritos 3 documentos con nombres de
+longitud muy distinta (`screen2.png`, nombre corto; `screen1.png`;
+`IMG-20260509-WA0012.jpg`, nombre largo que se trunca con "…" en la
+lista) para forzar el caso más propenso a causar una diferencia visual
+(texto de 1 línea vs. texto que casi llena las 2 líneas permitidas).
+Las 3 tarjetas del carrusel horizontal de Favoritos en Biblioteca
+renderizaron con **exactamente el mismo tamaño** (150×160dp), sin
+ninguna diferencia visible de ancho ni alto.
+
+No se pudo probar con tipos de archivo distintos a "Imagen" (PDF,
+Word, Excel) porque la biblioteca de prueba de este dispositivo solo
+contiene imágenes (0 documentos PDF/Word registrados) — igualmente,
+el tipo de archivo solo afecta el color/label del recuadro interno de
+72dp (que tiene `.clip()`), no las dimensiones del `Card` externo, así
+que no hay mecanismo en el código actual por el que variaría el
+tamaño de la tarjeta.
+
+**Conclusión**: el bug no existe con el código actual. Es probable que
+la nota original (agregada en una revisión UX/UI heurística anterior,
+sin verificación en dispositivo — ver `CONTEXT.md` línea "ajuste
+visual, no funcional, fuera de alcance de esta pasada") describiera un
+estado del código anterior a que el `Card` tuviera tamaño fijo, o una
+observación que no llegó a confirmarse. Se marca el ítem #17 como
+verificado/no reproducible en vez de aplicar un cambio sin un defecto
+real que corregir (evitar tocar código sin una causa raíz confirmada).
+Si en el futuro se observa el problema de nuevo, lo más útil sería una
+captura de pantalla del momento exacto en que ocurre, para comparar
+tarjeta por tarjeta.
