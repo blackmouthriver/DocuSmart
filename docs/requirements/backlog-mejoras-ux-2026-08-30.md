@@ -2335,6 +2335,19 @@ dispositivo de prueba) -- en 3 de las 5 pestañas
 pestaña activa, círculo limpio, sin regresiones. Gauntlet en verde una
 vez más.
 
+**Cuarta iteración — el usuario prueba en varios equipos a propósito
+(mismo día)**: reportó, con captura, que la barra volvió a quedar muy
+alta y el círculo activo sobresalía demasiado (pidió reducirlo a la
+mitad); también pidió juntar más la letra del título al ícono,
+conservando el fondo sin franjas blancas. Ajustado: `BarVerticalPadding`
+14dp → 8dp, `ItemBox` 64dp → 60dp, `LiftOffset` -14dp → -7dp (mitad
+exacta), íconos 28/24dp → 26/22dp, espaciador ícono-título 4dp → 1dp.
+Verificado en el emulador `sdk_gphone64_x86_64` (el dispositivo físico
+de esta ronda no estaba conectado a la máquina en el momento del
+ajuste): barra visiblemente más compacta, círculo sobresale poco,
+título pegado al ícono, sin franja blanca. Gauntlet en verde una vez
+más.
+
 **Hallazgo colateral — limpieza de datos de prueba**: durante la
 verificación en dispositivo, el usuario notó capturas propias
 (`screen15.png`...`screen21.png`) mezcladas con sus fotos reales en

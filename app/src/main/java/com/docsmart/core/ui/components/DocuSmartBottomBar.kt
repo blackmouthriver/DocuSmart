@@ -107,13 +107,13 @@ private val routesWithBottomBar = setOf(
 // HomeBanner/DocuSmartTopBanner/etc. (gradientes con azul fijo que
 // ignoraban el "Color de acento" elegido).
 private object BottomBarSizes {
-    val BarCorner = 30.dp
-    val BarVerticalPadding = 14.dp
-    val ItemBox = 64.dp
+    val BarCorner = 26.dp
+    val BarVerticalPadding = 8.dp   // feedback 2026-09-06: la barra quedó muy alta
+    val ItemBox = 60.dp
     val ItemCorner = ItemBox / 2   // siempre circular, activo e inactivo
-    val LiftOffset = (-14).dp      // sobresale poco, se mantiene casi dentro del bar
-    val ActiveIconSize = 28.dp
-    val InactiveIconSize = 24.dp
+    val LiftOffset = (-7).dp       // mitad de lo anterior (-14dp), sobresale menos aún
+    val ActiveIconSize = 26.dp
+    val InactiveIconSize = 22.dp
 }
 
 @Composable
@@ -298,7 +298,7 @@ private fun BottomNavAnimatedItem(
                 )
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(1.dp))
                 Text(
                     text = label,
                     color = MaterialTheme.colorScheme.primary,

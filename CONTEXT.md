@@ -1078,6 +1078,22 @@ anteriores -- el usuario cambió de dispositivo de prueba) en 3 de las 5
 pestañas (Inicio/Convertir/Ajustes): título visible correctamente solo
 en la pestaña activa, círculo limpio. Gauntlet en verde una vez más.
 
+**Cuarta iteración — feedback del usuario probando en otro equipo
+(mismo día, 2026-09-06):** el usuario está probando la barra en varios
+dispositivos a propósito y reportó, con captura, que la barra volvió a
+quedar demasiado alta y el círculo activo sobresalía demasiado (pidió
+reducirlo a la mitad); también pidió juntar más la letra del título al
+ícono -- todo esto conservando el fondo sin franjas blancas ya
+corregido. Ajustado: `BarVerticalPadding` 14dp → 8dp, `ItemBox` 64dp →
+60dp, `LiftOffset` -14dp → -7dp (mitad exacta, como se pidió),
+`ActiveIconSize`/`InactiveIconSize` 28/24dp → 26/22dp (proporcional al
+círculo más chico), y el espaciador entre ícono y título de 4dp → 1dp.
+Verificado en el emulador `sdk_gphone64_x86_64` (el dispositivo físico
+de esta ronda no estaba conectado a esta máquina en el momento del
+ajuste) -- barra visiblemente más compacta, círculo sobresale poco,
+título pegado al ícono, sigue sin franja blanca. Gauntlet en verde una
+vez más.
+
 **Hallazgo colateral durante la verificación en dispositivo — limpieza
 de datos:** el usuario notó capturas propias (`screen15.png`...
 `screen21.png`) mezcladas con sus fotos reales en Biblioteca/Favoritos.
