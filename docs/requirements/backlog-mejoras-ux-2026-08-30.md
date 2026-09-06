@@ -2450,6 +2450,18 @@ tinte coordinado en los tres casos, con borde separador visible al
 hacer scroll, y el botón activo sigue contrastando bien encima.
 Gauntlet en verde una vez más.
 
+**Décima iteración — cierre del punto de la barra**: último ajuste
+pedido: los íconos inactivos se quedaban en gris neutro
+(`onSurfaceVariant`), contrastando poco contra la barra ya teñida.
+Corregido con `lerp(colorScheme.onSurfaceVariant, colorScheme.primary,
+0.45f)` -- mismo patrón que el tinte de la barra. Verificado en
+dispositivo real con acento Morado (claro) y Azul (oscuro, cambio de
+tema accidental durante la prueba que sirvió para confirmar que el
+diseño también funciona en modo oscuro): íconos con tono coordinado al
+acento en ambos casos. Con esto se da por cerrado el punto de la barra
+de navegación (petición explícita del usuario). Gauntlet en verde una
+vez más.
+
 **Hallazgo colateral — limpieza de datos de prueba**: durante la
 verificación en dispositivo, el usuario notó capturas propias
 (`screen15.png`...`screen21.png`) mezcladas con sus fotos reales en

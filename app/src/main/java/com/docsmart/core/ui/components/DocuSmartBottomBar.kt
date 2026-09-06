@@ -247,9 +247,18 @@ private fun BottomNavAnimatedItem(
         animationSpec = sizeTween,
         label = "iconSize"
     )
+    // Feedback 2026-09-06 (4ta vuelta, cierre del punto de la barra): los
+    // íconos inactivos se quedaban en gris neutro (onSurfaceVariant) sin
+    // relación con el acento, contrastando poco contra la barra ya teñida
+    // -- se mezcla con el acento (mismo patrón lerp que el tinte de la
+    // barra) para que combinen sin perder legibilidad.
+    val inactiveIconColor = lerp(
+        MaterialTheme.colorScheme.onSurfaceVariant,
+        MaterialTheme.colorScheme.primary,
+        0.45f
+    )
     val iconColor by animateColorAsState(
-        targetValue = if (active) MaterialTheme.colorScheme.onPrimary
-        else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = if (active) MaterialTheme.colorScheme.onPrimary else inactiveIconColor,
         animationSpec = colorTween,
         label = "iconColor"
     )
