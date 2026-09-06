@@ -1214,6 +1214,38 @@ de Convertir y Herramientas PDF: sin ninguna franja, en todo el
 recorrido de scroll, en ambas pantallas. Gauntlet en verde una vez
 más.
 
+**Novena iteración — mejora estética, mismo día**: con todos los bugs
+ya corregidos, el usuario pidió un ajuste de diseño (no un bug): la
+barra usaba una superficie neutra (`colorScheme.surface`/
+`surfaceVariant`, básicamente blanco/gris) que "se perdía" contra el
+fondo animado al hacer scroll, sin relación visual con el resto de la
+app. Pidió que la barra también tome el Color de acento (igual que ya
+hacen HomeBanner/la pastilla activa/el fondo animado), y un borde
+superior un poco más oscuro para separarla del contenido -- pero que
+siga contrastando con el botón activo, no que se vea igual, y que
+combine con cualquier color de acento elegido.
+
+Implementado en `DocuSmartBottomBar.kt`: el degradado de la superficie
+del bar ahora es `lerp(colorScheme.surface, accent, 0.14f)` →
+`lerp(colorScheme.surfaceVariant, accent, 0.24f)` -- un tinte suave del
+acento, bastante menos intenso que la pastilla activa (que usa el
+acento a toda intensidad vía `rememberAccentGradient()`), para que siga
+contrastando y destacando por encima. Se agregó
+`Modifier.border(1.5.dp, lerp(accent, Color.Black, 0.3f).copy(alpha =
+0.4f), barShape)` como línea superior de separación, en vez de una
+sombra física (evita repetir el problema de sombras con esquinas
+mixtas de iteraciones anteriores). El color de relleno de las esquinas
+(fix del bug de "arcos negros") se actualizó para usar el mismo tono
+que la nueva parada superior del degradado, así combina en vez de
+desentonar.
+
+Verificado en dispositivo real con 3 colores de acento distintos
+(Naranja, Turquesa, Azul): en los tres casos la barra toma un tinte
+claramente visible y coordinado con el acento elegido, con un borde
+superior que la separa del contenido al hacer scroll, y el botón
+activo (con el acento a toda intensidad) sigue contrastando bien
+encima. Gauntlet en verde una vez más.
+
 **Hallazgo colateral durante la verificación en dispositivo — limpieza
 de datos:** el usuario notó capturas propias (`screen15.png`...
 `screen21.png`) mezcladas con sus fotos reales en Biblioteca/Favoritos.

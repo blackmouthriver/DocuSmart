@@ -14,6 +14,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +48,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -130,10 +132,20 @@ fun DocuSmartBottomBar(
         topStart = BottomBarSizes.BarCorner,
         topEnd = BottomBarSizes.BarCorner
     )
-    val surfaceGradient = listOf(
-        MaterialTheme.colorScheme.surface,
-        MaterialTheme.colorScheme.surfaceVariant
-    )
+    // Feedback 2026-09-06 (3ra vuelta): con la superficie neutra (surface/
+    // surfaceVariant) la barra "se perdía" contra el fondo animado al hacer
+    // scroll -- se le da un tinte suave del propio Color de acento (mismo
+    // que usan HomeBanner/DocuSmartTopBanner/la pastilla activa) para que
+    // combine con el resto de la app sin importar qué acento se elija,
+    // manteniéndolo bastante más tenue que la pastilla (que usa el acento a
+    // toda intensidad) para que esta siga contrastando y destacando encima.
+    val accent = MaterialTheme.colorScheme.primary
+    val barTopColor = lerp(MaterialTheme.colorScheme.surface, accent, 0.14f)
+    val barBottomColor = lerp(MaterialTheme.colorScheme.surfaceVariant, accent, 0.24f)
+    val surfaceGradient = listOf(barTopColor, barBottomColor)
+    // Borde superior un poco más oscuro que el acento, para separar
+    // visualmente la barra del contenido que se ve detrás (mismo pedido).
+    val barBorderColor = lerp(accent, Color.Black, 0.3f).copy(alpha = 0.4f)
 
     Box(
         modifier = Modifier
@@ -147,10 +159,10 @@ fun DocuSmartBottomBar(
             // `containerColor = Color.Transparent` (para dejar ver el fondo
             // animado), esas esquinas dejaban ver el fondo de la ventana de
             // la Activity (negro) en vez del tono de la barra. Se pinta acá,
-            // en el Box exterior SIN recortar, para que esas esquinas
-            // muestren el mismo color de superficie en vez de quedar
-            // transparentes.
-            .background(MaterialTheme.colorScheme.surface),
+            // en el Box exterior SIN recortar, con el mismo tono que la
+            // parada superior del degradado de abajo, para que esas
+            // esquinas combinen en vez de quedar transparentes o desentonar.
+            .background(barTopColor),
         contentAlignment = Alignment.BottomCenter
     ) {
         // Superficie del bar -- se ajusta al alto real del Row (el único
@@ -165,14 +177,15 @@ fun DocuSmartBottomBar(
         // Sin `.shadow()`: con esquinas redondeadas solo arriba y una
         // elevación alta (18dp) heredada del diseño de referencia, el
         // renderer dibujaba una sombra que se perdía contra el fondo
-        // transparente. Un bar pegado al borde no necesita sombra propia
-        // para leerse elevado -- el círculo activo y su propio `.shadow()`
-        // ya cumplen ese rol.
+        // transparente. En su lugar, un borde superior (ver barBorderColor
+        // arriba) separa visualmente la barra del contenido -- más simple y
+        // predecible que una sombra sobre una forma con esquinas mixtas.
         Box(
             Modifier
                 .matchParentSize()
                 .clip(barShape)
                 .background(Brush.verticalGradient(surfaceGradient))
+                .border(width = 1.5.dp, color = barBorderColor, shape = barShape)
         )
 
         // Items

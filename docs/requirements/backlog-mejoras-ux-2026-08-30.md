@@ -2431,6 +2431,25 @@ intacto. Verificado en dispositivo real haciendo scroll hasta el final
 absoluto de Convertir y Herramientas PDF: sin ninguna franja en todo
 el recorrido, en ambas pantallas. Gauntlet en verde una vez más.
 
+**Novena iteración — mejora estética, no un bug**: con todo corregido,
+el usuario pidió que la barra (superficie neutra blanco/gris) también
+tome el Color de acento -- se "perdía" contra el fondo animado al
+hacer scroll -- y un borde superior más oscuro para separarla, sin
+dejar de contrastar con el botón activo, combinando con cualquier
+acento. Implementado: degradado de la superficie
+`lerp(colorScheme.surface, accent, 0.14f)` →
+`lerp(colorScheme.surfaceVariant, accent, 0.24f)` (tinte suave, mucho
+menos intenso que la pastilla activa, que usa el acento a toda
+intensidad); borde superior `lerp(accent, Color.Black, 0.3f)` con
+`Modifier.border()` en vez de una sombra física (evita repetir el
+problema de sombras con esquinas mixtas). El color de relleno de
+esquinas (fix de "arcos negros") se actualizó para combinar con la
+nueva parada superior del degradado. Verificado en dispositivo real
+con 3 acentos distintos (Naranja, Turquesa, Azul): la barra toma un
+tinte coordinado en los tres casos, con borde separador visible al
+hacer scroll, y el botón activo sigue contrastando bien encima.
+Gauntlet en verde una vez más.
+
 **Hallazgo colateral — limpieza de datos de prueba**: durante la
 verificación en dispositivo, el usuario notó capturas propias
 (`screen15.png`...`screen21.png`) mezcladas con sus fotos reales en
