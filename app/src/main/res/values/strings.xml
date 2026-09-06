@@ -798,7 +798,7 @@
 
     <!-- ── Vincular carpeta de Descargas por SAF (fila 22 backlog UX) ── -->
     <string name="library_link_downloads_title">Ver más documentos aquí</string>
-    <string name="library_link_downloads_body">Elije tu carpeta preferida para encontrar tus documentos de tu dispositivo y vincularlo a DocuSmart</string>
+    <string name="library_link_downloads_body">Elige una carpeta de tu dispositivo para que Biblioteca también muestre los documentos que ya tienes ahí</string>
     <string name="library_link_downloads_button">Vincular carpeta</string>
 
     <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->

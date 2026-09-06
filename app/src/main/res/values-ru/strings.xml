@@ -794,7 +794,7 @@
 
     <!-- ── Привязка папки Загрузки через SAF (пункт 22 бэклога UX) ── -->
     <string name="library_link_downloads_title">Смотрите больше документов здесь</string>
-    <string name="library_link_downloads_body">Выберите папку по вашему выбору, чтобы найти документы с вашего устройства и привязать её к DocuSmart</string>
+    <string name="library_link_downloads_body">Выберите папку на устройстве, чтобы Библиотека также показывала документы, которые уже есть там</string>
     <string name="library_link_downloads_button">Привязать папку</string>
 
     <!-- ── Быстрый доступ к привязанной папке, рядом с Устройство/Мои файлы/Корзина ── -->

@@ -40,6 +40,9 @@ class DocuSmartApplication : Application(), ImageLoaderFactory {
     // pantalla, sin tener que pasar un ImageLoader propio en cada uso.
     override fun newImageLoader(): ImageLoader =
         ImageLoader.Builder(this)
-            .components { add(PdfThumbnailFetcher.Factory()) }
+            .components {
+                add(PdfThumbnailFetcher.UriFactory())
+                add(PdfThumbnailFetcher.FileFactory())
+            }
             .build()
 }

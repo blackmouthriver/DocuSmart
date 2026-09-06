@@ -794,7 +794,7 @@
 
     <!-- ── Vincular pasta de Downloads via SAF (item 22 do backlog UX) ── -->
     <string name="library_link_downloads_title">Veja mais documentos aqui</string>
-    <string name="library_link_downloads_body">Escolha a pasta de sua preferência para encontrar os documentos do seu dispositivo e vinculá-la ao DocuSmart</string>
+    <string name="library_link_downloads_body">Escolha uma pasta do seu dispositivo para que a Biblioteca também mostre os documentos que você já tem lá</string>
     <string name="library_link_downloads_button">Vincular pasta</string>
 
     <!-- ── Atalho para a pasta vinculada, ao lado de Dispositivo/Meus arquivos/Lixeira ── -->

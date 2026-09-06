@@ -798,7 +798,7 @@
 
     <!-- ── Associer le dossier Téléchargements via SAF (ligne 22 backlog UX) ── -->
     <string name="library_link_downloads_title">Voir plus de documents ici</string>
-    <string name="library_link_downloads_body">Choisis ton dossier préféré pour retrouver tes documents depuis ton appareil et l\'associer à DocuSmart</string>
+    <string name="library_link_downloads_body">Choisis un dossier de ton appareil pour que la Bibliothèque affiche aussi les documents qui s\'y trouvent déjà</string>
     <string name="library_link_downloads_button">Associer un dossier</string>
 
     <!-- ── Raccourci vers le dossier associé, à côté de Appareil/Mes fichiers/Corbeille ── -->

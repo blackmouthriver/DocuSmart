@@ -6,12 +6,14 @@ import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import coil.ImageLoader
 import coil.decode.DataSource
 import coil.fetch.DrawableResult
 import coil.fetch.FetchResult
 import coil.fetch.Fetcher
 import coil.request.Options
+import java.io.File
 import kotlin.math.roundToInt
 
 /**
@@ -22,21 +24,26 @@ import kotlin.math.roundToInt
  * ConverterScreen.kt/ScanResultScreen.kt) trae decodificadores para
  * imágenes normales (JPG/PNG/WebP) pero no para PDF -- Android no tiene un
  * `BitmapFactory` para ese formato, solo [PdfRenderer], que entrega un
- * `Bitmap` ya compuesto en vez de un stream de bytes de imagen. Este
- * Fetcher le enseña a Coil a usar [PdfRenderer] como si fuera un
- * decodificador más, así `document.toContentUri()` funciona igual para
- * `AsyncImage`/`SubcomposeAsyncImage` sin importar si es una imagen o un
- * PDF.
+ * `Bitmap` ya compuesto en vez de un stream de bytes de imagen.
+ *
+ * Bug real corregido 2026-09-06 (encontrado al recrear un PDF de prueba y
+ * ver que la miniatura seguía cayendo al ícono genérico): Coil mapea
+ * internamente cualquier `Uri` de esquema `file://` a un `java.io.File`
+ * (`FileUriMapper`, built-in) **antes** de resolver el `Fetcher` -- así que
+ * un `Fetcher.Factory<Uri>` nunca llega a evaluarse para los documentos
+ * generados por la app (`DocumentUiModel.toContentUri()` devuelve
+ * `Uri.fromFile(...)` para esos). Solo los `content://` de MediaStore
+ * llegan como `Uri` de verdad al Fetcher. Por eso hacen falta DOS
+ * factories -- una para cada tipo de dato -- registradas ambas en
+ * `DocuSmartApplication`.
  */
 class PdfThumbnailFetcher(
     private val context: Context,
-    private val uri: Uri
+    private val openDescriptor: () -> ParcelFileDescriptor
 ) : Fetcher {
 
     override suspend fun fetch(): FetchResult {
-        val descriptor = context.contentResolver.openFileDescriptor(uri, "r")
-            ?: error("No se pudo abrir el PDF para miniatura: $uri")
-        return descriptor.use { pfd ->
+        return openDescriptor().use { pfd ->
             PdfRenderer(pfd).use { renderer ->
                 renderer.openPage(0).use { page ->
                     val scale = THUMBNAIL_WIDTH_PX.toFloat() / page.width
@@ -62,12 +69,25 @@ class PdfThumbnailFetcher(
         }
     }
 
-    class Factory : Fetcher.Factory<Uri> {
+    /** Para `content://` reales (MediaStore, SAF) -- Coil los deja pasar como `Uri`. */
+    class UriFactory : Fetcher.Factory<Uri> {
         override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? {
             val mimeType = options.context.contentResolver.getType(data)
-            val looksLikePdf = mimeType == "application/pdf" ||
-                data.toString().endsWith(".pdf", ignoreCase = true)
-            return if (looksLikePdf) PdfThumbnailFetcher(options.context, data) else null
+            if (!looksLikePdf(mimeType, data.toString())) return null
+            return PdfThumbnailFetcher(options.context) {
+                options.context.contentResolver.openFileDescriptor(data, "r")
+                    ?: error("No se pudo abrir el PDF para miniatura: $data")
+            }
+        }
+    }
+
+    /** Para `file://` de la app (`converted/`/`pdftools/`) -- Coil los mapea a `File` antes de llegar acá. */
+    class FileFactory : Fetcher.Factory<File> {
+        override fun create(data: File, options: Options, imageLoader: ImageLoader): Fetcher? {
+            if (!looksLikePdf(mimeType = null, dataAsString = data.name)) return null
+            return PdfThumbnailFetcher(options.context) {
+                ParcelFileDescriptor.open(data, ParcelFileDescriptor.MODE_READ_ONLY)
+            }
         }
     }
 
@@ -77,5 +97,8 @@ class PdfThumbnailFetcher(
         // alto en las tarjetas de Favoritos), sin gastar memoria de más
         // renderizando la página a su resolución completa.
         const val THUMBNAIL_WIDTH_PX = 300
+
+        fun looksLikePdf(mimeType: String?, dataAsString: String): Boolean =
+            mimeType == "application/pdf" || dataAsString.endsWith(".pdf", ignoreCase = true)
     }
 }

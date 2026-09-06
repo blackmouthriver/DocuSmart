@@ -793,7 +793,7 @@
 
     <!-- ── Link Downloads folder via SAF (UX backlog row 22) ── -->
     <string name="library_link_downloads_title">See more documents here</string>
-    <string name="library_link_downloads_body">Choose your preferred folder to find your device\'s documents and link it to DocuSmart</string>
+    <string name="library_link_downloads_body">Choose a folder on your device so Library also shows the documents you already have there</string>
     <string name="library_link_downloads_button">Link folder</string>
 
     <!-- ── Shortcut to the linked folder, next to Device/My files/Trash ── -->

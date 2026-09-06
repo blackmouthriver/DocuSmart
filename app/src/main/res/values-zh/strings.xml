@@ -798,7 +798,7 @@
 
     <!-- ── 通过 SAF 关联下载文件夹（UX 待办第 22 行） ── -->
     <string name="library_link_downloads_title">在这里查看更多文档</string>
-    <string name="library_link_downloads_body">选择你偏好的文件夹以查找设备中的文档，并将其关联到 DocuSmart</string>
+    <string name="library_link_downloads_body">选择设备中的一个文件夹，让资料库也显示你已经存放在那里的文档</string>
     <string name="library_link_downloads_button">关联文件夹</string>
 
     <!-- ── 已关联文件夹的快捷方式，位于设备/我的文件/回收站旁 ── -->

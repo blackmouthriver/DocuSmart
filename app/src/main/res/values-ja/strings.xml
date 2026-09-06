@@ -798,7 +798,7 @@
 
     <!-- ── SAFによるダウンロードフォルダの連携(バックログUX 22行目) ── -->
     <string name="library_link_downloads_title">もっとドキュメントを見る</string>
-    <string name="library_link_downloads_body">お好みのフォルダを選択して端末内のドキュメントを見つけ、DocuSmartと連携させましょう</string>
+    <string name="library_link_downloads_body">端末内のフォルダを選ぶと、そこにあるドキュメントもライブラリに表示されます</string>
     <string name="library_link_downloads_button">フォルダを連携</string>
 
     <!-- ── 連携済みフォルダへのショートカット(デバイス/マイファイル/ゴミ箱の隣) ── -->

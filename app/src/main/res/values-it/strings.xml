@@ -799,7 +799,7 @@
 
     <!-- ── Collega cartella Download tramite SAF (riga 22 backlog UX) ── -->
     <string name="library_link_downloads_title">Vedi altri documenti qui</string>
-    <string name="library_link_downloads_body">Scegli la tua cartella preferita per trovare i documenti dal tuo dispositivo e collegarla a DocuSmart</string>
+    <string name="library_link_downloads_body">Scegli una cartella del tuo dispositivo per far sì che la Libreria mostri anche i documenti già presenti lì</string>
     <string name="library_link_downloads_button">Collega cartella</string>
 
     <!-- ── Scorciatoia alla cartella collegata, accanto a Dispositivo/I miei file/Cestino ── -->

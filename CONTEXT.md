@@ -1489,6 +1489,95 @@ restaurado al terminar (acento turquesa, tema claro, tamaño de letra
 "Muy grande", archivos de prueba eliminados). Gauntlet en verde:
 `compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
 
+### Bug real: la miniatura de PDF nunca funcionó para archivos de la app (2026-09-06)
+
+Al recrear `pruebapdf.pdf` para verificar el fix anterior, se confirmó
+que el ítem #25 (miniaturas reales) seguía sin funcionar para PDF:
+en "Mis archivos" el ícono genérico "PDF" seguía apareciendo en vez
+de una miniatura real, algo que ya se había documentado como "sin
+verificar visualmente" en la sesión que implementó
+[`PdfThumbnailFetcher.kt`](app/src/main/java/com/docsmart/core/media/PdfThumbnailFetcher.kt)
+por falta de un PDF real en el dispositivo.
+
+Investigación con `coil.util.DebugLogger()` + un log temporal en
+`Factory.create()` (retirados ambos al cerrar el hallazgo): el log de
+Coil mostraba `🚨 Failed ... BitmapFactory returned a null bitmap`
+para el PDF, y el `Factory.create()` de `PdfThumbnailFetcher`
+**nunca se invocaba** para ese archivo -- sí para todas las imágenes
+JPEG de MediaStore, pero no para el PDF de `file://`.
+
+**Causa raíz**: Coil 2.x trae un `Mapper` interno (`FileUriMapper`)
+que convierte cualquier `Uri` de esquema `file://` en un
+`java.io.File` **antes** de resolver qué `Fetcher` usar. Como
+`DocumentUiModel.toContentUri()` devuelve `Uri.fromFile(...)` para
+los documentos generados por la app (`converted/`/`pdftools/`, ruta
+absoluta, no `content://`), el dato que finalmente llega a la etapa
+de Fetcher es un `File`, no un `Uri` -- así que un
+`Fetcher.Factory<Uri>` nunca lo ve, y Coil termina usando su
+`FileFetcher` + `BitmapFactoryDecoder` por defecto, que fallan porque
+un PDF no es una imagen rasterizada. Solo los PDF de MediaStore/SAF
+(`content://` reales) sí llegaban como `Uri` y ahí sí sería aplicable
+el Factory original -- pero nunca se había probado con ninguno de esos
+tampoco.
+
+**Corregido**: `PdfThumbnailFetcher` ahora expone dos factories --
+`UriFactory : Fetcher.Factory<Uri>` (para `content://` reales) y
+`FileFactory : Fetcher.Factory<File>` (para los `file://` de la app,
+que Coil ya mapeó a `File`) -- ambas registradas en
+`DocuSmartApplication.newImageLoader()`. La lógica de render
+(`PdfRenderer` sobre un `ParcelFileDescriptor`) quedó igual, solo
+cambió cómo se obtiene ese descriptor según el tipo de dato recibido.
+
+**Verificado en dispositivo real**: se recreó `pruebapdf.pdf` (esta
+vez inyectando un PDF mínimo válido directamente en
+`files/converted/` vía `run-as`, sin tocar `/sdcard/` ni fotos reales
+del usuario, siguiendo la restricción ya conocida sobre no escribir
+en almacenamiento compartido) -- la miniatura ahora renderiza el
+contenido real de la página (el texto del PDF de prueba se ve
+literalmente en el recuadro). De paso se encontró y limpió
+`pruebayo.pdf`, un archivo de prueba real (801 KB, permisos de
+archivo propio de la app) que había quedado de un intento anterior
+de esta sesión de automatizar el Convertidor -- también con miniatura
+real ya funcionando. Ambos archivos de prueba se eliminaron al
+terminar. Gauntlet en verde: `compileDebugKotlin` + `detekt` +
+`lintDebug` + `testDebugUnitTest`.
+
+### Texto de "Vincular carpeta" poco claro (2026-09-06)
+
+El usuario pidió, a partir de la tarjeta "Vincular carpeta" de
+Biblioteca, que la app permitiera crear una carpeta propia para los
+archivos generados y que esta se borrara al desinstalar. Antes de
+tocar código se le explicó la limitación real de Android: eso solo es
+gratis (sin código extra) si la carpeta es privada de la app -- que es
+exactamente donde ya viven `converted/`/`pdftools/` hoy -- porque una
+carpeta visible en almacenamiento compartido (Documentos/Descargas)
+NO puede autoborrarse al desinstalar (una app no puede ejecutar
+código después de que Android termina de desinstalarla; es una regla
+del sistema, no una limitación de DocuSmart). El usuario confirmó
+mantener el almacenamiento privado actual (sin cambios de código ahí)
+y aclaró que el pedido real era sobre el **texto**, no el
+comportamiento.
+
+Al revisar el código se encontró que "Vincular carpeta" (fila 22 del
+backlog UX, `library_link_downloads_body`) en realidad no tiene nada
+que ver con dónde guarda la app sus propios archivos -- deja elegir
+una carpeta EXISTENTE del dispositivo (p. ej. Descargas) para que
+Biblioteca también lea los documentos que ya hay ahí. El texto
+anterior ("Elije tu carpeta preferida para encontrar tus documentos
+de tu dispositivo y vincularlo a DocuSmart") además tenía un error de
+tipeo ("Elije") y una concordancia rota ("vincularlo" con "carpeta").
+Confirmado con el usuario: corregir el texto para que describa con
+precisión lo que el botón ya hace, sin agregar una sección nueva.
+
+**Corregido**: `library_link_downloads_body` reescrito en los 10
+idiomas soportados (es/en/de/pt/ru/ja/ko/zh/fr/it) --
+"Elige una carpeta de tu dispositivo para que Biblioteca también
+muestre los documentos que ya tienes ahí" (y equivalentes), sin
+mencionar ya "vincularlo a DocuSmart" de forma ambigua. Verificado en
+dispositivo real que el nuevo texto se ve correctamente en la
+tarjeta de Biblioteca. Gauntlet en verde: `compileDebugKotlin` +
+`detekt` + `lintDebug` + `testDebugUnitTest`.
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)

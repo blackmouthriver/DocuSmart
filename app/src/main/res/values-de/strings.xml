@@ -794,7 +794,7 @@
 
     <!-- ── Downloads-Ordner per SAF verknüpfen (UX-Backlog Zeile 22) ── -->
     <string name="library_link_downloads_title">Mehr Dokumente hier sehen</string>
-    <string name="library_link_downloads_body">Wähle deinen bevorzugten Ordner, um die Dokumente deines Geräts zu finden und ihn mit DocuSmart zu verknüpfen</string>
+    <string name="library_link_downloads_body">Wähle einen Ordner auf deinem Gerät, damit die Bibliothek auch die Dokumente zeigt, die du dort bereits hast</string>
     <string name="library_link_downloads_button">Ordner verknüpfen</string>
 
     <!-- ── Verknüpfung zum verknüpften Ordner, neben Gerät/Meine Dateien/Papierkorb ── -->
