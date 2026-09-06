@@ -355,8 +355,10 @@ fun SettingsScreen(
             dismissButton = {
                 if (totalFiles > 0) {
                     TextButton(onClick = {
-                        convertedDir.listFiles()?.forEach { it.delete() }
-                        pdfToolsDir.listFiles()?.forEach { it.delete() }
+                        val allFiles = convertedDir.listFiles()?.toList().orEmpty() +
+                            pdfToolsDir.listFiles()?.toList().orEmpty()
+                        val ids = allFiles.map { it.absolutePath }
+                        viewModel.moveConvertedFilesToTrash(ids)
                         showStorageDialog = false
                     }) {
                         Text(
@@ -496,8 +498,6 @@ fun SettingsScreen(
                     themeManager.setAccentColor(AccentColor.BLUE)
                     themeManager.setFontScale(FontScale.NORMAL)
                     languageManager.setLanguage(languageManager.deviceDefaultLanguage())
-                    java.io.File(context.filesDir, "converted").listFiles()?.forEach { it.delete() }
-                    java.io.File(context.filesDir, "pdftools").listFiles()?.forEach { it.delete() }
                     showResetDialog = false
                 }) {
                     Text(

@@ -1438,6 +1438,57 @@ Biblioteca, y desmarcándolo de inmediato después de la captura, sin
 dejar cambios residuales). Gauntlet en verde: `compileDebugKotlin` +
 `detekt` + `lintDebug` + `testDebugUnitTest`.
 
+### Bug real: "Restablecer configuración" y "Limpiar caché" borraban documentos reales sin avisar (2026-09-06)
+
+El usuario reportó que un PDF creado con el Convertidor (`pruebapdf.pdf`)
+desapareció por completo de Favoritos, Biblioteca, Recientes y "Mis
+archivos". Investigación en el dispositivo real (sin adivinar): la
+carpeta `files/converted` de la app no existía, `trash_entries` estaba
+vacía y el archivo no aparecía en ningún registro -- se había borrado
+de forma permanente, no oculto ni filtrado por una vista.
+
+Causa raíz encontrada en el código, en dos sitios de
+`SettingsScreen.kt`:
+- El botón **"Limpiar caché"** (diálogo de Almacenamiento) borraba con
+  `File.delete()` *todos* los archivos de `converted/` y `pdftools/`
+  -- es decir, todos los PDF/Word/Excel convertidos y procesados con
+  Herramientas PDF, no caché temporal real.
+- **"Restablecer configuración"** hacía lo mismo de forma silenciosa
+  al resetear tema/acento/idioma/tamaño de letra. Confirmado además
+  que el propio texto del diálogo, en los 8 idiomas soportados,
+  afirma explícitamente *"Los documentos no se eliminarán"* --
+  contradicción directa y verificable entre el texto mostrado al
+  usuario y lo que el código realmente hacía.
+
+Ninguno de los dos pasaba por `TrashRepository` (el mecanismo de
+Papelera con retención de 30 días que sí protege cualquier otro
+borrado de documento en la app, RF-VIS-07) -- el borrado era
+inmediato y sin posibilidad de recuperación.
+
+**Corregido**:
+- `SettingsViewModel.kt`: se agregó `TrashRepository` como
+  dependencia y el método `moveConvertedFilesToTrash(documentIds)`,
+  que reutiliza exactamente `TrashRepository.moveToTrash()` (el mismo
+  que usan Biblioteca/Home/Visor).
+- "Limpiar caché" ahora llama a ese método en vez de `.delete()` --
+  los archivos pasan a la Papelera (recuperables 30 días) en lugar de
+  borrarse para siempre.
+- "Restablecer configuración" ya **no toca** los archivos de
+  `converted/`/`pdftools/` en absoluto -- solo restablece tema,
+  acento, tamaño de letra e idioma, tal como su propio texto siempre
+  prometió.
+
+**Verificado en dispositivo real** con archivos de prueba sintéticos
+(nunca con contenido real del usuario): tras "Limpiar caché", el
+archivo de prueba seguía en disco y apareció en la Papelera con
+"Restaurar"/"Eliminar ahora" y "Quedan 30 días"; tras "Restablecer
+configuración" (confirmado que el reset sí se ejecutó -- el acento
+cambió de turquesa a azul, el valor por defecto), el archivo de
+prueba permaneció intacto en "Mis archivos". Estado del dispositivo
+restaurado al terminar (acento turquesa, tema claro, tamaño de letra
+"Muy grande", archivos de prueba eliminados). Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)
