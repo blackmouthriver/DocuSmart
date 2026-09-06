@@ -1,7 +1,9 @@
 package com.docsmart.core.ui.theme
 
 import androidx.compose.foundation.border
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableChipColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -83,3 +85,21 @@ fun Modifier.accentBorder(
     val color = lerp(MaterialTheme.colorScheme.primary, Color.Black, darken).copy(alpha = alpha)
     return this.border(width = width, color = color, shape = shape)
 }
+
+/**
+ * Colores de `FilterChip` seleccionado con el Color de acento -- por
+ * defecto, Material3 usa `colorScheme.secondaryContainer`/
+ * `onSecondaryContainer` para el estado seleccionado, y esos dos tokens
+ * quedan fijos en un índigo/lavanda (`Theme.kt`, `DocuSmartTheme` solo
+ * recolorea `primary`/`onPrimary`/`primaryContainer`/`onPrimaryContainer`)
+ * -- así que un chip seleccionado se veía igual sin importar el acento
+ * elegido (bug real encontrado 2026-09-06 al revisar los colores del
+ * Escáner). Se usa acá el mismo `primaryContainer`/`onPrimaryContainer`
+ * que ya usan las tarjetas de acceso rápido y los banners.
+ */
+@Composable
+fun accentFilterChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
+    selectedContainerColor    = MaterialTheme.colorScheme.primaryContainer,
+    selectedLabelColor        = MaterialTheme.colorScheme.onPrimaryContainer,
+    selectedLeadingIconColor  = MaterialTheme.colorScheme.onPrimaryContainer
+)

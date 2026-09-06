@@ -1668,6 +1668,87 @@ que hubiera frente al lente en ese momento (una superficie/pantalla
 cualquiera) -- no se leyó, describió ni analizó el contenido más
 allá de confirmar que la imagen se incrustó bien en el PDF.
 
+### Color de acento en todo el menú Escáner (documento + QR) (2026-09-06)
+
+El usuario compartió una captura de la cámara de ML Kit ("Manual"/
+"Captura automática", totalmente negra) pidiendo que "todos los
+colores de escáner" -- botones, bordes, sombreado -- sigan el color
+de acento. Antes de tocar código se le aclaró una limitación técnica
+real: esa vista puntual de la cámara es la Activity propia de Google
+Play Services/ML Kit (`GmsDocumentScanning.getStartScanIntent()`),
+fuera del control de DocuSmart -- no se puede re-colorear, igual que
+no se puede re-colorear el selector de fotos de Android. Confirmado
+con el usuario el alcance real: todo el menú "Escáner" que sí es de
+la app (Escanear documento + Leer QR + Crear QR), no solo la pantalla
+de resultado del escaneo ya trabajada en el punto anterior.
+
+Al revisar el código se encontraron dos bugs reales de color, además
+de la falta de bordes/sombras ya identificada:
+- `QrCornerDecoration()` (las esquinas del recuadro guía al escanear
+  un QR) usaba `DocuBlue` fijo, ignorando el acento -- mismo patrón
+  de bug ya corregido antes en banners (2026-09-04).
+- `FilterChip` de Material3 usa por defecto
+  `colorScheme.secondaryContainer`/`onSecondaryContainer` para su
+  estado seleccionado -- y esos dos tokens quedan **fijos** en un
+  índigo/lavanda en `Theme.kt` (`DocuSmartTheme` solo recolorea
+  `primary`/`onPrimary`/`primaryContainer`/`onPrimaryContainer`, ver
+  RF-SET-07). Esto afectaba tanto a los chips de formato PDF/JPG/WebP
+  agregados en el punto anterior de esta misma sesión como a los
+  chips de tipo de `QrCreatorScreen` (URL/Texto/Email/Tel/Imagen/
+  Documento) -- ambos se veían igual sin importar el acento elegido.
+
+**Implementado**:
+- `AccentGradient.kt`: nueva función `accentFilterChipColors()` --
+  `FilterChipDefaults.filterChipColors()` con
+  `selectedContainerColor`/`selectedLabelColor`/
+  `selectedLeadingIconColor` apuntando a `primaryContainer`/
+  `onPrimaryContainer` en vez de los `secondaryContainer` fijos.
+  Aplicada a los 3 lugares con `FilterChip` del Escáner (formato de
+  salida y escala en `ScanResultScreen.kt`, tipo de contenido en
+  `QrCreatorScreen`).
+- `QrCornerDecoration()`: `DocuBlue` → `MaterialTheme.colorScheme.primary`.
+  El color por tipo de contenido detectado (azul para URL/documento/
+  email/texto, verde para imagen/teléfono en `QrReaderScreen`) se
+  dejó igual a propósito -- es una categorización semántica, no
+  decorativa, mismo criterio que los colores fijos por tipo de
+  documento en Biblioteca.
+- Bordes + sombreado con acento (mismo `accentShadow`/`accentBorder`
+  ya usado en tarjetas de Inicio/Biblioteca y en el punto anterior):
+  en `ScanResultScreen.kt`, los 4 botones de
+  `DocuSmartPrimaryButton`/`DocuSmartSecondaryButton` (vía su
+  `modifier`, sin tocar esos componentes compartidos para no afectar
+  el resto de la app); en `QrScreen.kt`, las 6 tarjetas propias
+  (`QrReaderScreen`: vista previa de imagen y card de resultado;
+  `QrCreatorScreen`: selector de imagen, selector de documento,
+  proteger con contraseña, QR generado) convertidas de `Card` a
+  `Box`/`Column` + `accentShadow`/`clip`/`background`/`accentBorder`,
+  y los ~15 `Button`/`OutlinedButton` propios de ambas pantallas
+  (abrir en navegador, copiar, generar QR, guardar, compartir,
+  permitir cámara, escanear otro, etc.).
+- El recuadro guía blanco semitransparente sobre la vista de cámara
+  en vivo (`QrReaderScreen`) se dejó igual a propósito -- es un
+  elemento de utilidad para visibilidad contra cualquier fondo de
+  cámara, no de marca; ídem el botón "Volver" blanco sobre el
+  degradado de acento en la pantalla "Iniciando escáner" (contraste
+  intencional ya resuelto en la sesión de la barra de navegación).
+
+**Verificado en dispositivo real** -- esta vez en el Moto E22
+(ZY32HFP5QL, el usuario cambió de dispositivo de prueba; acento
+Rosa en ese equipo): las esquinas del visor QR se ven en rosa en vez
+del azul fijo anterior; en "Crear QR", el chip de tipo seleccionado
+("Doc") se ve en rosa en vez de índigo; las tarjetas de selector de
+imagen/documento, la de contraseña y la del QR generado muestran
+borde y sombra rosa; los botones "Generar QR"/"Guardar"/"Compartir"
+muestran el borde rosa más oscuro. No se pudo repetir la captura de
+cámara del flujo de escaneo de documento en este equipo específico
+(la escena estaba completamente oscura y la automatización del
+obturador no avanzó tras varios intentos) -- se dejó así, dado que
+`ScanResultScreen.kt` ya se había verificado a fondo en el equipo
+anterior con el mismo mecanismo de `accentFilterChipColors`/
+`accentBorder`/`accentShadow` ya confirmado funcionando en
+`QrCreatorScreen`. Gauntlet en verde: `compileDebugKotlin` +
+`detekt` + `lintDebug` + `testDebugUnitTest`.
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)

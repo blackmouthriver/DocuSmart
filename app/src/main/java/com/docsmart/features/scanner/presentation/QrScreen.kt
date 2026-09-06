@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -49,6 +50,9 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.SuccessGreen
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentFilterChipColors
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.scanner.domain.QrCrypto
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
@@ -248,6 +252,7 @@ fun QrReaderScreen(
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = { permissionLauncher.launch(android.Manifest.permission.CAMERA) },
+                            modifier = Modifier.accentBorder(MaterialTheme.shapes.medium),
                             shape = MaterialTheme.shapes.medium
                         ) { Text(stringResource(R.string.qr_allow_camera_access)) }
                     }
@@ -378,10 +383,14 @@ fun QrReaderScreen(
 
                     // ── Imagen inline si es tipo imagen ───────────────────────
                     if (qrType == QrContentType.IMAGE) {
-                        Card(
-                            shape = MaterialTheme.shapes.large,
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            modifier = Modifier.fillMaxWidth()
+                        val imagePreviewShape = MaterialTheme.shapes.large
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .accentShadow(imagePreviewShape)
+                                .clip(imagePreviewShape)
+                                .background(MaterialTheme.colorScheme.surface)
+                                .accentBorder(imagePreviewShape)
                         ) {
                             if (imageBitmap != null) {
                                 Image(
@@ -413,13 +422,14 @@ fun QrReaderScreen(
                     }
 
                     // ── Card con contenido y acciones ─────────────────────────
-                    Card(
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(2.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    val resultCardShape = MaterialTheme.shapes.large
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .accentShadow(resultCardShape)
+                            .clip(resultCardShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .accentBorder(resultCardShape)
                     ) {
                         Column(
                             modifier = Modifier.padding(20.dp),
@@ -469,7 +479,8 @@ fun QrReaderScreen(
                                     QrContentType.URL -> {
                                         Button(
                                             onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.OpenInBrowser, null,
@@ -479,7 +490,8 @@ fun QrReaderScreen(
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.ContentCopy, null,
@@ -491,7 +503,8 @@ fun QrReaderScreen(
                                     QrContentType.IMAGE -> {
                                         Button(
                                             onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.OpenInBrowser, null,
@@ -501,7 +514,8 @@ fun QrReaderScreen(
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.ContentCopy, null,
@@ -513,7 +527,8 @@ fun QrReaderScreen(
                                     QrContentType.DOCUMENT -> {
                                         Button(
                                             onClick = { openDocumentExternally(context, qrResult ?: "", openDocumentLabel) },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.OpenInNew, null,
@@ -523,7 +538,8 @@ fun QrReaderScreen(
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.ContentCopy, null,
@@ -535,7 +551,8 @@ fun QrReaderScreen(
                                     QrContentType.EMAIL -> {
                                         Button(
                                             onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.Email, null,
@@ -545,7 +562,8 @@ fun QrReaderScreen(
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.ContentCopy, null,
@@ -557,7 +575,8 @@ fun QrReaderScreen(
                                     QrContentType.PHONE -> {
                                         Button(
                                             onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.Phone, null,
@@ -567,7 +586,8 @@ fun QrReaderScreen(
                                         }
                                         OutlinedButton(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.ContentCopy, null,
@@ -579,7 +599,8 @@ fun QrReaderScreen(
                                     QrContentType.TEXT -> {
                                         Button(
                                             onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth()
+                                                .accentBorder(MaterialTheme.shapes.medium),
                                             shape = MaterialTheme.shapes.medium
                                         ) {
                                             Icon(Icons.Rounded.ContentCopy, null,
@@ -595,7 +616,8 @@ fun QrReaderScreen(
 
                     OutlinedButton(
                         onClick = { qrResult = null; isScanning = true; copiedMsg = false; imageBitmap = null },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                            .accentBorder(MaterialTheme.shapes.medium),
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Icon(Icons.Rounded.QrCodeScanner, null, modifier = Modifier.size(18.dp))
@@ -611,7 +633,7 @@ fun QrReaderScreen(
 // ── Esquinas decorativas ──────────────────────────────────────────────────────
 @Composable
 private fun QrCornerDecoration() {
-    val color      = DocuBlue
+    val color      = MaterialTheme.colorScheme.primary
     val frameSize  = 240.dp
     val cornerSize = 28.dp
     val stroke     = 4.dp
@@ -790,7 +812,8 @@ fun QrCreatorScreen(
                                     Text(label, style = MaterialTheme.typography.labelSmall)
                                 }
                             },
-                            modifier  = Modifier.weight(1f)
+                            modifier  = Modifier.weight(1f),
+                            colors    = accentFilterChipColors()
                         )
                     }
                 }
@@ -820,7 +843,8 @@ fun QrCreatorScreen(
                                     Text(label, style = MaterialTheme.typography.labelSmall)
                                 }
                             },
-                            modifier  = Modifier.weight(1f)
+                            modifier  = Modifier.weight(1f),
+                            colors    = accentFilterChipColors()
                         )
                     }
                 }
@@ -830,16 +854,19 @@ fun QrCreatorScreen(
             when (selectedType) {
                 4 -> {
                     // Imagen
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick  = { imageLauncher.launch("image/*") },
-                        shape    = MaterialTheme.shapes.large,
-                        colors   = CardDefaults.cardColors(
-                            containerColor = if (selectedUri != null)
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                            else MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                    val imagePickerShape = MaterialTheme.shapes.large
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .accentShadow(imagePickerShape)
+                            .clip(imagePickerShape)
+                            .background(
+                                if (selectedUri != null)
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                else MaterialTheme.colorScheme.surface
+                            )
+                            .accentBorder(imagePickerShape)
+                            .clickable { imageLauncher.launch("image/*") }
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -876,16 +903,19 @@ fun QrCreatorScreen(
                 }
                 5 -> {
                     // Documento
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick  = { documentLauncher.launch("*/*") },
-                        shape    = MaterialTheme.shapes.large,
-                        colors   = CardDefaults.cardColors(
-                            containerColor = if (selectedUri != null)
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                            else MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                    val documentPickerShape = MaterialTheme.shapes.large
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .accentShadow(documentPickerShape)
+                            .clip(documentPickerShape)
+                            .background(
+                                if (selectedUri != null)
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                else MaterialTheme.colorScheme.surface
+                            )
+                            .accentBorder(documentPickerShape)
+                            .clickable { documentLauncher.launch("*/*") }
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -966,14 +996,18 @@ fun QrCreatorScreen(
             }
 
             // ── Contraseña ────────────────────────────────────────────────────
-            Card(
-                shape  = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(
-                    containerColor = if (usePassword)
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    else MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(if (usePassword) 0.dp else 2.dp)
+            val passwordCardShape = MaterialTheme.shapes.large
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .accentShadow(passwordCardShape)
+                    .clip(passwordCardShape)
+                    .background(
+                        if (usePassword)
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        else MaterialTheme.colorScheme.surface
+                    )
+                    .accentBorder(passwordCardShape)
             ) {
                 Column(
                     modifier            = Modifier.padding(16.dp),
@@ -1099,7 +1133,8 @@ fun QrCreatorScreen(
                     }
                 },
                 enabled  = hasContent,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp)
+                    .accentBorder(MaterialTheme.shapes.medium),
                 shape    = MaterialTheme.shapes.medium
             ) {
                 if (isGenerating) {
@@ -1114,13 +1149,14 @@ fun QrCreatorScreen(
 
             // ── QR generado ───────────────────────────────────────────────────
             qrBitmap?.let { bitmap ->
-                Card(
-                    shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    modifier  = Modifier.fillMaxWidth()
+                val qrResultCardShape = MaterialTheme.shapes.large
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .accentShadow(qrResultCardShape)
+                        .clip(qrResultCardShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .accentBorder(qrResultCardShape)
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(20.dp),
@@ -1194,7 +1230,8 @@ fun QrCreatorScreen(
                                         }
                                     }
                                 },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(1f)
+                                    .accentBorder(MaterialTheme.shapes.medium),
                                 shape = MaterialTheme.shapes.medium
                             ) {
                                 Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
@@ -1208,7 +1245,8 @@ fun QrCreatorScreen(
                                         if (file != null) shareQrImage(context, file, shareQrChooserTitle)
                                     }
                                 },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(1f)
+                                    .accentBorder(MaterialTheme.shapes.medium),
                                 shape = MaterialTheme.shapes.medium
                             ) {
                                 Icon(Icons.Rounded.Share, null, modifier = Modifier.size(16.dp))

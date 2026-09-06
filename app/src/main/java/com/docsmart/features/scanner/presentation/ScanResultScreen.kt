@@ -42,6 +42,9 @@ import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.buttons.DocuSmartPrimaryButton
 import com.docsmart.core.ui.components.buttons.DocuSmartSecondaryButton
 import com.docsmart.core.ui.theme.PremiumGold
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentFilterChipColors
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterViewModel
@@ -421,7 +424,8 @@ private fun ScanFormatSection(
                 FilterChip(
                     selected = selectedFormat == format,
                     onClick = { onFormatSelected(format) },
-                    label = { Text(format.label) }
+                    label = { Text(format.label) },
+                    colors = accentFilterChipColors()
                 )
             }
         }
@@ -510,6 +514,13 @@ private fun ScanResultActions(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // Backlog UX #34: mismo criterio de "botón con borde/sombra de acento"
+    // ya usado en las tarjetas de Inicio/Biblioteca -- acá en vez de sobre
+    // un Card, envolviendo cada botón vía su `modifier` (los componentes
+    // compartidos DocuSmartPrimaryButton/SecondaryButton no se tocan, para
+    // no afectar el resto de la app con este cambio acotado al Escáner).
+    val buttonShape = MaterialTheme.shapes.medium
+    val accentButtonModifier = Modifier.accentShadow(buttonShape).accentBorder(buttonShape)
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (state.hasResult) {
@@ -533,6 +544,7 @@ private fun ScanResultActions(
             } else {
                 DocuSmartPrimaryButton(
                     text = stringResource(R.string.converter_save),
+                    modifier = accentButtonModifier,
                     onClick = {
                         scope.launch {
                             val name = state.fileName.ifBlank {
@@ -560,6 +572,7 @@ private fun ScanResultActions(
             } else {
                 DocuSmartSecondaryButton(
                     text = stringResource(R.string.scan_result_share_format, state.format.label),
+                    modifier = accentButtonModifier,
                     onClick = {
                         scope.launch {
                             onPreparingShareChange(true)
@@ -594,6 +607,7 @@ private fun ScanResultActions(
         } else {
             DocuSmartPrimaryButton(
                 text = stringResource(R.string.scan_result_generate_format, state.format.label),
+                modifier = accentButtonModifier,
                 onClick = onGenerate,
                 leadingIcon = if (state.format == ScanExportFormat.PDF) {
                     Icons.Rounded.PictureAsPdf
@@ -603,6 +617,7 @@ private fun ScanResultActions(
             )
             DocuSmartSecondaryButton(
                 text = stringResource(R.string.scanner_again),
+                modifier = accentButtonModifier,
                 onClick = onScanAgain,
                 leadingIcon = Icons.Rounded.DocumentScanner
             )
@@ -758,7 +773,8 @@ private fun ScanImageEditorDialog(
                         FilterChip(
                             selected = scalePercent == percent,
                             onClick = { scalePercent = percent },
-                            label = { Text("$percent%") }
+                            label = { Text("$percent%") },
+                            colors = accentFilterChipColors()
                         )
                     }
                 }
