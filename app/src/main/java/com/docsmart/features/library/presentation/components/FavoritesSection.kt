@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -21,6 +23,8 @@ import com.docsmart.core.ui.components.DocumentContextMenu
 import com.docsmart.core.ui.components.DocumentThumbnail
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.RenameDocumentDialog
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 
 @Composable
 fun FavoritesSection(
@@ -112,15 +116,15 @@ private fun FavoriteDocumentCard(
     onClick    : () -> Unit,
     onLongClick: () -> Unit
 ) {
-    Card(
+    val shape = MaterialTheme.shapes.large
+    Box(
         modifier = Modifier
             .width(150.dp)
-            .height(160.dp),
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .height(160.dp)
+            .accentShadow(shape = shape)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Column(
             modifier = Modifier

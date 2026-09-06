@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.core.ui.theme.DocuBlue
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 
 // ── Card base reutilizable ────────────────────────────
 // Úsala como contenedor para cualquier contenido
@@ -57,13 +59,15 @@ fun  DocuSmartQuickAccessCard(
     iconTint: Color = DocuBlue,
     backgroundColor: Color = MaterialTheme.colorScheme.surface
 ) {
-    Card(
+    val shape = MaterialTheme.shapes.large
+    Box(
         modifier = modifier
             .aspectRatio(1f)
-            .clickable { onClick() },
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .accentShadow(shape = shape)
+            .clip(shape)
+            .background(backgroundColor)
+            .accentBorder(shape = shape)
+            .clickable { onClick() }
     ) {
         Column(
             modifier = Modifier

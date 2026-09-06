@@ -3,12 +3,14 @@ package com.docsmart.features.home.presentation.component
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -17,6 +19,8 @@ import com.docsmart.core.ui.components.DocuSmartDocumentItem
 import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.RenameDocumentDialog
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 
 @Composable
 fun RecentDocuments(
@@ -78,12 +82,14 @@ fun RecentDocuments(
                 onAction    = onOpenFileClick
             )
         } else {
-            Card(
-                shape  = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            val shape = MaterialTheme.shapes.large
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .accentShadow(shape = shape)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .accentBorder(shape = shape)
             ) {
                 documents.forEachIndexed { index, document ->
                     val shareLabel = stringResource(R.string.home_share_document, document.name)

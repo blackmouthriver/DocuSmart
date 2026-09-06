@@ -47,6 +47,9 @@ priorización para decidir qué se aborda y en qué orden.
 | 24 | `DocuSmartBottomBar.kt`: pestaña activa sin animación de tamaño/forma/color | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-05** — ver §24 |
 | 25 | Miniatura real del archivo (no solo ícono/color por tipo) en Biblioteca, Recientes y Favoritos | Mejora | Media | Alta | Medio | **🟡 Implementado y verificado en dispositivo real 2026-09-06 para Imagen (Word/Excel/PowerPoint quedan con ícono/color, no pedidos en esta pasada); PDF implementado con `PdfRenderer` pero sin verificar visualmente por falta de un PDF real en el dispositivo de prueba** — ver §26 |
 | 26 | Fondo animado en toda la app, con el color de acento, y opción de apagarlo | Mejora | Media | Alta | Medio | **✅ Implementado y verificado en dispositivo real 2026-09-06** — ver §25 |
+| 27 | Sombra de tarjetas/listas con el color de acento (Material3 `Card` no permite tintar la sombra directamente) | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-06, acotado a Inicio/Biblioteca/Recientes/Favoritos (pedido explícito del usuario, no las ~30 tarjetas restantes de la app)** — ver §27 |
+| 28 | Border con color de acento en las mismas tarjetas/listas, mismo criterio que la barra de navegación | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-06, mismo alcance que el ítem 27** — ver §27 |
+| 29 | Extender sombra + border con color de acento (ítems 27/28) al resto de `Card` de la app (~30 sitios: Convertidor, Herramientas PDF, Seguridad, Escáner/QR, Estudio, Ajustes, Visor) | Mejora | Baja | Media-Alta (son ~30 sitios) | Medio (tocar tantos archivos a la vez sube el riesgo de regresión visual) | **⬜ Pendiente** — alcance descartado a propósito por el usuario en la pasada de los ítems 27/28, queda catalogado para una futura sesión — ver §27 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -2615,3 +2618,86 @@ una próxima sesión. Gauntlet en verde:
 **Pendiente para después**: miniaturas para Word/Excel/PowerPoint
 (requiere renderizar el documento a imagen primero, no solo leer el
 tipo) -- no implementado, no pedido en esta pasada.
+
+## 27. Mejora — Sombra de tarjetas/listas con el color de acento
+
+El usuario pidió, el mismo día tras las miniaturas, extender el "Color
+de acento" también a las sombras de las tarjetas y listas.
+
+**Investigación previa** (agente de exploración, solo lectura):
+confirmó que Material3 `Card` en la versión resuelta del proyecto
+(`material3-android:1.3.1`, vía `compose-bom = "2024.11.00"`) **no
+expone** `ambientColor`/`spotColor` en `CardDefaults.cardElevation()`
+ni en la firma de `Card()` -- no hay forma de tintar la sombra sin
+reemplazar el `Card` por un contenedor propio con
+`Modifier.shadow(elevation, shape, ambientColor, spotColor)` manual,
+el mismo patrón ya usado en `DocuSmartBottomBar.kt` para el círculo de
+la pestaña activa. El mismo agente encontró **~34 sitios** con
+`Card(... elevation = CardDefaults.cardElevation(...) > 0.dp)`
+repartidos por casi toda la app (Inicio, Biblioteca, Convertidor,
+Herramientas PDF, Seguridad, Escáner/QR, Estudio, Ajustes, Visor).
+
+Dado el tamaño real del cambio, se le preguntó al usuario el alcance
+antes de tocar código -- eligió acotarlo a las tarjetas ya trabajadas
+esta sesión (accesos rápidos de Inicio, filas de documentos en
+Biblioteca/Recientes, tarjetas de Favoritos), dejando el resto de la
+app (~30 sitios más) con la sombra neutra de Material3 por ahora, para
+minimizar riesgo de que algo se vea mal en una pantalla no revisada a
+fondo en esta pasada.
+
+**Implementado**: `Modifier.accentShadow(shape, elevation, alpha)`
+(nueva extensión, `core/ui/theme/AccentGradient.kt`, mismo archivo que
+`rememberAccentGradient()`) -- sombra tenue (`alpha` default 0.35f,
+bastante menos intensa que la pastilla de la barra de navegación, que
+usa 0.55f, para no saturar visualmente cuando se aplica a muchas
+tarjetas pequeñas en una lista) tintada con `colorScheme.primary`.
+Aplicado reemplazando `Card()` por `Box`/`Column` +
+`.accentShadow().clip().background()` en:
+- `DocuSmartQuickAccessCard` (`core/ui/components/cards/DocuSmartCards.kt`)
+  -- accesos rápidos de Inicio.
+- La tarjeta que envuelve la lista completa de `DocuSmartDocumentItem`
+  en `DocumentListSection.kt` (Biblioteca) y `RecentDocuments.kt`
+  (Recientes de Inicio) -- se reemplazó por un `Column` simple (el
+  `content` de `Card` ya asumía `ColumnScope`, así que el layout
+  interno no cambió).
+- `FavoriteDocumentCard` en `FavoritesSection.kt`.
+
+**Verificado en dispositivo real**: en modo oscuro la sombra tintada
+es sutil (esperable, poco contraste contra un fondo ya oscuro); en
+modo claro, con capturas ampliadas (PowerShell `System.Drawing`), se
+confirmó un tinte turquesa/acento claramente visible alrededor de las
+tarjetas de accesos rápidos de Inicio, de la tarjeta de la lista de
+Recientes y de la lista completa de Biblioteca. Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
+
+**Pendiente para después**: extender el mismo tratamiento al resto de
+`Card` de la app (~30 sitios en Convertidor/Herramientas PDF/
+Seguridad/Escáner/Estudio/Ajustes/Visor) -- no implementado, alcance
+descartado a propósito por el usuario en esta pasada.
+
+### Ítem 28: border con color de acento en las mismas tarjetas/listas
+
+Mismo día, antes de fusionar el cambio de sombras de arriba, el
+usuario pidió agregar también un borde a esas mismas tarjetas/listas,
+con el mismo criterio que ya usa `DocuSmartBottomBar.kt` para el borde
+superior de la barra (`lerp(accent, Color.Black, 0.3f).copy(alpha =
+0.4f)`), y que reaccione también al color de acento elegido.
+
+**Implementado**: `Modifier.accentBorder(shape, width, darken, alpha)`
+(nueva extensión, `core/ui/theme/AccentGradient.kt`, junto a
+`accentShadow()`), usando `Modifier.border()` con el color ya derivado
+del acento. Aplicado en las mismas 4 ubicaciones que ya tenían
+`accentShadow()` (mismo alcance, no las ~30 tarjetas restantes de la
+app): `DocuSmartQuickAccessCard`, la tarjeta de la lista de documentos
+en `DocumentListSection.kt` (Biblioteca) y `RecentDocuments.kt`
+(Recientes), y `FavoriteDocumentCard` en `FavoritesSection.kt`.
+
+**Verificado en dispositivo real** (acento turquesa activo, capturas
+ampliadas con PowerShell `System.Drawing`): borde visible y coherente
+con el acento en los accesos rápidos de Inicio, en la lista de
+Recientes, en la lista completa de Biblioteca y en la tarjeta de
+Favoritos (para esta última se marcó temporalmente un documento como
+favorito, solo para forzar la aparición de la sección "Favoritos" en
+Biblioteca, y se desmarcó de inmediato tras la captura, sin dejar
+cambios residuales en los datos del usuario). Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.

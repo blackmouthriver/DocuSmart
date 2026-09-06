@@ -1376,6 +1376,68 @@ visual real con un PDF de verdad en una próxima sesión. Gauntlet en
 verde (`compileDebugKotlin` + `detekt` + `lintDebug` +
 `testDebugUnitTest`).
 
+### Sombra de tarjetas con el color de acento (2026-09-06)
+
+El usuario pidió extender el "Color de acento" también a las sombras
+de las tarjetas y listas (mismo día, después de las miniaturas). Se
+confirmó primero (agente de exploración) que Material3 `Card` en la
+versión usada (`material3-android:1.3.1`) **no expone**
+`ambientColor`/`spotColor` para personalizar el color de la sombra --
+la única vía es la misma que ya se usó en `DocuSmartBottomBar.kt` para
+el círculo activo: reemplazar `Card()` por un `Box`/`Column` con
+`Modifier.shadow(elevation, shape, ambientColor, spotColor)` manual.
+
+Dado que el patrón aparece en **~34 sitios** repartidos por casi toda
+la app, se le preguntó al usuario el alcance -- eligió acotarlo a las
+tarjetas ya trabajadas esta sesión (no las ~30 restantes de
+Convertidor/PdfTools/Seguridad/Escáner/Estudio/Ajustes/Visor, que
+quedan con la sombra neutra de Material3 por ahora).
+
+Implementado: `Modifier.accentShadow(shape, elevation, alpha)` (nueva
+extensión en `core/ui/theme/AccentGradient.kt`, mismo archivo que
+`rememberAccentGradient()`) -- sombra tenue (`alpha` default 0.35f)
+tintada con `colorScheme.primary`. Aplicado reemplazando `Card()` por
+`Box`/`Column` + `.accentShadow().clip().background()` en:
+`DocuSmartQuickAccessCard` (accesos rápidos de Inicio, en
+`DocuSmartCards.kt`), la tarjeta que envuelve la lista de documentos en
+`DocumentListSection.kt` (Biblioteca) y `RecentDocuments.kt`
+(Recientes), y `FavoriteDocumentCard` en `FavoritesSection.kt`.
+
+Verificado en dispositivo real, en modo oscuro (sutil, esperable contra
+fondo ya oscuro) y modo claro (tinte claramente visible con capturas
+ampliadas): sombra turquesa/acento visible en los accesos rápidos de
+Inicio, en la tarjeta de la lista de Recientes y en la lista completa
+de Biblioteca. Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
+
+### Border con color de acento en tarjetas/listas (2026-09-06)
+
+Antes de fusionar el cambio de sombras anterior, el usuario pidió
+agregar también un borde a las mismas tarjetas/listas, con el mismo
+criterio ya usado en `DocuSmartBottomBar.kt` para el borde superior de
+la barra de navegación (`lerp(accent, Color.Black, 0.3f).copy(alpha =
+0.4f)`), y que ese borde también reaccione al color de acento elegido.
+
+Implementado: `Modifier.accentBorder(shape, width, darken, alpha)`
+(nueva extensión en `core/ui/theme/AccentGradient.kt`, junto a
+`accentShadow()`), usando `Modifier.border()` con el mismo color
+derivado del acento que ya usa la barra. Aplicado en las mismas 4
+ubicaciones que ya tenían `accentShadow()` (mismo alcance elegido por
+el usuario, no las ~30 tarjetas restantes de la app):
+`DocuSmartQuickAccessCard` (`DocuSmartCards.kt`), la tarjeta de la
+lista de documentos en `DocumentListSection.kt` (Biblioteca) y
+`RecentDocuments.kt` (Recientes), y `FavoriteDocumentCard` en
+`FavoritesSection.kt`.
+
+Verificado en dispositivo real (acento turquesa activo): borde visible
+y coherente con el acento en los accesos rápidos de Inicio, en la
+lista de Recientes, en la lista completa de Biblioteca y en la tarjeta
+de Favoritos (verificada marcando temporalmente un documento como
+favorito para forzar la aparición de la sección "Favoritos" en
+Biblioteca, y desmarcándolo de inmediato después de la captura, sin
+dejar cambios residuales). Gauntlet en verde: `compileDebugKotlin` +
+`detekt` + `lintDebug` + `testDebugUnitTest`.
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)
