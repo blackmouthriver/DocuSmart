@@ -15,9 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.SubcomposeAsyncImage
 import com.docsmart.R
 import com.docsmart.core.ui.theme.*
 import java.io.File
@@ -60,6 +63,49 @@ enum class DocumentType(val label: String, val color: Color) {
     OCR        ("OCR",    ColorOcr)
 }
 
+/**
+ * Recuadro de vista previa de un documento en las listas (Biblioteca/
+ * Favoritos/Recientes -- backlog UX #25, pedido explícito del usuario
+ * 2026-09-06: "más claro y diciente para el usuario mostrar una miniatura
+ * visual del contenido" en vez de solo el ícono/color por tipo). Solo
+ * Imagen y PDF tienen una miniatura real hoy -- Word/Excel/PowerPoint/
+ * Texto/ZIP/OCR requerirían renderizar el archivo a una imagen primero
+ * (mucho más trabajo, no pedido en esta pasada) y se quedan con el
+ * ícono/color de siempre. El PDF se resuelve con [PdfThumbnailFetcher]
+ * (registrado una sola vez en `DocuSmartApplication`), así que
+ * `document.toContentUri()` funciona igual para ambos tipos.
+ */
+@Composable
+fun DocumentThumbnail(
+    document  : DocumentUiModel,
+    modifier  : Modifier = Modifier,
+    shape     : androidx.compose.ui.graphics.Shape = MaterialTheme.shapes.small,
+    labelStyle: TextStyle = MaterialTheme.typography.labelSmall
+) {
+    val iconBg = remember(document.type.color) { document.type.color.copy(alpha = 0.12f) }
+    val typeBox: @Composable () -> Unit = {
+        Box(
+            modifier = Modifier.fillMaxSize().background(iconBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = document.type.label, style = labelStyle, color = document.type.color)
+        }
+    }
+
+    if (document.type == DocumentType.IMAGE || document.type == DocumentType.PDF) {
+        SubcomposeAsyncImage(
+            model              = document.toContentUri(),
+            contentDescription = document.name,
+            modifier           = modifier.clip(shape),
+            contentScale       = ContentScale.Crop,
+            loading            = { typeBox() },
+            error              = { typeBox() }
+        )
+    } else {
+        Box(modifier = modifier.clip(shape)) { typeBox() }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DocuSmartDocumentItem(
@@ -75,10 +121,6 @@ fun DocuSmartDocumentItem(
     onRenameClick  : (() -> Unit)? = null,
     onDeleteClick  : (() -> Unit)? = null
 ) {
-    val iconBg = remember(document.type.color) {
-        document.type.color.copy(alpha = 0.12f)
-    }
-
     var showMenu by remember { mutableStateOf(false) }
 
     if (showMenu) {
@@ -106,19 +148,11 @@ fun DocuSmartDocumentItem(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(iconBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text  = document.type.label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = document.type.color
-                )
-            }
+            DocumentThumbnail(
+                document = document,
+                modifier = Modifier.size(44.dp),
+                shape    = MaterialTheme.shapes.small
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 

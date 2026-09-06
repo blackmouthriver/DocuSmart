@@ -45,7 +45,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 22 | `DocumentRepository.loadPdfsFromDownloads()` no ve PDF/Word/Excel/PowerPoint reales de Descargas sin `owner_package_name` propio (scoped storage); Texto ni siquiera está en el filtro de mimeTypes de esa consulta | Bug | Media-Alta | Media | Medio | **🟡 Corregido lo corregible 2026-09-03 (Texto + permiso falso + API 29-32); la limitación de scoped storage en API 33+ es de la plataforma, sin fix de código posible** — ver §16 |
 | 23 | Firebase Analytics/Crashlytics ya declarados a Play Store pero nunca funcionaron (plugin de Gradle sin aplicar, 15 eventos sin conectar, sin árbol de Timber en release) | Bug | Alta | Media | Medio | **✅ Corregido y verificado en dispositivo real (build release firmado) 2026-09-03** — ver §20 |
 | 24 | `DocuSmartBottomBar.kt`: pestaña activa sin animación de tamaño/forma/color | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-05** — ver §24 |
-| 25 | Miniatura real del archivo (no solo ícono/color por tipo) en Biblioteca, Recientes, Convertir y demás listados de documentos | Mejora | Media | Alta | Medio | Pedido explícitamente por el usuario 2026-09-05, "para después" — no implementado, requiere generar/cachear miniaturas por documento (portada PDF, primera diapositiva, contenido de imagen, etc.) |
+| 25 | Miniatura real del archivo (no solo ícono/color por tipo) en Biblioteca, Recientes y Favoritos | Mejora | Media | Alta | Medio | **🟡 Implementado y verificado en dispositivo real 2026-09-06 para Imagen (Word/Excel/PowerPoint quedan con ícono/color, no pedidos en esta pasada); PDF implementado con `PdfRenderer` pero sin verificar visualmente por falta de un PDF real en el dispositivo de prueba** — ver §26 |
 | 26 | Fondo animado en toda la app, con el color de acento, y opción de apagarlo | Mejora | Media | Alta | Medio | **✅ Implementado y verificado en dispositivo real 2026-09-06** — ver §25 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
@@ -2552,3 +2552,66 @@ interruptor probado apagando y reactivando, cae a fondo sólido limpio
 y vuelve a animar correctamente sin reiniciar la app. Gauntlet en
 verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
 `testDebugUnitTest`.
+
+## 26. Mejora — Miniatura real del documento en Biblioteca/Favoritos/Recientes (ítem #25)
+
+El usuario, revisando la app pantalla por pantalla, pidió retomar el
+ítem #25 (anotado "para después" en §24/§25): mostrar una miniatura
+real del contenido del archivo en vez de solo el recuadro genérico de
+tipo ("Imagen", "PDF", etc.) en Biblioteca, Favoritos y Recientes de
+Inicio.
+
+**Investigación previa** (agente de exploración, solo lectura): reveló
+que Biblioteca (`DocumentListSection.kt`) y Recientes de Home
+(`RecentDocuments.kt`) ya comparten un único composable
+(`DocuSmartDocumentItem`, en
+`core/ui/components/DocuSmartDocumentItem.kt`) -- un cambio ahí cubre
+ambas pantallas de una vez. Solo `FavoriteDocumentCard`
+(`FavoritesSection.kt`) duplica el mismo patrón por separado. Coil
+2.7.0 ya estaba en el proyecto (usado en Convertidor/ScanResultScreen)
+pero sin decodificador de PDF -- Android no tiene uno nativo para ese
+formato, solo `PdfRenderer` (entrega un `Bitmap` ya compuesto, no un
+stream de bytes de imagen que Coil pueda decodificar directamente).
+
+**Implementado**:
+- `DocumentThumbnail` (nuevo composable compartido, mismo archivo que
+  `DocuSmartDocumentItem`): usa `SubcomposeAsyncImage` con
+  `document.toContentUri()` como modelo para tipo `IMAGE`/`PDF`, con
+  el ícono/color de siempre como estado de carga y de error (fallback
+  automático si la miniatura no carga). El resto de tipos
+  (Word/Excel/PowerPoint/Texto/ZIP/OCR) siguen mostrando solo el
+  ícono/color -- renderizarlos a imagen requiere mucho más trabajo
+  (convertir el documento primero) y no fue pedido en esta pasada.
+- `PdfThumbnailFetcher` (nuevo, `core/media/PdfThumbnailFetcher.kt`):
+  `Fetcher`/`Fetcher.Factory` de Coil que usa `PdfRenderer` para
+  renderizar la primera página del PDF a un `Bitmap` de 300px de
+  ancho. Se activa automáticamente para cualquier Uri cuyo MIME type
+  o extensión sea PDF.
+- `DocuSmartApplication` ahora implementa `ImageLoaderFactory` de
+  Coil, registrando el Fetcher una sola vez a nivel de app -- así
+  `AsyncImage`/`SubcomposeAsyncImage` funcionan igual para imágenes y
+  PDFs en cualquier pantalla futura, sin pasar un `ImageLoader` propio
+  en cada uso.
+- `DocuSmartDocumentItem` (filas de Biblioteca/Recientes) y
+  `FavoriteDocumentCard` (tarjetas de Favoritos) ahora usan
+  `DocumentThumbnail` en vez de duplicar el recuadro de ícono/color a
+  mano.
+
+**Verificado en dispositivo real**: miniaturas reales visibles en las
+tres pantallas pedidas (Recientes en Inicio, lista completa de
+Biblioteca, tarjetas de Favoritos), con fotos reales de WhatsApp del
+dispositivo de prueba. **No se pudo verificar visualmente la
+miniatura de PDF** -- la biblioteca de este dispositivo no tiene
+ningún PDF real, y un intento de generar uno con el propio
+Convertidor de la app (Imagen → PDF) no completó el flujo en varios
+intentos (se abandonó el intento por no ser el objetivo central del
+cambio). Queda documentado como limitación de esta verificación, no
+como comportamiento confirmado -- el código usa `PdfRenderer` de
+forma directa (API estándar de Android desde API 21), pero una
+verificación visual real con un PDF de verdad queda pendiente para
+una próxima sesión. Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
+
+**Pendiente para después**: miniaturas para Word/Excel/PowerPoint
+(requiere renderizar el documento a imagen primero, no solo leer el
+tipo) -- no implementado, no pedido en esta pasada.

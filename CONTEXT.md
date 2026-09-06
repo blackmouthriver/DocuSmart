@@ -1326,6 +1326,56 @@ fondo visible en Inicio/Biblioteca/Estudio sin afectar legibilidad
 (tarjetas opacas encima), interruptor probado apagando y reactivando
 en caliente. Gauntlet en verde.
 
+### Miniaturas reales en Biblioteca/Favoritos/Recientes (2026-09-06)
+
+El usuario, revisando la app pantalla por pantalla, señaló que el
+recuadro genérico de tipo ("Imagen", "PDF", etc.) en las listas de
+documentos es menos útil que mostrar una miniatura real del contenido
+-- pedido que coincidía con el ítem #25 del backlog UX, ya anotado en
+una sesión anterior ("para después").
+
+**Investigación previa** (agente de exploración, sin tocar código):
+confirmó que Biblioteca (`DocumentListSection.kt`) y Recientes de Home
+(`RecentDocuments.kt`) ya comparten un único composable
+(`DocuSmartDocumentItem`, en
+`core/ui/components/DocuSmartDocumentItem.kt`), así que un cambio ahí
+cubre ambas pantallas de una vez; solo `FavoriteDocumentCard`
+(`FavoritesSection.kt`) tiene su propio recuadro duplicado. Coil 2.7.0
+ya estaba en el proyecto (usado en Convertidor/ScanResultScreen) pero
+sin ningún decodificador de PDF -- Android no tiene uno nativo para
+ese formato, solo `PdfRenderer` (entrega un `Bitmap` ya compuesto, no
+un stream de bytes de imagen).
+
+**Implementado**: nuevo `DocumentThumbnail` (composable compartido en
+el mismo archivo que `DocuSmartDocumentItem`) que usa
+`SubcomposeAsyncImage` con `document.toContentUri()` como modelo para
+tipo `IMAGE`/`PDF` (con el ícono/color de siempre como estado de carga
+y de error), y sigue mostrando solo el ícono/color para el resto de
+tipos (Word/Excel/PowerPoint/Texto/ZIP/OCR -- renderizarlos a imagen es
+mucho más trabajo, no pedido en esta pasada). Para PDF se agregó
+`PdfThumbnailFetcher` (nuevo, `core/media/`), un `Fetcher`/
+`Fetcher.Factory` de Coil que usa `PdfRenderer` para la primera página,
+registrado una sola vez vía `DocuSmartApplication` implementando
+`ImageLoaderFactory` -- así `AsyncImage`/`SubcomposeAsyncImage`
+funcionan igual para imágenes y PDFs en cualquier pantalla, sin pasar
+un `ImageLoader` propio en cada uso. `DocuSmartDocumentItem` y
+`FavoriteDocumentCard` ahora usan `DocumentThumbnail` en vez de
+duplicar el recuadro de ícono/color a mano.
+
+Verificado en dispositivo real: miniaturas reales visibles en las tres
+pantallas pedidas (Recientes en Inicio, lista de Biblioteca, tarjetas
+de Favoritos), con imágenes reales del dispositivo (fotos de
+WhatsApp). **No se pudo verificar visualmente la miniatura de PDF** --
+la biblioteca de este dispositivo de prueba no tiene ningún archivo
+PDF real, y un intento de generar uno con el propio Convertidor de la
+app (Imagen → PDF) no completó el flujo en varios intentos; se
+documenta como limitación de esta verificación, no como comportamiento
+confirmado. El código usa `PdfRenderer` de forma directa (API estándar
+de Android desde API 21), pero queda pendiente de una verificación
+visual real con un PDF de verdad en una próxima sesión. Gauntlet en
+verde (`compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`).
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)
