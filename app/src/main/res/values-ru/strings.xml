@@ -146,9 +146,8 @@
     <string name="scanner_title">Запуск сканера</string>
     <string name="scanner_hint">Подготовьте документ и\nнаведите на него камеру</string>
     <string name="scanner_result_title">Отсканированный документ</string>
-    <string name="scanner_generate">Создать PDF</string>
     <string name="scanner_again">Сканировать снова</string>
-    <string name="scanner_share">Поделиться PDF</string>
+    <string name="scan_result_share_format">Поделиться %1$s</string>
     <string name="scanner_back">Вернуться на главную</string>
 
     <!-- ── Просмотрщик ─────────────────────────────────── -->
@@ -636,7 +635,12 @@
     <string name="scan_result_filename_label">Имя файла</string>
     <string name="scan_result_filename_placeholder">Например: Сканированный_документ</string>
     <string name="scan_result_filename_hint">Если оставить пустым, будет создано автоматическое имя</string>
-    <string name="scan_result_generating_pdf">Создание PDF…</string>
+    <string name="scan_result_generating_format">Создание %1$s…</string>
+    <string name="scan_result_export_format_label">Формат вывода</string>
+    <string name="scan_result_generate_format">Создать %1$s</string>
+    <string name="scan_result_high_res_title">Высокое разрешение</string>
+    <string name="scan_result_high_res_desc">Более четкий PDF, идеально для печати или архивирования</string>
+    <string name="scan_result_high_res_premium_content_desc">Премиум-функция</string>
     <string name="scan_result_default_name_prefix">Скан_%1$s</string>
     <string name="scan_edit_page_content_desc">Редактировать страницу %1$d</string>
     <string name="scan_edit_title">Редактировать страницу</string>

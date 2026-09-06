@@ -9,8 +9,10 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -39,8 +41,11 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.buttons.DocuSmartPrimaryButton
 import com.docsmart.core.ui.components.buttons.DocuSmartSecondaryButton
+import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.features.converter.domain.model.ConversionResult
+import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterViewModel
+import com.docsmart.features.converter.presentation.components.BatchConversionSuccess
 import com.docsmart.features.scanner.domain.buildColorMatrix
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -54,6 +59,31 @@ import java.util.Locale
 
 private const val MIME_PDF = "application/pdf"
 
+// Backlog UX #33 (pedido explícito del usuario 2026-09-06): antes el
+// Escáner solo podía terminar en PDF -- ahora también puede exportar las
+// páginas como imágenes. "Alta resolución" es exclusivo de PDF (JPG/WebP
+// ya exportan siempre a la resolución nativa de la cámara, sin reducir
+// nada, así que no hay nada que mejorar ahí).
+private enum class ScanExportFormat(val label: String, val extension: String, val mimeType: String) {
+    PDF("PDF", "pdf", MIME_PDF),
+    JPG("JPG", "jpg", "image/jpeg"),
+    WEBP("WebP", "webp", "image/webp")
+}
+
+private fun ScanExportFormat.toImageConversionType(): ConversionType? = when (this) {
+    ScanExportFormat.PDF  -> null
+    ScanExportFormat.JPG  -> ConversionType.IMAGE_TO_JPG
+    ScanExportFormat.WEBP -> ConversionType.IMAGE_TO_WEBP
+}
+
+private fun mimeTypeForExtension(extension: String): String = when (extension.lowercase()) {
+    "pdf"         -> MIME_PDF
+    "jpg", "jpeg" -> "image/jpeg"
+    "webp"        -> "image/webp"
+    "png"         -> "image/png"
+    else          -> "application/octet-stream"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanResultScreen(
@@ -61,6 +91,7 @@ fun ScanResultScreen(
     isPdf: Boolean,
     onBack: () -> Unit,
     onDone: () -> Unit,
+    onPremiumClick: () -> Unit = {},
     converterViewModel: ConverterViewModel = hiltViewModel(),
     editorViewModel: ScanImageEditorViewModel = hiltViewModel()
 ) {
@@ -73,6 +104,8 @@ fun ScanResultScreen(
     var savedToDownloads by remember { mutableStateOf(false) }
     var savedFile by remember { mutableStateOf<File?>(null) }
     var isPreparingShare by remember { mutableStateOf(false) }
+    var selectedFormat by remember { mutableStateOf(ScanExportFormat.PDF) }
+    var highResEnabled by remember { mutableStateOf(false) }
 
     // RF-SCAN-06/07: lista editable -- empieza igual al resultado del
     // escáner, y cada página editada reemplaza su URI original por la del
@@ -81,7 +114,7 @@ fun ScanResultScreen(
     var editingIndex by remember { mutableStateOf<Int?>(null) }
 
     val defaultNameTemplate = stringResource(R.string.scan_result_default_name_prefix)
-    val shareChooserTitle   = stringResource(R.string.scanner_share)
+    val shareChooserTitle   = stringResource(R.string.scan_result_share_format, selectedFormat.label)
 
     // ── Inicializar según tipo de resultado ───────────
     LaunchedEffect(editableUris, isPdf) {
@@ -166,46 +199,138 @@ fun ScanResultScreen(
                 }
             }
 
-            // ── Nombre del archivo ────────────────────
-            item {
-                ScanFilenameField(fileName = fileName, onFileNameChange = { fileName = it })
-            }
+            val hasBatchResult = uiState.batchResults.isNotEmpty()
+            val hasSingleResult = isPdf || conversionResult is ConversionResult.Success
+            val hasAnyResult = hasSingleResult || hasBatchResult
 
-            // ── Botones ───────────────────────────────
-            item {
-                ScanResultActions(
-                    state = ScanResultActionsState(
+            if (hasBatchResult) {
+                // ── Resultado de exportar varias páginas como imágenes ──
+                item {
+                    BatchConversionSuccess(
+                        items = uiState.batchResults,
+                        savedToDownloads = uiState.batchSavedToDownloads,
+                        onConvertAnother = {
+                            converterViewModel.clearAll()
+                            onBack()
+                        },
+                        onSaveAllToDownloads = { converterViewModel.saveAllToDownloads(context) }
+                    )
+                }
+            } else {
+                scanConfigAndActionItems(
+                    hasAnyResult = hasAnyResult,
+                    formatArgs = ScanFormatSectionArgs(
+                        selectedFormat = selectedFormat,
+                        onFormatSelected = { selectedFormat = it },
+                        highResEnabled = highResEnabled,
+                        onHighResToggle = { highResEnabled = it },
+                        isPremium = isPremium,
+                        onPremiumClick = onPremiumClick
+                    ),
+                    fileName = fileName,
+                    onFileNameChange = { fileName = it },
+                    actionsState = ScanResultActionsState(
                         isPdf = isPdf,
                         scannedUris = scannedUris,
-                        hasResult = isPdf || conversionResult is ConversionResult.Success,
+                        hasResult = hasSingleResult,
                         isConverting = uiState.isConverting,
                         fileName = fileName,
                         defaultNameTemplate = defaultNameTemplate,
                         shareChooserTitle = shareChooserTitle,
                         savedFile = savedFile,
                         savedToDownloads = savedToDownloads,
-                        isPreparingShare = isPreparingShare
+                        isPreparingShare = isPreparingShare,
+                        format = selectedFormat
                     ),
-                    onSavedToDownloadsChange = { savedToDownloads = it },
-                    onPreparingShareChange = { isPreparingShare = it },
-                    onGeneratePdf = {
-                        val customName = fileName.trim().ifBlank { null }
-                        if (customName != null) {
-                            converterViewModel.onFileNameChange(customName)
+                    callbacks = ScanResultActionsCallbacks(
+                        onSavedToDownloadsChange = { savedToDownloads = it },
+                        onPreparingShareChange = { isPreparingShare = it },
+                        onGenerate = {
+                            val customName = fileName.trim().ifBlank { null }
+                            if (customName != null) {
+                                converterViewModel.onFileNameChange(customName)
+                            }
+                            val imageType = selectedFormat.toImageConversionType()
+                            if (imageType == null) {
+                                converterViewModel.convertToPdf(context, highResolution = highResEnabled)
+                            } else {
+                                converterViewModel.convertToImageFormat(context, imageType)
+                            }
+                        },
+                        onScanAgain = {
+                            converterViewModel.clearAll()
+                            onBack()
+                        },
+                        onDone = {
+                            converterViewModel.clearAll()
+                            onDone()
                         }
-                        converterViewModel.convertToPdf(context)
-                    },
-                    onScanAgain = {
-                        converterViewModel.clearAll()
-                        onBack()
-                    },
-                    onDone = {
-                        converterViewModel.clearAll()
-                        onDone()
-                    }
+                    )
                 )
             }
         }
+    }
+}
+
+private data class ScanFormatSectionArgs(
+    val selectedFormat: ScanExportFormat,
+    val onFormatSelected: (ScanExportFormat) -> Unit,
+    val highResEnabled: Boolean,
+    val onHighResToggle: (Boolean) -> Unit,
+    val isPremium: Boolean,
+    val onPremiumClick: () -> Unit
+)
+
+private data class ScanResultActionsCallbacks(
+    val onSavedToDownloadsChange: (Boolean) -> Unit,
+    val onPreparingShareChange: (Boolean) -> Unit,
+    val onGenerate: () -> Unit,
+    val onScanAgain: () -> Unit,
+    val onDone: () -> Unit
+)
+
+// Extraído de ScanResultScreen (LongMethod de detekt) -- ítems de la
+// LazyColumn para elegir formato/alta resolución (backlog UX #33), nombrar
+// el archivo y generar/guardar/compartir el resultado, para cuando el
+// escaneo NO terminó en un lote de imágenes (ver BatchConversionSuccess).
+private fun LazyListScope.scanConfigAndActionItems(
+    hasAnyResult: Boolean,
+    formatArgs: ScanFormatSectionArgs,
+    fileName: String,
+    onFileNameChange: (String) -> Unit,
+    actionsState: ScanResultActionsState,
+    callbacks: ScanResultActionsCallbacks
+) {
+    if (!hasAnyResult) {
+        item {
+            ScanFormatSection(
+                selectedFormat = formatArgs.selectedFormat,
+                onFormatSelected = formatArgs.onFormatSelected,
+                highResEnabled = formatArgs.highResEnabled,
+                onHighResToggle = formatArgs.onHighResToggle,
+                isPremium = formatArgs.isPremium,
+                onPremiumClick = formatArgs.onPremiumClick
+            )
+        }
+    }
+
+    item {
+        ScanFilenameField(
+            fileName = fileName,
+            onFileNameChange = onFileNameChange,
+            extension = actionsState.format.extension
+        )
+    }
+
+    item {
+        ScanResultActions(
+            state = actionsState,
+            onSavedToDownloadsChange = callbacks.onSavedToDownloadsChange,
+            onPreparingShareChange = callbacks.onPreparingShareChange,
+            onGenerate = callbacks.onGenerate,
+            onScanAgain = callbacks.onScanAgain,
+            onDone = callbacks.onDone
+        )
     }
 }
 
@@ -231,9 +356,13 @@ private fun ScanPreviewSection(uris: List<Uri>, onEditPage: (Int) -> Unit) {
 }
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- campo de nombre
-// del archivo antes de guardar/generar el PDF.
+// del archivo antes de guardar/generar el resultado.
 @Composable
-private fun ScanFilenameField(fileName: String, onFileNameChange: (String) -> Unit) {
+private fun ScanFilenameField(
+    fileName: String,
+    onFileNameChange: (String) -> Unit,
+    extension: String = "pdf"
+) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = stringResource(R.string.scan_result_filename_label),
@@ -252,7 +381,7 @@ private fun ScanFilenameField(fileName: String, onFileNameChange: (String) -> Un
             },
             trailingIcon = {
                 Text(
-                    text = ".pdf",
+                    text = ".$extension",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(end = 12.dp)
                 )
@@ -265,6 +394,88 @@ private fun ScanFilenameField(fileName: String, onFileNameChange: (String) -> Un
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+// Backlog UX #33: elegir el formato de salida (PDF/JPG/WebP) y, solo para
+// PDF, activar "Alta resolución" (Premium) -- ver ConvertImageToPdfUseCase
+// para el porqué el PDF es el único formato que se beneficia de esto (JPG/
+// WebP ya exportan siempre a la resolución nativa de la cámara).
+@Composable
+private fun ScanFormatSection(
+    selectedFormat: ScanExportFormat,
+    onFormatSelected: (ScanExportFormat) -> Unit,
+    highResEnabled: Boolean,
+    onHighResToggle: (Boolean) -> Unit,
+    isPremium: Boolean,
+    onPremiumClick: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = stringResource(R.string.scan_result_export_format_label),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ScanExportFormat.entries.forEach { format ->
+                FilterChip(
+                    selected = selectedFormat == format,
+                    onClick = { onFormatSelected(format) },
+                    label = { Text(format.label) }
+                )
+            }
+        }
+
+        if (selectedFormat == ScanExportFormat.PDF) {
+            val highResClickable = if (isPremium) {
+                Modifier
+            } else {
+                Modifier.clickable(onClick = onPremiumClick)
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(highResClickable)
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.scan_result_high_res_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (!isPremium) {
+                            Icon(
+                                imageVector = Icons.Rounded.Lock,
+                                contentDescription = stringResource(
+                                    R.string.scan_result_high_res_premium_content_desc
+                                ),
+                                tint = PremiumGold,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = stringResource(R.string.scan_result_high_res_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = highResEnabled && isPremium,
+                    onCheckedChange = { checked ->
+                        if (isPremium) onHighResToggle(checked) else onPremiumClick()
+                    },
+                    enabled = isPremium
+                )
+            }
+        }
     }
 }
 
@@ -281,17 +492,19 @@ private data class ScanResultActionsState(
     val shareChooserTitle: String,
     val savedFile: File?,
     val savedToDownloads: Boolean,
-    val isPreparingShare: Boolean
+    val isPreparingShare: Boolean,
+    val format: ScanExportFormat
 )
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- guardar/compartir/
-// generar PDF, según el estado actual del resultado del escaneo.
+// generar el resultado (PDF o imagen, backlog UX #33), según el estado
+// actual del escaneo.
 @Composable
 private fun ScanResultActions(
     state: ScanResultActionsState,
     onSavedToDownloadsChange: (Boolean) -> Unit,
     onPreparingShareChange: (Boolean) -> Unit,
-    onGeneratePdf: () -> Unit,
+    onGenerate: () -> Unit,
     onScanAgain: () -> Unit,
     onDone: () -> Unit
 ) {
@@ -346,7 +559,7 @@ private fun ScanResultActions(
                 }
             } else {
                 DocuSmartSecondaryButton(
-                    text = stringResource(R.string.scanner_share),
+                    text = stringResource(R.string.scan_result_share_format, state.format.label),
                     onClick = {
                         scope.launch {
                             onPreparingShareChange(true)
@@ -372,7 +585,7 @@ private fun ScanResultActions(
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     Text(
-                        text = stringResource(R.string.scan_result_generating_pdf),
+                        text = stringResource(R.string.scan_result_generating_format, state.format.label),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -380,9 +593,13 @@ private fun ScanResultActions(
             }
         } else {
             DocuSmartPrimaryButton(
-                text = stringResource(R.string.scanner_generate),
-                onClick = onGeneratePdf,
-                leadingIcon = Icons.Rounded.PictureAsPdf
+                text = stringResource(R.string.scan_result_generate_format, state.format.label),
+                onClick = onGenerate,
+                leadingIcon = if (state.format == ScanExportFormat.PDF) {
+                    Icons.Rounded.PictureAsPdf
+                } else {
+                    Icons.Rounded.Image
+                }
             )
             DocuSmartSecondaryButton(
                 text = stringResource(R.string.scanner_again),
@@ -600,7 +817,7 @@ private fun shareFile(context: Context, file: File, chooserTitle: String) {
             file
         )
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = MIME_PDF
+            type = mimeTypeForExtension(file.extension)
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
@@ -617,7 +834,7 @@ private fun saveFileToDownloads(context: Context, file: File): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-                put(MediaStore.Downloads.MIME_TYPE, MIME_PDF)
+                put(MediaStore.Downloads.MIME_TYPE, mimeTypeForExtension(file.extension))
                 put(MediaStore.Downloads.IS_PENDING, 1)
             }
             val resolver = context.contentResolver

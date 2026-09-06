@@ -146,9 +146,8 @@
     <string name="scanner_title">スキャナーを起動中</string>
     <string name="scanner_hint">ドキュメントを準備して\nカメラを向けてください</string>
     <string name="scanner_result_title">スキャンしたドキュメント</string>
-    <string name="scanner_generate">PDFを生成</string>
     <string name="scanner_again">もう一度スキャン</string>
-    <string name="scanner_share">PDFを共有</string>
+    <string name="scan_result_share_format">%1$sを共有</string>
     <string name="scanner_back">ホームに戻る</string>
 
     <!-- ── ビューア ──────────────────────────────────── -->
@@ -640,7 +639,12 @@
     <string name="scan_result_filename_label">ファイル名</string>
     <string name="scan_result_filename_placeholder">例: スキャンしたドキュメント</string>
     <string name="scan_result_filename_hint">空欄の場合は自動的に名前が生成されます</string>
-    <string name="scan_result_generating_pdf">PDFを生成中…</string>
+    <string name="scan_result_generating_format">%1$sを生成中…</string>
+    <string name="scan_result_export_format_label">出力形式</string>
+    <string name="scan_result_generate_format">%1$sを生成</string>
+    <string name="scan_result_high_res_title">高解像度</string>
+    <string name="scan_result_high_res_desc">よりくっきりしたPDF、印刷や保存に最適</string>
+    <string name="scan_result_high_res_premium_content_desc">プレミアム機能</string>
     <string name="scan_result_default_name_prefix">スキャン_%1$s</string>
     <string name="scan_edit_page_content_desc">%1$dページ目を編集</string>
     <string name="scan_edit_title">ページを編集</string>

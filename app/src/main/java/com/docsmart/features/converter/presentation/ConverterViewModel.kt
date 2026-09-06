@@ -191,17 +191,23 @@ class ConverterViewModel @Inject constructor(
     // imágenes en UN PDF" (comportamiento ya existente) -- el modo lote
     // ("N archivos → N salidas") aplica al resto de tipos cuando hay más de
     // un archivo elegido.
-    fun convert(context: Context) {
+    fun convert(context: Context, highResolutionPdf: Boolean = false) {
         val state = _uiState.value
-        val type  = state.selectedType ?: return
+        val type  = state.selectedType
         val files = state.selectedFiles
-        if (files.isEmpty()) return
+        if (type == null || files.isEmpty()) return
 
         if (!adManager.isPremium.value && !dailyLimitManager.canConvert()) {
             _uiState.update { it.copy(showLimitDialog = true) }
             Timber.d("ConverterViewModel: límite diario alcanzado")
             return
         }
+
+        // "Alta resolución" (backlog UX #33) es Premium -- se revalida acá,
+        // no solo en la UI, para que el estado de la pantalla nunca pueda
+        // saltarse el gate (defensa en profundidad, mismo criterio que
+        // adManager.isPremium ya se revalida en el límite diario arriba).
+        val useHighRes = highResolutionPdf && adManager.isPremium.value
 
         val customName = state.fileName.trim().ifBlank { generateDefaultName() }
         val isBatch    = type != ConversionType.IMAGE_TO_PDF && files.size > 1
@@ -223,40 +229,49 @@ class ConverterViewModel @Inject constructor(
             }
 
             val result = if (type == ConversionType.IMAGE_TO_PDF)
-                convertImageToPdf(imageUris = files, fileName = customName)
+                convertImageToPdf(imageUris = files, fileName = customName, highResolution = useHighRes)
             else
                 runConversionForUri(type, files.first(), customName)
 
             Timber.d("ConverterViewModel: resultado $type → $result")
-
-            when (result) {
-                is ConversionResult.Success ->
-                    DocuSmartAnalytics.logConversionSuccess(type.name, result.fileSizeKb)
-                is ConversionResult.Error ->
-                    DocuSmartAnalytics.logConversionError(type.name, result.message)
-                else -> Unit
-            }
+            logConversionOutcome(type, result)
 
             _uiState.update { state ->
-                when (result) {
-                    is ConversionResult.Success -> {
-                        dailyLimitManager.registerConversion()
-                        state.copy(
-                            isConverting     = false,
-                            conversionResult = result,
-                            outputFile       = result.outputFile,
-                            conversionCount  = dailyLimitManager.getConversionCount(),
-                            conversionLimit  = dailyLimitManager.getConversionLimit()
-                        )
-                    }
-                    is ConversionResult.Error -> state.copy(
-                        isConverting = false,
-                        errorMessage = result.message
-                    )
-                    else -> state.copy(isConverting = false)
-                }
+                applySingleConversionResult(state, result)
             }
         }
+    }
+
+    // Extraído de convert() (detekt: CyclomaticComplexMethod) -- registrar
+    // el resultado en analítica es una rama de lógica independiente de
+    // cómo se actualiza el estado de la pantalla.
+    private fun logConversionOutcome(type: ConversionType, result: ConversionResult) {
+        when (result) {
+            is ConversionResult.Success ->
+                DocuSmartAnalytics.logConversionSuccess(type.name, result.fileSizeKb)
+            is ConversionResult.Error ->
+                DocuSmartAnalytics.logConversionError(type.name, result.message)
+            else -> Unit
+        }
+    }
+
+    // Extraído de convert() (detekt: CyclomaticComplexMethod).
+    private fun applySingleConversionResult(
+        state: ConverterUiState,
+        result: ConversionResult
+    ): ConverterUiState = when (result) {
+        is ConversionResult.Success -> {
+            dailyLimitManager.registerConversion()
+            state.copy(
+                isConverting     = false,
+                conversionResult = result,
+                outputFile       = result.outputFile,
+                conversionCount  = dailyLimitManager.getConversionCount(),
+                conversionLimit  = dailyLimitManager.getConversionLimit()
+            )
+        }
+        is ConversionResult.Error -> state.copy(isConverting = false, errorMessage = result.message)
+        else -> state.copy(isConverting = false)
     }
 
     private suspend fun runConversionForUri(type: ConversionType, uri: Uri, fileName: String): ConversionResult =
@@ -349,10 +364,20 @@ class ConverterViewModel @Inject constructor(
         }
     }
 
-    fun convertToPdf(context: Context) {
+    fun convertToPdf(context: Context, highResolution: Boolean = false) {
         if (_uiState.value.selectedType == null) {
             _uiState.update { it.copy(selectedType = ConversionType.IMAGE_TO_PDF) }
         }
+        convert(context, highResolutionPdf = highResolution)
+    }
+
+    // Atajo del Escáner (backlog UX #33) para exportar las páginas
+    // escaneadas como imágenes en vez de PDF -- reutiliza el mismo
+    // `convert()` que ya arma lotes N archivos → N salidas para estos tipos
+    // (ver `isBatch` arriba), así una página exporta un solo archivo y
+    // varias exportan una por una con `runBatchConversion`.
+    fun convertToImageFormat(context: Context, type: ConversionType) {
+        _uiState.update { it.copy(selectedType = type) }
         convert(context)
     }
 

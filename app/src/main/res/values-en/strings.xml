@@ -146,9 +146,8 @@
     <string name="scanner_title">Starting scanner</string>
     <string name="scanner_hint">Prepare the document and\npoint the camera at it</string>
     <string name="scanner_result_title">Scanned document</string>
-    <string name="scanner_generate">Generate PDF</string>
     <string name="scanner_again">Scan again</string>
-    <string name="scanner_share">Share PDF</string>
+    <string name="scan_result_share_format">Share %1$s</string>
     <string name="scanner_back">Back to home</string>
 
     <!-- ── Viewer ─────────────────────────────────── -->
@@ -635,7 +634,12 @@
     <string name="scan_result_filename_label">File name</string>
     <string name="scan_result_filename_placeholder">E.g.: Scanned_document</string>
     <string name="scan_result_filename_hint">If left empty, an automatic name will be generated</string>
-    <string name="scan_result_generating_pdf">Generating PDF…</string>
+    <string name="scan_result_generating_format">Generating %1$s…</string>
+    <string name="scan_result_export_format_label">Output format</string>
+    <string name="scan_result_generate_format">Generate %1$s</string>
+    <string name="scan_result_high_res_title">High resolution</string>
+    <string name="scan_result_high_res_desc">Sharper PDF, ideal for printing or archiving</string>
+    <string name="scan_result_high_res_premium_content_desc">Premium feature</string>
     <string name="scan_result_default_name_prefix">Scan_%1$s</string>
     <string name="scan_edit_page_content_desc">Edit page %1$d</string>
     <string name="scan_edit_title">Edit page</string>

@@ -146,9 +146,8 @@
     <string name="scanner_title">Iniciando escáner</string>
     <string name="scanner_hint">Prepara el documento y\napunta la cámara hacia él</string>
     <string name="scanner_result_title">Documento escaneado</string>
-    <string name="scanner_generate">Generar PDF</string>
     <string name="scanner_again">Escanear de nuevo</string>
-    <string name="scanner_share">Compartir PDF</string>
+    <string name="scan_result_share_format">Compartir %1$s</string>
     <string name="scanner_back">Volver al inicio</string>
 
     <!-- ── Visor ──────────────────────────────────── -->
@@ -640,8 +639,13 @@
     <string name="scan_result_filename_label">Nombre del archivo</string>
     <string name="scan_result_filename_placeholder">Ej: Documento_escaneado</string>
     <string name="scan_result_filename_hint">Si lo dejas vacío se generará un nombre automático</string>
-    <string name="scan_result_generating_pdf">Generando PDF…</string>
+    <string name="scan_result_generating_format">Generando %1$s…</string>
     <string name="scan_result_default_name_prefix">Escaneo_%1$s</string>
+    <string name="scan_result_export_format_label">Formato de salida</string>
+    <string name="scan_result_generate_format">Generar %1$s</string>
+    <string name="scan_result_high_res_title">Alta resolución</string>
+    <string name="scan_result_high_res_desc">PDF más nítido, ideal para imprimir o archivar</string>
+    <string name="scan_result_high_res_premium_content_desc">Función Premium</string>
     <string name="scan_edit_page_content_desc">Editar página %1$d</string>
     <string name="scan_edit_title">Editar página</string>
     <string name="scan_edit_brightness">Brillo: %1$d</string>

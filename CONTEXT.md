@@ -1578,6 +1578,96 @@ dispositivo real que el nuevo texto se ve correctamente en la
 tarjeta de Biblioteca. Gauntlet en verde: `compileDebugKotlin` +
 `detekt` + `lintDebug` + `testDebugUnitTest`.
 
+### Escáner: exportar a imagen (JPG/WebP) + alta resolución Premium (2026-09-06)
+
+El usuario notó que el Escáner solo ofrecía generar PDF, y pidió
+agregar formatos de imagen además de una opción de "alta resolución"
+detrás de Premium. Antes de tocar código se investigó el pipeline real
+(ML Kit `GmsDocumentScanning` -- solo entrega páginas JPEG, el PDF lo
+arma `ConvertImageToPdfUseCase`) y se encontró la pieza clave: ese
+conversor ya reducía **cualquier** escaneo a un equivalente de ~67 DPI
+sin importar la cámara del teléfono, porque usaba los mismos números
+del tamaño de página en puntos (595x842, A4 a 72pt/in) como tamaño en
+**píxeles** del bitmap incrustado. Confirmado con el usuario (2
+preguntas): formatos a agregar = JPG + WebP (no PNG); "alta
+resolución" solo mejora el PDF (JPG/WebP ya exportan siempre a la
+resolución nativa de la cámara, sin reducir nada -- no hay nada que
+premium-gatear ahí).
+
+**Implementado**:
+- `ConvertImageToPdfUseCase`: separadas dos cosas que antes eran la
+  misma -- el recuadro de dibujo en LA PÁGINA (siempre en puntos,
+  `pageDrawRect()`, igual con o sin alta resolución, así el layout no
+  cambia) y cuántos píxeles reales del bitmap se conservan dentro de
+  ese recuadro (`embedBitmapForDrawRect()`, `HIGH_RES_MULTIPLIER = 3`
+  ≈ 216 DPI en Premium vs. el equivalente histórico de ~72 DPI en
+  free). Nuevo parámetro `highResolution: Boolean = false`.
+- `ConverterViewModel`: `convert()` ahora recibe `highResolutionPdf`
+  y lo revalida contra `adManager.isPremium.value` (defensa en
+  profundidad -- el estado de la pantalla nunca puede saltarse el
+  gate aunque algo falle en la UI). Nueva función
+  `convertToImageFormat(context, type)` para el atajo del Escáner,
+  que reutiliza el mismo `convert()` -- ya sabía armar lotes N
+  archivos → N salidas para JPG/WebP (`isBatch`), solo hacía falta
+  invocarlo desde ahí.
+- `ScanResultScreen.kt`: nuevo selector "Formato de salida" (chips
+  PDF/JPG/WebP) y, solo para PDF, fila "Alta resolución" con
+  `Switch` -- bloqueada (candado dorado) si no es Premium, tocarla
+  navega a la pantalla Premium (`onPremiumClick`, nuevo parámetro
+  enhebrado desde `DocuSmartNavGraph`). Todos los textos
+  (botón "Generar", "Generando…", "Compartir", sufijo del nombre de
+  archivo) pasaron a ser dinámicos según el formato elegido. De paso
+  se corrigieron dos bugs reales encontrados al implementar esto:
+  `saveFileToDownloads()`/`shareFile()` tenían el MIME type
+  hardcodeado a `application/pdf` sin importar el archivo real --
+  invisible antes porque el Escáner solo generaba PDF, pero hubiera
+  guardado/compartido un JPG con el MIME de un PDF. Para 2+ páginas
+  exportadas como imagen, se reutiliza `BatchConversionSuccess` (ya
+  existente para el Convertidor, RF-CONV-08) en vez de construir una
+  UI nueva.
+- Refactors por detekt (`CyclomaticComplexMethod`/`LongMethod`/
+  `ReturnCount`): `ConverterViewModel.convert()` se dividió en
+  `logConversionOutcome()`/`applySingleConversionResult()`;
+  `ScanResultScreen()` se dividió extrayendo
+  `scanConfigAndActionItems()` (una extensión de `LazyListScope`).
+- Los 10 idiomas soportados recibieron los textos nuevos/renombrados
+  (`scan_result_export_format_label`, `scan_result_generate_format`,
+  `scan_result_generating_format`, `scan_result_high_res_title`,
+  `scan_result_high_res_desc`,
+  `scan_result_high_res_premium_content_desc`,
+  `scan_result_share_format`), reemplazando los antiguos
+  `scanner_generate`/`scanner_share`/`scan_result_generating_pdf`
+  (hardcodeados a "PDF").
+
+**Verificado en dispositivo real** (escaneo real con la cámara vía ML
+Kit, sin usar fotos de la galería del usuario -- ver nota de
+privacidad más abajo): los 3 chips de formato cambian correctamente
+el botón/sufijo/ícono; con JPG de una sola página se generó, guardó
+en Descargas (confirmado por `content query` que quedó con
+`mime_type=image/jpeg`, no `application/pdf`) y el botón "Compartir
+JPG" mostró el texto correcto; con PDF (sin alta resolución) se
+generó y se inspeccionó el archivo resultante directamente -- la
+imagen se ve completa y sin distorsión, confirmando que el refactor
+de `pageDrawRect`/`embedBitmapForDrawRect` no rompió el caso
+estándar. El candado de "Alta resolución" en cuenta gratuita bloquea
+el `Switch` y, al tocarlo, navega a la pantalla Premium
+correctamente. **No verificado**: la diferencia visual real de
+"Alta resolución" activada (necesita una cuenta Premium genuina --
+`BillingManager` resincroniza el estado real de compra en cada
+inicio de la app, así que no se pudo simular Premium editando
+preferencias a mano; la lógica de píxeles fue revisada con cuidado y
+pasa el gauntlet, pero esta pieza específica queda pendiente de
+verificación visual en una sesión futura con una cuenta Premium
+real). Todos los archivos de prueba (JPG/PDF en Descargas y en
+almacenamiento interno) se eliminaron al terminar. Gauntlet en
+verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`.
+
+**Nota de privacidad**: la verificación con cámara real capturó lo
+que hubiera frente al lente en ese momento (una superficie/pantalla
+cualquiera) -- no se leyó, describió ni analizó el contenido más
+allá de confirmar que la imagen se incrustó bien en el PDF.
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)

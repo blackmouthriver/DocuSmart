@@ -146,9 +146,8 @@
     <string name="scanner_title">正在启动扫描仪</string>
     <string name="scanner_hint">准备好文档\n将摄像头对准它</string>
     <string name="scanner_result_title">文档已扫描</string>
-    <string name="scanner_generate">生成 PDF</string>
     <string name="scanner_again">重新扫描</string>
-    <string name="scanner_share">分享 PDF</string>
+    <string name="scan_result_share_format">分享 %1$s</string>
     <string name="scanner_back">返回首页</string>
 
     <!-- ── 查看器 ──────────────────────────────────── -->
@@ -640,7 +639,12 @@
     <string name="scan_result_filename_label">文件名</string>
     <string name="scan_result_filename_placeholder">例如：扫描文档</string>
     <string name="scan_result_filename_hint">留空将自动生成文件名</string>
-    <string name="scan_result_generating_pdf">正在生成 PDF…</string>
+    <string name="scan_result_generating_format">正在生成 %1$s…</string>
+    <string name="scan_result_export_format_label">输出格式</string>
+    <string name="scan_result_generate_format">生成 %1$s</string>
+    <string name="scan_result_high_res_title">高分辨率</string>
+    <string name="scan_result_high_res_desc">更清晰的 PDF，适合打印或存档</string>
+    <string name="scan_result_high_res_premium_content_desc">高级功能</string>
     <string name="scan_result_default_name_prefix">扫描_%1$s</string>
     <string name="scan_edit_page_content_desc">编辑第 %1$d 页</string>
     <string name="scan_edit_title">编辑页面</string>

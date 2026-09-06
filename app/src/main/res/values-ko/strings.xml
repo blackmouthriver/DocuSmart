@@ -146,9 +146,8 @@
     <string name="scanner_title">스캐너 시작 중</string>
     <string name="scanner_hint">문서를 준비하고\n카메라를 향하게 하세요</string>
     <string name="scanner_result_title">스캔된 문서</string>
-    <string name="scanner_generate">PDF 생성</string>
     <string name="scanner_again">다시 스캔</string>
-    <string name="scanner_share">PDF 공유</string>
+    <string name="scan_result_share_format">%1$s 공유</string>
     <string name="scanner_back">홈으로 돌아가기</string>
 
     <!-- ── 뷰어 ──────────────────────────────────── -->
@@ -640,7 +639,12 @@
     <string name="scan_result_filename_label">파일 이름</string>
     <string name="scan_result_filename_placeholder">예: 스캔한_문서</string>
     <string name="scan_result_filename_hint">비워두면 자동으로 이름이 생성됩니다</string>
-    <string name="scan_result_generating_pdf">PDF 생성 중…</string>
+    <string name="scan_result_generating_format">%1$s 생성 중…</string>
+    <string name="scan_result_export_format_label">출력 형식</string>
+    <string name="scan_result_generate_format">%1$s 생성</string>
+    <string name="scan_result_high_res_title">고해상도</string>
+    <string name="scan_result_high_res_desc">더 선명한 PDF, 인쇄나 보관에 적합</string>
+    <string name="scan_result_high_res_premium_content_desc">프리미엄 기능</string>
     <string name="scan_result_default_name_prefix">스캔_%1$s</string>
     <string name="scan_edit_page_content_desc">페이지 %1$d 편집</string>
     <string name="scan_edit_title">페이지 편집</string>

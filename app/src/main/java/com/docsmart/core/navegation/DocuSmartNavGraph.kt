@@ -481,14 +481,15 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
         val isPdf = scannerEntry.savedStateHandle.get<Boolean>("is_pdf") ?: false
         val uris  = uriStrings.map { Uri.parse(it) }
         ScanResultScreen(
-            scannedUris = uris,
-            isPdf       = isPdf,
-            onBack      = { navController.popBackStack() },
-            onDone      = {
+            scannedUris    = uris,
+            isPdf          = isPdf,
+            onBack         = { navController.popBackStack() },
+            onDone         = {
                 navController.navigate(NavRoutes.Home.route) {
                     popUpTo(NavRoutes.Scanner.route) { inclusive = true }
                 }
-            }
+            },
+            onPremiumClick = { navController.navigate(NavRoutes.Premium.route) }
         )
     }
 }
