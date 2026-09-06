@@ -78,6 +78,8 @@
     <string name="settings_select_accent_color">Selecionar cor de destaque</string>
     <string name="settings_font_scale">Tamanho da fonte</string>
     <string name="settings_select_font_scale">Selecionar tamanho da fonte</string>
+    <string name="settings_animated_background">Fundo animado</string>
+    <string name="settings_animated_background_subtitle">Formas com a cor de destaque em movimento</string>
     <string name="settings_storage">Armazenamento</string>
     <string name="settings_storage_subtitle">Ver arquivos gerados</string>
     <string name="settings_about">Sobre</string>

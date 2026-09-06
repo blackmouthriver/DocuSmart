@@ -54,6 +54,7 @@ fun SettingsScreen(
     val currentTheme       by themeManager.currentTheme.collectAsState()
     val currentAccentColor by themeManager.accentColor.collectAsState()
     val currentFontScale   by themeManager.fontScale.collectAsState()
+    val animatedBackgroundEnabled by themeManager.animatedBackgroundEnabled.collectAsState()
     val currentLanguage    by languageManager.currentLanguage.collectAsState()
     val isPremium          by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
@@ -676,6 +677,15 @@ fun SettingsScreen(
                 onClick  = { showFontScaleDialog = true }
             )
         }
+        item {
+            SettingsSwitchItem(
+                icon     = Icons.Rounded.Gradient,
+                title    = stringResource(R.string.settings_animated_background),
+                subtitle = stringResource(R.string.settings_animated_background_subtitle),
+                checked  = animatedBackgroundEnabled,
+                onCheckedChange = { themeManager.setAnimatedBackgroundEnabled(it) }
+            )
+        }
 
         // ── Sección: Almacenamiento ───────────────────────────────────────────
         item { SettingsSectionHeader(stringResource(R.string.settings_storage)) }
@@ -831,6 +841,43 @@ private fun SettingsItem(
             Icon(Icons.Rounded.ChevronRight, null,
                 tint     = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+// Mismo estilo visual que SettingsItem, pero con un Switch en vez de
+// chevron+onClick -- para ajustes on/off como el fondo animado (backlog UX
+// 2026-09-06), en vez de abrir un diálogo de opciones.
+@Composable
+private fun SettingsSwitchItem(
+    icon    : androidx.compose.ui.graphics.vector.ImageVector,
+    title   : String,
+    subtitle: String,
+    checked : Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    tint    : androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
+) {
+    Card(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = MaterialTheme.shapes.large,
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            modifier              = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Switch(checked = checked, onCheckedChange = onCheckedChange)
         }
     }
 }

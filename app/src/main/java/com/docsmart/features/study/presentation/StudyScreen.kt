@@ -195,7 +195,22 @@ fun StudyScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        // Fondo animado global (backlog UX 2026-09-06): transparente para
+        // dejar ver la capa pintada una sola vez en MainActivity. Bug real
+        // encontrado 2026-09-06 ("línea blanca" reportada por el usuario,
+        // solo en pantallas con Scaffold propio): por defecto Scaffold
+        // reserva su propio inset de systemBars (incluida la barra de
+        // navegación real del sistema) EN ADICIÓN al que ya reserva el
+        // Scaffold principal de MainActivity para DocuSmartBottomBar --
+        // ese doble descuento dejaba una franja de fondo plano extra justo
+        // encima de la barra, en las pantallas con Scaffold propio (no en
+        // Home/Biblioteca, que no tienen su propio Scaffold). Se excluye
+        // el inset inferior acá porque ya lo maneja MainActivity una sola
+        // vez; se conserva el superior para no afectar la barra de arriba.
+        contentWindowInsets = WindowInsets.systemBars.only(
+            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+        ),
+        containerColor = Color.Transparent,
         topBar = {
             StudyTopBar(
                 documentName = documentName,

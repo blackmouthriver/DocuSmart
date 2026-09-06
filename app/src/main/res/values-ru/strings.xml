@@ -78,6 +78,8 @@
     <string name="settings_select_accent_color">Выбрать акцентный цвет</string>
     <string name="settings_font_scale">Размер шрифта</string>
     <string name="settings_select_font_scale">Выбрать размер шрифта</string>
+    <string name="settings_animated_background">Анимированный фон</string>
+    <string name="settings_animated_background_subtitle">Фигуры в цвете акцента в движении</string>
     <string name="settings_storage">Хранилище</string>
     <string name="settings_storage_subtitle">Просмотр созданных файлов</string>
     <string name="settings_about">О приложении</string>

@@ -101,7 +101,16 @@ fun SecurityScreen(
 
     Scaffold(
         snackbarHost   = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background
+        // Fondo animado global (backlog UX 2026-09-06): transparente para
+        // dejar ver la capa pintada una sola vez en MainActivity. Se excluye
+        // el inset inferior de systemBars (bug real "línea blanca": este
+        // Scaffold lo reservaba por duplicado sobre el que ya reserva
+        // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
+        // detalle completo).
+        contentWindowInsets = WindowInsets.systemBars.only(
+            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+        ),
+        containerColor = Color.Transparent
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (uiState.screenState) {

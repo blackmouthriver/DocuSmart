@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -359,7 +360,16 @@ fun PdfToolsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background
+        // Fondo animado global (backlog UX 2026-09-06): transparente para
+        // dejar ver la capa pintada una sola vez en MainActivity. Se excluye
+        // el inset inferior de systemBars (bug real "línea blanca": este
+        // Scaffold lo reservaba por duplicado sobre el que ya reserva
+        // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
+        // detalle completo).
+        contentWindowInsets = WindowInsets.systemBars.only(
+            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+        ),
+        containerColor = Color.Transparent
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier

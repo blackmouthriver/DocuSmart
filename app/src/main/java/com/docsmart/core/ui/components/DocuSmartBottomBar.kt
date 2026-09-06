@@ -107,13 +107,16 @@ private val routesWithBottomBar = setOf(
 // HomeBanner/DocuSmartTopBanner/etc. (gradientes con azul fijo que
 // ignoraban el "Color de acento" elegido).
 private object BottomBarSizes {
-    val BarCorner = 26.dp
-    val BarVerticalPadding = 8.dp   // feedback 2026-09-06: la barra quedó muy alta
-    val ItemBox = 60.dp
-    val ItemCorner = ItemBox / 2   // siempre circular, activo e inactivo
-    val LiftOffset = (-7).dp       // mitad de lo anterior (-14dp), sobresale menos aún
-    val ActiveIconSize = 26.dp
-    val InactiveIconSize = 22.dp
+    val BarCorner = 22.dp
+    val BarVerticalPadding = 6.dp    // feedback 2026-09-06 (2da vuelta): más delgada aún
+    val ItemBox = 52.dp
+    val ItemCorner = ItemBox / 2     // siempre circular, activo e inactivo
+    // Sobresale la mitad del propio círculo (26dp = ItemBox/2), no la mitad
+    // del valor anterior -- feedback 2026-09-06 (2da vuelta): "el botón no
+    // sale de la barra, la idea es que salga la mitad".
+    val LiftOffset = -(ItemBox / 2)
+    val ActiveIconSize = 22.dp
+    val InactiveIconSize = 18.dp
 }
 
 @Composable
@@ -127,14 +130,27 @@ fun DocuSmartBottomBar(
         topStart = BottomBarSizes.BarCorner,
         topEnd = BottomBarSizes.BarCorner
     )
-    val barShadowColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
     val surfaceGradient = listOf(
         MaterialTheme.colorScheme.surface,
         MaterialTheme.colorScheme.surfaceVariant
     )
 
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            // Bug real encontrado 2026-09-06 ("arcos negros" reportados por
+            // el usuario en las esquinas de la barra): el hijo de abajo se
+            // recorta a `barShape` (redondeado solo arriba), así que las dos
+            // esquinitas triangulares FUERA de esa curva -- dentro del
+            // rectángulo de este Box exterior pero fuera de la forma
+            // redondeada -- quedaban sin pintar. Con el Scaffold en
+            // `containerColor = Color.Transparent` (para dejar ver el fondo
+            // animado), esas esquinas dejaban ver el fondo de la ventana de
+            // la Activity (negro) en vez del tono de la barra. Se pinta acá,
+            // en el Box exterior SIN recortar, para que esas esquinas
+            // muestren el mismo color de superficie en vez de quedar
+            // transparentes.
+            .background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.BottomCenter
     ) {
         // Superficie del bar -- se ajusta al alto real del Row (el único
@@ -145,15 +161,16 @@ fun DocuSmartBottomBar(
         // disponible y el label quedaba sin espacio). El círculo activo
         // sigue sobresaliendo por overflow natural (Box no recorta a sus
         // hijos por defecto), sin reservarle a Scaffold espacio extra.
+        //
+        // Sin `.shadow()`: con esquinas redondeadas solo arriba y una
+        // elevación alta (18dp) heredada del diseño de referencia, el
+        // renderer dibujaba una sombra que se perdía contra el fondo
+        // transparente. Un bar pegado al borde no necesita sombra propia
+        // para leerse elevado -- el círculo activo y su propio `.shadow()`
+        // ya cumplen ese rol.
         Box(
             Modifier
                 .matchParentSize()
-                .shadow(
-                    elevation = 18.dp,
-                    shape = barShape,
-                    ambientColor = barShadowColor,
-                    spotColor = barShadowColor
-                )
                 .clip(barShape)
                 .background(Brush.verticalGradient(surfaceGradient))
         )

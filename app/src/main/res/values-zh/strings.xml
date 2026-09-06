@@ -78,6 +78,8 @@
     <string name="settings_select_accent_color">选择强调色</string>
     <string name="settings_font_scale">字体大小</string>
     <string name="settings_select_font_scale">选择字体大小</string>
+    <string name="settings_animated_background">动态背景</string>
+    <string name="settings_animated_background_subtitle">以强调色移动的图形</string>
     <string name="settings_storage">存储空间</string>
     <string name="settings_storage_subtitle">查看已生成的文件</string>
     <string name="settings_about">关于</string>

@@ -43,6 +43,12 @@ class ThemeManager @Inject constructor(
     private val _fontScale = MutableStateFlow(loadFontScale())
     val fontScale: StateFlow<FontScale> = _fontScale.asStateFlow()
 
+    // Fondo animado (backlog UX 2026-09-06): activado por defecto -- se
+    // puede apagar desde Ajustes para equipos de gama baja o gente sensible
+    // al movimiento (ver DocuSmartAnimatedBackground.kt).
+    private val _animatedBackgroundEnabled = MutableStateFlow(loadAnimatedBackgroundEnabled())
+    val animatedBackgroundEnabled: StateFlow<Boolean> = _animatedBackgroundEnabled.asStateFlow()
+
     fun setTheme(theme: AppTheme) {
         _currentTheme.value = theme
         prefs.edit().putString("theme", theme.name).apply()
@@ -61,6 +67,12 @@ class ThemeManager @Inject constructor(
         Timber.d("ThemeManager: tamaño de letra cambiado a ${scale.label}")
     }
 
+    fun setAnimatedBackgroundEnabled(enabled: Boolean) {
+        _animatedBackgroundEnabled.value = enabled
+        prefs.edit().putBoolean("animated_background_enabled", enabled).apply()
+        Timber.d("ThemeManager: fondo animado ${if (enabled) "activado" else "desactivado"}")
+    }
+
     private fun loadTheme(): AppTheme {
         val saved = prefs.getString("theme", AppTheme.SYSTEM.name)
         return AppTheme.entries.find { it.name == saved } ?: AppTheme.SYSTEM
@@ -75,4 +87,7 @@ class ThemeManager @Inject constructor(
         val saved = prefs.getString("font_scale", FontScale.NORMAL.name)
         return FontScale.entries.find { it.name == saved } ?: FontScale.NORMAL
     }
+
+    private fun loadAnimatedBackgroundEnabled(): Boolean =
+        prefs.getBoolean("animated_background_enabled", true)
 }

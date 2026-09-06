@@ -8,14 +8,17 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -24,6 +27,7 @@ import com.docsmart.core.ads.AdManager
 import com.docsmart.core.navegation.DocuSmartNavGraph
 import com.docsmart.core.navegation.NavRoutes
 import com.docsmart.core.ui.LanguageManager
+import com.docsmart.core.ui.components.DocuSmartAnimatedBackground
 import com.docsmart.core.ui.components.DocuSmartBottomBar
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.DocuSmartTheme
@@ -81,13 +85,34 @@ class MainActivity : AppCompatActivity() {
 
         externalFileUri = resolveExternalIntent(intent)
         requestStoragePermissions()
-        enableEdgeToEdge()
+        // Bug real encontrado 2026-09-06 ("línea/franja blanca" reportada
+        // por el usuario tapando botones en Convertir/Herramientas PDF):
+        // enableEdgeToEdge() sin parámetros usa SystemBarStyle.auto(...) por
+        // defecto, que en ciertas versiones/API de Android dibuja un scrim
+        // blanco semitransparente del sistema detrás de la barra de
+        // navegación para asegurar contraste. Con la barra inferior anterior
+        // (más alta) ese scrim quedaba oculto debajo de su propia superficie
+        // opaca; al achicar la barra (feedback de la misma sesión), el
+        // scrim empezó a asomar por encima, tapando el contenido. La propia
+        // barra ya resuelve su contraste con MaterialTheme.colorScheme, así
+        // que no hace falta el scrim del sistema -- se fuerza transparente.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
         requestAdsConsentThenInitializeAds()
 
         setContent {
             val currentTheme by themeManager.currentTheme.collectAsState()
             val currentAccentColor by themeManager.accentColor.collectAsState()
             val currentFontScale by themeManager.fontScale.collectAsState()
+            val animatedBackgroundEnabled by themeManager.animatedBackgroundEnabled.collectAsState()
             val currentLanguage by languageManager.currentLanguage.collectAsState()
             val isSystemDark = isSystemInDarkTheme()
 
@@ -147,8 +172,16 @@ class MainActivity : AppCompatActivity() {
                     externalFileUri = null
                 }
 
+                // Fondo animado (backlog UX 2026-09-06): capa 0 detrás de toda
+                // la navegación, pintada una sola vez acá -- el Scaffold y los
+                // Scaffold anidados de cada pantalla usan containerColor
+                // transparente para dejarla ver (ver DocuSmartAnimatedBackground.kt
+                // para la excepción del Visor, que mantiene fondo sólido fijo
+                // por legibilidad de lectura).
+                val backgroundColor = MaterialTheme.colorScheme.background
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    containerColor = Color.Transparent,
                     bottomBar = {
                         DocuSmartBottomBar(
                             currentRoute = currentRoute,
@@ -164,7 +197,24 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding)) {
+                    // El fondo comparte el mismo Box con padding que el
+                    // contenido -- bug real 2026-09-06: cuando el fondo medía
+                    // la pantalla completa (sin descontar la barra), una de
+                    // las formas quedaba posicionada justo a la altura del
+                    // borde superior de la barra y se veía como una franja de
+                    // color pegada encima. Al medir el mismo alto que el
+                    // contenido real (innerPadding ya descuenta la barra),
+                    // las formas nunca llegan a esa zona.
+                    Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                        if (animatedBackgroundEnabled) {
+                            DocuSmartAnimatedBackground(modifier = Modifier.fillMaxSize())
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(backgroundColor)
+                            )
+                        }
                         DocuSmartNavGraph(
                             navController = navController,
                             themeManager = themeManager,

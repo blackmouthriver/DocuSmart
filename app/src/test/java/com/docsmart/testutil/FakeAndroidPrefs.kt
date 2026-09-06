@@ -36,6 +36,12 @@ fun fakeContextWithPrefs(store: MutableMap<String, Any>): Context {
         store[longKey.captured] = longValue.captured
         editor
     }
+    val boolKey = slot<String>()
+    val boolValue = slot<Boolean>()
+    every { editor.putBoolean(capture(boolKey), capture(boolValue)) } answers {
+        store[boolKey.captured] = boolValue.captured
+        editor
+    }
     every { editor.apply() } answers { }
 
     val prefs = mockk<SharedPreferences>()
@@ -48,6 +54,11 @@ fun fakeContextWithPrefs(store: MutableMap<String, Any>): Context {
     val getLongDefault = slot<Long>()
     every { prefs.getLong(capture(getLongKey), capture(getLongDefault)) } answers {
         (store[getLongKey.captured] as? Long) ?: getLongDefault.captured
+    }
+    val getBoolKey = slot<String>()
+    val getBoolDefault = slot<Boolean>()
+    every { prefs.getBoolean(capture(getBoolKey), capture(getBoolDefault)) } answers {
+        (store[getBoolKey.captured] as? Boolean) ?: getBoolDefault.captured
     }
     every { prefs.edit() } returns editor
 

@@ -1094,6 +1094,126 @@ ajuste) -- barra visiblemente más compacta, círculo sobresale poco,
 título pegado al ícono, sigue sin franja blanca. Gauntlet en verde una
 vez más.
 
+**Quinta iteración — mismo día, tras agregar el fondo animado
+(2026-09-06):** con el fondo animado ya implementado (ver sección de
+abajo), el usuario reportó dos problemas nuevos con captura: (1) una
+franja de color visible justo encima de la barra al entrar a
+Convertir y Herramientas PDF; (2) la barra seguía sintiéndose grande y
+el círculo activo "no sale de la barra" -- pidió que sobresalga a la
+mitad (de su propio tamaño, no de la mitad del valor anterior como se
+interpretó en la iteración previa) y una barra más delgada.
+
+**Causa real de la franja**: `DocuSmartAnimatedBackground` medía
+`Modifier.fillMaxSize()` sobre el `Box` exterior completo de
+`MainActivity` (que abarca el alto total de pantalla, incluyendo el
+área detrás de la barra inferior), mientras que `DocuSmartNavGraph` sí
+respetaba `innerPadding` (que descuenta la barra). Con esos dos altos
+distintos, una de las formas del fondo (la que se posiciona en
+`h - 216dp` relativo a la altura total) terminaba con su borde
+inferior cayendo casi exactamente a la altura del borde superior de la
+barra -- visible como una franja de color pegada ahí, más notoria en
+pantallas con `Scaffold` propio transparente (Convertir/PDF) por cómo
+quedaba compuesta esa región. Corregido moviendo el fondo animado
+DENTRO del mismo `Box` con `innerPadding` que ya usa `DocuSmartNavGraph`
+-- ambos miden ahora la misma altura de contenido real, así que las
+formas nunca llegan a la zona de la barra.
+
+**Tamaño y elevación**: se aclaró que "la mitad" se refería a que la
+mitad del propio círculo sobresalga del borde superior de la barra
+(un "notch" clásico), no la mitad del valor de elevación anterior.
+Ajustado: `ItemBox` 60dp → 52dp, `BarVerticalPadding` 8dp → 6dp,
+`BarCorner` 26dp → 22dp, íconos 26/22dp → 22/18dp, y
+`LiftOffset = -(ItemBox / 2)` (fórmula explícita en vez de un valor
+suelto, para que "la mitad" quede garantizado por construcción en vez
+de ajustado a ojo).
+
+Verificado en dispositivo real (Motorola Edge 30 Neo, acento Naranja):
+franja completamente desaparecida en Convertir y Herramientas PDF,
+barra notablemente más delgada, círculo sobresaliendo claramente a la
+mitad. Gauntlet en verde una vez más.
+
+**Nota operativa**: durante esta verificación, un toque en la pestaña
+PDF coincidió con una videollamada entrante real de WhatsApp que
+resultó contestada (contenido con personas identificables real) -- se
+intentó colgar de inmediato pero el dispositivo se desconectó de adb
+en ese momento (el usuario tomó el teléfono). El usuario confirmó
+después que todo quedó bien de su lado; no se leyó ni analizó nada de
+ese contenido.
+
+**Sexta iteración — mismo día, con captura del usuario**: pese al fix
+anterior, seguía viéndose una franja/línea en Convertir y PDF, y
+además dos arcos negros nuevos en las esquinas superiores de la barra.
+Diagnóstico inicial (incorrecto): se atribuyó a la sombra
+(`elevation = 18dp`) de la superficie del bar y se quitó -- no
+resolvió nada, los arcos seguían idénticos incluso con el fondo
+animado desactivado (prueba que aisló la causa: no dependía del fondo
+animado en absoluto). **Causa real**: la superficie del bar se recorta
+con `RoundedCornerShape` redondeada solo arriba -- las dos esquinitas
+triangulares que quedan DENTRO del `Box` exterior pero FUERA de esa
+forma redondeada no las pinta nada, y con el `Scaffold` en
+`containerColor = Color.Transparent` (necesario para el fondo
+animado), esas esquinas dejaban ver el fondo de la ventana de la
+`Activity` -- `android:windowBackground` = `#0F172A` (azul marino muy
+oscuro, usado para el splash), que a simple vista se ve casi negro.
+Corregido pintando el `Box` exterior (sin recortar) con
+`MaterialTheme.colorScheme.surface` antes del hijo recortado, así esas
+esquinas muestran el mismo tono de la barra en vez de quedar
+transparentes. Verificado con capturas recortadas (PowerShell
+`System.Drawing`, ya que el dispositivo no tiene pantalla táctil para
+hacer zoom manual) en Convertir, PDF y Ajustes, con el fondo animado
+tanto encendido como apagado: arcos completamente eliminados en los
+tres casos. Gauntlet en verde una vez más.
+
+**Séptima iteración — mismo día, con nueva captura del usuario**: los
+arcos negros ya no aparecían, pero seguía viéndose una franja/línea
+blanca en Convertir y Herramientas PDF, esta vez tapando literalmente
+el último botón visible de la lista ("Rotar PDF", "Imagen → BMP").
+**Causa real**: `enableEdgeToEdge()` llamado sin parámetros en
+`MainActivity.onCreate()` usa por defecto `SystemBarStyle.auto(...)`,
+que en ciertas versiones/API de Android dibuja un **scrim blanco
+semitransparente del propio sistema operativo** detrás de la zona de
+la barra de navegación, para garantizar que los botones/gestos del
+sistema sigan siendo legibles sobre cualquier contenido de la app. Con
+la barra inferior anterior (más alta) ese scrim quedaba completamente
+oculto debajo de la superficie opaca de `DocuSmartBottomBar`; al
+achicar la barra en las iteraciones de esta misma sesión, el scrim del
+sistema (que ocupa una altura fija, independiente de mi barra)
+empezó a asomar por encima, tapando el contenido de la lista.
+Corregido especificando explícitamente `SystemBarStyle.auto(
+Color.TRANSPARENT, Color.TRANSPARENT)` para status bar y navigation
+bar -- la propia barra ya resuelve su contraste con
+`MaterialTheme.colorScheme`, no hace falta el scrim del sistema.
+Verificado en dispositivo real: "Rotar PDF" e "Imagen → BMP"
+completamente visibles y sin ninguna franja, en Convertir y
+Herramientas PDF. Gauntlet en verde una vez más.
+
+**Octava iteración — mismo día, el fix del scrim no era suficiente**:
+el usuario reportó que la franja blanca seguía tapando el último botón
+visible ("Rotar PDF", "Imagen → BMP") y pidió explícitamente investigar
+por qué otras pantallas (Home, Biblioteca) no tenían el mismo
+problema. Comparando la estructura de Home/Biblioteca (sin `Scaffold`
+propio, renderizan su `LazyColumn` directo bajo el `Box` compartido de
+`MainActivity`) contra Convertir/PDF/Seguridad/Premium/QR/Estudio (cada
+una con su PROPIO `Scaffold` anidado, para el `snackbarHost`), se
+encontró la causa real: `Scaffold` por defecto usa
+`contentWindowInsets = WindowInsets.systemBars`, así que cada uno de
+esos `Scaffold` anidados reservaba SU PROPIO inset de systemBars
+(incluida la barra de navegación real del sistema) además del que ya
+reserva, una sola vez, el `Scaffold` principal de `MainActivity` para
+`DocuSmartBottomBar` -- un doble descuento que dejaba una franja de
+fondo plano adicional justo encima de la barra, solo en las pantallas
+con `Scaffold` propio. Corregido en los 7 archivos
+(`StudyScreen`/`SecurityScreen`/`PremiumScreen`/`QrScreen` ×2/
+`PdfToolsScreen`/`PdfPasswordScreen`/`ConverterScreen`) con
+`contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top
++ WindowInsetsSides.Horizontal)` -- se excluye solo el inferior (ya
+manejado una vez por `MainActivity`), conservando el superior intacto
+para no afectar las barras superiores propias de cada pantalla.
+Verificado en dispositivo real haciendo scroll hasta el final absoluto
+de Convertir y Herramientas PDF: sin ninguna franja, en todo el
+recorrido de scroll, en ambas pantallas. Gauntlet en verde una vez
+más.
+
 **Hallazgo colateral durante la verificación en dispositivo — limpieza
 de datos:** el usuario notó capturas propias (`screen15.png`...
 `screen21.png`) mezcladas con sus fotos reales en Biblioteca/Favoritos.
@@ -1119,6 +1239,46 @@ documentos. Es un cambio más grande (requiere generar/cachear
 miniaturas por documento, no solo leer `document.type`) -- queda
 anotado como candidato a un nuevo ítem del backlog de UX, no abordado
 en esta sesión.
+
+### Fondo animado en toda la app, con el color de acento (2026-09-06)
+
+El usuario aportó un diseño de referencia (formas geométricas con
+degradado que derivan lentamente) pidiendo un fondo animado para la
+app, con aspecto de banner (por defecto azul) y movimiento real. Antes
+de implementar se resolvieron 3 preguntas de diseño: alcance (**toda
+la app**), personalización (**sigue el "Color de acento" existente**,
+sin selector aparte) e interruptor (**sí, en Ajustes**).
+
+Igual que con la barra de navegación (ver arriba), el diseño de
+referencia traía colores fijos sin relación con el acento -- adaptado
+para usar `rememberAccentGradient()` (mismo helper que HomeBanner/
+DocuSmartTopBanner/etc.) y `MaterialTheme.colorScheme.background` real
+en vez de un hex fijo. Pintado una sola vez en `MainActivity.kt`
+(capa 0, detrás de `DocuSmartNavGraph`); los 7 `Scaffold` anidados de
+pantallas propias más `ScanResultScreen` pasaron su fondo a
+`Color.Transparent` para dejarlo ver. **Excepción deliberada**:
+`ViewerScreen.kt` (lectura real de documentos) mantiene fondo sólido
+fijo -- un fondo en movimiento detrás de texto que se está leyendo
+perjudicaría la legibilidad, no solo la estética.
+
+Interruptor persistido en `ThemeManager.animatedBackgroundEnabled`
+(default `true`), fila nueva "Fondo animado" en Ajustes con un
+`Switch` (`SettingsSwitchItem`), i18n en los 10 idiomas soportados.
+Respeta accesibilidad ("Quitar animaciones" del sistema → formas
+quietas) y se redujo de 5 a 4 capas respecto a la referencia (se quitó
+el contorno que giraba en cada frame) para no penalizar rendimiento al
+aplicarse en toda la app.
+
+**Bug real encontrado en el camino**: `ThemeManagerTest` (4 tests)
+empezó a fallar con `MockKException` -- el fake de `SharedPreferences`
+compartido (`FakeAndroidPrefs.kt`) no tenía `getBoolean`/`putBoolean`
+mockeados, solo `getString`/`getLong`. Corregido extendiendo el fake
+con el mismo patrón ya usado.
+
+Verificado en dispositivo real (Motorola Edge 30 Neo, acento Rosa):
+fondo visible en Inicio/Biblioteca/Estudio sin afectar legibilidad
+(tarjetas opacas encima), interruptor probado apagando y reactivando
+en caliente. Gauntlet en verde.
 
 ---
 

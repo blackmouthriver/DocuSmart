@@ -78,6 +78,8 @@
     <string name="settings_select_accent_color">アクセントカラーを選択</string>
     <string name="settings_font_scale">文字サイズ</string>
     <string name="settings_select_font_scale">文字サイズを選択</string>
+    <string name="settings_animated_background">アニメーション背景</string>
+    <string name="settings_animated_background_subtitle">アクセントカラーの図形が動きます</string>
     <string name="settings_storage">ストレージ</string>
     <string name="settings_storage_subtitle">生成されたファイルを表示</string>
     <string name="settings_about">アプリについて</string>

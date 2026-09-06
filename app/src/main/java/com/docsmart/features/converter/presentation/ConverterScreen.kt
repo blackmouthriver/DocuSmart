@@ -160,7 +160,18 @@ fun ConverterScreen(
 
     Scaffold(
         snackbarHost   = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background
+        // Fondo animado global (backlog UX 2026-09-06): transparente para
+        // dejar ver la capa pintada una sola vez en MainActivity. Se excluye
+        // el inset inferior de systemBars (bug real "línea blanca": este
+        // Scaffold lo reservaba por duplicado sobre el que ya reserva
+        // MainActivity para DocuSmartBottomBar, dejando una franja de fondo
+        // plano extra encima de la barra en pantallas con Scaffold propio --
+        // no pasaba en Home/Biblioteca porque esas no tienen su propio
+        // Scaffold).
+        contentWindowInsets = WindowInsets.systemBars.only(
+            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+        ),
+        containerColor = Color.Transparent
     ) { innerPadding ->
         LazyColumn(
             modifier            = Modifier.fillMaxSize().padding(innerPadding),

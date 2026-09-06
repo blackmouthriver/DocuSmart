@@ -78,6 +78,8 @@
     <string name="settings_select_accent_color">Select accent color</string>
     <string name="settings_font_scale">Font size</string>
     <string name="settings_select_font_scale">Select font size</string>
+    <string name="settings_animated_background">Animated background</string>
+    <string name="settings_animated_background_subtitle">Shapes in your accent color, in motion</string>
     <string name="settings_storage">Storage</string>
     <string name="settings_storage_subtitle">View generated files</string>
     <string name="settings_about">About</string>

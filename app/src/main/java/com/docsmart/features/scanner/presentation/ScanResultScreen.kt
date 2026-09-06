@@ -126,7 +126,9 @@ fun ScanResultScreen(
     // de volver, duplicando el título que ya muestra el banner azul justo
     // debajo -- se reemplaza por el mismo patrón de "Volver" integrado en
     // el banner que ya usan el resto de sub-pantallas.
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    // Fondo animado global (backlog UX 2026-09-06): transparente para dejar
+    // ver la capa pintada una sola vez en MainActivity.
+    Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(

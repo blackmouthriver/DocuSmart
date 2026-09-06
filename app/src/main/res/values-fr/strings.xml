@@ -78,6 +78,8 @@
     <string name="settings_select_accent_color">Choisir la couleur d\'accent</string>
     <string name="settings_font_scale">Taille du texte</string>
     <string name="settings_select_font_scale">Choisir la taille du texte</string>
+    <string name="settings_animated_background">Arrière-plan animé</string>
+    <string name="settings_animated_background_subtitle">Formes dans la couleur d\'accent, en mouvement</string>
     <string name="settings_storage">Stockage</string>
     <string name="settings_storage_subtitle">Voir les fichiers générés</string>
     <string name="settings_about">À propos</string>
