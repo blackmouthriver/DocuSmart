@@ -5,6 +5,7 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import com.docsmart.core.analytics.CrashlyticsTree
 import com.docsmart.core.media.PdfThumbnailFetcher
+import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.remoteconfig.RemoteConfigManager
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
@@ -14,6 +15,14 @@ import javax.inject.Inject
 class DocuSmartApplication : Application(), ImageLoaderFactory {
 
     @Inject lateinit var remoteConfigManager: RemoteConfigManager
+
+    // Bug real corregido 2026-09-07: PremiumManager solo se construía al
+    // abrir la pantalla Premium (única que lo inyecta), y solo al
+    // construirse sincroniza el estado Premium persistido con AdManager
+    // -- así que un suscriptor real que no visitaba esa pantalla seguía
+    // viendo anuncios. Se inyecta acá para forzar esa construcción (y su
+    // sincronización) desde el arranque de la app.
+    @Inject lateinit var premiumManager: PremiumManager
 
     override fun onCreate() {
         super.onCreate()
@@ -29,6 +38,7 @@ class DocuSmartApplication : Application(), ImageLoaderFactory {
             Timber.plant(CrashlyticsTree())
         }
 
+        Timber.d("DocuSmartApplication: estado Premium al arrancar = ${premiumManager.isPremium.value}")
         remoteConfigManager.refresh()
     }
 

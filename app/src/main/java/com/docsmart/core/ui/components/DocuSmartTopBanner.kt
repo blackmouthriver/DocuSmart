@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.rememberAccentGradient
@@ -78,36 +79,39 @@ fun DocuSmartTopBanner(
             )
 
             // ── Contenido principal ────────────────────────────────────────────
-            Row(
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // Logo DocuSmart
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .background(
-                            color = Color.White.copy(alpha = 0.18f),
-                            shape = MaterialTheme.shapes.medium
-                        ),
-                    contentAlignment = Alignment.Center
+            // Reestructurado 2026-09-07 a pedido explícito del usuario: antes
+            // el logo y el título/subtítulo compartían una sola fila, así que
+            // el logo quedaba centrado contra las 3 líneas de texto en vez de
+            // quedar "a nivel" solo con "DocuSmart" -- ahora el logo+marca son
+            // una fila compacta arriba, y el título (centrado)/subtítulo
+            // (justificado) van debajo, a todo el ancho del banner.
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Image(
-                        painter           = painterResource(R.drawable.ic_docusmart_logo),
-                        contentDescription = "DocuSmart",
-                        modifier          = Modifier
-                            .size(34.dp)
-                            .padding(2.dp)
-                    )
-                }
+                    // Logo DocuSmart
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                color = Color.White.copy(alpha = 0.18f),
+                                shape = MaterialTheme.shapes.medium
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter           = painterResource(R.drawable.ic_docusmart_logo),
+                            contentDescription = "DocuSmart",
+                            modifier          = Modifier
+                                .size(24.dp)
+                                .padding(1.dp)
+                        )
+                    }
 
-                // Textos
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    // Marca "DocuSmart" pequeña arriba
+                    // Marca "DocuSmart" -- a nivel con el logo, en la misma fila
                     Row(
+                        modifier              = Modifier.weight(1f),
                         verticalAlignment     = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -124,24 +128,35 @@ fun DocuSmartTopBanner(
                             fontWeight = FontWeight.Normal
                         )
                     }
-                    // Título de la pantalla
-                    Text(
-                        text       = screenTitle,
-                        style      = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color      = Color.White
-                    )
-                    // Subtítulo opcional
-                    if (screenSubtitle.isNotBlank()) {
-                        Text(
-                            text  = screenSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.72f)
-                        )
-                    }
+
+                    actions?.invoke(this)
                 }
 
-                actions?.invoke(this)
+                Spacer(Modifier.height(12.dp))
+
+                // Título de la pantalla -- centrado, a todo el ancho
+                Text(
+                    text       = screenTitle,
+                    style      = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color.White,
+                    textAlign  = TextAlign.Center,
+                    modifier   = Modifier.fillMaxWidth()
+                )
+                // Subtítulo opcional -- centrado, igual que el título (pedido
+                // explícito del usuario 2026-09-07: primero se pidió
+                // justificado, pero el efecto no se notaba con textos de una
+                // sola línea -- al aclarar, prefirió centrado).
+                if (screenSubtitle.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text      = screenSubtitle,
+                        style     = MaterialTheme.typography.bodySmall,
+                        color     = Color.White.copy(alpha = 0.72f),
+                        textAlign = TextAlign.Center,
+                        modifier  = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
 

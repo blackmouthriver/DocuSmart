@@ -11,7 +11,7 @@
 
     <!-- ── Главная ───────────────────────────────────── -->
     <string name="home_title">Ваши документы\nв одном месте</string>
-    <string name="home_subtitle">Открывайте, конвертируйте и управляйте\nвашими файлами легко</string>
+    <string name="home_subtitle">Открывайте, конвертируйте и управляйте вашими файлами легко</string>
     <string name="home_open">Открыть</string>
     <string name="home_convert">Конвертировать</string>
     <string name="home_quick_access">Быстрый доступ</string>

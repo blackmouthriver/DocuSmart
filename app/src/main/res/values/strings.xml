@@ -11,7 +11,7 @@
 
     <!-- ── Home ───────────────────────────────────── -->
     <string name="home_title">Tus documentos\nen un solo lugar</string>
-    <string name="home_subtitle">Abre, convierte y gestiona\ntus archivos fácilmente</string>
+    <string name="home_subtitle">Abre, convierte y gestiona tus archivos fácilmente</string>
     <string name="home_open">Abrir</string>
     <string name="home_convert">Convertir</string>
     <string name="home_quick_access">Accesos rápidos</string>

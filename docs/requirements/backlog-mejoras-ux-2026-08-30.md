@@ -2795,5 +2795,102 @@ Herramientas PDF arrancan el banner exactamente a la misma altura que
 Inicio, sin el hueco extra. Gauntlet en verde: `compileDebugKotlin` +
 `detekt` + `lintDebug` + `testDebugUnitTest`.
 
+**Fusionado y subido a `main`** con aprobación explícita del usuario
+(commit `c77e3e5`).
+
+## 30. Bug real — usuarios Premium reales podían seguir viendo anuncios toda la sesión
+
+Tras fusionar el ítem 29, el usuario pidió verificar que Premium oculte
+el banner de anuncios (sin dejar hueco) y también los anuncios de
+video/intersticiales. Auditoría de solo lectura sobre `AdManager`/
+`PremiumManager`/`BillingManager`.
+
+**Lo que ya estaba bien**: las 7 pantallas condicionan banner+`Spacer`
+al mismo `if (!isPremium)` (banner de título sube sin hueco);
+`DocuSmartBannerAd` tiene además su propio `return` temprano si
+`isPremium`; los 3 disparadores de rewarded (límite de conversión, de
+herramienta PDF, de "agregar página") y el único disparador de
+intersticial (`onConversionCompleted`) ya estaban condicionados a
+`isPremium` antes de ofrecer la UI de "ver anuncio".
+
+**Bug real encontrado**: `AdManager._isPremium` (lo que leen las 7
+pantallas y lo que bloquea intersticial/rewarded) arranca en `false` y
+solo se sincroniza vía `PremiumManager.activatePremium()` -- pero
+`PremiumManager` (el único que lee el estado persistido en
+`SharedPreferences` al construirse) solo se instanciaba de forma
+perezosa al abrir la pantalla Premium (única que lo inyecta). Un
+suscriptor Premium real que no visitara esa pantalla en una sesión
+seguía viendo anuncios (banner + elegible para intersticial/rewarded)
+toda esa sesión, pese a tener el estado correcto ya guardado en disco.
+
+**Corregido**:
+- `PremiumManager.kt`: `init { adManager.setPremium(_isPremium.value) }`
+  -- sincroniza `AdManager` apenas se construye `PremiumManager`.
+- `DocuSmartApplication.kt`: se inyecta `PremiumManager` (mismo patrón
+  que `remoteConfigManager`) para forzar esa construcción desde el
+  arranque de la app, sin crear dependencia circular con `AdManager`.
+- `AdManager.showRewardedAd()`: agregado el guard `if (_isPremium.value) return`
+  que ya tenían el resto de las funciones de anuncios (antes solo
+  quedaba a salvo indirectamente vía `setPremium(true)` anulando el
+  `rewardedAd` cacheado).
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL): simulado un
+suscriptor Premium real sin abrir nunca la pantalla Premium (inyectando
+`is_premium=true` en `shared_prefs/docusmart_premium.xml` vía
+`adb shell run-as` + reinicio limpio de la app). Confirmado que Inicio
+y Convertidor arrancan sin banner de anuncios y con el banner de título
+ya arriba, sin hueco. Estado de prueba limpiado con `pm clear`. Gauntlet
+en verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`.
+
+### Seguimiento (mismo día): rediseño del contenido del banner en todas las pantallas
+
+Confirmado el fix de Premium, el usuario pidió 4 ajustes más sobre el
+banner antes de fusionar: espacio pequeño arriba (no pegado al borde),
+logo+"DocuSmart" a nivel (misma fila) quitando texto repetido, título
+centrado debajo de esa fila (no al lado), y subtítulo justificado.
+
+**Implementado**:
+- `DocuSmartScreenHeader.kt` y los 3 patrones manuales (Ajustes/
+  Seguridad/Documento escaneado): margen superior de 12dp (antes 0dp).
+- `DocuSmartTopBanner.kt` (9 pantallas): reestructurado a fila compacta
+  logo+marca arriba, título centrado a todo el ancho y subtítulo
+  justificado a todo el ancho debajo (ya no comparten fila con el logo).
+- `HomeBanner.kt`: eliminado el texto "DocuSmart" repetido
+  (`R.string.app_name`) debajo de "Docu"+"Smart"; título centrado y
+  subtítulo justificado.
+
+**Nota para el usuario**: el "justificado" no se nota visualmente en la
+mayoría de las pantallas porque esos subtítulos usan saltos de línea
+manuales (`\n`) en vez de ajuste automático -- la justificación de
+Android solo estira el espacio entre palabras en líneas cortadas por
+ancho, no en líneas ya cortadas a mano. El código aplica
+`TextAlign.Justify` tal como se pidió; si se quiere ver el efecto,
+haría falta además quitar esos saltos manuales -- pendiente de
+confirmación del usuario.
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL): Inicio,
+Convertidor, Ajustes y Seguridad -- logo+"DocuSmart" a nivel, sin texto
+repetido, título centrado, espacio pequeño arriba, "Volver" de
+Seguridad intacto. Gauntlet en verde: `compileDebugKotlin` + `detekt` +
+`lintDebug` + `testDebugUnitTest`.
+
+### Segundo seguimiento (mismo día): subtítulo centrado en vez de justificado
+
+El usuario pidió quitar los saltos de línea manuales del subtítulo y
+confirmar que se viera justificado, pero en el mismo mensaje también
+pidió que ese texto quedara centrado -- dos alineaciones que no pueden
+coexistir. Al preguntar, eligió **centrado** (igual que el título).
+
+**Implementado**: quitado el salto de línea manual (`\n`) de
+`home_subtitle` en los 10 idiomas (único subtítulo del banner que lo
+tenía); `HomeBanner.kt`/`DocuSmartTopBanner.kt` cambian el subtítulo de
+`TextAlign.Justify` a `TextAlign.Center`.
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL): en Inicio el
+subtítulo ya es una sola línea centrada; en Convertidor, igual,
+centrado como el título. Gauntlet en verde: `compileDebugKotlin` +
+`detekt` + `lintDebug` + `testDebugUnitTest`.
+
 **Pendiente**: aprobación explícita del usuario para fusionar y subir
 este cambio a `main` (no fusionado todavía).

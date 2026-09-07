@@ -11,7 +11,7 @@
 
     <!-- ── 홈 ───────────────────────────────────── -->
     <string name="home_title">나만의 문서를\n한곳에서</string>
-    <string name="home_subtitle">파일을 열고, 변환하고\n쉽게 관리하세요</string>
+    <string name="home_subtitle">파일을 열고, 변환하고 쉽게 관리하세요</string>
     <string name="home_open">열기</string>
     <string name="home_convert">변환</string>
     <string name="home_quick_access">빠른 실행</string>

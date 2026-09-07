@@ -150,6 +150,17 @@ class AdManager @Inject constructor(
         onRewarded: () -> Unit,
         onFailed  : () -> Unit
     ) {
+        // Defensivo (2026-09-07): loadInterstitial/loadRewarded/
+        // onConversionCompleted ya se niegan a actuar si _isPremium es
+        // true -- a esta función le faltaba el mismo guard explícito.
+        // Hasta ahora quedaba a salvo solo porque setPremium(true) anula
+        // `rewardedAd`, pero si algún llamador futuro ofreciera "ver
+        // anuncio" sin revisar antes isPremium, un usuario Premium podría
+        // llegar a ver un rewarded si quedara alguno cacheado.
+        if (_isPremium.value) {
+            onFailed()
+            return
+        }
         val ad = rewardedAd
         if (ad == null) {
             Timber.w("AdManager: no hay Rewarded disponible")

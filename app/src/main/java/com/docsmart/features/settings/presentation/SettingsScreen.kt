@@ -587,7 +587,10 @@ fun SettingsScreen(
         // un solo ítem (para que `spacedBy` de la lista no sume su propio
         // espacio entre el anuncio y el banner).
         item {
-            Column {
+            // Pedido explícito del usuario 2026-09-07 (seguimiento): 12dp de
+            // espacio arriba, igual que DocuSmartScreenHeader, para que no
+            // quede pegado al borde/barra de estado.
+            Column(modifier = Modifier.padding(top = 12.dp)) {
                 if (!isPremium) {
                     DocuSmartBannerAd(
                         adUnitId  = AdConstants.BANNER_SETTINGS_ID,

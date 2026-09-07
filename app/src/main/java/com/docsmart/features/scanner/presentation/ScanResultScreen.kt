@@ -313,9 +313,9 @@ private fun ScanResultBody(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             // Pedido explícito del usuario 2026-09-07: mismo margen
-            // horizontal que el resto de las pantallas, y sin hueco antes
-            // del anuncio (antes tenía 24dp arriba también).
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            // horizontal que el resto de las pantallas. Seguimiento mismo
+            // día: 12dp arriba (no 0) para que no quede pegado al borde.
+            contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             scanResultContent(

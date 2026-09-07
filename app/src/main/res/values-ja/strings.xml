@@ -11,7 +11,7 @@
 
     <!-- ── ホーム ───────────────────────────────────── -->
     <string name="home_title">ドキュメントを\nすべてこの一か所に</string>
-    <string name="home_subtitle">ファイルを簡単に\n開く・変換・管理</string>
+    <string name="home_subtitle">ファイルを簡単に 開く・変換・管理</string>
     <string name="home_open">開く</string>
     <string name="home_convert">変換</string>
     <string name="home_quick_access">クイックアクセス</string>

@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.rememberAccentGradient
@@ -91,45 +92,51 @@ fun HomeBanner(
                     )
                 }
 
-                // Nombre de marca
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        verticalAlignment     = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text       = "Docu",
-                            style      = MaterialTheme.typography.labelMedium,
-                            color      = Color.White,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text       = "Smart",
-                            style      = MaterialTheme.typography.labelMedium,
-                            color      = Color.White.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.Normal
-                        )
-                    }
+                // Nombre de marca -- a nivel con el logo, en la misma fila.
+                // Bug real corregido 2026-09-07 (seguimiento): debajo de esta
+                // fila había un segundo texto con `R.string.app_name`
+                // ("DocuSmart") que repetía lo que ya dicen "Docu"+"Smart" acá
+                // mismo -- se elimina, ya no hace falta el Column contenedor.
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
                     Text(
-                        text  = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.5f)
+                        text       = "Docu",
+                        style      = MaterialTheme.typography.labelMedium,
+                        color      = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text       = "Smart",
+                        style      = MaterialTheme.typography.labelMedium,
+                        color      = Color.White.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Normal
                     )
                 }
             }
 
-            // Título principal
+            // Título principal -- centrado, a todo el ancho
             Text(
-                text  = stringResource(R.string.home_title),
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
+                text       = stringResource(R.string.home_title),
+                style      = MaterialTheme.typography.headlineSmall,
+                color      = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign  = TextAlign.Center,
+                modifier   = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(4.dp))
+            // Subtítulo -- centrado, igual que el título (pedido explícito
+            // del usuario 2026-09-07: primero se pidió justificado, pero el
+            // efecto no se notaba porque el texto tenía saltos de línea
+            // manuales -- al aclarar, el usuario prefirió centrado en vez de
+            // quitar los saltos solo para lograr el justificado).
             Text(
-                text  = stringResource(R.string.home_subtitle),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.75f)
+                text      = stringResource(R.string.home_subtitle),
+                style     = MaterialTheme.typography.bodySmall,
+                color     = Color.White.copy(alpha = 0.75f),
+                textAlign = TextAlign.Center,
+                modifier  = Modifier.fillMaxWidth()
             )
         }
     }

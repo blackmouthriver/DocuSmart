@@ -31,7 +31,11 @@ fun SecurityMenuScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 20.dp),
+            // Pedido explícito del usuario 2026-09-07 (seguimiento): 12dp de
+            // espacio arriba (no 20dp) para que coincida con el resto de las
+            // pantallas -- el bottom de 20dp no cambia, es para separar del
+            // final de la lista.
+            .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
