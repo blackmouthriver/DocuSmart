@@ -1,5 +1,6 @@
 package com.docsmart.features.home.presentation.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,11 +31,12 @@ fun HomeBanner(
     // degradado estaba fijo en tonos de azul (DocuBlue/SmartBlue/
     // IndigoAccent) sin importar el "Color de acento" elegido en Ajustes
     // -- era el único elemento de Home que no respetaba esa elección.
-    val primary = MaterialTheme.colorScheme.primary
     val bannerGradient = rememberAccentGradient()
+    val primary = MaterialTheme.colorScheme.primary
 
+    Column(modifier = modifier) {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .background(brush = Brush.linearGradient(colors = bannerGradient))
@@ -129,49 +131,50 @@ fun HomeBanner(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.75f)
             )
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Botones de acción
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(
-                    onClick   = onOpenFileClick,
-                    modifier  = Modifier.weight(1f).height(44.dp),
-                    shape     = MaterialTheme.shapes.medium,
-                    colors    = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor   = primary
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Icon(Icons.Rounded.FolderOpen, null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text  = stringResource(R.string.home_open),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-
-                OutlinedButton(
-                    onClick  = onConvertClick,
-                    modifier = Modifier.weight(1f).height(44.dp),
-                    shape    = MaterialTheme.shapes.medium,
-                    colors   = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
-                    ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = Brush.linearGradient(
-                            listOf(Color.White.copy(0.6f), Color.White.copy(0.6f))
-                        )
-                    )
-                ) {
-                    Icon(Icons.Rounded.SwapHoriz, null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text  = stringResource(R.string.home_convert),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-            }
         }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Pedido explícito del usuario 2026-09-07: sacar los botones de
+    // acción de dentro del recuadro degradado, dejarlos debajo (mismo
+    // patrón ya usado con la flecha "Volver" de DocuSmartTopBanner) --
+    // por eso ahora usan el color de acento en vez de blanco/blanco.
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Button(
+            onClick   = onOpenFileClick,
+            modifier  = Modifier.weight(1f).height(44.dp),
+            shape     = MaterialTheme.shapes.medium,
+            colors    = ButtonDefaults.buttonColors(
+                containerColor = primary,
+                contentColor   = Color.White
+            ),
+            elevation = ButtonDefaults.buttonElevation(0.dp)
+        ) {
+            Icon(Icons.Rounded.FolderOpen, null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text  = stringResource(R.string.home_open),
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+
+        OutlinedButton(
+            onClick  = onConvertClick,
+            modifier = Modifier.weight(1f).height(44.dp),
+            shape    = MaterialTheme.shapes.medium,
+            colors   = ButtonDefaults.outlinedButtonColors(
+                contentColor = primary
+            ),
+            border = BorderStroke(1.dp, primary)
+        ) {
+            Icon(Icons.Rounded.SwapHoriz, null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text  = stringResource(R.string.home_convert),
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
     }
 }

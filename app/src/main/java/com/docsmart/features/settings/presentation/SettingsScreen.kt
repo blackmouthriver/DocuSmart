@@ -574,28 +574,32 @@ fun SettingsScreen(
     LazyColumn(
         modifier       = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            top = 24.dp, bottom = 100.dp,
-            start = 20.dp, end = 20.dp
+            bottom = 100.dp,
+            start = 16.dp, end = 16.dp
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // ── AdMob — solo para usuarios free ──────────────────────────────────
-        if (!isPremium) {
-            item {
-                DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_SETTINGS_ID,
-                    adManager = viewModel.adManager,
-                    modifier  = Modifier.padding(horizontal = 0.dp)
+        // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
+        // banner que el resto de las pantallas -- acá el margen horizontal
+        // ya lo da el `contentPadding` de arriba (todos los ítems de esta
+        // pantalla lo comparten, no solo el banner), así que en vez de
+        // DocuSmartScreenHeader se arma el mismo espacio de 8dp a mano, en
+        // un solo ítem (para que `spacedBy` de la lista no sume su propio
+        // espacio entre el anuncio y el banner).
+        item {
+            Column {
+                if (!isPremium) {
+                    DocuSmartBannerAd(
+                        adUnitId  = AdConstants.BANNER_SETTINGS_ID,
+                        adManager = viewModel.adManager
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                DocuSmartTopBanner(
+                    screenTitle    = stringResource(R.string.settings_title),
+                    screenSubtitle = stringResource(R.string.settings_subtitle)
                 )
             }
-        }
-
-        // ── Banner azul ───────────────────────────────────────────────────────
-        item {
-            DocuSmartTopBanner(
-                screenTitle    = stringResource(R.string.settings_title),
-                screenSubtitle = stringResource(R.string.settings_subtitle)
-            )
         }
 
         // ── Premium card ──────────────────────────────────────────────────────

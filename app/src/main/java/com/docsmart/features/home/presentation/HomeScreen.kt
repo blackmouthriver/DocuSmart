@@ -13,8 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.ads.AdConstants
-import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.features.home.presentation.component.HomeBanner
 import com.docsmart.features.home.presentation.component.QuickAccessGrid
 import com.docsmart.features.home.presentation.component.RecentDocuments
@@ -49,7 +49,6 @@ fun HomeScreen(
     }
 
     val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
-    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     val context    = LocalContext.current
 
     LaunchedEffect(uiState.deleteError) {
@@ -79,24 +78,23 @@ fun HomeScreen(
 
     LazyColumn(
         modifier        = Modifier.fillMaxSize(),
-        contentPadding  = PaddingValues(top = 20.dp, bottom = 100.dp),
+        contentPadding  = PaddingValues(bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        if (!isPremium) {
-            item {
-                DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_HOME_ID,
-                    adManager = viewModel.adManager,
-                    modifier  = Modifier.padding(horizontal = 20.dp)
+        // Pedido explícito del usuario 2026-09-07: los banners de todas las
+        // pantallas se veían de tamaños/separaciones distintas -- unificado
+        // en DocuSmartScreenHeader (mismo margen horizontal, mismo espacio
+        // entre el anuncio y el banner, sin hueco antes del anuncio).
+        item {
+            DocuSmartScreenHeader(
+                adUnitId  = AdConstants.BANNER_HOME_ID,
+                adManager = viewModel.adManager
+            ) {
+                HomeBanner(
+                    onOpenFileClick = openFileLauncher,
+                    onConvertClick  = onConvert
                 )
             }
-        }
-        item {
-            HomeBanner(
-                onOpenFileClick = openFileLauncher,
-                onConvertClick  = onConvert,
-                modifier        = Modifier.padding(horizontal = 20.dp)
-            )
         }
         item {
             QuickAccessGrid(

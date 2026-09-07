@@ -2712,3 +2712,88 @@ favorito, solo para forzar la aparición de la sección "Favoritos" en
 Biblioteca, y se desmarcó de inmediato tras la captura, sin dejar
 cambios residuales en los datos del usuario). Gauntlet en verde:
 `compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
+
+## 29. Mejora — Consistencia de banners entre pantallas + botones fuera del banner de Inicio
+
+Tras revisar 7 capturas (Inicio, Biblioteca, Convertidor, Herramientas
+PDF, Ajustes, Seguridad, Documento escaneado), el usuario señaló que el
+banner superior de cada pantalla se veía con tamaño y separación
+distintos entre sí, y pidió: (1) sacar los botones "Abrir"/"Convertir"
+del banner de Inicio, (2) unificar los márgenes izquierdo/derecho del
+banner, más pegados al borde del dispositivo, (3) reducir el espacio
+entre el banner de anuncios y el banner de título ("levemente pegado"),
+y (4) subir el banner de anuncios (menos padding superior).
+
+**Causa raíz**: cada pantalla había ido acumulando su propio criterio de
+márgenes (20dp por-item en Inicio/Biblioteca/Convertidor/Herramientas
+PDF vs. 16-24dp a nivel de contenedor en Ajustes/Seguridad/Documento
+escaneado), de `contentPadding` superior (0/20dp/24dp) y de espacio
+entre el banner de anuncios y el de título (según el
+`verticalArrangement.spacedBy` de cada pantalla, sin un valor pensado
+específicamente para esa relación) — Ajustes y Seguridad además sumaban
+un `padding(vertical = 24dp)` extra solo alrededor del banner de
+anuncios.
+
+**Implementado**:
+- Nuevo componente compartido `DocuSmartScreenHeader`
+  (`core/ui/components/DocuSmartScreenHeader.kt`) para las 4 pantallas
+  con padding por-item (Inicio, Biblioteca, Convertidor, Herramientas
+  PDF): agrupa banner de anuncios + 8dp fijo + banner de título en un
+  `Column` con 16dp de margen horizontal y sin padding superior.
+- Para Ajustes, Seguridad y Documento escaneado (padding horizontal a
+  nivel de contenedor, donde el componente compartido duplicaría el
+  margen) se aplicó el mismo criterio a mano: un `Column` propio con
+  banner de anuncios + `Spacer(8.dp)` + banner de título como un solo
+  hijo/ítem, para que el `spacedBy` de cada pantalla no sume espacio
+  extra entre ambos.
+- `contentPadding`/`padding` superior quitado en las 7 pantallas.
+- Inicio (`HomeBanner.kt`): botones "Abrir"/"Convertir" sacados de
+  dentro del banner (ver corrección más abajo).
+
+**Verificado en dispositivo real** (Motorola Edge 30 Neo, ZY22G7SB77,
+reinstalación limpia): las 7 pantallas con el mismo margen horizontal,
+mismo espacio pequeño entre banner de anuncios y banner de título, y
+banner de anuncios pegado arriba — confirmado con capturas de las 6
+pantallas de navegación directa y de Documento escaneado al final de un
+flujo completo de escaneo con el Escáner de Google ML Kit. Gauntlet en
+verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`.
+
+### Seguimiento (mismo día): corrección de 2 observaciones
+
+Al revisar el resultado, el usuario aclaró que el pedido sobre Inicio
+era sacar los botones del banner (dejarlos fuera, debajo), no
+eliminarlos — y señaló que Convertidor y Herramientas PDF seguían con
+más espacio arriba del banner que Inicio/Biblioteca/Ajustes.
+
+**Corregido — botones de Inicio**: revertidas las 10 cadenas
+`home_open`/`home_convert` y restaurada la fila de botones en
+`HomeBanner.kt`, ahora como un `Column` propio fuera del `Box`
+degradado (banner arriba, 16dp de espacio, fila de botones debajo) —
+mismo patrón ya usado con la flecha "Volver" de `DocuSmartTopBanner`.
+Como el fondo debajo del banner ya no es el degradado sino el normal de
+la pantalla, los botones pasan de blanco/blanco al color de acento.
+
+**Corregido — margen superior de Convertidor/Herramientas PDF**: causa
+raíz era que estas 2 pantallas (únicas de las 7 con `Scaffold` propio,
+para su `SnackbarHost`) reservaban el inset superior de `systemBars`
+(`WindowInsetsSides.Top`) por duplicado — el `Scaffold` de
+`MainActivity.kt` ya reserva ese mismo inset una vez para toda la
+navegación, y estas 2 pantallas lo volvían a reservar en su propio
+`Scaffold`, sumando una barra de estado extra de espacio arriba que las
+otras 5 pantallas (sin `Scaffold` propio) nunca tuvieron. Mismo patrón
+de bug ya conocido para el inset inferior (línea blanca sobre
+`DocuSmartBottomBar`), pero nadie había notado que también afectaba al
+superior. Corregido cambiando `contentWindowInsets` de
+`WindowInsets.systemBars.only(Top + Horizontal)` a
+`WindowInsets.systemBars.only(Horizontal)` en ambos archivos.
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL): tras
+`assembleDebug` + reinstalación limpia, Inicio muestra los botones
+como fila debajo del banner en color de acento, y Convertidor/
+Herramientas PDF arrancan el banner exactamente a la misma altura que
+Inicio, sin el hueco extra. Gauntlet en verde: `compileDebugKotlin` +
+`detekt` + `lintDebug` + `testDebugUnitTest`.
+
+**Pendiente**: aprobación explícita del usuario para fusionar y subir
+este cambio a `main` (no fusionado todavía).

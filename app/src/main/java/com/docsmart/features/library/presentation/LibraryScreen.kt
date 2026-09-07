@@ -34,8 +34,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
-import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.library.presentation.components.*
 import timber.log.Timber
@@ -52,7 +52,6 @@ fun LibraryScreen(
     viewModel      : LibraryViewModel = hiltViewModel()
 ) {
     val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
-    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     val context    = LocalContext.current
 
     var hasPermission   by remember { mutableStateOf(checkStoragePermission(context)) }
@@ -100,30 +99,24 @@ fun LibraryScreen(
     LazyColumn(
         modifier        = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding  = PaddingValues(top = 24.dp, bottom = 100.dp)
+        contentPadding  = PaddingValues(bottom = 100.dp)
     ) {
-        // ── AdMob — solo para usuarios free ──────────────────────────────────
-        if (!isPremium) {
-            item {
-                DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_LIBRARY_ID,
-                    adManager = viewModel.adManager,
-                    modifier  = Modifier.padding(horizontal = 20.dp)
-                )
-            }
-        }
-
-        // ── Banner azul ───────────────────────────────────────────────────────
+        // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
+        // banner que el resto de las pantallas -- ver DocuSmartScreenHeader.
         // RF-VIS-07: el botón de papelera vivía acá, en una esquina del banner
         // -- quedaba perdido junto al título/subtítulo. Se movió junto a las
         // pestañas Dispositivo/Mis archivos (ver LibraryTabs más abajo), donde
         // el usuario ya está mirando para elegir qué documentos ver.
         item {
-            DocuSmartTopBanner(
-                screenTitle    = stringResource(R.string.library_title),
-                screenSubtitle = stringResource(R.string.library_subtitle),
-                modifier       = Modifier.padding(horizontal = 20.dp)
-            )
+            DocuSmartScreenHeader(
+                adUnitId  = AdConstants.BANNER_LIBRARY_ID,
+                adManager = viewModel.adManager
+            ) {
+                DocuSmartTopBanner(
+                    screenTitle    = stringResource(R.string.library_title),
+                    screenSubtitle = stringResource(R.string.library_subtitle)
+                )
+            }
         }
 
         // ── Sin permisos ──────────────────────────────────────────────────────

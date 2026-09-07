@@ -31,23 +31,27 @@ fun SecurityMenuScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
+            .padding(horizontal = 16.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // ── AdMob — solo para usuarios free (backlog UX §8) ───────────
-        if (!isPremium) {
-            DocuSmartBannerAd(
-                adUnitId  = AdConstants.BANNER_SECURITY_ID,
-                adManager = viewModel.adManager
+        // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
+        // banner que el resto de las pantallas -- ad+banner van en un solo
+        // Column con 8dp entre ambos (para que el `spacedBy` de 16dp de
+        // arriba, pensado para el resto de esta pantalla, no se sume ahí).
+        Column {
+            if (!isPremium) {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_SECURITY_ID,
+                    adManager = viewModel.adManager
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            DocuSmartTopBanner(
+                screenTitle    = stringResource(R.string.security_title),
+                screenSubtitle = stringResource(R.string.security_subtitle),
+                onBack         = onBack
             )
         }
-
-        // Header
-        DocuSmartTopBanner(
-            screenTitle    = stringResource(R.string.security_title),
-            screenSubtitle = stringResource(R.string.security_subtitle),
-            onBack         = onBack
-        )
 
         Spacer(Modifier.height(8.dp))
 

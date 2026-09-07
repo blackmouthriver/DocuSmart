@@ -31,7 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
-import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DailyLimitDialog
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.*
@@ -161,15 +161,15 @@ fun ConverterScreen(
     Scaffold(
         snackbarHost   = { SnackbarHost(snackbarHostState) },
         // Fondo animado global (backlog UX 2026-09-06): transparente para
-        // dejar ver la capa pintada una sola vez en MainActivity. Se excluye
-        // el inset inferior de systemBars (bug real "línea blanca": este
-        // Scaffold lo reservaba por duplicado sobre el que ya reserva
-        // MainActivity para DocuSmartBottomBar, dejando una franja de fondo
-        // plano extra encima de la barra en pantallas con Scaffold propio --
-        // no pasaba en Home/Biblioteca porque esas no tienen su propio
-        // Scaffold).
+        // dejar ver la capa pintada una sola vez en MainActivity. Se excluyen
+        // los insets superior e inferior de systemBars (bug real "línea
+        // blanca" + margen superior duplicado 2026-09-07: este Scaffold los
+        // reservaba por duplicado sobre los que ya reserva el Scaffold de
+        // MainActivity para toda la navegación -- no pasaba en Home/
+        // Biblioteca/Ajustes/Seguridad porque esas pantallas no tienen su
+        // propio Scaffold).
         contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+            WindowInsetsSides.Horizontal
         ),
         containerColor = Color.Transparent
     ) { innerPadding ->
@@ -178,24 +178,24 @@ fun ConverterScreen(
             contentPadding      = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // ── AdMob — solo para usuarios free ──────────────────────────────
-            if (!isPremium) {
-                item {
-                    DocuSmartBannerAd(
-                        adUnitId  = AdConstants.BANNER_CONVERTER_ID,
-                        adManager = viewModel.adManager,
-                        modifier  = Modifier.padding(horizontal = 20.dp)
+            // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado
+            // de banner que el resto de las pantallas -- ver
+            // DocuSmartScreenHeader. `bannerBottomSpacing` reemplaza el
+            // `vertical = 24.dp` que antes tenía el banner (esta pantalla usa
+            // `spacedBy(0.dp)` a propósito para el resto de su contenido, así
+            // que sin este espacio el banner quedaría pegado al siguiente
+            // elemento).
+            item {
+                DocuSmartScreenHeader(
+                    adUnitId  = AdConstants.BANNER_CONVERTER_ID,
+                    adManager = viewModel.adManager,
+                    bannerBottomSpacing = 24.dp
+                ) {
+                    DocuSmartTopBanner(
+                        screenTitle    = stringResource(R.string.converter_title),
+                        screenSubtitle = stringResource(R.string.converter_subtitle)
                     )
                 }
-            }
-
-            // ── Banner azul ───────────────────────────────────────────────────
-            item {
-                DocuSmartTopBanner(
-                    screenTitle    = stringResource(R.string.converter_title),
-                    screenSubtitle = stringResource(R.string.converter_subtitle),
-                    modifier       = Modifier.padding(horizontal = 20.dp, vertical = 24.dp)
-                )
             }
 
             // ── Contador de conversiones (usuarios free) ──────────────────────

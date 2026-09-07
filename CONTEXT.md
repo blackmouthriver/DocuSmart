@@ -2159,6 +2159,113 @@ contador de conversiones a 0 (subió a 4 por las pruebas).
 
 ---
 
+### Consistencia de banners entre pantallas + quitar botones del banner de Inicio (2026-09-07)
+
+Tras la fusión anterior, el usuario compartió capturas de las 7 pantallas
+con banner superior (Inicio, Biblioteca, Convertidor, Herramientas PDF,
+Ajustes, Seguridad, Documento escaneado) y señaló que se veían con
+tamaños y separaciones distintas entre sí, además de pedir sacar los
+botones "Abrir"/"Convertir" del banner de Inicio.
+
+**Causa raíz**: cada pantalla había ido acumulando su propio criterio de
+márgenes y espaciados:
+- Márgenes horizontales de 20dp (Inicio/Biblioteca/Convertidor/
+  Herramientas PDF, aplicados por-item dentro del `LazyColumn`) vs. 16-24dp
+  en Ajustes/Seguridad/Documento escaneado (aplicados una sola vez a nivel
+  de contenedor).
+- `contentPadding` superior variable (0, 20dp o 24dp) antes del primer
+  `item`, lo que corría el banner de anuncios más o menos abajo según la
+  pantalla.
+- El espacio entre el banner de anuncios y el banner de título dependía
+  del `verticalArrangement.spacedBy` de cada pantalla (0dp, 12dp, 16dp o
+  20dp según el caso) en vez de un valor fijo pensado para esa relación
+  específica.
+- Ajustes y Seguridad además sumaban un `padding(vertical = 24dp)` extra
+  solo alrededor del banner de anuncios, agrandando aún más la diferencia.
+
+**Implementado**:
+- Nuevo componente compartido [`DocuSmartScreenHeader`](app/src/main/java/com/docsmart/core/ui/components/DocuSmartScreenHeader.kt)
+  para las pantallas con arquitectura de padding por-item (Inicio,
+  Biblioteca, Convertidor, Herramientas PDF): agrupa banner de anuncios +
+  8dp de espacio fijo + banner de título dentro de un único `Column` con
+  16dp de margen horizontal, sin padding superior (el banner de anuncios
+  queda pegado arriba del todo).
+- Para las 3 pantallas con padding horizontal a nivel de contenedor
+  (Ajustes, Seguridad, Documento escaneado) -- donde usar el componente
+  compartido habría duplicado el margen -- se aplicó el mismo criterio
+  (16dp de margen, 8dp de gap) de forma manual: un `Column` propio con el
+  banner de anuncios + `Spacer(8.dp)` + banner de título como un solo
+  hijo, para que el `spacedBy` de cada pantalla no sume espacio extra
+  entre ambos elementos.
+- `contentPadding`/`padding` superior quitado en las 7 pantallas (el
+  banner de anuncios ahora arranca pegado al borde superior en todas).
+- Inicio: `HomeBanner` sacó los botones "Abrir"/"Convertir" de dentro del
+  recuadro degradado y los dejó como una fila aparte justo debajo (mismo
+  patrón ya usado con la flecha "Volver" de `DocuSmartTopBanner`) -- no
+  se eliminaron, solo se movieron fuera del banner, como pidió el
+  usuario.
+
+**Verificado en dispositivo real** (Motorola Edge 30 Neo, ZY22G7SB77,
+reinstalación limpia): las 7 pantallas muestran ahora el mismo margen
+horizontal, el mismo espacio pequeño entre el banner de anuncios y el de
+título, y el banner de anuncios pegado arriba -- confirmado visualmente
+con capturas de Inicio, Biblioteca, Convertidor, Herramientas PDF,
+Ajustes, Seguridad y Documento escaneado (esta última verificada al
+final de un flujo completo de escaneo con el Escáner de Google ML Kit).
+Gauntlet en verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`.
+
+### Seguimiento (mismo día): botones eliminados por error + margen superior seguía distinto en Convertidor/Herramientas PDF (2026-09-07)
+
+Al revisar el resultado, el usuario señaló dos problemas con el batch de
+arriba: (1) el pedido era sacar los botones "Abrir"/"Convertir" del
+banner de Inicio, dejándolos fuera -- no eliminarlos, como terminó
+pasando; y (2) Convertidor y Herramientas PDF seguían mostrando más
+espacio arriba del banner de anuncios que Inicio/Biblioteca/Ajustes.
+
+**Corregido (1)**: se revirtieron las 10 cadenas `home_open`/
+`home_convert` (con `git checkout` sobre esos 10 `strings.xml`, ya que
+el único cambio pendiente ahí era justamente borrar esas dos líneas) y
+se restauró la fila de botones en `HomeBanner.kt`, pero como un
+`Column` propio fuera del `Box` degradado (banner arriba, `Spacer(16dp)`,
+fila de botones debajo) en vez de dentro de él -- por eso los botones
+ahora usan el color de acento (`MaterialTheme.colorScheme.primary`) en
+vez de blanco/blanco, ya que el fondo debajo del banner es el normal de
+la pantalla.
+
+**Causa raíz de (2)**: `ConverterScreen.kt` y `PdfToolsScreen.kt` son las
+únicas 2 de las 7 pantallas que tienen su propio `Scaffold` (para su
+`SnackbarHost`). Ese `Scaffold` reservaba el inset superior de
+`systemBars` (`WindowInsetsSides.Top`) con su propio `innerPadding` --
+pero el `Scaffold` de `MainActivity.kt` (el que envuelve todo
+`DocuSmartNavGraph`) ya reserva ese mismo inset superior una vez para
+*todas* las pantallas. El resultado: Convertidor y Herramientas PDF
+reservaban la altura de la barra de estado **dos veces**, sumando un
+padding superior que Inicio/Biblioteca/Ajustes/Seguridad/Documento
+escaneado nunca tuvieron (esas 5 no tienen `Scaffold` propio). Mismo
+patrón de bug ya documentado para el inset inferior (línea blanca sobre
+`DocuSmartBottomBar`), pero nadie había notado que el superior tenía el
+mismo problema.
+
+**Corregido**: en ambos archivos, `contentWindowInsets` pasa de
+`WindowInsets.systemBars.only(Top + Horizontal)` a
+`WindowInsets.systemBars.only(Horizontal)` -- se deja de reservar el
+inset superior por duplicado, dejando que lo haga una sola vez el
+`Scaffold` de `MainActivity`.
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL -- el Motorola
+Edge 30 Neo usado en la verificación anterior ya no estaba conectado):
+tras `assembleDebug` + reinstalación limpia, Inicio muestra "Abrir"/
+"Convertir" como fila debajo del banner (en color de acento, ya no
+blanco), y Convertidor/Herramientas PDF arrancan su banner exactamente
+a la misma altura que Inicio, sin el hueco extra. Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`
+(nota: para ver el cambio reflejado en el dispositivo hace falta
+`assembleDebug`, no alcanza con `compileDebugKotlin` -- ese task no
+genera el `.apk`).
+
+---
+
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)
 
 - **Inicio:** abrir archivo, convertir, escanear, imagen a PDF, caja fuerte (futuro), modo estudio (futuro), recientes, banner de anuncio.

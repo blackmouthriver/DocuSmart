@@ -312,7 +312,10 @@ private fun ScanResultBody(
     Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
+            // Pedido explícito del usuario 2026-09-07: mismo margen
+            // horizontal que el resto de las pantallas, y sin hueco antes
+            // del anuncio (antes tenía 24dp arriba también).
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             scanResultContent(
@@ -659,20 +662,22 @@ private fun LazyListScope.scanResultContent(
     sessionArgs: ScanSessionDisplayArgs,
     defaultFlowArgs: ScanDefaultFlowArgs
 ) {
-    // ── AdMob — solo para usuarios free (backlog UX §8) ───────
-    if (!headerArgs.isPremium) {
-        item {
-            DocuSmartBannerAd(adUnitId = AdConstants.BANNER_SCAN_RESULT_ID, adManager = headerArgs.adManager)
-        }
-    }
-
-    // ── Banner ────────────────────────────────
+    // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
+    // banner que el resto de las pantallas -- ad+banner van en un solo
+    // ítem con 8dp entre ambos (el `spacedBy(20.dp)` de la LazyColumn,
+    // pensado para el resto del contenido, no debe aplicar acá).
     item {
-        DocuSmartTopBanner(
-            screenTitle = stringResource(R.string.scanner_result_title),
-            screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, headerArgs.scannedUris.size),
-            onBack = headerArgs.onBack
-        )
+        Column {
+            if (!headerArgs.isPremium) {
+                DocuSmartBannerAd(adUnitId = AdConstants.BANNER_SCAN_RESULT_ID, adManager = headerArgs.adManager)
+                Spacer(Modifier.height(8.dp))
+            }
+            DocuSmartTopBanner(
+                screenTitle = stringResource(R.string.scanner_result_title),
+                screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, headerArgs.scannedUris.size),
+                onBack = headerArgs.onBack
+            )
+        }
     }
 
     // ── Vista previa ──────────────────────────
