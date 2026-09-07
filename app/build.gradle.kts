@@ -364,7 +364,7 @@ dependencies {
     // ── Testing ───────────────────────────────────────────────────────────────
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("io.mockk:mockk:1.14.11")
     testImplementation("app.cash.turbine:turbine:1.2.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     // El stub de Android para unit tests deja org.json.* sin implementar
@@ -384,7 +384,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     // mockk-android, no mockk: mockear en el dispositivo necesita soporte
     // dexmaker/bytebuddy-android, distinto del mockk de test/ (JVM).
-    androidTestImplementation("io.mockk:mockk-android:1.13.13")
+    androidTestImplementation("io.mockk:mockk-android:1.14.11")
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
