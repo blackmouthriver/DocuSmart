@@ -280,7 +280,7 @@ dependencies {
     // a diferencia de dibujar un rectángulo negro con PdfCanvas (que deja el
     // texto/vector original intacto y extraíble debajo), este módulo elimina
     // de verdad el contenido del content stream dentro de la región indicada.
-    implementation("com.itextpdf:cleanup:3.0.2")
+    implementation("com.itextpdf:cleanup:5.0.7")
     implementation("org.bouncycastle:bcprov-jdk15on:1.70")
     implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
 
