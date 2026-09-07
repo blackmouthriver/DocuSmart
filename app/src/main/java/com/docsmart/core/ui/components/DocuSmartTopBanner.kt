@@ -47,60 +47,37 @@ fun DocuSmartTopBanner(
     // así que el fix aplica a todas de una sola vez.
     val bannerGradient = rememberAccentGradient()
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .background(brush = Brush.linearGradient(colors = bannerGradient))
-            .padding(horizontal = 20.dp, vertical = 18.dp)
-    ) {
-        // ── Círculos decorativos ──────────────────────────────────────────────
+    Column(modifier = modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier
-                .size(130.dp)
-                .align(Alignment.TopEnd)
-                .offset(x = 40.dp, y = (-25).dp)
-                .background(
-                    color = Color.White.copy(alpha = 0.07f),
-                    shape = MaterialTheme.shapes.extraLarge
-                )
-        )
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .align(Alignment.BottomEnd)
-                .offset(x = 15.dp, y = 25.dp)
-                .background(
-                    color = Color.White.copy(alpha = 0.05f),
-                    shape = MaterialTheme.shapes.extraLarge
-                )
-        )
-
-        Column {
-            // ── Volver (opcional) ────────────────────────────────────────────
-            if (onBack != null) {
-                Row(
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        .padding(bottom = 12.dp)
-                        .clickable(role = Role.Button, onClick = onBack)
-                ) {
-                    Icon(
-                        imageVector        = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = null,
-                        tint               = Color.White,
-                        modifier           = Modifier.size(18.dp)
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.large)
+                .background(brush = Brush.linearGradient(colors = bannerGradient))
+                .padding(horizontal = 20.dp, vertical = 18.dp)
+        ) {
+            // ── Círculos decorativos ──────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .size(130.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = 40.dp, y = (-25).dp)
+                    .background(
+                        color = Color.White.copy(alpha = 0.07f),
+                        shape = MaterialTheme.shapes.extraLarge
                     )
-                    Text(
-                        text  = stringResource(R.string.general_back),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.White
+            )
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 15.dp, y = 25.dp)
+                    .background(
+                        color = Color.White.copy(alpha = 0.05f),
+                        shape = MaterialTheme.shapes.extraLarge
                     )
-                }
-            }
+            )
 
-            // ── Contenido principal ──────────────────────────────────────────
+            // ── Contenido principal ────────────────────────────────────────────
             Row(
                 verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -165,6 +142,35 @@ fun DocuSmartTopBanner(
                 }
 
                 actions?.invoke(this)
+            }
+        }
+
+        // ── Volver (opcional) ──────────────────────────────────────────────────
+        // Pedido explícito del usuario 2026-09-06: antes vivía integrado
+        // dentro del degradado del banner (texto/ícono blancos) -- ahora
+        // queda debajo, fuera del área con color, usando el color de acento
+        // (`primary`) en vez de blanco fijo, ya que el fondo de acá es el
+        // normal de la pantalla (claro u oscuro según el tema), no el
+        // degradado.
+        if (onBack != null) {
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .clickable(role = Role.Button, onClick = onBack)
+            ) {
+                Icon(
+                    imageVector        = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(18.dp)
+                )
+                Text(
+                    text  = stringResource(R.string.general_back),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

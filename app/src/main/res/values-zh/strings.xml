@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">升级高级版 → 无限制</string>
     <string name="pdf_tools_daily_limit_label">该工具</string>
     <string name="converter_daily_limit_label">转换</string>
+    <string name="scan_daily_save_limit_label">已保存的扫描</string>
 
     <!-- ── PDF 工具：主界面与结果卡片 ── -->
     <string name="pdf_tools_back_to_tools">返回工具列表</string>
@@ -645,13 +646,19 @@
     <string name="scan_result_high_res_title">高分辨率</string>
     <string name="scan_result_high_res_desc">更清晰的 PDF，适合打印或存档</string>
     <string name="scan_result_high_res_premium_content_desc">高级功能</string>
+    <string name="scan_session_title">已扫描的文件</string>
+    <string name="scan_session_scan_another">扫描其他文档</string>
     <string name="scan_result_default_name_prefix">扫描_%1$s</string>
     <string name="scan_edit_page_content_desc">编辑第 %1$d 页</string>
     <string name="scan_edit_title">编辑页面</string>
-    <string name="scan_edit_brightness">亮度：%1$d</string>
-    <string name="scan_edit_contrast">对比度：%1$d</string>
+    <string name="scan_edit_brightness">亮度：%1$d%%</string>
+    <string name="scan_edit_contrast">对比度：%1$d%%</string>
     <string name="scan_edit_scale">缩放</string>
     <string name="scan_edit_apply">应用</string>
+    <string name="scan_page_count">%1$d/%2$d 页</string>
+    <string name="scan_add_page">添加页面</string>
+    <string name="scan_page_limit_title">已达到页数上限</string>
+    <string name="scan_page_limit_body">此文档已有 %1$d/%2$d 页。观看视频以添加一页，或升级到高级版以取消限制。</string>
     <string name="security_file_protected_original_kept">文件已受保护。无法从原位置删除原文件 — 如需彻底移除，请手动删除。</string>
     <string name="qr_protected_title">受保护的二维码</string>
     <string name="qr_protected_desc">此内容已用密码保护，请输入密码以查看。</string>

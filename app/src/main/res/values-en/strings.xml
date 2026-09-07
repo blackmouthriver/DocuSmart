@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">Get Premium → no limits</string>
     <string name="pdf_tools_daily_limit_label">uses of this tool</string>
     <string name="converter_daily_limit_label">conversions</string>
+    <string name="scan_daily_save_limit_label">saved scans</string>
 
     <!-- ── PDF Tools: main screen and result card ── -->
     <string name="pdf_tools_back_to_tools">Back to tools</string>
@@ -640,13 +641,19 @@
     <string name="scan_result_high_res_title">High resolution</string>
     <string name="scan_result_high_res_desc">Sharper PDF, ideal for printing or archiving</string>
     <string name="scan_result_high_res_premium_content_desc">Premium feature</string>
+    <string name="scan_session_title">Scanned files</string>
+    <string name="scan_session_scan_another">Scan another document</string>
     <string name="scan_result_default_name_prefix">Scan_%1$s</string>
     <string name="scan_edit_page_content_desc">Edit page %1$d</string>
     <string name="scan_edit_title">Edit page</string>
-    <string name="scan_edit_brightness">Brightness: %1$d</string>
-    <string name="scan_edit_contrast">Contrast: %1$d</string>
+    <string name="scan_edit_brightness">Brightness: %1$d%%</string>
+    <string name="scan_edit_contrast">Contrast: %1$d%%</string>
     <string name="scan_edit_scale">Scale</string>
     <string name="scan_edit_apply">Apply</string>
+    <string name="scan_page_count">%1$d of %2$d pages</string>
+    <string name="scan_add_page">Add page</string>
+    <string name="scan_page_limit_title">Page limit reached</string>
+    <string name="scan_page_limit_body">This document already has %1$d of %2$d pages. Watch a video to add one more page, or go Premium for no limit.</string>
     <string name="security_file_protected_original_kept">File protected. Couldn\'t delete the original from its location — delete it manually if you want it fully removed.</string>
     <string name="qr_protected_title">Protected QR code</string>
     <string name="qr_protected_desc">This content is password-protected. Enter the password to view it.</string>

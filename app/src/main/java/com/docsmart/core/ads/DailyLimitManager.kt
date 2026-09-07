@@ -37,10 +37,19 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_OCR             = "count_ocr"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
         private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
+        // Backlog UX (pedido explícito del usuario 2026-09-06): "escaneos
+        // guardados" es un contador propio, independiente del de
+        // conversiones -- un usuario puede agotar sus 8 escaneos guardados
+        // del día sin que eso afecte sus 5 conversiones del Convertidor, y
+        // viceversa (dos límites distintos, cada uno con su propio anuncio
+        // recompensado).
+        private const val KEY_SCANS_SAVED       = "count_scans_saved"
+        private const val KEY_EXTRA_SCANS_SAVED = "extra_scans_saved"
 
         // ── Límites diarios ───────────────────────────────────────────────────
         const val LIMIT_CONVERSIONS = 5
         const val LIMIT_PDF_TOOLS   = 3
+        const val LIMIT_SCANS_SAVED = 8
 
         // Mapa en vez de `when` -- este dispatcher crece una entrada por cada
         // herramienta PDF nueva del backlog y ya había superado el umbral de
@@ -94,6 +103,8 @@ class DailyLimitManager @Inject constructor(
                 .putInt(KEY_OCR,            0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
                 .putInt(KEY_EXTRA_PDF_TOOLS, 0)
+                .putInt(KEY_SCANS_SAVED, 0)
+                .putInt(KEY_EXTRA_SCANS_SAVED, 0)
                 .apply()
         }
     }
@@ -105,6 +116,15 @@ class DailyLimitManager @Inject constructor(
         val extras = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
         val canDo  = count < LIMIT_CONVERSIONS + extras
         Timber.d("DailyLimitManager: canConvert=$canDo ($count/${LIMIT_CONVERSIONS + extras})")
+        return canDo
+    }
+
+    fun canSaveScan(): Boolean {
+        checkAndResetIfNewDay()
+        val count  = prefs.getInt(KEY_SCANS_SAVED, 0)
+        val extras = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
+        val canDo  = count < LIMIT_SCANS_SAVED + extras
+        Timber.d("DailyLimitManager: canSaveScan=$canDo ($count/${LIMIT_SCANS_SAVED + extras})")
         return canDo
     }
 
@@ -124,6 +144,13 @@ class DailyLimitManager @Inject constructor(
         val current = prefs.getInt(KEY_CONVERSIONS, 0)
         prefs.edit().putInt(KEY_CONVERSIONS, current + 1).apply()
         Timber.d("DailyLimitManager: conversión registrada → ${current + 1}")
+    }
+
+    fun registerScanSaved() {
+        checkAndResetIfNewDay()
+        val current = prefs.getInt(KEY_SCANS_SAVED, 0)
+        prefs.edit().putInt(KEY_SCANS_SAVED, current + 1).apply()
+        Timber.d("DailyLimitManager: escaneo guardado registrado → ${current + 1}")
     }
 
     fun registerPdfTool(toolKey: String) {
@@ -150,6 +177,14 @@ class DailyLimitManager @Inject constructor(
         Timber.d("DailyLimitManager: +1 extra de herramienta PDF por rewarded → ${current + 1} extras")
     }
 
+    // ── Agregar escaneo guardado extra (reward por ver anuncio) ───────────────
+    fun addRewardedScanSave() {
+        checkAndResetIfNewDay()
+        val current = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
+        prefs.edit().putInt(KEY_EXTRA_SCANS_SAVED, current + 1).apply()
+        Timber.d("DailyLimitManager: +1 escaneo guardado extra por rewarded → ${current + 1} extras")
+    }
+
     // ── Obtener contadores para mostrar en UI ─────────────────────────────────
     fun getConversionCount(): Int {
         checkAndResetIfNewDay()
@@ -160,6 +195,17 @@ class DailyLimitManager @Inject constructor(
         checkAndResetIfNewDay()
         val extras = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
         return LIMIT_CONVERSIONS + extras
+    }
+
+    fun getScanSavedCount(): Int {
+        checkAndResetIfNewDay()
+        return prefs.getInt(KEY_SCANS_SAVED, 0)
+    }
+
+    fun getScanSavedLimit(): Int {
+        checkAndResetIfNewDay()
+        val extras = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
+        return LIMIT_SCANS_SAVED + extras
     }
 
     fun getPdfToolCount(toolKey: String): Int {

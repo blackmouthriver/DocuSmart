@@ -381,6 +381,25 @@ class ConverterViewModel @Inject constructor(
         convert(context)
     }
 
+    // Atajo del Escáner (backlog UX #35) para el botón único "Generar" de
+    // ScanResultScreen: según el formato elegido dispara PDF (con la opción
+    // "Alta resolución") o una imagen suelta (JPG/WebP), fijando antes el
+    // nombre elegido por el usuario en el estado (`convert()` lee
+    // `state.fileName`).
+    fun generateFromScan(
+        context: Context,
+        imageType: ConversionType?,
+        highResolution: Boolean,
+        fileName: String
+    ) {
+        onFileNameChange(fileName)
+        if (imageType == null) {
+            convertToPdf(context, highResolution)
+        } else {
+            convertToImageFormat(context, imageType)
+        }
+    }
+
     fun saveToDownloads(context: Context) {
         val file = _uiState.value.outputFile ?: return
         viewModelScope.launch {

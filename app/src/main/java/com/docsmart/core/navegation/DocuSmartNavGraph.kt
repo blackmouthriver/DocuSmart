@@ -489,7 +489,16 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
                     popUpTo(NavRoutes.Scanner.route) { inclusive = true }
                 }
             },
-            onPremiumClick = { navController.navigate(NavRoutes.Premium.route) }
+            onPremiumClick = { navController.navigate(NavRoutes.Premium.route) },
+            // Backlog UX §35 (feedback del usuario tras probar la primera
+            // versión de la lista de sesión): mismas acciones que ya tiene
+            // el menú "⋮" de Biblioteca/Recientes -- los archivos de la
+            // sesión son siempre rutas absolutas (generados por la app),
+            // nunca `content://`, así que no hace falta el permiso
+            // persistente que sí necesita Library para MediaStore.
+            onOpenDocument         = { documentId -> navController.navigate(NavRoutes.Viewer.createRoute(documentId)) },
+            onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
+            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) }
         )
     }
 }

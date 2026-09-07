@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">Получить Premium → без ограничений</string>
     <string name="pdf_tools_daily_limit_label">использований этого инструмента</string>
     <string name="converter_daily_limit_label">конвертаций</string>
+    <string name="scan_daily_save_limit_label">сохранённых сканов</string>
 
     <!-- ── Инструменты PDF: главный экран и карточка результата ── -->
     <string name="pdf_tools_back_to_tools">Назад к инструментам</string>
@@ -641,13 +642,19 @@
     <string name="scan_result_high_res_title">Высокое разрешение</string>
     <string name="scan_result_high_res_desc">Более четкий PDF, идеально для печати или архивирования</string>
     <string name="scan_result_high_res_premium_content_desc">Премиум-функция</string>
+    <string name="scan_session_title">Отсканированные файлы</string>
+    <string name="scan_session_scan_another">Сканировать другой документ</string>
     <string name="scan_result_default_name_prefix">Скан_%1$s</string>
     <string name="scan_edit_page_content_desc">Редактировать страницу %1$d</string>
     <string name="scan_edit_title">Редактировать страницу</string>
-    <string name="scan_edit_brightness">Яркость: %1$d</string>
-    <string name="scan_edit_contrast">Контраст: %1$d</string>
+    <string name="scan_edit_brightness">Яркость: %1$d%%</string>
+    <string name="scan_edit_contrast">Контраст: %1$d%%</string>
     <string name="scan_edit_scale">Масштаб</string>
     <string name="scan_edit_apply">Применить</string>
+    <string name="scan_page_count">%1$d из %2$d страниц</string>
+    <string name="scan_add_page">Добавить страницу</string>
+    <string name="scan_page_limit_title">Достигнут лимит страниц</string>
+    <string name="scan_page_limit_body">В этом документе уже %1$d из %2$d страниц. Посмотрите видео, чтобы добавить ещё одну страницу, или перейдите на Premium — без ограничений.</string>
     <string name="security_file_protected_original_kept">Файл защищён. Не удалось удалить оригинал из исходного места — удалите его вручную, если хотите убрать его полностью.</string>
     <string name="qr_protected_title">Защищённый QR-код</string>
     <string name="qr_protected_desc">Это содержимое защищено паролем. Введите пароль, чтобы увидеть его.</string>

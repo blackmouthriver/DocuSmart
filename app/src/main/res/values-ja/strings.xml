@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">Premiumを入手 → 上限なし</string>
     <string name="pdf_tools_daily_limit_label">このツールの利用回数</string>
     <string name="converter_daily_limit_label">変換回数</string>
+    <string name="scan_daily_save_limit_label">保存したスキャン</string>
 
     <!-- ── PDFツール: メイン画面と結果カード ── -->
     <string name="pdf_tools_back_to_tools">ツール一覧に戻る</string>
@@ -645,13 +646,19 @@
     <string name="scan_result_high_res_title">高解像度</string>
     <string name="scan_result_high_res_desc">よりくっきりしたPDF、印刷や保存に最適</string>
     <string name="scan_result_high_res_premium_content_desc">プレミアム機能</string>
+    <string name="scan_session_title">スキャンしたファイル</string>
+    <string name="scan_session_scan_another">別のドキュメントをスキャン</string>
     <string name="scan_result_default_name_prefix">スキャン_%1$s</string>
     <string name="scan_edit_page_content_desc">%1$dページ目を編集</string>
     <string name="scan_edit_title">ページを編集</string>
-    <string name="scan_edit_brightness">明るさ: %1$d</string>
-    <string name="scan_edit_contrast">コントラスト: %1$d</string>
+    <string name="scan_edit_brightness">明るさ: %1$d%%</string>
+    <string name="scan_edit_contrast">コントラスト: %1$d%%</string>
     <string name="scan_edit_scale">スケール</string>
     <string name="scan_edit_apply">適用</string>
+    <string name="scan_page_count">%2$d ページ中 %1$d ページ</string>
+    <string name="scan_add_page">ページを追加</string>
+    <string name="scan_page_limit_title">ページ数の上限に達しました</string>
+    <string name="scan_page_limit_body">このドキュメントはすでに%2$dページ中%1$dページあります。動画を見てページを追加するか、Premiumで上限をなくしましょう。</string>
     <string name="security_file_protected_original_kept">ファイルを保護しました。元のファイルをその場所から削除できませんでした — 完全に削除したい場合は手動で削除してください。</string>
     <string name="qr_protected_title">保護されたQRコード</string>
     <string name="qr_protected_desc">このコンテンツはパスワードで保護されています。表示するには入力してください。</string>

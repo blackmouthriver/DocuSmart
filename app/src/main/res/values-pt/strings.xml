@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">Obter Premium → sem limites</string>
     <string name="pdf_tools_daily_limit_label">usos desta ferramenta</string>
     <string name="converter_daily_limit_label">conversões</string>
+    <string name="scan_daily_save_limit_label">digitalizações salvas</string>
 
     <!-- ── Ferramentas PDF: tela principal e cartão de resultado ── -->
     <string name="pdf_tools_back_to_tools">Voltar às ferramentas</string>
@@ -641,13 +642,19 @@
     <string name="scan_result_high_res_title">Alta resolução</string>
     <string name="scan_result_high_res_desc">PDF mais nítido, ideal para imprimir ou arquivar</string>
     <string name="scan_result_high_res_premium_content_desc">Recurso Premium</string>
+    <string name="scan_session_title">Arquivos escaneados</string>
+    <string name="scan_session_scan_another">Escanear outro documento</string>
     <string name="scan_result_default_name_prefix">Escaneamento_%1$s</string>
     <string name="scan_edit_page_content_desc">Editar página %1$d</string>
     <string name="scan_edit_title">Editar página</string>
-    <string name="scan_edit_brightness">Brilho: %1$d</string>
-    <string name="scan_edit_contrast">Contraste: %1$d</string>
+    <string name="scan_edit_brightness">Brilho: %1$d%%</string>
+    <string name="scan_edit_contrast">Contraste: %1$d%%</string>
     <string name="scan_edit_scale">Escala</string>
     <string name="scan_edit_apply">Aplicar</string>
+    <string name="scan_page_count">%1$d de %2$d páginas</string>
+    <string name="scan_add_page">Adicionar página</string>
+    <string name="scan_page_limit_title">Limite de páginas atingido</string>
+    <string name="scan_page_limit_body">Este documento já tem %1$d de %2$d páginas. Assista a um vídeo para adicionar mais uma página, ou torne-se Premium para não ter limite.</string>
     <string name="security_file_protected_original_kept">Arquivo protegido. Não foi possível excluir o original do seu local — exclua-o manualmente se quiser removê-lo por completo.</string>
     <string name="qr_protected_title">Código QR protegido</string>
     <string name="qr_protected_desc">Este conteúdo está protegido por senha. Digite a senha para vê-lo.</string>

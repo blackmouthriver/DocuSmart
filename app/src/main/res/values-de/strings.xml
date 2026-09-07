@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">Premium holen → keine Limits</string>
     <string name="pdf_tools_daily_limit_label">Nutzungen dieses Werkzeugs</string>
     <string name="converter_daily_limit_label">Konvertierungen</string>
+    <string name="scan_daily_save_limit_label">gespeicherte Scans</string>
 
     <!-- ── PDF-Werkzeuge: Hauptbildschirm und Ergebniskarte ── -->
     <string name="pdf_tools_back_to_tools">Zurück zu den Werkzeugen</string>
@@ -641,13 +642,19 @@
     <string name="scan_result_high_res_title">Hohe Auflösung</string>
     <string name="scan_result_high_res_desc">Schärferes PDF, ideal zum Drucken oder Archivieren</string>
     <string name="scan_result_high_res_premium_content_desc">Premium-Funktion</string>
+    <string name="scan_session_title">Gescannte Dateien</string>
+    <string name="scan_session_scan_another">Weiteres Dokument scannen</string>
     <string name="scan_result_default_name_prefix">Scan_%1$s</string>
     <string name="scan_edit_page_content_desc">Seite %1$d bearbeiten</string>
     <string name="scan_edit_title">Seite bearbeiten</string>
-    <string name="scan_edit_brightness">Helligkeit: %1$d</string>
-    <string name="scan_edit_contrast">Kontrast: %1$d</string>
+    <string name="scan_edit_brightness">Helligkeit: %1$d%%</string>
+    <string name="scan_edit_contrast">Kontrast: %1$d%%</string>
     <string name="scan_edit_scale">Skalierung</string>
     <string name="scan_edit_apply">Anwenden</string>
+    <string name="scan_page_count">%1$d von %2$d Seiten</string>
+    <string name="scan_add_page">Seite hinzufügen</string>
+    <string name="scan_page_limit_title">Seitenlimit erreicht</string>
+    <string name="scan_page_limit_body">Dieses Dokument hat bereits %1$d von %2$d Seiten. Sieh dir ein Video an, um eine weitere Seite hinzuzufügen, oder hol dir Premium für kein Limit.</string>
     <string name="security_file_protected_original_kept">Datei geschützt. Das Original konnte nicht von seinem Speicherort gelöscht werden — lösche es manuell, wenn du es vollständig entfernen möchtest.</string>
     <string name="qr_protected_title">Geschützter QR-Code</string>
     <string name="qr_protected_desc">Dieser Inhalt ist passwortgeschützt. Gib das Passwort ein, um ihn zu sehen.</string>

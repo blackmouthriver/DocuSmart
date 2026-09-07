@@ -1749,6 +1749,414 @@ anterior con el mismo mecanismo de `accentFilterChipColors`/
 `QrCreatorScreen`. Gauntlet en verde: `compileDebugKotlin` +
 `detekt` + `lintDebug` + `testDebugUnitTest`.
 
+### Escáner: chips de brillo/contraste + lista de sesión tras guardar/compartir (2026-09-06)
+
+El usuario notó dos carencias más en el Escáner: el editor de página
+(`ScanImageEditorDialog`) solo permitía ajustar brillo/contraste con
+un `Slider` de -100 a 100 sin indicar el porcentaje, y una vez
+guardado o compartido el documento escaneado no había ninguna opción
+para volver a escanear otro sin salir de la pantalla. Se preguntó al
+usuario cómo prefería el control de brillo/contraste (eligió "Chips
+de porcentaje fijo", el mismo patrón que ya usaban los chips de
+Escala) y qué debía pasar exactamente tras guardar/compartir. La
+primera propuesta de flujo no coincidió con lo que el usuario tenía
+en mente; explicó el flujo real por chat: el editor de un solo
+documento (escanear → vista previa → formato → generar → guardar/
+compartir) queda igual, y **solo después** de que el usuario termine
+de guardar o compartir ese documento, la pantalla debe ocultar su
+vista previa/formato/nombre y mostrar, en su lugar, una lista tipo
+Biblioteca con todos los archivos escaneados en esa sesión, más la
+opción de escanear otro documento.
+
+**Implementado**:
+- `ScanImageEditorDialog`: brillo y contraste pasaron de
+  `mutableFloatStateOf` (slider continuo) a `mutableIntStateOf` con
+  chips fijos (`-50/-25/0/+25/+50 %`), reutilizando el mismo patrón
+  visual `PercentChipRow()` ya usado por los chips de Escala (nueva
+  función común para las tres filas), todos con
+  `accentFilterChipColors()`.
+- Nuevo `ScanSessionManager` (`@Singleton`, `features/scanner/domain`):
+  guarda en memoria (`MutableStateFlow<List<File>>`) los archivos
+  escaneados y guardados/compartidos durante la sesión de proceso
+  actual. Necesario porque `ScanResultScreen` navega a una NUEVA
+  entrada del backstack en cada "Escanear otro documento"
+  (`hiltViewModel()` se re-crea por defecto por cada
+  `NavBackStackEntry`), así que un ViewModel normal habría perdido la
+  lista al volver a escanear. `ScanSessionViewModel` es un wrapper
+  delgado sobre el manager, solo para poder obtenerlo con
+  `hiltViewModel()` desde el Composable.
+- `ScanResultScreen`: nuevo estado `sessionFinalized`, que pasa a
+  `true` recién cuando `ScanResultActions` confirma que "Guardar en
+  Descargas" tuvo éxito o que "Compartir" terminó -- momento en el
+  que también se agrega el archivo a `ScanSessionManager`
+  (`onFinalized`). Mientras `sessionFinalized` es `false`, la pantalla
+  se comporta exactamente igual que antes (vista previa, selector de
+  formato, nombre, generar/guardar/compartir). En cuanto pasa a
+  `true`, esa sección se reemplaza por `ScanSessionFinalizedSection`:
+  encabezado, una fila por archivo de la sesión (miniatura real vía
+  `DocumentThumbnail`/`DocumentUiModel`, nombre, tamaño, botón
+  compartir) y el botón "Escanear otro documento" (reutiliza la misma
+  acción `scanAgainAction` que ya existía para "Volver a escanear"),
+  más "Volver al inicio" (limpia la sesión y navega a Home).
+- Refactor por detekt (`LongMethod`, `ScanResultScreen` llegó a
+  171/150 líneas tras sumar todo lo anterior): se extrajo el cuerpo
+  completo del `LazyColumn` a una función `scanResultContent()`
+  (extensión de `LazyListScope`), agrupando el aluvión de estado en 4
+  data class nuevas (`ScanResultHeaderArgs`, `ScanPreviewArgs`,
+  `ScanBatchDisplayArgs`, `ScanSessionDisplayArgs`,
+  `ScanDefaultFlowArgs`) para no superar el límite de 8 parámetros
+  (`LongParameterList`) -- solo mover lambdas a funciones con nombre
+  no alcanzó para bajar el conteo de líneas; hubo que sacar lógica de
+  negocio del cuerpo del Composable de verdad, incluyendo mover la
+  llamada de generación a un nuevo método
+  `ConverterViewModel.generateFromScan(context, imageType,
+  highResolution, fileName)` que decide entre `convertToPdf()` (si el
+  formato elegido no requiere `ConversionType`, es decir PDF) o
+  `convertToImageFormat()` (JPG/WebP), fijando antes el nombre elegido
+  en el estado.
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL, cámara
+tapada -- sin contenido real, ver nota de privacidad): los chips de
+brillo/contraste cambian el porcentaje mostrado y afectan la vista
+previa en vivo, igual que los de Escala; al generar y "Guardar en
+Descargas" un primer documento, la vista de un solo documento
+desaparece y aparece "Archivos escaneados en esta sesión" con una
+fila (miniatura real, nombre, tamaño, ícono compartir); "Escanear
+otro documento" reabre correctamente el escáner de ML Kit; al
+generar y esta vez "Compartir" un segundo documento, el archivo se
+agrega a la lista sin reemplazar al primero (2 filas visibles); el
+share sheet de Android se abrió con el nombre de archivo correcto
+(no se completó el envío real a ninguna app, solo se confirmó que se
+abre bien); "Volver al inicio" limpia la sesión y navega a Home.
+Gauntlet en verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`. Se eliminó el único archivo de prueba que llegó
+a guardarse en Descargas al terminar la verificación.
+
+### Seguimiento (mismo día): bug real de "Generar" + brillo/contraste vuelve a slider (2026-09-06)
+
+Tras la entrega anterior, el usuario probó el flujo en su propio
+dispositivo y reportó que el botón "Generar" no lo dejaba avanzar a
+guardar. Investigado antes de tocar nada: `ConverterViewModel.convert()`
+(el mismo método que usa el Escáner) sí revisa el límite diario de 5
+conversiones/día y, al alcanzarlo, pone `showLimitDialog = true` y
+retorna sin convertir -- pero `ScanResultScreen` nunca observaba ese
+flag ni mostraba el `DailyLimitDialog` (a diferencia de
+`ConverterScreen`/`PdfToolsScreen`, que sí lo tienen cableado). El
+límite se había alcanzado por las pruebas automatizadas de la entrega
+anterior (varias conversiones seguidas en la misma sesión), así que
+el botón quedaba sin hacer nada, sin ningún aviso -- un bug real que
+le pasaría a cualquier usuario real tras su quinta conversión del día,
+no solo en pruebas.
+
+El usuario aprovechó para pedir además un segundo cambio: había visto
+los chips de porcentaje de brillo/contraste en acción durante las
+pruebas y prefiere volver a un control continuo tipo "scroll" de 0 a
+100 para ambos, en vez de valores fijos.
+
+**Implementado**:
+- `ScanResultScreen`: nuevo `ScanDailyLimitDialog()` (extraído aparte
+  para no volver a superar el límite de `LongMethod`), que muestra
+  `DailyLimitDialog` cuando `uiState.showLimitDialog` es `true`,
+  cableado igual que en `ConverterScreen`/`PdfToolsScreen`
+  (`onWatchAd` → `watchAdForConversion()`, `onDismiss` →
+  `dismissLimitDialog()`, `onGetPremium` vacío, mismo criterio que las
+  otras dos pantallas). Nuevos `activity`/`isRewardedReady` obtenidos
+  igual que en `ConverterScreen`.
+- Brillo y contraste: los chips de `-50/-25/0/+25/+50 %` se
+  reemplazaron por un `Slider` de Material3 con rango `0f..100f` (50 =
+  sin cambios), mostrado como "Brillo: 50%"/"Contraste: 50%". Como
+  `buildColorMatrix()` sigue esperando el rango simétrico `-100..100`
+  original, el valor mostrado se convierte con
+  `displayToInternal(display) = (display - 50) * 2` antes de usarlo
+  para la vista previa en vivo y al aplicar -- así se conserva el
+  mismo rango de efecto que tenía el slider original, solo con una
+  escala 0-100 más intuitiva en pantalla. Escala sigue con chips fijos
+  (no pedido en este ajuste).
+- Refactor por detekt: extraer el diálogo de límite diario a
+  `ScanDailyLimitDialog()` no bastó por sí solo (`ScanResultScreen`
+  bajó a 153/150); se extrajo también el diálogo de edición de página
+  a `ScanPageEditDialog()`, dejando margen para futuros ajustes.
+
+**Verificado en dispositivo real** (Moto E22, cámara tapada -- sin
+contenido real): confirmado que el contador de conversiones del
+dispositivo estaba en 5/5 (`docusmart_daily_limits.xml`) por las
+pruebas de la entrega anterior; al tocar "Generar" con el contador
+lleno, ahora aparece correctamente "Límite diario alcanzado" con las
+opciones de ver anuncio/Premium/cancelar, en vez de no hacer nada.
+Se reinició el contador a 0 (`count_conversions`, artefacto de las
+pruebas automatizadas, no uso real del usuario) para dejar la app en
+un estado normal, y se repitió el flujo completo: el slider de
+brillo/contraste muestra "50%" por defecto y responde en vivo al
+arrastrar (probado subiendo brillo a 75%, la vista previa se aclaró
+visiblemente); con el contador bajo el límite, "Generar PDF" y
+"Guardar en Descargas" funcionan con normalidad y el archivo aparece
+en la lista de la sesión. Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
+Se eliminó el archivo de prueba guardado en Descargas al terminar.
+
+### Segundo seguimiento (mismo día): fila de la sesión con solo "compartir" + JPG fuera de la lista (2026-09-06)
+
+El usuario probó de nuevo y encontró dos cosas más: (1) la fila de cada
+archivo escaneado en "Archivos escaneados" solo tenía un botón de
+compartir, y pidió agregarle las mismas opciones que ya tienen las filas
+de Biblioteca/Recientes; (2) al escanear y generar un PDF sí quedaba en
+la lista, pero al exportar como JPG no aparecía ahí. Investigado antes de
+tocar código: con 2+ páginas, exportar a JPG/WebP arma un lote (`isBatch`
+en `ConverterViewModel.convert()`, ya existía desde antes para el
+Convertidor) que termina en `BatchConversionSuccess` -- una UI aparte,
+reutilizada tal cual del Convertidor, que nunca se conectó a
+`ScanSessionManager` cuando se adaptó el Escáner. Con una sola página no
+pasaba (el PDF de una sola página tampoco es "lote", así que ambos casos
+coincidían por casualidad en pruebas anteriores).
+
+**Implementado**:
+- `ScanSessionManager` ahora inyecta `FavoritesRepository`,
+  `DocumentRepository` y `TrashRepository` -- las mismas tres que ya usa
+  `LibraryViewModel` -- y expone `List<DocumentUiModel>` en vez de
+  `List<File>`, con `toggleFavorite()`/`renameDocument()`/
+  `deleteDocument()` que delegan en esas mismas clases (favorito
+  persistido en SharedPreferences, "renombrar" hace `File.renameTo()`
+  real, "eliminar" mueve a la papelera real vía `TrashRepository.
+  moveToTrash()` -- no borra el archivo directo, mismo criterio que
+  Biblioteca/RF-VIS-07). `ScanSessionViewModel` expone esos tres métodos
+  envueltos en `viewModelScope.launch`.
+- `ScanResultScreen.kt`: cada fila de "Archivos escaneados" pasó de una
+  fila propia con un solo ícono de compartir a reutilizar el mismo
+  `DocuSmartDocumentItem` (+ `RenameDocumentDialog`) que ya usan
+  `DocumentListSection`/`FavoritesSection` de Biblioteca -- mismo menú
+  "⋮" completo: Abrir, Agregar a favoritos, Renombrar, Convertir, Crear
+  QR, Compartir, Eliminar. Como el documento generado por el Escáner
+  siempre vive en el propio proceso de la app (nunca llega a Biblioteca
+  a menos que el usuario lo guarde en Descargas por separado), "Abrir"/
+  "Convertir"/"Crear QR" necesitaron 3 callbacks nuevos
+  (`onOpenDocument`, `onConvertDocument`, `onCreateQrFromDocument`)
+  enhebrados desde `DocuSmartNavGraph.kt` con el mismo mecanismo ya
+  usado para Home/Biblioteca (`navigateToConvert()`/
+  `navigateToQrCreator()`, ya existentes; `Viewer.createRoute()` para
+  abrir).
+- Bug real del lote (JPG/WebP con 2+ páginas): se reordenó la prioridad
+  de ramas en `scanResultContent()` para que la sesión finalizada tenga
+  prioridad sobre `BatchConversionSuccess` (antes iba primero y nunca
+  dejaba pasar a la vista de sesión), y se agregó
+  `ScanBatchSessionSync()` -- al confirmar "Guardar todas en Descargas"
+  del lote, cada archivo exitoso se agrega a la misma sesión y se
+  finaliza igual que el flujo de PDF de un solo archivo. Con esto, PDF
+  y JPG/WebP (una o varias páginas) terminan siempre en la misma lista.
+- Refactor por detekt (`LongMethod`, `ScanResultScreen` volvió a superar
+  el límite dos veces sumando todo esto): se extrajo
+  `ScanResultBody()` (el `Box`+`LazyColumn` visual, separado del armado
+  de los 5 grupos de argumentos) y `ScanSessionRowActions` (data class
+  con las 6 acciones de fila, para no superar el límite de 8 parámetros
+  de `ScanSessionDisplayArgs`).
+- Título de la sección acortado de "Archivos escaneados en esta sesión"
+  a "Archivos escaneados" (pedido explícito del usuario), actualizado en
+  los 10 idiomas soportados.
+
+**Verificado en dispositivo real** (Moto E22, cámara tapada -- sin
+contenido real): escaneadas 2 páginas en una sola sesión de la cámara
+(botón "+" de agregar página del propio ML Kit, sin salir del escáner),
+exportadas como JPG -- las 2 aparecieron en `BatchConversionSuccess`
+("2 de 2 archivos convertidos"); al tocar "Guardar todas en Descargas",
+la vista cambió a "Archivos escaneados" con ambos JPG en la misma lista
+(miniatura real, corazón de favorito, menú "⋮"), confirmando el fix del
+bug de unificación. Sobre esa lista: "Renombrar" cambió el nombre del
+archivo y se reflejó de inmediato en la fila; el corazón de favorito
+alternó a rojo/relleno correctamente; "Eliminar" quitó el archivo de la
+lista al instante (movido a la papelera real, no solo ocultado); "Convertir"
+navegó al Convertidor ya filtrado en categoría "Imagen" (mismo mecanismo
+que Biblioteca). Gauntlet en verde: `compileDebugKotlin` + `detekt` +
+`lintDebug` + `testDebugUnitTest`. Se identificaron y se dejaron
+intactos 4 archivos de prueba del propio usuario ya presentes en
+Descargas (de una sesión de pruebas manual anterior, con timestamps
+distintos a los generados en esta verificación); solo se eliminaron los
+2 archivos JPG creados durante esta verificación puntual, y se reinició
+el contador de conversiones diarias a 0 (quedó en 2/5 por las pruebas).
+
+### Tercer seguimiento (mismo día): bug real de "Escala" + límite diario de escaneos guardados + ampliar páginas por documento (2026-09-06)
+
+El usuario reportó un tercer bug real y pidió dos mejoras nuevas, con
+dudas genuinas que se resolvieron por chat antes de tocar código (ver
+preguntas y respuestas más abajo).
+
+**Bug real: "Escala" no hacía nada visible.** Investigado antes de
+corregir: el bake final sí reducía la imagen (`ScanImageEditor.
+scaleBitmap()` ya funcionaba), pero la vista previa en vivo del diálogo
+de edición solo aplicaba el `colorFilter` de brillo/contraste -- nunca
+redimensionaba el `AsyncImage` según el porcentaje elegido, así que
+mover los chips de Escala no mostraba ningún cambio en pantalla. De
+paso se encontró una segunda inconsistencia: esos mismos chips
+mostraban "+100%/+75%/+50%/+25%" con un "+" que no corresponde (son
+porcentajes absolutos de tamaño, no un offset desde un punto neutro
+como brillo/contraste).
+
+**Implementado**: el `AsyncImage` de la vista previa ahora usa
+`Modifier.fillMaxWidth(scalePercent / 100f).fillMaxHeight(scalePercent
+/ 100f)` dentro del `Box` centrado, así que 25% se ve visiblemente como
+una cuarta parte del tamaño, en vivo. Los chips de Escala perdieron el
+prefijo "+" (ahora "100%"/"75%"/"50%"/"25%").
+
+**Verificado en dispositivo real**: al elegir 25% en el editor, la
+vista previa se encogió visiblemente al instante (antes no cambiaba en
+absoluto).
+
+**Preguntas resueltas antes de implementar las dos mejoras nuevas**
+(el usuario pidió un límite diario de "8 escaneos guardados" con
+anuncio/Premium al agotarse, y preguntó si el tope de 10 páginas por
+documento se podía ampliar, con la misma idea de anuncio/Premium por
+página extra):
+1. El tope de 10 páginas SÍ es ampliable (es un valor propio de
+   DocuSmart, `setPageLimit(10)` en `DocumentScannerLauncher.kt`, no un
+   límite de Google) -- pero la pantalla de captura en sí (cámara,
+   botón "+" de ML Kit) es la Activity propia de Play Services, fuera
+   del control de DocuSmart: no se puede mostrar ahí un diálogo de "ver
+   anuncio" a mitad del escaneo. El usuario eligió la opción propuesta:
+   mantener el escaneo inicial topado en 10 (sin cambios ahí) y agregar
+   un botón "Agregar página" en `ScanResultScreen` que lanza una
+   mini-sesión de ML Kit de 1 sola página y la suma al documento actual
+   -- gratis bajo 10, con anuncio/Premium a partir de ahí.
+2. El límite de "8 escaneos guardados/día" es un contador **nuevo e
+   independiente** del de "5 conversiones/día" que ya existía --
+   agotar uno no afecta al otro.
+3. Ese contador se consume al tocar "Guardar en Descargas" **o**
+   "Compartir" (lo que pase primero), no al generar el archivo.
+
+**Implementado -- límite de escaneos guardados**:
+- `DailyLimitManager`: nuevo `LIMIT_SCANS_SAVED = 8` con su propio par
+  de claves (`count_scans_saved`/`extra_scans_saved`), y
+  `canSaveScan()`/`registerScanSaved()`/`addRewardedScanSave()`/
+  `getScanSavedCount()`/`getScanSavedLimit()` -- mismo patrón exacto
+  que ya usan conversiones y herramientas PDF, pero un contador
+  totalmente aparte.
+- `ScanSessionViewModel`: ahora también inyecta `DailyLimitManager` y
+  `AdManager`, expone `ScanSaveLimitUiState` (contador + diálogo) y
+  `requestScanSaveSlot()` (revisa el límite, muestra el diálogo si no
+  queda cupo, Premium nunca se bloquea), `registerScanSaved()`,
+  `watchAdForScanSave()`.
+- `ScanResultScreen.kt`: `onRequestSaveSlot` nuevo en
+  `ScanResultActionsCallbacks`, revisado al inicio de los `onClick` de
+  "Guardar en Descargas" y "Compartir" (y también antes de "Guardar
+  todas en Descargas" del lote de imágenes) -- si no hay cupo, no
+  procede y se muestra `ScanSaveLimitDialog` (reutiliza el mismo
+  `DailyLimitDialog` compartido, con la etiqueta "escaneos guardados"
+  en vez de "conversiones").
+
+**Implementado -- "Agregar página"**:
+- `DocumentScannerLauncher.kt`: `launchDocumentScanner()` ahora recibe
+  `pageLimit: Int = SCAN_DEFAULT_PAGE_LIMIT` (10) en vez de tenerlo
+  hardcodeado -- el escaneo inicial de `ScannerScreen` sigue igual por
+  el valor por defecto.
+- `ScanResultScreen.kt`: nuevo `rememberAddPageLauncher()` (mismo
+  mecanismo de `ActivityResultContracts.StartIntentSenderForResult()`
+  que ya usa `ScannerScreen`) lanzando una mini-sesión con
+  `pageLimit = 1`, cuyo resultado se agrega a `editableUris`. Nueva
+  sección `ScanAddPageSection`: texto "X de 10 páginas" + botón
+  "Agregar página" -- gratis si `pageCount < 10` o Premium; si no,
+  abre `ScanPageLimitDialog` (diálogo propio, no reutiliza
+  `DailyLimitDialog` porque este límite es por documento, no diario --
+  "se reinicia mañana" sería incorrecto acá) ofreciendo ver anuncio
+  (+1 página) o Premium (sin límite). Cada página extra exige ver el
+  anuncio de nuevo (no es un desbloqueo permanente).
+- Refactor por detekt (`LongMethod`, `ScanResultScreen` volvió a rozar
+  el límite): se extrajo `ScanResultSideEffects()` (agrupa los 4
+  diálogos/sincronizaciones de la pantalla en una sola función,
+  bundleando los 3 ViewModels en `ScanResultViewModels` y los
+  callbacks de mutación en `ScanResultEffectCallbacks` para no superar
+  el límite de 8 parámetros) y `buildScanAddPageArgs()`.
+
+**Verificado en dispositivo real** (Moto E22, cámara tapada -- sin
+contenido real): escaneada 1 página, "1 de 10 páginas" visible con el
+botón "Agregar página" en acento; al tocarlo se abrió una nueva
+mini-sesión de ML Kit (sin el botón "+" de ML Kit, confirmando
+`pageLimit = 1`); tras aplicar y confirmar, la página se sumó al
+documento ("2 de 10 páginas", 2 miniaturas en Vista previa). Para el
+límite de escaneos guardados: con el contador forzado a 8/8 (vía
+SharedPreferences, simulando un día ya agotado), "Guardar en
+Descargas" mostró correctamente "Has usado 8 de 8 escaneos guardados
+de hoy" sin guardar nada; con el contador en 0, "Guardar" funcionó con
+normalidad y el contador subió a 1 (confirmado leyendo
+`docusmart_daily_limits.xml` directamente), sin tocar el contador de
+conversiones (quedó en 2, de generar los PDFs de prueba, contadores
+verificados como independientes). **No verificado**: el bypass real de
+Premium en ambos límites nuevos (misma limitación ya conocida de
+sesiones anteriores -- no se puede simular una compra Premium genuina
+en este entorno; la lógica del `if (adManager.isPremium.value) ...`
+sigue el mismo patrón ya usado y probado para el límite de
+conversiones). Gauntlet en verde: `compileDebugKotlin` + `detekt` +
+`lintDebug` + `testDebugUnitTest`. Se eliminó el único archivo de
+prueba propio guardado en Descargas durante esta verificación (se
+respetaron 4 archivos de prueba del usuario ya presentes, de sesiones
+manuales anteriores) y se reiniciaron ambos contadores nuevos a un
+estado limpio al terminar.
+
+### Revisión final antes de fusionar (mismo día): "Volver al inicio" faltante en 2 ramas + flecha "Volver" fuera del banner (2026-09-06)
+
+Antes de aprobar la fusión de todo lo anterior, el usuario pidió una
+revisión final con dos pedidos: (1) confirmar que todas las vistas del
+flujo del Escáner tengan una salida directa a Inicio, y (2) sacar la
+flecha "Volver" de dentro del banner degradado y dejarla debajo.
+
+**Bug real encontrado en el punto (1)**: revisando las 4 ramas de
+`ScanResultScreen` (antes de generar, con resultado ya generado, lote
+de imágenes, sesión finalizada), dos de las cuatro NO tenían
+"Volver al inicio":
+- La rama inicial (antes de tocar "Generar") solo ofrecía "Generar
+  X"/"Escanear de nuevo" -- la única salida era el "Volver" del banner,
+  que no lleva a Inicio sino de vuelta al Escáner (que reabre la
+  cámara de inmediato).
+- El resultado de lote (`BatchConversionSuccess`, componente
+  compartido con el Convertidor) solo ofrecía "Guardar todas"/
+  "Convertir otro". Ahí no importaba en el Convertidor porque esa
+  pantalla conserva la barra de navegación inferior (salida
+  alternativa siempre visible), pero el Escáner no tiene esa barra en
+  ninguna de sus pantallas -- para el Escáner era un callejón sin
+  salida real.
+
+De paso, revisando el porqué, se encontró un tercer bug real: el
+"Volver al inicio" que sí existía en la rama de "resultado ya
+generado, sin guardar" limpiaba `ConverterViewModel` pero nunca
+`ScanSessionManager` (el `@Singleton` que guarda la lista de archivos
+de la sesión) -- como ese singleton no se destruye al salir de la
+pantalla, la próxima vez que el usuario entrara a escanear (una sesión
+nueva, sin relación con la anterior) se encontraría con archivos
+"fantasma" de la sesión abandonada mezclados con los nuevos.
+
+**Implementado**:
+- Nuevo `goHomeAction` compartido en `ScanResultScreen` (limpia
+  `ScanSessionManager` + `ConverterViewModel` + navega a Inicio) --
+  reemplaza las 3 implementaciones de "Volver al inicio" que antes
+  variaban entre sí (dos de ellas no limpiaban la sesión).
+- Rama inicial (antes de generar): nuevo `TextButton` "Volver al
+  inicio" debajo de "Generar"/"Escanear de nuevo".
+- Resultado de lote: nuevo `TextButton` "Volver al inicio" debajo de
+  `BatchConversionSuccess` (agregado en `ScanResultScreen`, sin tocar
+  el componente compartido -- ahí el Convertidor no lo necesita por la
+  barra inferior).
+
+**Implementado -- banner**: `DocuSmartTopBanner.kt` (componente
+compartido por ~10 pantallas: Convertidor, Biblioteca, Papelera,
+Herramientas PDF, Escáner, Seguridad x3, Ajustes) reestructurado de
+`Box(degradado) { Column { Volver; contenido } }` a
+`Column { Box(degradado) { contenido }; Volver }` -- la fila "Volver"
+(flecha + texto) queda ahora debajo del recuadro con color, ya no dentro
+de él. Como el fondo de esa zona pasa a ser el normal de la pantalla
+(no el degradado), el texto/ícono blanco fijo se cambió a
+`MaterialTheme.colorScheme.primary` (color de acento) para que siga
+siendo legible. Este cambio es global -- se aplicó al componente
+compartido, no una versión aparte para el Escáner, ya que no tendría
+sentido que esa flecha se viera distinta entre pantallas.
+
+**Verificado en dispositivo real**: en Seguridad y en el Escáner, el
+banner se ve limpio (logo + título + subtítulo) y "← Volver" aparece
+debajo, en rosa (acento activo), sobre el fondo normal de la pantalla.
+En el Escáner: "Volver al inicio" ahora visible en la rama inicial
+(antes de generar) y en el resultado de lote (2 páginas exportadas
+como JPG, "2 de 2 archivos convertidos"); al tocarlo desde el lote,
+navegó correctamente a Inicio. Gauntlet en verde: `compileDebugKotlin`
++ `detekt` + `lintDebug` + `testDebugUnitTest`. No se generaron
+archivos nuevos en Descargas durante esta verificación puntual (se
+tocó "Volver al inicio" antes de guardar nada); se reinició el
+contador de conversiones a 0 (subió a 4 por las pruebas).
+
 ---
 
 ## 9. Inventario de pantallas (fuente: Contenido, vistas y herramientas)

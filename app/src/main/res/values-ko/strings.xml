@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">프리미엄으로 업그레이드 → 한도 없음</string>
     <string name="pdf_tools_daily_limit_label">이 도구의 사용 횟수</string>
     <string name="converter_daily_limit_label">변환</string>
+    <string name="scan_daily_save_limit_label">저장한 스캔</string>
 
     <!-- ── PDF 도구: 메인 화면 및 결과 카드 ── -->
     <string name="pdf_tools_back_to_tools">도구로 돌아가기</string>
@@ -645,13 +646,19 @@
     <string name="scan_result_high_res_title">고해상도</string>
     <string name="scan_result_high_res_desc">더 선명한 PDF, 인쇄나 보관에 적합</string>
     <string name="scan_result_high_res_premium_content_desc">프리미엄 기능</string>
+    <string name="scan_session_title">스캔한 파일</string>
+    <string name="scan_session_scan_another">다른 문서 스캔</string>
     <string name="scan_result_default_name_prefix">스캔_%1$s</string>
     <string name="scan_edit_page_content_desc">페이지 %1$d 편집</string>
     <string name="scan_edit_title">페이지 편집</string>
-    <string name="scan_edit_brightness">밝기: %1$d</string>
-    <string name="scan_edit_contrast">대비: %1$d</string>
+    <string name="scan_edit_brightness">밝기: %1$d%%</string>
+    <string name="scan_edit_contrast">대비: %1$d%%</string>
     <string name="scan_edit_scale">크기 조절</string>
     <string name="scan_edit_apply">적용</string>
+    <string name="scan_page_count">%2$d페이지 중 %1$d페이지</string>
+    <string name="scan_add_page">페이지 추가</string>
+    <string name="scan_page_limit_title">페이지 한도 도달</string>
+    <string name="scan_page_limit_body">이 문서에는 이미 %2$d페이지 중 %1$d페이지가 있습니다. 동영상을 보고 페이지를 추가하거나 프리미엄으로 한도 없이 이용하세요.</string>
     <string name="security_file_protected_original_kept">파일이 보호되었습니다. 원본 파일을 원래 위치에서 삭제할 수 없었습니다 — 완전히 제거하려면 직접 삭제하세요.</string>
     <string name="qr_protected_title">보호된 QR 코드</string>
     <string name="qr_protected_desc">이 콘텐츠는 비밀번호로 보호되어 있습니다. 확인하려면 비밀번호를 입력하세요.</string>

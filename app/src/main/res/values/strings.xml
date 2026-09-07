@@ -206,6 +206,7 @@
     <string name="daily_limit_get_premium">Obtener Premium → sin límites</string>
     <string name="pdf_tools_daily_limit_label">usos de esta herramienta</string>
     <string name="converter_daily_limit_label">conversiones</string>
+    <string name="scan_daily_save_limit_label">escaneos guardados</string>
 
     <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
     <string name="pdf_tools_back_to_tools">Volver a herramientas</string>
@@ -646,12 +647,18 @@
     <string name="scan_result_high_res_title">Alta resolución</string>
     <string name="scan_result_high_res_desc">PDF más nítido, ideal para imprimir o archivar</string>
     <string name="scan_result_high_res_premium_content_desc">Función Premium</string>
+    <string name="scan_session_title">Archivos escaneados</string>
+    <string name="scan_session_scan_another">Escanear otro documento</string>
     <string name="scan_edit_page_content_desc">Editar página %1$d</string>
     <string name="scan_edit_title">Editar página</string>
-    <string name="scan_edit_brightness">Brillo: %1$d</string>
-    <string name="scan_edit_contrast">Contraste: %1$d</string>
+    <string name="scan_edit_brightness">Brillo: %1$d%%</string>
+    <string name="scan_edit_contrast">Contraste: %1$d%%</string>
     <string name="scan_edit_scale">Escala</string>
     <string name="scan_edit_apply">Aplicar</string>
+    <string name="scan_page_count">%1$d de %2$d páginas</string>
+    <string name="scan_add_page">Agregar página</string>
+    <string name="scan_page_limit_title">Límite de páginas alcanzado</string>
+    <string name="scan_page_limit_body">Este documento ya tiene %1$d de %2$d páginas. Mira un video para agregar una página más, o pasa a Premium para no tener límite.</string>
     <string name="security_file_protected_original_kept">Archivo protegido. No se pudo eliminar el original de su ubicación — bórralo manualmente si quieres quitarlo por completo.</string>
     <string name="qr_protected_title">Código QR protegido</string>
     <string name="qr_protected_desc">Este contenido está protegido con contraseña. Ingrésala para verlo.</string>
