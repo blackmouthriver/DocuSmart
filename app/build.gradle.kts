@@ -345,7 +345,7 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
 
     // ── Guava ─────────────────────────────────────────────────────────────────
-    implementation("com.google.guava:guava:32.1.3-android")
+    implementation("com.google.guava:guava:33.7.1-android")
 
     // ── Biometría ─────────────────────────────────────────────────────────────
     implementation("androidx.biometric:biometric:1.1.0")
