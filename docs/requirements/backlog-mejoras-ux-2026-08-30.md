@@ -2892,5 +2892,195 @@ subtítulo ya es una sola línea centrada; en Convertidor, igual,
 centrado como el título. Gauntlet en verde: `compileDebugKotlin` +
 `detekt` + `lintDebug` + `testDebugUnitTest`.
 
+**Fusionado y subido a `main`** con aprobación explícita del usuario
+(commit `e37a3a8`).
+
+## 31. Modo Estudio — Lectura solo PDF, "Leer todo" corregido, PDF visible al leer, acento y contraste
+
+El usuario pidió arreglar Lectura antes de construir una nueva función
+de resumen automático (pendiente, ver abajo): solo PDF (Word daba
+problemas), arreglar "Leer todo" (no funcionaba), mostrar el PDF real
+mientras la voz lee (no los párrafos extraídos), color de acento en
+Lectura/Notas/Pomodoro, y contraste en el encabezado y las pestañas.
+
+**Bug real — "Leer todo"**: unía todos los párrafos en un solo string y
+hacía una única llamada a `TextToSpeech.speak()` -- Android limita cada
+llamada a ~4000 caracteres, así que con cualquier documento largo (PDF
+real de 55 páginas usado para probar) fallaba en silencio. Corregido
+encolando un párrafo por llamada (`QUEUE_FLUSH` + `QUEUE_ADD`).
+
+**Implementado**:
+- Selector de archivo restringido a `application/pdf`; eliminado todo
+  el código de extracción de Word/PPT/texto plano y sus tests, ya sin
+  uso.
+- `core/pdf/PdfPageBitmap.kt` (nuevo): renderizador de páginas a bitmap
+  extraído de `ViewerScreen.kt` al necesitarse también en Estudio --
+  ahora compartido entre el Visor y Estudio.
+- `StudyPdfViewer` (nuevo): Lectura muestra el PDF real (con zoom/pan)
+  en vez de la lista de párrafos -- el texto extraído sigue existiendo
+  por debajo solo para alimentar la voz. "Marcar" pasa a resaltar el
+  párrafo que se está leyendo en ese momento (ya no hay filas de
+  párrafo que tocar), sigue alimentando "Párrafos resaltados" en Notas.
+- Color de acento: `DocuBlue` (fijo) en usos de marca/estado activo
+  (párrafo en lectura, Pomodoro "en foco") pasa al acento elegido;
+  `WarningAmber`/`SuccessGreen` (resaltado / "en descanso") quedan
+  fijos por su significado, mismo criterio que error/éxito/advertencia
+  en el resto de la app.
+- Encabezado: reemplazado el `TopAppBar` plano (única pantalla sin el
+  banner degradado) por el `DocuSmartTopBanner` compartido -- de paso
+  se corrigió el mismo bug de inset superior duplicado ya arreglado en
+  Convertidor/Herramientas PDF.
+
+**Verificado en dispositivo real** (Motorola Edge 30 Neo, ZY22G7SB77)
+con un PDF real de 55 páginas: selector de archivos con Word/Excel/
+PowerPoint deshabilitados; PDF real visible (portada/contraportada, no
+párrafos); "Leer todo" funciona de verdad con este mismo archivo que
+antes fallaba en silencio; marcar mientras lee aparece en Notas;
+Pomodoro y encabezado con el color de acento y contraste correctos.
+Gauntlet en verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`.
+
+**Pendiente, a pedido explícito del usuario**: función de resumen
+automático del PDF -- elegido 100% local (extracción de frases clave,
+sin nube) para no romper la promesa de la política de privacidad ni
+sumar costo por uso. No implementada todavía.
+
+### Seguimiento (mismo día): anuncio arriba, íconos fuera del degradado, pestañas con acento
+
+Confirmado el rediseño anterior, 3 ajustes más antes de fusionar: subir
+el anuncio (quedaba debajo de las pestañas) a la parte superior, sacar
+los íconos de abrir documento/estadísticas de dentro del degradado
+azul y ponerlos a la altura de "Volver", y que las pestañas no queden
+blancas planas sino también afectadas por el acento (cuidando el
+contraste del texto).
+
+**Implementado**: banner de título + fila "Volver"/íconos ahora dentro
+de `DocuSmartScreenHeader` (mismo componente que Inicio/Biblioteca/
+Convertidor/Herramientas PDF) -- el anuncio queda arriba del todo.
+`DocuSmartTopBanner` se llama sin `onBack`/`actions`; la fila "Volver" +
+íconos se arma a mano en `StudyScreen.kt` (específico de Estudio, no se
+tocó el componente compartido). `TabRow` pasa de `colorScheme.surface`
+a `colorScheme.primaryContainer.copy(alpha=0.35f)` (mismo mecanismo que
+`AccentGradient.kt` para tintar con el acento), con
+`selectedContentColor`/`unselectedContentColor` explícitos para mantener
+contraste.
+
+**Verificado en dispositivo real** (Motorola Edge 30 Neo, ZY22G7SB77):
+anuncio arriba del todo, íconos a la altura de "Volver" (ya no sobre el
+degradado), pestañas con fondo celeste tintado y buen contraste de
+texto. Gauntlet en verde: `compileDebugKotlin` + `detekt` + `lintDebug`
++ `testDebugUnitTest`.
+
+## 32. Modo Estudio — Resumen automático 100% local + mensajes de progreso
+
+Última parte pendiente de Modo Estudio: resumen automático del PDF,
+100% local (sin IA en la nube, condición explícita del usuario ya
+acordada) para no romper la política de privacidad ni sumar costo.
+
+**Implementado**:
+- `TextSummarizer.kt`: algoritmo extractivo (variante de Luhn) --
+  puntúa oraciones por frecuencia de palabras significativas
+  (español+inglés) y devuelve las mejor puntuadas en orden original. 5
+  tests, encontraron un bug real (`coerceIn` con rango inválido si
+  `maxSentences` < mínimo garantizado).
+- Nueva 4ta pestaña "Resumen" (reusa el `documentText` de Lectura, no
+  vuelve a pedir el PDF). `StudySummaryExporter.kt` + guardar en
+  Descargas (MediaStore) y compartir (`FileProvider`), mismos patrones
+  ya usados en el resto de la app.
+- `ScrollableTabRow` en vez de `TabRow`: con 4 pestañas, "Pomodoro" se
+  partía en 2 líneas con ancho fijo -- corregido de paso.
+
+**Seguimiento mismo día -- mensajes de progreso**: cargar un PDF real
+de 55 páginas tarda ~2 minutos; un spinner sin texto parecía la app
+colgada. Se agregó `LoadingIndicator` compartido (mensaje + spinner)
+para la carga del documento y la generación del resumen. Iteración
+adicional: el spinner lleva ahora el logo de DocuSmart sobre un círculo
+tintado (rodeado por el `CircularProgressIndicator` real de Compose,
+grosor 5dp) en vez de un spinner genérico solo. Nota: una captura de
+pantalla de un spinner indeterminado solo muestra un arco en un punto
+de su rotación (se ve como un punto) -- en vivo gira de forma continua;
+confirmación final pendiente del usuario mirando el dispositivo.
+
+**Verificado en dispositivo real** (Motorola Edge 30 Neo, ZY22G7SB77)
+con el PDF real de 55 páginas: mensajes de carga visibles, resumen se
+genera y muestra como lista, guardar/compartir funcionan. Gauntlet en
+verde: `compileDebugKotlin` + `detekt` + `lintDebug` +
+`testDebugUnitTest`.
+
+### Seguimiento (mismo día): confirmación del spinner + borde/fondo en los íconos de "Volver"
+
+El primer dispositivo de prueba tenía las animaciones del sistema
+desactivadas (Opciones de desarrollador), por eso no se percibía el
+giro del spinner -- no era un bug. Confirmado en un segundo dispositivo
+(Moto E22, ZY32HFP5QL, animaciones activas): 2 capturas seguidas
+muestran el arco en posiciones distintas, girando con normalidad.
+
+De paso: los íconos de abrir documento/estadísticas (junto a "Volver")
+ahora tienen su propio círculo -- borde (acento 40% opacidad) y fondo
+tintado (acento 10% opacidad), mismo criterio ya usado en el resto de
+la app de no dejar un ícono solo sobre fondo plano.
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL): spinner
+girando confirmado con 2 capturas consecutivas; íconos con borde/fondo
+correctos. Gauntlet en verde: `compileDebugKotlin` + `detekt` +
+`lintDebug` + `testDebugUnitTest`.
+
+Ajuste puntual mismo día: los 2 íconos quedaban muy pegados -- espacio
+entre ambos sube de 8dp a 16dp. Verificado en el mismo Moto E22.
+
+## 33. Modo Estudio — "Retomar lectura" con progreso guardado, extracción incremental del PDF y opción de quitar de la lista
+
+Pedido explícito del usuario: al detener la lectura en voz alta de un
+PDF largo y cerrar la app, antes tocaba volver a empezar desde el
+principio. Se agregó `StudyReadingProgressStorage` (SharedPreferences +
+JSON, mismo patrón que Notas/Estadísticas): guarda por URI el párrafo
+donde quedó la lectura, página actual/total y nombre del documento
+(hasta 10, el más viejo libera su permiso persistente). "Leer todo"
+ahora retoma desde ahí en vez de reiniciar, y una tarjeta "Continuar
+leyendo" en el estado vacío de Lectura permite reabrir cualquiera de
+esos documentos.
+
+**Seguimiento, pedido explícito del usuario**: además de retomar,
+poder **quitar un PDF de esa lista** (sin borrar el archivo real) --
+ícono de basura en cada tarjeta, quita la entrada al instante.
+
+**Seguimiento, pedido explícito del usuario**: en un dispositivo más
+lento (Moto E22) la extracción del mismo PDF tardaba notablemente más
+que en otro -- preguntó si se podía procesar en segundo plano y
+empezar a leer con solo una parte ya lista. `extractPdfText` ahora
+avisa (`onPageExtracted`) después de CADA página en vez de esperar el
+documento completo: el spinner desaparece y "Leer todo" queda
+disponible con la primera página lista, mientras el resto se sigue
+procesando de fondo (barra de estado: "Procesando el resto del
+documento… (N páginas listas)"). Si la lectura alcanza el último
+párrafo ya extraído antes de que termine todo, no se corta -- espera y
+retoma sola en cuanto llegan más párrafos.
+
+**Bug real encontrado y corregido en la verificación**: el selector de
+documentos usaba `GetContent()` (ACTION_GET_CONTENT), cuyo permiso
+persistente NO sobrevive un reinicio de la app pese a no lanzar
+excepción al pedirlo -- solo `OpenDocument()` (ACTION_OPEN_DOCUMENT) lo
+soporta de verdad. Efecto real: "Continuar leyendo" fallaba en
+silencio tras cerrar la app (`SecurityException` del
+`DownloadStorageProvider` tanto en la extracción de texto como en el
+visor de PDF), y como la app leía en voz alta el mensaje de error como
+si fuera el documento, el progreso guardado terminaba borrándose solo
+al "terminar" esa lectura. Corregido cambiando el selector a
+`OpenDocument()` (mismo selector del sistema, sin cambio visible). De
+paso se corrigió que el nombre del documento guardado en el progreso
+quedaba en un valor genérico ("Sin documento"/"Documento") porque solo
+se fijaba al terminar TODA la extracción -- ahora se resuelve aparte y
+de una vez, sin esperar el texto.
+
+**Verificado en dispositivo real** (Moto E22, ZY32HFP5QL, con "It -
+Stephen King.pdf"): extracción incremental confirmada (lectura arranca
+y sigue sin cortes mientras el resto se extrae de fondo); ciclo
+completo detener → cerrar app → reabrir → "Continuar leyendo" con el
+nombre real → retoma la lectura real, sin `SecurityException` en
+logcat; botón "Quitar de la lista" confirmado (tarjeta desaparece al
+instante, JSON persistido queda vacío). Gauntlet en verde:
+`compileDebugKotlin` + `detekt` + `lintDebug` + `testDebugUnitTest`.
+
 **Pendiente**: aprobación explícita del usuario para fusionar y subir
-este cambio a `main` (no fusionado todavía).
+todo lo anterior (Lectura, Resumen, header/contraste/íconos y
+"Retomar lectura") a `main` (no fusionado todavía).

@@ -10,9 +10,12 @@ import org.junit.jupiter.api.Test
  * líneas visuales se leía en voz alta como 2-3 "párrafos" cortados a mitad
  * de frase. `groupPdfChunksIntoParagraphs()` agrupa por el espaciado
  * vertical real entre líneas (misma heurística ya verificada en
- * PdfToWordUseCase/RF-CONV-09), y `parseWordParagraphsWithHeadings()`
- * agrega la misma detección de encabezado que ya tiene el Visor de Word
- * (antes Estudio no distinguía encabezados en absoluto).
+ * PdfToWordUseCase/RF-CONV-09).
+ *
+ * Los tests de `parseWordParagraphsWithHeadings()` se quitaron 2026-09-08
+ * junto con esa función -- Lectura pasó a aceptar solo PDF (pedido
+ * explícito del usuario: Word daba problemas con el parser propio de esta
+ * pantalla).
  */
 class StudyTextExtractionTest {
 
@@ -64,56 +67,5 @@ class StudyTextExtractionTest {
     @Test
     fun `sin fragmentos no hay parrafos`() {
         assertEquals(emptyList<String>(), groupPdfChunksIntoParagraphs(emptyList()))
-    }
-
-    // ── parseWordParagraphsWithHeadings ───────────────────────────────────
-
-    @Test
-    fun `detecta el indice de un parrafo con estilo de encabezado`() {
-        val xml = """
-            <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Titulo principal</w:t></w:r></w:p>
-            <w:p><w:r><w:t>Parrafo normal despues del titulo.</w:t></w:r></w:p>
-        """.trimIndent()
-
-        val (paragraphs, headingIndices) = parseWordParagraphsWithHeadings(xml)
-
-        assertEquals(2, paragraphs.size)
-        assertEquals(setOf(0), headingIndices)
-        assertEquals("Titulo principal", paragraphs[0])
-    }
-
-    @Test
-    fun `detecta encabezado con el identificador de estilo real que escribe Word en espanol`() {
-        // Bug real encontrado en dispositivo: Word en español escribe
-        // w:val="Ttulo1" (tilde quitada), no "Heading1" como se asumía.
-        val xml = """<w:p><w:pPr><w:pStyle w:val="Ttulo1"/></w:pPr><w:r><w:t>Titulo del documento</w:t></w:r></w:p>"""
-
-        val (paragraphs, headingIndices) = parseWordParagraphsWithHeadings(xml)
-
-        assertEquals(1, paragraphs.size)
-        assertEquals(setOf(0), headingIndices)
-    }
-
-    @Test
-    fun `parrafo sin estilo de encabezado no se marca como tal`() {
-        val xml = "<w:p><w:r><w:t>Solo texto normal, nada de encabezado.</w:t></w:r></w:p>"
-
-        val (paragraphs, headingIndices) = parseWordParagraphsWithHeadings(xml)
-
-        assertEquals(1, paragraphs.size)
-        assertTrue(headingIndices.isEmpty())
-    }
-
-    @Test
-    fun `parrafos muy cortos no cuentan para el indice de encabezados`() {
-        val xml = """
-            <w:p><w:r><w:t>Ok</w:t></w:r></w:p>
-            <w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>Titulo real</w:t></w:r></w:p>
-        """.trimIndent()
-
-        val (paragraphs, headingIndices) = parseWordParagraphsWithHeadings(xml)
-
-        assertEquals(1, paragraphs.size)
-        assertEquals(setOf(0), headingIndices)
     }
 }

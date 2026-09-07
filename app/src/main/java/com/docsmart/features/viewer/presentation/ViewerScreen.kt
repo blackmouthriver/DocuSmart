@@ -3,9 +3,7 @@ package com.docsmart.features.viewer.presentation
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.pdf.PdfRenderer
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.pdf.PdfPageBitmap
+import com.docsmart.core.pdf.renderPdfPagesToBitmaps
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.converter.domain.usecase.WordFileFormat
 import com.docsmart.features.converter.domain.usecase.detectWordFormat
@@ -78,7 +78,6 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
 import timber.log.Timber
-import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipInputStream
 
@@ -516,69 +515,6 @@ private fun PdfSearchResultBar(
             }
         }
     }
-}
-
-/** Página renderizada + su tamaño real en puntos PDF (RF-VIS-08: necesario
- *  para convertir la posición de una coincidencia de búsqueda a píxeles de
- *  pantalla y dibujar el resaltado sobre el bitmap ya renderizado). */
-private data class PdfPageBitmap(val bitmap: Bitmap, val pageWidthPts: Float, val pageHeightPts: Float)
-
-/** Copia el PDF de [uri] al caché de la app y renderiza cada página a un [Bitmap]. */
-private fun renderPdfPagesToBitmaps(uri: Uri, context: android.content.Context): List<PdfPageBitmap> {
-    val cacheFile = File(context.cacheDir, "preview_${System.currentTimeMillis()}.pdf")
-    if (!copyPdfUriToCache(uri, context, cacheFile)) {
-        Timber.e("PdfViewer: no se pudo copiar el PDF al caché")
-        return emptyList()
-    }
-    Timber.d("PdfViewer: cacheFile copiado → ${cacheFile.length()}b")
-    return renderCachedPdfPages(cacheFile)
-}
-
-private fun copyPdfUriToCache(uri: Uri, context: android.content.Context, cacheFile: File): Boolean =
-    if (uri.scheme == "file") copyFileSchemeToCache(uri, cacheFile)
-    else copyContentUriToCache(uri, context, cacheFile)
-
-private fun copyFileSchemeToCache(uri: Uri, cacheFile: File): Boolean {
-    val srcFile = uri.path?.let(::File)
-    Timber.d("PdfViewer: file:// path=${uri.path} existe=${srcFile?.exists()} size=${srcFile?.length()}")
-    val valid = srcFile != null && srcFile.exists() && srcFile.length() > 0
-    if (valid) {
-        java.io.FileInputStream(srcFile).use { input ->
-            cacheFile.outputStream().use { output -> input.copyTo(output) }
-        }
-    }
-    return valid
-}
-
-private fun copyContentUriToCache(uri: Uri, context: android.content.Context, cacheFile: File): Boolean = try {
-    context.contentResolver.openInputStream(uri)?.use { input ->
-        cacheFile.outputStream().use { output -> input.copyTo(output) }
-        true
-    } ?: false
-} catch (e: Exception) {
-    Timber.e("PdfViewer: error openInputStream → ${e.message}")
-    false
-}
-
-private fun renderCachedPdfPages(cacheFile: File): List<PdfPageBitmap> {
-    val fileDescriptor = ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY)
-    val pdfRenderer = PdfRenderer(fileDescriptor)
-    val pages       = mutableListOf<PdfPageBitmap>()
-
-    for (i in 0 until pdfRenderer.pageCount) {
-        val page   = pdfRenderer.openPage(i)
-        val bitmap = Bitmap.createBitmap(
-            page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888
-        )
-        bitmap.eraseColor(android.graphics.Color.WHITE)
-        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        pages.add(PdfPageBitmap(bitmap, page.width.toFloat(), page.height.toFloat()))
-        page.close()
-    }
-
-    pdfRenderer.close()
-    fileDescriptor.close()
-    return pages
 }
 
 // RF-VIS-08: color del resaltado de búsqueda -- amarillo semitransparente,

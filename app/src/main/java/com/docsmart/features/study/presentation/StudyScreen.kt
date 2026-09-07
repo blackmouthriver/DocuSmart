@@ -4,21 +4,29 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import androidx.annotation.RequiresApi
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,29 +35,44 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.analytics.DocuSmartAnalytics
+import com.docsmart.core.pdf.PdfPageBitmap
+import com.docsmart.core.pdf.renderPdfPagesToBitmaps
+import com.docsmart.core.ui.components.DocuSmartScreenHeader
+import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.features.study.domain.PomodoroEngine
 import com.docsmart.features.study.domain.SavedNote
 import com.docsmart.features.study.domain.StudyNotesExporter
+import com.docsmart.features.study.domain.ReadingProgress
 import com.docsmart.features.study.domain.StudyNotesStorage
+import com.docsmart.features.study.domain.StudyReadingProgressStorage
+import com.docsmart.features.study.domain.pageForParagraph
 import com.docsmart.features.study.domain.StudyStats
 import com.docsmart.features.study.domain.StudyStatsStorage
+import com.docsmart.features.study.domain.StudySummaryExporter
+import com.docsmart.features.study.domain.TextSummarizer
 import com.docsmart.features.study.domain.millisToHoursAndMinutes
 import com.docsmart.features.study.domain.pomodoroCountsByWeekday
-import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.core.ui.theme.rememberAccentGradient
@@ -70,7 +93,6 @@ import timber.log.Timber
 import java.io.File
 import java.util.Calendar
 import java.util.Locale
-import java.util.zip.ZipInputStream
 
 @Composable
 fun StudyScreen(
@@ -80,23 +102,42 @@ fun StudyScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     // ── Estado general ────────────────────────────────
-    var selectedTab by remember { mutableIntStateOf(initialTab.coerceIn(0, 2)) }
+    var selectedTab by remember { mutableIntStateOf(initialTab.coerceIn(0, 3)) }
+    // ── Resumen automático (2026-09-08, 100% local -- ver TextSummarizer) ──
+    var summarySentences by remember { mutableStateOf<List<String>?>(null) }
+    var isSummarizing by remember { mutableStateOf(false) }
+    // Pedido explícito del usuario 2026-09-08: Lectura pasa a aceptar solo
+    // PDF (antes "*/*" -- los documentos Word daban problemas con el parser
+    // propio de esta pantalla). `documentUri` es nuevo -- antes solo se
+    // guardaba el texto ya extraído, pero ahora también hace falta el PDF
+    // original para mostrarlo mientras la voz lee (ver StudyPdfViewer).
+    var documentUri by remember { mutableStateOf<Uri?>(null) }
     var documentText by remember { mutableStateOf<List<String>>(emptyList()) }
-    var documentHeadingIndices by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    // "Retomar lectura" (2026-09-08): límites de página del documento activo,
+    // para poder mostrar "página X de Y" y guardar el progreso por página.
+    var pageBoundaries by remember { mutableStateOf<List<Int>>(emptyList()) }
+    // Pedido explícito del usuario 2026-09-08: en un dispositivo más lento la
+    // extracción del PDF completo tardaba mucho más que en otro -- ahora
+    // `documentText`/`pageBoundaries` se actualizan página por página en vez
+    // de esperar a que termine todo el documento, y `extractionComplete`
+    // indica si aún queda procesamiento en segundo plano.
+    var extractionComplete by remember { mutableStateOf(true) }
     val noDocumentLabel = stringResource(R.string.study_no_document)
     var documentName by remember { mutableStateOf(noDocumentLabel) }
+    // Pedido explícito del usuario 2026-09-08: además de "Continuar leyendo",
+    // poder quitar un PDF de esa lista -- estado propio (no `remember` de una
+    // sola vez) para que la tarjeta desaparezca al tocar "Quitar" sin
+    // necesidad de salir y volver a entrar a la pestaña Lectura.
+    var readingHistory by remember { mutableStateOf(StudyReadingProgressStorage.loadAll(context)) }
 
     val extractionMessages = StudyExtractionMessages(
-        noTextFound          = stringResource(R.string.study_extract_no_text_found),
-        couldNotOpen          = stringResource(R.string.study_extract_could_not_open),
-        couldNotRead          = stringResource(R.string.study_extract_could_not_read),
-        pdfNoText             = stringResource(R.string.study_extract_pdf_no_text),
-        pdfErrorTemplate       = stringResource(R.string.study_extract_pdf_error),
-        genericErrorTemplate   = stringResource(R.string.study_extract_generic_error),
-        defaultDocumentName    = stringResource(R.string.study_default_document_name)
+        couldNotRead         = stringResource(R.string.study_extract_could_not_read),
+        pdfNoText            = stringResource(R.string.study_extract_pdf_no_text),
+        pdfErrorTemplate     = stringResource(R.string.study_extract_pdf_error),
+        genericErrorTemplate = stringResource(R.string.study_extract_generic_error),
+        defaultDocumentName  = stringResource(R.string.study_default_document_name)
     )
     var notes by remember { mutableStateOf("") }
     var highlights by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -107,6 +148,11 @@ fun StudyScreen(
     val isSpeaking = remember { mutableStateOf(false) }
     val ttsReady = remember { mutableStateOf(false) }
     val currentSpeakingIndex = remember { mutableIntStateOf(-1) }
+    // Ver comentario de `extractionComplete` -- si "Leer todo" alcanza el
+    // último párrafo ya extraído mientras el resto del PDF sigue procesándose
+    // en segundo plano, esto queda en true hasta que aparezcan más párrafos
+    // (o termine la extracción) en vez de dar la lectura por terminada.
+    val waitingForMoreText = remember { mutableStateOf(false) }
 
     // ── Pomodoro (RF-STU-10: vive en PomodoroEngine, no en remember{},
     // para que siga corriendo al salir de esta pantalla) ─────────────
@@ -166,6 +212,30 @@ fun StudyScreen(
         }
     }
 
+    // "Procesamiento incremental" (2026-09-08): cuando "Leer todo" alcanza el
+    // último párrafo ya extraído mientras el PDF seguía procesándose de
+    // fondo, `onDone` deja `waitingForMoreText` en true en vez de terminar la
+    // lectura. Este efecto se relanza cada vez que llega una página nueva (o
+    // termina la extracción) y retoma la cola apenas hay algo nuevo que leer.
+    LaunchedEffect(documentText.size, extractionComplete) {
+        if (!waitingForMoreText.value) return@LaunchedEffect
+        val tts = ttsRef.value ?: return@LaunchedEffect
+        val resumeFrom = currentSpeakingIndex.intValue + 1
+        val uriString = documentUri?.toString()
+        if (resumeFrom <= documentText.lastIndex) {
+            waitingForMoreText.value = false
+            for (idx in resumeFrom..documentText.lastIndex) {
+                tts.speak(documentText[idx], TextToSpeech.QUEUE_ADD, null, "study_all_$idx")
+            }
+        } else if (extractionComplete) {
+            // Terminó de extraer y no quedó nada más por leer.
+            waitingForMoreText.value = false
+            isSpeaking.value = false
+            currentSpeakingIndex.intValue = -1
+            if (uriString != null) StudyReadingProgressStorage.remove(context, uriString)
+        }
+    }
+
     // ── RF-STU-10: pide el permiso de notificaciones (Android 13+) al
     // entrar a la pestaña Pomodoro, para que la notificación de progreso en
     // segundo plano sea visible -- el timer en sí funciona igual sin el
@@ -178,51 +248,98 @@ fun StudyScreen(
         if (!granted) notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    // ── Selector de documento ─────────────────────────
+    // "Retomar lectura" (2026-09-08): carga un PDF y, si se le pasa un
+    // párrafo de retomo (viene de un progreso guardado), deja la lectura
+    // lista para continuar ahí en vez de desde el principio. Compartida
+    // entre el selector de documento normal y la lista "Continuar leyendo".
+    fun loadDocument(uri: Uri, resumeFromParagraph: Int?) {
+        isLoadingDoc = true
+        extractionComplete = false
+        documentUri  = uri
+        documentText = emptyList()
+        pageBoundaries = emptyList()
+        summarySentences = null // documento nuevo -- el resumen anterior ya no aplica
+        // Pedido explícito del usuario 2026-09-08: no esperar a que el PDF
+        // completo termine de procesarse para poder empezar a leer -- cada
+        // vez que una página nueva termina de extraerse (`onPageExtracted`)
+        // se refresca `documentText`/`pageBoundaries` y se apaga el spinner,
+        // así "Leer todo" queda disponible desde la primera página lista.
+        var resumeApplied = false
+        scope.launch {
+            // Bug real corregido 2026-09-08: `documentName` antes solo se
+            // fijaba al TERMINAR toda la extracción -- como ahora "Leer todo"
+            // puede arrancar mucho antes de eso, el progreso guardado
+            // (`StudyReadingProgressStorage`) quedaba con el nombre por
+            // defecto ("Sin documento") en vez del nombre real del PDF. Se
+            // resuelve aparte y de una vez, sin esperar el texto.
+            documentName = withContext(Dispatchers.IO) { resolveFileName(context, uri, extractionMessages) }
+            val result = extractTextFromUri(context, uri, extractionMessages) { partialParagraphs, partialBoundaries ->
+                // El callback llega desde Dispatchers.IO (extractPdfText corre
+                // ahí) -- se pasa a Main antes de tocar estado de Compose.
+                withContext(Dispatchers.Main) {
+                    documentText   = partialParagraphs
+                    pageBoundaries = partialBoundaries
+                    isLoadingDoc   = false
+                    if (!resumeApplied) {
+                        resumeApplied = true
+                        currentSpeakingIndex.intValue = resumeFromParagraph
+                            ?.coerceIn(0, (partialParagraphs.size - 1).coerceAtLeast(0))
+                            ?: -1
+                    }
+                }
+            }
+            documentText   = result.paragraphs
+            documentName   = result.fileName
+            pageBoundaries = result.pageBoundaries
+            if (!resumeApplied) {
+                currentSpeakingIndex.intValue = resumeFromParagraph
+                    ?.coerceIn(0, (result.paragraphs.size - 1).coerceAtLeast(0))
+                    ?: -1
+            }
+            isLoadingDoc = false
+            extractionComplete = true
+        }
+    }
+
+    // ── Selector de documento (solo PDF) ──────────────
+    // Bug real corregido 2026-09-08: con `GetContent()` (ACTION_GET_CONTENT)
+    // `takePersistableUriPermission` no lanzaba excepción pero el permiso NO
+    // quedaba realmente persistido -- solo `OpenDocument()`
+    // (ACTION_OPEN_DOCUMENT) lo soporta. Por eso "Continuar leyendo" fallaba
+    // en silencio después de cerrar la app: al reabrir, tanto la extracción
+    // de texto como el visor de PDF recibían SecurityException del
+    // DownloadStorageProvider al intentar leer el mismo URI.
     val docLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            isLoadingDoc = true
-            scope.launch {
-                val result = extractTextFromUri(context, uri, extractionMessages)
-                documentText = result.paragraphs
-                documentHeadingIndices = result.headingIndices
-                documentName = result.fileName
-                isLoadingDoc = false
+            @Suppress("TooGenericExceptionCaught")
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "No se pudo tomar permiso persistente sobre $uri")
             }
+            val saved = StudyReadingProgressStorage.findFor(context, uri.toString())
+            loadDocument(uri, resumeFromParagraph = saved?.paragraphIndex)
         }
     }
 
     Scaffold(
         // Fondo animado global (backlog UX 2026-09-06): transparente para
         // dejar ver la capa pintada una sola vez en MainActivity. Bug real
-        // encontrado 2026-09-06 ("línea blanca" reportada por el usuario,
-        // solo en pantallas con Scaffold propio): por defecto Scaffold
-        // reserva su propio inset de systemBars (incluida la barra de
-        // navegación real del sistema) EN ADICIÓN al que ya reserva el
-        // Scaffold principal de MainActivity para DocuSmartBottomBar --
-        // ese doble descuento dejaba una franja de fondo plano extra justo
-        // encima de la barra, en las pantallas con Scaffold propio (no en
-        // Home/Biblioteca, que no tienen su propio Scaffold). Se excluye
-        // el inset inferior acá porque ya lo maneja MainActivity una sola
-        // vez; se conserva el superior para no afectar la barra de arriba.
-        contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-        ),
-        containerColor = Color.Transparent,
-        topBar = {
-            StudyTopBar(
-                documentName = documentName,
-                onBack = {
-                    ttsRef.value?.stop()
-                    isSpeaking.value = false
-                    onBack()
-                },
-                onSelectDoc = { docLauncher.launch("*/*") },
-                onShowStats = { showStats = true }
-            )
-        }
+        // encontrado 2026-09-06 ("línea blanca"): por defecto Scaffold
+        // reserva su propio inset de systemBars EN ADICIÓN al que ya
+        // reserva el Scaffold principal de MainActivity -- se excluye el
+        // inferior porque ya lo maneja MainActivity una sola vez.
+        // Seguimiento 2026-09-08: también se excluye el superior, mismo
+        // bug real encontrado y corregido ese día en Convertidor/
+        // Herramientas PDF -- Modo Estudio tenía el mismo doble descuento
+        // (esta pantalla también tiene Scaffold propio), dejando el
+        // banner de título más abajo que en el resto de la app.
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
+        containerColor = Color.Transparent
     ) { innerPadding ->
         if (showStats) {
             StudyStatsDialog(
@@ -235,129 +352,295 @@ fun StudyScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            // ── Banner de anuncio + título ────────────
+            // Seguimiento 2026-09-08 a pedido explícito del usuario: (1) el
+            // anuncio subió arriba del todo, mismo patrón que el resto de
+            // las pantallas (DocuSmartScreenHeader: 16dp de margen, 12dp
+            // arriba, 8dp de espacio al banner); (2) los íconos de abrir
+            // documento/estadísticas salieron del degradado -- quedan en su
+            // propia fila, a la altura de "Volver" (que por eso se arma acá
+            // a mano en vez de con el `onBack` de DocuSmartTopBanner, para
+            // poder ponerlos en la misma fila).
+            DocuSmartScreenHeader(
+                adUnitId  = AdConstants.BANNER_STUDY_ID,
+                adManager = viewModel.adManager
+            ) {
+                Column {
+                    DocuSmartTopBanner(
+                        screenTitle    = stringResource(R.string.study_title),
+                        screenSubtitle = documentName
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp, bottom = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.clickable(role = Role.Button) {
+                                ttsRef.value?.stop()
+                                isSpeaking.value = false
+                                onBack()
+                            }
+                        ) {
+                            Icon(
+                                imageVector        = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = null,
+                                tint               = MaterialTheme.colorScheme.primary,
+                                modifier           = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text  = stringResource(R.string.general_back),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        // Pedido explícito del usuario 2026-09-08: los
+                        // íconos quedaban sueltos, sin ningún fondo que los
+                        // distinguiera del resto de la fila -- ahora cada
+                        // uno lleva su propio círculo (borde + fondo
+                        // tintado, contraste con el color del ícono).
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            IconButton(
+                                onClick = { docLauncher.launch(arrayOf("application/pdf")) },
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector        = Icons.Rounded.FolderOpen,
+                                    contentDescription = stringResource(R.string.qr_open_document),
+                                    tint               = MaterialTheme.colorScheme.primary,
+                                    modifier           = Modifier.size(18.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = { showStats = true },
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector        = Icons.Rounded.QueryStats,
+                                    contentDescription = stringResource(R.string.study_stats_icon_desc),
+                                    tint               = MaterialTheme.colorScheme.primary,
+                                    modifier           = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // ── Tabs ──────────────────────────────────
+            // Seguimiento 2026-09-08: antes quedaba blanco plano -- ahora
+            // usa `primaryContainer` (ya recoloreado por el acento elegido
+            // en Ajustes, mismo mecanismo que `AccentGradient.kt`) con el
+            // texto en `primary`/`onSurfaceVariant` para mantener buen
+            // contraste sobre ese fondo tintado.
             val tabs = listOf(
                 stringResource(R.string.study_tab_reading),
                 stringResource(R.string.study_tab_notes),
-                stringResource(R.string.study_tab_pomodoro)
+                stringResource(R.string.study_tab_pomodoro),
+                stringResource(R.string.study_tab_summary)
             )
-            TabRow(
+            // ScrollableTabRow en vez de TabRow (2026-09-08): con el 4to tab
+            // ("Resumen") agregado, TabRow forzaba las 4 pestañas al mismo
+            // ancho fijo y "Pomodoro" se partía en 2 líneas -- cada pestaña
+            // mide su propio contenido acá, sin forzar el ancho, y las 4
+            // caben sin necesidad real de scroll en la mayoría de pantallas.
+            ScrollableTabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                contentColor   = MaterialTheme.colorScheme.primary,
+                edgePadding    = 0.dp
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
+                        selectedContentColor   = MaterialTheme.colorScheme.primary,
+                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         text = {
                             Text(
                                 text = title,
                                 fontWeight = if (selectedTab == index)
-                                    FontWeight.Bold else FontWeight.Normal
+                                    FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1
                             )
                         }
                     )
                 }
             }
 
-            // ── AdMob — solo para usuarios free (backlog UX §8), visible
-            // en las 3 pestañas por igual, no solo en una ────────────────
-            if (!isPremium) {
-                DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_STUDY_ID,
-                    adManager = viewModel.adManager,
-                    modifier  = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                )
-            }
-
             when (selectedTab) {
                 // ── Tab Lectura ───────────────────────
+                // Rediseñado 2026-09-08 a pedido explícito del usuario: antes
+                // mostraba los párrafos extraídos como la vista principal --
+                // ahora se ve el PDF real (StudyPdfViewer) mientras el texto
+                // extraído sigue existiendo "por debajo", solo para
+                // alimentar la voz. Como ya no hay una fila por párrafo que
+                // tocar, "marcar" pasa a resaltar el párrafo que se está
+                // leyendo en ese momento (único que tiene sentido sin verlos
+                // en pantalla) -- sigue alimentando la lista de "Párrafos
+                // resaltados" de la pestaña Notas, sin tocarla.
                 0 -> ReadingTab(
-                    documentText = documentText,
-                    headingIndices = documentHeadingIndices,
+                    documentUri = documentUri,
                     isLoading = isLoadingDoc,
-                    highlights = highlights,
+                    highlightedCount = highlights.size,
+                    isCurrentHighlighted = highlights.contains(currentSpeakingIndex.intValue),
                     isSpeaking = isSpeaking.value,
                     ttsReady = ttsReady.value,
-                    currentSpeakingIndex = currentSpeakingIndex.intValue,
-                    onToggleHighlight = { index ->
-                        highlights = if (highlights.contains(index)) {
-                            highlights - index
-                        } else {
-                            highlights + index
+                    isExtractingMore = !extractionComplete,
+                    onToggleHighlightCurrent = {
+                        val index = currentSpeakingIndex.intValue
+                        if (index >= 0) {
+                            highlights = if (highlights.contains(index)) {
+                                highlights - index
+                            } else {
+                                highlights + index
+                            }
                         }
                     },
-                    onSpeak = { text, index ->
-                        if (isSpeaking.value) {
-                            ttsRef.value?.stop()
-                            isSpeaking.value = false
-                            currentSpeakingIndex.intValue = -1
-                        } else {
-                            ttsRef.value?.setOnUtteranceProgressListener(
-                                object : UtteranceProgressListener() {
-                                    override fun onStart(utteranceId: String?) {
-                                        isSpeaking.value = true
-                                        currentSpeakingIndex.intValue = index
-                                    }
-                                    override fun onDone(utteranceId: String?) {
-                                        isSpeaking.value = false
-                                        currentSpeakingIndex.intValue = -1
-                                    }
-                                    override fun onError(utteranceId: String?) {
-                                        isSpeaking.value = false
-                                        currentSpeakingIndex.intValue = -1
-                                    }
-                                }
-                            )
-                            ttsRef.value?.speak(
-                                text,
-                                TextToSpeech.QUEUE_FLUSH,
-                                null,
-                                "study_${System.currentTimeMillis()}"
-                            )
-                        }
-                    },
+                    currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
+                    totalPages = pageBoundaries.size,
                     onSpeakAll = {
                         if (isSpeaking.value) {
+                            // "Retomar lectura" (2026-09-08): antes esto
+                            // reiniciaba `currentSpeakingIndex` a -1, así que
+                            // parar y volver a tocar "Leer todo" (en esta
+                            // misma sesión o en una futura) siempre empezaba
+                            // desde el principio. Ahora se deja tal cual --
+                            // "Leer todo" retoma desde ahí la próxima vez.
                             ttsRef.value?.stop()
                             isSpeaking.value = false
-                            currentSpeakingIndex.intValue = -1
+                            waitingForMoreText.value = false
                         } else {
                             val currentTts = ttsRef.value
-                            if (currentTts == null || !ttsReady.value) {
+                            if (currentTts == null || !ttsReady.value || documentText.isEmpty()) {
                                 Timber.e("TTS no está listo")
                                 return@ReadingTab
                             }
-                            val fullText = documentText.joinToString(". ")
-                            if (fullText.isBlank()) return@ReadingTab
-
+                            // Bug real corregido 2026-09-08: "Leer todo" unía
+                            // TODOS los párrafos en un solo string y hacía
+                            // una única llamada a speak() -- Android limita
+                            // cada llamada a ~4000 caracteres
+                            // (TextToSpeech.getMaxSpeechInputLength()), así
+                            // que con cualquier documento largo esa llamada
+                            // fallaba en silencio y no se oía nada. Ahora se
+                            // encola un párrafo por llamada (ya probados
+                            // individualmente por "leer este párrafo", cada
+                            // uno bien por debajo del límite), con
+                            // QUEUE_ADD para que se reproduzcan en orden.
+                            //
+                            // "Retomar lectura": el punto de partida ya no es
+                            // siempre 0 -- si `currentSpeakingIndex` quedó en
+                            // un párrafo válido (por "Detener" o por venir de
+                            // "Continuar leyendo"), se sigue desde ahí.
+                            val startIndex = currentSpeakingIndex.intValue
+                                .takeIf { it in documentText.indices } ?: 0
+                            val uriString = documentUri?.toString()
                             currentTts.setOnUtteranceProgressListener(
                                 object : UtteranceProgressListener() {
                                     override fun onStart(utteranceId: String?) {
+                                        val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
                                         isSpeaking.value = true
+                                        if (index != null) {
+                                            currentSpeakingIndex.intValue = index
+                                            if (uriString != null) {
+                                                StudyReadingProgressStorage.save(
+                                                    context,
+                                                    ReadingProgress(
+                                                        uri              = uriString,
+                                                        documentName     = documentName,
+                                                        paragraphIndex   = index,
+                                                        totalParagraphs  = documentText.size,
+                                                        currentPage      = pageForParagraph(index, pageBoundaries),
+                                                        totalPages       = pageBoundaries.size,
+                                                        lastReadAtMillis = System.currentTimeMillis()
+                                                    )
+                                                )
+                                            }
+                                        }
                                     }
                                     override fun onDone(utteranceId: String?) {
-                                        isSpeaking.value = false
-                                        currentSpeakingIndex.intValue = -1
+                                        val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
+                                        if (index == null) return
+                                        // "Procesamiento incremental": `lastIndex`
+                                        // se calculó al tocar "Leer todo", pero
+                                        // si el PDF seguía extrayéndose de
+                                        // fondo puede que ya haya más párrafos
+                                        // ahora que cuando se armó la cola --
+                                        // se revisa el tamaño ACTUAL de
+                                        // `documentText`, no el de entonces.
+                                        val newLastIndex = documentText.lastIndex
+                                        when {
+                                            index < newLastIndex -> {
+                                                ttsRef.value?.let { tts ->
+                                                    for (nextIndex in index + 1..newLastIndex) {
+                                                        tts.speak(
+                                                            documentText[nextIndex],
+                                                            TextToSpeech.QUEUE_ADD,
+                                                            null,
+                                                            "study_all_$nextIndex"
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            !extractionComplete -> {
+                                                // No hay más texto disponible
+                                                // TODAVÍA, pero el PDF sigue
+                                                // procesándose -- esperar en
+                                                // vez de dar la lectura por
+                                                // terminada (ver LaunchedEffect
+                                                // que retoma cuando llegue más).
+                                                waitingForMoreText.value = true
+                                            }
+                                            else -> {
+                                                // Terminó todo el documento --
+                                                // ya no hay nada que retomar.
+                                                isSpeaking.value = false
+                                                currentSpeakingIndex.intValue = -1
+                                                if (uriString != null) {
+                                                    StudyReadingProgressStorage.remove(context, uriString)
+                                                }
+                                            }
+                                        }
                                     }
                                     override fun onError(utteranceId: String?) {
+                                        // No se resetea el índice -- si falla
+                                        // a mitad de un documento largo, "Leer
+                                        // todo" debe poder reintentar desde
+                                        // ahí, no desde el principio.
                                         isSpeaking.value = false
                                     }
                                 }
                             )
-                            val result = currentTts.speak(
-                                fullText,
-                                TextToSpeech.QUEUE_FLUSH,
-                                null,
-                                "study_all_${System.currentTimeMillis()}"
-                            )
-                            Timber.d("TTS resultado: $result")
-                            if (result == TextToSpeech.SUCCESS) {
-                                isSpeaking.value = true
+                            documentText.withIndex().drop(startIndex).forEachIndexed { queuePos, (index, paragraph) ->
+                                currentTts.speak(
+                                    paragraph,
+                                    if (queuePos == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
+                                    null,
+                                    "study_all_$index"
+                                )
                             }
+                            isSpeaking.value = true
                         }
                     },
-                    onSelectDoc = { docLauncher.launch("*/*") }
+                    onSelectDoc = { docLauncher.launch(arrayOf("application/pdf")) },
+                    readingHistory = readingHistory,
+                    onResumeDocument = { progress ->
+                        loadDocument(Uri.parse(progress.uri), resumeFromParagraph = progress.paragraphIndex)
+                    },
+                    onDeleteDocument = { progress ->
+                        StudyReadingProgressStorage.remove(context, progress.uri)
+                        readingHistory = StudyReadingProgressStorage.loadAll(context)
+                    }
                 )
 
                 // ── Tab Notas ─────────────────────────
@@ -378,145 +661,131 @@ fun StudyScreen(
                     onToggle = { PomodoroEngine.toggle(context) },
                     onReset = { PomodoroEngine.reset(context) }
                 )
+
+                // ── Tab Resumen (2026-09-08, 100% local) ──
+                3 -> SummaryTab(
+                    documentText     = documentText,
+                    documentName     = documentName,
+                    hasDocument      = documentUri != null,
+                    summarySentences = summarySentences,
+                    isSummarizing    = isSummarizing,
+                    onGenerate = {
+                        isSummarizing = true
+                        scope.launch {
+                            summarySentences = withContext(Dispatchers.Default) {
+                                TextSummarizer.summarize(documentText)
+                            }
+                            isSummarizing = false
+                        }
+                    },
+                    onSelectDoc = { docLauncher.launch(arrayOf("application/pdf")) }
+                )
             }
         }
     }
 }
 
-// ── Top Bar ───────────────────────────────────────────
-@OptIn(ExperimentalMaterial3Api::class)
+// Spinner + mensaje de progreso (2026-09-08, pedido explícito del usuario):
+// tanto extraer/renderizar un PDF real como generar el resumen pueden tardar
+// -- un spinner solo, sin ningún texto, hacía pensar que la app se había
+// colgado en vez de estar trabajando. Seguimiento mismo día: el
+// `CircularProgressIndicator` por sí solo se veía demasiado chico/sutil en
+// el dispositivo real -- se agranda a 64dp y se le pone el logo de
+// DocuSmart en el centro (marca propia en vez de un spinner genérico, con
+// el spinner real de Compose alrededor como respaldo si el logo no se
+// llegara a ver). Compartido entre Lectura (carga del documento) y Resumen
+// (generación).
 @Composable
-private fun StudyTopBar(
-    documentName: String,
-    onBack: () -> Unit,
-    onSelectDoc: () -> Unit,
-    onShowStats: () -> Unit
-) {
-    TopAppBar(
-        title = {
-            Column {
-                Text(
-                    text = stringResource(R.string.study_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = documentName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-            }
-        },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
-            }
-        },
-        actions = {
-            IconButton(onClick = onShowStats) {
-                Icon(
-                    imageVector = Icons.Rounded.QueryStats,
-                    contentDescription = stringResource(R.string.study_stats_icon_desc),
-                    tint = MaterialTheme.colorScheme.primary
+private fun LoadingIndicator(message: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Box(modifier = Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(
+                modifier    = Modifier.fillMaxSize(),
+                color       = MaterialTheme.colorScheme.primary,
+                strokeWidth = 5.dp
+            )
+            // El logo solo (sin fondo propio) se perdía contra el fondo
+            // claro de la pantalla -- en todos los demás usos del logo en
+            // la app siempre lleva un círculo de color detrás (ver banners),
+            // así que se repite el mismo criterio acá.
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter            = painterResource(R.drawable.ic_docusmart_logo),
+                    contentDescription = null,
+                    modifier           = Modifier.size(24.dp)
                 )
             }
-            IconButton(onClick = onSelectDoc) {
-                Icon(
-                    imageVector = Icons.Rounded.FolderOpen,
-                    contentDescription = stringResource(R.string.qr_open_document),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface
+        }
+        Text(
+            text      = message,
+            style     = MaterialTheme.typography.bodyMedium,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
-    )
+    }
 }
 
 // ── Tab de Lectura ────────────────────────────────────
+// Rediseñado 2026-09-08 a pedido explícito del usuario: antes mostraba los
+// párrafos extraídos como texto plano con resaltado -- ahora muestra el PDF
+// real (StudyPdfViewer, mismo renderizador que ya usa el Visor) mientras la
+// voz lee de fondo a partir del texto ya extraído (`documentText`, que ya no
+// baja hasta esta función -- solo hace falta el conteo de resaltados y el
+// URI para dibujar el PDF). Reemplaza a ReadingParagraphRow (fila por
+// párrafo, sin uso ahora que no hay párrafos individuales que tocar).
 @Composable
 private fun ReadingTab(
-    documentText: List<String>,
-    headingIndices: Set<Int> = emptySet(),
+    documentUri: Uri?,
     isLoading: Boolean,
-    highlights: Set<Int>,
+    highlightedCount: Int,
+    isCurrentHighlighted: Boolean,
     isSpeaking: Boolean,
     ttsReady: Boolean,
-    currentSpeakingIndex: Int,
-    onToggleHighlight: (Int) -> Unit,
-    onSpeak: (String, Int) -> Unit,
+    isExtractingMore: Boolean,
+    currentPage: Int,
+    totalPages: Int,
+    onToggleHighlightCurrent: () -> Unit,
     onSpeakAll: () -> Unit,
-    onSelectDoc: () -> Unit
+    onSelectDoc: () -> Unit,
+    readingHistory: List<ReadingProgress>,
+    onResumeDocument: (ReadingProgress) -> Unit,
+    onDeleteDocument: (ReadingProgress) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when {
-            isLoading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
+            // Pedido explícito del usuario 2026-09-08: la extracción de un
+            // PDF real puede tardar bastante (probado con un libro de 55
+            // páginas) -- un spinner solo, sin texto, hacía parecer que la
+            // app se había colgado. Mismo mensaje que usa StudyPdfViewer más
+            // abajo para su propia carga (para el usuario es un solo
+            // "cargando documento", sin importar que sean 2 pasos técnicos
+            // distintos).
+            isLoading -> LoadingIndicator(
+                stringResource(R.string.study_loading_document),
+                modifier = Modifier.align(Alignment.Center)
             )
-            documentText.isEmpty() -> {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                // Bug real corregido 2026-09-04 (backlog UX
-                                // §7, HU-UX-06): fijo en tonos de azul,
-                                // ignorando el "Color de acento" elegido en
-                                // Ajustes.
-                                brush = Brush.linearGradient(rememberAccentGradient()),
-                                shape = MaterialTheme.shapes.extraLarge
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.MenuBook,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.study_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.study_empty_state_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Button(
-                        onClick = onSelectDoc,
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.FolderOpen,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.qr_open_document))
-                    }
-                }
-            }
+            documentUri == null -> ReadingEmptyState(
+                readingHistory   = readingHistory,
+                onSelectDoc      = onSelectDoc,
+                onResumeDocument = onResumeDocument,
+                onDeleteDocument = onDeleteDocument
+            )
             else -> {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // ── Barra TTS ─────────────────────
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = if (isSpeaking)
-                            DocuBlue.copy(alpha = 0.1f)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                         else
                             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
                         shadowElevation = 2.dp
@@ -538,17 +807,45 @@ private fun ReadingTab(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = if (isSpeaking)
-                                    stringResource(R.string.study_reading_document)
-                                else
-                                    stringResource(
-                                        R.string.study_paragraphs_highlighted_count,
-                                        documentText.size, highlights.size
-                                    ),
+                                // "Retomar lectura" (2026-09-08): pedido
+                                // explícito del usuario, "llevar el número
+                                // de hojas leídas" -- mientras lee, muestra
+                                // la página actual en vez del texto genérico.
+                                text = when {
+                                    isSpeaking && totalPages > 0 ->
+                                        stringResource(R.string.study_reading_page, currentPage, totalPages)
+                                    isSpeaking -> stringResource(R.string.study_reading_document)
+                                    // "Procesamiento incremental": el PDF ya
+                                    // se puede leer pero el resto todavía se
+                                    // sigue extrayendo de fondo.
+                                    isExtractingMore ->
+                                        stringResource(R.string.study_extracting_more, totalPages)
+                                    else -> stringResource(R.string.study_highlighted_count, highlightedCount)
+                                },
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.weight(1f)
                             )
+                            // ── Marcar el párrafo que se está leyendo ─
+                            // (reemplaza el resaltado por-fila de antes --
+                            // ya no hay filas de párrafo que tocar, así que
+                            // "marcar" pasa a aplicar al que suena ahora)
+                            IconButton(
+                                onClick = onToggleHighlightCurrent,
+                                enabled = isSpeaking,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isCurrentHighlighted)
+                                        Icons.Rounded.Bookmark
+                                    else
+                                        Icons.Rounded.BookmarkBorder,
+                                    contentDescription = stringResource(R.string.study_mark_current_paragraph),
+                                    tint = if (isSpeaking) WarningAmber
+                                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                             // ── Botón leer todo ───────
                             FilledTonalButton(
                                 onClick = onSpeakAll,
@@ -564,122 +861,248 @@ private fun ReadingTab(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                Text(if (isSpeaking) stringResource(R.string.study_stop) else stringResource(R.string.study_read_all))
+                                val speakButtonLabel = if (isSpeaking) {
+                                    stringResource(R.string.study_stop)
+                                } else {
+                                    stringResource(R.string.study_read_all)
+                                }
+                                Text(speakButtonLabel)
                             }
                         }
                     }
 
-                    // ── Texto fluido con resaltado ────
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            horizontal = 20.dp,
-                            vertical = 16.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)
-                    ) {
-                        itemsIndexed(documentText) { index, paragraph ->
-                            ReadingParagraphRow(
-                                paragraph = paragraph,
-                                index = index,
-                                isLast = index == documentText.size - 1,
-                                isHeading = headingIndices.contains(index),
-                                isHighlighted = highlights.contains(index),
-                                isSpeakingThis = currentSpeakingIndex == index,
-                                ttsReady = ttsReady,
-                                onToggleHighlight = onToggleHighlight,
-                                onSpeak = onSpeak
-                            )
-                        }
-                    }
+                    // ── PDF real, la voz lee de fondo ─
+                    StudyPdfViewer(
+                        uri      = documentUri,
+                        modifier = Modifier.fillMaxWidth().weight(1f)
+                    )
                 }
             }
         }
     }
 }
 
-// ── Párrafo individual ────────────────────────────────
-// Extraído de ReadingTab (antes tenía el render de cada párrafo inline,
-// LongMethod por detekt) -- reemplaza además a ParagraphItem/HighlightButton/
-// SpeakButton/paragraphCardColor, que quedaron como código muerto (ninguna
-// función del archivo las llamaba) desde que ReadingTab pasó a dibujar el
-// párrafo como texto fluido con Row en vez de una Card por párrafo.
+// Extraído de ReadingTab (LongMethod por detekt) -- estado sin documento
+// activo. "Retomar lectura" (2026-09-08): con historial pendiente, el
+// contenido ya no cabe centrado en pantallas chicas (hasta 10 documentos) --
+// pasa a ser una columna con scroll, con la lista arriba del botón "Abrir
+// documento". Sin historial, exactamente el mismo estado vacío de siempre.
 @Composable
-private fun ReadingParagraphRow(
-    paragraph        : String,
-    index            : Int,
-    isLast           : Boolean,
-    isHeading        : Boolean,
-    isHighlighted    : Boolean,
-    isSpeakingThis   : Boolean,
-    ttsReady         : Boolean,
-    onToggleHighlight: (Int) -> Unit,
-    onSpeak          : (String, Int) -> Unit
+private fun BoxScope.ReadingEmptyState(
+    readingHistory  : List<ReadingProgress>,
+    onSelectDoc     : () -> Unit,
+    onResumeDocument: (ReadingProgress) -> Unit,
+    onDeleteDocument: (ReadingProgress) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                when {
-                    isSpeakingThis -> DocuBlue.copy(alpha = 0.08f)
-                    isHighlighted  -> WarningAmber.copy(alpha = 0.1f)
-                    else           -> Color.Transparent
-                }
-            )
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.Top
+    val emptyStateModifier = if (readingHistory.isEmpty()) {
+        Modifier.align(Alignment.Center)
+    } else {
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+    }
+    Column(
+        modifier = emptyStateModifier.padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // ── Texto (encabezados en negrita, igual que el Visor de Word) ─
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(
+                    // Bug real corregido 2026-09-04 (backlog UX §7,
+                    // HU-UX-06): fijo en tonos de azul, ignorando el "Color
+                    // de acento" elegido en Ajustes.
+                    brush = Brush.linearGradient(rememberAccentGradient()),
+                    shape = MaterialTheme.shapes.extraLarge
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.MenuBook,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(40.dp)
+            )
+        }
         Text(
-            text = paragraph,
-            style = MaterialTheme.typography.bodyMedium,
-            fontSize = if (isHeading) 18.sp else 16.sp,
-            fontWeight = if (isHeading) FontWeight.Bold else FontWeight.Normal,
-            lineHeight = 26.sp,
-            color = when {
-                isSpeakingThis -> DocuBlue
-                isHeading      -> MaterialTheme.colorScheme.primary
-                else           -> MaterialTheme.colorScheme.onSurface
-            },
-            modifier = Modifier.weight(1f)
+            text = stringResource(R.string.study_title),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
         )
-
-        // ── Botones acción ────────
-        Column {
-            IconButton(
-                onClick = { onToggleHighlight(index) },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(
-                    imageVector = if (isHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
-                    contentDescription = null,
-                    tint = if (isHighlighted) WarningAmber
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.size(16.dp)
+        Text(
+            text = stringResource(R.string.study_empty_state_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        if (readingHistory.isNotEmpty()) {
+            Text(
+                text  = stringResource(R.string.study_continue_reading),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
+            readingHistory.forEach { progress ->
+                ReadingHistoryCard(
+                    progress = progress,
+                    onClick  = { onResumeDocument(progress) },
+                    onDelete = { onDeleteDocument(progress) }
                 )
             }
-            IconButton(
-                onClick = { onSpeak(paragraph, index) },
-                modifier = Modifier.size(28.dp),
-                enabled = ttsReady
-            ) {
+        }
+        Button(
+            onClick = onSelectDoc,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.FolderOpen,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.qr_open_document))
+        }
+    }
+}
+
+// "Retomar lectura" (2026-09-08): un PDF con progreso guardado, en la lista
+// "Continuar leyendo" del estado vacío de Lectura. Tocarlo reabre el archivo
+// y deja la voz lista para seguir desde el mismo párrafo/página.
+// Pedido explícito del usuario 2026-09-08: además de retomar, poder quitar un
+// PDF de esta lista (no borra el archivo, solo el progreso guardado).
+@Composable
+private fun ReadingHistoryCard(progress: ReadingProgress, onClick: () -> Unit, onDelete: () -> Unit) {
+    Card(
+        modifier  = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape     = MaterialTheme.shapes.medium,
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector        = Icons.Rounded.MenuBook,
+                contentDescription = null,
+                tint               = MaterialTheme.colorScheme.primary,
+                modifier           = Modifier.size(28.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text       = progress.documentName,
+                    style      = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines   = 1,
+                    overflow   = TextOverflow.Ellipsis,
+                    color      = MaterialTheme.colorScheme.onSurface
+                )
+                if (progress.totalPages > 0) {
+                    Text(
+                        text  = stringResource(
+                            R.string.study_resume_page_progress,
+                            progress.currentPage,
+                            progress.totalPages
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Icon(
+                imageVector        = Icons.Rounded.PlayCircle,
+                contentDescription = stringResource(R.string.study_resume_reading),
+                tint               = MaterialTheme.colorScheme.primary,
+                modifier           = Modifier.size(28.dp)
+            )
+            IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                 Icon(
-                    imageVector = if (isSpeakingThis) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-                    contentDescription = null,
-                    tint = if (isSpeakingThis) DocuBlue
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.size(16.dp)
+                    imageVector        = Icons.Rounded.DeleteOutline,
+                    contentDescription = stringResource(R.string.study_remove_from_history),
+                    tint               = MaterialTheme.colorScheme.error,
+                    modifier           = Modifier.size(20.dp)
                 )
             }
         }
     }
+}
 
-    if (!isLast) {
-        HorizontalDivider(
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-            thickness = 0.5.dp
-        )
+// ── Visor de PDF embebido en Lectura ──────────────────
+// Mismo patrón que el Visor de documentos (renderPdfPagesToBitmaps,
+// extraído a core/pdf/PdfPageRenderer.kt al necesitarse acá también) pero
+// sin la lógica de resaltado de búsqueda -- Estudio no la necesita.
+@Composable
+private fun StudyPdfViewer(uri: Uri, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    var pages by remember(uri) { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
+    var loadError by remember(uri) { mutableStateOf(false) }
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+    LaunchedEffect(uri) {
+        pages = withContext(Dispatchers.IO) {
+            try {
+                renderPdfPagesToBitmaps(uri, context, cachePrefix = "study")
+            } catch (e: Exception) {
+                Timber.e(e, "Estudio: error renderizando PDF")
+                loadError = true
+                emptyList()
+            }
+        }
+    }
+
+    when {
+        loadError -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text  = stringResource(R.string.viewer_error),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        pages.isEmpty() -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            LoadingIndicator(stringResource(R.string.study_loading_document))
+        }
+        else -> LazyColumn(
+            state = rememberLazyListState(),
+            modifier = modifier
+                .onSizeChanged { containerSize = it }
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        val newScale = (scale * zoom).coerceIn(0.5f, 4f)
+                        val maxX = (containerSize.width  * (newScale - 1) / 2f).coerceAtLeast(0f)
+                        val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
+                        scale   = newScale
+                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
+                    }
+                }
+                .graphicsLayer(
+                    scaleX       = scale,
+                    scaleY       = scale,
+                    translationX = offsetX,
+                    translationY = offsetY
+                ),
+            contentPadding      = PaddingValues(top = 8.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(pages) { pageBitmap ->
+                Card(
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = MaterialTheme.shapes.small,
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Image(
+                        bitmap             = pageBitmap.bitmap.asImageBitmap(),
+                        contentDescription = null,
+                        modifier           = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -1263,13 +1686,13 @@ private fun PomodoroTypeIndicator(isBreak: Boolean) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = if (isBreak) SuccessGreen.copy(alpha = 0.15f)
-        else DocuBlue.copy(alpha = 0.15f)
+        else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
     ) {
         Text(
             text = if (isBreak) stringResource(R.string.study_break_label) else stringResource(R.string.study_study_label),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = if (isBreak) SuccessGreen else DocuBlue,
+            color = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(
                 horizontal = 20.dp, vertical = 10.dp
             )
@@ -1287,7 +1710,7 @@ private fun PomodoroClock(minutes: Int, seconds: Int, isRunning: Boolean, isBrea
                     colors = if (isBreak)
                         listOf(SuccessGreen.copy(0.2f), Color.Transparent)
                     else
-                        listOf(DocuBlue.copy(0.2f), Color.Transparent)
+                        listOf(MaterialTheme.colorScheme.primary.copy(0.2f), Color.Transparent)
                 ),
                 shape = RoundedCornerShape(100.dp)
             ),
@@ -1302,7 +1725,7 @@ private fun PomodoroClock(minutes: Int, seconds: Int, isRunning: Boolean, isBrea
                 text = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}",
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isBreak) SuccessGreen else DocuBlue
+                color = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary
             )
             Text(
                 text = if (isRunning) stringResource(R.string.study_in_progress) else stringResource(R.string.study_paused),
@@ -1336,7 +1759,7 @@ private fun PomodoroControls(
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.height(52.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isBreak) SuccessGreen else DocuBlue
+                containerColor = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary
             )
         ) {
             Icon(
@@ -1427,52 +1850,276 @@ private fun PomodoroInfoCard() {
     }
 }
 
+// ── Tab Resumen ───────────────────────────────────────
+// Nuevo 2026-09-08, a pedido explícito del usuario, con una condición suya:
+// 100% local (sin IA en la nube) para no romper la promesa de la política
+// de privacidad ("los documentos nunca salen del dispositivo") ni sumar
+// costo por uso -- ver `TextSummarizer.kt` para el detalle del algoritmo
+// extractivo. Reusa el mismo `documentText` que ya carga Lectura -- no pide
+// el PDF de nuevo.
+@Composable
+private fun SummaryTab(
+    documentText    : List<String>,
+    documentName    : String,
+    hasDocument     : Boolean,
+    summarySentences: List<String>?,
+    isSummarizing   : Boolean,
+    onGenerate      : () -> Unit,
+    onSelectDoc     : () -> Unit
+) {
+    val context = LocalContext.current
+    var savedToDownloads by remember(summarySentences) { mutableStateOf(false) }
+    val shareTitle = stringResource(R.string.study_summary_share_title)
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            !hasDocument -> {
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(
+                                brush = Brush.linearGradient(rememberAccentGradient()),
+                                shape = MaterialTheme.shapes.extraLarge
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Summarize,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.study_tab_summary),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.study_empty_state_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Button(onClick = onSelectDoc, shape = MaterialTheme.shapes.medium) {
+                        Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.qr_open_document))
+                    }
+                }
+            }
+            isSummarizing -> LoadingIndicator(
+                stringResource(R.string.study_summarizing),
+                modifier = Modifier.align(Alignment.Center)
+            )
+            summarySentences == null -> {
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Summarize,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text(
+                        text  = stringResource(R.string.study_summary_local_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Button(
+                        onClick = onGenerate,
+                        shape   = MaterialTheme.shapes.medium,
+                        enabled = documentText.isNotEmpty()
+                    ) {
+                        Icon(Icons.Rounded.Summarize, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.study_generate_summary))
+                    }
+                }
+            }
+            else -> SummaryResultView(
+                sentences        = summarySentences,
+                savedToDownloads = savedToDownloads,
+                onSave = {
+                    savedToDownloads = saveSummaryToDownloads(context, documentName, summarySentences)
+                },
+                onShare = { shareSummary(context, documentName, summarySentences, shareTitle) }
+            )
+        }
+    }
+}
+
+// Extraído de SummaryTab (LongMethod por detekt) -- la lista de oraciones
+// generadas + la fila de guardar/compartir, una vez que ya hay resumen.
+@Composable
+private fun SummaryResultView(
+    sentences       : List<String>,
+    savedToDownloads: Boolean,
+    onSave          : () -> Unit,
+    onShare         : () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text  = stringResource(R.string.study_summary_sentences_count, sentences.size),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
+            )
+            IconButton(onClick = onSave) {
+                Icon(
+                    imageVector = if (savedToDownloads) Icons.Rounded.CheckCircle else Icons.Rounded.Download,
+                    contentDescription = stringResource(R.string.general_save),
+                    tint = if (savedToDownloads) SuccessGreen else MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(onClick = onShare) {
+                Icon(
+                    imageVector = Icons.Rounded.Share,
+                    contentDescription = stringResource(R.string.general_share),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(sentences) { sentence ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 7.dp)
+                            .size(6.dp)
+                            .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraLarge)
+                    )
+                    Text(
+                        text  = sentence,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            item { Spacer(Modifier.height(24.dp)) }
+        }
+    }
+}
+
+@Suppress("TooGenericExceptionCaught")
+private fun shareSummary(context: Context, documentName: String, sentences: List<String>, shareTitle: String) {
+    try {
+        val file = StudySummaryExporter.exportAsTextFile(context, documentName, sentences)
+        val uri  = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(android.content.Intent.createChooser(intent, shareTitle))
+    } catch (e: Exception) {
+        Timber.e(e, "Error compartiendo resumen de estudio")
+    }
+}
+
+// Mismo patrón ya usado en ConverterViewModel/PdfToolsViewModel/ScanResultScreen
+// para guardar en Descargas vía MediaStore (Android 10+) -- no se extrajo a un
+// util compartido porque ninguno de esos 3 lo hizo antes (no hay un lugar
+// único ya establecido para esto en el proyecto).
+@Suppress("TooGenericExceptionCaught")
+private fun saveSummaryToDownloads(context: Context, documentName: String, sentences: List<String>): Boolean {
+    return try {
+        val file = StudySummaryExporter.exportAsTextFile(context, documentName, sentences)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) copyToDownloadsViaMediaStore(context, file)
+        else copyToLegacyDownloadsDir(file)
+        true
+    } catch (e: Exception) {
+        Timber.e(e, "Error guardando resumen en Descargas")
+        false
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.Q)
+private fun copyToDownloadsViaMediaStore(context: Context, file: File) {
+    val values = android.content.ContentValues().apply {
+        put(MediaStore.Downloads.DISPLAY_NAME, file.name)
+        put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+        put(MediaStore.Downloads.IS_PENDING, 1)
+    }
+    val resolver = context.contentResolver
+    val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return
+    resolver.openOutputStream(uri)?.use { output ->
+        java.io.FileInputStream(file).use { input -> input.copyTo(output) }
+    }
+    values.clear()
+    values.put(MediaStore.Downloads.IS_PENDING, 0)
+    resolver.update(uri, values, null, null)
+}
+
+private fun copyToLegacyDownloadsDir(file: File) {
+    val downloadsDir = android.os.Environment
+        .getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+    file.copyTo(File(downloadsDir, file.name), overwrite = true)
+}
+
 // Mensajes localizados, resueltos en la capa de presentación (stringResource)
-// y pasados hacia abajo — estas funciones de extracción no tienen Context de recursos.
+// y pasados hacia abajo — estas funciones de extracción no tienen Context de
+// recursos. Reducido 2026-09-08 a solo PDF (pedido explícito del usuario:
+// Lectura deja de aceptar Word, que daba problemas con el parser propio de
+// esta pantalla) -- se quitan los mensajes que solo usaban las rutas de
+// Word/PPT/texto plano, ya eliminadas.
 data class StudyExtractionMessages(
-    val noTextFound       : String,
-    val couldNotOpen      : String,
-    val couldNotRead      : String,
-    val pdfNoText         : String,
-    val pdfErrorTemplate  : String, // formato: %1$s
+    val couldNotRead        : String,
+    val pdfNoText           : String,
+    val pdfErrorTemplate    : String, // formato: %1$s
     val genericErrorTemplate: String, // formato: %1$s
-    val defaultDocumentName: String
+    val defaultDocumentName : String
 )
 
-// Resultado de extracción: encabezados detectados vienen como índices dentro
-// de `paragraphs` (no un tipo por-párrafo aparte) para no tocar la lógica de
-// resaltado/TTS existente, que ya identifica párrafos por índice sobre
-// `documentText` (ver `highlights: Set<Int>`, `currentSpeakingIndex`).
 data class StudyExtractionResult(
-    val paragraphs: List<String>,
-    val headingIndices: Set<Int>,
-    val fileName: String
+    val paragraphs    : List<String>,
+    val fileName      : String,
+    // "Retomar lectura" (2026-09-08): cuántos párrafos acumulados hay al
+    // terminar cada página del PDF -- permite traducir el índice de párrafo
+    // que va leyendo la voz a un número de página real (`pageForParagraph`).
+    val pageBoundaries: List<Int> = emptyList()
 )
 
-// ── Extraer texto de documento ────────────────────────
+// ── Extraer texto de un PDF ───────────────────────────
+// "Procesamiento incremental" (2026-09-08, pedido explícito del usuario tras
+// notar que un dispositivo más lento tardaba más en extraer el mismo PDF):
+// antes esta función solo devolvía resultado cuando TERMINABA de procesar
+// todas las páginas. Ahora recibe `onPageExtracted`, invocado después de cada
+// página con el texto acumulado hasta ese punto, para que la pantalla pueda
+// mostrar el documento y habilitar "Leer todo" desde la primera página lista
+// en vez de esperar el 100% del documento.
 private suspend fun extractTextFromUri(
     context: Context,
     uri: Uri,
-    messages: StudyExtractionMessages
+    messages: StudyExtractionMessages,
+    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> }
 ): StudyExtractionResult = withContext(Dispatchers.IO) {
     try {
-        val mimeType = context.contentResolver.getType(uri) ?: ""
         val fileName = resolveFileName(context, uri, messages)
-
-        val (paragraphs, headingIndices) = when {
-            mimeType.contains("pdf") -> extractPdfText(context, uri, messages) to emptySet()
-            mimeType.contains("word") || mimeType.contains("msword") ||
-                    mimeType.contains("wordprocessingml") -> extractWordText(context, uri, messages)
-            mimeType.contains("text") -> extractPlainText(context, uri, messages) to emptySet()
-            mimeType.contains("powerpoint") || mimeType.contains("presentation") ->
-                extractPptText(context, uri, messages) to emptySet()
-            else -> extractPlainText(context, uri, messages) to emptySet()
-        }
-
-        StudyExtractionResult(paragraphs, headingIndices, fileName)
+        val (paragraphs, pageBoundaries) = extractPdfText(context, uri, messages, onPageExtracted)
+        StudyExtractionResult(paragraphs, fileName, pageBoundaries)
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto")
-        StudyExtractionResult(emptyList(), emptySet(), String.format(messages.genericErrorTemplate, e.message ?: ""))
+        StudyExtractionResult(emptyList(), String.format(messages.genericErrorTemplate, e.message ?: ""))
     }
 }
 
@@ -1484,28 +2131,36 @@ private suspend fun extractTextFromUri(
 // > 1.6x el tamaño de fuente = párrafo nuevo, uno menor = ajuste de línea
 // dentro del mismo párrafo lógico) para que "leer este párrafo" lea un
 // párrafo real, no medio renglón.
-private fun extractPdfText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
+private suspend fun extractPdfText(
+    context : Context,
+    uri     : Uri,
+    messages: StudyExtractionMessages,
+    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> }
+): Pair<List<String>, List<Int>> {
     return try {
         val cacheFile = File.createTempFile("study_temp", ".pdf", context.cacheDir)
         context.contentResolver.openInputStream(uri)?.use { input ->
             cacheFile.outputStream().use { output -> input.copyTo(output) }
-        } ?: return listOf(messages.couldNotRead)
+        } ?: return listOf(messages.couldNotRead) to emptyList()
 
         val pdfDoc = PdfDocument(PdfReader(cacheFile))
 
         val paragraphs = mutableListOf<String>()
+        val pageBoundaries = mutableListOf<Int>()
         for (i in 1..pdfDoc.numberOfPages) {
             val listener = StudyPdfLineListener()
             PdfCanvasProcessor(listener).processPageContent(pdfDoc.getPage(i))
             paragraphs.addAll(groupPdfChunksIntoParagraphs(listener.chunks))
+            pageBoundaries.add(paragraphs.size)
+            if (paragraphs.isNotEmpty()) onPageExtracted(paragraphs.toList(), pageBoundaries.toList())
         }
         pdfDoc.close()
         cacheFile.delete()
 
-        if (paragraphs.isEmpty()) listOf(messages.pdfNoText) else paragraphs
+        if (paragraphs.isEmpty()) listOf(messages.pdfNoText) to emptyList() else paragraphs to pageBoundaries
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto PDF")
-        listOf(String.format(messages.pdfErrorTemplate, e.message ?: ""))
+        listOf(String.format(messages.pdfErrorTemplate, e.message ?: "")) to emptyList()
     }
 }
 
@@ -1546,113 +2201,6 @@ internal fun groupPdfChunksIntoParagraphs(chunks: List<StudyPdfChunk>): List<Str
     }
     paragraphs.add(current)
     return paragraphs.map { it.toString().trim() }.filter { it.length > 5 }
-}
-
-// RF: antes convertía TODO <w:p> en un simple salto de línea antes de
-// quitar etiquetas, perdiendo la información de estilo (<w:pPr>) necesaria
-// para saber si un párrafo es un encabezado -- igual mejora ya aplicada al
-// Visor de Word (WordViewerContent), reutilizando la misma detección de
-// estilo "Heading/Title/Título/H1-H6".
-private fun extractWordText(
-    context: Context,
-    uri: Uri,
-    messages: StudyExtractionMessages
-): Pair<List<String>, Set<Int>> {
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            val documentXml = findWordDocumentXml(input)
-                ?: return@use listOf(messages.noTextFound) to emptySet()
-            val (paragraphs, headingIndices) = parseWordParagraphsWithHeadings(documentXml)
-            if (paragraphs.isEmpty()) listOf(messages.noTextFound) to emptySet()
-            else paragraphs to headingIndices
-        } ?: listOf(messages.couldNotOpen) to emptySet()
-    } catch (e: Exception) {
-        listOf(String.format(messages.genericErrorTemplate, e.message ?: "")) to emptySet()
-    }
-}
-
-private fun findWordDocumentXml(input: java.io.InputStream): String? {
-    val zip = ZipInputStream(input)
-    var entry = zip.nextEntry
-    while (entry != null) {
-        if (entry.name == "word/document.xml") return zip.readBytes().toString(Charsets.UTF_8)
-        entry = zip.nextEntry
-    }
-    return null
-}
-
-// Hallazgo real verificado en dispositivo con un .docx generado por Word en
-// español: el identificador de estilo interno (w:pStyle w:val) NO siempre es
-// en inglés como se asumía -- Word en español escribió "Ttulo1" (con tilde
-// quitada), no "Heading1". Mismo criterio ya corregido en WordViewerContent
-// (ver WORD_HEADING_STYLE_REGEX en ViewerScreen.kt) -- se duplica acá en vez
-// de importarlo entre features para no acoplar Estudio al Visor por un
-// patrón de 3 líneas.
-private val STUDY_HEADING_STYLE_REGEX = Regex(
-    "w:val=\"(heading|title|titulo|ttulo|berschrift|titel|заголовок|название|h[123456])",
-    RegexOption.IGNORE_CASE
-)
-
-internal fun parseWordParagraphsWithHeadings(xml: String): Pair<List<String>, Set<Int>> {
-    val paragraphs = mutableListOf<String>()
-    val headingIndices = mutableSetOf<Int>()
-    val paraRegex = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
-
-    paraRegex.findAll(xml).forEach { match ->
-        val paraXml = match.value
-        val text = paraXml
-            .replace(Regex("<w:rPr>.*?</w:rPr>", RegexOption.DOT_MATCHES_ALL), "")
-            .replace(Regex("<w:pPr>.*?</w:pPr>", RegexOption.DOT_MATCHES_ALL), "")
-            .replace(Regex("<[^>]+>"), "")
-            .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
-            .replace(Regex("\\s+"), " ").trim()
-        if (text.length <= 3) return@forEach
-        if (paraXml.contains(STUDY_HEADING_STYLE_REGEX)) headingIndices.add(paragraphs.size)
-        paragraphs.add(text)
-    }
-    return paragraphs to headingIndices
-}
-
-private fun extractPptText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            val zip = ZipInputStream(input)
-            var entry = zip.nextEntry
-            val slideMap = mutableMapOf<Int, String>()
-            while (entry != null) {
-                if (entry.name.startsWith("ppt/slides/slide") &&
-                    entry.name.endsWith(".xml") && !entry.name.contains("_rels")) {
-                    val num = entry.name.removePrefix("ppt/slides/slide")
-                        .removeSuffix(".xml").toIntOrNull() ?: 0
-                    val content = zip.readBytes().toString(Charsets.UTF_8)
-                    val text = content.replace(Regex("<a:p[ >]"), "\n")
-                        .replace(Regex("<[^>]+>"), "")
-                        .split("\n").map { it.trim() }.filter { it.length > 2 }
-                        .joinToString(" — ")
-                    if (text.isNotBlank()) slideMap[num] = "Slide $num: $text"
-                }
-                entry = zip.nextEntry
-            }
-            zip.close()
-            slideMap.toSortedMap().values.toList()
-                .ifEmpty { listOf(messages.noTextFound) }
-        } ?: listOf(messages.couldNotOpen)
-    } catch (e: Exception) {
-        listOf(String.format(messages.genericErrorTemplate, e.message ?: ""))
-    }
-}
-
-private fun extractPlainText(context: Context, uri: Uri, messages: StudyExtractionMessages): List<String> {
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            input.bufferedReader().readText()
-                .split("\n")
-                .map { it.trim() }
-                .filter { it.length > 2 }
-        } ?: listOf(messages.couldNotRead)
-    } catch (e: Exception) {
-        listOf(String.format(messages.genericErrorTemplate, e.message ?: ""))
-    }
 }
 
 private fun resolveFileName(context: Context, uri: Uri, messages: StudyExtractionMessages): String {
