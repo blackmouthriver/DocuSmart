@@ -18,7 +18,7 @@ room = "2.8.4"
 sqlite = "2.7.0"
 documentfile = "1.0.1"
 billing = "9.1.0"
-detekt = "1.23.7"
+detekt = "1.23.8"
 sonarqube = "7.4.0.8496"
 
 [libraries]
