@@ -15,7 +15,7 @@ plugins {
     // resuelve el problema; no usa ninguna de las opciones eliminadas en el
     // salto de versión mayor (mappingFile/strippedNativeLibsDir/
     // symbolGenerator), así que no hace falta ningún otro cambio.
-    id("com.google.firebase.crashlytics")   version "3.0.6" apply false
+    id("com.google.firebase.crashlytics")   version "3.0.8" apply false
 }
 
 // SonarCloud — se ejecuta con `./gradlew sonar` (requiere SONAR_TOKEN en el
