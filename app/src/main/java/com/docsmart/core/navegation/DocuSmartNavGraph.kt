@@ -354,7 +354,12 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
             onStudy     = { tab -> navController.navigate(NavRoutes.Study.createRoute(tab)) },
             onSeeAll    = { navController.navigate(NavRoutes.Library.route) },
             onQrReader  = { navController.navigate(NavRoutes.QrReader.route) },
-            onQrCreator = { navController.navigate(NavRoutes.QrCreator.route) },
+            // Bug real corregido 2026-09-08: navegaba con `NavRoutes.QrCreator.route`,
+            // la plantilla cruda de la ruta ("...&initialFileName={initialFileName}")
+            // -- al no pasar por `createRoute()`, esos marcadores de posición
+            // literales quedaban como el valor real del argumento (se veía el
+            // texto "{initialFileName}" en la pantalla en vez de un campo vacío).
+            onQrCreator = { navController.navigate(NavRoutes.QrCreator.createRoute()) },
             onTrash     = { navController.navigate(NavRoutes.Trash.route) },
             onDocumentClick = { documentId ->
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))

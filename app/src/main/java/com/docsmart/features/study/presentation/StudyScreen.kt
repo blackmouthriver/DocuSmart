@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -280,11 +281,28 @@ fun StudyScreen(
                     documentText   = partialParagraphs
                     pageBoundaries = partialBoundaries
                     isLoadingDoc   = false
+                    // Bug real corregido 2026-09-08: con la extracción
+                    // incremental, el primer lote parcial (solo la página 1)
+                    // puede tener MUCHOS menos párrafos que el índice
+                    // guardado para retomar -- antes esto lo "recortaba" con
+                    // `coerceIn` para que entrara en ese lote chico, dejando
+                    // la lectura fija cerca del principio para siempre (el
+                    // `resumeApplied` ya no dejaba corregirlo después). Ahora
+                    // se espera a que llegue un lote que sí contenga ese
+                    // párrafo antes de aplicar el retomo.
                     if (!resumeApplied) {
-                        resumeApplied = true
-                        currentSpeakingIndex.intValue = resumeFromParagraph
-                            ?.coerceIn(0, (partialParagraphs.size - 1).coerceAtLeast(0))
-                            ?: -1
+                        when {
+                            resumeFromParagraph == null -> {
+                                resumeApplied = true
+                                currentSpeakingIndex.intValue = -1
+                            }
+                            resumeFromParagraph < partialParagraphs.size -> {
+                                resumeApplied = true
+                                currentSpeakingIndex.intValue = resumeFromParagraph
+                            }
+                            // si no, seguir esperando más páginas -- todavía
+                            // no llegamos al párrafo donde había quedado
+                        }
                     }
                 }
             }
@@ -1185,319 +1203,374 @@ private fun NotesTab(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    // Bug real corregido 2026-09-08: todo esto antes vivía en un `Column`
+    // fijo (sin scroll) con un `LazyColumn` aparte solo para la lista de
+    // notas -- al agregar la tarjeta del editor, el contenido ya no cabía
+    // en pantallas chicas y el estado "Sin notas guardadas" quedaba cortado
+    // sin forma de hacer scroll para verlo. Ahora es una única `LazyColumn`
+    // para toda la pestaña.
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
 
         // ── Párrafos resaltados ───────────────────────────────────────────────
         if (highlights.isNotEmpty() && documentText.isNotEmpty()) {
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text       = stringResource(R.string.study_highlighted_paragraphs_count, highlights.size),
-                    style      = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color      = MaterialTheme.colorScheme.onSurface
-                )
-                LazyColumn(
-                    modifier            = Modifier.fillMaxWidth().heightIn(max = 140.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+            item {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment     = Alignment.CenterVertically
                 ) {
-                    itemsIndexed(highlights.sorted()) { _, index ->
-                        if (index < documentText.size) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape    = MaterialTheme.shapes.medium,
-                                colors   = CardDefaults.cardColors(
-                                    containerColor = WarningAmber.copy(alpha = 0.1f)
-                                )
-                            ) {
-                                Row(
-                                    modifier              = Modifier.padding(10.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(Icons.Rounded.Bookmark, null,
-                                        tint     = WarningAmber,
-                                        modifier = Modifier.size(16.dp))
-                                    Text(
-                                        text     = documentText[index],
-                                        style    = MaterialTheme.typography.bodySmall,
-                                        color    = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 2
-                                    )
-                                }
-                            }
+                    Icon(
+                        imageVector        = Icons.Rounded.Bookmarks,
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text       = stringResource(R.string.study_highlighted_paragraphs_count, highlights.size),
+                        style      = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color      = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            itemsIndexed(highlights.sorted()) { _, index ->
+                if (index < documentText.size) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
+                        shape    = MaterialTheme.shapes.medium,
+                        colors   = CardDefaults.cardColors(
+                            containerColor = WarningAmber.copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Row(
+                            modifier              = Modifier.padding(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Rounded.Bookmark, null,
+                                tint     = WarningAmber,
+                                modifier = Modifier.size(16.dp))
+                            Text(
+                                text     = documentText[index],
+                                style    = MaterialTheme.typography.bodySmall,
+                                color    = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2
+                            )
                         }
                     }
                 }
             }
-            HorizontalDivider()
+            item { HorizontalDivider(modifier = Modifier.padding(top = 8.dp)) }
         }
 
         // ── Editor de nota nueva ──────────────────────────────────────────────
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text       = stringResource(R.string.study_new_note),
-                style      = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.onSurface
-            )
-
-            // Campo título
-            OutlinedTextField(
-                value         = currentTitle,
-                onValueChange = { currentTitle = it },
-                modifier      = Modifier.fillMaxWidth(),
-                label         = { Text(stringResource(R.string.study_note_title_label)) },
-                placeholder   = { Text(stringResource(R.string.study_note_title_placeholder)) },
-                singleLine    = true,
-                leadingIcon   = {
-                    Icon(
-                        imageVector        = Icons.Rounded.Title,
-                        contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(20.dp)
-                    )
-                },
-                shape  = MaterialTheme.shapes.large,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
-            )
-
-            // Campo contenido + botón micrófono
-            OutlinedTextField(
-                value         = currentNote,
-                onValueChange = {
-                    currentNote = it
-                    onNotesChange(it)
-                },
-                modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
-                placeholder   = { Text(stringResource(R.string.study_note_content_placeholder)) },
-                trailingIcon  = {
-                    IconButton(
-                        onClick  = { startVoiceInput() },
-                        modifier = Modifier.size(40.dp)
+        // Envuelto en su propia tarjeta (antes flotaba directo sobre el
+        // fondo) para que tenga la misma jerarquía visual que las notas
+        // guardadas de más abajo, en vez de sentirse como una sección aparte.
+        item {
+            Card(
+                modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                shape     = MaterialTheme.shapes.large,
+                colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(1.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment     = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector        = if (isListening)
-                                Icons.Rounded.MicOff
-                            else
-                                Icons.Rounded.Mic,
-                            contentDescription = stringResource(R.string.study_dictate_note),
-                            tint               = if (isListening)
+                            imageVector        = Icons.Rounded.EditNote,
+                            contentDescription = null,
+                            tint               = MaterialTheme.colorScheme.primary,
+                            modifier           = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text       = stringResource(R.string.study_new_note),
+                            style      = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color      = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    // Campo título
+                    OutlinedTextField(
+                        value         = currentTitle,
+                        onValueChange = { currentTitle = it },
+                        modifier      = Modifier.fillMaxWidth(),
+                        label         = { Text(stringResource(R.string.study_note_title_label)) },
+                        placeholder   = { Text(stringResource(R.string.study_note_title_placeholder)) },
+                        singleLine    = true,
+                        leadingIcon   = {
+                            Icon(
+                                imageVector        = Icons.Rounded.Title,
+                                contentDescription = null,
+                                tint               = MaterialTheme.colorScheme.primary,
+                                modifier           = Modifier.size(20.dp)
+                            )
+                        },
+                        shape  = MaterialTheme.shapes.large,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+
+                    // Campo contenido + botón micrófono
+                    OutlinedTextField(
+                        value         = currentNote,
+                        onValueChange = {
+                            currentNote = it
+                            onNotesChange(it)
+                        },
+                        modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
+                        placeholder   = { Text(stringResource(R.string.study_note_content_placeholder)) },
+                        trailingIcon  = {
+                            IconButton(
+                                onClick  = { startVoiceInput() },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector        = if (isListening)
+                                        Icons.Rounded.MicOff
+                                    else
+                                        Icons.Rounded.Mic,
+                                    contentDescription = stringResource(R.string.study_dictate_note),
+                                    tint               = if (isListening)
+                                        MaterialTheme.colorScheme.error
+                                    else
+                                        MaterialTheme.colorScheme.primary,
+                                    modifier           = Modifier.size(22.dp)
+                                )
+                            }
+                        },
+                        shape  = MaterialTheme.shapes.large,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor   = if (isListening)
                                 MaterialTheme.colorScheme.error
                             else
                                 MaterialTheme.colorScheme.primary,
-                            modifier           = Modifier.size(22.dp)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
-                    }
-                },
-                shape  = MaterialTheme.shapes.large,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = if (isListening)
-                        MaterialTheme.colorScheme.error
-                    else
-                        MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
-            )
+                    )
 
-            // Indicador de escucha activa
-            if (isListening) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment     = Alignment.CenterVertically,
-                    modifier              = Modifier.padding(start = 4.dp)
-                ) {
-                    Icon(
-                        imageVector        = Icons.Rounded.GraphicEq,
-                        contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.error,
-                        modifier           = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text  = stringResource(R.string.study_listening),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    // Indicador de escucha activa
+                    if (isListening) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            modifier              = Modifier.padding(start = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector        = Icons.Rounded.GraphicEq,
+                                contentDescription = null,
+                                tint               = MaterialTheme.colorScheme.error,
+                                modifier           = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text  = stringResource(R.string.study_listening),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                    val untitledNoteLabel = stringResource(R.string.study_untitled_note)
+
+                    // Botón guardar
+                    Button(
+                        onClick = {
+                            val text  = currentNote.trim()
+                            val title = currentTitle.trim()
+                            if (text.isNotBlank()) {
+                                val newNote = SavedNote(
+                                    id       = System.currentTimeMillis().toString(),
+                                    title    = title.ifBlank { untitledNoteLabel },
+                                    text     = text,
+                                    dateTime = dateFormatter.format(java.util.Date())
+                                )
+                                val updated = listOf(newNote) + savedNotes
+                                StudyNotesStorage.saveNotes(context, updated)
+                                DocuSmartAnalytics.logNoteCreated()
+                                savedNotes   = updated
+                                currentNote  = ""
+                                currentTitle = ""
+                                onNotesChange("")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape    = MaterialTheme.shapes.medium,
+                        enabled  = currentNote.trim().isNotBlank()
+                    ) {
+                        Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.study_save_note), style = MaterialTheme.typography.labelLarge)
+                    }
                 }
-            }
-
-            val untitledNoteLabel = stringResource(R.string.study_untitled_note)
-
-            // Botón guardar
-            Button(
-                onClick = {
-                    val text  = currentNote.trim()
-                    val title = currentTitle.trim()
-                    if (text.isNotBlank()) {
-                        val newNote = SavedNote(
-                            id       = System.currentTimeMillis().toString(),
-                            title    = title.ifBlank { untitledNoteLabel },
-                            text     = text,
-                            dateTime = dateFormatter.format(java.util.Date())
-                        )
-                        val updated = listOf(newNote) + savedNotes
-                        StudyNotesStorage.saveNotes(context, updated)
-                        DocuSmartAnalytics.logNoteCreated()
-                        savedNotes   = updated
-                        currentNote  = ""
-                        currentTitle = ""
-                        onNotesChange("")
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape    = MaterialTheme.shapes.medium,
-                enabled  = currentNote.trim().isNotBlank()
-            ) {
-                Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.study_save_note), style = MaterialTheme.typography.labelLarge)
             }
         }
 
-        HorizontalDivider()
-
         // ── Lista de notas guardadas ──────────────────────────────────────────
-        Row(
-            modifier              = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically
-        ) {
-            Text(
-                text       = if (savedNotes.isEmpty()) stringResource(R.string.study_no_saved_notes)
-                else stringResource(R.string.study_saved_notes_count, savedNotes.size),
-                style      = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.onSurface
-            )
-            if (savedNotes.isNotEmpty()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StudyExportNotesButton(notes = savedNotes)
-                    TextButton(onClick = { showDeleteAll = true }) {
-                        Text(
-                            text  = stringResource(R.string.study_delete_all),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
+        item {
+            Row(
+                modifier              = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector        = Icons.AutoMirrored.Rounded.Notes,
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text       = if (savedNotes.isEmpty()) stringResource(R.string.study_no_saved_notes)
+                        else stringResource(R.string.study_saved_notes_count, savedNotes.size),
+                        style      = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color      = MaterialTheme.colorScheme.primary
+                    )
+                }
+                if (savedNotes.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StudyExportNotesButton(notes = savedNotes)
+                        TextButton(onClick = { showDeleteAll = true }) {
+                            Text(
+                                text  = stringResource(R.string.study_delete_all),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }
         }
 
         if (savedNotes.isEmpty()) {
-            Column(
-                modifier            = Modifier.fillMaxWidth().padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector        = Icons.Rounded.NoteAlt,
-                    contentDescription = null,
-                    modifier           = Modifier.size(48.dp),
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                )
-                Text(
-                    text      = stringResource(R.string.study_no_notes_yet),
-                    style     = MaterialTheme.typography.bodyMedium,
-                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+            item {
+                Column(
+                    modifier            = Modifier.fillMaxWidth().padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Misma insignia circular con degradado de acento que usan
+                    // los estados vacíos de Lectura y Resumen -- antes era un
+                    // ícono gris plano, sin relación visual con el resto de la
+                    // pantalla.
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(
+                                brush = Brush.linearGradient(rememberAccentGradient()),
+                                shape = MaterialTheme.shapes.extraLarge
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector        = Icons.Rounded.NoteAlt,
+                            contentDescription = null,
+                            tint               = Color.White,
+                            modifier           = Modifier.size(30.dp)
+                        )
+                    }
+                    Text(
+                        text      = stringResource(R.string.study_no_notes_yet),
+                        style     = MaterialTheme.typography.bodyMedium,
+                        color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         } else {
-            LazyColumn(
-                modifier       = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                itemsIndexed(savedNotes, key = { _, note -> note.id }) { _, note ->
-                    Card(
-                        modifier  = Modifier.fillMaxWidth(),
-                        shape     = MaterialTheme.shapes.large,
-                        colors    = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(2.dp)
+            itemsIndexed(savedNotes, key = { _, note -> note.id }) { _, note ->
+                Card(
+                    modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 5.dp),
+                    shape     = MaterialTheme.shapes.large,
+                    colors    = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        // Cabecera: título + eliminar
+                        Row(
+                            modifier              = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment     = Alignment.CenterVertically
                         ) {
-                            // Cabecera: título + eliminar
                             Row(
-                                modifier              = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment     = Alignment.CenterVertically
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment     = Alignment.CenterVertically,
+                                modifier              = Modifier.weight(1f)
                             ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalAlignment     = Alignment.CenterVertically,
-                                    modifier              = Modifier.weight(1f)
-                                ) {
-                                    Icon(
-                                        imageVector        = Icons.Rounded.NoteAlt,
-                                        contentDescription = null,
-                                        tint               = MaterialTheme.colorScheme.primary,
-                                        modifier           = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text       = note.title,
-                                        style      = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color      = MaterialTheme.colorScheme.onSurface,
-                                        maxLines   = 1,
-                                        overflow   = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                }
-                                IconButton(
-                                    onClick  = {
-                                        val updated = savedNotes.filter { it.id != note.id }
-                                        StudyNotesStorage.saveNotes(context, updated)
-                                        savedNotes = updated
-                                    },
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(
-                                        imageVector        = Icons.Rounded.DeleteOutline,
-                                        contentDescription = stringResource(R.string.study_delete_note_desc),
-                                        tint               = MaterialTheme.colorScheme.error,
-                                        modifier           = Modifier.size(16.dp)
-                                    )
-                                }
+                                Icon(
+                                    imageVector        = Icons.Rounded.NoteAlt,
+                                    contentDescription = null,
+                                    tint               = MaterialTheme.colorScheme.primary,
+                                    modifier           = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text       = note.title,
+                                    style      = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color      = MaterialTheme.colorScheme.onSurface,
+                                    maxLines   = 1,
+                                    overflow   = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
                             }
-
-                            // Fecha
-                            Text(
-                                text  = note.dateTime,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            HorizontalDivider(
-                                thickness = 0.5.dp,
-                                color     = MaterialTheme.colorScheme.outlineVariant
-                            )
-
-                            // Contenido
-                            Text(
-                                text       = note.text,
-                                style      = MaterialTheme.typography.bodyMedium,
-                                color      = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 22.sp
-                            )
+                            IconButton(
+                                onClick  = {
+                                    val updated = savedNotes.filter { it.id != note.id }
+                                    StudyNotesStorage.saveNotes(context, updated)
+                                    savedNotes = updated
+                                },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector        = Icons.Rounded.DeleteOutline,
+                                    contentDescription = stringResource(R.string.study_delete_note_desc),
+                                    tint               = MaterialTheme.colorScheme.error,
+                                    modifier           = Modifier.size(16.dp)
+                                )
+                            }
                         }
+
+                        // Fecha
+                        Text(
+                            text  = note.dateTime,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color     = MaterialTheme.colorScheme.outlineVariant
+                        )
+
+                        // Contenido
+                        Text(
+                            text       = note.text,
+                            style      = MaterialTheme.typography.bodyMedium,
+                            color      = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 22.sp
+                        )
                     }
                 }
             }
+            item { Spacer(Modifier.height(16.dp)) }
         }
     }
 }
@@ -1664,20 +1737,27 @@ private fun PomodoroTab(
     onToggle: () -> Unit,
     onReset: () -> Unit
 ) {
+    // Bug real corregido 2026-09-08: mismo problema que se encontró y
+    // corrigió en Notas -- este `Column` no tenía scroll, así que en
+    // pantallas más chicas "Pomodoros completados" y la tarjeta de info
+    // quedaban cortados fuera de la pantalla, sin forma de verlos.
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(32.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
 
         PomodoroTypeIndicator(isBreak)
         PomodoroClock(minutes, seconds, isRunning, isBreak)
         PomodoroControls(isRunning, isBreak, onToggle, onReset)
         PomodoroCountCard(pomodoroCount)
         PomodoroInfoCard()
+
+        Spacer(Modifier.height(8.dp))
     }
 }
 
@@ -1924,12 +2004,26 @@ private fun SummaryTab(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Summarize,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
-                    )
+                    // Misma insignia circular con degradado de acento que el
+                    // estado "sin documento" de arriba -- antes este estado
+                    // usaba un ícono plano más chico, sin relación visual con
+                    // el resto de la pantalla.
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(
+                                brush = Brush.linearGradient(rememberAccentGradient()),
+                                shape = MaterialTheme.shapes.extraLarge
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Summarize,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
                     Text(
                         text  = stringResource(R.string.study_summary_local_note),
                         style = MaterialTheme.typography.bodySmall,
@@ -1971,14 +2065,26 @@ private fun SummaryResultView(
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text  = stringResource(R.string.study_summary_sentences_count, sentences.size),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
-            )
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector        = Icons.Rounded.Summarize,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(18.dp)
+                )
+                Text(
+                    text  = stringResource(R.string.study_summary_sentences_count, sentences.size),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             IconButton(onClick = onSave) {
                 Icon(
                     imageVector = if (savedToDownloads) Icons.Rounded.CheckCircle else Icons.Rounded.Download,
@@ -1997,22 +2103,46 @@ private fun SummaryResultView(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(sentences) { sentence ->
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 7.dp)
-                            .size(6.dp)
-                            .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraLarge)
-                    )
-                    Text(
-                        text  = sentence,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
+            // Cada punto clave en su propia tarjeta numerada -- antes era
+            // solo un punto (bullet) suelto sobre el fondo, sin la misma
+            // jerarquía de tarjeta que el resto de Modo Estudio (notas,
+            // historial de lectura).
+            itemsIndexed(sentences) { index, sentence ->
+                Card(
+                    modifier  = Modifier.fillMaxWidth(),
+                    shape     = MaterialTheme.shapes.medium,
+                    colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(1.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    MaterialTheme.shapes.extraLarge
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text  = "${index + 1}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text  = sentence,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
             item { Spacer(Modifier.height(24.dp)) }

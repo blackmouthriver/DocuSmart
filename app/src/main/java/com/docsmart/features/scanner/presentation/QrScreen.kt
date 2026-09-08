@@ -48,7 +48,6 @@ import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.analytics.DocuSmartAnalytics
-import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentFilterChipColors
@@ -357,14 +356,36 @@ fun QrReaderScreen(
 
                     Spacer(Modifier.height(8.dp))
 
-                    // Ícono según tipo
+                    // Ícono según tipo -- bug real corregido 2026-09-08: URL/
+                    // Documento/Email/Texto usaban `DocuBlue`, un azul fijo que
+                    // ignoraba el Color de acento elegido en Ajustes (mismo
+                    // patrón de bug ya corregido antes en banners y sombras --
+                    // ver `AccentGradient.kt`). Imagen/Teléfono se quedan en
+                    // verde a propósito, como diferenciación semántica.
+                    val accentTypeColor = MaterialTheme.colorScheme.primary
                     val (typeIcon, typeColor, typeLabel) = when (qrType) {
-                        QrContentType.URL      -> Triple(Icons.Rounded.Link,         DocuBlue,    stringResource(R.string.qr_type_url_detected))
-                        QrContentType.IMAGE    -> Triple(Icons.Rounded.Image,        SuccessGreen,stringResource(R.string.qr_type_image_detected))
-                        QrContentType.DOCUMENT -> Triple(Icons.Rounded.Description,  DocuBlue,    stringResource(R.string.qr_type_document_detected))
-                        QrContentType.EMAIL    -> Triple(Icons.Rounded.Email,        DocuBlue,    stringResource(R.string.qr_type_email_detected))
-                        QrContentType.PHONE    -> Triple(Icons.Rounded.Phone,        SuccessGreen,stringResource(R.string.qr_type_phone_detected))
-                        QrContentType.TEXT     -> Triple(Icons.Rounded.TextFields,   DocuBlue,    stringResource(R.string.qr_type_text_detected))
+                        QrContentType.URL ->
+                            Triple(Icons.Rounded.Link, accentTypeColor, stringResource(R.string.qr_type_url_detected))
+                        QrContentType.IMAGE ->
+                            Triple(Icons.Rounded.Image, SuccessGreen, stringResource(R.string.qr_type_image_detected))
+                        QrContentType.DOCUMENT ->
+                            Triple(
+                                Icons.Rounded.Description,
+                                accentTypeColor,
+                                stringResource(R.string.qr_type_document_detected)
+                            )
+                        QrContentType.EMAIL ->
+                            Triple(
+                                Icons.Rounded.Email, accentTypeColor, stringResource(R.string.qr_type_email_detected)
+                            )
+                        QrContentType.PHONE ->
+                            Triple(Icons.Rounded.Phone, SuccessGreen, stringResource(R.string.qr_type_phone_detected))
+                        QrContentType.TEXT ->
+                            Triple(
+                                Icons.Rounded.TextFields,
+                                accentTypeColor,
+                                stringResource(R.string.qr_type_text_detected)
+                            )
                     }
 
                     Box(
