@@ -182,6 +182,60 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
+// Hallazgo SonarCloud text:S8569: sin lock file, dos builds del mismo commit
+// pueden resolver versiones transitivas distintas si algo cambia río arriba
+// (un rango de versión, un repositorio, o un artefacto republicado) -- el
+// lock file fija el árbol de dependencias exacto ya resuelto, para que el
+// build sea reproducible y una versión transitiva comprometida no pueda
+// colarse en silencio. `lockAllConfigurations()` cubre todas las
+// configuraciones (debug/release, test, androidTest, ksp, detekt, etc.), no
+// solo las de "dependencies" normales.
+//
+// Mantenimiento: cada vez que una dependencia cambia de versión (a mano o
+// vía Dependabot), hay que regenerar el lock file y commitear el resultado,
+// o el build falla con "Locked dependencies... have changed":
+//   ./gradlew resolveAndLockAll --write-locks
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+// Task recomendada por la documentación oficial de Gradle para poder
+// regenerar el lock file de una sola vez: sin esto, `--write-locks` solo
+// fija las configuraciones que la tarea elegida llegue a resolver (ej.
+// `assembleDebug` nunca toca las configuraciones de detekt/lint/androidTest).
+//
+// Un puñado de configuraciones internas de AGP (ej. la ambigüedad de
+// variante que aparece al forzar `debugAndroidTestCompileClasspath` fuera
+// del pipeline normal de compilación) no se pueden resolver de forma
+// aislada así -- no son configuraciones de dependencias reales, así que se
+// omiten con una advertencia en vez de abortar toda la generación del lock.
+tasks.register("resolveAndLockAll") {
+    doFirst {
+        require(gradle.startParameter.isWriteDependencyLocks) {
+            "Ejecutar con --write-locks, ej.: ./gradlew resolveAndLockAll --write-locks"
+        }
+    }
+    doLast {
+        configurations.filter { it.isCanBeResolved }.forEach { configuration ->
+            try {
+                configuration.resolve()
+            } catch (e: Exception) {
+                logger.warn("resolveAndLockAll: se omite '${configuration.name}' (${e.message})")
+            }
+        }
+    }
+}
+
+// Hallazgo SonarCloud kotlin:S6474 (ver comentario en gradle/verification-
+// metadata.xml): checksum sha256 de cada dependencia realmente usada, para
+// detectar un artefacto alterado/comprometido antes de que entre al build.
+//
+// Mantenimiento: cada vez que una dependencia cambia de versión (a mano o
+// vía Dependabot) o se agrega una nueva, el build falla con "Dependency
+// verification failed" hasta regenerar el archivo y commitear el
+// resultado:
+//   ./gradlew --write-verification-metadata sha256 assembleDebug assembleDebugAndroidTest testDebugUnitTest detekt lintDebug
+
 // Reporte XML de cobertura para SonarCloud, fusionando los unit tests
 // JVM (testDebugUnitTest) con las pruebas instrumentadas de Compose UI
 // Testing (connectedDebugAndroidTest, ver docs/requirements/compose-ui-testing.md
