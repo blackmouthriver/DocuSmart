@@ -48,6 +48,7 @@ import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.analytics.DocuSmartAnalytics
+import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentFilterChipColors
@@ -151,36 +152,14 @@ fun QrReaderScreen(
         contentWindowInsets = WindowInsets.systemBars.only(
             WindowInsetsSides.Top + WindowInsetsSides.Horizontal
         ),
-        containerColor = Color.Transparent, // fondo animado global (backlog UX 2026-09-06)
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.qr_reader_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.qr_reader_subtitle),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
+        containerColor = Color.Transparent // fondo animado global (backlog UX 2026-09-06)
     ) { innerPadding ->
         // ── Diálogo: QR protegido con contraseña ──────────────────────────────
         pendingProtectedContent?.let {
             AlertDialog(
                 onDismissRequest = { resumeScanning() },
                 shape = MaterialTheme.shapes.large,
-                icon  = { Icon(Icons.Rounded.Lock, null) },
+                icon  = { Icon(Icons.Rounded.Lock, null, tint = MaterialTheme.colorScheme.primary) },
                 title = { Text(stringResource(R.string.qr_protected_title)) },
                 text  = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -230,6 +209,16 @@ fun QrReaderScreen(
         Column(
             modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
+            // Banner azul con degradado de acento (2026-09-08, pedido
+            // explícito del usuario) -- reemplaza el TopAppBar plano de
+            // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
+            DocuSmartTopBanner(
+                screenTitle    = stringResource(R.string.qr_reader_title),
+                screenSubtitle = stringResource(R.string.qr_reader_subtitle),
+                onBack         = onBack,
+                modifier       = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            )
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             if (qrResult == null) {
                 if (!hasCameraPermission) {
                     // ── Sin permiso ───────────────────────────────────────────
@@ -647,6 +636,7 @@ fun QrReaderScreen(
                     }
                 }
             }
+            }
         }
     }
 }
@@ -670,6 +660,30 @@ private fun QrCornerDecoration() {
         Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)))
     }
 }
+
+// Chips del selector de tipo (URL/Texto/Email/Tel/Imagen/Doc) -- pedido
+// explícito del usuario 2026-09-08: fondo tintado y borde con el Color de
+// acento siempre visibles, no solo el contorno neutro por defecto de
+// Material3, más marcado cuando el chip está seleccionado.
+@Composable
+private fun qrTypeChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
+    containerColor           = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+    labelColor               = MaterialTheme.colorScheme.onSurface,
+    iconColor                = MaterialTheme.colorScheme.primary,
+    selectedContainerColor   = MaterialTheme.colorScheme.primaryContainer,
+    selectedLabelColor       = MaterialTheme.colorScheme.onPrimaryContainer,
+    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+)
+
+@Composable
+private fun qrTypeChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
+    enabled             = true,
+    selected            = selected,
+    borderColor         = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+    selectedBorderColor = MaterialTheme.colorScheme.primary,
+    borderWidth         = 1.dp,
+    selectedBorderWidth = 1.5.dp
+)
 
 // ── Pantalla: Crear QR ────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
@@ -764,29 +778,7 @@ fun QrCreatorScreen(
         contentWindowInsets = WindowInsets.systemBars.only(
             WindowInsetsSides.Top + WindowInsetsSides.Horizontal
         ),
-        containerColor = Color.Transparent, // fondo animado global (backlog UX 2026-09-06)
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.qr_creator_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.qr_creator_subtitle),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = stringResource(R.string.general_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
+        containerColor = Color.Transparent // fondo animado global (backlog UX 2026-09-06)
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -796,6 +788,15 @@ fun QrCreatorScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Banner azul con degradado de acento (2026-09-08, pedido
+            // explícito del usuario) -- reemplaza el TopAppBar plano de
+            // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
+            DocuSmartTopBanner(
+                screenTitle    = stringResource(R.string.qr_creator_title),
+                screenSubtitle = stringResource(R.string.qr_creator_subtitle),
+                onBack         = onBack
+            )
+
             // ── AdMob — solo para usuarios free (backlog UX §8) ───────────────
             if (!isPremium) {
                 DocuSmartBannerAd(
@@ -807,6 +808,11 @@ fun QrCreatorScreen(
             Spacer(Modifier.height(4.dp))
 
             // ── Selector de tipo en 2 filas ───────────────────────────────────
+            // Pedido explícito del usuario 2026-09-08: los chips sin
+            // seleccionar se veían sueltos, sin borde ni fondo propios (solo
+            // el contorno gris neutro por defecto de Material3). Ahora
+            // siempre llevan un fondo tintado y un borde con el Color de
+            // acento, más marcado cuando están seleccionados.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -834,7 +840,8 @@ fun QrCreatorScreen(
                                 }
                             },
                             modifier  = Modifier.weight(1f),
-                            colors    = accentFilterChipColors()
+                            colors    = qrTypeChipColors(),
+                            border    = qrTypeChipBorder(selectedType == index)
                         )
                     }
                 }
@@ -865,7 +872,8 @@ fun QrCreatorScreen(
                                 }
                             },
                             modifier  = Modifier.weight(1f),
-                            colors    = accentFilterChipColors()
+                            colors    = qrTypeChipColors(),
+                            border    = qrTypeChipBorder(selectedType == index)
                         )
                     }
                 }
@@ -1011,7 +1019,15 @@ fun QrCreatorScreen(
                         ),
                         minLines = if (selectedType == 1) 3 else 1,
                         maxLines = if (selectedType == 1) 5 else 1,
-                        shape    = MaterialTheme.shapes.large
+                        shape    = MaterialTheme.shapes.large,
+                        // Pedido explícito del usuario 2026-09-08: borde con
+                        // el Color de acento siempre visible (antes solo se
+                        // notaba al enfocar el campo, el contorno normal era
+                        // el gris neutro por defecto de Material3).
+                        colors   = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                            focusedBorderColor   = MaterialTheme.colorScheme.primary
+                        )
                     )
                 }
             }
@@ -1043,15 +1059,18 @@ fun QrCreatorScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment     = Alignment.CenterVertically
                         ) {
+                            // Pedido explícito del usuario 2026-09-08: ícono
+                            // y título siempre con el Color de acento (antes
+                            // el ícono se apagaba a gris con la contraseña
+                            // desactivada).
                             Icon(Icons.Rounded.Lock, null,
-                                tint = if (usePassword) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp))
                             Column {
                                 Text(stringResource(R.string.qr_protect_password),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface)
+                                    color = MaterialTheme.colorScheme.primary)
                                 Text(stringResource(R.string.qr_protect_password_desc),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1059,7 +1078,12 @@ fun QrCreatorScreen(
                         }
                         Switch(
                             checked         = usePassword,
-                            onCheckedChange = { usePassword = it; if (!it) password = "" }
+                            onCheckedChange = { usePassword = it; if (!it) password = "" },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                checkedBorderColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                     if (usePassword) {
