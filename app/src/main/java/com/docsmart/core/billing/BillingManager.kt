@@ -185,18 +185,49 @@ class BillingManager @Inject constructor(
     }
 
     suspend fun restorePurchases() {
+        // Bug real corregido 2026-09-08: antes se llamaba a
+        // queryPurchasesAsync() sin esperar a que la conexión con Play
+        // Billing quedara lista (`readyDeferred` se completaba pero nunca se
+        // esperaba en ningún lado) -- si esta función corría antes de que la
+        // conexión terminara de establecerse, la consulta podía fallar o
+        // devolver una lista vacía sin haber consultado nada de verdad.
+        val ready = readyDeferred.await()
+        if (!ready) {
+            Timber.w("BillingManager: restorePurchases() -- la conexión con Play Billing nunca quedó lista")
+            emitResult(PurchaseResult.Error("No se pudo conectar con Google Play"))
+            return
+        }
+
         val subs = billingClient.queryPurchasesAsync(
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
         )
+
+        // Bug real corregido 2026-09-08: antes no se revisaba si la consulta
+        // en sí había fallado (sin red, servicio de Play Store caído, etc.)
+        // -- una consulta fallida devuelve `purchasesList` vacía, exactamente
+        // igual que "el usuario genuinamente no tiene compras", así que esta
+        // función desactivaba Premium a un usuario que sí había pagado, cada
+        // vez que la app arranca (esto corre automáticamente en cada inicio,
+        // no solo al tocar "Restaurar compras"). Ahora solo se toca el
+        // estado de Premium cuando la consulta realmente tuvo éxito.
+        if (subs.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+            Timber.w(
+                "BillingManager: restorePurchases() -- la consulta falló, no se toca el estado " +
+                    "Premium actual (${subs.billingResult.debugMessage})"
+            )
+            emitResult(PurchaseResult.Error(subs.billingResult.debugMessage))
+            return
+        }
+
         val owned = subs.purchasesList
             .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
 
         if (owned.isEmpty()) {
             premiumManager.deactivatePremium()
             emitResult(PurchaseResult.NoPurchasesToRestore)
-            return
+        } else {
+            owned.forEach { handlePurchase(it, isRestore = true) }
         }
-        owned.forEach { handlePurchase(it, isRestore = true) }
     }
 
     private fun handlePurchase(purchase: Purchase, isRestore: Boolean = false) {

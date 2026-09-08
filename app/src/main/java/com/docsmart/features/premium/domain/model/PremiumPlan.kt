@@ -35,9 +35,14 @@ enum class PremiumFeature(
         titleRes = R.string.premium_feature_compress_title,
         descRes  = R.string.premium_feature_compress_desc
     ),
+    // Bug real corregido 2026-09-08: estaba marcado `isAvailableFree = true`,
+    // así que la pantalla Premium mostraba "Conversiones ilimitadas" como ya
+    // desbloqueado para cualquier usuario gratis -- pero el límite diario de
+    // 5 conversiones (`DailyLimitManager.LIMIT_CONVERSIONS`) sí se aplica de
+    // verdad en `ConverterViewModel`. Le mentía al usuario sobre lo que
+    // Premium realmente ofrece.
     UNLIMITED_CONVERT(
-        titleRes        = R.string.premium_feature_unlimited_title,
-        descRes         = R.string.premium_feature_unlimited_desc,
-        isAvailableFree = true
+        titleRes = R.string.premium_feature_unlimited_title,
+        descRes  = R.string.premium_feature_unlimited_desc
     )
 }
