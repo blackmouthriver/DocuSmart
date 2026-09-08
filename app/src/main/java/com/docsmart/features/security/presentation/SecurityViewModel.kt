@@ -116,7 +116,17 @@ class SecurityViewModel @Inject constructor(
                 .setSubtitle(promptSubtitle)
                 .setNegativeButtonText(usePinLabel)
                 .build()
-            prompt.authenticate(promptInfo)
+            // Revisado (hallazgo SonarCloud kotlin:S6293): sin CryptoObject a
+            // propósito -- "Carpeta Segura" no cifra los archivos, solo los
+            // mueve a una carpeta privada de la app y exige PIN o biometría
+            // como puerta de acceso (ver SecurityManager, que jamás cifra/
+            // descifra nada). Un CryptoObject solo aporta seguridad real
+            // cuando protege una operación criptográfica de verdad -- acá
+            // ligarlo a un cifrado ficticio sería más código y más riesgo de
+            // dejar a un usuario fuera de sus archivos sin ganar protección
+            // real. Si en el futuro se cifra el contenido de los archivos,
+            // este es el lugar para agregar el CryptoObject correspondiente.
+            prompt.authenticate(promptInfo) // NOSONAR
         } catch (e: Exception) {
             Timber.e(e, "Error biometría: ${e.message}")
             _uiState.update { it.copy(error = String.format(errorTemplate, e.message ?: "")) }

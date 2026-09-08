@@ -25,6 +25,8 @@ import com.docsmart.core.ui.theme.AccentColor
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.FontScale
 import com.docsmart.core.ui.theme.ThemeManager
+import com.docsmart.features.library.data.DownloadsAccessManager
+import com.docsmart.features.library.data.TrashRepository
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -91,7 +93,17 @@ class SettingsScreenTest {
         val adManager = mockk<AdManager>(relaxed = true)
         every { adManager.isPremium } returns MutableStateFlow(true)
         every { adManager.isInitialized } returns MutableStateFlow(false)
-        return SettingsViewModel(adManager = adManager)
+
+        val downloadsAccessManager = mockk<DownloadsAccessManager>(relaxed = true)
+        every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
+
+        val trashRepository = mockk<TrashRepository>(relaxed = true)
+
+        return SettingsViewModel(
+            adManager = adManager,
+            downloadsAccessManager = downloadsAccessManager,
+            trashRepository = trashRepository
+        )
     }
 
     private fun setContentWithLocale(content: @Composable () -> Unit) {

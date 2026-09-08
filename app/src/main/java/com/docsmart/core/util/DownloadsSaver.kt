@@ -53,7 +53,14 @@ object DownloadsSaver {
                 values.put(MediaStore.Downloads.IS_PENDING, 0)
                 resolver.update(uri, values, null, null)
             } else {
-                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                // Revisado (hallazgo SonarCloud kotlin:S5324): solo se alcanza en
+                // Android 9 y anteriores (Build.VERSION_CODES.Q ya usa MediaStore,
+                // con almacenamiento por ámbitos, arriba) -- es el reemplazo
+                // retrocompatible oficial recomendado por Android para ese rango
+                // de API, y el destino es la carpeta pública de Descargas por
+                // pedido explícito del usuario ("Guardar en Descargas"), no una
+                // ruta interna sensible.
+                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) // NOSONAR
                 file.copyTo(File(dir, displayName), overwrite = true)
             }
             true
@@ -87,7 +94,11 @@ object DownloadsSaver {
                 values.put(MediaStore.Downloads.IS_PENDING, 0)
                 resolver.update(destUri, values, null, null)
             } else {
-                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                // Revisado (hallazgo SonarCloud kotlin:S5324): mismo caso que en
+                // saveFile() arriba -- solo Android 9 y anteriores, reemplazo
+                // retrocompatible oficial de MediaStore, destino público pedido
+                // explícitamente por el usuario.
+                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) // NOSONAR
                 val destFile = File(dir, displayName)
                 context.contentResolver.openInputStream(sourceUri)?.use { input ->
                     destFile.outputStream().use { output -> input.copyTo(output) }

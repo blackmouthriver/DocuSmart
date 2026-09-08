@@ -24,6 +24,7 @@ import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.library.data.DocumentRepository
+import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import io.mockk.coEvery
 import io.mockk.every
@@ -86,11 +87,15 @@ class LibraryScreenTest {
         val trashRepository = mockk<TrashRepository>(relaxed = true)
         coEvery { trashRepository.loadTrashedDocuments() } returns emptyList()
 
+        val downloadsAccessManager = mockk<DownloadsAccessManager>(relaxed = true)
+        every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
+
         return LibraryViewModel(
-            adManager           = adManager,
-            repository          = repository,
-            trashRepository     = trashRepository,
-            favoritesRepository = mockk<FavoritesRepository>(relaxed = true)
+            adManager             = adManager,
+            repository            = repository,
+            trashRepository       = trashRepository,
+            favoritesRepository   = mockk<FavoritesRepository>(relaxed = true),
+            downloadsAccessManager = downloadsAccessManager
         )
     }
 
