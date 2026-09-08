@@ -342,37 +342,10 @@ class SecurityViewModel @Inject constructor(
         successTemplate: String, errorMessage: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    val values = android.content.ContentValues().apply {
-                        put(android.provider.MediaStore.Downloads.DISPLAY_NAME, file.name)
-                        put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf")
-                        put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
-                    }
-                    val resolver = context.contentResolver
-                    val uri      = resolver.insert(
-                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
-                    )
-                    uri?.let {
-                        resolver.openOutputStream(it)?.use { output ->
-                            file.inputStream().use { input -> input.copyTo(output) }
-                        }
-                        values.clear()
-                        values.put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
-                        resolver.update(it, values, null, null)
-                    }
-                } else {
-                    val dest = java.io.File(
-                        android.os.Environment.getExternalStoragePublicDirectory(
-                            android.os.Environment.DIRECTORY_DOWNLOADS
-                        ), file.name
-                    )
-                    file.copyTo(dest, overwrite = true)
-                }
-                _uiState.update { it.copy(successMessage = String.format(successTemplate, file.name)) }
-            } catch (e: Exception) {
-                Timber.e(e, "Error guardando en Descargas")
-                _uiState.update { it.copy(error = errorMessage) }
+            val saved = com.docsmart.core.util.DownloadsSaver.saveFile(context, file, "application/pdf")
+            _uiState.update { state ->
+                if (saved) state.copy(successMessage = String.format(successTemplate, file.name))
+                else state.copy(error = errorMessage)
             }
         }
     }

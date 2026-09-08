@@ -1,16 +1,13 @@
 package com.docsmart.features.converter.presentation
 
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.converter.domain.model.BatchConversionItem
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
@@ -25,7 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
-import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -356,7 +352,9 @@ class ConverterViewModel @Inject constructor(
         if (successFiles.isEmpty()) return
 
         viewModelScope.launch {
-            val allSaved = successFiles.all { copyToDownloads(context, it) }
+            val allSaved = successFiles.all {
+                DownloadsSaver.saveFile(context, it, DownloadsSaver.mimeTypeForExtension(it.extension))
+            }
             _uiState.update { state ->
                 if (allSaved) state.copy(batchSavedToDownloads = true)
                 else state.copy(errorMessage = "No se pudieron guardar todos los archivos en Descargas")
@@ -404,7 +402,7 @@ class ConverterViewModel @Inject constructor(
         val file = _uiState.value.outputFile ?: return
         viewModelScope.launch {
             try {
-                val saved = copyToDownloads(context, file)
+                val saved = DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
                 _uiState.update { state ->
                     if (saved) state.copy(savedToDownloads = true)
                     else state.copy(errorMessage = "No se pudo guardar en Descargas")
@@ -412,42 +410,6 @@ class ConverterViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Error: ${e.message}") }
             }
-        }
-    }
-
-    private fun copyToDownloads(context: Context, file: File): Boolean {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val mime = when (file.extension.lowercase()) {
-                    "pdf"         -> "application/pdf"
-                    "txt"         -> "text/plain"
-                    "csv"         -> "text/csv"
-                    "jpg","jpeg"  -> "image/jpeg"
-                    "png"         -> "image/png"
-                    else          -> "application/octet-stream"
-                }
-                val values = ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-                    put(MediaStore.Downloads.MIME_TYPE, mime)
-                    put(MediaStore.Downloads.IS_PENDING, 1)
-                }
-                val resolver = context.contentResolver
-                val uri      = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
-                resolver.openOutputStream(uri)?.use { output ->
-                    FileInputStream(file).use { input -> input.copyTo(output) }
-                }
-                values.clear()
-                values.put(MediaStore.Downloads.IS_PENDING, 0)
-                resolver.update(uri, values, null, null)
-                true
-            } else {
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                file.copyTo(File(downloadsDir, file.name), overwrite = true)
-                true
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error guardando en Descargas")
-            false
         }
     }
 

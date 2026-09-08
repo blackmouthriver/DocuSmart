@@ -55,23 +55,24 @@ class CompressPdfUseCase @Inject constructor(
             val originalSize = cacheFile.length()
             Timber.d("$TAG: tamaño original = ${originalSize / 1024} KB")
 
-            val fileDescriptor = ParcelFileDescriptor.open(
+            // Bug real corregido 2026-09-08: `renderer`/`fileDescriptor` antes
+            // se cerraban a mano solo en el camino feliz (o en el caso
+            // "sin páginas") -- si `renderAndCompressPages()` fallaba a
+            // mitad de proceso (ej. `OutOfMemoryError` con un PDF grande,
+            // que además ni siquiera hereda de `Exception` y no lo atrapa
+            // el catch de más abajo), ambos quedaban abiertos para siempre.
+            // `.use{}` los cierra pase lo que pase.
+            val pdfDocument = ParcelFileDescriptor.open(
                 cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
-            )
-            val renderer = PdfRenderer(fileDescriptor)
-
-            if (renderer.pageCount == 0) {
-                renderer.close()
-                fileDescriptor.close()
-                return@withContext PdfToolResult.Error(messages.noPages)
+            ).use { fileDescriptor ->
+                PdfRenderer(fileDescriptor).use { renderer ->
+                    if (renderer.pageCount == 0) {
+                        return@withContext PdfToolResult.Error(messages.noPages)
+                    }
+                    Timber.d("$TAG: ${renderer.pageCount} páginas a comprimir")
+                    renderAndCompressPages(renderer, scaleFactorFor(quality), quality)
+                }
             }
-
-            Timber.d("$TAG: ${renderer.pageCount} páginas a comprimir")
-
-            val pdfDocument = renderAndCompressPages(renderer, scaleFactorFor(quality), quality)
-
-            renderer.close()
-            fileDescriptor.close()
 
             val name       = outputFileName ?: "Compressed_q$quality"
             val outputFile = createOutputFile(name)

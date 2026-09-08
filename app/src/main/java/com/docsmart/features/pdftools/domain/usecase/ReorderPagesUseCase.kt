@@ -56,13 +56,19 @@ class ReorderPagesUseCase @Inject constructor(
 
             val outputFile = createOutputFile(outputFileName ?: "Reordered")
 
-            val sourcePdf = PdfDocument(PdfReader(cacheFile))
-            val destPdf   = PdfDocument(PdfWriter(outputFile))
-            pageOrder.forEach { pageNumber ->
-                sourcePdf.copyPagesTo(pageNumber, pageNumber, destPdf)
+            // Bug real corregido 2026-09-08: `sourcePdf`/`destPdf` antes se
+            // cerraban a mano solo en el camino feliz -- si `copyPagesTo`
+            // fallaba a mitad del loop (ej. un `pageOrder` con un número de
+            // página fuera de rango para el PDF actual), ambos quedaban
+            // abiertos. `.use{}` los cierra pase lo que pase, mismo patrón
+            // ya usado en `RotatePdfUseCase`/`SplitPdfUseCase`.
+            PdfDocument(PdfReader(cacheFile)).use { sourcePdf ->
+                PdfDocument(PdfWriter(outputFile)).use { destPdf ->
+                    pageOrder.forEach { pageNumber ->
+                        sourcePdf.copyPagesTo(pageNumber, pageNumber, destPdf)
+                    }
+                }
             }
-            destPdf.close()
-            sourcePdf.close()
 
             if (outputFile.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)

@@ -1,17 +1,12 @@
 package com.docsmart.features.scanner.presentation
 
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -55,6 +50,7 @@ import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentFilterChipColors
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.converter.domain.model.BatchConversionItem
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
@@ -68,7 +64,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
-import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -1247,8 +1242,12 @@ private fun ScanResultActions(
                                     String.format(state.defaultNameTemplate, generateTimestamp())
                                 }
                                 val success = when {
-                                    state.savedFile != null -> saveFileToDownloads(context, state.savedFile)
-                                    state.isPdf -> savePdfUriToDownloads(context, state.scannedUris.first(), name)
+                                    state.savedFile != null -> DownloadsSaver.saveFile(
+                                        context, state.savedFile, mimeTypeForExtension(state.savedFile.extension)
+                                    )
+                                    state.isPdf -> DownloadsSaver.saveUri(
+                                        context, state.scannedUris.first(), MIME_PDF, "$name.pdf"
+                                    )
                                     else -> false
                                 }
                                 onSavedToDownloadsChange(success)
@@ -1591,81 +1590,6 @@ private fun shareFile(context: Context, file: File, chooserTitle: String) {
     }
 }
 
-// ── Guardar File en Descargas ─────────────────────────
-private fun saveFileToDownloads(context: Context, file: File): Boolean {
-    return try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val values = ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-                put(MediaStore.Downloads.MIME_TYPE, mimeTypeForExtension(file.extension))
-                put(MediaStore.Downloads.IS_PENDING, 1)
-            }
-            val resolver = context.contentResolver
-            val uri = resolver.insert(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
-            ) ?: return false
-            resolver.openOutputStream(uri)?.use { output ->
-                FileInputStream(file).use { it.copyTo(output) }
-            }
-            values.clear()
-            values.put(MediaStore.Downloads.IS_PENDING, 0)
-            resolver.update(uri, values, null, null)
-            true
-        } else {
-            val dir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS
-            )
-            file.copyTo(File(dir, file.name), overwrite = true)
-            true
-        }
-    } catch (e: Exception) {
-        Timber.e(e, "Error guardando en Descargas")
-        false
-    }
-}
-
-// ── Guardar URI en Descargas ──────────────────────────
-private suspend fun savePdfUriToDownloads(
-    context: Context,
-    uri: Uri,
-    fileName: String
-): Boolean = withContext(Dispatchers.IO) {
-    try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val values = ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, "$fileName.pdf")
-                put(MediaStore.Downloads.MIME_TYPE, MIME_PDF)
-                put(MediaStore.Downloads.IS_PENDING, 1)
-            }
-            val resolver = context.contentResolver
-            val destUri = resolver.insert(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
-            ) ?: return@withContext false
-            resolver.openInputStream(uri)?.use { input ->
-                resolver.openOutputStream(destUri)?.use { output ->
-                    input.copyTo(output)
-                }
-            }
-            values.clear()
-            values.put(MediaStore.Downloads.IS_PENDING, 0)
-            resolver.update(destUri, values, null, null)
-            true
-        } else {
-            // Pre-Q (API < 29): sin MediaStore.Downloads, se escribe directo
-            // al directorio público de Descargas (requiere WRITE_EXTERNAL_STORAGE,
-            // ya declarado para este rango de API).
-            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val destFile = File(dir, "$fileName.pdf")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                destFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@withContext false
-            true
-        }
-    } catch (e: Exception) {
-        Timber.e(e, "Error guardando URI en Descargas")
-        false
-    }
-}
 
 private fun generateTimestamp(): String =
     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())

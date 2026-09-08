@@ -44,43 +44,43 @@ class SplitPdfUseCase @Inject constructor(
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val reader     = PdfReader(cacheFile)
-            val sourcePdf  = PdfDocument(reader)
-            val totalPages = sourcePdf.numberOfPages
+            // Bug real corregido 2026-09-08: rechazaba extraer exactamente
+            // UNA página de un PDF de más de una página ("rango muy
+            // pequeño"), aunque la interfaz sí permite dejar "desde" y
+            // "hasta" en el mismo número y no bloquea el botón -- el
+            // usuario terminaba con un error en vez de su PDF de una sola
+            // página, un caso de uso normal (ej. "extraer solo la página 3").
+            // De paso, `sourcePdf`/`destPdf` antes se cerraban a mano solo
+            // en el camino feliz -- `.use{}` los cierra pase lo que pase,
+            // mismo patrón ya usado en `RotatePdfUseCase`.
+            var startPage = 0
+            var endPage = 0
+            lateinit var outputFile: File
 
-            Timber.d("$TAG: PDF abierto — $totalPages páginas totales")
+            PdfDocument(PdfReader(cacheFile)).use { sourcePdf ->
+                val totalPages = sourcePdf.numberOfPages
+                Timber.d("$TAG: PDF abierto — $totalPages páginas totales")
 
-            if (totalPages == 0) {
-                sourcePdf.close()
-                return@withContext PdfToolResult.Error(messages.noPages)
+                if (totalPages == 0) {
+                    return@withContext PdfToolResult.Error(messages.noPages)
+                }
+
+                startPage = fromPage.coerceIn(1, totalPages)
+                endPage   = toPage.coerceIn(startPage, totalPages)
+                Timber.d("$TAG: extrayendo páginas $startPage a $endPage")
+
+                val name = outputFileName ?: "Split_p${startPage}-p${endPage}"
+                outputFile = createOutputFile(name)
+
+                PdfDocument(PdfWriter(outputFile)).use { destPdf ->
+                    sourcePdf.copyPagesTo(startPage, endPage, destPdf)
+                }
             }
-
-            val startPage = fromPage.coerceIn(1, totalPages)
-            val endPage   = toPage.coerceIn(startPage, totalPages)
-
-            if (startPage == endPage && totalPages > 1) {
-                sourcePdf.close()
-                return@withContext PdfToolResult.Error(
-                    String.format(messages.rangeTooSmall, totalPages)
-                )
-            }
-
-            val pagesExtracted = endPage - startPage + 1
-            Timber.d("$TAG: extrayendo páginas $startPage a $endPage ($pagesExtracted páginas)")
-
-            val name       = outputFileName ?: "Split_p${startPage}-p${endPage}"
-            val outputFile = createOutputFile(name)
-            val writer     = PdfWriter(outputFile)
-            val destPdf    = PdfDocument(writer)
-
-            sourcePdf.copyPagesTo(startPage, endPage, destPdf)
-
-            destPdf.close()
-            sourcePdf.close()
 
             if (outputFile.length() == 0L)
                 return@withContext PdfToolResult.Error(messages.generateError)
 
+            val pagesExtracted = endPage - startPage + 1
             val sizeKb = outputFile.length() / 1024
             Timber.d("$TAG: split exitoso — $pagesExtracted páginas, $sizeKb KB")
 

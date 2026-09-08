@@ -49,6 +49,7 @@ import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentFilterChipColors
@@ -1270,7 +1271,7 @@ fun QrCreatorScreen(
                                     scope.launch {
                                         val file = saveQrToFile(context, bitmap)
                                         if (file != null) {
-                                            saveQrToDownloads(context, file)
+                                            DownloadsSaver.saveFile(context, file, "image/png")
                                             savedMsg = savedDownloadsMsg
                                         }
                                     }
@@ -1365,27 +1366,6 @@ private suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
         } catch (e: Exception) { Timber.e(e, "saveQrToFile"); null }
     }
 
-private fun saveQrToDownloads(context: Context, file: File) {
-    try {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            val values = android.content.ContentValues().apply {
-                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, file.name)
-                put(android.provider.MediaStore.Downloads.MIME_TYPE, "image/png")
-                put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
-            }
-            val resolver = context.contentResolver
-            val uri = resolver.insert(
-                android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
-            ) ?: return
-            resolver.openOutputStream(uri)?.use { out ->
-                java.io.FileInputStream(file).use { it.copyTo(out) }
-            }
-            values.clear()
-            values.put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
-            resolver.update(uri, values, null, null)
-        }
-    } catch (e: Exception) { Timber.e(e, "saveQrToDownloads") }
-}
 
 private fun shareQrImage(context: Context, file: File, chooserTitle: String) {
     try {

@@ -62,13 +62,16 @@ private fun PremiumFeatureItem(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Ícono de la función
+        // Ícono de la función -- bug real corregido 2026-09-08: usaba
+        // `DocuBlue`, un azul fijo que ignoraba el Color de acento elegido
+        // en Ajustes (mismo patrón de bug ya corregido antes en QR y
+        // Carpeta Segura).
         Box(
             modifier = Modifier
                 .size(44.dp)
                 .background(
                     color = if (isUnlocked)
-                        DocuBlue.copy(alpha = 0.1f)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     else
                         MaterialTheme.colorScheme.surfaceVariant,
                     shape = MaterialTheme.shapes.medium
@@ -79,7 +82,7 @@ private fun PremiumFeatureItem(
                 imageVector = getFeatureIcon(feature),
                 contentDescription = null,
                 tint = if (isUnlocked)
-                    DocuBlue
+                    MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(22.dp)

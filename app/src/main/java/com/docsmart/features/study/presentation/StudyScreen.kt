@@ -4,10 +4,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import androidx.annotation.RequiresApi
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -77,6 +75,7 @@ import com.docsmart.features.study.domain.pomodoroCountsByWeekday
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.core.ui.theme.rememberAccentGradient
+import com.docsmart.core.util.DownloadsSaver
 import com.itextpdf.kernel.geom.Vector
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
@@ -1948,6 +1947,7 @@ private fun SummaryTab(
     onSelectDoc     : () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var savedToDownloads by remember(summarySentences) { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.study_summary_share_title)
 
@@ -2045,7 +2045,9 @@ private fun SummaryTab(
                 sentences        = summarySentences,
                 savedToDownloads = savedToDownloads,
                 onSave = {
-                    savedToDownloads = saveSummaryToDownloads(context, documentName, summarySentences)
+                    scope.launch {
+                        savedToDownloads = saveSummaryToDownloads(context, documentName, summarySentences)
+                    }
                 },
                 onShare = { shareSummary(context, documentName, summarySentences, shareTitle) }
             )
@@ -2166,44 +2168,15 @@ private fun shareSummary(context: Context, documentName: String, sentences: List
     }
 }
 
-// Mismo patrón ya usado en ConverterViewModel/PdfToolsViewModel/ScanResultScreen
-// para guardar en Descargas vía MediaStore (Android 10+) -- no se extrajo a un
-// util compartido porque ninguno de esos 3 lo hizo antes (no hay un lugar
-// único ya establecido para esto en el proyecto).
 @Suppress("TooGenericExceptionCaught")
-private fun saveSummaryToDownloads(context: Context, documentName: String, sentences: List<String>): Boolean {
+private suspend fun saveSummaryToDownloads(context: Context, documentName: String, sentences: List<String>): Boolean {
     return try {
         val file = StudySummaryExporter.exportAsTextFile(context, documentName, sentences)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) copyToDownloadsViaMediaStore(context, file)
-        else copyToLegacyDownloadsDir(file)
-        true
+        DownloadsSaver.saveFile(context, file, "text/plain")
     } catch (e: Exception) {
         Timber.e(e, "Error guardando resumen en Descargas")
         false
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.Q)
-private fun copyToDownloadsViaMediaStore(context: Context, file: File) {
-    val values = android.content.ContentValues().apply {
-        put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-        put(MediaStore.Downloads.MIME_TYPE, "text/plain")
-        put(MediaStore.Downloads.IS_PENDING, 1)
-    }
-    val resolver = context.contentResolver
-    val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return
-    resolver.openOutputStream(uri)?.use { output ->
-        java.io.FileInputStream(file).use { input -> input.copyTo(output) }
-    }
-    values.clear()
-    values.put(MediaStore.Downloads.IS_PENDING, 0)
-    resolver.update(uri, values, null, null)
-}
-
-private fun copyToLegacyDownloadsDir(file: File) {
-    val downloadsDir = android.os.Environment
-        .getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-    file.copyTo(File(downloadsDir, file.name), overwrite = true)
 }
 
 // Mensajes localizados, resueltos en la capa de presentación (stringResource)

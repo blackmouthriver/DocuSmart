@@ -23,9 +23,18 @@ class PdfToImageUseCase @Inject constructor(
         pdfUri: Uri,
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
+        // Bug real corregido 2026-09-08: el archivo de caché tenía un
+        // nombre fijo ("temp_convert.pdf", no único como en el resto de los
+        // use cases de esta app) y nunca se borraba -- quedaba en disco
+        // después de cada conversión, y dos conversiones de este tipo a la
+        // vez competían por el mismo archivo. `renderer`/`fileDescriptor`
+        // tampoco se cerraban si algo fallaba a mitad del loop (ej.
+        // `OutOfMemoryError` al renderizar una página a 2x, que ni siquiera
+        // hereda de `Exception` y no la atrapa el catch de más abajo).
+        var cacheFile: File? = null
         try {
             // ── Copiar al cache ───────────────────────
-            val cacheFile = File(context.cacheDir, "temp_convert.pdf")
+            cacheFile = File(context.cacheDir, "temp_convert_${System.currentTimeMillis()}.pdf")
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
                 cacheFile.outputStream().use { output -> input.copyTo(output) }
             } ?: return@withContext ConversionResult.Error("No se pudo leer el PDF")
@@ -34,32 +43,28 @@ class PdfToImageUseCase @Inject constructor(
             val baseName = fileName ?: generateTimestamp()
             val outputFiles = mutableListOf<File>()
 
-            val fileDescriptor = ParcelFileDescriptor.open(
-                cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
-            )
-            val renderer = PdfRenderer(fileDescriptor)
+            ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fileDescriptor ->
+                PdfRenderer(fileDescriptor).use { renderer ->
+                    for (i in 0 until renderer.pageCount) {
+                        val page = renderer.openPage(i)
+                        val bitmap = Bitmap.createBitmap(
+                            page.width * 2,
+                            page.height * 2,
+                            Bitmap.Config.ARGB_8888
+                        )
+                        bitmap.eraseColor(android.graphics.Color.WHITE)
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        page.close()
 
-            for (i in 0 until renderer.pageCount) {
-                val page = renderer.openPage(i)
-                val bitmap = Bitmap.createBitmap(
-                    page.width * 2,
-                    page.height * 2,
-                    Bitmap.Config.ARGB_8888
-                )
-                bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                page.close()
-
-                val outputFile = File(outputDir, "${baseName}_pagina${i + 1}.jpg")
-                outputFile.outputStream().use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                        val outputFile = File(outputDir, "${baseName}_pagina${i + 1}.jpg")
+                        outputFile.outputStream().use { out ->
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                        }
+                        bitmap.recycle()
+                        outputFiles.add(outputFile)
+                    }
                 }
-                bitmap.recycle()
-                outputFiles.add(outputFile)
             }
-
-            renderer.close()
-            fileDescriptor.close()
 
             if (outputFiles.isEmpty()) {
                 return@withContext ConversionResult.Error("No se pudieron extraer páginas")
@@ -75,6 +80,8 @@ class PdfToImageUseCase @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo PDF a imagen")
             ConversionResult.Error("Error: ${e.message}")
+        } finally {
+            cacheFile?.delete()
         }
     }
 

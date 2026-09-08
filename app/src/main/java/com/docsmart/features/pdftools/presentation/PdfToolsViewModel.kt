@@ -1,18 +1,15 @@
 package com.docsmart.features.pdftools.presentation
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
 import android.app.Activity
-import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.ComparePdfUseCase
@@ -55,7 +52,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
-import java.io.FileInputStream
 import javax.inject.Inject
 
 enum class PdfTool {
@@ -558,43 +554,11 @@ class PdfToolsViewModel @Inject constructor(
     fun saveToDownloads(context: Context, errorMessage: String) {
         val result = _uiState.value.result as? PdfToolResult.Success ?: return
         viewModelScope.launch {
-            val saved = copyToDownloads(context, result.outputFile)
+            val saved = DownloadsSaver.saveFile(context, result.outputFile, "application/pdf")
             _uiState.update { state ->
                 if (saved) state.copy(savedToDownloads = true)
                 else state.copy(errorMessage = errorMessage)
             }
-        }
-    }
-
-    private fun copyToDownloads(context: Context, file: File): Boolean {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val values = ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-                    put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
-                    put(MediaStore.Downloads.IS_PENDING, 1)
-                }
-                val resolver = context.contentResolver
-                val uri = resolver.insert(
-                    MediaStore.Downloads.EXTERNAL_CONTENT_URI, values
-                ) ?: return false
-                resolver.openOutputStream(uri)?.use { output ->
-                    FileInputStream(file).use { input -> input.copyTo(output) }
-                }
-                values.clear()
-                values.put(MediaStore.Downloads.IS_PENDING, 0)
-                resolver.update(uri, values, null, null)
-                true
-            } else {
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_DOWNLOADS
-                )
-                file.copyTo(File(downloadsDir, file.name), overwrite = true)
-                true
-            }
-        } catch (e: Exception) {
-            Timber.e("Error guardando en Descargas: ${e.message}")
-            false
         }
     }
 
