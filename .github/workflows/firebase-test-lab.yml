@@ -52,32 +52,57 @@ jobs:
     name: Pruebas instrumentadas en Firebase Test Lab
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ secrets.GCP_SA_KEY != '' }}
     steps:
+      # GitHub Actions no permite referenciar el contexto `secrets` directo
+      # en el `if:` de un job -- hacerlo (como antes) invalida el archivo
+      # entero: GitHub lo reporta como "run" fantasma en failure en CADA
+      # push, aunque este workflow solo se dispare manualmente
+      # (workflow_dispatch), porque nunca llega a programar ni un solo job.
+      # Se resuelve el secret a una variable de entorno acá y se usa esa
+      # variable (no el secret) en el `if:` de los demás steps -- patrón
+      # recomendado por la propia documentación de GitHub para este caso.
+      - name: Verificar secret GCP_SA_KEY
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -z "$GCP_SA_KEY" ]; then
+            echo "gcp_configurado=false" >> "$GITHUB_ENV"
+            echo "::warning::GCP_SA_KEY no configurado -- este workflow no puede correr (ver comentario al inicio del archivo)."
+          else
+            echo "gcp_configurado=true" >> "$GITHUB_ENV"
+          fi
+
       - name: Checkout
+        if: env.gcp_configurado == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: JDK 17
+        if: env.gcp_configurado == 'true'
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Gradle
+        if: env.gcp_configurado == 'true'
         uses: gradle/actions/setup-gradle@4733eaac7c1b0da527e4206b7671e0061de1ce37 # v6
 
       - name: Permiso de ejecución para gradlew
+        if: env.gcp_configurado == 'true'
         run: chmod +x ./gradlew
 
       - name: Compilar APKs de debug y de test
+        if: env.gcp_configurado == 'true'
         run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
 
       - name: Autenticar con Google Cloud
+        if: env.gcp_configurado == 'true'
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Configurar gcloud CLI
+        if: env.gcp_configurado == 'true'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
       # Modelo/versión elegidos para igualar el dispositivo real usado en
@@ -87,6 +112,7 @@ jobs:
       # real (ver `gcloud firebase test android models list`) si hace falta
       # más fidelidad más adelante.
       - name: Ejecutar pruebas en Firebase Test Lab
+        if: env.gcp_configurado == 'true'
         run: |
           gcloud firebase test android run \
             --type instrumentation \

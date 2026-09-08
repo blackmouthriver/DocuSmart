@@ -1,0 +1,9 @@
+# Falsos positivos de la regla "generic-api-key": son claves de caché de AVD
+# (ej. "avd-34-aosp_atd-x86_64" en .github/workflows/*.yml, usadas por
+# actions/cache), no credenciales. Gitleaks las marca por el patrón
+# `key: <string con suficiente entropía>` en YAML, sin importar el contexto.
+# El fingerprint incluye el commit donde se introdujo el string -- reescribir
+# esos commits para "limpiarlos" del historial no vale la pena para un falso
+# positivo confirmado.
+c2df989a3a9119e68956e9cf0198d8926a46dbbb:.github/workflows/sonarcloud.yml:generic-api-key:98
+c2df989a3a9119e68956e9cf0198d8926a46dbbb:.github/workflows/ci.yml:generic-api-key:157
