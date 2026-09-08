@@ -95,8 +95,7 @@ class AdManager @Inject constructor(
         val count        = conversionCount.incrementAndGet()
         val now          = System.currentTimeMillis()
         val timeSinceLast = now - lastInterstitialTime.get()
-        val shouldShow   = count >= AdConstants.INTERSTITIAL_MIN_CONVERSIONS &&
-                timeSinceLast >= AdConstants.INTERSTITIAL_MIN_INTERVAL_MS
+        val shouldShow   = shouldShowInterstitial(count, timeSinceLast)
 
         if (shouldShow && interstitialAd != null) {
             interstitialAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
@@ -205,3 +204,12 @@ class AdManager @Inject constructor(
         }
     }
 }
+
+/**
+ * Extraída de `onConversionCompleted()` para poder testearla sin construir
+ * `AdManager` (su constructor evalúa `Handler(Looper.getMainLooper())`, que
+ * revienta fuera de un runtime Android real -- ver `AdManagerTest`).
+ */
+internal fun shouldShowInterstitial(conversionCount: Int, timeSinceLastMs: Long): Boolean =
+    conversionCount >= AdConstants.INTERSTITIAL_MIN_CONVERSIONS &&
+        timeSinceLastMs >= AdConstants.INTERSTITIAL_MIN_INTERVAL_MS

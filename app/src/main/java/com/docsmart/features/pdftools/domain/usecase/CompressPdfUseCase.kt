@@ -123,14 +123,16 @@ class CompressPdfUseCase @Inject constructor(
         }
     }
 
-    private fun scaleFactorFor(quality: Int) = when {
+    // internal (no private) para poder testearlas sin tocar PdfRenderer --
+    // ver CompressPdfUseCaseTest.
+    internal fun scaleFactorFor(quality: Int) = when {
         quality >= 80 -> 1.5f
         quality >= 60 -> 1.2f
         quality >= 40 -> 0.9f
         else          -> 0.6f
     }
 
-    private fun resultMessage(
+    internal fun resultMessage(
         messages: CompressPdfMessages, keepOriginal: Boolean,
         originalKb: Long, finalKb: Long, reduction: Int
     ) =

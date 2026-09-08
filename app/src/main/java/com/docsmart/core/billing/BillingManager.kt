@@ -208,25 +208,24 @@ class BillingManager @Inject constructor(
         // igual que "el usuario genuinamente no tiene compras", así que esta
         // función desactivaba Premium a un usuario que sí había pagado, cada
         // vez que la app arranca (esto corre automáticamente en cada inicio,
-        // no solo al tocar "Restaurar compras"). Ahora solo se toca el
-        // estado de Premium cuando la consulta realmente tuvo éxito.
-        if (subs.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-            Timber.w(
-                "BillingManager: restorePurchases() -- la consulta falló, no se toca el estado " +
-                    "Premium actual (${subs.billingResult.debugMessage})"
-            )
-            emitResult(PurchaseResult.Error(subs.billingResult.debugMessage))
-            return
-        }
-
-        val owned = subs.purchasesList
-            .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
-
-        if (owned.isEmpty()) {
-            premiumManager.deactivatePremium()
-            emitResult(PurchaseResult.NoPurchasesToRestore)
-        } else {
-            owned.forEach { handlePurchase(it, isRestore = true) }
+        // no solo al tocar "Restaurar compras"). `evaluateRestoreOutcome()`
+        // deja esa decisión como función pura testeable (ver BillingManagerTest)
+        // para que este bug no pueda reaparecer sin que un test lo detecte.
+        when (val outcome = evaluateRestoreOutcome(subs.billingResult.responseCode, subs.purchasesList)) {
+            RestoreOutcome.QueryFailed -> {
+                Timber.w(
+                    "BillingManager: restorePurchases() -- la consulta falló, no se toca el estado " +
+                        "Premium actual (${subs.billingResult.debugMessage})"
+                )
+                emitResult(PurchaseResult.Error(subs.billingResult.debugMessage))
+            }
+            RestoreOutcome.NothingOwned -> {
+                premiumManager.deactivatePremium()
+                emitResult(PurchaseResult.NoPurchasesToRestore)
+            }
+            is RestoreOutcome.Owned -> {
+                outcome.purchases.forEach { handlePurchase(it, isRestore = true) }
+            }
         }
     }
 
@@ -259,4 +258,21 @@ class BillingManager @Inject constructor(
     private fun emitResult(result: PurchaseResult) {
         scope.launch { _purchaseResult.emit(result) }
     }
+}
+
+/**
+ * Resultado puro de evaluar una respuesta de `queryPurchasesAsync()`,
+ * extraído para poder testear la decisión sin construir `BillingManager`
+ * (su constructor arma un `BillingClient` real -- ver `BillingManagerTest`).
+ */
+internal sealed interface RestoreOutcome {
+    data object QueryFailed : RestoreOutcome
+    data object NothingOwned : RestoreOutcome
+    data class Owned(val purchases: List<Purchase>) : RestoreOutcome
+}
+
+internal fun evaluateRestoreOutcome(responseCode: Int, purchasesList: List<Purchase>): RestoreOutcome {
+    if (responseCode != BillingClient.BillingResponseCode.OK) return RestoreOutcome.QueryFailed
+    val owned = purchasesList.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+    return if (owned.isEmpty()) RestoreOutcome.NothingOwned else RestoreOutcome.Owned(owned)
 }
