@@ -62,8 +62,18 @@ class PdfPasswordUseCase @Inject constructor() {
             // Eliminar si existe previamente
             if (outputFile.exists()) outputFile.delete()
 
+            // Bug real de seguridad corregido 2026-09-08: la contraseña de
+            // propietario (la que controla permisos de impresión/copia en
+            // lectores externos, ver ALLOW_PRINTING/ALLOW_COPY más abajo)
+            // se derivaba de forma predecible como "contraseña + _owner" --
+            // cualquiera que conociera esa convención podía calcularla y
+            // saltarse esos permisos sin conocer la contraseña real. Esta
+            // app siempre desbloquea con la contraseña de usuario
+            // (`removePassword` de abajo usa solo esa), nunca con la de
+            // propietario, así que no hace falta poder reconstruirla --
+            // se genera aleatoria e independiente.
             val userPass  = password.toByteArray()
-            val ownerPass = (password + "_owner").toByteArray()
+            val ownerPass = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
 
             val writerProps = WriterProperties().setStandardEncryption(
                 userPass,

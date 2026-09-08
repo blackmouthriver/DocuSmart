@@ -8,7 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -33,7 +35,6 @@ import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
-import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.core.ui.theme.rememberAccentGradient
 import timber.log.Timber
 
@@ -235,10 +236,19 @@ private fun PinUnlockScreen(
             Icon(Icons.Rounded.ArrowBack, stringResource(R.string.general_back), tint = Color.White)
         }
 
+        // Bug real corregido 2026-09-08: mismo patrón ya encontrado y
+        // corregido en Notas/Pomodoro -- esta columna centrada (ícono +
+        // título + puntos del PIN + teclado numérico completo + botones)
+        // no tenía scroll, así que en pantallas chicas o con letra grande
+        // podía cortar el teclado o "¿Olvidaste tu PIN?" fuera de la
+        // pantalla, sin forma de llegar a esos elementos.
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(32.dp),
-            modifier            = Modifier.align(Alignment.Center).padding(32.dp)
+            modifier            = Modifier
+                .align(Alignment.Center)
+                .verticalScroll(rememberScrollState())
+                .padding(32.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -425,10 +435,15 @@ private fun SetupPinScreen(
             .background(Brush.linearGradient(pinBannerGradient)),
         contentAlignment = Alignment.Center
     ) {
+        // Bug real corregido 2026-09-08: mismo problema que en
+        // `PinUnlockScreen` -- sin scroll, esta columna podía cortar el
+        // teclado numérico o los botones en pantallas chicas.
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(32.dp),
-            modifier            = Modifier.padding(32.dp)
+            modifier            = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(32.dp)
         ) {
             IconButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) {
                 Icon(Icons.Rounded.ArrowBack, stringResource(R.string.general_back), tint = Color.White)
@@ -662,8 +677,13 @@ private fun SecureFolderContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // Bug real corregido 2026-09-08: usaba `PremiumGold`,
+                        // el mismo color que la app reserva exclusivamente
+                        // para señalar funciones Premium (banner Premium,
+                        // tarjetas de plan, Ajustes) -- Carpeta Segura NO es
+                        // una función Premium, así que confundía al usuario.
                         Icon(Icons.Rounded.Lock, null,
-                            tint = PremiumGold, modifier = Modifier.size(48.dp))
+                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
                         Text(stringResource(R.string.security_no_protected_files),
                             style     = MaterialTheme.typography.bodyMedium,
                             color     = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -710,11 +730,11 @@ private fun SecureFileItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(PremiumGold.copy(alpha = 0.15f), MaterialTheme.shapes.medium),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Rounded.Lock, null,
-                    tint = PremiumGold, modifier = Modifier.size(22.dp))
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(file.name,
