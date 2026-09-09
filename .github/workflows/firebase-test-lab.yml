@@ -105,6 +105,22 @@ jobs:
         if: env.gcp_configurado == 'true'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
+      # Diagnóstico temporal (2026-09-09): "Unable to access the test
+      # environment catalog: 403 Not authorized" persiste igual con 3
+      # combinaciones de roles distintas ya probadas en la cuenta de
+      # servicio esperada -- para descartar que el secret GCP_SA_KEY
+      # apunte a una identidad/proyecto distinto del que se le asignaron
+      # los roles, se imprime acá qué cuenta y proyecto ve gcloud de verdad.
+      - name: Diagnóstico -- verificar identidad activa
+        if: env.gcp_configurado == 'true'
+        run: |
+          echo "Cuenta activa:"
+          gcloud config get-value account
+          echo "Proyecto activo:"
+          gcloud config get-value project
+          echo "Listado completo de cuentas autenticadas:"
+          gcloud auth list
+
       # Modelo/versión elegidos para igualar el dispositivo real usado en
       # desarrollo (Motorola Edge 30 Neo, Android 14/API 34). "MediumPhone.arm"
       # es un dispositivo virtual de Test Lab -- más barato y con más cuota
