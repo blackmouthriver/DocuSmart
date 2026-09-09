@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -66,11 +68,22 @@ class SettingsScreenTest {
             prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
     }
 
+    // Bug real corregido 2026-09-09: solo simulaba getString/putString --
+    // ThemeManager.loadAnimatedBackgroundEnabled() (fondo animado, agregado
+    // 2026-09-06) usa getBoolean/putBoolean sobre este mismo prefs, y al no
+    // estar simulado MockK lanzaba MockKException al construir ThemeManager,
+    // haciendo fallar el 100% de las veces cambiarTemaIdiomaYAcento_.../
+    // restablecerConfiguracion_... tanto en el emulador de CI como en
+    // Firebase Test Lab.
     private fun fakeSharedPreferences(): SharedPreferences {
         val store  = mutableMapOf<String, Any?>()
         val editor = mockk<SharedPreferences.Editor>()
         every { editor.putString(any(), any()) } answers {
             store[firstArg<String>()] = secondArg<String?>()
+            editor
+        }
+        every { editor.putBoolean(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Boolean>()
             editor
         }
         every { editor.apply() } just Runs
@@ -79,6 +92,9 @@ class SettingsScreenTest {
         every { prefs.edit() } returns editor
         every { prefs.getString(any(), any()) } answers {
             (store[firstArg<String>()] as? String) ?: secondArg()
+        }
+        every { prefs.getBoolean(any(), any()) } answers {
+            (store[firstArg<String>()] as? Boolean) ?: secondArg()
         }
         return prefs
     }
@@ -113,7 +129,19 @@ class SettingsScreenTest {
             // inglés por defecto (ver com.docsmart.core.ui.test.forceLocale).
             val baseContext = LocalContext.current
             val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
-            CompositionLocalProvider(LocalContext provides localizedContext) { content() }
+            // Bug real corregido 2026-09-09: SettingsScreen usa
+            // rememberLauncherForActivityResult() para vincular una carpeta
+            // por SAF -- sin reproveer estos dos apuntando a la Activity
+            // real (mismo motivo que LibraryScreenTest/ConverterScreenTest/
+            // SecurityScreenTest), fallaba con "No ActivityResultRegistryOwner
+            // was provided" el 100% de las veces, tanto en el emulador de CI
+            // como en Firebase Test Lab -- quedaba oculto detrás del bug de
+            // MockKException en buildManagers(), ya corregido arriba.
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+            ) { content() }
         }
     }
 

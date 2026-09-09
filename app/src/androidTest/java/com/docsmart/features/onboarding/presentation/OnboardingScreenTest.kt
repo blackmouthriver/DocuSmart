@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -12,10 +14,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.features.library.data.DownloadsAccessManager
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -25,8 +29,15 @@ import org.junit.Test
  * Flujo de prioridad Baja #17 de RF-QA-01 (ver compose-ui-testing.md):
  * Onboarding -- recorrer y completar, marca como visto y navega a Home.
  *
- * `OnboardingScreen` no tiene ViewModel ni Hilt -- todo su estado es
- * `remember`/`PagerState`, y persiste "completado" directo en
+ * `OnboardingScreen` recibe su `OnboardingViewModel` con valor por defecto
+ * `hiltViewModel()`, y usa `rememberLauncherForActivityResult()` para
+ * vincular una carpeta por SAF -- mismo motivo que `LibraryScreenTest`/
+ * `ConverterScreenTest`/`SecurityScreenTest` para reproveer
+ * `LocalActivityResultRegistryOwner`/`LocalOnBackPressedDispatcherOwner`
+ * apuntando a la Activity real, y para pasar el ViewModel construido a
+ * mano en vez de dejar que caiga en `hiltViewModel()` (que exige una
+ * Activity instrumentada con Hilt, y este test usa una ComponentActivity
+ * plana). El estado propio de "completado" persiste directo en
  * `SharedPreferences` ("docusmart_onboarding") vía funciones de nivel de
  * paquete (`markOnboardingCompleted`). Se aísla con el mismo patrón
  * `IsolatedPrefsContext` ya usado en `SettingsScreenTest`/`StudyScreenTest`,
@@ -67,6 +78,20 @@ class OnboardingScreenTest {
         return IsolatedPrefsContext(forceLocale(appContext, "es-ES"))
     }
 
+    // Bug real corregido 2026-09-09: OnboardingScreen(onFinished = ...) sin
+    // pasarle `viewModel` cae en el valor por defecto hiltViewModel(), que
+    // exige una Activity instrumentada con Hilt -- este test usa una
+    // ComponentActivity plana (mismo patrón que HomeScreenTest/
+    // LibraryScreenTest), así que fallaba el 100% de las veces, tanto en
+    // el emulador de CI como en un dispositivo real de Firebase Test Lab.
+    // Se construye el ViewModel a mano y se pasa explícito, igual que en
+    // esos otros tests.
+    private fun buildViewModel(): OnboardingViewModel {
+        val downloadsAccessManager = mockk<DownloadsAccessManager>(relaxed = true)
+        every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
+        return OnboardingViewModel(downloadsAccessManager)
+    }
+
     private fun waitForText(text: String) {
         composeRule.waitUntil(timeoutMillis = 20_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
@@ -80,8 +105,12 @@ class OnboardingScreenTest {
         var finished = false
 
         composeRule.setContent {
-            CompositionLocalProvider(LocalContext provides isolatedContext) {
-                OnboardingScreen(onFinished = { finished = true })
+            CompositionLocalProvider(
+                LocalContext provides isolatedContext,
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+            ) {
+                OnboardingScreen(onFinished = { finished = true }, viewModel = buildViewModel())
             }
         }
         waitForText("Bienvenido a DocuSmart")
@@ -95,6 +124,13 @@ class OnboardingScreenTest {
 
         composeRule.onNodeWithText("Siguiente").performClick()
         waitForText("Modo Estudio")
+
+        // Bug real corregido 2026-09-09: al agregarse la 5ta slide (fila 22
+        // del backlog UX, vincular carpeta por SAF) el test se quedó
+        // esperando "¡Empezar!" un click antes de tiempo -- "Modo Estudio"
+        // ya no es la última página, "Vincula tus documentos" sí lo es.
+        composeRule.onNodeWithText("Siguiente").performClick()
+        waitForText("Vincula tus documentos")
         // En la última página "Saltar" se oculta (reemplazado por un
         // Spacer del mismo ancho) y el botón cambia a "¡Empezar!".
         waitForText("¡Empezar!")
@@ -112,8 +148,12 @@ class OnboardingScreenTest {
         var finished = false
 
         composeRule.setContent {
-            CompositionLocalProvider(LocalContext provides isolatedContext) {
-                OnboardingScreen(onFinished = { finished = true })
+            CompositionLocalProvider(
+                LocalContext provides isolatedContext,
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+            ) {
+                OnboardingScreen(onFinished = { finished = true }, viewModel = buildViewModel())
             }
         }
         waitForText("Saltar")
