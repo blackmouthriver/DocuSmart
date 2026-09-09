@@ -1,8 +1,5 @@
 package com.docsmart.features.library.presentation.components
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -17,14 +14,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.components.DocumentContextMenu
 import com.docsmart.core.ui.components.DocumentThumbnail
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.RenameDocumentDialog
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.util.shareDocument
 
 @Composable
 fun FavoritesSection(
@@ -43,6 +43,7 @@ fun FavoritesSection(
 
     // Menú contextual
     menuDocument?.let { doc ->
+        val shareLabel = stringResource(R.string.home_share_document, doc.name)
         DocumentContextMenu(
             document   = doc,
             onDismiss  = { menuDocument = null },
@@ -53,7 +54,7 @@ fun FavoritesSection(
             } else null,
             onShare    = {
                 menuDocument = null
-                shareDocument(context, doc)
+                shareDocument(context, doc, shareLabel)
             },
             onDelete   = onDeleteClick?.let { cb ->
                 { menuDocument = null; cb(doc.id) }
@@ -161,31 +162,5 @@ private fun FavoriteDocumentCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-private fun shareDocument(context: Context, document: DocumentUiModel) {
-    try {
-        val uri    = Uri.parse(document.id)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "*/*"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, document.name)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
-    } catch (e: Exception) {
-        try {
-            val file = java.io.File(document.id)
-            val uri  = androidx.core.content.FileProvider.getUriForFile(
-                context, "${context.packageName}.fileprovider", file
-            )
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "*/*"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
-        } catch (e2: Exception) { e2.printStackTrace() }
     }
 }

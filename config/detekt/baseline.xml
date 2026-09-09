@@ -281,14 +281,12 @@
     <ID>TooGenericExceptionCaught:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocuSmartBannerAd.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocuSmartNavGraph.kt$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:DocumentListSection.kt$e2: Exception</ID>
-    <ID>TooGenericExceptionCaught:DocumentListSection.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:DocumentRepository.kt$DocumentRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocumentSharing.kt$e2: Exception</ID>
+    <ID>TooGenericExceptionCaught:DocumentSharing.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:EditTextPdfUseCase.kt$EditTextPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ExcelToPdfUseCase.kt$ExcelToPdfUseCase$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:FavoritesSection.kt$e2: Exception</ID>
-    <ID>TooGenericExceptionCaught:FavoritesSection.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:FillFormUseCase.kt$FillFormUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:HomeViewModel.kt$HomeViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageFormatUseCase.kt$ImageFormatUseCase$e: Exception</ID>
@@ -307,8 +305,6 @@
     <ID>TooGenericExceptionCaught:PptToTextUseCase.kt$PptToTextUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:PremiumManager.kt$PremiumManager$e: Exception</ID>
     <ID>TooGenericExceptionCaught:QrScreen.kt$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:RecentDocuments.kt$e2: Exception</ID>
-    <ID>TooGenericExceptionCaught:RecentDocuments.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:RedactPdfScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:RedactPdfUseCase.kt$RedactPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ReorderPagesScreen.kt$e: Exception</ID>

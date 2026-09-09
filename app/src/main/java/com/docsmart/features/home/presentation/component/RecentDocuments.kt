@@ -1,8 +1,5 @@
 package com.docsmart.features.home.presentation.component
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -21,6 +18,7 @@ import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.RenameDocumentDialog
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.util.shareDocument
 
 @Composable
 fun RecentDocuments(
@@ -110,31 +108,5 @@ fun RecentDocuments(
                 }
             }
         }
-    }
-}
-
-private fun shareDocument(context: Context, document: DocumentUiModel, shareLabel: String) {
-    try {
-        val uri    = Uri.parse(document.id)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "*/*"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, document.name)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, shareLabel))
-    } catch (e: Exception) {
-        try {
-            val file = java.io.File(document.id)
-            val uri  = androidx.core.content.FileProvider.getUriForFile(
-                context, "${context.packageName}.fileprovider", file
-            )
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "*/*"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, shareLabel))
-        } catch (e2: Exception) { e2.printStackTrace() }
     }
 }

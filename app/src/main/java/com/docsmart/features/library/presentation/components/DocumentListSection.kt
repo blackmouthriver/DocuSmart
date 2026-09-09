@@ -1,8 +1,5 @@
 package com.docsmart.features.library.presentation.components
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,13 +9,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartDocumentItem
 import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.RenameDocumentDialog
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.util.shareDocument
 
 @Composable
 fun DocumentListSection(
@@ -77,6 +77,7 @@ fun DocumentListSection(
                     .accentBorder(shape = shape)
             ) {
                 documents.forEachIndexed { index, document ->
+                    val shareLabel = stringResource(R.string.home_share_document, document.name)
                     DocuSmartDocumentItem(
                         document        = document,
                         onClick         = { onDocumentClick(document) },
@@ -86,7 +87,7 @@ fun DocumentListSection(
                         onRenameClick   = if (onRenameClick != null) {
                             { documentToRename = document }
                         } else null,
-                        onShareClick    = { shareDocument(context, document) },
+                        onShareClick    = { shareDocument(context, document, shareLabel) },
                         onConvertClick  = onConvertClick?.let  { cb -> { cb(document) } },
                         onCreateQrClick = onCreateQrClick?.let { cb -> { cb(document) } },
                         onDeleteClick   = onDeleteClick?.let   { cb -> { cb(document.id) } }
@@ -94,31 +95,5 @@ fun DocumentListSection(
                 }
             }
         }
-    }
-}
-
-private fun shareDocument(context: Context, document: DocumentUiModel) {
-    try {
-        val uri    = Uri.parse(document.id)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "*/*"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, document.name)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
-    } catch (e: Exception) {
-        try {
-            val file = java.io.File(document.id)
-            val uri  = androidx.core.content.FileProvider.getUriForFile(
-                context, "${context.packageName}.fileprovider", file
-            )
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "*/*"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(intent, "Compartir ${document.name}"))
-        } catch (e2: Exception) { e2.printStackTrace() }
     }
 }
