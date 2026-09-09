@@ -16,12 +16,12 @@ class DocuSmartApplication : Application(), ImageLoaderFactory {
 
     @Inject lateinit var remoteConfigManager: RemoteConfigManager
 
-    // Bug real corregido 2026-09-07: PremiumManager solo se construía al
-    // abrir la pantalla Premium (única que lo inyecta), y solo al
-    // construirse sincroniza el estado Premium persistido con AdManager
-    // -- así que un suscriptor real que no visitaba esa pantalla seguía
-    // viendo anuncios. Se inyecta acá para forzar esa construcción (y su
-    // sincronización) desde el arranque de la app.
+    // Bug real corregido 2026-09-07 (ya no aplica desde la consolidación
+    // 2026-09-09 de la doble fuente de verdad Premium/AdManager --
+    // AdManager.isPremium ahora es un passthrough directo de
+    // PremiumManager.isPremium, correcto en cuanto se lee, sin ningún paso
+    // de sincronización que forzar). Se deja esta inyección temprana solo
+    // para loguear el estado Premium al arrancar.
     @Inject lateinit var premiumManager: PremiumManager
 
     override fun onCreate() {

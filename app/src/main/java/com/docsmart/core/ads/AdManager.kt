@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import com.docsmart.core.premium.PremiumManager
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -14,9 +15,14 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -25,7 +31,8 @@ import javax.inject.Singleton
 
 @Singleton
 class AdManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val premiumManager: PremiumManager
 ) {
     private var interstitialAd : InterstitialAd? = null
     private var rewardedAd     : RewardedAd?     = null
@@ -40,7 +47,8 @@ class AdManager @Inject constructor(
     // esto. Crash real reproducido: "IllegalStateException: #008 Must be
     // called on the main UI thread" al entrar a Premium por primera vez,
     // porque BillingManager.restorePurchases() corre en IO y termina
-    // llamando a setPremium(false) -> loadInterstitial().
+    // desactivando Premium -> loadInterstitial() (hoy disparado por el
+    // collector de premiumManager.isPremium, ver el init{} más abajo).
     private fun runOnMainThread(action: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) action()
         else mainHandler.post(action)
@@ -49,14 +57,42 @@ class AdManager @Inject constructor(
     private val conversionCount       = AtomicInteger(0)
     private val lastInterstitialTime  = AtomicLong(0L)
 
-    private val _isPremium      = MutableStateFlow(false)
-    val isPremium: StateFlow<Boolean> = _isPremium.asStateFlow()
+    // Doble fuente de verdad corregida 2026-09-09: acá vivía un
+    // MutableStateFlow propio, sincronizado a mano desde PremiumManager
+    // (único que llamaba a setPremium()) cada vez que el estado Premium
+    // cambiaba -- dos flags separados que solo coincidían porque nada más
+    // escribía en este. Ahora hay un solo StateFlow real (el de
+    // PremiumManager, respaldado en SharedPreferences); este es un simple
+    // passthrough, así que ya no puede desincronizarse.
+    val isPremium: StateFlow<Boolean> = premiumManager.isPremium
 
     private val _isInitialized  = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     private val _isRewardedReady = MutableStateFlow(false)
     val isRewardedReady: StateFlow<Boolean> = _isRewardedReady.asStateFlow()
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    init {
+        // El valor inicial de premiumManager.isPremium ya es correcto sin
+        // ningún paso de sincronización (se carga de SharedPreferences en
+        // el propio constructor de PremiumManager) -- drop(1) evita repetir
+        // acá ese primer valor y solo reacciona a cambios reales durante la
+        // sesión (compra o restauración de Play Billing).
+        scope.launch {
+            isPremium.drop(1).collect { premium ->
+                if (premium) {
+                    interstitialAd         = null
+                    rewardedAd             = null
+                    _isRewardedReady.value = false
+                } else {
+                    loadInterstitial()
+                    loadRewarded()
+                }
+            }
+        }
+    }
 
     fun initialize() {
         Timber.d("AdManager: iniciando MobileAds")
@@ -70,7 +106,7 @@ class AdManager @Inject constructor(
 
     // ── Interstitial ──────────────────────────────────────────────────────────
     private fun loadInterstitial() {
-        if (_isPremium.value) return
+        if (isPremium.value) return
         runOnMainThread {
             InterstitialAd.load(
                 context,
@@ -91,7 +127,7 @@ class AdManager @Inject constructor(
     }
 
     fun onConversionCompleted(activity: Activity) {
-        if (_isPremium.value) return
+        if (isPremium.value) return
         val count        = conversionCount.incrementAndGet()
         val now          = System.currentTimeMillis()
         val timeSinceLast = now - lastInterstitialTime.get()
@@ -117,7 +153,7 @@ class AdManager @Inject constructor(
 
     // ── Rewarded Ad ───────────────────────────────────────────────────────────
     private fun loadRewarded() {
-        if (_isPremium.value) return
+        if (isPremium.value) return
         runOnMainThread {
             RewardedAd.load(
                 context,
@@ -150,13 +186,13 @@ class AdManager @Inject constructor(
         onFailed  : () -> Unit
     ) {
         // Defensivo (2026-09-07): loadInterstitial/loadRewarded/
-        // onConversionCompleted ya se niegan a actuar si _isPremium es
+        // onConversionCompleted ya se niegan a actuar si isPremium es
         // true -- a esta función le faltaba el mismo guard explícito.
-        // Hasta ahora quedaba a salvo solo porque setPremium(true) anula
+        // Hasta ahora quedaba a salvo solo porque el cambio a premium anula
         // `rewardedAd`, pero si algún llamador futuro ofreciera "ver
         // anuncio" sin revisar antes isPremium, un usuario Premium podría
         // llegar a ver un rewarded si quedara alguno cacheado.
-        if (_isPremium.value) {
+        if (isPremium.value) {
             onFailed()
             return
         }
@@ -191,18 +227,6 @@ class AdManager @Inject constructor(
     }
 
     fun getAdRequest(): AdRequest = AdRequest.Builder().build()
-
-    fun setPremium(isPremium: Boolean) {
-        _isPremium.value = isPremium
-        if (isPremium) {
-            interstitialAd         = null
-            rewardedAd             = null
-            _isRewardedReady.value = false
-        } else {
-            loadInterstitial()
-            loadRewarded()
-        }
-    }
 }
 
 /**
