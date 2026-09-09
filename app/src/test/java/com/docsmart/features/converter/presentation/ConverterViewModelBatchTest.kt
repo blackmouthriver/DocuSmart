@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.net.Uri
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.premium.PremiumManager
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.domain.usecase.*
@@ -45,6 +46,7 @@ class ConverterViewModelBatchTest {
     private lateinit var convertImageToPdf: ConvertImageToPdfUseCase
     private lateinit var adManager        : AdManager
     private lateinit var dailyLimitManager: DailyLimitManager
+    private lateinit var premiumManager   : PremiumManager
     private lateinit var viewModel        : ConverterViewModel
 
     @BeforeEach
@@ -56,11 +58,14 @@ class ConverterViewModelBatchTest {
         convertImageToPdf = mockk()
         adManager         = mockk()
         dailyLimitManager = mockk(relaxed = true)
+        premiumManager    = mockk()
 
         every { adManager.isPremium } returns MutableStateFlow(false)
         every { dailyLimitManager.canConvert() } returns true
         every { dailyLimitManager.getConversionCount() } returns 0
         every { dailyLimitManager.getConversionLimit() } returns 5
+        every { premiumManager.isPremium } returns MutableStateFlow(false)
+        every { premiumManager.canPerform(any()) } answers { firstArg<() -> Boolean>().invoke() }
 
         viewModel = ConverterViewModel(
             convertImageToPdf = convertImageToPdf,
@@ -78,7 +83,8 @@ class ConverterViewModelBatchTest {
             pptToPdf          = mockk(),
             pptToText         = mockk(),
             adManager         = adManager,
-            dailyLimitManager = dailyLimitManager
+            dailyLimitManager = dailyLimitManager,
+            premiumManager    = premiumManager
         )
     }
 

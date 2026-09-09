@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.converter.domain.model.ConversionType
@@ -66,6 +67,12 @@ class ConverterScreenTest {
         val dailyLimitManager = mockk<DailyLimitManager>(relaxed = true)
         every { dailyLimitManager.canConvert() } returns true
 
+        // canPerform() delega en el lambda para no duplicar el mock del
+        // límite diario -- mismo criterio que el resto de este builder.
+        val premiumManager = mockk<PremiumManager>(relaxed = true)
+        every { premiumManager.isPremium } returns MutableStateFlow(false)
+        every { premiumManager.canPerform(any()) } answers { firstArg<() -> Boolean>().invoke() }
+
         return ConverterViewModel(
             convertImageToPdf = mockk(relaxed = true),
             pdfToImage        = mockk(relaxed = true),
@@ -82,7 +89,8 @@ class ConverterScreenTest {
             pptToPdf          = mockk(relaxed = true),
             pptToText         = mockk(relaxed = true),
             adManager         = adManager,
-            dailyLimitManager = dailyLimitManager
+            dailyLimitManager = dailyLimitManager,
+            premiumManager    = premiumManager
         )
     }
 

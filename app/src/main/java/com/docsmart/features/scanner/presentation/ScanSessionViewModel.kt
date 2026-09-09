@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.scanner.domain.ScanSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,7 @@ data class ScanSaveLimitUiState(
 class ScanSessionViewModel @Inject constructor(
     private val sessionManager: ScanSessionManager,
     private val dailyLimitManager: DailyLimitManager,
+    private val premiumManager: PremiumManager,
     val adManager: AdManager
 ) : ViewModel() {
 
@@ -81,7 +83,7 @@ class ScanSessionViewModel @Inject constructor(
     // ScanResultActions -- devuelve `false` y muestra el diálogo de límite
     // si ya no quedan usos disponibles hoy (Premium nunca se bloquea).
     fun requestScanSaveSlot(): Boolean {
-        if (adManager.isPremium.value || dailyLimitManager.canSaveScan()) return true
+        if (premiumManager.canPerform { dailyLimitManager.canSaveScan() }) return true
         _saveLimitState.update { it.copy(showLimitDialog = true) }
         return false
     }

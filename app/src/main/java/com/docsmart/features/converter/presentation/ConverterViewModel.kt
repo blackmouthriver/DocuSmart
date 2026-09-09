@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.converter.domain.model.BatchConversionItem
 import com.docsmart.features.converter.domain.model.ConversionResult
@@ -65,7 +66,8 @@ class ConverterViewModel @Inject constructor(
     private val pptToPdf         : PptToPdfUseCase,
     private val pptToText        : PptToTextUseCase,
     val adManager                : AdManager,
-    private val dailyLimitManager: DailyLimitManager   // ← NUEVO
+    private val dailyLimitManager: DailyLimitManager,  // ← NUEVO
+    private val premiumManager   : PremiumManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConverterUiState())
@@ -193,7 +195,7 @@ class ConverterViewModel @Inject constructor(
         val files = state.selectedFiles
         if (type == null || files.isEmpty()) return
 
-        if (!adManager.isPremium.value && !dailyLimitManager.canConvert()) {
+        if (!premiumManager.canPerform { dailyLimitManager.canConvert() }) {
             _uiState.update { it.copy(showLimitDialog = true) }
             Timber.d("ConverterViewModel: límite diario alcanzado")
             return
@@ -202,8 +204,8 @@ class ConverterViewModel @Inject constructor(
         // "Alta resolución" (backlog UX #33) es Premium -- se revalida acá,
         // no solo en la UI, para que el estado de la pantalla nunca pueda
         // saltarse el gate (defensa en profundidad, mismo criterio que
-        // adManager.isPremium ya se revalida en el límite diario arriba).
-        val useHighRes = highResolutionPdf && adManager.isPremium.value
+        // premiumManager ya se revalida en el límite diario arriba).
+        val useHighRes = highResolutionPdf && premiumManager.isPremium.value
 
         val customName = state.fileName.trim().ifBlank { generateDefaultName() }
         val isBatch    = type != ConversionType.IMAGE_TO_PDF && files.size > 1
@@ -306,7 +308,7 @@ class ConverterViewModel @Inject constructor(
             val nameNoExt    = originalName.substringBeforeLast('.').ifBlank { generateDefaultName() }
             val baseName     = uniqueBaseName(nameNoExt, usedNames)
 
-            val result = if (!adManager.isPremium.value && !dailyLimitManager.canConvert()) {
+            val result = if (!premiumManager.canPerform { dailyLimitManager.canConvert() }) {
                 ConversionResult.Error("Límite diario de conversiones alcanzado")
             } else {
                 runConversionForUri(type, uri, baseName).also {

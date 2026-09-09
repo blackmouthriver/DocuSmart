@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -68,6 +69,10 @@ class PdfToolsScreenTest {
         val dailyLimitManager = mockk<DailyLimitManager>(relaxed = true)
         every { dailyLimitManager.canUsePdfTool(any()) } returns true
 
+        val premiumManager = mockk<PremiumManager>(relaxed = true)
+        every { premiumManager.isPremium } returns MutableStateFlow(false)
+        every { premiumManager.canPerform(any()) } answers { firstArg<() -> Boolean>().invoke() }
+
         return PdfToolsViewModel(
             mergePdf         = mockk(relaxed = true),
             splitPdf         = mockk(relaxed = true),
@@ -85,6 +90,7 @@ class PdfToolsScreenTest {
             fillForm         = mockk(relaxed = true),
             ocrPdf           = mockk(relaxed = true),
             dailyLimitManager = dailyLimitManager,
+            premiumManager    = premiumManager,
             adManager         = adManager
         )
     }

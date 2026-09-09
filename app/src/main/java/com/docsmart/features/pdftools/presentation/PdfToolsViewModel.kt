@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
@@ -129,6 +130,7 @@ class PdfToolsViewModel @Inject constructor(
     private val fillForm: FillFormUseCase,
     private val ocrPdf: OcrPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
+    private val premiumManager: PremiumManager,
     val adManager: AdManager
 ) : ViewModel() {
 
@@ -357,7 +359,7 @@ class PdfToolsViewModel @Inject constructor(
         }
         if (!hasSelection || state.selectedTool == PdfTool.NONE) return
 
-        if (!adManager.isPremium.value && !dailyLimitManager.canUsePdfTool(state.selectedTool.name)) {
+        if (!premiumManager.canPerform { dailyLimitManager.canUsePdfTool(state.selectedTool.name) }) {
             _uiState.update { it.copy(showLimitDialog = true) }
             Timber.d("$TAG: límite diario alcanzado para ${state.selectedTool}")
             return

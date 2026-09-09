@@ -40,6 +40,15 @@ class PremiumManager @Inject constructor(
         return feature.isAvailableFree || _isPremium.value
     }
 
+    // Gate genérico para operaciones con límite diario (Convertidor,
+    // Herramientas PDF, escaneos guardados): estaba repetido como
+    // `!adManager.isPremium.value && !dailyLimitManager.canX()` (o su
+    // inverso) en 3 ViewModels distintos, cada uno leyendo el estado
+    // Premium directo de AdManager en vez de a través de este manager.
+    fun canPerform(dailyCheck: () -> Boolean): Boolean {
+        return _isPremium.value || dailyCheck()
+    }
+
     fun activatePremium() {
         _isPremium.value = true
         savePremiumStatus(true)

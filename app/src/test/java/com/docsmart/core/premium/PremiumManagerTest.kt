@@ -117,4 +117,28 @@ class PremiumManagerTest {
     fun `UNLIMITED_CONVERT no esta marcado como disponible gratis`() {
         assertFalse(PremiumFeature.UNLIMITED_CONVERT.isAvailableFree)
     }
+
+    // Duplicación corregida 2026-09-09: `!adManager.isPremium.value &&
+    // !dailyLimitManager.canX()` (o su inverso) estaba repetido en
+    // ConverterViewModel, PdfToolsViewModel y ScanSessionViewModel, cada
+    // uno leyendo el estado Premium directo de AdManager en vez de acá.
+    @Test
+    fun `canPerform es true si es premium sin evaluar el limite diario`() {
+        val manager = newManager()
+        manager.activatePremium()
+        var dailyCheckLlamado = false
+
+        val resultado = manager.canPerform { dailyCheckLlamado = true; false }
+
+        assertTrue(resultado)
+        assertFalse(dailyCheckLlamado)
+    }
+
+    @Test
+    fun `canPerform delega en el limite diario cuando no es premium`() {
+        val manager = newManager()
+
+        assertTrue(manager.canPerform { true })
+        assertFalse(manager.canPerform { false })
+    }
 }
