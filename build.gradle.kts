@@ -30,24 +30,17 @@ sonar {
             "sonar.coverage.jacoco.xmlReportPaths",
             "app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
         )
-        // Bug real corregido 2026-09-09: sin esto, la auto-detección del
-        // plugin org.sonarqube encontraba bien los archivos del proyecto
-        // para métricas generales (ncloc, cantidad de archivos), pero el
-        // importador de cobertura JaCoCo XML no lograba emparejar NINGUNO
-        // de los archivos del reporte contra las fuentes analizadas ("None
-        // of the 186 files in coverage report could be matched") --
-        // reportando 0% de cobertura pese a tener datos reales. La propia
-        // documentación de Sonar indica que la importación de cobertura
-        // depende de que sonar.sources apunte de forma explícita y precisa
-        // al directorio de fuentes, sin depender de la auto-detección.
-        // Se incluyen también los build.gradle.kts/settings.gradle.kts --
-        // sin listarlos acá, restringir sonar.sources a solo el código de
-        // la app los sacaría del análisis (ahí viven los hallazgos ya
-        // corregidos kotlin:S6474/text:S8569 sobre dependencias).
-        property(
-            "sonar.sources",
-            "app/src/main/java,build.gradle.kts,app/build.gradle.kts,settings.gradle.kts"
-        )
-        property("sonar.tests", "app/src/test/java,app/src/androidTest/java")
+        // Intento revertido 2026-09-09: fijar sonar.sources/sonar.tests acá
+        // de forma explícita ("app/src/main/java,build.gradle.kts,..." /
+        // "app/src/test/java,app/src/androidTest/java") rompió el análisis
+        // por completo -- "File .../MainActivity.kt can't be indexed
+        // twice", porque choca con la auto-detección de fuentes/tests que
+        // el plugin org.sonarqube ya hace sola para proyectos Android vía
+        // AGP (las dos listas terminan solapándose, no reemplazándose).
+        // El problema real que se intentaba resolver (0% de cobertura,
+        // "None of the 186 files in coverage report could be matched to
+        // the analysed sources") sigue sin causa raíz confirmada -- queda
+        // pendiente investigar el mecanismo exacto de integración AGP del
+        // plugin antes de tocar sonar.sources/sonar.tests de nuevo.
     }
 }
