@@ -30,5 +30,24 @@ sonar {
             "sonar.coverage.jacoco.xmlReportPaths",
             "app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
         )
+        // Bug real corregido 2026-09-09: sin esto, la auto-detección del
+        // plugin org.sonarqube encontraba bien los archivos del proyecto
+        // para métricas generales (ncloc, cantidad de archivos), pero el
+        // importador de cobertura JaCoCo XML no lograba emparejar NINGUNO
+        // de los archivos del reporte contra las fuentes analizadas ("None
+        // of the 186 files in coverage report could be matched") --
+        // reportando 0% de cobertura pese a tener datos reales. La propia
+        // documentación de Sonar indica que la importación de cobertura
+        // depende de que sonar.sources apunte de forma explícita y precisa
+        // al directorio de fuentes, sin depender de la auto-detección.
+        // Se incluyen también los build.gradle.kts/settings.gradle.kts --
+        // sin listarlos acá, restringir sonar.sources a solo el código de
+        // la app los sacaría del análisis (ahí viven los hallazgos ya
+        // corregidos kotlin:S6474/text:S8569 sobre dependencias).
+        property(
+            "sonar.sources",
+            "app/src/main/java,build.gradle.kts,app/build.gradle.kts,settings.gradle.kts"
+        )
+        property("sonar.tests", "app/src/test/java,app/src/androidTest/java")
     }
 }
