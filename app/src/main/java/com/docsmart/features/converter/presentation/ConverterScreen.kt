@@ -37,6 +37,7 @@ import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.*
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
+import com.docsmart.features.converter.domain.model.HIDDEN_FROM_UI
 import com.docsmart.features.converter.presentation.components.BatchConversionSuccess
 import com.docsmart.features.converter.presentation.components.ConversionProgress
 import com.docsmart.features.converter.presentation.components.ConversionSuccess
@@ -278,7 +279,7 @@ fun ConverterScreen(
                 )
             }
 
-            val allTypes = ConversionType.entries.toList()
+            val allTypes = ConversionType.entries.filterNot { it in HIDDEN_FROM_UI }
             CONVERSION_CATEGORIES.forEach { category ->
                 val types = allTypes.filter { it.getCategoryForUi() == category.title }
                 if (types.isNotEmpty()) {

@@ -104,7 +104,13 @@ fun StudyScreen(
     val scope = rememberCoroutineScope()
 
     // ── Estado general ────────────────────────────────
-    var selectedTab by remember { mutableIntStateOf(initialTab.coerceIn(0, 3)) }
+    // Lanzamiento inicial 2026-09-10: pestaña "Resumen" oculta a pedido del
+    // usuario para el primer release (ver `tabs` más abajo) -- el límite
+    // baja de 3 a 2 para que initialTab nunca pueda arrancar en la pestaña
+    // oculta. TextSummarizer y SummaryTab quedan intactos, solo sin punto
+    // de entrada desde la UI; reactivar es agregar de nuevo el 4to string
+    // en `tabs` y volver este coerceIn a (0, 3).
+    var selectedTab by remember { mutableIntStateOf(initialTab.coerceIn(0, 2)) }
     // ── Resumen automático (2026-09-08, 100% local -- ver TextSummarizer) ──
     var summarySentences by remember { mutableStateOf<List<String>?>(null) }
     var isSummarizing by remember { mutableStateOf(false) }
@@ -463,19 +469,23 @@ fun StudyScreen(
             val tabs = listOf(
                 stringResource(R.string.study_tab_reading),
                 stringResource(R.string.study_tab_notes),
-                stringResource(R.string.study_tab_pomodoro),
-                stringResource(R.string.study_tab_summary)
+                stringResource(R.string.study_tab_pomodoro)
+                // "Resumen" oculta para el primer release, ver comentario junto a selectedTab.
             )
-            // ScrollableTabRow en vez de TabRow (2026-09-08): con el 4to tab
-            // ("Resumen") agregado, TabRow forzaba las 4 pestañas al mismo
-            // ancho fijo y "Pomodoro" se partía en 2 líneas -- cada pestaña
-            // mide su propio contenido acá, sin forzar el ancho, y las 4
-            // caben sin necesidad real de scroll en la mayoría de pantallas.
-            ScrollableTabRow(
+            // TabRow (vuelto a usar 2026-09-10, con "Resumen" oculto): con
+            // 4 pestañas, TabRow forzaba el mismo ancho fijo y "Pomodoro" se
+            // partía en 2 líneas -- por eso se había pasado a
+            // ScrollableTabRow, que mide cada pestaña por su contenido (sin
+            // llenar el ancho, dejando un hueco vacío a la derecha con solo
+            // 3 pestañas). Con 3 pestañas cada una tiene más espacio y
+            // "Pomodoro" entra en una sola línea, así que TabRow (ancho
+            // fijo, reparte el espacio total) evita el hueco. Si "Resumen"
+            // vuelve a activarse (ver `tabs` arriba), hay que volver a
+            // ScrollableTabRow para no reintroducir el corte de línea.
+            TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                contentColor   = MaterialTheme.colorScheme.primary,
-                edgePadding    = 0.dp
+                contentColor   = MaterialTheme.colorScheme.primary
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(

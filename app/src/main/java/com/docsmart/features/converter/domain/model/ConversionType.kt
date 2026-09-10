@@ -120,6 +120,24 @@ enum class ConversionType(
     )
 }
 
+// Lanzamiento inicial 2026-09-10: PDF→Word y las categorías Word/Excel/
+// PowerPoint completas se ocultan de la grilla del Convertidor a pedido
+// del usuario para el primer release (ver el filtro en ConverterScreen.kt
+// donde se aplica). La lógica de conversión real (use cases, ViewModel)
+// queda intacta -- para reactivarlas más adelante alcanza con sacarlas de
+// este set.
+val HIDDEN_FROM_UI: Set<ConversionType> = setOf(
+    ConversionType.PDF_TO_WORD,
+    ConversionType.WORD_TO_PDF,
+    ConversionType.WORD_TO_TXT,
+    ConversionType.WORD_TO_HTML,
+    ConversionType.EXCEL_TO_PDF,
+    ConversionType.EXCEL_TO_CSV,
+    ConversionType.EXCEL_TO_HTML,
+    ConversionType.PPT_TO_PDF,
+    ConversionType.PPT_TO_TXT
+)
+
 fun ConversionType.getCategoryLabel(): String = when (this) {
     ConversionType.IMAGE_TO_PDF,
     ConversionType.IMAGE_TO_JPG,
