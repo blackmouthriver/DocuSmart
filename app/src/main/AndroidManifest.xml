@@ -65,10 +65,10 @@
         android:enableOnBackInvokedCallback="true">
 
 
-        <!-- AdMob App ID — reemplazar con el tuyo al publicar -->
+        <!-- AdMob App ID real, registrado 2026-09-10 en apps.admob.com -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-1109506701099935~4980986590" />
 
         <!-- Firebase Analytics/Crashlytics: activados solo en el build type
              release (ver manifestPlaceholders en app/build.gradle.kts); en

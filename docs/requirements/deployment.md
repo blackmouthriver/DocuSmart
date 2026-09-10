@@ -584,7 +584,7 @@ Revisado directamente en el código, no supuesto:
 - Búsqueda de `setCustomKey`/Crashlytics → no hay claves custom agregadas, solo el reporte estándar de Firebase.
 - Búsqueda de `ConsentInformation`/`UserMessagingPlatform` (SDK de consentimiento de Google) → **implementado 2026-08-26**, ver `settings-premium.md` §9.
 - `StudyScreen.kt` — confirmado que el dictado de voz usa `RecognizerIntent` (delega al sistema), no un `SpeechRecognizer` propio ni un servicio de voz en la nube contratado por la app.
-- `AndroidManifest.xml` → el AdMob App ID configurado es **el ID de prueba público de Google** (`ca-app-pub-3940256099942544~...`), no uno real — ya venía comentado como pendiente ("reemplazar con el tuyo al publicar").
+- `AndroidManifest.xml` → el AdMob App ID configurado era **el ID de prueba público de Google** (`ca-app-pub-3940256099942544~...`), no uno real — ya venía comentado como pendiente ("reemplazar con el tuyo al publicar"). **Resuelto 2026-09-10**: App ID real registrado en AdMob y las 12 unidades de anuncio (10 banners + interstitial + rewarded) creadas y cargadas en `AdConstants.kt`.
 - **Corregido 2026-09-03**: esta tabla ya declaraba Firebase Analytics/Crashlytics como activos, pero el plugin de Gradle que procesa `google-services.json` (`com.google.gms.google-services`/`com.google.firebase.crashlytics`, declarados con `apply false` en el `build.gradle.kts` raíz) nunca se aplicaba en `app/build.gradle.kts` -- sin eso, Firebase no tenía con qué inicializarse de verdad, y los 15 eventos de `DocuSmartAnalytics.kt` tenían cero call sites en toda la app (escritos, nunca invocados). Esta tabla describía la intención, no lo que realmente pasaba. Corregido: plugin aplicado, meta-data del manifest conectado a los `manifestPlaceholders` ya existentes, los 15 eventos conectados a sus pantallas/flujos reales, y un `Timber.Tree` (`CrashlyticsTree`) que reenvía los `Timber.w`/`Timber.e` ya existentes en todo el proyecto hacia `FirebaseCrashlytics.recordException()` -- antes de esto, en build `release` no había ningún árbol de Timber plantado, así que ni siquiera Logcat veía esos errores en producción. Ver `backlog-mejoras-ux-2026-08-30.md` §10 para el detalle completo.
 
 **Hallazgo corregido (2026-08-26):** no había SDK de consentimiento (Google
@@ -598,13 +598,14 @@ no lo pedía. Implementado y verificado en el dispositivo real, ver
 
 ## 6. Otros pendientes menores antes de la primera subida
 
-- **`versionCode`/`versionName`** siguen en `1`/`1.0.0` — ajustar antes de
-  la primera subida real si corresponde.
-- **`targetSdk = 35`** — Play Console exige mantenerse dentro de la ventana
-  de versión de Android soportada vigente al momento de publicar; verificar
-  el requisito actual antes de subir.
-- **AdMob App ID de prueba** en `AndroidManifest.xml` — reemplazar por el
-  real antes de publicar (ver hallazgo en §5.3).
+- ~~**`versionCode`/`versionName`** siguen en `1`/`1.0.0`~~ — **Resuelto
+  2026-09-10**: `versionCode` en `2` tras un rechazo de Play Console por
+  código repetido; `versionName` sigue en `1.0.0` (correcto, primer
+  lanzamiento).
+- ~~**`targetSdk = 35`**~~ — **Resuelto 2026-09-10**: subido a `36` por
+  requisito de Play Console para nuevas subidas.
+- ~~**AdMob App ID de prueba** en `AndroidManifest.xml`~~ — **Resuelto
+  2026-09-10** (ver hallazgo actualizado en §5.3).
 
 ---
 
