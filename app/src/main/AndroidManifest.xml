@@ -20,9 +20,15 @@
         tools:ignore="ScopedStorage" />
 
     <!-- ── Medios — Android 13+ (API 33+) ───────────── -->
+    <!-- READ_MEDIA_VIDEO y READ_MEDIA_AUDIO removidos 2026-09-10 (hallazgo
+         real al preparar la declaración de permisos de Play Console):
+         estaban declarados acá pero nunca solicitados ni verificados en
+         ningún lugar del código Kotlin. DocuSmart no tiene ninguna función
+         que use video ni audio de archivos (el dictado de voz usa
+         RecognizerIntent del sistema, no lee archivos de audio). Pedir
+         permisos que la app nunca usa viola la política de Google de
+         fotos/video y no había forma honesta de justificarlos. -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission
         android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
         android:minSdkVersion="34" />

@@ -46,10 +46,14 @@ import org.junit.Test
  */
 class LibraryScreenTest {
 
+    // READ_MEDIA_VIDEO removido 2026-09-10 de este grant: ya no está
+    // declarado en el manifest (ver comentario en MainActivity.kt), y
+    // GrantPermissionRule falla si intenta otorgar un permiso que la app
+    // no declara.
     @get:Rule
     val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
         else
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     )

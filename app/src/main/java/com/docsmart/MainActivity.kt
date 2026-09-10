@@ -251,6 +251,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Permiso de video corregido 2026-09-10 (hallazgo real al preparar la
+    // declaración de permisos de fotos/video para Play Console):
+    // READ_MEDIA_VIDEO se pedía acá y en LibraryScreen.kt sin que ninguna
+    // función de la app use contenido de video (ConversionType no tiene
+    // ningún tipo de video, no hay reproductor ni importador) -- pedir un
+    // permiso que no se usa viola la política de Google de fotos/video y
+    // no había forma honesta de justificarlo en el formulario.
     private fun requestStoragePermissions() {
         val permissions = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -264,10 +271,6 @@ class MainActivity : AppCompatActivity() {
                     this, Manifest.permission.READ_MEDIA_IMAGES
                 ) != PackageManager.PERMISSION_GRANTED
             ) permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.READ_MEDIA_VIDEO
-                ) != PackageManager.PERMISSION_GRANTED
-            ) permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
         } else {
             if (ContextCompat.checkSelfPermission(
                     this, Manifest.permission.READ_EXTERNAL_STORAGE
