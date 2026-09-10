@@ -121,67 +121,12 @@ fun RotatePdfScreen(
         }
 
         // ── Selector PDF ──────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .clip(MaterialTheme.shapes.large)
-                .border(
-                    width = if (selectedPdf != null) 1.dp else 1.5.dp,
-                    color = if (selectedPdf != null)
-                        WarningAmber
-                    else
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                    shape = MaterialTheme.shapes.large
-                )
-                .background(
-                    if (selectedPdf != null)
-                        WarningAmber.copy(alpha = 0.1f)
-                    else
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                )
-                .clickable { onSelectPdf() },
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (selectedPdf != null)
-                        Icons.Rounded.CheckCircle
-                    else
-                        Icons.Rounded.FileOpen,
-                    contentDescription = null,
-                    tint = if (selectedPdf != null)
-                        WarningAmber
-                    else
-                        MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Column {
-                    Text(
-                        text = stringResource(
-                            if (selectedPdf != null) R.string.pdf_rotate_ready
-                            else R.string.pdf_tools_select_pdf_prompt
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (selectedPdf != null)
-                            WarningAmber
-                        else
-                            MaterialTheme.colorScheme.primary
-                    )
-                    if (selectedPdf != null) {
-                        Text(
-                            text = selectedPdf.lastPathSegment
-                                ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
+        PdfSelectZone(
+            selectedPdf = selectedPdf,
+            onSelectPdf = onSelectPdf,
+            readyText = stringResource(R.string.pdf_rotate_ready),
+            accentColor = WarningAmber
+        )
 
         // ── Card: Vista previa + controles ────────────
         Card(
@@ -325,47 +270,14 @@ fun RotatePdfScreen(
         }
 
         // ── Progreso o botón ──────────────────────────
-        if (isProcessing) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = WarningAmber,
-                    trackColor = WarningAmber.copy(alpha = 0.2f)
-                )
-                Text(
-                    text = stringResource(R.string.pdf_rotate_progress, degrees),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            Button(
-                onClick = onExecute,
-                enabled = selectedPdf != null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = WarningAmber,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.RotateRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.pdf_rotate_execute, degrees),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
+        PdfProcessingFooter(
+            isProcessing = isProcessing,
+            enabled = selectedPdf != null,
+            progressText = stringResource(R.string.pdf_rotate_progress, degrees),
+            buttonLabel = stringResource(R.string.pdf_rotate_execute, degrees),
+            buttonIcon = Icons.Rounded.RotateRight,
+            onExecute = onExecute,
+            accentColor = WarningAmber
+        )
     }
 }

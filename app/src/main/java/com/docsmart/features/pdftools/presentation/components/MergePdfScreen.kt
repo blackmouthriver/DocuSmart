@@ -76,11 +76,16 @@ fun MergePdfScreen(
         }
 
         // ── Progreso o botón ──────────────────────────
-        if (isProcessing) {
-            MergePdfProgress(selectedPdfs.size)
-        } else {
-            MergePdfExecuteButton(selectedPdfs.size, onExecute)
-        }
+        val count = selectedPdfs.size
+        PdfProcessingFooter(
+            isProcessing = isProcessing,
+            enabled = count >= 2,
+            progressText = stringResource(R.string.pdf_merge_progress, count),
+            buttonLabel = if (count < 2) stringResource(R.string.pdf_merge_select_at_least_2)
+                          else stringResource(R.string.pdf_merge_execute, count),
+            buttonIcon = Icons.Rounded.MergeType,
+            onExecute = onExecute
+        )
     }
 }
 
@@ -201,46 +206,3 @@ private fun SelectedPdfRow(index: Int, uri: Uri, onRemovePdf: (Uri) -> Unit) {
     }
 }
 
-@Composable
-private fun MergePdfProgress(count: Int) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        LinearProgressIndicator(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.primaryContainer
-        )
-        Text(
-            text = stringResource(R.string.pdf_merge_progress, count),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun MergePdfExecuteButton(count: Int, onExecute: () -> Unit) {
-    Button(
-        onClick = onExecute,
-        enabled = count >= 2,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.MergeType,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = if (count < 2) stringResource(R.string.pdf_merge_select_at_least_2)
-                   else stringResource(R.string.pdf_merge_execute, count),
-            style = MaterialTheme.typography.labelLarge
-        )
-    }
-}

@@ -1,9 +1,6 @@
 package com.docsmart.features.pdftools.presentation.components
 
 import android.net.Uri
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -11,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,61 +45,11 @@ fun SplitPdfScreen(
         }
 
         // ── Selector PDF ──────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .clip(MaterialTheme.shapes.large)
-                .border(
-                    width = if (selectedPdf != null) 1.dp else 1.5.dp,
-                    color = if (selectedPdf != null)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                    shape = MaterialTheme.shapes.large
-                )
-                .background(
-                    if (selectedPdf != null)
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                    else
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                )
-                .clickable { onSelectPdf() },
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (selectedPdf != null)
-                        Icons.Rounded.CheckCircle
-                    else
-                        Icons.Rounded.FileOpen,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Column {
-                    Text(
-                        text = stringResource(
-                            if (selectedPdf != null) R.string.pdf_split_selected
-                            else R.string.pdf_tools_select_pdf_prompt
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    if (selectedPdf != null) {
-                        Text(
-                            text = selectedPdf.lastPathSegment
-                                ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
+        PdfSelectZone(
+            selectedPdf = selectedPdf,
+            onSelectPdf = onSelectPdf,
+            readyText = stringResource(R.string.pdf_split_selected)
+        )
 
         // ── Rango de páginas ──────────────────────────
         if (selectedPdf != null) {
@@ -236,43 +182,13 @@ fun SplitPdfScreen(
         }
 
         // ── Progreso o botón ──────────────────────────
-        if (isProcessing) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.primaryContainer
-                )
-                Text(
-                    text = stringResource(R.string.pdf_split_progress),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            Button(
-                onClick = onExecute,
-                enabled = selectedPdf != null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.CallSplit,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.pdf_split),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
+        PdfProcessingFooter(
+            isProcessing = isProcessing,
+            enabled = selectedPdf != null,
+            progressText = stringResource(R.string.pdf_split_progress),
+            buttonLabel = stringResource(R.string.pdf_split),
+            buttonIcon = Icons.Rounded.CallSplit,
+            onExecute = onExecute
+        )
     }
 }
