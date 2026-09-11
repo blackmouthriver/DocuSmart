@@ -1,6 +1,7 @@
 package com.docsmart.features.pdftools.presentation.components
 
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -8,10 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.SuccessGreen
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 
 @Composable
 fun CompressPdfScreen(
@@ -51,12 +55,13 @@ fun CompressPdfScreen(
         )
 
         // ── Control de calidad ────────────────────────
-        Card(
-            shape = MaterialTheme.shapes.large,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(2.dp)
+        val shape = MaterialTheme.shapes.large
+        Box(
+            modifier = Modifier
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),

@@ -16,6 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 
 @Composable
 fun MergePdfScreen(
@@ -130,12 +132,13 @@ private fun MergePdfSelectZone(isEmpty: Boolean, onSelectPdfs: () -> Unit) {
 
 @Composable
 private fun SelectedPdfsList(selectedPdfs: List<Uri>, onRemovePdf: (Uri) -> Unit) {
-    Card(
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = Modifier
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Column {
             selectedPdfs.forEachIndexed { index, uri ->

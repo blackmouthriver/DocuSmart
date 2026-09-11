@@ -1361,10 +1361,14 @@ private fun ScanPageThumbnail(
     onEditClick: () -> Unit
 ) {
     Box(modifier = Modifier.size(120.dp, 160.dp)) {
-        Card(
-            modifier = Modifier.fillMaxSize(),
-            shape = MaterialTheme.shapes.medium,
-            elevation = CardDefaults.cardElevation(2.dp)
+        val shape = MaterialTheme.shapes.medium
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
         ) {
             AsyncImage(
                 model = uri,

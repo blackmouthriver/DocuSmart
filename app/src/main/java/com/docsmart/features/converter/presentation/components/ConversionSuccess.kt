@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,8 @@ import com.docsmart.core.ui.theme.ColorPdf
 import com.docsmart.core.ui.theme.ColorPowerPoint
 import com.docsmart.core.ui.theme.ColorText
 import com.docsmart.core.ui.theme.ColorWord
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.converter.domain.model.ConversionResult
 import timber.log.Timber
 import java.io.File
@@ -41,13 +44,14 @@ fun ConversionSuccess(
     val shareLabel = stringResource(R.string.converter_share)
     val (fileIcon, fileColor) = formatIconForExtension(result.outputFile.extension)
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Column(
             modifier = Modifier

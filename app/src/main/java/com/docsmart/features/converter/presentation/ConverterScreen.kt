@@ -421,11 +421,15 @@ private fun ConversionGridCard(
     val (fromColor, fromIcon) = getFormatStyle(type.fromFormat)
     val (toColor,   toIcon)   = getFormatStyle(type.toFormat)
 
-    Card(
-        modifier  = modifier.height(110.dp).clickable { onClick() },
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = modifier
+            .height(110.dp)
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
+            .clickable { onClick() }
     ) {
         Column(
             modifier            = Modifier.fillMaxSize().padding(14.dp),

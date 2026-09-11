@@ -3,6 +3,7 @@ package com.docsmart.features.security.presentation
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,6 +30,8 @@ import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.security.domain.PdfPasswordMessages
 
 @Composable
@@ -192,11 +196,15 @@ private fun ModeCard(
     color      : androidx.compose.ui.graphics.Color,
     onClick    : () -> Unit
 ) {
-    Card(
-        modifier  = Modifier.fillMaxWidth().clickable { onClick() },
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
+            .clickable { onClick() }
     ) {
         Row(
             modifier              = Modifier.fillMaxWidth().padding(20.dp),

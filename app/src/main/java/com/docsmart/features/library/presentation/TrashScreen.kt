@@ -24,8 +24,6 @@ import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -51,6 +49,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import java.util.Locale
 
 /**
@@ -215,10 +215,13 @@ private fun TrashItemCard(
     onDeleteForever: () -> Unit
 ) {
     val doc = item.document
-    Card(
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(1.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = Modifier
+            .accentShadow(shape = shape, elevation = 1.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

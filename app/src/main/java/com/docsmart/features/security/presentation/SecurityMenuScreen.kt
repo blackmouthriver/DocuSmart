@@ -1,5 +1,6 @@
 package com.docsmart.features.security.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -9,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -18,6 +20,8 @@ import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 
 @Composable
 fun SecurityMenuScreen(
@@ -97,11 +101,15 @@ private fun SecurityOptionCard(
     badge      : String,
     onClick    : () -> Unit
 ) {
-    Card(
-        modifier  = Modifier.fillMaxWidth().clickable { onClick() },
-        shape     = MaterialTheme.shapes.extraLarge,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.extraLarge
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
+            .clickable { onClick() }
     ) {
         Row(
             modifier              = Modifier.fillMaxWidth().padding(20.dp),

@@ -4,7 +4,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size as ComposeSize
@@ -56,6 +56,8 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.pdf.PdfPageBitmap
 import com.docsmart.core.pdf.renderPdfPagesToBitmaps
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.converter.domain.usecase.WordFileFormat
 import com.docsmart.features.converter.domain.usecase.detectWordFormat
 import com.docsmart.features.converter.domain.usecase.extractLegacyDocBlocks
@@ -625,10 +627,14 @@ private fun PdfViewerContent(
                 onPageChanged(index, pages.size)
             }
             val pageHighlights = highlights[index + 1]
-            Card(
-                modifier  = Modifier.fillMaxWidth(),
-                shape     = MaterialTheme.shapes.small,
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            val shape = MaterialTheme.shapes.small
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .accentShadow(shape = shape, elevation = 2.dp)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .accentBorder(shape = shape)
             ) {
                 Image(
                     bitmap             = pageBitmap.bitmap.asImageBitmap(),
@@ -1307,17 +1313,19 @@ private fun PptViewerContent(
                             color    = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
-                        Card(
-                            modifier  = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
-                            shape     = MaterialTheme.shapes.large,
-                            colors    = CardDefaults.cardColors(
-                                containerColor = if (searchQuery.isNotBlank())
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                                else
-                                    Color.White
-                            ),
-                            border    = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            elevation = CardDefaults.cardElevation(3.dp)
+                        val shape = MaterialTheme.shapes.large
+                        val containerColor = if (searchQuery.isNotBlank())
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                        else
+                            Color.White
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .accentShadow(shape = shape, elevation = 3.dp)
+                                .clip(shape)
+                                .background(containerColor)
+                                .accentBorder(shape = shape)
                         ) {
                             PptSlideCanvas(slide)
                         }

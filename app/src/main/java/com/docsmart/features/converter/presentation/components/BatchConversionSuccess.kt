@@ -11,10 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.converter.domain.model.BatchConversionItem
 import com.docsmart.features.converter.domain.model.ConversionResult
 
@@ -33,11 +36,14 @@ fun BatchConversionSuccess(
     val shareLabel = stringResource(R.string.converter_share)
     val successCount = items.count { it.result is ConversionResult.Success }
 
-    Card(
-        modifier  = modifier.fillMaxWidth(),
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Column(
             modifier            = Modifier.fillMaxWidth().padding(20.dp),

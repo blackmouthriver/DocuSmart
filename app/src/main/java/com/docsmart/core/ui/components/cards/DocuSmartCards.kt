@@ -25,21 +25,18 @@ fun DocuSmartCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
+    val shape = MaterialTheme.shapes.large // 20dp
+    Box(
         modifier = modifier
             .fillMaxWidth()
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
             .then(
                 if (onClick != null) Modifier.clickable { onClick() }
                 else Modifier
-            ),
-        shape = MaterialTheme.shapes.large, // 20dp
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 4.dp
-        )
+            )
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -114,15 +111,15 @@ fun DocuSmartToolCard(
     modifier: Modifier = Modifier,
     iconTint: Color = DocuBlue
 ) {
-    Card(
+    val shape = MaterialTheme.shapes.large
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .accentShadow(shape = shape)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier

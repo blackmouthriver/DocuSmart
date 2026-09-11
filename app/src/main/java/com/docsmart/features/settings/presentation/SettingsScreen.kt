@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -36,6 +37,8 @@ import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.FontScale
 import com.docsmart.core.ui.theme.PremiumGold
 import com.docsmart.core.ui.theme.ThemeManager
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.util.findActivity
 import com.docsmart.features.onboarding.presentation.resetOnboarding
 import com.google.android.ump.ConsentInformation
@@ -825,11 +828,15 @@ private fun SettingsItem(
     onClick : () -> Unit,
     tint    : androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
 ) {
-    Card(
-        modifier  = Modifier.fillMaxWidth().clickable { onClick() },
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
+            .clickable { onClick() }
     ) {
         Row(
             modifier              = Modifier.fillMaxWidth().padding(16.dp),
@@ -864,11 +871,14 @@ private fun SettingsSwitchItem(
     onCheckedChange: (Boolean) -> Unit,
     tint    : androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
 ) {
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Row(
             modifier              = Modifier.fillMaxWidth().padding(16.dp),

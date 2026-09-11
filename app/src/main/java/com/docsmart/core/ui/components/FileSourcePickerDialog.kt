@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 
 /**
  * Selector de archivo con dos orígenes: el picker del sistema operativo,
@@ -126,11 +128,15 @@ fun FileSourcePickerDialog(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(filtered, key = { it.id }) { document ->
-                            Card(
-                                modifier  = Modifier.fillMaxWidth().clickable { onChooseDocument(document) },
-                                shape     = MaterialTheme.shapes.medium,
-                                colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                elevation = CardDefaults.cardElevation(1.dp)
+                            val shape = MaterialTheme.shapes.medium
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .accentShadow(shape = shape, elevation = 1.dp)
+                                    .clip(shape)
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .accentBorder(shape = shape)
+                                    .clickable { onChooseDocument(document) }
                             ) {
                                 Row(
                                     modifier              = Modifier.fillMaxWidth().padding(12.dp),

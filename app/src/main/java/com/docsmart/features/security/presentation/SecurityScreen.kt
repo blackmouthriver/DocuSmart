@@ -35,6 +35,8 @@ import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.theme.rememberAccentGradient
 import timber.log.Timber
 
@@ -601,11 +603,14 @@ private fun SecureFolderContent(
         }
 
         item {
-            Card(
-                modifier  = Modifier.fillMaxWidth(),
-                shape     = MaterialTheme.shapes.large,
-                colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(2.dp)
+            val shape = MaterialTheme.shapes.large
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .accentShadow(shape = shape, elevation = 2.dp)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .accentBorder(shape = shape)
             ) {
                 Column(
                     modifier            = Modifier.padding(16.dp),
@@ -716,11 +721,14 @@ private fun SecureFileItem(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape, elevation = 2.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Row(
             modifier              = Modifier.fillMaxWidth().padding(16.dp),

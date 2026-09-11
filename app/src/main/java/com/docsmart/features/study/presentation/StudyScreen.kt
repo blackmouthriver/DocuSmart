@@ -74,6 +74,8 @@ import com.docsmart.features.study.domain.millisToHoursAndMinutes
 import com.docsmart.features.study.domain.pomodoroCountsByWeekday
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.theme.rememberAccentGradient
 import com.docsmart.core.util.DownloadsSaver
 import com.itextpdf.kernel.geom.Vector
@@ -1000,11 +1002,15 @@ private fun BoxScope.ReadingEmptyState(
 // PDF de esta lista (no borra el archivo, solo el progreso guardado).
 @Composable
 private fun ReadingHistoryCard(progress: ReadingProgress, onClick: () -> Unit, onDelete: () -> Unit) {
-    Card(
-        modifier  = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape     = MaterialTheme.shapes.medium,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(1.dp)
+    val shape = MaterialTheme.shapes.medium
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape, elevation = 1.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
+            .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -1117,10 +1123,14 @@ private fun StudyPdfViewer(uri: Uri, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(pages) { pageBitmap ->
-                Card(
-                    modifier  = Modifier.fillMaxWidth(),
-                    shape     = MaterialTheme.shapes.small,
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                val shape = MaterialTheme.shapes.small
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .accentShadow(shape = shape, elevation = 2.dp)
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .accentBorder(shape = shape)
                 ) {
                     Image(
                         bitmap             = pageBitmap.bitmap.asImageBitmap(),
@@ -1276,11 +1286,15 @@ private fun NotesTab(
         // fondo) para que tenga la misma jerarquía visual que las notas
         // guardadas de más abajo, en vez de sentirse como una sección aparte.
         item {
-            Card(
-                modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                shape     = MaterialTheme.shapes.large,
-                colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(1.dp)
+            val shape = MaterialTheme.shapes.large
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .accentShadow(shape = shape, elevation = 1.dp)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .accentBorder(shape = shape)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -1500,13 +1514,15 @@ private fun NotesTab(
             }
         } else {
             itemsIndexed(savedNotes, key = { _, note -> note.id }) { _, note ->
-                Card(
-                    modifier  = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 5.dp),
-                    shape     = MaterialTheme.shapes.large,
-                    colors    = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(2.dp)
+                val shape = MaterialTheme.shapes.large
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 5.dp)
+                        .accentShadow(shape = shape, elevation = 2.dp)
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .accentBorder(shape = shape)
                 ) {
                     Column(
                         modifier = Modifier
@@ -1868,13 +1884,14 @@ private fun PomodoroControls(
 
 @Composable
 private fun PomodoroCountCard(pomodoroCount: Int) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(2.dp)
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .accentShadow(shape = shape)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .accentBorder(shape = shape)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -2122,11 +2139,14 @@ private fun SummaryResultView(
             // jerarquía de tarjeta que el resto de Modo Estudio (notas,
             // historial de lectura).
             itemsIndexed(sentences) { index, sentence ->
-                Card(
-                    modifier  = Modifier.fillMaxWidth(),
-                    shape     = MaterialTheme.shapes.medium,
-                    colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(1.dp)
+                val shape = MaterialTheme.shapes.medium
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .accentShadow(shape = shape, elevation = 1.dp)
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .accentBorder(shape = shape)
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),

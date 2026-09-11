@@ -8,6 +8,9 @@ import android.os.Build
 import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -21,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -37,6 +41,8 @@ import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.library.presentation.components.*
 import timber.log.Timber
 
@@ -330,24 +336,29 @@ private fun LibraryTabItem(
     onClick : () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        onClick   = onClick,
-        modifier  = modifier,
-        shape     = MaterialTheme.shapes.large,
-        colors    = CardDefaults.cardColors(
-            containerColor = if (selected)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (selected) 0.dp else 2.dp
-        ),
-        border    = if (selected)
-            androidx.compose.foundation.BorderStroke(
-                1.5.dp, MaterialTheme.colorScheme.primary
+    val shape = MaterialTheme.shapes.large
+    val containerColor = if (selected)
+        MaterialTheme.colorScheme.primaryContainer
+    else
+        MaterialTheme.colorScheme.surface
+    Box(
+        modifier = modifier
+            .then(
+                // Sombra/borde de acento solo cuando NO está seleccionada --
+                // igual que antes con 0.dp, la tarjeta seleccionada no lleva
+                // sombra, y usa su propio borde grueso de "seleccionado".
+                if (!selected) Modifier.accentShadow(shape = shape, elevation = 2.dp)
+                else Modifier
             )
-        else null
+            .clip(shape)
+            .background(containerColor)
+            .then(
+                if (selected)
+                    Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
+                else
+                    Modifier.accentBorder(shape = shape)
+            )
+            .clickable { onClick() }
     ) {
         // HU-UX-05: con "Grande"/"Muy grande" activo, "Dispositivo"/"Mis
         // archivos"/"Papelera" no entran ni en 2 líneas compartiendo el ancho
