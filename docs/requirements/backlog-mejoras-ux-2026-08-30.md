@@ -62,6 +62,30 @@ priorización para decidir qué se aborda y en qué orden.
 | 39 | Bug real (revisión final antes de fusionar): 2 de las 4 ramas de `ScanResultScreen` (antes de generar, y el resultado de lote de imágenes) no tenían "Volver al inicio" — único callejón sin salida real, ya que el Escáner no tiene barra de navegación inferior; de paso se encontró que el "Volver al inicio" ya existente en otra rama tampoco limpiaba `ScanSessionManager`, dejando archivos "fantasma" de sesiones abandonadas | Bug | Alta | Baja | Bajo | **✅ Corregido y verificado en dispositivo real 2026-09-06 (las 4 ramas ya llevan a Inicio, las 3 limpian la sesión por igual)** — ver CONTEXT.md §8, "Revisión final antes de fusionar" |
 | 40 | Mejora (revisión final antes de fusionar): la flecha "Volver" vivía integrada dentro del degradado de `DocuSmartTopBanner` (texto/ícono blancos) — pedido explícito del usuario: sacarla del área con color y dejarla debajo | Mejora | Baja | Baja | Bajo (cambio visual en un componente compartido por ~10 pantallas, sin tocar su lógica) | **✅ Implementado y verificado en dispositivo real 2026-09-06 (probado en Seguridad y en el Escáner)** — ver CONTEXT.md §8, "Revisión final antes de fusionar" |
 
+| 41 | Escáner — Filtros de color al escanear (Blanco y negro, Escala de grises, Resaltar texto) | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.1 |
+| 42 | Escáner — Acceso directo a OCR/Firmar/Carpeta Segura desde el resultado del escaneo | Mejora | Media | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.1 |
+| 43 | Creador de QR — Nuevos tipos de contenido (Wi-Fi, Contacto/vCard, Evento de calendario) | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.2 |
+| 44 | Creador/Lector de QR — Historial de códigos creados y leídos | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.2 |
+| 45 | Creador de QR — Diseño personalizado (color/logo en el centro) | Mejora | Baja | Media-Alta | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.2 |
+| 46 | Visor — Anotaciones (resaltar texto, notas adhesivas) sobre el PDF | Mejora (épica) | Alta | Alta | Medio-Alto | 🆕 Propuesto 2026-09-10 — ver §34.3 |
+| 47 | Visor — Marcadores de página | Mejora | Media | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.3 |
+| 48 | Visor — Recordar la última página vista por documento (distinto de "Retomar lectura" en audio, ya existente en Modo Estudio §33) | Mejora | Media | Baja | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.3 |
+| 49 | Notas (Modo Estudio) — Adjuntar una imagen o recorte escaneado a una nota | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.4 |
+| 50 | Notas — Vincular una nota a un documento específico de la Biblioteca | Mejora | Baja | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.4 |
+| 51 | Notas — Exportar una nota a PDF/Word (reutilizando el Convertidor) | Mejora | Media | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.4 |
+| 52 | Notas — Recordatorio de repaso (notificación local) | Mejora | Baja | Media | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.4 |
+| 53 | Herramientas PDF — Extraer imágenes embebidas de un PDF | Mejora | Baja | Media | Bajo | 🆕 Propuesto 2026-09-10 — única novedad real de esta categoría, ver §34.5 |
+| 54 | Monetización — Prueba gratuita de Premium (trial de 7 días) | Mejora | Alta | Media | Medio | 🆕 Propuesto 2026-09-10 — ver §34.6 |
+| 55 | Monetización — Plan anual con descuento | Mejora | Alta | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.6 |
+| 56 | Monetización — Programa de referidos (código de invitación) | Mejora | Media | Alta | Medio-Alto | 🆕 Propuesto 2026-09-10 — ver §34.6 |
+| 57 | Monetización — Mediación de AdMob (sumar otra red publicitaria) | Mejora | Media | Media | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.6 |
+| 58 | IA on-device — Traducción de documentos (ML Kit Translation, 100% local) | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.7 |
+| 59 | IA on-device — Clasificación automática del tipo de documento al escanear | Mejora | Media | Alta | Medio | 🆕 Propuesto 2026-09-10 — ver §34.7 |
+| 60 | IA generativa on-device (Gemini Nano/AICore) — Flashcards de estudio desde una nota | Mejora | Media | Alta | Medio-Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio, ver §34.7 |
+| 61 | IA en la nube — Chat con el documento (preguntas y respuestas sobre un PDF) | Mejora | Alta | Alta | Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio previa (privacidad + costo), ver §34.7 |
+| 62 | IA en la nube — Extracción estructurada de datos de recibos/facturas | Mejora | Media | Alta | Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio previa (privacidad + costo), ver §34.7 |
+| 63 | Fondo animado — más movimiento perceptible (refinamiento del ítem 26) | Mejora | Media-Alta | Baja | Bajo | 🆕 Propuesto 2026-09-10 — ver §36 |
+
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
 completo sigue viviendo en sus documentos originales (enlazados).
@@ -3084,3 +3108,816 @@ instante, JSON persistido queda vacío). Gauntlet en verde:
 **Pendiente**: aprobación explícita del usuario para fusionar y subir
 todo lo anterior (Lectura, Resumen, header/contraste/íconos y
 "Retomar lectura") a `main` (no fusionado todavía).
+
+## 34. Auditoría de nuevas funcionalidades propuestas (Escáner, QR, Visor, Notas, Herramientas PDF, Monetización, IA) — 2026-09-10
+
+El usuario pidió una lluvia de ideas de mejoras para estas 6 áreas
+mientras se esperaba la revisión de Google Play, con una condición
+explícita: **contrastarlas contra lo que ya existe** antes de
+catalogarlas, para no proponer trabajo duplicado. Se investigó cada
+idea contra el código real (grep + lectura de archivos, no supuesto)
+antes de escribir esta sección — varias ideas originales del
+brainstorming **ya estaban implementadas** y se descartaron de esta
+lista; se documenta cuáles para que quede el registro.
+
+**Descartadas por ya existir (hallazgo real de esta auditoría, no
+había que agregarlas):**
+- **Herramientas PDF**: de las ideas propuestas, **Reordenar páginas**
+  (`PdfTool.REORDER_PAGES`), **Comparar dos PDFs** (`PdfTool.COMPARE`),
+  **Redactar/censurar** (`PdfTool.REDACT`) y **Firma digital**
+  (`PdfTool.SIGN`) ya están completamente implementadas — confirmado
+  en `PdfToolsViewModel.kt` (enum `PdfTool` con 13 herramientas reales)
+  y sus pantallas en `PdfToolsScreen.kt`/`SignPdfScreen.kt`. La app ya
+  tiene 13 herramientas PDF, no 9 como se asumió al proponer la idea.
+- **Creador de QR**: los tipos de contenido Email y Teléfono
+  (`QrContentType.EMAIL`/`PHONE`) ya existen, además de URL/Texto/
+  Imagen/Documento — confirmado en `QrScreen.kt`. Solo Wi-Fi, Contacto
+  y Evento de calendario son realmente nuevos (ítem 43).
+- **Modo Estudio**: "Lectura en voz alta del PDF" y "Continuar leyendo"
+  (retomar donde quedó la lectura) **ya existen**, implementados en la
+  pestaña "Lectura" con `StudyReadingProgressStorage` — ver §33. No se
+  proponen de nuevo. Lo que sí sigue faltando es el equivalente
+  *visual* (recordar la última página vista al mirar el PDF en el
+  Visor, no al escucharlo) — ítem 48, una función distinta.
+- **Modo Estudio**: "Resumen automático" ya existe, 100% local
+  (algoritmo extractivo, sin IA en la nube) — ver §32. Esto también
+  fija el precedente de diseño para la sección de IA más abajo (§34.7):
+  el usuario ya eligió una vez, explícitamente, no depender de una API
+  de IA en la nube para esta función por costo y por la promesa de
+  privacidad ya publicada.
+
+### §34.1 — Escáner
+
+#### HU-41 — Filtros de color al escanear
+
+**Como** usuario que escanea un documento,
+**quiero** elegir entre Color, Blanco y negro, Escala de grises o
+Resaltar texto antes de guardar,
+**para** mejorar la legibilidad según el tipo de documento (una
+pizarra, un recibo térmico desteñido, un texto a lápiz).
+
+**Investigado**: `DocumentScannerLauncher.kt` solo expone
+`SCANNER_MODE_FULL`/`SCANNER_MODE_BASE` de ML Kit — controla qué UI de
+edición se muestra, no el color del resultado. ML Kit Document Scanner
+no expone un filtro de color propio; los 4 modos tendrían que aplicarse
+como post-proceso sobre el bitmap ya capturado (matriz de color/umbral
+para B&N, desaturación para escala de grises).
+
+- **RF1** El resultado de cada página capturada permite elegir uno de
+  4 modos de color antes de guardar: Color (actual, sin cambios),
+  Blanco y negro, Escala de grises, Resaltar texto (aumenta contraste y
+  fuerza casi-blanco el fondo).
+- **RF2** El modo elegido se aplica a todas las páginas del documento
+  actual por defecto, pero se puede cambiar página por página antes de
+  guardar.
+- **RNF1** Aplicar el filtro a una página de resolución típica (hasta
+  4000×3000px) no debe agregar más de ~500ms de espera perceptible por
+  página.
+- **RNF2** El procesamiento es 100% local (matriz de color de Android
+  Graphics), sin llamadas de red.
+- **AC1** Dado que termino de capturar una página, cuando reviso el
+  resultado, entonces veo los 4 modos de color como chips seleccionables
+  con una vista previa en miniatura de cada uno.
+- **AC2** Dado que elijo un modo distinto de Color, cuando guardo el
+  documento, entonces el archivo final refleja ese filtro.
+- **AC3** El modo "Color" (por defecto) no cambia el comportamiento
+  actual — sin regresión para quien no toca esta opción.
+
+#### HU-42 — Acceso directo a OCR/Firmar/Carpeta Segura desde el resultado del escaneo
+
+**Como** usuario que acaba de escanear un documento,
+**quiero** poder pasarlo directo a OCR, Firmar, o Carpeta Segura,
+**para** no tener que guardarlo primero y volver a buscarlo en
+Biblioteca para esas mismas acciones.
+
+**Investigado**: mismo mecanismo ya construido y verificado en HU-UX-01/
+HU-UX-02 (§3) para "Crear QR"/"Convertir" desde un archivo ya
+seleccionado — `NavRoutes` con parámetros opcionales + "consumo único"
+del archivo precargado. Reutilizable tal cual apuntando a
+`PdfTool.OCR`/`PdfTool.SIGN` y al flujo de mover a Carpeta Segura ya
+existente en Seguridad.
+
+- **RF1** El resultado del escaneo (`ScanResultScreen`) agrega 3
+  acciones nuevas junto a "Compartir": "Hacer buscable" (OCR), "Firmar",
+  "Mover a Carpeta Segura".
+- **RF2** Cada acción navega directo a la pantalla correspondiente con
+  el archivo ya cargado, sin volver a mostrar el selector de archivos.
+- **RNF1** Ninguna de las 3 acciones duplica el archivo en disco
+  innecesariamente — reutiliza la misma referencia de archivo ya
+  guardado por el escáner.
+- **AC1** Dado que acabo de guardar/compartir un documento escaneado,
+  cuando veo la lista de acciones, entonces aparecen las 3 nuevas.
+- **AC2** Dado que toco "Hacer buscable", cuando se abre Herramientas
+  PDF, entonces el archivo ya está cargado en la herramienta OCR.
+- **AC3** El flujo manual (ir a Herramientas PDF y elegir el archivo a
+  mano) sigue funcionando igual.
+
+### §34.2 — Creador/Lector de QR
+
+#### HU-43 — Nuevos tipos de contenido: Wi-Fi, Contacto, Evento de calendario
+
+**Como** usuario que quiere compartir algo más que un link o texto,
+**quiero** generar un QR de tipo Wi-Fi (conectar a una red sin escribir
+la contraseña), Contacto (tarjeta vCard) o Evento (agregar a
+calendario),
+**para** cubrir los casos de uso más comunes de un generador de QR sin
+salir de DocuSmart.
+
+- **RF1** 3 nuevos `QrContentType`: `WIFI` (SSID + contraseña +
+  seguridad WPA/WEP/ninguna), `CONTACT` (nombre, teléfono, correo —
+  formato vCard 3.0), `EVENT` (título, fecha/hora inicio-fin, lugar —
+  formato iCalendar).
+- **RF2** Cada tipo tiene su propio formulario de campos (igual patrón
+  que los 6 tipos ya existentes) y genera el string con el formato
+  estándar correspondiente antes de codificarlo en el QR.
+- **RNF1** El QR generado debe ser legible por el lector nativo de
+  Android/iOS (formato estándar, sin extensiones propietarias) — un QR
+  Wi-Fi de DocuSmart tiene que poder escanearse con la cámara nativa de
+  cualquier teléfono y ofrecer "Conectar".
+- **AC1** Dado que elijo "Wi-Fi" como tipo, cuando completo SSID +
+  contraseña y genero el QR, entonces escanearlo con la cámara nativa
+  de Android ofrece conectar a esa red.
+- **AC2** Dado que elijo "Contacto", cuando genero el QR, entonces
+  escanearlo ofrece "Agregar contacto" con los datos correctos.
+- **AC3** Dado que elijo "Evento", cuando genero el QR, entonces
+  escanearlo ofrece agregarlo al calendario del dispositivo.
+- **AC4** Los 6 tipos existentes (URL/Texto/Imagen/Documento/Email/
+  Teléfono) no cambian.
+
+#### HU-44 — Historial de códigos QR creados y leídos
+
+**Como** usuario que genera o lee QR seguido,
+**quiero** ver un historial de los últimos códigos,
+**para** reutilizar uno sin tener que rehacerlo o volver a escanearlo.
+
+**Investigado**: no existe ninguna persistencia de QR hoy (`grep`
+"historial"/"Historial"/"QrHistory" sin resultados en `features/
+scanner`) — es una entidad nueva de punta a punta.
+
+- **RF1** Cada QR creado o leído con éxito se guarda (contenido,
+  tipo, fecha) en una lista local, máximo 50 entradas (las más viejas
+  se descartan).
+- **RF2** Pantalla "Historial" accesible desde Creador y Lector de QR,
+  con opción de volver a generar (Creador) o copiar/abrir el contenido
+  (Lector), y de eliminar una entrada individual o vaciar todo.
+- **RNF1** Persistencia local (Room o `SharedPreferences`+JSON, mismo
+  patrón ya usado por Notas/Progreso de lectura) — no sale del
+  dispositivo.
+- **RNF2** Un QR protegido con contraseña (función ya existente) guarda
+  en el historial el contenido *cifrado*, no el texto plano, para no
+  debilitar esa protección con una copia sin cifrar.
+- **AC1** Dado que genero un QR nuevo, cuando abro el Historial,
+  entonces aparece como la entrada más reciente.
+- **AC2** Dado que leo un QR con la cámara, cuando abro el Historial
+  desde el Lector, entonces también aparece ahí.
+- **AC3** Eliminar una entrada no afecta ninguna otra ni borra ningún
+  archivo real vinculado.
+
+#### HU-45 — Diseño personalizado del QR (color y logo)
+
+**Como** usuario que comparte un QR con otras personas,
+**quiero** elegir un color o agregar un logo pequeño al centro,
+**para** que se vea más profesional o reconocible como propio.
+
+**Investigado**: la generación de QR actual (librería usada en
+`QrCreatorScreen`) no fue confirmada en esta pasada si soporta módulos
+coloreados/logo embebido de fábrica — **a verificar antes de estimar
+en detalle**, puede requerir reemplazar la librería de generación o
+post-procesar el bitmap con cuidado de no romper la lectura.
+
+- **RF1** Selector de color para los módulos del QR (con verificación
+  de contraste mínimo contra el fondo, para no generar un QR
+  illegible).
+- **RF2** Opción de subir una imagen pequeña (logo) que se superpone al
+  centro del QR, con el nivel de corrección de errores del QR subido
+  automáticamente para compensar el área tapada.
+- **RNF1** Todo QR generado con color/logo debe seguir siendo legible
+  por un lector estándar — criterio de aceptación no negociable, se
+  valida escaneando el resultado con la cámara nativa antes de dar por
+  terminada la funcionalidad.
+- **AC1** Dado que elijo un color de contraste insuficiente, cuando
+  intento generar, entonces la app avisa y sugiere un color más oscuro/
+  claro en vez de generar un QR potencialmente illegible.
+- **AC2** Dado que agrego un logo, cuando escaneo el QR resultante con
+  la cámara nativa de otro teléfono, entonces lee correctamente el
+  contenido.
+
+### §34.3 — Visor (modo lector de documentos)
+
+#### HU-46 — Anotaciones: resaltar texto y notas adhesivas (épica)
+
+**Como** usuario que lee un PDF/documento importante,
+**quiero** resaltar frases y dejar notas adhesivas sobre el documento,
+**para** repasar después lo más relevante sin salir de la app.
+
+**Investigado**: `ViewerViewModel.pdfSearchHighlights` es un mecanismo
+temporal de resultados de búsqueda (se limpia al cerrar la búsqueda),
+no una anotación persistente del usuario — confirmado, no hay ningún
+sistema de anotaciones hoy.
+
+*(Épica — se listan RF/AC de alto nivel; el diseño detallado de cómo se
+persiste una anotación por página/offset de texto queda para cuando se
+decida abordarla, dada la Dificultad Alta.)*
+
+- **RF1** Seleccionar texto en un documento (PDF/Word/Texto ya
+  renderizado) ofrece "Resaltar" con al menos 3 colores.
+- **RF2** Tocar un punto del documento (no sobre texto seleccionable,
+  p.ej. una imagen escaneada) ofrece "Agregar nota" — un ícono anclado
+  a esa posición que al tocarlo muestra el texto de la nota.
+- **RF3** Las anotaciones persisten por documento y sobreviven cerrar/
+  reabrir la app.
+- **RNF1** Las anotaciones no modifican el archivo original — se
+  guardan aparte (capa superpuesta), para no arriesgar corromper el PDF
+  del usuario.
+- **RNF2** Compartir un documento anotado ofrece explícitamente elegir
+  entre "con anotaciones" (aplana la capa sobre una copia nueva) o
+  "original sin anotaciones" — nunca sobrescribe el archivo fuente.
+- **AC1** Dado que resalto una frase, cuando cierro y reabro el
+  documento, entonces el resaltado sigue ahí en la misma posición.
+- **AC2** Dado que un documento no tiene anotaciones, cuando lo
+  comparto, entonces se comparte exactamente igual que hoy (sin
+  regresión).
+
+#### HU-47 — Marcadores de página
+
+**Como** usuario que lee documentos largos,
+**quiero** marcar páginas específicas,
+**para** volver directo a ellas sin deslizar/buscar.
+
+- **RF1** Ícono de marcador en la barra del Visor por página; tocar lo
+  activa/desactiva.
+- **RF2** Lista de marcadores del documento actual, accesible desde un
+  botón en la barra superior, que salta a la página al tocar uno.
+- **RNF1** Persistencia local por documento (mismo patrón que Progreso
+  de lectura de Modo Estudio).
+- **AC1** Dado que marco la página 12, cuando cierro y reabro el
+  documento, entonces el marcador sigue en la página 12.
+- **AC2** Dado que tengo 3 marcadores, cuando abro la lista, entonces
+  veo las 3 páginas y saltar a cualquiera funciona.
+
+#### HU-48 — Recordar la última página vista (visual, distinta del audio ya existente)
+
+**Como** usuario que cierra la app a mitad de leer un documento,
+**quiero** que el Visor me lleve a la última página que vi,
+**para** no perder el lugar visualmente (esto es aparte de "Retomar
+lectura" en audio, que ya existe para Modo Estudio).
+
+**Investigado**: `ViewerViewModel.currentPage` es solo estado en
+memoria de la sesión actual (`MutableStateFlow`, no persistido) —
+confirmado por grep, sin ningún campo de persistencia de página por
+documento en el Visor.
+
+- **RF1** Al cerrar el Visor, la última página vista se guarda
+  asociada a la URI/id del documento.
+- **RF2** Al reabrir el mismo documento desde Biblioteca/Recientes, el
+  Visor abre directo en esa página (no en la 1).
+- **RNF1** Guardar la página no debe agregar demora perceptible al
+  cerrar el Visor (escritura asíncrona).
+- **AC1** Dado que estoy en la página 8 de un PDF de 20 y cierro la
+  app, cuando reabro ese mismo documento, entonces el Visor abre en la
+  página 8.
+- **AC2** Un documento abierto por primera vez sigue abriendo en la
+  página 1 (sin cambio para el caso nuevo).
+
+### §34.4 — Notas (Modo Estudio)
+
+#### HU-49 — Adjuntar una imagen o recorte escaneado a una nota
+
+**Como** usuario tomando notas de estudio,
+**quiero** adjuntar una foto o un recorte de un documento escaneado,
+**para** no tener que describir con palabras algo que es más claro
+como imagen (un diagrama, una fórmula).
+
+- **RF1** Botón "Adjuntar imagen" en el editor de notas: cámara,
+  galería, o un archivo ya escaneado en la Biblioteca (mismo picker ya
+  usado en Convertir/Seguridad).
+- **RF2** La imagen se muestra en línea dentro de la nota, en el punto
+  donde se insertó.
+- **RNF1** La imagen adjunta se copia al almacenamiento privado de la
+  app (mismo criterio que Carpeta Segura) — si el usuario borra el
+  original de su galería, la nota no pierde la imagen.
+- **AC1** Dado que adjunto una foto a una nota, cuando la guardo y
+  reabro, entonces la imagen sigue visible en el mismo lugar.
+- **AC2** Borrar la nota borra también la copia de la imagen asociada
+  (no deja archivos huérfanos).
+
+#### HU-50 — Vincular una nota a un documento de la Biblioteca
+
+**Como** usuario que toma notas sobre un PDF específico,
+**quiero** vincular la nota a ese documento,
+**para** encontrar mis apuntes junto al archivo cuando lo vuelva a
+abrir.
+
+- **RF1** Al crear/editar una nota, opción "Vincular documento" que
+  abre el selector de la Biblioteca.
+- **RF2** Desde el Visor de ese documento, un ícono/badge muestra que
+  tiene notas vinculadas y permite abrirlas.
+- **RNF1** Un documento puede tener varias notas vinculadas; una nota
+  solo puede vincularse a un documento a la vez (relación 1 nota → 0/1
+  documento, N notas → 1 documento).
+- **AC1** Dado que vinculo una nota a "Contrato.pdf", cuando abro ese
+  PDF en el Visor, entonces veo el indicador de nota vinculada.
+- **AC2** Borrar el documento vinculado no borra la nota (la nota queda
+  sin vínculo, no se pierde el contenido escrito).
+
+#### HU-51 — Exportar una nota a PDF/Word
+
+**Como** usuario que quiere compartir o imprimir una nota,
+**quiero** exportarla a PDF o Word,
+**para** usarla fuera de la app (imprimir, entregar una tarea).
+
+**Investigado**: `StudySummaryExporter.kt` ya hace exactamente esto
+para el Resumen automático (exporta a Descargas + compartir) —
+reutilizable como base técnica para notas de texto libre.
+
+- **RF1** Botón "Exportar" en una nota, con opción PDF o Word (.docx).
+- **RF2** El archivo generado conserva el texto e imágenes adjuntas
+  (ver HU-49) en el mismo orden que la nota.
+- **RNF1** Reutiliza el mismo mecanismo de guardado en Descargas
+  (MediaStore) + compartir (`FileProvider`) ya usado en toda la app —
+  no un flujo nuevo.
+- **AC1** Dado que exporto una nota a PDF, cuando abro el archivo
+  generado, entonces el texto y las imágenes coinciden con la nota
+  original.
+- **AC2** Exportar a Word (.docx) produce un archivo abrible por Word/
+  Google Docs sin errores de formato.
+
+#### HU-52 — Recordatorio de repaso
+
+**Como** usuario que estudia con notas,
+**quiero** recibir un recordatorio para repasar una nota,
+**para** no olvidarme de volver a ella.
+
+**Investigado**: `PomodoroTimerService` ya establece el patrón de
+notificaciones locales del proyecto (foreground service +
+`POST_NOTIFICATIONS`) — un recordatorio de repaso es más simple (no
+necesita foreground, alcanza con `WorkManager`/`AlarmManager` para una
+notificación puntual).
+
+- **RF1** Al guardar una nota, opción "Recordarme repasar esto" con
+  intervalos predefinidos (mañana, en 3 días, en 1 semana) o fecha
+  personalizada.
+- **RF2** Notificación local a esa fecha/hora que, al tocarla, abre la
+  nota directamente.
+- **RNF1** No requiere conexión a internet (notificación 100% local,
+  sin servidor propio).
+- **RNF2** Respeta que el usuario haya denegado `POST_NOTIFICATIONS` —
+  si no hay permiso, la opción se muestra deshabilitada con una
+  explicación, no falla en silencio.
+- **AC1** Dado que programo un recordatorio para "en 3 días", cuando
+  llega esa fecha, entonces recibo la notificación con el título de la
+  nota.
+- **AC2** Tocar la notificación abre esa nota específica.
+
+### §34.5 — Herramientas PDF
+
+Como se documentó al inicio de esta sección, de las ideas originales de
+esta categoría, **13 de 14 ya existen** en el código (Unir, Dividir,
+Comprimir, Rotar, Numerar páginas, Marca de agua, Reordenar páginas,
+Comparar, Redactar, Recortar, Editar texto, Firmar, Rellenar
+formulario, OCR). La única novedad real encontrada:
+
+#### HU-53 — Extraer imágenes embebidas de un PDF
+
+**Como** usuario con un PDF que contiene fotos/diagramas,
+**quiero** extraer esas imágenes como archivos separados,
+**para** reutilizarlas sin tener que recortarlas a mano de una captura
+de pantalla.
+
+**Investigado**: no existe `PdfTool.EXTRACT_IMAGES` ni equivalente en
+el enum de 13 herramientas confirmado por grep — no implementado.
+
+- **RF1** Nueva herramienta "Extraer imágenes" en el menú de
+  Herramientas PDF: recibe un PDF, detecta todas las imágenes
+  embebidas (vía iText, ya usado por el resto de herramientas PDF del
+  proyecto) y las guarda como archivos JPG/PNG individuales.
+- **RF2** Si el PDF no tiene ninguna imagen embebida, se informa
+  claramente en vez de generar un resultado vacío sin explicación.
+- **RNF1** Un PDF de hasta 50 páginas con imágenes debe procesarse en
+  un tiempo razonable (mismo umbral de referencia que Comprimir/OCR ya
+  existentes en el proyecto).
+- **AC1** Dado un PDF con 5 imágenes embebidas, cuando ejecuto
+  "Extraer imágenes", entonces obtengo 5 archivos de imagen guardados
+  en Descargas/Biblioteca.
+- **AC2** Dado un PDF sin imágenes (solo texto), cuando ejecuto la
+  herramienta, entonces veo un mensaje claro ("Este PDF no tiene
+  imágenes para extraer") en vez de un resultado vacío.
+
+### §34.6 — Monetización
+
+#### HU-54 — Prueba gratuita de Premium (trial)
+
+**Como** usuario indeciso sobre pagar Premium,
+**quiero** probarlo gratis por unos días,
+**para** decidir con confianza si vale la pena suscribirme.
+
+**Investigado**: Google Play Billing soporta *free trials* nativos
+configurables por producto/plan base en Play Console
+(`freeTrialPeriod`), sin necesidad de backend propio — `BillingManager`
+tendría que reconocer el estado "en período de prueba" además de
+"activo"/"inactivo" que ya maneja.
+
+- **RF1** El plan mensual (y el nuevo plan anual de HU-55, si se
+  implementa junto) ofrece 7 días de prueba gratuita antes del primer
+  cobro, configurado del lado de Play Console.
+- **RF2** `PremiumScreen` muestra claramente "7 días gratis, luego
+  $X/mes" en vez de solo el precio, para que no sea sorpresivo el
+  primer cobro.
+- **RF3** El usuario puede cancelar durante el trial sin cargo (ya lo
+  garantiza Play Billing de fábrica, no es lógica de la app).
+- **RNF1** El estado "en trial" debe distinguirse de "pagando" en
+  `PremiumManager` únicamente para fines de mensaje en la UI — el
+  *gating* de funciones Premium debe tratarlos igual (ambos
+  desbloquean todo).
+- **AC1** Dado que inicio el trial, cuando reviso Ajustes, entonces
+  veo que tengo Premium activo con la fecha en que empezaría a
+  cobrarse.
+- **AC2** Dado que cancelo durante el trial, cuando llega la fecha de
+  cobro, entonces no se genera ningún cargo y Premium se desactiva.
+
+#### HU-55 — Plan anual con descuento
+
+**Como** usuario que ya decidió que quiere Premium,
+**quiero** pagar una vez al año con descuento en vez de mes a mes,
+**para** ahorrar dinero si sé que lo voy a seguir usando.
+
+**Investigado**: `PremiumPlan.kt` ya modela `id`/`price`/`periodRes`/
+`savingsLabelRes`/`productId` como una lista de planes — el modelo de
+datos **ya está preparado** para más de un plan (el campo
+`savingsLabelRes` sugiere que esto ya se pensó al diseñarlo). Agregar
+un plan anual es sumar un `PremiumPlan` más a la lista existente y su
+producto correspondiente en Play Console, no rediseñar nada.
+
+- **RF1** Nuevo plan "Anual" en `PremiumScreen`, con su propio
+  `productId` de Play Billing, mostrando el ahorro vs. 12 meses del
+  plan mensual (usa `savingsLabelRes`, ya existente en el modelo).
+- **RF2** Marcado como "Más conveniente" (usa `isPopular`, ya existente
+  en `PremiumPlan`) si así se decide.
+- **RNF1** Sin cambios en la lógica de gating de `PremiumManager` — un
+  usuario con plan anual activo se trata exactamente igual que uno con
+  plan mensual activo.
+- **AC1** Dado que elijo el plan anual, cuando completo la compra,
+  entonces Premium se activa igual que con el plan mensual.
+- **AC2** El plan mensual existente sigue funcionando sin cambios.
+
+#### HU-56 — Programa de referidos
+
+**Como** usuario contento con la app,
+**quiero** invitar amigos y que ambos ganemos algo,
+**para** tener un motivo concreto para recomendarla.
+
+**Investigado**: no hay backend propio en el proyecto (arquitectura
+100% local + servicios de terceros ya declarados) — un programa de
+referidos que dé días Premium gratis necesita **validar códigos de
+invitación del lado del servidor** para evitar que un usuario se
+auto-invite o comparta un código reutilizable infinitas veces; esto es
+la razón real de la Dificultad Alta/Riesgo Medio-Alto, no la parte de
+UI.
+
+- **RF1** Cada usuario Premium (o todos, a decidir) tiene un código de
+  invitación único, compartible por WhatsApp/redes.
+  Requiere backend propio para generarlo y validarlo (fuera del
+  alcance de "solo cliente Android" de este proyecto hoy).
+- **RF2** Al canjear un código válido y no usado antes, ambas cuentas
+  (quien invita y quien es invitado) reciben N días de Premium gratis.
+- **RNF1** El backend debe impedir: auto-referido (mismo dispositivo/
+  cuenta), reutilización del mismo código por más de una cuenta nueva,
+  y abuso por creación masiva de cuentas.
+- **RNF2** Requiere definir una identidad de usuario estable (hoy
+  DocuSmart no tiene cuentas de usuario, ver política de privacidad
+  §3 "no pedimos que crees una cuenta") — **decisión de producto previa
+  necesaria**: ¿se introduce alguna forma de identidad (aunque sea
+  anónima, tipo ID de instalación) solo para este programa, aceptando
+  que eso es un cambio de postura respecto a "sin cuentas"?
+- **AC1** Dado que comparto mi código y un amigo lo usa al instalar
+  por primera vez, cuando confirma, entonces ambos vemos Premium
+  extendido por N días.
+- **AC2** Un código ya usado no puede volver a canjearse por otra
+  cuenta.
+
+*(Recomendación: esta es la idea de mayor esfuerzo/riesgo de las 4 de
+Monetización — requiere decidir primero si vale la pena introducir
+backend + alguna noción de identidad de usuario antes de estimarla en
+detalle.)*
+
+#### HU-57 — Mediación de AdMob
+
+**Como** dueño de la app,
+**quiero** que AdMob compita con otras redes publicitarias por cada
+espacio de anuncio,
+**para** aumentar el ingreso por impresión sin cambiar la experiencia
+del usuario.
+
+- **RF1** Configurar mediación en la consola de AdMob (sumar al menos
+  una red adicional, p.ej. Meta Audience Network) para los 12 bloques
+  de anuncio ya creados (§ sesión anterior, AdConstants.kt).
+- **RF2** Agregar el SDK de mediación correspondiente como dependencia
+  Gradle nueva.
+- **RNF1** No debe cambiar la frecuencia ni ubicación de anuncios ya
+  definida (`INTERSTITIAL_MIN_CONVERSIONS`, `INTERSTITIAL_MIN_INTERVAL_MS`
+  en `AdConstants.kt`) — es una optimización de backend publicitario,
+  invisible para el usuario salvo por qué anuncio específico ve.
+- **AC1** Dado que se activa la mediación, cuando se cargan anuncios,
+  entonces la consola de AdMob muestra impresiones repartidas entre
+  las redes configuradas (no solo Google Ads).
+- **AC2** Ningún flujo existente (banners/interstitial/rewarded) cambia
+  de comportamiento para el usuario.
+
+*(Recomendación: esperar a tener datos reales de tráfico/eCPM en
+producción antes de invertir esfuerzo acá — sin usuarios reales
+todavía no hay señal de si vale la pena.)*
+
+### §34.7 — Funcionalidades con IA
+
+Antes de proponer nada acá, un precedente real del propio proyecto
+(§32): al construir "Resumen automático", el usuario **ya eligió
+explícitamente** un algoritmo 100% local en vez de una API de IA en la
+nube, por dos razones concretas — no romper la promesa de privacidad
+ya publicada ("no leemos ni subimos el contenido de tus documentos... a
+ningún servidor", política de privacidad, sección 3) y no sumar costo
+variable por uso. Esa decisión aplica como criterio de diseño para
+cualquier función de IA nueva: se separan en 3 niveles según qué tan
+lejos se alejan de ese precedente.
+
+**Nivel A — IA on-device (ML Kit), sin costo, sin cambiar la política
+de privacidad actual:**
+
+#### HU-58 — Traducción de documentos
+
+**Como** usuario con un documento en otro idioma,
+**quiero** traducirlo dentro de la app,
+**para** entenderlo sin salir a pegar el texto en otra app.
+
+**Investigado**: ML Kit Translation corre 100% on-device (modelos de
+idioma se descargan una vez, sin llamada de red por traducción) — el
+proyecto ya usa ML Kit para escaneo/OCR, mismo SDK, sin sumar una
+dependencia de un proveedor nuevo.
+
+- **RF1** Botón "Traducir" en el Visor de PDF/Texto, con selector de
+  idioma destino (de los que ya existen como idiomas de la app: es,
+  en, pt, ja, ko, zh, it, fr, más los que soporte ML Kit).
+- **RF2** El texto traducido se muestra superpuesto/reemplazando la
+  vista de texto extraído (mismo mecanismo que ya extrae texto para
+  Lectura en voz alta de Modo Estudio).
+- **RNF1** El modelo de idioma se descarga una sola vez (con aviso de
+  tamaño ~30MB antes de descargar por datos móviles) y se reutiliza
+  para futuras traducciones a ese idioma.
+- **RNF2** 100% local tras la descarga del modelo — no envía el
+  contenido del documento a ningún servidor, consistente con la
+  política de privacidad ya publicada (sin necesidad de actualizarla).
+- **AC1** Dado que traduzco un PDF en inglés a español, cuando termina,
+  entonces veo el texto traducido, no el original.
+- **AC2** Sin conexión y sin el modelo descargado, la app avisa
+  claramente en vez de fallar en silencio.
+
+#### HU-59 — Clasificación automática del tipo de documento al escanear
+
+**Como** usuario que escanea documentos variados,
+**quiero** que la app sugiera automáticamente una categoría (DNI,
+factura, contrato, receta médica),
+**para** organizarlos sin etiquetarlos a mano cada vez.
+
+- **RF1** Al terminar de escanear, ML Kit Entity Extraction/Text
+  Classification (on-device) analiza el texto detectado y sugiere una
+  de un set cerrado de categorías predefinidas.
+- **RF2** La sugerencia se muestra como un chip editable ("Parece un
+  recibo — ¿es correcto?") antes de guardar, nunca se asigna sin
+  confirmación.
+- **RNF1** 100% local — mismo criterio de privacidad que HU-58.
+- **RNF2** Una clasificación incorrecta no debe tener consecuencias
+  destructivas (solo afecta una etiqueta/carpeta sugerida, nunca borra
+  ni mueve el archivo sin confirmar).
+- **AC1** Dado que escaneo un recibo, cuando reviso el resultado,
+  entonces veo una sugerencia de categoría razonable la mayoría de las
+  veces (no 100% garantizado, es una heurística).
+- **AC2** Rechazar la sugerencia guarda el documento sin categoría,
+  igual que hoy.
+
+**Nivel B — IA generativa on-device (Gemini Nano vía Android AICore),
+sigue sin salir del dispositivo pero con una limitación real de
+hardware:**
+
+#### HU-60 — Flashcards de estudio generadas desde una nota
+
+**Como** estudiante con una nota larga,
+**quiero** que se generen automáticamente tarjetas de pregunta/
+respuesta,
+**para** repasar de forma activa sin armarlas a mano.
+
+**Investigado**: el algoritmo extractivo de `TextSummarizer.kt` no
+sirve para esto (elige oraciones existentes, no genera preguntas
+nuevas) — se necesita capacidad *generativa* real. Android AICore
+(Gemini Nano) permite generación de texto 100% on-device, pero
+**solo en un subconjunto de dispositivos de gama alta con NPU
+compatible** (no todos los Android soportan AICore hoy) — limitación
+de hardware real, no de diseño.
+
+- **RF1** Botón "Generar flashcards" en una nota, disponible solo en
+  dispositivos con AICore/Gemini Nano disponible.
+- **RF2** En dispositivos sin soporte, el botón no aparece (no un
+  error) — se detecta la disponibilidad antes de ofrecer la función.
+- **RNF1** 100% local en los dispositivos donde corre — no sale de la
+  política de privacidad actual.
+- **RNF2** Como es contenido generado (no extractivo), debe marcarse
+  claramente como "generado por IA" y permitir edición manual antes de
+  guardar — no asumir que el texto generado es perfecto.
+- **AC1** Dado un dispositivo compatible con una nota de al menos 200
+  palabras, cuando genero flashcards, entonces obtengo al menos 3
+  pares pregunta/respuesta relacionados con el contenido real de la
+  nota.
+- **AC2** Dado un dispositivo sin AICore, cuando abro una nota,
+  entonces no veo la opción (evita frustrar con un botón que fallaría).
+
+**Nivel C — IA generativa en la nube (API externa), la más potente pero
+requiere una decisión de negocio previa, no solo de código:**
+
+#### HU-61 — Chat con el documento
+
+**Como** usuario con un PDF largo,
+**quiero** hacerle preguntas puntuales ("¿cuál es el monto total?"),
+**para** encontrar información sin leer todo el documento.
+
+**Requiere decisión de negocio ANTES de estimar en detalle** — esta
+función, a diferencia de todas las anteriores, envía contenido del
+documento a un servicio externo (una API de IA como Claude/Gemini) por
+la naturaleza misma de lo que hace. Esto choca directo con dos cosas ya
+publicadas:
+1. La política de privacidad dice explícitamente "no leemos ni subimos
+   el contenido de tus documentos... a ningún servidor" — habría que
+   reescribir esa sección y, probablemente, el cuestionario de
+   Seguridad de datos de Play Console (nueva categoría de dato
+   compartido con un tercero).
+2. Tiene **costo variable real por uso** (tokens de la API), a
+   diferencia de todo lo demás en la app, que es costo fijo (ML
+   Kit/AdMob) o nulo (procesamiento local).
+
+- **RF1** (si se aprueba avanzar) Campo de pregunta libre en el Visor
+  de PDF; el texto ya extraído del documento (mismo mecanismo que
+  Lectura/Resumen) se envía junto con la pregunta a una API de IA.
+- **RF2** Exclusivo Premium, con un límite diario incluso para
+  Premium (para controlar costo), gating similar al ya usado para
+  conversiones/escaneos.
+- **RF3** Aviso explícito la primera vez que se usa: "Esta función
+  envía el texto del documento a un servicio externo para poder
+  responder tu pregunta" — consentimiento informado, no letra chica.
+- **RNF1** Requiere actualizar Política de Privacidad y la declaración
+  de Seguridad de datos de Play Console antes de publicar esta función
+  (no después) — cambia una promesa ya hecha a los usuarios actuales.
+- **RNF2** El documento no debe almacenarse del lado del servidor más
+  allá de lo estrictamente necesario para responder (sin retención),
+  y hay que confirmar la política de retención de datos del proveedor
+  de IA elegido antes de integrarlo.
+- **RNF3** Manejo de costo: límite diario configurable, y monitoreo de
+  gasto real vs. presupuesto (alertas si el uso agregado supera un
+  umbral).
+- **AC1** Dado que pregunto algo sobre un PDF abierto, cuando la IA
+  responde, entonces la respuesta se basa en el contenido real de ese
+  documento (no inventa datos que no están).
+- **AC2** Dado que alcancé el límite diario, cuando intento preguntar
+  de nuevo, entonces veo un aviso claro (mismo patrón que
+  `DailyLimitDialog` ya usado en Convertidor/Escáner).
+- **AC3** La primera vez que se usa, el aviso de envío a un servicio
+  externo se muestra y requiere aceptación explícita.
+
+#### HU-62 — Extracción estructurada de datos de recibos/facturas
+
+**Como** usuario que junta recibos para gastos,
+**quiero** que la app extraiga automáticamente monto, fecha y
+proveedor,
+**para** llevar un registro sin tipear cada dato a mano.
+
+**Mismo precedente y mismas 2 condiciones que HU-61** (privacidad +
+costo) — se documenta por separado porque el caso de uso y el gating
+son distintos (es una extracción puntual por documento, no una
+conversación abierta).
+
+- **RF1** Botón "Extraer datos" sobre un recibo/factura ya escaneado;
+  envía el texto ya extraído (OCR local existente) a una API de IA
+  pidiendo un formato estructurado (monto, fecha, proveedor, moneda).
+- **RF2** El resultado se muestra editable antes de guardar (la IA
+  puede equivocarse, especialmente con formatos de recibo poco
+  comunes) y se puede exportar a CSV/Excel (reutiliza el Convertidor).
+- **RNF1** Mismas RNF1/RNF2/RNF3 de HU-61 (actualizar política de
+  privacidad, sin retención del lado del proveedor, control de costo).
+- **AC1** Dado un recibo con monto y fecha legibles, cuando extraigo
+  datos, entonces el monto y la fecha mostrados coinciden con el
+  recibo real la mayoría de las veces (no 100%, es una extracción por
+  IA, siempre editable).
+- **AC2** El texto extraído por OCR (ya existente, local) no cambia —
+  esta función es un paso adicional opcional sobre ese resultado, no
+  un reemplazo.
+
+## 35. Priorización recomendada de §34
+
+No es una decisión mía tomarla sola — es una recomendación basada en
+impacto/esfuerzo/riesgo, para que el usuario decida el orden real.
+
+**Alta prioridad (alto impacto, esfuerzo/riesgo manejable):**
+- HU-55 (Plan anual) — el modelo de datos ya está listo, es la de menor
+  esfuerzo de todo Monetización con impacto directo en ingresos.
+- HU-54 (Trial de Premium) — sube conversión, Play Billing ya lo
+  soporta nativo.
+- HU-48 (Recordar última página del Visor) — esfuerzo bajo, se nota en
+  cada sesión de lectura.
+- HU-47 (Marcadores de página) — esfuerzo bajo, complementa HU-48.
+- HU-51 (Exportar nota a PDF/Word) — reutiliza infraestructura ya
+  construida (`StudySummaryExporter`), esfuerzo bajo.
+- HU-58 (Traducción on-device) — diferenciador real, sin costo, sin
+  tocar la política de privacidad.
+
+**Media prioridad:**
+- HU-41/HU-42 (filtros de color + accesos directos del Escáner).
+- HU-43/HU-44 (nuevos tipos de QR + historial).
+- HU-49/HU-50/HU-52 (adjuntar imagen, vincular documento, recordatorio
+  — Notas).
+- HU-59 (clasificación automática de documento).
+- HU-57 (mediación de AdMob) — esperar señal real de tráfico primero.
+
+**Baja prioridad / requieren decisión previa antes de estimar:**
+- HU-45 (QR con logo) — a confirmar si la librería actual lo soporta.
+- HU-46 (anotaciones del Visor) — alto valor pero épica grande, requiere
+  diseño previo de cómo se persiste una anotación.
+- HU-53 (extraer imágenes de PDF) — única novedad real de Herramientas
+  PDF, pero de nicho.
+- HU-56 (referidos) — requiere decidir si se introduce backend +
+  identidad de usuario antes de estimar en serio.
+- HU-60 (flashcards con IA on-device) — limitado a hardware con
+  AICore, adopción real incierta hoy.
+- HU-61/HU-62 (IA en la nube) — **no estimar esfuerzo de implementación
+  todavía**; lo primero es una decisión de negocio consciente: ¿vale la
+  pena romper la promesa de "100% local" ya publicada y asumir costo
+  variable por uso, a cambio de estas 2 funciones? Si la respuesta es
+  sí, recién ahí se define alcance/proveedor/límites en detalle.
+
+## 36. Ajuste — Más movimiento en el fondo animado (refinamiento del ítem 26)
+
+Pedido explícito del usuario 2026-09-10: el fondo animado con el color
+de acento (implementado 2026-09-06, ver §26 y `DocuSmartAnimatedBackground.kt`)
+se ve **demasiado sutil** — quiere que tenga más movimiento perceptible.
+
+**Investigado**: `DocuSmartAnimatedBackground.kt` ya tiene 4 formas
+(`AccentSquare`) que derivan con `drift()`, un `animateFloat` infinito
+0→1→0 (`RepeatMode.Reverse`). Valores actuales:
+- 3 formas de fondo con ciclos de **26s/30s/23s** y desplazamiento de
+  solo **14-22dp** + rotación de **6-16°**.
+- 1 "destello" con ciclo de pulso de **12s** (solo cambia opacidad, no
+  se mueve).
+- Ya respeta accesibilidad: si el sistema tiene "Quitar animaciones"
+  activado, las formas quedan quietas (`reduceMotion`) — este
+  comportamiento no debe tocarse.
+
+Con ciclos tan largos (23-30 segundos) y desplazamientos tan chicos
+(equivalentes a unos pocos milímetros en pantalla), el movimiento real
+es casi imperceptible salvo mirando fijo un buen rato — coincide con lo
+reportado por el usuario.
+
+#### HU-63 — Fondo animado con movimiento más perceptible
+
+**Como** usuario que activó el fondo animado,
+**quiero** notar el movimiento sin tener que mirar fijo,
+**para** que se sienta la app "viva" como se pretendía al pedir esta
+función originalmente (§26).
+
+- **RF1** Reducir la duración de los ciclos de `drift()` (hoy 23-30s)
+  a un rango que se note sin resultar frenético — punto de partida
+  sugerido: 10-14s por forma, manteniendo duraciones distintas entre
+  las 3 formas para que no se sincronicen visualmente entre sí (mismo
+  criterio de diseño ya usado hoy).
+- **RF2** Aumentar el rango de desplazamiento (`x`/`y`, hoy 14-22dp) y
+  de rotación (hoy 6-16°) de cada `AccentSquare`, lo suficiente para
+  que el ojo perciba el recorrido sin que las formas lleguen a tapar
+  contenido real ni salirse notoriamente del área visible.
+- **RF3** Mantener el "destello" (`pulse`) como variación de opacidad
+  únicamente, o evaluar sumarle también un desplazamiento leve si al
+  probar en dispositivo se ve bien — a decidir en la implementación,
+  no es un requisito estricto.
+- **RNF1** No debe afectar el rendimiento percibido de la app — las
+  animaciones corren en una capa decorativa detrás del contenido
+  (`MainActivity`), deben seguir sin interceptar toques ni causar
+  jank visible en dispositivos de gama media (verificar en el Moto E22,
+  el dispositivo más lento con el que se probó §26 originalmente).
+- **RNF2** El comportamiento de accesibilidad (`reduceMotion`, formas
+  quietas si el sistema tiene animaciones desactivadas) no debe
+  cambiar.
+- **RNF3** El interruptor "Apagar fondo animado" ya existente en
+  Ajustes (`ThemeManager.animatedBackgroundEnabled`) sigue funcionando
+  igual — este ajuste solo cambia la intensidad del movimiento cuando
+  está activado, no agrega ni quita el interruptor.
+- **AC1** Dado que tengo el fondo animado activado, cuando miro la
+  pantalla sin fijarme especialmente, entonces percibo el movimiento
+  de las formas de fondo (a diferencia de hoy, que requiere mirar
+  fijo).
+- **AC2** Dado que el sistema tiene "Quitar animaciones" activado,
+  cuando abro la app, entonces el fondo se sigue viendo quieto (sin
+  regresión).
+- **AC3** Dado que apago el fondo animado en Ajustes, cuando navego por
+  la app, entonces no se ve ningún movimiento (sin regresión del
+  interruptor existente).
+- **AC4** Ninguna forma tapa contenido real (texto, botones) en ningún
+  punto de su recorrido, en las pantallas principales (Home,
+  Biblioteca, Convertidor).
+
+**Prioridad recomendada**: Media-Alta — es un ajuste puntual (tuning de
+valores existentes, no una función nueva), de esfuerzo y riesgo bajos,
+sobre una función que el usuario ya consideró importante al pedirla
+originalmente.
