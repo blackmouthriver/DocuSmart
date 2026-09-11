@@ -606,6 +606,40 @@ no lo pedía. Implementado y verificado en el dispositivo real, ver
   requisito de Play Console para nuevas subidas.
 - ~~**AdMob App ID de prueba** en `AndroidManifest.xml`~~ — **Resuelto
   2026-09-10** (ver hallazgo actualizado en §5.3).
+- **Aviso de Play Console 2026-09-11: bibliotecas nativas sin alinear a
+  16 KB** ("Vuelve a compilar tu aplicación con la alineación de
+  bibliotecas nativas de 16 KB", pestaña Calidad técnica del app
+  bundle, versión 2). **No bloquea la publicación** (a diferencia de
+  los 3 errores ya resueltos arriba) — es una advertencia sobre
+  compatibilidad futura con dispositivos Android 15+ de memoria con
+  páginas de 16 KB.
+
+  Investigado (no es código propio, DocuSmart no tiene librerías
+  nativas propias): el `.so` responsable es `libyuv-decoder.so`, parte
+  de `com.google.android.gms:play-services-mlkit-document-scanner:16.0.0`
+  (versión usada en `app/build.gradle.kts`) -- **bug confirmado y
+  abierto del lado de Google**, sin versión corregida publicada
+  todavía (reporte oficial:
+  [googlesamples/mlkit#1020](https://github.com/googlesamples/mlkit/issues/1020),
+  abierto 2026-03-19, mismo problema reportado en varios otros módulos
+  de ML Kit: [#938](https://github.com/googlesamples/mlkit/issues/938),
+  [#947](https://github.com/googlesamples/mlkit/issues/947),
+  [#975](https://github.com/googlesamples/mlkit/issues/975),
+  [#976](https://github.com/googlesamples/mlkit/issues/976),
+  [#987](https://github.com/googlesamples/mlkit/issues/987)).
+  Verificado 2026-09-11 que no hay versión más nueva disponible de
+  `play-services-mlkit-document-scanner` (sigue en 16.0.0) ni de las
+  demás dependencias con código nativo (`com.google.mlkit:barcode-scanning:17.3.0`,
+  `com.google.mlkit:text-recognition:16.0.1`,
+  `com.google.android.gms:play-services-ads:23.3.0` -- las 3 ya en su
+  última versión publicada).
+
+  **Sin acción posible del lado de DocuSmart por ahora** -- parchear a
+  mano el `.so` de una librería de terceros no es una práctica
+  sostenible (frágil, puede romper la firma del bundle). Revisar
+  periódicamente si Google publica una versión nueva de
+  `play-services-mlkit-document-scanner` que resuelva el issue #1020, y
+  actualizar la dependencia cuando exista.
 
 ---
 
