@@ -497,7 +497,7 @@
     <string name="onboarding_1_title">DocuSmartへようこそ</string>
     <string name="onboarding_1_desc">あなたのスマートなドキュメント管理アプリです。ファイルをすばやく安全に開いて、整理して、変換できます。</string>
     <string name="onboarding_2_title">あらゆる形式を変換</string>
-    <string name="onboarding_2_desc">PDF、Word、Excel、PowerPoint、画像など。17種類以上の変換が手元で行えます。</string>
+    <string name="onboarding_2_desc">PDFと画像、今後さらに追加予定。変換をすぐに簡単に。</string>
     <string name="onboarding_3_title">ドキュメントを保護</string>
     <string name="onboarding_3_desc">PINまたは指紋で保護された専用の金庫にファイルを保存できます。プライバシーを第一に。</string>
     <string name="onboarding_4_title">学習モード</string>

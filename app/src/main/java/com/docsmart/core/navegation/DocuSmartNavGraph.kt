@@ -1,6 +1,8 @@
 package com.docsmart.core.navegation
 
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,6 +18,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.docsmart.core.data.canonicalMediaUri
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
@@ -331,13 +334,49 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
     composable(NavRoutes.Home.route) {
         val context = LocalContext.current
         HomeScreen(
-            onOpenFile = { uri ->
+            onOpenFile = { pickedUri ->
                 try {
-                    val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    context.contentResolver.takePersistableUriPermission(uri, flags)
+                    // Persistir también escritura (ver comentario en
+                    // HomeScreen.kt openFileLauncher) -- sin esto, borrar
+                    // este documento más tarde desde Biblioteca/Recientes
+                    // fallaba en silencio.
+                    val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    context.contentResolver.takePersistableUriPermission(pickedUri, flags)
                 } catch (e: Exception) {
                     Timber.e("Error permiso: ${e.message}")
                 }
+                // Bug real reportado 2026-09-11: un documento abierto con
+                // "Abrir" (picker de documentos, autoridad
+                // com.android.providers.media.documents) queda registrado en
+                // el historial con SU PROPIO Uri de documento SAF -- pero ese
+                // mismo archivo físico, si ya está indexado por MediaStore
+                // (caso típico: cualquier cosa en Descargas), también aparece
+                // en Biblioteca → Dispositivo con un Uri de MediaStore
+                // DISTINTO (content://media/...). Al "Eliminar" desde una
+                // lista solo se marca ese id puntual en la papelera -- el
+                // otro id, del mismo archivo, nunca se filtra y sigue
+                // apareciendo, dando la falsa impresión de que "Eliminar" no
+                // hizo nada. `MediaStore.getMediaUri()` (API 29+) resuelve el
+                // Uri de documento SAF a su Uri real de MediaStore cuando
+                // corresponde -- pero ese resultado puede venir en la
+                // colección genérica `content://media/external/file/<id>`,
+                // distinta de la colección específica
+                // (`.../downloads/<id>`, `.../images/media/<id>`) que usan
+                // loadDocumentsFromDownloads()/loadImagesFromMediaStore()
+                // para el MISMO archivo -- mismo `_id`, string distinto.
+                // canonicalMediaUri() normaliza ambos casos a la misma forma.
+                val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    try {
+                        MediaStore.getMediaUri(context, pickedUri) ?: pickedUri
+                    } catch (e: Exception) {
+                        Timber.w("No se pudo resolver a Uri de MediaStore: ${e.message}")
+                        pickedUri
+                    }
+                } else {
+                    pickedUri
+                }
+                val uri = canonicalMediaUri(resolved)
                 navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
             },
             onScan      = { navController.navigate(NavRoutes.Scanner.route) },

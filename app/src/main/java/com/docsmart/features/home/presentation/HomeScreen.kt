@@ -67,10 +67,19 @@ fun HomeScreen(
     }
 
     val openFileLauncher = {
+        // Bug real reportado por el usuario 2026-09-11: un documento abierto
+        // con este botón se podía ver en Biblioteca/Recientes pero "Eliminar"
+        // no hacía nada -- el permiso pedido acá era solo de LECTURA, nunca
+        // de escritura, así que DocumentsContract.deleteDocument() (llamado
+        // desde DocumentRepository para cualquier Uri que no sea de
+        // MediaStore) fallaba con SecurityException en silencio. Se agrega
+        // FLAG_GRANT_WRITE_URI_PERMISSION para que el picker sí otorgue
+        // permiso de escritura desde el principio.
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "*/*"
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
         filePicker.launch(intent)

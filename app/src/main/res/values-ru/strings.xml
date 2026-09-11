@@ -497,7 +497,7 @@
     <string name="onboarding_1_title">Добро пожаловать в DocuSmart</string>
     <string name="onboarding_1_desc">Ваш умный менеджер документов. Открывайте, организуйте и конвертируйте файлы быстро и безопасно.</string>
     <string name="onboarding_2_title">Конвертируйте любой формат</string>
-    <string name="onboarding_2_desc">PDF, Word, Excel, PowerPoint, изображения и другое. Более 17 видов конвертации под рукой.</string>
+    <string name="onboarding_2_desc">PDF и изображения, скоро появится больше. Упрощайте конвертацию мгновенно.</string>
     <string name="onboarding_3_title">Защитите свои документы</string>
     <string name="onboarding_3_desc">Храните файлы в личном сейфе с PIN-кодом или отпечатком пальца. Ваша конфиденциальность превыше всего.</string>
     <string name="onboarding_4_title">Режим учёбы</string>

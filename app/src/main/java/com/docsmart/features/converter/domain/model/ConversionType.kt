@@ -126,6 +126,15 @@ enum class ConversionType(
 // donde se aplica). La lógica de conversión real (use cases, ViewModel)
 // queda intacta -- para reactivarlas más adelante alcanza con sacarlas de
 // este set.
+// 2026-09-11: WORD_TO_PDF/EXCEL_TO_PDF/PPT_TO_PDF se sacaron brevemente de
+// este set tras una primera verificación visual, pero el usuario reportó
+// problemas reales probando cada una en su dispositivo (coincide con un bug
+// real encontrado y corregido en PptToPdfUseCase ese mismo día -- lectura
+// vacía del archivo vía content resolver en ciertas URIs SAF). Vuelven a
+// quedar ocultas hasta poder revisar Word/Excel a fondo con la misma
+// rigurosidad. No confundir con el fix ya aplicado a PptToPdfUseCase: el
+// código se deja corregido, pero la función sigue oculta hasta verificar
+// que el fix realmente resuelve lo que reportó el usuario.
 val HIDDEN_FROM_UI: Set<ConversionType> = setOf(
     ConversionType.PDF_TO_WORD,
     ConversionType.WORD_TO_PDF,

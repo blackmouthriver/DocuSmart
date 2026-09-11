@@ -69,9 +69,22 @@ class PptToPdfUseCase @Inject constructor(
         }
     }
 
+    // Bug real reportado por testers 2026-09-11: "La presentación no contiene
+    // texto" con archivos .pptx que sí tienen texto real. Causa raíz
+    // confirmada con diagnóstico en dispositivo real: envolver directamente
+    // el InputStream del content resolver en ZipInputStream podía encontrar
+    // 0 entradas (zip.nextEntry devolvía null de entrada) pese a que el mismo
+    // archivo, leído directo desde disco, se procesaba sin problemas -- una
+    // inconsistencia real del stream que entrega el content resolver para
+    // ciertas URIs de Storage Access Framework. Se corrige leyendo el
+    // archivo completo a memoria primero (los .pptx de este flujo son
+    // documentos de texto, no video/imagen pesada) y envolviendo esos bytes
+    // en un ByteArrayInputStream simple antes de pasarlo a ZipInputStream --
+    // elimina cualquier dependencia del comportamiento del stream original.
     private fun extractSlideText(pptUri: Uri): Map<Int, String>? {
-        val input = context.contentResolver.openInputStream(pptUri) ?: return null
-        return input.use { ZipInputStream(it).use(::readSlideTexts) }
+        val bytes = context.contentResolver.openInputStream(pptUri)?.use { it.readBytes() }
+            ?: return null
+        return java.io.ByteArrayInputStream(bytes).use { ZipInputStream(it).use(::readSlideTexts) }
     }
 
     private fun readSlideTexts(zip: ZipInputStream): Map<Int, String> {

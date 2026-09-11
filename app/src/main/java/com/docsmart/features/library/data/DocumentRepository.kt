@@ -8,6 +8,7 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.documentfile.provider.DocumentFile
 import com.docsmart.core.data.FavoritesRepository
+import com.docsmart.core.data.canonicalMediaUri
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.ui.components.DocumentType
@@ -23,10 +24,22 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// Autoridad real de Android para SAF sobre almacenamiento externo -- se usa
-// para distinguir un Uri de carpeta vinculada (fila 22 del backlog UX) de un
-// Uri de MediaStore, ya que ambos comparten el esquema "content://".
-private const val EXTERNAL_STORAGE_DOCUMENTS_AUTHORITY = "com.android.externalstorage.documents"
+// Crash real reportado por Crashlytics 2026-09-11 (IllegalArgumentException
+// "All requested items must be referenced by specific ID" en
+// MediaStore.createDeleteRequest): esta constante distinguía un Uri de
+// carpeta vinculada (fila 22 del backlog UX) SOLO para la autoridad SAF de
+// "Almacenamiento interno" -- pero cualquier documento abierto con el picker
+// genérico de Android (botón "Abrir" de Inicio, ACTION_OPEN_DOCUMENT) puede
+// venir de OTRAS autoridades SAF (el proveedor de "Documentos"/media
+// agregada, "Descargas", Google Drive, etc.), todas con esquema "content://"
+// pero NINGUNA es un Uri real de MediaStore -- MediaStore.createDeleteRequest()
+// exige URIs con un ID numérico de fila (content://media/external/.../123),
+// no URIs de documento SAF (content://.../document/document%3A123), y lanza
+// esa excepción para cualquiera de estas otras autoridades. La comprobación
+// correcta es la inversa: usar el borrado genérico de SAF
+// (DocumentsContract.deleteDocument) para CUALQUIER Uri que no sea
+// explícitamente de MediaStore, en vez de intentar listar cada autoridad SAF
+// que no lo es.
 
 // Compartida entre loadDocumentsFromDownloads() (consulta a MediaStore) y
 // loadDocumentsFromLinkedFolder() (enumeración SAF) -- un único lugar para
@@ -191,7 +204,7 @@ class DocumentRepository @Inject constructor(
         // distinguir). Se borra directo vía DocumentsContract, la API real
         // para documentos SAF.
         val uri = if (documentId.startsWith("content://")) Uri.parse(documentId) else null
-        if (uri?.authority == EXTERNAL_STORAGE_DOCUMENTS_AUTHORITY) {
+        if (uri != null && uri.authority != MediaStore.AUTHORITY) {
             return@withContext deleteSafDocument(uri, documentId)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && documentId.startsWith("content://")) {
@@ -312,8 +325,8 @@ class DocumentRepository @Inject constructor(
                         val mime   = cursor.getString(mimeCol) ?: continue
                         if (name.startsWith(".")) continue
 
-                        val uri = Uri.withAppendedPath(
-                            MediaStore.Downloads.EXTERNAL_CONTENT_URI, id.toString()
+                        val uri = canonicalMediaUri(
+                            Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id.toString())
                         )
                         documents.add(DocumentUiModel(
                             id         = uri.toString(),
@@ -432,8 +445,8 @@ class DocumentRepository @Inject constructor(
                         cursor.getString(mimeCol) ?: continue
                         if (name.startsWith(".")) continue
 
-                        val uri = Uri.withAppendedPath(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()
+                        val uri = canonicalMediaUri(
+                            Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
                         )
                         documents.add(DocumentUiModel(
                             id         = uri.toString(),

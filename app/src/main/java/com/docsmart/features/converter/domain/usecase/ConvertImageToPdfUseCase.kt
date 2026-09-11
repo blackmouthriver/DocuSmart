@@ -5,10 +5,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
+import androidx.exifinterface.media.ExifInterface
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -30,17 +32,21 @@ class ConvertImageToPdfUseCase @Inject constructor(
         private const val PAGE_HEIGHT = 842
         private const val MARGIN = 20
 
-        // "Alta resolución" (premium, backlog UX #33): el PDF siempre midió
-        // la página en puntos (595x842 = A4 a 72pt/in), pero antes también
-        // se usaban esos mismos números como tamaño en PÍXELES del bitmap
-        // incrustado -- eso limitaba cualquier escaneo, sin importar la
-        // cámara del teléfono, a un equivalente de ~72 DPI (~67 DPI real
-        // descontando el margen). Ahora el tamaño en puntos del recuadro de
-        // dibujo se mantiene igual siempre (misma página, mismo layout) y
-        // solo cambia cuántos píxeles reales del bitmap se conservan dentro
-        // de ese recuadro -- este multiplicador define esa densidad extra
-        // para usuarios Premium (x3 ≈ 216 DPI, calidad de impresión).
-        private const val HIGH_RES_MULTIPLIER = 3
+        // Bug real reportado por testers 2026-09-11: el plan gratuito
+        // incrustaba el bitmap a la misma cantidad de píxeles que puntos
+        // tiene la página (595x842 = A4 a 72pt/in) -- un multiplicador de
+        // 1x, equivalente a ~72 DPI (~67 DPI real descontando el margen),
+        // demasiado bajo para leer texto con nitidez, sin importar qué tan
+        // buena fuera la cámara del teléfono. Subido a un piso decente
+        // (BASE_MULTIPLIER x2 ≈ 144 DPI) para que ningún usuario reciba un
+        // documento que se vea roto; "Alta resolución" Premium (backlog UX
+        // #33) sube proporcionalmente (x4 ≈ 288 DPI, calidad de impresión),
+        // manteniendo el mismo salto relativo (el doble de nitidez) entre
+        // planes. El tamaño en puntos del recuadro de dibujo no cambia
+        // (misma página, mismo layout) en ningún caso -- solo cuántos
+        // píxeles reales del bitmap se conservan dentro de ese recuadro.
+        private const val BASE_MULTIPLIER     = 2
+        private const val HIGH_RES_MULTIPLIER = 4
     }
 
     suspend operator fun invoke(
@@ -123,15 +129,45 @@ class ConvertImageToPdfUseCase @Inject constructor(
         }
     }
 
+    // Bug real reportado por testers 2026-09-11: fotos tomadas en vertical
+    // aparecían "acostadas" (rotadas 90°) en el PDF generado. Causa: muchas
+    // cámaras graban el buffer de píxeles crudo en horizontal y solo marcan
+    // la orientación real en el tag EXIF -- sin leerlo, BitmapFactory
+    // entrega el bitmap tal cual vino del sensor. Se corrige rotando el
+    // bitmap decodificado según ese tag antes de incrustarlo en la página.
     private fun loadBitmapFromUri(uri: Uri): Bitmap? {
         return try {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
+            val rawBitmap = context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream)
-            }
+            } ?: return null
+
+            val orientation = context.contentResolver.openInputStream(uri)?.use { stream ->
+                ExifInterface(stream).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } ?: ExifInterface.ORIENTATION_NORMAL
+
+            rotateBitmapForOrientation(rawBitmap, orientation)
         } catch (e: Exception) {
             Timber.e("Error cargando imagen: ${e.message}")
             null
         }
+    }
+
+    private fun rotateBitmapForOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90  -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL   -> matrix.postScale(1f, -1f)
+            else -> return bitmap
+        }
+        val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        bitmap.recycle()
+        return rotated
     }
 
     /** Recuadro (en puntos, centrado) donde se dibuja la imagen en la
@@ -152,12 +188,12 @@ class ConvertImageToPdfUseCase @Inject constructor(
         return RectF(left, top, left + drawWidth, top + drawHeight)
     }
 
-    /** Bitmap que se incrusta dentro de [drawRect]: en modo estándar, tantos
-     *  píxeles como puntos tiene el recuadro (el comportamiento histórico);
-     *  en alta resolución, [HIGH_RES_MULTIPLIER] veces más -- nunca se
-     *  agranda más allá de lo que la cámara ya capturó. */
+    /** Bitmap que se incrusta dentro de [drawRect]: en modo estándar,
+     *  [BASE_MULTIPLIER] píxeles por punto del recuadro; en alta resolución,
+     *  [HIGH_RES_MULTIPLIER] -- nunca se agranda más allá de lo que la
+     *  cámara ya capturó. */
     private fun embedBitmapForDrawRect(bitmap: Bitmap, drawRect: RectF, highResolution: Boolean): Bitmap {
-        val multiplier = if (highResolution) HIGH_RES_MULTIPLIER else 1
+        val multiplier = if (highResolution) HIGH_RES_MULTIPLIER else BASE_MULTIPLIER
         val targetWidth  = (drawRect.width()  * multiplier).roundToInt().coerceAtLeast(1)
         val targetHeight = (drawRect.height() * multiplier).roundToInt().coerceAtLeast(1)
 

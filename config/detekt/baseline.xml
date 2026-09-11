@@ -266,6 +266,7 @@
     <ID>SwallowedException:DocumentListSection.kt$e: Exception</ID>
     <ID>SwallowedException:FavoritesSection.kt$e: Exception</ID>
     <ID>SwallowedException:HomeViewModel.kt$HomeViewModel$e: Exception</ID>
+    <ID>SwallowedException:MediaUriUtils.kt$e: UnsupportedOperationException</ID>
     <ID>SwallowedException:RecentDocuments.kt$e: Exception</ID>
     <ID>SwallowedException:SecurityViewModel.kt$SecurityViewModel$e: Exception</ID>
     <ID>SwallowedException:SettingsScreen.kt$e: ActivityNotFoundException</ID>

@@ -497,7 +497,7 @@
     <string name="onboarding_1_title">欢迎使用 DocuSmart</string>
     <string name="onboarding_1_desc">你的智能文档管理助手。快速、安全地打开、整理和转换你的文件。</string>
     <string name="onboarding_2_title">转换任意格式</string>
-    <string name="onboarding_2_desc">PDF、Word、Excel、PowerPoint、图片等等。超过 17 种转换类型触手可及。</string>
+    <string name="onboarding_2_desc">PDF和图片，更多格式即将推出。即刻简化你的转换。</string>
     <string name="onboarding_3_title">保护你的文档</string>
     <string name="onboarding_3_desc">使用 PIN 码或指纹将文件保存在你的私人保险箱中，隐私至上。</string>
     <string name="onboarding_4_title">学习模式</string>

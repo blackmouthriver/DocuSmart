@@ -496,7 +496,7 @@
     <string name="onboarding_1_title">Welcome to DocuSmart</string>
     <string name="onboarding_1_desc">Your smart document manager. Open, organize and convert your files quickly and securely.</string>
     <string name="onboarding_2_title">Convert any format</string>
-    <string name="onboarding_2_desc">PDF, Word, Excel, PowerPoint, images and more. Over 17 conversion types at your fingertips.</string>
+    <string name="onboarding_2_desc">PDF and images, with more on the way. Simplify your conversions instantly.</string>
     <string name="onboarding_3_title">Protect your documents</string>
     <string name="onboarding_3_desc">Store files in your personal vault with PIN or fingerprint. Your privacy comes first.</string>
     <string name="onboarding_4_title">Study Mode</string>
