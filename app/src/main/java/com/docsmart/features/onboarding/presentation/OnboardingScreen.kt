@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -19,11 +20,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +52,12 @@ data class OnboardingSlide(
     @StringRes val titleRes: Int,
     @StringRes val descRes : Int,
     val gradient     : List<Color>,
+    // Foto de fondo real (pedido explícito del usuario 2026-09-12, mismo
+    // tratamiento que la card de trial de PremiumScreen): el degradado de
+    // arriba pasa a dibujarse ENCIMA de la foto como velo semitransparente,
+    // en vez de ser el fondo entero -- así cada slide conserva su color de
+    // marca pero ya no es un fondo plano.
+    @DrawableRes val backgroundRes: Int,
     // Fila 22 del backlog UX: la última slide deja vincular una carpeta del
     // dispositivo (SAF) directo desde el onboarding, en vez de que el
     // usuario tenga que descubrir el banner de Biblioteca por su cuenta.
@@ -54,32 +66,36 @@ data class OnboardingSlide(
 
 private val slides = listOf(
     OnboardingSlide(
-        icon      = Icons.Rounded.FolderOpen,
-        iconColor = Color.White,
-        titleRes  = R.string.onboarding_1_title,
-        descRes   = R.string.onboarding_1_desc,
-        gradient  = listOf(DocuBlue, SmartBlue, IndigoAccent)
+        icon          = Icons.Rounded.FolderOpen,
+        iconColor     = Color.White,
+        titleRes      = R.string.onboarding_1_title,
+        descRes       = R.string.onboarding_1_desc,
+        gradient      = listOf(DocuBlue, SmartBlue, IndigoAccent),
+        backgroundRes = R.drawable.onboarding_bg_1
     ),
     OnboardingSlide(
-        icon      = Icons.Rounded.SwapHoriz,
-        iconColor = Color.White,
-        titleRes  = R.string.onboarding_2_title,
-        descRes   = R.string.onboarding_2_desc,
-        gradient  = listOf(IndigoAccent, DocuBlue, SmartBlue)
+        icon          = Icons.Rounded.SwapHoriz,
+        iconColor     = Color.White,
+        titleRes      = R.string.onboarding_2_title,
+        descRes       = R.string.onboarding_2_desc,
+        gradient      = listOf(IndigoAccent, DocuBlue, SmartBlue),
+        backgroundRes = R.drawable.onboarding_bg_2
     ),
     OnboardingSlide(
-        icon      = Icons.Rounded.Lock,
-        iconColor = Color.White,
-        titleRes  = R.string.onboarding_3_title,
-        descRes   = R.string.onboarding_3_desc,
-        gradient  = listOf(SmartBlue, IndigoAccent, DocuBlue)
+        icon          = Icons.Rounded.Lock,
+        iconColor     = Color.White,
+        titleRes      = R.string.onboarding_3_title,
+        descRes       = R.string.onboarding_3_desc,
+        gradient      = listOf(SmartBlue, IndigoAccent, DocuBlue),
+        backgroundRes = R.drawable.onboarding_bg_3
     ),
     OnboardingSlide(
-        icon      = Icons.Rounded.MenuBook,
-        iconColor = Color.White,
-        titleRes  = R.string.onboarding_4_title,
-        descRes   = R.string.onboarding_4_desc,
-        gradient  = listOf(DocuBlue, IndigoAccent, SmartBlue)
+        icon          = Icons.Rounded.MenuBook,
+        iconColor     = Color.White,
+        titleRes      = R.string.onboarding_4_title,
+        descRes       = R.string.onboarding_4_desc,
+        gradient      = listOf(DocuBlue, IndigoAccent, SmartBlue),
+        backgroundRes = R.drawable.onboarding_bg_4
     ),
     OnboardingSlide(
         icon              = Icons.Rounded.CreateNewFolder,
@@ -87,6 +103,7 @@ private val slides = listOf(
         titleRes          = R.string.onboarding_5_title,
         descRes           = R.string.onboarding_5_desc,
         gradient          = listOf(IndigoAccent, SmartBlue, DocuBlue),
+        backgroundRes     = R.drawable.onboarding_bg_5,
         isFolderLinkSlide = true
     )
 )
@@ -239,13 +256,26 @@ private fun OnboardingSlideContent(
     linkedFolderName : String? = null,
     onLinkFolderClick: () -> Unit = {}
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.linearGradient(colors = slide.gradient)
-            )
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(slide.backgroundRes),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        // El degradado de marca de cada slide se dibuja como velo
+        // semitransparente sobre la foto (antes era el fondo entero) --
+        // conserva la identidad de color de la app y garantiza contraste
+        // para el texto blanco de abajo sin taparle la foto por completo.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = slide.gradient.map { it.copy(alpha = 0.72f) }
+                    )
+                )
+        )
         Column(
             modifier            = Modifier
                 .fillMaxSize()
@@ -275,10 +305,18 @@ private fun OnboardingSlideContent(
 
             Spacer(Modifier.height(48.dp))
 
-            // Título
+            // Título -- sombra agregada junto con la foto de fondo (antes
+            // el fondo era un degradado plano, no hacía falta): garantiza
+            // contraste sin importar qué tan clara sea la zona de la foto
+            // que quede detrás del texto en cada slide.
+            val textShadow = Shadow(
+                color = Color.Black.copy(alpha = 0.5f),
+                offset = Offset(0f, 2f),
+                blurRadius = 8f
+            )
             Text(
                 text       = stringResource(slide.titleRes),
-                style      = MaterialTheme.typography.headlineMedium,
+                style      = MaterialTheme.typography.headlineMedium.copy(shadow = textShadow),
                 fontWeight = FontWeight.Bold,
                 color      = Color.White,
                 textAlign  = TextAlign.Center,
@@ -290,8 +328,8 @@ private fun OnboardingSlideContent(
             // Descripción
             Text(
                 text      = stringResource(slide.descRes),
-                style     = MaterialTheme.typography.bodyLarge,
-                color     = Color.White.copy(alpha = 0.85f),
+                style     = MaterialTheme.typography.bodyLarge.copy(shadow = textShadow),
+                color     = Color.White.copy(alpha = 0.9f),
                 textAlign = TextAlign.Center,
                 lineHeight = 26.sp
             )
