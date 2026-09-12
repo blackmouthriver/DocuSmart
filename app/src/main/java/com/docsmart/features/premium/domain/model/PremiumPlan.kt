@@ -10,7 +10,12 @@ data class PremiumPlan(
     @StringRes val periodRes: Int,
     @StringRes val savingsLabelRes: Int? = null,
     val isPopular: Boolean = false,
-    val productId: String // ID de Play Store Billing
+    val productId: String, // ID de Play Store Billing
+    // HU-54: días de prueba gratuita configurados en Play Console para este
+    // plan, o null si no tiene (o si Play Billing todavía no respondió).
+    // Viene de BillingManager, nunca hardcodeado -- si se quita el trial en
+    // la consola, desaparece solo, sin publicar una actualización.
+    val trialDays: Int? = null
 )
 
 // Funciones premium bloqueadas para usuarios free

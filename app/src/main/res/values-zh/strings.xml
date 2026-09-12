@@ -72,6 +72,8 @@
     <string name="settings_subtitle">个性化你的体验</string>
     <string name="settings_premium">DocuSmart 高级版</string>
     <string name="settings_premium_subtitle">解锁全部功能</string>
+    <string name="settings_premium_trial_subtitle">免费试用中 · %1$s 扣费</string>
+    <string name="settings_premium_auto_trial_subtitle">免费体验高级版 · 还剩 %1$d 天</string>
     <string name="settings_language">语言</string>
     <string name="settings_theme">主题</string>
     <string name="settings_accent_color">强调色</string>
@@ -521,6 +523,11 @@
          因为有人按 String.format 的方式对其进行了转义，
          导致界面上显示出重复的 "%"）。 -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">节省 44%</string>
+    <string name="premium_trial_badge">%1$d 天免费</string>
+    <string name="premium_start_trial">开始 %1$d 天免费试用</string>
+    <string name="premium_trial_active_message">免费试用中 — 将于 %1$s 扣费</string>
+    <string name="premium_auto_trial_title">免费体验高级版</string>
+    <string name="premium_auto_trial_body">你还有 %1$d 天可以免费使用全部功能且无广告。请在结束前选择套餐以继续使用。</string>
     <string name="premium_feature_no_ads_title">无广告</string>
     <string name="premium_feature_no_ads_desc">畅享无干扰的 DocuSmart 体验</string>
     <string name="premium_feature_pdf_word_title">PDF 转 Word</string>

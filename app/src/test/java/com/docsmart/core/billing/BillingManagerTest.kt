@@ -97,4 +97,39 @@ class BillingManagerTest {
         assertTrue(outcome is RestoreOutcome.Owned)
         assertEquals(listOf(purchased), (outcome as RestoreOutcome.Owned).purchases)
     }
+
+    // HU-54: iso8601PeriodToDays() traduce la duración que Play Billing
+    // devuelve para la fase de prueba gratuita ("freeTrialPeriod" en Play
+    // Console) al número de días que se muestra en la UI ("7 días gratis").
+    @Test
+    fun `iso8601PeriodToDays interpreta dias`() {
+        assertEquals(7, iso8601PeriodToDays("P7D"))
+    }
+
+    @Test
+    fun `iso8601PeriodToDays interpreta semanas`() {
+        assertEquals(14, iso8601PeriodToDays("P2W"))
+    }
+
+    @Test
+    fun `iso8601PeriodToDays interpreta meses de forma aproximada`() {
+        assertEquals(30, iso8601PeriodToDays("P1M"))
+    }
+
+    @Test
+    fun `iso8601PeriodToDays interpreta anios de forma aproximada`() {
+        assertEquals(365, iso8601PeriodToDays("P1Y"))
+    }
+
+    @Test
+    fun `iso8601PeriodToDays devuelve null para un texto invalido`() {
+        assertEquals(null, iso8601PeriodToDays("no-es-un-periodo"))
+    }
+
+    @Test
+    fun `iso8601PeriodToDays devuelve null para un periodo de cero dias`() {
+        // No debería pasar en la práctica (Play Console no permite un trial
+        // de 0 días), pero si pasara, no debe tratarse como "hay trial".
+        assertEquals(null, iso8601PeriodToDays("P0D"))
+    }
 }

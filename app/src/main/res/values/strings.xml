@@ -72,6 +72,8 @@
     <string name="settings_subtitle">Personaliza tu experiencia</string>
     <string name="settings_premium">DocuSmart Premium</string>
     <string name="settings_premium_subtitle">Desbloquea todas las funciones</string>
+    <string name="settings_premium_trial_subtitle">Prueba gratis activa · se cobra el %1$s</string>
+    <string name="settings_premium_auto_trial_subtitle">Probando Premium gratis · quedan %1$d días</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_accent_color">Color de acento</string>
@@ -521,6 +523,17 @@
          antes decía "44%%" porque alguien lo escapó como si fuera a pasar
          por String.format, mostrando el "%" duplicado en pantalla). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Ahorra 44%</string>
+    <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
+         configurada una fase de prueba real para el producto, nunca se
+         muestran como texto fijo sin que Play Billing la confirme. -->
+    <string name="premium_trial_badge">%1$d días gratis</string>
+    <string name="premium_start_trial">Empezar %1$d días gratis</string>
+    <string name="premium_trial_active_message">Prueba gratis activa — se cobrará el %1$s</string>
+    <!-- Trial automático sin tarjeta (pedido explícito del usuario
+         2026-09-12): todo el que instala la app tiene unos días de Premium
+         completo gratis sin suscribirse a nada. -->
+    <string name="premium_auto_trial_title">Prueba Premium gratis</string>
+    <string name="premium_auto_trial_body">Te quedan %1$d días con acceso completo, sin anuncios. Elegí un plan antes de que termine para no perderlo.</string>
     <string name="premium_feature_no_ads_title">Sin anuncios</string>
     <string name="premium_feature_no_ads_desc">Disfruta DocuSmart sin interrupciones</string>
     <string name="premium_feature_pdf_word_title">PDF a Word</string>

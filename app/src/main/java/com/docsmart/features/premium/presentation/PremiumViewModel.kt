@@ -25,7 +25,17 @@ data class PremiumUiState(
     val isPremium: Boolean = false,
     val isPurchasing: Boolean = false,
     val purchaseSuccess: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    // HU-54: no nulo y en el futuro solo mientras dura la prueba gratuita del
+    // usuario -- únicamente para el mensaje de PremiumActiveCard.
+    val trialEndsAtMillis: Long? = null,
+    // Trial automático sin tarjeta: isPaidPremium distingue a un cliente
+    // pagador real (incluido uno en el trial de suscripción de HU-54) de
+    // alguien que solo tiene acceso porque está dentro del trial automático
+    // de instalación -- la pantalla necesita esto para no ocultarle el
+    // botón de suscripción a este último.
+    val isPaidPremium: Boolean = false,
+    val autoTrialDaysRemaining: Int? = null
 )
 
 @HiltViewModel
@@ -50,7 +60,9 @@ class PremiumViewModel @Inject constructor(
     init {
         loadPlans()
         observePremiumStatus()
-        observePrices()
+        observeOffers()
+        observeTrialEndsAt()
+        observeAutoTrialState()
         observePurchaseResult()
     }
 
@@ -73,17 +85,49 @@ class PremiumViewModel @Inject constructor(
     }
 
     // Sobrescribe el precio fijo de PremiumRepository con el precio real y
-    // localizado que devuelve Play Billing, en cuanto esté disponible.
-    private fun observePrices() {
+    // localizado que devuelve Play Billing (y los días de prueba gratuita si
+    // el plan tiene uno configurado en Play Console), en cuanto esté
+    // disponible.
+    private fun observeOffers() {
         viewModelScope.launch {
-            billingManager.formattedPrices.collect { prices ->
-                if (prices.isEmpty()) return@collect
+            billingManager.planOffers.collect { offers ->
+                if (offers.isEmpty()) return@collect
                 _uiState.update { state ->
                     state.copy(plans = state.plans.map { plan ->
-                        prices[plan.productId]?.takeIf { it.isNotBlank() }
-                            ?.let { plan.copy(price = it) } ?: plan
+                        offers[plan.productId]?.let { offer ->
+                            plan.copy(
+                                price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
+                                trialDays = offer.trialDays
+                            )
+                        } ?: plan
                     })
                 }
+            }
+        }
+    }
+
+    // HU-54, AC1: mientras dure la prueba, PremiumActiveCard debe poder
+    // mostrar la fecha real de cobro.
+    private fun observeTrialEndsAt() {
+        viewModelScope.launch {
+            premiumManager.trialEndsAtMillis.collect { trialEndsAtMillis ->
+                _uiState.update { it.copy(trialEndsAtMillis = trialEndsAtMillis) }
+            }
+        }
+    }
+
+    // Trial automático sin tarjeta: isPaidPremium/autoTrialDaysRemaining
+    // determinan si esta pantalla debe seguir mostrando los planes de
+    // suscripción (ver PremiumScreen) y el mensaje de días restantes.
+    private fun observeAutoTrialState() {
+        viewModelScope.launch {
+            premiumManager.isPaidPremium.collect { isPaidPremium ->
+                _uiState.update { it.copy(isPaidPremium = isPaidPremium) }
+            }
+        }
+        viewModelScope.launch {
+            premiumManager.autoTrialDaysRemaining.collect { daysRemaining ->
+                _uiState.update { it.copy(autoTrialDaysRemaining = daysRemaining) }
             }
         }
     }
@@ -137,11 +181,15 @@ class PremiumViewModel @Inject constructor(
         _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
         viewModelScope.launch {
             billingManager.restorePurchases()
-            // premiumManager.isPremium.value (no _uiState.value.isPremium):
-            // se lee directo del StateFlow para evitar una carrera con el
-            // colector de observePremiumStatus(), que corre en otra
-            // corrutina y podría no haber procesado la actualización todavía.
-            val wasRestored = premiumManager.isPremium.value
+            // premiumManager.isPaidPremium.value, no isPremium.value: con el
+            // trial automático sin tarjeta, isPremium ya puede ser true sin
+            // que se haya restaurado nada real -- usar isPremium acá le
+            // mostraría "compra restaurada" a alguien que solo está en el
+            // trial. Se lee directo del StateFlow (no _uiState.value) para
+            // evitar una carrera con el colector de observeAutoTrialState(),
+            // que corre en otra corrutina y podría no haber procesado la
+            // actualización todavía.
+            val wasRestored = premiumManager.isPaidPremium.value
             _uiState.update { state ->
                 state.copy(
                     isPurchasing = false,

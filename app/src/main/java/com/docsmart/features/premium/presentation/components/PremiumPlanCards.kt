@@ -154,6 +154,25 @@ private fun PlanCard(
                                 )
                             }
                         }
+                        // HU-54 RF2: badge de prueba gratuita -- solo aparece
+                        // si Play Billing devolvió una fase de prueba real
+                        // para este producto (nunca hardcodeado).
+                        plan.trialDays?.let { days ->
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = MaterialTheme.colorScheme.tertiaryContainer
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.premium_trial_badge, days),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.padding(
+                                        horizontal = 6.dp,
+                                        vertical = 2.dp
+                                    )
+                                )
+                            }
+                        }
                     }
                     Text(
                         text = stringResource(plan.periodRes),

@@ -72,6 +72,8 @@
     <string name="settings_subtitle">Passe deine Erfahrung an</string>
     <string name="settings_premium">DocuSmart Premium</string>
     <string name="settings_premium_subtitle">Alle Funktionen freischalten</string>
+    <string name="settings_premium_trial_subtitle">Kostenlose Testphase aktiv · Abbuchung am %1$s</string>
+    <string name="settings_premium_auto_trial_subtitle">Premium kostenlos testen · noch %1$d Tage</string>
     <string name="settings_language">Sprache</string>
     <string name="settings_theme">Design</string>
     <string name="settings_accent_color">Akzentfarbe</string>
@@ -517,6 +519,11 @@
     <string name="premium_period_month">pro Monat</string>
     <string name="premium_period_year">pro Jahr</string>
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44 % sparen</string>
+    <string name="premium_trial_badge">%1$d Tage gratis</string>
+    <string name="premium_start_trial">%1$d Tage gratis testen</string>
+    <string name="premium_trial_active_message">Kostenlose Testphase aktiv — Abbuchung am %1$s</string>
+    <string name="premium_auto_trial_title">Kostenlose Premium-Testphase</string>
+    <string name="premium_auto_trial_body">Dir bleiben noch %1$d Tage mit vollem Zugriff, ohne Werbung. Wähle einen Plan, bevor sie endet, um ihn zu behalten.</string>
     <string name="premium_feature_no_ads_title">Keine Werbung</string>
     <string name="premium_feature_no_ads_desc">Genieße DocuSmart ohne Unterbrechungen</string>
     <string name="premium_feature_pdf_word_title">PDF zu Word</string>

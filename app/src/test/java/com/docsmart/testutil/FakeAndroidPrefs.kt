@@ -1,6 +1,8 @@
 package com.docsmart.testutil
 
 import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.content.SharedPreferences
 import io.mockk.every
 import io.mockk.mockk
@@ -21,7 +23,17 @@ fun fakePrefsStore(): MutableMap<String, Any> = mutableMapOf()
  * putLong/edit/apply (`StudyNotesStorageTest`, `StudyStatsStorageTest`,
  * `ThemeManagerTest`), señalado por SonarCloud como duplicación de código.
  */
-fun fakeContextWithPrefs(store: MutableMap<String, Any>): Context {
+/**
+ * `firstInstallTimeMillis` respalda `PackageManager.getPackageInfo(...).
+ * firstInstallTime`, usado por `PremiumManager` para el trial automático
+ * sin tarjeta -- por defecto simula una instalación muy vieja (any trial
+ * automático ya expirado) para no afectar tests que no les importa esto;
+ * un test que sí quiera simular una instalación reciente lo pasa explícito.
+ */
+fun fakeContextWithPrefs(
+    store: MutableMap<String, Any>,
+    firstInstallTimeMillis: Long = 0L
+): Context {
     val editor = mockk<SharedPreferences.Editor>()
 
     val strKey = slot<String>()
@@ -62,7 +74,13 @@ fun fakeContextWithPrefs(store: MutableMap<String, Any>): Context {
     }
     every { prefs.edit() } returns editor
 
+    val packageInfo = PackageInfo().apply { firstInstallTime = firstInstallTimeMillis }
+    val packageManager = mockk<PackageManager>()
+    every { packageManager.getPackageInfo("com.docsmart", 0) } returns packageInfo
+
     val context = mockk<Context>()
     every { context.getSharedPreferences(any(), any()) } returns prefs
+    every { context.packageManager } returns packageManager
+    every { context.packageName } returns "com.docsmart"
     return context
 }

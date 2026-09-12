@@ -26,8 +26,8 @@ class PremiumManagerTest {
         store = fakePrefsStore()
     }
 
-    private fun newManager(): PremiumManager =
-        PremiumManager(fakeContextWithPrefs(store))
+    private fun newManager(firstInstallTimeMillis: Long = 0L): PremiumManager =
+        PremiumManager(fakeContextWithPrefs(store, firstInstallTimeMillis))
 
     @Test
     fun `arranca en free por defecto sin estado guardado previo`() {
@@ -119,5 +119,119 @@ class PremiumManagerTest {
 
         assertTrue(manager.canPerform { true })
         assertFalse(manager.canPerform { false })
+    }
+
+    // HU-54 (prueba gratuita): trialEndsAtMillis es solo para mensajes de UI
+    // -- estos tests confirman que se persiste/limpia igual que isPremium,
+    // sin tocar isFeatureAvailable/canPerform (ver tests de arriba, que ya
+    // cubren que el gating no distingue trial de pago).
+    @Test
+    fun `activatePremium sin trial deja trialEndsAtMillis en null`() {
+        val manager = newManager()
+
+        manager.activatePremium()
+
+        assertEquals(null, manager.trialEndsAtMillis.value)
+    }
+
+    @Test
+    fun `activatePremium con trial guarda y persiste la fecha de fin`() {
+        val manager = newManager()
+        val trialEndsAtMillis = 1_800_000_000_000L
+
+        manager.activatePremium(trialEndsAtMillis)
+
+        assertEquals(trialEndsAtMillis, manager.trialEndsAtMillis.value)
+        assertEquals(trialEndsAtMillis, store["trial_ends_at_millis"])
+    }
+
+    @Test
+    fun `carga la fecha de fin de trial ya guardada en SharedPreferences`() {
+        store["is_premium"] = true
+        store["trial_ends_at_millis"] = 1_800_000_000_000L
+
+        val manager = newManager()
+
+        assertEquals(1_800_000_000_000L, manager.trialEndsAtMillis.value)
+    }
+
+    @Test
+    fun `deactivatePremium limpia la fecha de fin de trial`() {
+        val manager = newManager()
+        manager.activatePremium(1_800_000_000_000L)
+
+        manager.deactivatePremium()
+
+        assertEquals(null, manager.trialEndsAtMillis.value)
+        assertEquals(false, store["is_premium"])
+    }
+
+    // Trial automático sin tarjeta (pedido explícito del usuario
+    // 2026-09-12): todo el que instala la app tiene 3 días de Premium
+    // completo gratis, medido desde firstInstallTime -- sin suscripción, sin
+    // pasar por activatePremium(). isPaidPremium es la que distingue esto de
+    // un cliente pagador real (la usa PremiumScreen para no ocultarle el
+    // botón de suscripción a alguien que solo está en el trial).
+    @Test
+    fun `un usuario recien instalado esta en trial automatico sin haber comprado nada`() {
+        val manager = newManager(firstInstallTimeMillis = System.currentTimeMillis())
+
+        assertTrue(manager.isPremium.value)
+        assertFalse(manager.isPaidPremium.value)
+        assertEquals(3, manager.autoTrialDaysRemaining.value)
+    }
+
+    @Test
+    fun `un usuario instalado hace mas de 3 dias ya no esta en trial automatico`() {
+        val haceCuatroDias = System.currentTimeMillis() - 4 * MILLIS_PER_DAY
+        val manager = newManager(firstInstallTimeMillis = haceCuatroDias)
+
+        assertFalse(manager.isPremium.value)
+        assertEquals(null, manager.autoTrialDaysRemaining.value)
+    }
+
+    @Test
+    fun `deactivatePremium no corta el trial automatico de un usuario recien instalado`() {
+        // Este es el bug que se evitó a propósito: restorePurchases() llama
+        // a deactivatePremium() en cada arranque de la app cuando no
+        // encuentra ninguna compra que restaurar -- eso no debe cortarle el
+        // trial automático a alguien que nunca intentó pagar.
+        val manager = newManager(firstInstallTimeMillis = System.currentTimeMillis())
+
+        manager.deactivatePremium()
+
+        assertTrue(manager.isPremium.value)
+        assertFalse(manager.isPaidPremium.value)
+    }
+
+    @Test
+    fun `un usuario pagador sigue siendo premium aunque el trial automatico ya haya expirado`() {
+        val haceCuatroDias = System.currentTimeMillis() - 4 * MILLIS_PER_DAY
+        val manager = newManager(firstInstallTimeMillis = haceCuatroDias)
+
+        manager.activatePremium()
+
+        assertTrue(manager.isPremium.value)
+        assertTrue(manager.isPaidPremium.value)
+    }
+
+    @Test
+    fun `isWithinAutoTrial es verdadero justo el ultimo dia y falso al llegar al limite`() {
+        val instalacion = 0L
+        val trialDeTresDias = 3
+
+        assertTrue(isWithinAutoTrial(instalacion, nowMillis = 2 * MILLIS_PER_DAY, trialDeTresDias))
+        assertFalse(isWithinAutoTrial(instalacion, nowMillis = 3 * MILLIS_PER_DAY, trialDeTresDias))
+    }
+
+    @Test
+    fun `autoTrialDaysRemaining cuenta hacia abajo y termina en null`() {
+        val instalacion = 0L
+        val trialDeTresDias = 3
+
+        assertEquals(3, autoTrialDaysRemaining(instalacion, nowMillis = 0L, trialDeTresDias))
+        assertEquals(2, autoTrialDaysRemaining(instalacion, nowMillis = MILLIS_PER_DAY, trialDeTresDias))
+        assertEquals(1, autoTrialDaysRemaining(instalacion, nowMillis = 2 * MILLIS_PER_DAY, trialDeTresDias))
+        assertEquals(null, autoTrialDaysRemaining(instalacion, nowMillis = 3 * MILLIS_PER_DAY, trialDeTresDias))
     }
 }

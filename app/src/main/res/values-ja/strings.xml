@@ -72,6 +72,8 @@
     <string name="settings_subtitle">使い方に合わせてカスタマイズ</string>
     <string name="settings_premium">DocuSmart Premium</string>
     <string name="settings_premium_subtitle">すべての機能をアンロック</string>
+    <string name="settings_premium_trial_subtitle">無料トライアル中・%1$sに課金</string>
+    <string name="settings_premium_auto_trial_subtitle">Premiumお試し中・残り%1$d日</string>
     <string name="settings_language">言語</string>
     <string name="settings_theme">テーマ</string>
     <string name="settings_accent_color">アクセントカラー</string>
@@ -521,6 +523,11 @@
          誰かがString.formatを通すかのようにエスケープしたため以前は「44%%」となっており、
          画面に「%」が重複して表示されていた)。 -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44%お得</string>
+    <string name="premium_trial_badge">%1$d日間無料</string>
+    <string name="premium_start_trial">%1$d日間無料で始める</string>
+    <string name="premium_trial_active_message">無料トライアル中 — %1$sに課金されます</string>
+    <string name="premium_auto_trial_title">無料Premiumお試し</string>
+    <string name="premium_auto_trial_body">フルアクセス・広告なしがあと%1$d日間使えます。終了する前にプランを選んで継続しましょう。</string>
     <string name="premium_feature_no_ads_title">広告なし</string>
     <string name="premium_feature_no_ads_desc">広告に邪魔されずDocuSmartをお楽しみいただけます</string>
     <string name="premium_feature_pdf_word_title">PDFからWordへ</string>

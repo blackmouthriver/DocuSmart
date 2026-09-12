@@ -72,6 +72,8 @@
     <string name="settings_subtitle">나만의 환경으로 꾸며보세요</string>
     <string name="settings_premium">DocuSmart 프리미엄</string>
     <string name="settings_premium_subtitle">모든 기능 잠금 해제</string>
+    <string name="settings_premium_trial_subtitle">무료 체험 중 · %1$s에 결제</string>
+    <string name="settings_premium_auto_trial_subtitle">프리미엄 무료 체험 중 · %1$d일 남음</string>
     <string name="settings_language">언어</string>
     <string name="settings_theme">테마</string>
     <string name="settings_accent_color">강조 색상</string>
@@ -521,6 +523,11 @@
          String.format을 거칠 것으로 착각해 "44%%"로 이스케이프해 두는 바람에
          화면에 "%"가 두 번 표시되었습니다). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44% 절약</string>
+    <string name="premium_trial_badge">%1$d일 무료</string>
+    <string name="premium_start_trial">%1$d일 무료로 시작</string>
+    <string name="premium_trial_active_message">무료 체험 중 — %1$s에 결제됩니다</string>
+    <string name="premium_auto_trial_title">무료 프리미엄 체험</string>
+    <string name="premium_auto_trial_body">광고 없이 모든 기능을 %1$d일 더 이용할 수 있어요. 끝나기 전에 요금제를 선택하세요.</string>
     <string name="premium_feature_no_ads_title">광고 없음</string>
     <string name="premium_feature_no_ads_desc">방해 없이 DocuSmart를 이용하세요</string>
     <string name="premium_feature_pdf_word_title">PDF를 Word로</string>

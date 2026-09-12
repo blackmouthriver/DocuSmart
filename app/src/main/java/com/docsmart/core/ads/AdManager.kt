@@ -66,6 +66,17 @@ class AdManager @Inject constructor(
     // passthrough, así que ya no puede desincronizarse.
     val isPremium: StateFlow<Boolean> = premiumManager.isPremium
 
+    // HU-54: passthrough igual que isPremium, para que Ajustes pueda mostrar
+    // la fecha de cobro sin depender de PremiumManager directamente.
+    val trialEndsAtMillis: StateFlow<Long?> = premiumManager.trialEndsAtMillis
+
+    // Trial automático sin tarjeta: isPaidPremium distingue a un cliente
+    // pagador real de alguien que solo está en el trial automático de
+    // instalación (isPremium es la que gatea anuncios/funciones y ya
+    // incluye ambos casos).
+    val isPaidPremium: StateFlow<Boolean> = premiumManager.isPaidPremium
+    val autoTrialDaysRemaining: StateFlow<Int?> = premiumManager.autoTrialDaysRemaining
+
     private val _isInitialized  = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 

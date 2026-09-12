@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -60,6 +61,12 @@ fun SettingsScreen(
     val animatedBackgroundEnabled by themeManager.animatedBackgroundEnabled.collectAsState()
     val currentLanguage    by languageManager.currentLanguage.collectAsState()
     val isPremium          by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    // HU-54, AC1: revisando Ajustes, sin entrar a PremiumScreen, ya se ve
+    // que Premium está activo y cuándo empezaría a cobrarse.
+    val trialEndsAtMillis  by viewModel.adManager.trialEndsAtMillis.collectAsStateWithLifecycle()
+    // Trial automático sin tarjeta: distinto del de arriba -- acá no hay
+    // ninguna suscripción, solo el trial que se da a todo el que instala.
+    val autoTrialDaysRemaining by viewModel.adManager.autoTrialDaysRemaining.collectAsStateWithLifecycle()
 
     @Composable
     fun themeLabel(theme: AppTheme): String = when (theme) {
@@ -630,8 +637,31 @@ fun SettingsScreen(
                         Text(stringResource(R.string.settings_premium),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface)
+                        val isInTrial = trialEndsAtMillis != null &&
+                            trialEndsAtMillis!! > System.currentTimeMillis()
+                        val subtitle = when {
+                            isInTrial -> {
+                                // Lint real (NonObservableLocale): ver
+                                // comentario equivalente en
+                                // PremiumScreen.PremiumActiveCard.
+                                val locale = LocalConfiguration.current.locales[0]
+                                val formattedDate = java.text.SimpleDateFormat("dd/MM/yyyy", locale)
+                                    .format(java.util.Date(trialEndsAtMillis!!))
+                                stringResource(R.string.settings_premium_trial_subtitle, formattedDate)
+                            }
+                            // Trial automático sin tarjeta: no hay
+                            // suscripción real, solo el trial que se da a
+                            // todo el que instala -- se distingue del de
+                            // arriba porque no hay fecha de cobro que avisar.
+                            autoTrialDaysRemaining != null ->
+                                stringResource(
+                                    R.string.settings_premium_auto_trial_subtitle,
+                                    autoTrialDaysRemaining!!
+                                )
+                            else -> stringResource(R.string.settings_premium_subtitle)
+                        }
                         Text(
-                            text  = stringResource(R.string.settings_premium_subtitle),
+                            text  = subtitle,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

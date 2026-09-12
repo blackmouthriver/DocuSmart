@@ -41,6 +41,13 @@ sealed interface PurchaseResult {
 }
 
 /**
+ * HU-54: precio real de la fase recurrente de un producto (ya sin la fase de
+ * prueba gratuita, que siempre tiene precio 0) más los días de esa prueba si
+ * Play Console la tiene configurada para este producto.
+ */
+data class PlanOffer(val price: String, val trialDays: Int? = null)
+
+/**
  * RF-PREM-05 (docs/requirements/settings-premium.md §7): reemplaza el
  * placeholder simulatePurchase() de PremiumManager por Play Billing real.
  *
@@ -70,6 +77,7 @@ class BillingManager @Inject constructor(
         const val PRODUCT_MONTHLY  = "com.docsmart.premium.monthly"
         const val PRODUCT_ANNUAL   = "com.docsmart.premium.annual"
         private val SUBSCRIPTION_PRODUCT_IDS = listOf(PRODUCT_MONTHLY, PRODUCT_ANNUAL)
+        private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -78,11 +86,12 @@ class BillingManager @Inject constructor(
     private val _purchaseResult = MutableSharedFlow<PurchaseResult>()
     val purchaseResult: SharedFlow<PurchaseResult> = _purchaseResult.asSharedFlow()
 
-    // productId → precio formateado y localizado por Play Store (ej. "$2.99").
+    // productId → precio real (ya sin la fase de prueba) + días de prueba si
+    // los tiene, formateados y localizados por Play Store (ej. "$2.99").
     // Reemplaza el precio fijo hardcodeado en PremiumRepository en cuanto
     // Play Billing responde — antes de eso, la UI usa el precio de respaldo.
-    private val _formattedPrices = MutableStateFlow<Map<String, String>>(emptyMap())
-    val formattedPrices: StateFlow<Map<String, String>> = _formattedPrices.asStateFlow()
+    private val _planOffers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+    val planOffers: StateFlow<Map<String, PlanOffer>> = _planOffers.asStateFlow()
 
     private var productDetailsCache: Map<String, com.android.billingclient.api.ProductDetails> = emptyMap()
 
@@ -145,13 +154,25 @@ class BillingManager @Inject constructor(
         val allDetails = subsResult.productDetailsList.orEmpty()
 
         productDetailsCache = allDetails.associateBy { it.productId }
-        _formattedPrices.value = allDetails.associate { details ->
-            val price = details.subscriptionOfferDetails?.firstOrNull()
-                ?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice
-                ?: ""
-            details.productId to price
-        }
+        _planOffers.value = allDetails.associate { it.productId to planOfferOf(it) }
         Timber.d("BillingManager: ${productDetailsCache.size} productos encontrados en Play Console")
+    }
+
+    // HU-54: si Play Console tiene configurada una fase de prueba gratuita
+    // (freeTrialPeriod) para este producto, aparece como una fase más al
+    // inicio de pricingPhaseList con priceAmountMicros = 0 -- se distingue
+    // así en vez de por posición, porque Play Billing no garantiza que sea
+    // siempre la primera. La fase recurrente real (lo que se le muestra al
+    // usuario como precio) es la de mayor precio.
+    private fun planOfferOf(details: com.android.billingclient.api.ProductDetails): PlanOffer {
+        val phases = details.subscriptionOfferDetails
+            ?.firstOrNull()?.pricingPhases?.pricingPhaseList.orEmpty()
+        val trialPhase = phases.firstOrNull { it.priceAmountMicros == 0L }
+        val recurringPhase = phases.maxByOrNull { it.priceAmountMicros } ?: phases.firstOrNull()
+        return PlanOffer(
+            price = recurringPhase?.formattedPrice ?: "",
+            trialDays = trialPhase?.billingPeriod?.let(::iso8601PeriodToDays)
+        )
     }
 
     /** Devuelve false si Play Billing no está listo o el producto no se encontró. */
@@ -232,7 +253,7 @@ class BillingManager @Inject constructor(
     private fun handlePurchase(purchase: Purchase, isRestore: Boolean = false) {
         when (purchase.purchaseState) {
             Purchase.PurchaseState.PURCHASED -> {
-                premiumManager.activatePremium()
+                premiumManager.activatePremium(trialEndsAtMillisFor(purchase))
                 if (!purchase.isAcknowledged) {
                     scope.launch {
                         val ackParams = AcknowledgePurchaseParams.newBuilder()
@@ -258,7 +279,42 @@ class BillingManager @Inject constructor(
     private fun emitResult(result: PurchaseResult) {
         scope.launch { _purchaseResult.emit(result) }
     }
+
+    // HU-54: Purchase no expone si esta compra específica arrancó con una
+    // prueba gratuita -- se deduce comparando el producto comprado contra la
+    // fase de prueba cacheada de queryProductDetails(). Si el producto no
+    // tiene trial configurado, o la compra es vieja (restaurada mucho
+    // después de que el trial terminó), el resultado ya queda en el pasado y
+    // la UI simplemente no muestra nada -- no hace falta un flag aparte.
+    private fun trialEndsAtMillisFor(purchase: Purchase): Long? {
+        val productId = purchase.products.firstOrNull()
+        val details = productId?.let { productDetailsCache[it] }
+        val phases = details?.subscriptionOfferDetails
+            ?.firstOrNull()?.pricingPhases?.pricingPhaseList.orEmpty()
+        val trialDays = phases.firstOrNull { it.priceAmountMicros == 0L }
+            ?.billingPeriod?.let(::iso8601PeriodToDays)
+        return trialDays?.let { purchase.purchaseTime + it * MILLIS_PER_DAY }
+    }
 }
+
+// HU-54: Play Billing describe la duración de cada fase de precio (incluida
+// la de prueba gratuita) como una duración ISO-8601 simple -- "P7D", "P1W",
+// "P1M", "P1Y", nunca combinaciones más complejas para este caso de uso.
+// Mes/año se aproximan a 30/365 días a propósito: solo importan para
+// mostrar "X días gratis" en la UI, no para ningún cálculo de facturación
+// real (eso lo hace Play Billing del lado del servidor).
+private val ISO8601_PERIOD_REGEX = Regex("^P(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)W)?(?:(\\d+)D)?$")
+
+internal fun iso8601PeriodToDays(period: String): Int? {
+    val groups = ISO8601_PERIOD_REGEX.matchEntire(period)?.groupValues ?: return null
+    val totalDays = groups[1].toIntOrNull().orZero() * 365 +
+        groups[2].toIntOrNull().orZero() * 30 +
+        groups[3].toIntOrNull().orZero() * 7 +
+        groups[4].toIntOrNull().orZero()
+    return totalDays.takeIf { it > 0 }
+}
+
+private fun Int?.orZero(): Int = this ?: 0
 
 /**
  * Resultado puro de evaluar una respuesta de `queryPurchasesAsync()`,
