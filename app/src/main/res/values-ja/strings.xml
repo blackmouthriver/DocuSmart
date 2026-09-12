@@ -503,7 +503,7 @@
     <string name="onboarding_3_title">ドキュメントを保護</string>
     <string name="onboarding_3_desc">PINまたは指紋で保護された専用の金庫にファイルを保存できます。プライバシーを第一に。</string>
     <string name="onboarding_4_title">学習モード</string>
-    <string name="onboarding_4_desc">読み上げ機能で聞く、段落をハイライトする、音声でメモを取る、ポモドーロタイマーを使うことができます。</string>
+    <string name="onboarding_4_desc">DocuSmartが読み上げ、音声でメモを取り、ポモドーロタイマーで学習をサポートします。</string>
     <string name="onboarding_5_title">ドキュメントを連携</string>
     <string name="onboarding_5_desc">ファイルを保存している端末内のフォルダを選択すると、ライブラリで表示できます。アクセスできるのはあなただけです — 今すぐ設定することも、後で「設定」から行うこともできます。</string>
     <string name="onboarding_folder_linked">連携済み: %1$s</string>

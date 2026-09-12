@@ -503,7 +503,7 @@
     <string name="onboarding_3_title">Proteggi i tuoi documenti</string>
     <string name="onboarding_3_desc">Salva i file nella tua cassaforte personale con PIN o impronta digitale. La tua privacy viene prima di tutto.</string>
     <string name="onboarding_4_title">Modalità Studio</string>
-    <string name="onboarding_4_desc">Leggi con la sintesi vocale, evidenzia i paragrafi, prendi appunti con la voce e usa il timer Pomodoro.</string>
+    <string name="onboarding_4_desc">DocuSmart legge per te, prendi appunti con la voce e usa il timer Pomodoro per aiutarti a studiare.</string>
     <string name="onboarding_5_title">Collega i tuoi documenti</string>
     <string name="onboarding_5_desc">Scegli la cartella del tuo dispositivo in cui salvi i tuoi file per vederli nella Libreria. Solo tu avrai accesso ad essi — puoi farlo ora o più tardi dalle Impostazioni.</string>
     <string name="onboarding_folder_linked">Collegata: %1$s</string>

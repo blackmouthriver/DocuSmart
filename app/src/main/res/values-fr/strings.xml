@@ -503,7 +503,7 @@
     <string name="onboarding_3_title">Protège tes documents</string>
     <string name="onboarding_3_desc">Enregistre des fichiers dans ton coffre-fort personnel avec un code PIN ou une empreinte digitale. Ta vie privée passe avant tout.</string>
     <string name="onboarding_4_title">Mode Étude</string>
-    <string name="onboarding_4_desc">Lis avec la synthèse vocale, surligne des paragraphes, prends des notes vocales et utilise le minuteur Pomodoro.</string>
+    <string name="onboarding_4_desc">DocuSmart lit pour toi, prends des notes vocales et utilise le minuteur Pomodoro pour t\'aider à étudier.</string>
     <string name="onboarding_5_title">Associe tes documents</string>
     <string name="onboarding_5_desc">Choisis le dossier de ton appareil où tu conserves tes fichiers pour les voir dans Bibliothèque. Toi seul y auras accès — tu peux le faire maintenant ou plus tard depuis Réglages.</string>
     <string name="onboarding_folder_linked">Associé : %1$s</string>

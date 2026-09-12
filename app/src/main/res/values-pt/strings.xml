@@ -503,7 +503,7 @@
     <string name="onboarding_3_title">Proteja seus documentos</string>
     <string name="onboarding_3_desc">Guarde arquivos no seu cofre pessoal com PIN ou impressão digital. Sua privacidade em primeiro lugar.</string>
     <string name="onboarding_4_title">Modo Estudo</string>
-    <string name="onboarding_4_desc">Leia com Text-to-Speech, destaque parágrafos, faça notas de voz e use o temporizador Pomodoro.</string>
+    <string name="onboarding_4_desc">O DocuSmart lê por você, faça notas de voz e use o temporizador Pomodoro para te ajudar a estudar.</string>
     <string name="onboarding_5_title">Vincule seus documentos</string>
     <string name="onboarding_5_desc">Escolha a pasta do seu dispositivo onde guarda seus arquivos para vê-los na Biblioteca. Só você terá acesso a eles — pode fazer isso agora ou depois em Ajustes.</string>
     <string name="onboarding_folder_linked">Vinculada: %1$s</string>

@@ -503,7 +503,7 @@
     <string name="onboarding_3_title">保护你的文档</string>
     <string name="onboarding_3_desc">使用 PIN 码或指纹将文件保存在你的私人保险箱中，隐私至上。</string>
     <string name="onboarding_4_title">学习模式</string>
-    <string name="onboarding_4_desc">通过文字转语音朗读、高亮段落、用语音记笔记，并使用番茄工作法计时器。</string>
+    <string name="onboarding_4_desc">DocuSmart 为你朗读，用语音记笔记，并使用番茄工作法计时器帮助你学习。</string>
     <string name="onboarding_5_title">关联你的文档</string>
     <string name="onboarding_5_desc">选择设备上存放文件的文件夹，即可在资料库中查看。只有你能访问它们 — 你可以现在关联，也可以稍后在设置中进行。</string>
     <string name="onboarding_folder_linked">已关联：%1$s</string>
