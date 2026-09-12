@@ -1,6 +1,14 @@
 package com.docsmart.features.premium.presentation
 
 import android.app.Activity
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -9,10 +17,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -315,34 +333,86 @@ private fun PremiumActiveCard(onClose: () -> Unit, trialEndsAtMillis: Long? = nu
 // es "el mecanismo que le va diciendo al usuario los días" que quedan,
 // distinta de PremiumActiveCard porque acá SÍ conviene seguir mostrando los
 // planes debajo (todavía no es cliente pagador).
+//
+// Ajuste pedido por el usuario 2026-09-12: foto de fondo con opacidad, 100%
+// del ancho de pantalla (sin el margen horizontal que sí tienen las demás
+// cards) y pegada al banner azul de arriba (sin padding vertical propio ni
+// esquinas redondeadas, para que no se note un corte entre los dos) -- por
+// eso es un Box liso en vez de un Card con su elevación/forma de siempre.
+//
+// Segundo ajuste, mismo día: más opacidad en la foto + zoom lento tipo
+// "Ken Burns" -- pero subirle la opacidad a la foto hacía que el texto se
+// viera perdido, así que se agrega un degradado oscuro (scrim) entre la
+// imagen y el texto para garantizar contraste sin bajarle intensidad a la
+// foto, y el texto pasa a blanco fijo con sombra (no onTertiaryContainer,
+// que depende del tema y podía quedar oscuro sobre un fondo con foto).
+// Shadow en la card entera para que se vea "flotando" sobre el resto.
 @Composable
 private fun PremiumAutoTrialCard(daysRemaining: Int) {
-    Card(
+    val infiniteTransition = rememberInfiniteTransition(label = "premiumTrialBg")
+    val imageScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 9000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "premiumTrialBgScale"
+    )
+    val textShadow = Shadow(
+        color = Color.Black.copy(alpha = 0.6f),
+        offset = Offset(0f, 2f),
+        blurRadius = 6f
+    )
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(0.dp)
+            .shadow(elevation = 10.dp, clip = false)
+            // El zoom animado de la foto (scale > 1) se dibuja más grande
+            // que la card -- sin este clip (van DESPUÉS del shadow a
+            // propósito, para que la sombra sí pueda salirse de los bordes
+            // y la foto no) se veía "salir" de la tarjeta hacia el banner
+            // de arriba y el contenido de abajo. Bug real reportado por el
+            // usuario 2026-09-12 al ver la animación en el dispositivo.
+            .clip(RectangleShape)
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
     ) {
+        Image(
+            painter = painterResource(R.drawable.premium_trial_bg),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alpha = 0.55f,
+            modifier = Modifier
+                .matchParentSize()
+                .scale(imageScale)
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Black.copy(alpha = 0.15f), Color.Black.copy(alpha = 0.55f))
+                    )
+                )
+        )
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = stringResource(R.string.premium_auto_trial_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
+                style = MaterialTheme.typography.titleLarge.copy(shadow = textShadow),
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
             Text(
                 text = stringResource(R.string.premium_auto_trial_body, daysRemaining),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f),
+                style = MaterialTheme.typography.bodyMedium.copy(shadow = textShadow),
+                color = Color.White.copy(alpha = 0.95f),
                 textAlign = TextAlign.Center
             )
         }
