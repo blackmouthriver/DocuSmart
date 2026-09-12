@@ -47,6 +47,7 @@
     <string name="converter_subtitle">Легко конвертируйте документы</string>
     <string name="converter_select">Что вы хотите конвертировать?</string>
     <string name="converter_save">Сохранить в Загрузки</string>
+    <string name="converter_view_document">Открыть документ</string>
 
     <!-- ── Инструменты PDF ──────────────────────────────── -->
     <string name="pdf_tools_title">Инструменты PDF</string>
@@ -653,6 +654,7 @@
     <string name="scan_session_scan_another">Сканировать другой документ</string>
     <string name="scan_result_default_name_prefix">Скан_%1$s</string>
     <string name="scan_edit_page_content_desc">Редактировать страницу %1$d</string>
+    <string name="scan_edit_button_label">Настроить</string>
     <string name="scan_edit_title">Редактировать страницу</string>
     <string name="scan_edit_brightness">Яркость: %1$d%%</string>
     <string name="scan_edit_contrast">Контраст: %1$d%%</string>
@@ -663,6 +665,8 @@
     <string name="scan_page_limit_title">Достигнут лимит страниц</string>
     <string name="scan_page_limit_body">В этом документе уже %1$d из %2$d страниц. Посмотрите видео, чтобы добавить ещё одну страницу, или перейдите на Premium — без ограничений.</string>
     <string name="security_file_protected_original_kept">Файл защищён. Не удалось удалить оригинал из исходного места — удалите его вручную, если хотите убрать его полностью.</string>
+    <string name="security_original_kept_dialog_title">Исходный файл всё ещё на месте</string>
+    <string name="security_original_kept_dialog_confirm">Понятно</string>
     <string name="qr_protected_title">Защищённый QR-код</string>
     <string name="qr_protected_desc">Это содержимое защищено паролем. Введите пароль, чтобы увидеть его.</string>
     <string name="qr_unlock">Разблокировать</string>
@@ -738,6 +742,12 @@
     <string name="study_highlighted_count">Выделено: %1$d</string>
     <string name="study_stop">Остановить</string>
     <string name="study_read_all">Прочитать всё</string>
+    <string name="study_choose_voice">Выбрать голос</string>
+    <string name="study_voice_option_label">Голос %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">очень высокое качество</string>
+    <string name="study_voice_quality_high">высокое качество</string>
+    <string name="study_voice_quality_normal">обычное качество</string>
+    <string name="study_voice_quality_low">базовое качество</string>
     <string name="study_generate_summary">Создать резюме</string>
     <string name="study_summarizing">Создаём резюме… для длинных документов это может занять несколько минут</string>
     <string name="study_loading_document">Загружаем документ… это может занять некоторое время</string>

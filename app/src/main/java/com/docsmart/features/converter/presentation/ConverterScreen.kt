@@ -67,6 +67,10 @@ fun ConverterScreen(
     initialType        : String? = null,
     initialFileUri      : String? = null,
     initialFileCategory: String? = null,
+    // Pedido explícito del usuario 2026-09-12 (feedback de testers): abre
+    // el visor ya existente para el archivo recién convertido, en vez de
+    // dejar la pantalla de éxito como destino final del flujo.
+    onOpenDocument      : (String) -> Unit = {},
     viewModel  : ConverterViewModel = hiltViewModel()
 ) {
     val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
@@ -107,57 +111,19 @@ fun ConverterScreen(
     // reutiliza el mismo escáner de ML Kit ya probado en la pantalla
     // Escáner (siempre devuelve páginas como imagen, nunca PDF directo).
     // Cancelar (RESULT_CANCELED) no hace nada, deja el selector como estaba.
-    val scannerStartErrorTemplate = stringResource(R.string.scanner_start_error)
-    val documentScanLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val pages = GmsDocumentScanningResult
-                .fromActivityResultIntent(result.data)
-                ?.pages?.mapNotNull { it.imageUri } ?: emptyList()
-            if (pages.isNotEmpty()) viewModel.onFilesSelected(pages)
-        }
-    }
-    val onCaptureWithCamera: () -> Unit = {
-        activity?.let { act ->
-            launchDocumentScanner(
-                activity   = act,
-                mode       = ScannerMode.DOCUMENT,
-                onLaunched = { intentSender ->
-                    documentScanLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
-                },
-                onError    = { message ->
-                    viewModel.onScanError(String.format(scannerStartErrorTemplate, message))
-                }
-            )
-        }
-    }
+    val onCaptureWithCamera = rememberCaptureWithCameraAction(
+        activity        = activity,
+        onFilesSelected = viewModel::onFilesSelected,
+        onScanError     = viewModel::onScanError
+    )
 
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.dismissError()
-        }
-    }
-
-    LaunchedEffect(uiState.conversionResult) {
-        if (uiState.conversionResult is ConversionResult.Success) {
-            activity?.let { viewModel.adManager.onConversionCompleted(it) }
-        }
-    }
-
-    // ── Dialog de límite diario ───────────────────────────────────────────────
-    if (uiState.showLimitDialog) {
-        DailyLimitDialog(
-            usedCount       = uiState.conversionCount,
-            limit           = uiState.conversionLimit,
-            itemLabelPlural = stringResource(R.string.converter_daily_limit_label),
-            isRewardedReady = isRewardedReady,
-            onWatchAd       = { activity?.let { viewModel.watchAdForConversion(it) } },
-            onDismiss       = { viewModel.dismissLimitDialog() },
-            onGetPremium    = { }
-        )
-    }
+    ConverterScreenSideEffects(
+        uiState           = uiState,
+        snackbarHostState = snackbarHostState,
+        isRewardedReady   = isRewardedReady,
+        activity          = activity,
+        viewModel         = viewModel
+    )
 
     Scaffold(
         snackbarHost   = { SnackbarHost(snackbarHostState) },
@@ -217,6 +183,7 @@ fun ConverterScreen(
                         savedToDownloads     = uiState.batchSavedToDownloads,
                         onConvertAnother     = { viewModel.clearAll() },
                         onSaveAllToDownloads = { viewModel.saveAllToDownloads(context) },
+                        onOpenDocument       = { file -> onOpenDocument(file.absolutePath) },
                         modifier             = Modifier.padding(horizontal = 20.dp)
                     )
                 }
@@ -231,6 +198,7 @@ fun ConverterScreen(
                         savedToDownloads  = uiState.savedToDownloads,
                         onConvertAnother  = { viewModel.clearAll() },
                         onSaveToDownloads = { viewModel.saveToDownloads(context) },
+                        onOpenDocument    = { onOpenDocument(result.outputFile.absolutePath) },
                         modifier          = Modifier.padding(horizontal = 20.dp)
                     )
                 }
@@ -295,6 +263,79 @@ fun ConverterScreen(
                 }
             }
         }
+    }
+}
+
+// Extraído de ConverterScreen (detekt: LongMethod) -- launcher del atajo
+// "Capturar con cámara" (backlog UX 2026-08-30, HU-UX-03), reutiliza el
+// mismo escáner de ML Kit que ya usa la pantalla Escáner (siempre devuelve
+// páginas como imagen, nunca PDF directo).
+@Composable
+private fun rememberCaptureWithCameraAction(
+    activity: Activity?,
+    onFilesSelected: (List<Uri>) -> Unit,
+    onScanError: (String) -> Unit
+): () -> Unit {
+    val scannerStartErrorTemplate = stringResource(R.string.scanner_start_error)
+    val documentScanLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val pages = GmsDocumentScanningResult
+                .fromActivityResultIntent(result.data)
+                ?.pages?.mapNotNull { it.imageUri } ?: emptyList()
+            if (pages.isNotEmpty()) onFilesSelected(pages)
+        }
+    }
+    return {
+        activity?.let { act ->
+            launchDocumentScanner(
+                activity   = act,
+                mode       = ScannerMode.DOCUMENT,
+                onLaunched = { intentSender ->
+                    documentScanLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                },
+                onError    = { message ->
+                    onScanError(String.format(scannerStartErrorTemplate, message))
+                }
+            )
+        }
+    }
+}
+
+// Extraído de ConverterScreen (detekt: LongMethod) -- efectos y diálogo de
+// límite diario, sin relación visual con el LazyColumn principal.
+@Composable
+private fun ConverterScreenSideEffects(
+    uiState: ConverterUiState,
+    snackbarHostState: SnackbarHostState,
+    isRewardedReady: Boolean,
+    activity: Activity?,
+    viewModel: ConverterViewModel
+) {
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.dismissError()
+        }
+    }
+
+    LaunchedEffect(uiState.conversionResult) {
+        if (uiState.conversionResult is ConversionResult.Success) {
+            activity?.let { viewModel.adManager.onConversionCompleted(it) }
+        }
+    }
+
+    if (uiState.showLimitDialog) {
+        DailyLimitDialog(
+            usedCount       = uiState.conversionCount,
+            limit           = uiState.conversionLimit,
+            itemLabelPlural = stringResource(R.string.converter_daily_limit_label),
+            isRewardedReady = isRewardedReady,
+            onWatchAd       = { activity?.let { viewModel.watchAdForConversion(it) } },
+            onDismiss       = { viewModel.dismissLimitDialog() },
+            onGetPremium    = { }
+        )
     }
 }
 

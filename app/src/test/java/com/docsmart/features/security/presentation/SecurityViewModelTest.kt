@@ -309,8 +309,13 @@ class SecurityViewModelTest {
         }
     }
 
+    // Pedido explícito del usuario 2026-09-12 (feedback de testers): este
+    // aviso pasó de mostrarse como successMessage (mismo Snackbar genérico
+    // que un éxito normal, fácil de perder) a un campo aparte que
+    // SecurityScreen muestra en un diálogo bloqueante -- ver
+    // originalNotDeletedWarning en SecurityViewModel.
     @Test
-    fun `importLocalFile exitoso con original NO borrado muestra originalKeptMessage`() = runTest {
+    fun `importLocalFile exitoso con original NO borrado muestra originalNotDeletedWarning`() = runTest {
         val file = File(secureFolder.parentFile, "converted/foo.pdf").apply { parentFile?.mkdirs(); writeText("x") }
         every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = false)
 
@@ -318,7 +323,9 @@ class SecurityViewModelTest {
         viewModel.uiState.test {
             awaitItem()
             viewModel.importLocalFile(file, "Archivo protegido", "Error", "Original conservado")
-            assertEquals("Original conservado", awaitItem().successMessage)
+            val state = awaitItem()
+            assertEquals("Original conservado", state.originalNotDeletedWarning)
+            assertNull(state.successMessage)
         }
     }
 

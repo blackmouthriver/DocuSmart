@@ -47,6 +47,7 @@
     <string name="converter_subtitle">Converti i tuoi documenti con facilità</string>
     <string name="converter_select">Cosa vuoi convertire?</string>
     <string name="converter_save">Salva in Download</string>
+    <string name="converter_view_document">Visualizza documento</string>
 
     <!-- ── Strumenti PDF ──────────────────────────────── -->
     <string name="pdf_tools_title">Strumenti PDF</string>
@@ -658,6 +659,7 @@
     <string name="scan_session_scan_another">Scansiona un altro documento</string>
     <string name="scan_result_default_name_prefix">Scansione_%1$s</string>
     <string name="scan_edit_page_content_desc">Modifica pagina %1$d</string>
+    <string name="scan_edit_button_label">Regola</string>
     <string name="scan_edit_title">Modifica pagina</string>
     <string name="scan_edit_brightness">Luminosità: %1$d%%</string>
     <string name="scan_edit_contrast">Contrasto: %1$d%%</string>
@@ -668,6 +670,8 @@
     <string name="scan_page_limit_title">Limite di pagine raggiunto</string>
     <string name="scan_page_limit_body">Questo documento ha già %1$d di %2$d pagine. Guarda un video per aggiungere un\'altra pagina, oppure passa a Premium per nessun limite.</string>
     <string name="security_file_protected_original_kept">File protetto. Non è stato possibile eliminare l\'originale dalla sua posizione — eliminalo manualmente se vuoi rimuoverlo completamente.</string>
+    <string name="security_original_kept_dialog_title">Il file originale è ancora presente</string>
+    <string name="security_original_kept_dialog_confirm">Capito</string>
     <string name="qr_protected_title">Codice QR protetto</string>
     <string name="qr_protected_desc">Questo contenuto è protetto da password. Inseriscila per visualizzarlo.</string>
     <string name="qr_unlock">Sblocca</string>
@@ -743,6 +747,12 @@
     <string name="study_highlighted_count">%1$d evidenziati</string>
     <string name="study_stop">Ferma</string>
     <string name="study_read_all">Leggi tutto</string>
+    <string name="study_choose_voice">Scegli voce</string>
+    <string name="study_voice_option_label">Voce %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">qualità molto alta</string>
+    <string name="study_voice_quality_high">qualità alta</string>
+    <string name="study_voice_quality_normal">qualità normale</string>
+    <string name="study_voice_quality_low">qualità base</string>
     <string name="study_generate_summary">Genera riepilogo</string>
     <string name="study_summarizing">Generazione del riepilogo… per documenti lunghi può richiedere alcuni minuti</string>
     <string name="study_loading_document">Caricamento del documento… potrebbe richiedere qualche istante</string>

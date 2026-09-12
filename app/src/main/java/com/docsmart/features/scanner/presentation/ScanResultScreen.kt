@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -224,7 +225,8 @@ fun ScanResultScreen(
                     converterViewModel.saveAllToDownloads(context)
                 }
             },
-            onDone = goHomeAction
+            onDone = goHomeAction,
+            onOpenDocument = { file -> onOpenDocument(file.absolutePath) }
         ),
         sessionArgs = ScanSessionDisplayArgs(
             sessionFinalized = sessionFinalized,
@@ -590,7 +592,8 @@ private data class ScanBatchDisplayArgs(
     val savedToDownloads: Boolean,
     val onConvertAnother: () -> Unit,
     val onSaveAllToDownloads: () -> Unit,
-    val onDone: () -> Unit
+    val onDone: () -> Unit,
+    val onOpenDocument: (java.io.File) -> Unit
 )
 
 // Extraído aparte de ScanSessionDisplayArgs (LongParameterList de detekt,
@@ -707,7 +710,8 @@ private fun LazyListScope.scanResultContent(
                 items = batchArgs.items,
                 savedToDownloads = batchArgs.savedToDownloads,
                 onConvertAnother = batchArgs.onConvertAnother,
-                onSaveAllToDownloads = batchArgs.onSaveAllToDownloads
+                onSaveAllToDownloads = batchArgs.onSaveAllToDownloads,
+                onOpenDocument = batchArgs.onOpenDocument
             )
         }
         // Bug real reportado por el usuario 2026-09-06: este resultado de
@@ -1379,19 +1383,32 @@ private fun ScanPageThumbnail(
                     .clip(MaterialTheme.shapes.medium)
             )
         }
-        IconButton(
-            onClick = onEditClick,
+        // Pedido explícito del usuario 2026-09-12 (feedback de testers): el
+        // ajuste de brillo/contraste ya existía, pero era un ícono de 16dp
+        // sin etiqueta escondido en una esquina -- nadie lo encontraba. Pasa
+        // a ser una franja con texto en el borde inferior de la miniatura,
+        // mucho más visible sin necesitar rediseñar toda la fila.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(4.dp)
-                .size(28.dp)
-                .background(Color.Black.copy(alpha = 0.5f), MaterialTheme.shapes.small)
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
+                .background(Color.Black.copy(alpha = 0.6f))
+                .clickable(onClick = onEditClick)
+                .padding(vertical = 6.dp)
         ) {
             Icon(
                 imageVector = Icons.Rounded.Tune,
-                contentDescription = stringResource(R.string.scan_edit_page_content_desc, pageNumber),
+                contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = stringResource(R.string.scan_edit_button_label),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White
             )
         }
     }

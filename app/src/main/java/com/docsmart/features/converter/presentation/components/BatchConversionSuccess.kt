@@ -7,6 +7,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,6 +32,7 @@ fun BatchConversionSuccess(
     savedToDownloads    : Boolean,
     onConvertAnother    : () -> Unit,
     onSaveAllToDownloads: () -> Unit,
+    onOpenDocument      : (java.io.File) -> Unit,
     modifier            : Modifier = Modifier
 ) {
     val shareLabel = stringResource(R.string.converter_share)
@@ -78,7 +80,7 @@ fun BatchConversionSuccess(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items.forEach { item ->
-                    BatchResultRow(item = item, shareLabel = shareLabel)
+                    BatchResultRow(item = item, shareLabel = shareLabel, onOpenDocument = onOpenDocument)
                 }
             }
 
@@ -136,7 +138,11 @@ fun BatchConversionSuccess(
 }
 
 @Composable
-private fun BatchResultRow(item: BatchConversionItem, shareLabel: String) {
+private fun BatchResultRow(
+    item: BatchConversionItem,
+    shareLabel: String,
+    onOpenDocument: (java.io.File) -> Unit
+) {
     val context = LocalContext.current
     val result = item.result
 
@@ -185,6 +191,17 @@ private fun BatchResultRow(item: BatchConversionItem, shareLabel: String) {
             }
 
             if (result is ConversionResult.Success) {
+                // Pedido explícito del usuario 2026-09-12 (feedback de
+                // testers): mismo botón "ver documento" que la conversión
+                // simple, acá junto a Compartir en vez de un botón grande
+                // (cada fila ya representa un archivo distinto del lote).
+                IconButton(onClick = { onOpenDocument(result.outputFile) }) {
+                    Icon(
+                        Icons.Rounded.Visibility, null,
+                        tint     = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
                 IconButton(onClick = { shareFile(context, result.outputFile, shareLabel) }) {
                     Icon(
                         Icons.Rounded.Share, null,

@@ -38,6 +38,7 @@ fun ConversionSuccess(
     savedToDownloads: Boolean,
     onConvertAnother: () -> Unit,
     onSaveToDownloads: () -> Unit,
+    onOpenDocument: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -148,69 +149,117 @@ fun ConversionSuccess(
             }
 
             // ── Botones ───────────────────────────────
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ConversionSuccessButtons(
+                result = result,
+                savedToDownloads = savedToDownloads,
+                shareLabel = shareLabel,
+                onConvertAnother = onConvertAnother,
+                onSaveToDownloads = onSaveToDownloads,
+                onOpenDocument = onOpenDocument,
+                context = context
+            )
+        }
+    }
+}
+
+// Extraído de ConversionSuccess (detekt: LongMethod) -- la columna de 4
+// botones (Ver documento/Guardar/Compartir/Convertir otro) es una unidad
+// visual propia, sin lógica compartida con el resto de la card.
+@Composable
+private fun ConversionSuccessButtons(
+    result: ConversionResult.Success,
+    savedToDownloads: Boolean,
+    shareLabel: String,
+    onConvertAnother: () -> Unit,
+    onSaveToDownloads: () -> Unit,
+    onOpenDocument: () -> Unit,
+    context: Context
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Pedido explícito del usuario 2026-09-12 (feedback de
+        // testers): antes de esto, tras convertir solo se podía
+        // guardar o compartir -- no había forma de ver el documento
+        // recién creado sin salir a buscarlo manualmente. Es la
+        // acción principal (botón lleno), Guardar pasa a contorno.
+        Button(
+            onClick = onOpenDocument,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = MaterialTheme.shapes.medium,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Visibility,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.converter_view_document),
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+
+        if (!savedToDownloads) {
+            OutlinedButton(
+                onClick = onSaveToDownloads,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = MaterialTheme.shapes.medium
             ) {
-                if (!savedToDownloads) {
-                    Button(
-                        onClick = onSaveToDownloads,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.converter_save),
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
-
-                OutlinedButton(
-                    onClick = { shareFile(context, result.outputFile, shareLabel) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Share,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = shareLabel,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-
-                TextButton(
-                    onClick = onConvertAnother,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.converter_convert_another),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Rounded.Download,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.converter_save),
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
+        }
+
+        OutlinedButton(
+            onClick = { shareFile(context, result.outputFile, shareLabel) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Share,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = shareLabel,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+
+        TextButton(
+            onClick = onConvertAnother,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.converter_convert_another),
+                style = MaterialTheme.typography.labelLarge
+            )
         }
     }
 }

@@ -124,7 +124,8 @@ fun DocuSmartNavGraph(
             ConverterScreen(
                 initialType         = backStackEntry.arguments?.getString("initialType"),
                 initialFileUri      = backStackEntry.arguments?.getString("initialFileUri"),
-                initialFileCategory = backStackEntry.arguments?.getString("initialFileCategory")
+                initialFileCategory = backStackEntry.arguments?.getString("initialFileCategory"),
+                onOpenDocument      = { path -> navController.navigate(NavRoutes.Viewer.createRoute(path)) }
             )
         }
 

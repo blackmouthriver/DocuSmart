@@ -47,6 +47,7 @@
     <string name="converter_subtitle">문서를 쉽게 변환하세요</string>
     <string name="converter_select">무엇을 변환하시겠어요?</string>
     <string name="converter_save">다운로드에 저장</string>
+    <string name="converter_view_document">문서 보기</string>
 
     <!-- ── PDF 도구 ──────────────────────────────── -->
     <string name="pdf_tools_title">PDF 도구</string>
@@ -657,6 +658,7 @@
     <string name="scan_session_scan_another">다른 문서 스캔</string>
     <string name="scan_result_default_name_prefix">스캔_%1$s</string>
     <string name="scan_edit_page_content_desc">페이지 %1$d 편집</string>
+    <string name="scan_edit_button_label">조정</string>
     <string name="scan_edit_title">페이지 편집</string>
     <string name="scan_edit_brightness">밝기: %1$d%%</string>
     <string name="scan_edit_contrast">대비: %1$d%%</string>
@@ -667,6 +669,8 @@
     <string name="scan_page_limit_title">페이지 한도 도달</string>
     <string name="scan_page_limit_body">이 문서에는 이미 %2$d페이지 중 %1$d페이지가 있습니다. 동영상을 보고 페이지를 추가하거나 프리미엄으로 한도 없이 이용하세요.</string>
     <string name="security_file_protected_original_kept">파일이 보호되었습니다. 원본 파일을 원래 위치에서 삭제할 수 없었습니다 — 완전히 제거하려면 직접 삭제하세요.</string>
+    <string name="security_original_kept_dialog_title">원본 파일이 아직 남아 있어요</string>
+    <string name="security_original_kept_dialog_confirm">확인</string>
     <string name="qr_protected_title">보호된 QR 코드</string>
     <string name="qr_protected_desc">이 콘텐츠는 비밀번호로 보호되어 있습니다. 확인하려면 비밀번호를 입력하세요.</string>
     <string name="qr_unlock">잠금 해제</string>
@@ -742,6 +746,12 @@
     <string name="study_highlighted_count">%1$d개 강조 표시</string>
     <string name="study_stop">중지</string>
     <string name="study_read_all">전체 읽기</string>
+    <string name="study_choose_voice">음성 선택</string>
+    <string name="study_voice_option_label">음성 %1$d — %2$s(%3$s)</string>
+    <string name="study_voice_quality_very_high">매우 높은 품질</string>
+    <string name="study_voice_quality_high">높은 품질</string>
+    <string name="study_voice_quality_normal">보통 품질</string>
+    <string name="study_voice_quality_low">기본 품질</string>
     <string name="study_generate_summary">요약 생성</string>
     <string name="study_summarizing">요약을 생성하는 중입니다… 문서가 길면 몇 분 정도 걸릴 수 있어요</string>
     <string name="study_loading_document">문서를 불러오는 중입니다… 잠시 시간이 걸릴 수 있어요</string>

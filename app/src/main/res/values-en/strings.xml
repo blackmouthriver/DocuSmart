@@ -47,6 +47,7 @@
     <string name="converter_subtitle">Convert your documents easily</string>
     <string name="converter_select">What do you want to convert?</string>
     <string name="converter_save">Save to Downloads</string>
+    <string name="converter_view_document">View document</string>
 
     <!-- ── PDF Tools ──────────────────────────────── -->
     <string name="pdf_tools_title">PDF Tools</string>
@@ -652,6 +653,7 @@
     <string name="scan_session_scan_another">Scan another document</string>
     <string name="scan_result_default_name_prefix">Scan_%1$s</string>
     <string name="scan_edit_page_content_desc">Edit page %1$d</string>
+    <string name="scan_edit_button_label">Adjust</string>
     <string name="scan_edit_title">Edit page</string>
     <string name="scan_edit_brightness">Brightness: %1$d%%</string>
     <string name="scan_edit_contrast">Contrast: %1$d%%</string>
@@ -662,6 +664,8 @@
     <string name="scan_page_limit_title">Page limit reached</string>
     <string name="scan_page_limit_body">This document already has %1$d of %2$d pages. Watch a video to add one more page, or go Premium for no limit.</string>
     <string name="security_file_protected_original_kept">File protected. Couldn\'t delete the original from its location — delete it manually if you want it fully removed.</string>
+    <string name="security_original_kept_dialog_title">The original file is still there</string>
+    <string name="security_original_kept_dialog_confirm">Got it</string>
     <string name="qr_protected_title">Protected QR code</string>
     <string name="qr_protected_desc">This content is password-protected. Enter the password to view it.</string>
     <string name="qr_unlock">Unlock</string>
@@ -737,6 +741,12 @@
     <string name="study_highlighted_count">%1$d highlighted</string>
     <string name="study_stop">Stop</string>
     <string name="study_read_all">Read all</string>
+    <string name="study_choose_voice">Choose voice</string>
+    <string name="study_voice_option_label">Voice %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">very high quality</string>
+    <string name="study_voice_quality_high">high quality</string>
+    <string name="study_voice_quality_normal">normal quality</string>
+    <string name="study_voice_quality_low">basic quality</string>
     <string name="study_generate_summary">Generate summary</string>
     <string name="study_summarizing">Generating your summary… this may take a few minutes for longer documents</string>
     <string name="study_loading_document">Loading your document… this may take a moment</string>

@@ -47,6 +47,7 @@
     <string name="converter_subtitle">Konvertiere deine Dokumente ganz einfach</string>
     <string name="converter_select">Was möchtest du konvertieren?</string>
     <string name="converter_save">In Downloads speichern</string>
+    <string name="converter_view_document">Dokument ansehen</string>
 
     <!-- ── PDF Tools ──────────────────────────────── -->
     <string name="pdf_tools_title">PDF-Werkzeuge</string>
@@ -653,6 +654,7 @@
     <string name="scan_session_scan_another">Weiteres Dokument scannen</string>
     <string name="scan_result_default_name_prefix">Scan_%1$s</string>
     <string name="scan_edit_page_content_desc">Seite %1$d bearbeiten</string>
+    <string name="scan_edit_button_label">Anpassen</string>
     <string name="scan_edit_title">Seite bearbeiten</string>
     <string name="scan_edit_brightness">Helligkeit: %1$d%%</string>
     <string name="scan_edit_contrast">Kontrast: %1$d%%</string>
@@ -663,6 +665,8 @@
     <string name="scan_page_limit_title">Seitenlimit erreicht</string>
     <string name="scan_page_limit_body">Dieses Dokument hat bereits %1$d von %2$d Seiten. Sieh dir ein Video an, um eine weitere Seite hinzuzufügen, oder hol dir Premium für kein Limit.</string>
     <string name="security_file_protected_original_kept">Datei geschützt. Das Original konnte nicht von seinem Speicherort gelöscht werden — lösche es manuell, wenn du es vollständig entfernen möchtest.</string>
+    <string name="security_original_kept_dialog_title">Die Originaldatei ist noch vorhanden</string>
+    <string name="security_original_kept_dialog_confirm">Verstanden</string>
     <string name="qr_protected_title">Geschützter QR-Code</string>
     <string name="qr_protected_desc">Dieser Inhalt ist passwortgeschützt. Gib das Passwort ein, um ihn zu sehen.</string>
     <string name="qr_unlock">Entsperren</string>
@@ -738,6 +742,12 @@
     <string name="study_highlighted_count">%1$d markiert</string>
     <string name="study_stop">Stoppen</string>
     <string name="study_read_all">Alles vorlesen</string>
+    <string name="study_choose_voice">Stimme wählen</string>
+    <string name="study_voice_option_label">Stimme %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">sehr hohe Qualität</string>
+    <string name="study_voice_quality_high">hohe Qualität</string>
+    <string name="study_voice_quality_normal">normale Qualität</string>
+    <string name="study_voice_quality_low">einfache Qualität</string>
     <string name="study_generate_summary">Zusammenfassung erstellen</string>
     <string name="study_summarizing">Deine Zusammenfassung wird erstellt… bei längeren Dokumenten kann das einige Minuten dauern</string>
     <string name="study_loading_document">Dein Dokument wird geladen… das kann einen Moment dauern</string>

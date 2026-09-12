@@ -47,6 +47,7 @@
     <string name="converter_subtitle">Convertis tes documents facilement</string>
     <string name="converter_select">Que veux-tu convertir ?</string>
     <string name="converter_save">Enregistrer dans Téléchargements</string>
+    <string name="converter_view_document">Voir le document</string>
 
     <!-- ── Outils PDF ──────────────────────────────── -->
     <string name="pdf_tools_title">Outils PDF</string>
@@ -657,6 +658,7 @@
     <string name="scan_session_scan_another">Scanner un autre document</string>
     <string name="scan_result_default_name_prefix">Scan_%1$s</string>
     <string name="scan_edit_page_content_desc">Modifier la page %1$d</string>
+    <string name="scan_edit_button_label">Ajuster</string>
     <string name="scan_edit_title">Modifier la page</string>
     <string name="scan_edit_brightness">Luminosité : %1$d%%</string>
     <string name="scan_edit_contrast">Contraste : %1$d%%</string>
@@ -667,6 +669,8 @@
     <string name="scan_page_limit_title">Limite de pages atteinte</string>
     <string name="scan_page_limit_body">Ce document compte déjà %1$d pages sur %2$d. Regardez une vidéo pour ajouter une page de plus, ou passez à Premium pour ne plus avoir de limite.</string>
     <string name="security_file_protected_original_kept">Fichier protégé. Impossible de supprimer l\'original de son emplacement — supprime-le manuellement si tu veux le retirer complètement.</string>
+    <string name="security_original_kept_dialog_title">Le fichier original est toujours là</string>
+    <string name="security_original_kept_dialog_confirm">Compris</string>
     <string name="qr_protected_title">Code QR protégé</string>
     <string name="qr_protected_desc">Ce contenu est protégé par un mot de passe. Entre-le pour le voir.</string>
     <string name="qr_unlock">Déverrouiller</string>
@@ -742,6 +746,12 @@
     <string name="study_highlighted_count">%1$d surlignés</string>
     <string name="study_stop">Arrêter</string>
     <string name="study_read_all">Tout lire</string>
+    <string name="study_choose_voice">Choisir une voix</string>
+    <string name="study_voice_option_label">Voix %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">très haute qualité</string>
+    <string name="study_voice_quality_high">haute qualité</string>
+    <string name="study_voice_quality_normal">qualité normale</string>
+    <string name="study_voice_quality_low">qualité basique</string>
     <string name="study_generate_summary">Générer un résumé</string>
     <string name="study_summarizing">Génération de ton résumé… cela peut prendre quelques minutes pour les documents longs</string>
     <string name="study_loading_document">Chargement de ton document… cela peut prendre un instant</string>

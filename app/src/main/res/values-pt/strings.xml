@@ -47,6 +47,7 @@
     <string name="converter_subtitle">Converta seus documentos facilmente</string>
     <string name="converter_select">O que você quer converter?</string>
     <string name="converter_save">Salvar em Downloads</string>
+    <string name="converter_view_document">Ver documento</string>
 
     <!-- ── Ferramentas PDF ──────────────────────────────── -->
     <string name="pdf_tools_title">Ferramentas PDF</string>
@@ -653,6 +654,7 @@
     <string name="scan_session_scan_another">Escanear outro documento</string>
     <string name="scan_result_default_name_prefix">Escaneamento_%1$s</string>
     <string name="scan_edit_page_content_desc">Editar página %1$d</string>
+    <string name="scan_edit_button_label">Ajustar</string>
     <string name="scan_edit_title">Editar página</string>
     <string name="scan_edit_brightness">Brilho: %1$d%%</string>
     <string name="scan_edit_contrast">Contraste: %1$d%%</string>
@@ -663,6 +665,8 @@
     <string name="scan_page_limit_title">Limite de páginas atingido</string>
     <string name="scan_page_limit_body">Este documento já tem %1$d de %2$d páginas. Assista a um vídeo para adicionar mais uma página, ou torne-se Premium para não ter limite.</string>
     <string name="security_file_protected_original_kept">Arquivo protegido. Não foi possível excluir o original do seu local — exclua-o manualmente se quiser removê-lo por completo.</string>
+    <string name="security_original_kept_dialog_title">O arquivo original ainda está lá</string>
+    <string name="security_original_kept_dialog_confirm">Entendi</string>
     <string name="qr_protected_title">Código QR protegido</string>
     <string name="qr_protected_desc">Este conteúdo está protegido por senha. Digite a senha para vê-lo.</string>
     <string name="qr_unlock">Desbloquear</string>
@@ -738,6 +742,12 @@
     <string name="study_highlighted_count">%1$d destacados</string>
     <string name="study_stop">Parar</string>
     <string name="study_read_all">Ler tudo</string>
+    <string name="study_choose_voice">Escolher voz</string>
+    <string name="study_voice_option_label">Voz %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">qualidade muito alta</string>
+    <string name="study_voice_quality_high">qualidade alta</string>
+    <string name="study_voice_quality_normal">qualidade normal</string>
+    <string name="study_voice_quality_low">qualidade básica</string>
     <string name="study_generate_summary">Gerar resumo</string>
     <string name="study_summarizing">Gerando seu resumo… pode levar alguns minutos em documentos mais longos</string>
     <string name="study_loading_document">Carregando seu documento… pode levar um momento</string>

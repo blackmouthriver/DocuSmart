@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.speech.tts.Voice
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -69,6 +70,7 @@ import com.docsmart.features.study.domain.pageForParagraph
 import com.docsmart.features.study.domain.StudyStats
 import com.docsmart.features.study.domain.StudyStatsStorage
 import com.docsmart.features.study.domain.StudySummaryExporter
+import com.docsmart.features.study.domain.StudyVoicePreference
 import com.docsmart.features.study.domain.TextSummarizer
 import com.docsmart.features.study.domain.millisToHoursAndMinutes
 import com.docsmart.features.study.domain.pomodoroCountsByWeekday
@@ -156,6 +158,13 @@ fun StudyScreen(
     val isSpeaking = remember { mutableStateOf(false) }
     val ttsReady = remember { mutableStateOf(false) }
     val currentSpeakingIndex = remember { mutableIntStateOf(-1) }
+    // Selector de voz (pedido explícito de testers 2026-09-12): solo voces
+    // instaladas en el dispositivo para el idioma actual, nunca las que
+    // requieren red (`isNetworkConnectionRequired`) -- se queda 100% local
+    // y gratis para todos, sin depender de ningún servicio en la nube.
+    val availableVoices = remember { mutableStateOf<List<Voice>>(emptyList()) }
+    val selectedVoice = remember { mutableStateOf<Voice?>(null) }
+    var showVoicePicker by remember { mutableStateOf(false) }
     // Ver comentario de `extractionComplete` -- si "Leer todo" alcanza el
     // último párrafo ya extraído mientras el resto del PDF sigue procesándose
     // en segundo plano, esto queda en true hasta que aparezcan más párrafos
@@ -188,9 +197,33 @@ fun StudyScreen(
                 }
                 ttsInstance?.setSpeechRate(0.85f)
                 ttsInstance?.setPitch(1.05f)
+
+                // Bug real encontrado al verificar en dispositivo (2026-09-12):
+                // ttsInstance.language.language puede devolver el código ISO
+                // de 3 letras ("spa") mientras que voice.locale.language usa
+                // 2 letras ("es") para el mismo idioma -- comparados directo,
+                // ninguna voz coincidía nunca (0 voces encontradas en la
+                // prueba real). Se normalizan ambos lados a ISO3 antes de
+                // comparar.
+                val currentIso3Language = runCatching { Locale.getDefault().isO3Language }.getOrNull()
+                val voices = ttsInstance?.voices
+                    ?.filter { voice ->
+                        !voice.isNetworkConnectionRequired &&
+                            runCatching { voice.locale.isO3Language }.getOrNull() == currentIso3Language
+                    }
+                    ?.sortedByDescending { it.quality }
+                    .orEmpty()
+                availableVoices.value = voices
+                val savedVoiceName = StudyVoicePreference.load(context)
+                val matchedVoice = voices.find { it.name == savedVoiceName }
+                if (matchedVoice != null) {
+                    ttsInstance?.voice = matchedVoice
+                }
+                selectedVoice.value = matchedVoice ?: ttsInstance?.voice
+
                 ttsRef.value = ttsInstance
                 ttsReady.value = true
-                Timber.d("TTS listo")
+                Timber.d("TTS listo, ${voices.size} voces disponibles para $currentIso3Language")
             }
         }
         onDispose {
@@ -370,6 +403,19 @@ fun StudyScreen(
             StudyStatsDialog(
                 stats = remember(showStats) { StudyStatsStorage.loadStats(context) },
                 onDismiss = { showStats = false }
+            )
+        }
+        if (showVoicePicker) {
+            VoiceSelectorDialog(
+                voices = availableVoices.value,
+                selectedVoice = selectedVoice.value,
+                onVoiceSelected = { voice ->
+                    ttsRef.value?.voice = voice
+                    selectedVoice.value = voice
+                    StudyVoicePreference.save(context, voice.name)
+                    showVoicePicker = false
+                },
+                onDismiss = { showVoicePicker = false }
             )
         }
         Column(
@@ -669,7 +715,9 @@ fun StudyScreen(
                     onDeleteDocument = { progress ->
                         StudyReadingProgressStorage.remove(context, progress.uri)
                         readingHistory = StudyReadingProgressStorage.loadAll(context)
-                    }
+                    },
+                    availableVoices = availableVoices.value,
+                    onVoiceSelectorClick = { showVoicePicker = true }
                 )
 
                 // ── Tab Notas ─────────────────────────
@@ -787,7 +835,9 @@ private fun ReadingTab(
     onSelectDoc: () -> Unit,
     readingHistory: List<ReadingProgress>,
     onResumeDocument: (ReadingProgress) -> Unit,
-    onDeleteDocument: (ReadingProgress) -> Unit
+    onDeleteDocument: (ReadingProgress) -> Unit,
+    availableVoices: List<Voice> = emptyList(),
+    onVoiceSelectorClick: () -> Unit = {}
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -874,6 +924,24 @@ private fun ReadingTab(
                                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                     modifier = Modifier.size(18.dp)
                                 )
+                            }
+                            // ── Elegir voz (pedido explícito de testers
+                            // 2026-09-12) -- solo si el motor TTS del
+                            // dispositivo tiene más de una voz instalada
+                            // para el idioma actual; si solo hay una no
+                            // tiene sentido mostrar un selector.
+                            if (availableVoices.size > 1) {
+                                IconButton(
+                                    onClick = onVoiceSelectorClick,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.RecordVoiceOver,
+                                        contentDescription = stringResource(R.string.study_choose_voice),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                             // ── Botón leer todo ───────
                             FilledTonalButton(
@@ -1705,6 +1773,62 @@ private fun StudyStatsDialog(stats: StudyStats, onDismiss: () -> Unit) {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
         }
     )
+}
+
+// Selector de voz para "Lectura en voz alta" (pedido explícito de testers
+// 2026-09-12): lista las voces on-device disponibles para el idioma actual
+// -- nunca las que requieren red, ver el filtro en la inicialización del
+// TTS más arriba (100% local y gratis, sin depender de ningún servicio en
+// la nube).
+@Composable
+private fun VoiceSelectorDialog(
+    voices: List<Voice>,
+    selectedVoice: Voice?,
+    onVoiceSelected: (Voice) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.study_choose_voice)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                voices.forEachIndexed { index, voice ->
+                    val isSelected = voice.name == selectedVoice?.name
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable { onVoiceSelected(voice) }
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        RadioButton(selected = isSelected, onClick = { onVoiceSelected(voice) })
+                        Text(
+                            text = stringResource(
+                                R.string.study_voice_option_label,
+                                index + 1,
+                                voice.locale.displayName,
+                                voiceQualityLabel(voice.quality)
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
+        }
+    )
+}
+
+@Composable
+private fun voiceQualityLabel(quality: Int): String = when (quality) {
+    Voice.QUALITY_VERY_HIGH -> stringResource(R.string.study_voice_quality_very_high)
+    Voice.QUALITY_HIGH      -> stringResource(R.string.study_voice_quality_high)
+    Voice.QUALITY_NORMAL    -> stringResource(R.string.study_voice_quality_normal)
+    else                    -> stringResource(R.string.study_voice_quality_low)
 }
 
 @Composable

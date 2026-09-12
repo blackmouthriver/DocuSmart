@@ -47,6 +47,7 @@
     <string name="converter_subtitle">ドキュメントを簡単に変換</string>
     <string name="converter_select">何を変換しますか?</string>
     <string name="converter_save">ダウンロードに保存</string>
+    <string name="converter_view_document">ドキュメントを見る</string>
 
     <!-- ── PDFツール ──────────────────────────────── -->
     <string name="pdf_tools_title">PDFツール</string>
@@ -657,6 +658,7 @@
     <string name="scan_session_scan_another">別のドキュメントをスキャン</string>
     <string name="scan_result_default_name_prefix">スキャン_%1$s</string>
     <string name="scan_edit_page_content_desc">%1$dページ目を編集</string>
+    <string name="scan_edit_button_label">調整</string>
     <string name="scan_edit_title">ページを編集</string>
     <string name="scan_edit_brightness">明るさ: %1$d%%</string>
     <string name="scan_edit_contrast">コントラスト: %1$d%%</string>
@@ -667,6 +669,8 @@
     <string name="scan_page_limit_title">ページ数の上限に達しました</string>
     <string name="scan_page_limit_body">このドキュメントはすでに%2$dページ中%1$dページあります。動画を見てページを追加するか、Premiumで上限をなくしましょう。</string>
     <string name="security_file_protected_original_kept">ファイルを保護しました。元のファイルをその場所から削除できませんでした — 完全に削除したい場合は手動で削除してください。</string>
+    <string name="security_original_kept_dialog_title">元のファイルはまだ残っています</string>
+    <string name="security_original_kept_dialog_confirm">わかりました</string>
     <string name="qr_protected_title">保護されたQRコード</string>
     <string name="qr_protected_desc">このコンテンツはパスワードで保護されています。表示するには入力してください。</string>
     <string name="qr_unlock">ロック解除</string>
@@ -742,6 +746,12 @@
     <string name="study_highlighted_count">%1$d件ハイライト</string>
     <string name="study_stop">停止</string>
     <string name="study_read_all">すべて読み上げる</string>
+    <string name="study_choose_voice">音声を選ぶ</string>
+    <string name="study_voice_option_label">音声 %1$d — %2$s（%3$s）</string>
+    <string name="study_voice_quality_very_high">非常に高音質</string>
+    <string name="study_voice_quality_high">高音質</string>
+    <string name="study_voice_quality_normal">標準音質</string>
+    <string name="study_voice_quality_low">基本音質</string>
     <string name="study_generate_summary">要約を生成</string>
     <string name="study_summarizing">要約を生成しています…長い文書の場合は数分かかることがあります</string>
     <string name="study_loading_document">文書を読み込んでいます…少し時間がかかる場合があります</string>

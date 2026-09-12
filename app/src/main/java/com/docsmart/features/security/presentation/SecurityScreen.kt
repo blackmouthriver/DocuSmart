@@ -102,6 +102,30 @@ fun SecurityScreen(
         }
     }
 
+    // Diálogo bloqueante para el aviso de "original no eliminado" (en vez de
+    // un Snackbar): los testers reportaban que Carpeta Segura "no tiene
+    // sentido" porque el archivo original seguía visible -- el aviso ya
+    // existía, pero como Snackbar pasaba desapercibido.
+    uiState.originalNotDeletedWarning?.let { warning ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissOriginalNotDeletedWarning() },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.WarningAmber,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text(stringResource(R.string.security_original_kept_dialog_title)) },
+            text = { Text(warning) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissOriginalNotDeletedWarning() }) {
+                    Text(stringResource(R.string.security_original_kept_dialog_confirm))
+                }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost   = { SnackbarHost(snackbarHostState) },
         // Fondo animado global (backlog UX 2026-09-06): transparente para

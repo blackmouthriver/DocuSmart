@@ -47,6 +47,7 @@
     <string name="converter_subtitle">Convierte tus documentos fácilmente</string>
     <string name="converter_select">¿Qué quieres convertir?</string>
     <string name="converter_save">Guardar en Descargas</string>
+    <string name="converter_view_document">Ver documento</string>
 
     <!-- ── PDF Tools ──────────────────────────────── -->
     <string name="pdf_tools_title">Herramientas PDF</string>
@@ -663,6 +664,7 @@
     <string name="scan_session_title">Archivos escaneados</string>
     <string name="scan_session_scan_another">Escanear otro documento</string>
     <string name="scan_edit_page_content_desc">Editar página %1$d</string>
+    <string name="scan_edit_button_label">Ajustar</string>
     <string name="scan_edit_title">Editar página</string>
     <string name="scan_edit_brightness">Brillo: %1$d%%</string>
     <string name="scan_edit_contrast">Contraste: %1$d%%</string>
@@ -673,6 +675,8 @@
     <string name="scan_page_limit_title">Límite de páginas alcanzado</string>
     <string name="scan_page_limit_body">Este documento ya tiene %1$d de %2$d páginas. Mira un video para agregar una página más, o pasa a Premium para no tener límite.</string>
     <string name="security_file_protected_original_kept">Archivo protegido. No se pudo eliminar el original de su ubicación — bórralo manualmente si quieres quitarlo por completo.</string>
+    <string name="security_original_kept_dialog_title">El archivo original sigue en su lugar</string>
+    <string name="security_original_kept_dialog_confirm">Entendido</string>
     <string name="qr_protected_title">Código QR protegido</string>
     <string name="qr_protected_desc">Este contenido está protegido con contraseña. Ingrésala para verlo.</string>
     <string name="qr_unlock">Desbloquear</string>
@@ -748,6 +752,14 @@
     <string name="study_highlighted_count">%1$d resaltados</string>
     <string name="study_stop">Detener</string>
     <string name="study_read_all">Leer todo</string>
+    <!-- Selector de voz TTS (pedido explícito de testers 2026-09-12): solo
+         voces on-device, sin nube. -->
+    <string name="study_choose_voice">Elegir voz</string>
+    <string name="study_voice_option_label">Voz %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">calidad muy alta</string>
+    <string name="study_voice_quality_high">calidad alta</string>
+    <string name="study_voice_quality_normal">calidad normal</string>
+    <string name="study_voice_quality_low">calidad básica</string>
     <string name="study_generate_summary">Generar resumen</string>
     <string name="study_summarizing">Generando tu resumen… puede tardar unos minutos según el tamaño del documento</string>
     <string name="study_loading_document">Cargando tu documento… puede tardar unos momentos</string>

@@ -47,6 +47,7 @@
     <string name="converter_subtitle">轻松转换你的文档</string>
     <string name="converter_select">你想转换什么？</string>
     <string name="converter_save">保存到下载</string>
+    <string name="converter_view_document">查看文档</string>
 
     <!-- ── PDF 工具 ──────────────────────────────── -->
     <string name="pdf_tools_title">PDF 工具</string>
@@ -657,6 +658,7 @@
     <string name="scan_session_scan_another">扫描其他文档</string>
     <string name="scan_result_default_name_prefix">扫描_%1$s</string>
     <string name="scan_edit_page_content_desc">编辑第 %1$d 页</string>
+    <string name="scan_edit_button_label">调整</string>
     <string name="scan_edit_title">编辑页面</string>
     <string name="scan_edit_brightness">亮度：%1$d%%</string>
     <string name="scan_edit_contrast">对比度：%1$d%%</string>
@@ -667,6 +669,8 @@
     <string name="scan_page_limit_title">已达到页数上限</string>
     <string name="scan_page_limit_body">此文档已有 %1$d/%2$d 页。观看视频以添加一页，或升级到高级版以取消限制。</string>
     <string name="security_file_protected_original_kept">文件已受保护。无法从原位置删除原文件 — 如需彻底移除，请手动删除。</string>
+    <string name="security_original_kept_dialog_title">原文件仍在原位置</string>
+    <string name="security_original_kept_dialog_confirm">知道了</string>
     <string name="qr_protected_title">受保护的二维码</string>
     <string name="qr_protected_desc">此内容已用密码保护，请输入密码以查看。</string>
     <string name="qr_unlock">解锁</string>
@@ -742,6 +746,12 @@
     <string name="study_highlighted_count">%1$d 处高亮</string>
     <string name="study_stop">停止</string>
     <string name="study_read_all">朗读全部</string>
+    <string name="study_choose_voice">选择声音</string>
+    <string name="study_voice_option_label">声音 %1$d — %2$s（%3$s）</string>
+    <string name="study_voice_quality_very_high">极高音质</string>
+    <string name="study_voice_quality_high">高音质</string>
+    <string name="study_voice_quality_normal">普通音质</string>
+    <string name="study_voice_quality_low">基础音质</string>
     <string name="study_generate_summary">生成摘要</string>
     <string name="study_summarizing">正在生成摘要…文档较长时可能需要几分钟</string>
     <string name="study_loading_document">正在加载文档…可能需要一些时间</string>

@@ -35,6 +35,14 @@ data class SecurityUiState(
     val secureFiles          : List<File>          = emptyList(),
     val error                : String?             = null,
     val successMessage       : String?             = null,
+    // Pedido explícito del usuario 2026-09-12 (feedback de testers): antes
+    // este aviso salía por el mismo Snackbar de éxito genérico -- pasaba
+    // desapercibido, así que el usuario creía que "Carpeta Segura" no
+    // funciona cuando en realidad Android le negó el borrado del original
+    // (algunos proveedores de almacenamiento, ej. Google Fotos, no lo
+    // permiten vía SAF). Se separa a un diálogo que exige confirmación
+    // explícita en vez de un aviso que se puede perder.
+    val originalNotDeletedWarning: String?         = null,
     // ── PDF Password ──────────────────────────────────────────────────────────
     val pdfPasswordMode      : PdfPasswordMode?    = null,
     val isPdfProcessing      : Boolean             = false,
@@ -160,7 +168,8 @@ class SecurityViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         secureFiles    = secureFiles,
-                        successMessage = if (result.originalDeleted) successMessage else originalKeptMessage
+                        successMessage = if (result.originalDeleted) successMessage else null,
+                        originalNotDeletedWarning = if (result.originalDeleted) null else originalKeptMessage
                     )
                 }
             } else {
@@ -193,7 +202,8 @@ class SecurityViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         secureFiles    = files,
-                        successMessage = if (originalDeleted) successMessage else originalKeptMessage
+                        successMessage = if (originalDeleted) successMessage else null,
+                        originalNotDeletedWarning = if (originalDeleted) null else originalKeptMessage
                     )
                 }
             } catch (e: Exception) {
@@ -325,6 +335,7 @@ class SecurityViewModel @Inject constructor(
     }
 
     fun dismissSuccess() { _uiState.update { it.copy(successMessage = null) } }
+    fun dismissOriginalNotDeletedWarning() { _uiState.update { it.copy(originalNotDeletedWarning = null) } }
     fun dismissError()   { _uiState.update { it.copy(error = null) } }
     fun goToSetupPin()   { _uiState.update { it.copy(screenState = SecurityScreenState.SETUP_PIN) } }
     fun goToLocked()     { _uiState.update { it.copy(screenState = SecurityScreenState.LOCKED, error = null) } }
