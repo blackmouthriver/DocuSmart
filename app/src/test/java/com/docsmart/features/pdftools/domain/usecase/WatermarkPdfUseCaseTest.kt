@@ -4,10 +4,13 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import com.itextpdf.kernel.geom.Rectangle
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
+import com.itextpdf.kernel.pdf.canvas.parser.listener.RegexBasedLocationExtractionStrategy
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -95,6 +98,54 @@ class WatermarkPdfUseCaseTest {
         assertTrue(result is PdfToolResult.Error)
     }
 
+    // Bug real reportado por testers 2026-09-13: "no se ve la marca de agua"
+    // -- el test anterior solo verificaba que el texto fuera extraíble, lo
+    // cual pasaba incluso con 0.15 de opacidad (casi invisible). Este test
+    // habría fallado con el valor viejo si alguna vez se hubiera bajado por
+    // error, y sigue protegiendo contra que alguien lo vuelva a bajar sin
+    // darse cuenta de que queda casi blanco sobre blanco.
+    @Test
+    fun `la opacidad de la marca de agua es suficiente para verse`() {
+        assertTrue(
+            WatermarkPdfUseCase.WATERMARK_OPACITY >= 0.25f,
+            "opacidad demasiado baja para verse con claridad: ${WatermarkPdfUseCase.WATERMARK_OPACITY}"
+        )
+    }
+
+    // Bug real reportado por testers 2026-09-13: la marca de agua se
+    // centraba respecto al origen (0,0) en vez del centro real de la
+    // página -- invisible en cualquier PDF cuyo MediaBox no arranque en
+    // (0,0) (común en escaneos o en un PDF ya procesado por Recortar/Rotar).
+    @Test
+    fun `la marca de agua queda dentro del area visible aunque el MediaBox no arranque en cero`() = runTest {
+        stubResolver(createTestPdfWithOffsetMediaBox())
+
+        val result = useCase(mockk<Uri>(), watermarkText = "CONFIDENCIAL", messages = messages)
+
+        assertTrue(result is PdfToolResult.Success)
+        val file = (result as PdfToolResult.Success).outputFile
+        val reader = PdfReader(file)
+        val pdf = PdfDocument(reader)
+        val page = pdf.getPage(1)
+        val pageSize = page.pageSize
+
+        val strategy = RegexBasedLocationExtractionStrategy("CONFIDENCIAL")
+        PdfCanvasProcessor(strategy).processPageContent(page)
+        val locations = strategy.resultantLocations
+        pdf.close()
+
+        assertTrue(locations.isNotEmpty(), "no se encontró la marca de agua en la página")
+        val rect = locations.first().rectangle
+        assertTrue(
+            rect.left >= pageSize.left && rect.right <= pageSize.right,
+            "marca de agua fuera del ancho visible: texto=$rect página=$pageSize"
+        )
+        assertTrue(
+            rect.bottom >= pageSize.bottom && rect.top <= pageSize.top,
+            "marca de agua fuera del alto visible: texto=$rect página=$pageSize"
+        )
+    }
+
     @Test
     fun `texto largo no lanza excepcion, se ajusta el tamano de fuente`() = runTest {
         stubResolver(createTestPdf(pages = 1))
@@ -119,6 +170,22 @@ class WatermarkPdfUseCaseTest {
         val out = ByteArrayOutputStream()
         val pdfDoc = PdfDocument(PdfWriter(out))
         repeat(pages) { pdfDoc.addNewPage() }
+        pdfDoc.close()
+        return out.toByteArray()
+    }
+
+    // MediaBox desplazado lejos de (0,0) -- reproduce el caso real que
+    // exponía el bug de posicionamiento (escaneos, o un PDF que ya pasó por
+    // Recortar/Rotar). El offset es grande a propósito: con el cálculo viejo
+    // (sin sumar pageSize.left/bottom) la marca de agua habría quedado
+    // centrada en (297,421), muy lejos del área visible real
+    // ([1000,1595]x[1500,2342]) -- cualquier ambigüedad de redondeo queda
+    // descartada.
+    private fun createTestPdfWithOffsetMediaBox(): ByteArray {
+        val out = ByteArrayOutputStream()
+        val pdfDoc = PdfDocument(PdfWriter(out))
+        val page = pdfDoc.addNewPage()
+        page.setMediaBox(Rectangle(1000f, 1500f, 595f, 842f))
         pdfDoc.close()
         return out.toByteArray()
     }

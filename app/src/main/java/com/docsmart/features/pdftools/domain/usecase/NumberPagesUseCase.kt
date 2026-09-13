@@ -62,29 +62,32 @@ class NumberPagesUseCase @Inject constructor(
             val outputFile = createOutputFile(outputFileName ?: "Numbered")
             val font       = PdfFontFactory.createFont(StandardFonts.HELVETICA)
 
-            val pdf        = PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile))
-            val totalPages = pdf.numberOfPages
+            // .use{} en vez de pdf.close() manual (mismo criterio ya
+            // documentado como bug real en SplitPdfUseCase/CompressPdfUseCase):
+            // una excepción a mitad del for no debe dejar el PdfDocument sin
+            // cerrar ni el archivo de salida a medio escribir.
+            var totalPages = 0
+            PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
+                totalPages = pdf.numberOfPages
+                for (pageNumber in 1..totalPages) {
+                    val page     = pdf.getPage(pageNumber)
+                    val pageSize = page.pageSize
+                    val text     = labelFor(format, pageNumber, totalPages, messages.pageOfTotalTemplate)
+
+                    val pdfCanvas = PdfCanvas(page)
+                    val canvas    = Canvas(pdfCanvas, pageSize)
+                    canvas.setFont(font).setFontSize(FONT_SIZE)
+                    canvas.showTextAligned(
+                        text, pageSize.width / 2, BOTTOM_MARGIN, TextAlignment.CENTER
+                    )
+                    canvas.close()
+                }
+            }
 
             if (totalPages == 0) {
-                pdf.close()
                 outputFile.delete()
                 return@withContext PdfToolResult.Error(messages.noPages)
             }
-
-            for (pageNumber in 1..totalPages) {
-                val page     = pdf.getPage(pageNumber)
-                val pageSize = page.pageSize
-                val text     = labelFor(format, pageNumber, totalPages, messages.pageOfTotalTemplate)
-
-                val pdfCanvas = PdfCanvas(page)
-                val canvas    = Canvas(pdfCanvas, pageSize)
-                canvas.setFont(font).setFontSize(FONT_SIZE)
-                canvas.showTextAligned(
-                    text, pageSize.width / 2, BOTTOM_MARGIN, TextAlignment.CENTER
-                )
-                canvas.close()
-            }
-            pdf.close()
 
             if (outputFile.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)

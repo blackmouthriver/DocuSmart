@@ -77,23 +77,29 @@ class ComparePdfUseCase @Inject constructor(
             cacheFileB = copyUriToCache(pdfUriB, "compareB")
                 ?: return@withContext PdfToolResult.Error(messages.readErrorB)
 
-            val pdfA = PdfDocument(PdfReader(cacheFileA))
-            val pdfB = PdfDocument(PdfReader(cacheFileB))
-            val pagesA = pdfA.numberOfPages
-            val pagesB = pdfB.numberOfPages
-            val totalPages = maxOf(pagesA, pagesB)
+            // .use{} anidado en vez de close() manual (mismo criterio ya
+            // documentado como bug real en SplitPdfUseCase/CompressPdfUseCase):
+            // una excepción al extraer texto de una página malformada no debe
+            // dejar ninguno de los dos PdfDocument sin cerrar.
+            var totalPages = 0
+            lateinit var pageResults: List<PageDiffResult>
+            PdfDocument(PdfReader(cacheFileA)).use { pdfA ->
+                PdfDocument(PdfReader(cacheFileB)).use { pdfB ->
+                    val pagesA = pdfA.numberOfPages
+                    val pagesB = pdfB.numberOfPages
+                    totalPages = maxOf(pagesA, pagesB)
 
-            val pageResults = (1..totalPages).map { pageNumber ->
-                val textA = if (pageNumber <= pagesA) {
-                    PdfTextExtractor.getTextFromPage(pdfA.getPage(pageNumber))
-                } else null
-                val textB = if (pageNumber <= pagesB) {
-                    PdfTextExtractor.getTextFromPage(pdfB.getPage(pageNumber))
-                } else null
-                buildPageDiff(pageNumber, textA, textB)
+                    pageResults = (1..totalPages).map { pageNumber ->
+                        val textA = if (pageNumber <= pagesA) {
+                            PdfTextExtractor.getTextFromPage(pdfA.getPage(pageNumber))
+                        } else null
+                        val textB = if (pageNumber <= pagesB) {
+                            PdfTextExtractor.getTextFromPage(pdfB.getPage(pageNumber))
+                        } else null
+                        buildPageDiff(pageNumber, textA, textB)
+                    }
+                }
             }
-            pdfA.close()
-            pdfB.close()
 
             val differingPages = pageResults.count { it.hasDifferences }
             val outputFile = createOutputFile(outputFileName ?: "Comparacion")

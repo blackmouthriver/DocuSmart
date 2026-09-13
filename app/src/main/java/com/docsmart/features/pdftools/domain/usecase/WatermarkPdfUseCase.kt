@@ -38,7 +38,17 @@ class WatermarkPdfUseCase @Inject constructor(
     companion object {
         private const val TAG = "WatermarkPdfUseCase"
         private const val WATERMARK_ANGLE_DEGREES = 45.0
-        private const val WATERMARK_OPACITY = 0.15f
+        // Bug real reportado por testers 2026-09-13: 0.15 (15% de opacidad)
+        // combinado con ColorConstants.GRAY (gris medio) se renderiza casi
+        // blanco sobre blanco (~93% blanco) -- técnicamente se dibuja, pero
+        // resulta invisible a simple vista en la mayoría de documentos. Nunca
+        // se había ajustado desde el commit inicial de esta función. Subido a
+        // 0.3 (30%), suficiente para verse con claridad sin tapar el
+        // contenido original de la página.
+        // internal (no private): WatermarkPdfUseCaseTest verifica que se
+        // mantenga por encima de un umbral visible -- 0.15 pasó desapercibido
+        // como "casi invisible" precisamente porque nada lo cubría.
+        internal const val WATERMARK_OPACITY = 0.3f
         private const val BASE_FONT_SIZE = 40f
         private const val MIN_FONT_SIZE = 8f
         private const val MAX_WIDTH_FACTOR = 1.3f
@@ -70,20 +80,23 @@ class WatermarkPdfUseCase @Inject constructor(
             val font       = PdfFontFactory.createFont(StandardFonts.HELVETICA)
             val gState     = PdfExtGState().setFillOpacity(WATERMARK_OPACITY)
 
-            val pdf        = PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile))
-            val totalPages = pdf.numberOfPages
+            // .use{} en vez de pdf.close() manual (mismo criterio ya
+            // documentado como bug real en SplitPdfUseCase/CompressPdfUseCase):
+            // una excepción a mitad del for no debe dejar el PdfDocument sin
+            // cerrar ni el archivo de salida a medio escribir.
+            var totalPages = 0
+            PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
+                totalPages = pdf.numberOfPages
+                for (pageNumber in 1..totalPages) {
+                    val page = pdf.getPage(pageNumber)
+                    drawWatermark(page, watermarkText, font, gState)
+                }
+            }
 
             if (totalPages == 0) {
-                pdf.close()
                 outputFile.delete()
                 return@withContext PdfToolResult.Error(messages.noPages)
             }
-
-            for (pageNumber in 1..totalPages) {
-                val page = pdf.getPage(pageNumber)
-                drawWatermark(page, watermarkText, font, gState)
-            }
-            pdf.close()
 
             if (outputFile.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
@@ -117,8 +130,16 @@ class WatermarkPdfUseCase @Inject constructor(
         val cos = cos(angleRad).toFloat()
         val sin = sin(angleRad).toFloat()
 
-        val centerX = pageSize.width / 2
-        val centerY = pageSize.height / 2
+        // Bug real reportado por testers 2026-09-13: `pageSize.width/height`
+        // son solo las DIMENSIONES del MediaBox, no sus coordenadas -- un
+        // PDF cuyo MediaBox no arranca en (0,0) (común en escaneos, o en un
+        // PDF ya procesado antes por Recortar/Rotar de esta misma app) hacía
+        // que la marca de agua se dibujara centrada respecto al origen
+        // (0,0) en vez del centro real de la página, pudiendo caer fuera del
+        // área visible. Se suma pageSize.left/pageSize.bottom para centrar
+        // sobre las coordenadas reales de la página.
+        val centerX = pageSize.left + pageSize.width / 2
+        val centerY = pageSize.bottom + pageSize.height / 2
         val startX  = centerX - (textWidth / 2) * cos
         val startY  = centerY - (textWidth / 2) * sin
 
