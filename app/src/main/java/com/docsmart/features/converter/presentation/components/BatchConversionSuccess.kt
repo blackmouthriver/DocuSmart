@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
+import com.docsmart.core.ui.components.TooltipIconButton
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.converter.domain.model.BatchConversionItem
@@ -195,20 +196,23 @@ private fun BatchResultRow(
                 // testers): mismo botón "ver documento" que la conversión
                 // simple, acá junto a Compartir en vez de un botón grande
                 // (cada fila ya representa un archivo distinto del lote).
-                IconButton(onClick = { onOpenDocument(result.outputFile) }) {
-                    Icon(
-                        Icons.Rounded.Visibility, null,
-                        tint     = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                IconButton(onClick = { shareFile(context, result.outputFile, shareLabel) }) {
-                    Icon(
-                        Icons.Rounded.Share, null,
-                        tint     = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+                // Tooltip agregado el mismo día (feedback de testers): estos
+                // dos íconos no tenían contentDescription ni texto visible,
+                // así que tampoco eran accesibles para lectores de pantalla.
+                TooltipIconButton(
+                    onClick     = { onOpenDocument(result.outputFile) },
+                    tooltipText = stringResource(R.string.converter_view_document),
+                    icon        = Icons.Rounded.Visibility,
+                    tint        = MaterialTheme.colorScheme.primary,
+                    iconSize    = 18.dp
+                )
+                TooltipIconButton(
+                    onClick     = { shareFile(context, result.outputFile, shareLabel) },
+                    tooltipText = stringResource(R.string.converter_share),
+                    icon        = Icons.Rounded.Share,
+                    tint        = MaterialTheme.colorScheme.primary,
+                    iconSize    = 18.dp
+                )
             }
         }
     }

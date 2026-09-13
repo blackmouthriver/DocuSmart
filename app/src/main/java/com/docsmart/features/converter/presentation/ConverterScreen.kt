@@ -34,6 +34,7 @@ import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DailyLimitDialog
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.TooltipIconButton
 import com.docsmart.core.ui.theme.*
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
@@ -537,13 +538,12 @@ private fun ConversionDetailCard(
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.Rounded.ArrowBackIosNew,
-                    contentDescription = stringResource(R.string.general_back_action),
-                    tint               = MaterialTheme.colorScheme.primary
-                )
-            }
+            TooltipIconButton(
+                onClick     = onBack,
+                tooltipText = stringResource(R.string.general_back_action),
+                icon        = Icons.Rounded.ArrowBackIosNew,
+                tint        = MaterialTheme.colorScheme.primary
+            )
             Text(
                 text       = type.localizedLabel(),
                 style      = MaterialTheme.typography.titleLarge,
@@ -674,6 +674,7 @@ private fun ConversionDetailCard(
 // seleccionadas para una conversión con origen Imagen (corrige el hallazgo
 // de QA "vista en carrusel se ve vacía": antes no existía ningún carrusel,
 // solo un texto de conteo).
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectedImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -691,27 +692,35 @@ private fun SelectedImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
                 // 2026-09-12, "botones pequeños") -- el badge visual se
                 // mantiene chico (24dp) para no tapar la miniatura de 84dp,
                 // pero el área táctil real ahora cumple el mínimo de Android.
-                IconButton(
-                    onClick = { onRemove(uri) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(48.dp)
+                // Tooltip agregado el mismo día (feedback de testers): un
+                // badge sin texto sobre una miniatura chica no siempre se
+                // reconoce como tocable a primera vista.
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(stringResource(R.string.general_delete)) } },
+                    state = rememberTooltipState(),
+                    modifier = Modifier.align(Alignment.TopEnd)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                shape = MaterialTheme.shapes.extraSmall
-                            ),
-                        contentAlignment = Alignment.Center
+                    IconButton(
+                        onClick = { onRemove(uri) },
+                        modifier = Modifier.size(48.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.general_delete),
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(14.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.general_delete),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
             }
