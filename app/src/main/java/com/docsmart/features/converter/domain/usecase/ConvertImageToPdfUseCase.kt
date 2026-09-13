@@ -40,12 +40,17 @@ class ConvertImageToPdfUseCase @Inject constructor(
         // buena fuera la cámara del teléfono. Subido a un piso decente
         // (BASE_MULTIPLIER x2 ≈ 144 DPI) para que ningún usuario reciba un
         // documento que se vea roto; "Alta resolución" Premium (backlog UX
-        // #33) sube proporcionalmente (x4 ≈ 288 DPI, calidad de impresión),
-        // manteniendo el mismo salto relativo (el doble de nitidez) entre
-        // planes. El tamaño en puntos del recuadro de dibujo no cambia
-        // (misma página, mismo layout) en ningún caso -- solo cuántos
+        // #33) sube proporcionalmente (x4 ≈ 288 DPI, calidad de impresión).
+        //
+        // Feedback real de testers 2026-09-13: 144 DPI seguía viéndose
+        // borroso/pixelado al leer texto en pantallas modernas -- 144 DPI es
+        // apenas el piso de "legible", no "nítido". Se sube el piso gratuito
+        // a BASE_MULTIPLIER x3 ≈ 216 DPI (decisión explícita del usuario:
+        // solo se sube el piso gratuito, Premium se mantiene en x4 ≈ 288 DPI
+        // como diferenciador). El tamaño en puntos del recuadro de dibujo no
+        // cambia (misma página, mismo layout) en ningún caso -- solo cuántos
         // píxeles reales del bitmap se conservan dentro de ese recuadro.
-        private const val BASE_MULTIPLIER     = 2
+        private const val BASE_MULTIPLIER     = 3
         private const val HIGH_RES_MULTIPLIER = 4
     }
 
