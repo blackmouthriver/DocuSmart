@@ -474,11 +474,13 @@ fun StudyScreen(
                         // distinguiera del resto de la fila -- ahora cada
                         // uno lleva su propio círculo (borde + fondo
                         // tintado, contraste con el color del ícono).
+                        // Botones subidos de 36dp a 48dp (auditoría de
+                        // testers 2026-09-12, "botones pequeños").
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             IconButton(
                                 onClick = { docLauncher.launch(arrayOf("application/pdf")) },
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(48.dp)
                                     .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
                                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
                             ) {
@@ -492,7 +494,7 @@ fun StudyScreen(
                             IconButton(
                                 onClick = { showStats = true },
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(48.dp)
                                     .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
                                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
                             ) {
@@ -909,10 +911,11 @@ private fun ReadingTab(
                             // (reemplaza el resaltado por-fila de antes --
                             // ya no hay filas de párrafo que tocar, así que
                             // "marcar" pasa a aplicar al que suena ahora)
+                            // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                             IconButton(
                                 onClick = onToggleHighlightCurrent,
                                 enabled = isSpeaking,
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = if (isCurrentHighlighted)
@@ -931,9 +934,10 @@ private fun ReadingTab(
                             // para el idioma actual; si solo hay una no
                             // tiene sentido mostrar un selector.
                             if (availableVoices.size > 1) {
+                                // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                                 IconButton(
                                     onClick = onVoiceSelectorClick,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.RecordVoiceOver,
@@ -1118,7 +1122,8 @@ private fun ReadingHistoryCard(progress: ReadingProgress, onClick: () -> Unit, o
                 tint               = MaterialTheme.colorScheme.primary,
                 modifier           = Modifier.size(28.dp)
             )
-            IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+            // Subido de 28dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
+            IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector        = Icons.Rounded.DeleteOutline,
                     contentDescription = stringResource(R.string.study_remove_from_history),
@@ -1419,9 +1424,10 @@ private fun NotesTab(
                         modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
                         placeholder   = { Text(stringResource(R.string.study_note_content_placeholder)) },
                         trailingIcon  = {
+                            // Subido de 40dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                             IconButton(
                                 onClick  = { startVoiceInput() },
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector        = if (isListening)
@@ -1624,13 +1630,14 @@ private fun NotesTab(
                                     overflow   = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
+                            // Subido de 28dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                             IconButton(
                                 onClick  = {
                                     val updated = savedNotes.filter { it.id != note.id }
                                     StudyNotesStorage.saveNotes(context, updated)
                                     savedNotes = updated
                                 },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector        = Icons.Rounded.DeleteOutline,

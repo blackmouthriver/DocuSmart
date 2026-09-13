@@ -96,7 +96,8 @@ fun SplitPdfScreen(
                                     onClick = {
                                         if (fromPage > 1) onFromPageChange(fromPage - 1)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
                                         Icons.Rounded.Remove, null,
@@ -112,7 +113,8 @@ fun SplitPdfScreen(
                                 )
                                 IconButton(
                                     onClick = { onFromPageChange(fromPage + 1) },
-                                    modifier = Modifier.size(36.dp)
+                                    // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
                                         Icons.Rounded.Add, null,
@@ -140,7 +142,8 @@ fun SplitPdfScreen(
                                     onClick = {
                                         if (toPage > fromPage) onToPageChange(toPage - 1)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
                                         Icons.Rounded.Remove, null,
@@ -156,7 +159,8 @@ fun SplitPdfScreen(
                                 )
                                 IconButton(
                                     onClick = { onToPageChange(toPage + 1) },
-                                    modifier = Modifier.size(36.dp)
+                                    // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
                                         Icons.Rounded.Add, null,

@@ -179,9 +179,13 @@ fun DocuSmartIconButton(
     tint: androidx.compose.ui.graphics.Color =
         MaterialTheme.colorScheme.onSurfaceVariant
 ) {
+    // Subido de 40dp a 48dp (auditoría de testers 2026-09-12, "botones
+    // pequeños") -- sin este mínimo, cualquier pantalla futura que use este
+    // componente compartido heredaría un área táctil por debajo de lo que
+    // Material3 garantiza por defecto.
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(40.dp)
+        modifier = modifier.size(48.dp)
     ) {
         Icon(
             imageVector = icon,

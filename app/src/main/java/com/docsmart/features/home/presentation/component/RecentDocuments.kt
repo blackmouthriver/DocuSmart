@@ -60,7 +60,11 @@ fun RecentDocuments(
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            TextButton(onClick = onSeeAllClick) {
+            // Auditoría de testers 2026-09-12 ("botones pequeños"): este
+            // TextButton por defecto renderizaba a ~38dp de alto, por debajo
+            // del mínimo táctil de Android -- se fuerza explícitamente a
+            // 48dp en vez de depender del default del componente.
+            TextButton(onClick = onSeeAllClick, modifier = Modifier.heightIn(min = 48.dp)) {
                 Text(
                     text  = stringResource(R.string.home_see_all),
                     style = MaterialTheme.typography.labelLarge,

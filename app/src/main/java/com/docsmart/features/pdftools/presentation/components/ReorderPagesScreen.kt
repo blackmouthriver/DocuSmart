@@ -238,12 +238,15 @@ private fun ReorderableThumbnailList(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.DragHandle,
-                        contentDescription = stringResource(R.string.pdf_reorder_pages_drag_handle_desc),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // Auditoría de testers 2026-09-12 ("botones pequeños"): el
+                    // detector de arrastre vivía directo sobre el ícono de
+                    // 28dp -- peor que un botón chico, porque encima exige un
+                    // gesto de arrastre preciso, no un simple toque. Se mueve
+                    // el `pointerInput` a un Box de 48dp que envuelve el
+                    // ícono, que se mantiene visualmente en 28dp.
+                    Box(
                         modifier = Modifier
-                            .size(28.dp)
+                            .size(48.dp)
                             .pointerInput(pageNumber) {
                                 detectDragGestures(
                                     onDragStart = {
@@ -273,8 +276,16 @@ private fun ReorderableThumbnailList(
                                         }
                                     }
                                 )
-                            }
-                    )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.DragHandle,
+                            contentDescription = stringResource(R.string.pdf_reorder_pages_drag_handle_desc),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
 
                     val bmp = thumbnails[pageNumber]
                     Box(

@@ -195,9 +195,10 @@ private fun SelectedPdfRow(index: Int, uri: Uri, onRemovePdf: (Uri) -> Unit) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
+        // Subido de 32dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
         IconButton(
             onClick = { onRemovePdf(uri) },
-            modifier = Modifier.size(32.dp)
+            modifier = Modifier.size(48.dp)
         ) {
             Icon(
                 imageVector = Icons.Rounded.Close,

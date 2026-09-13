@@ -1388,16 +1388,19 @@ private fun ScanPageThumbnail(
         // sin etiqueta escondido en una esquina -- nadie lo encontraba. Pasa
         // a ser una franja con texto en el borde inferior de la miniatura,
         // mucho más visible sin necesitar rediseñar toda la fila.
+        // Auditoría de testers 2026-09-12 ("botones pequeños"): la etiqueta
+        // ya se ve, pero el alto táctil de la franja quedaba en ~28-32dp,
+        // debajo del mínimo -- se fuerza a 48dp con `heightIn`.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .heightIn(min = 48.dp)
                 .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
                 .background(Color.Black.copy(alpha = 0.6f))
                 .clickable(onClick = onEditClick)
-                .padding(vertical = 6.dp)
         ) {
             Icon(
                 imageVector = Icons.Rounded.Tune,

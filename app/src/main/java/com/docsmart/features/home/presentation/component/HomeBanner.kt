@@ -148,9 +148,10 @@ fun HomeBanner(
     // patrón ya usado con la flecha "Volver" de DocuSmartTopBanner) --
     // por eso ahora usan el color de acento en vez de blanco/blanco.
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Altura subida de 44dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
         Button(
             onClick   = onOpenFileClick,
-            modifier  = Modifier.weight(1f).height(44.dp),
+            modifier  = Modifier.weight(1f).height(48.dp),
             shape     = MaterialTheme.shapes.medium,
             colors    = ButtonDefaults.buttonColors(
                 containerColor = primary,
@@ -168,7 +169,7 @@ fun HomeBanner(
 
         OutlinedButton(
             onClick  = onConvertClick,
-            modifier = Modifier.weight(1f).height(44.dp),
+            modifier = Modifier.weight(1f).height(48.dp),
             shape    = MaterialTheme.shapes.medium,
             colors   = ButtonDefaults.outlinedButtonColors(
                 contentColor = primary

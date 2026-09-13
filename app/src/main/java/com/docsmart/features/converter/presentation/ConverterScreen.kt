@@ -687,22 +687,32 @@ private fun SelectedImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
                         .fillMaxSize()
                         .clip(MaterialTheme.shapes.medium)
                 )
+                // Botón subido de 24dp a 48dp (auditoría de testers
+                // 2026-09-12, "botones pequeños") -- el badge visual se
+                // mantiene chico (24dp) para no tapar la miniatura de 84dp,
+                // pero el área táctil real ahora cumple el mínimo de Android.
                 IconButton(
                     onClick = { onRemove(uri) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .size(24.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            shape = MaterialTheme.shapes.extraSmall
-                        )
+                        .size(48.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = stringResource(R.string.general_delete),
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(14.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                shape = MaterialTheme.shapes.extraSmall
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = stringResource(R.string.general_delete),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                 }
             }
         }

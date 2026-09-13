@@ -174,7 +174,12 @@ fun DocuSmartDocumentItem(
 
             Spacer(modifier = Modifier.width(4.dp))
 
-            IconButton(onClick = onFavoriteClick, modifier = Modifier.size(36.dp)) {
+            // Botones subidos de 36dp a 48dp (auditoría de testers 2026-09-12,
+            // "botones pequeños"): 36dp queda por debajo del mínimo táctil de
+            // Android, y este componente se repite en Biblioteca, Papelera,
+            // Favoritos e historial de Lectura -- el mayor impacto de todo
+            // el hallazgo.
+            IconButton(onClick = onFavoriteClick, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector        = if (document.isFavorite) Icons.Rounded.Favorite
                     else Icons.Rounded.FavoriteBorder,
@@ -186,7 +191,7 @@ fun DocuSmartDocumentItem(
                 )
             }
 
-            IconButton(onClick = { showMenu = true }, modifier = Modifier.size(36.dp)) {
+            IconButton(onClick = { showMenu = true }, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector        = Icons.Rounded.MoreVert,
                     contentDescription = stringResource(R.string.viewer_more_options),
