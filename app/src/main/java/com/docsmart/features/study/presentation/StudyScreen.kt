@@ -1890,6 +1890,19 @@ private fun PomodoroTab(
     // corrigió en Notas -- este `Column` no tenía scroll, así que en
     // pantallas más chicas "Pomodoros completados" y la tarjeta de info
     // quedaban cortados fuera de la pantalla, sin forma de verlos.
+    //
+    // Feedback real de testers 2026-09-12: "no se entiende para qué sirve
+    // Pomodoro" -- la explicación y el contador ya existían, pero quedaban
+    // al final de la pantalla, después del reloj y los controles, y el
+    // contador se reiniciaba a 0 en cada apertura de la app (contaba solo
+    // la sesión en memoria de `PomodoroEngine`, no el historial real). Se
+    // sube la explicación al principio, antes que nada más, y el contador
+    // pasa a mostrar el total persistido (`StudyStatsStorage`, últimos 90
+    // días) en vez del contador de la sesión actual.
+    val context = LocalContext.current
+    val lifetimePomodoros = remember(pomodoroCount) {
+        StudyStatsStorage.loadStats(context).pomodoroTimestamps.size
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1900,11 +1913,11 @@ private fun PomodoroTab(
     ) {
         Spacer(Modifier.height(8.dp))
 
+        PomodoroInfoCard()
         PomodoroTypeIndicator(isBreak)
         PomodoroClock(minutes, seconds, isRunning, isBreak)
         PomodoroControls(isRunning, isBreak, onToggle, onReset)
-        PomodoroCountCard(pomodoroCount)
-        PomodoroInfoCard()
+        PomodoroCountCard(lifetimePomodoros)
 
         Spacer(Modifier.height(8.dp))
     }

@@ -41,6 +41,8 @@
     <string name="library_tab_device">Dispositivo</string>
     <string name="library_tab_app_files">Mis archivos</string>
     <string name="library_tab_file_count">%1$d archivos</string>
+    <string name="library_tab_device_description">Fotos y documentos que ya tenías guardados en tu dispositivo</string>
+    <string name="library_tab_app_files_description">Documentos que creaste o convertiste dentro de DocuSmart</string>
 
     <!-- ── Convertidor ────────────────────────────── -->
     <string name="converter_title">Convertidor</string>
@@ -799,7 +801,7 @@
     <string name="study_start">Iniciar</string>
     <string name="study_pomodoros_completed">Pomodoros completados</string>
     <string name="study_pomodoros_hint">Cada 4 pomodoros = descanso largo</string>
-    <string name="study_pomodoro_technique_info">Técnica Pomodoro: 25 min estudio + 5 min descanso</string>
+    <string name="study_pomodoro_technique_info">Técnica Pomodoro: alterna 25 min de estudio enfocado con 5 min de descanso para ayudarte a concentrarte sin agotarte</string>
     <string name="study_extract_could_not_read">No se pudo leer el archivo</string>
     <string name="study_extract_pdf_no_text">Este PDF no contiene texto extraíble. Puede ser un PDF escaneado.</string>
     <string name="study_extract_pdf_error">Error al leer el PDF: %1$s</string>

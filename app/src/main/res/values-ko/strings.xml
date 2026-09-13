@@ -41,6 +41,8 @@
     <string name="library_tab_device">기기</string>
     <string name="library_tab_app_files">내 파일</string>
     <string name="library_tab_file_count">파일 %1$d개</string>
+    <string name="library_tab_device_description">이미 기기에 저장되어 있던 사진과 문서</string>
+    <string name="library_tab_app_files_description">DocuSmart에서 만들거나 변환한 문서</string>
 
     <!-- ── 변환기 ────────────────────────────── -->
     <string name="converter_title">변환기</string>
@@ -791,7 +793,7 @@
     <string name="study_start">시작</string>
     <string name="study_pomodoros_completed">완료한 뽀모도로</string>
     <string name="study_pomodoros_hint">뽀모도로 4회마다 긴 휴식</string>
-    <string name="study_pomodoro_technique_info">뽀모도로 기법: 학습 25분 + 휴식 5분</string>
+    <string name="study_pomodoro_technique_info">뽀모도로 기법: 25분 집중 학습과 5분 휴식을 번갈아 하여 지치지 않고 집중할 수 있도록 도와줍니다</string>
     <string name="study_extract_could_not_read">파일을 읽을 수 없습니다</string>
     <string name="study_extract_pdf_no_text">이 PDF에는 추출 가능한 텍스트가 없습니다. 스캔된 PDF일 수 있습니다.</string>
     <string name="study_extract_pdf_error">PDF 읽기 오류: %1$s</string>

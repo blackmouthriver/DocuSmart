@@ -41,6 +41,8 @@
     <string name="library_tab_device">Устройство</string>
     <string name="library_tab_app_files">Мои файлы</string>
     <string name="library_tab_file_count">Файлов: %1$d</string>
+    <string name="library_tab_device_description">Фото и документы, которые уже были сохранены на вашем устройстве</string>
+    <string name="library_tab_app_files_description">Документы, созданные или преобразованные в DocuSmart</string>
 
     <!-- ── Конвертер ────────────────────────────────── -->
     <string name="converter_title">Конвертер</string>
@@ -787,7 +789,7 @@
     <string name="study_start">Начать</string>
     <string name="study_pomodoros_completed">Завершено помодоро</string>
     <string name="study_pomodoros_hint">Каждые 4 помодоро = длинный перерыв</string>
-    <string name="study_pomodoro_technique_info">Техника Помодоро: 25 мин учёбы + 5 мин перерыва</string>
+    <string name="study_pomodoro_technique_info">Техника Помодоро: чередует 25 мин сфокусированной учёбы с 5-минутными перерывами, помогая сосредоточиться без переутомления</string>
     <string name="study_extract_could_not_read">Не удалось прочитать файл</string>
     <string name="study_extract_pdf_no_text">В этом PDF нет извлекаемого текста. Возможно, это отсканированный PDF.</string>
     <string name="study_extract_pdf_error">Ошибка чтения PDF: %1$s</string>

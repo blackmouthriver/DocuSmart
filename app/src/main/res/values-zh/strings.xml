@@ -41,6 +41,8 @@
     <string name="library_tab_device">设备</string>
     <string name="library_tab_app_files">我的文件</string>
     <string name="library_tab_file_count">%1$d 个文件</string>
+    <string name="library_tab_device_description">你设备上已有的照片和文档</string>
+    <string name="library_tab_app_files_description">你在 DocuSmart 中创建或转换的文档</string>
 
     <!-- ── 转换器 ────────────────────────────── -->
     <string name="converter_title">转换器</string>
@@ -791,7 +793,7 @@
     <string name="study_start">开始</string>
     <string name="study_pomodoros_completed">已完成的番茄钟</string>
     <string name="study_pomodoros_hint">每完成 4 个番茄钟 = 一次长休息</string>
-    <string name="study_pomodoro_technique_info">番茄工作法：学习 25 分钟 + 休息 5 分钟</string>
+    <string name="study_pomodoro_technique_info">番茄工作法：交替进行 25 分钟专注学习和 5 分钟休息，帮助你保持专注而不疲惫</string>
     <string name="study_extract_could_not_read">无法读取文件</string>
     <string name="study_extract_pdf_no_text">此 PDF 不包含可提取的文本，可能是扫描版 PDF。</string>
     <string name="study_extract_pdf_error">读取 PDF 时出错：%1$s</string>

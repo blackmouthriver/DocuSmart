@@ -162,6 +162,25 @@ fun LibraryScreen(
             )
         }
 
+        // ── Descripción de la pestaña activa (feedback real de testers
+        // 2026-09-12: "Biblioteca lacking context" -- no quedaba claro qué
+        // diferencia hay entre "Dispositivo" y "Mis archivos"). Un texto
+        // corto que cambia según la pestaña seleccionada, en vez de forzar
+        // una tercera línea dentro de cada tarjeta de LibraryTabItem (con
+        // fuente "Grande"/"Muy grande" ya apenas entran 2 líneas ahí, ver
+        // HU-UX-05).
+        item {
+            Text(
+                text = when (uiState.selectedTab) {
+                    LibraryTab.DEVICE    -> stringResource(R.string.library_tab_device_description)
+                    LibraryTab.APP_FILES -> stringResource(R.string.library_tab_app_files_description)
+                },
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+        }
+
         // ── Vincular Descargas (fila 22 backlog UX): solo en la pestaña
         // Dispositivo y mientras no haya carpeta vinculada -- una vez vinculada,
         // loadDocumentsFromLinkedFolder() ya trae PDF/Word/Excel/PowerPoint/

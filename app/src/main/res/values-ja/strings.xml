@@ -41,6 +41,8 @@
     <string name="library_tab_device">デバイス</string>
     <string name="library_tab_app_files">マイファイル</string>
     <string name="library_tab_file_count">%1$d件のファイル</string>
+    <string name="library_tab_device_description">すでに端末に保存されていた写真や書類</string>
+    <string name="library_tab_app_files_description">DocuSmartで作成または変換した書類</string>
 
     <!-- ── コンバーター ────────────────────────────── -->
     <string name="converter_title">コンバーター</string>
@@ -791,7 +793,7 @@
     <string name="study_start">開始</string>
     <string name="study_pomodoros_completed">完了したポモドーロ</string>
     <string name="study_pomodoros_hint">4回ごとに長い休憩があります</string>
-    <string name="study_pomodoro_technique_info">ポモドーロ・テクニック: 25分学習 + 5分休憩</string>
+    <string name="study_pomodoro_technique_info">ポモドーロ・テクニック: 25分の集中学習と5分の休憩を繰り返すことで、疲れずに集中力を保てます</string>
     <string name="study_extract_could_not_read">ファイルを読み取れませんでした</string>
     <string name="study_extract_pdf_no_text">このPDFには抽出可能なテキストが含まれていません。スキャンされたPDFの可能性があります。</string>
     <string name="study_extract_pdf_error">PDFの読み取り中にエラーが発生しました: %1$s</string>
