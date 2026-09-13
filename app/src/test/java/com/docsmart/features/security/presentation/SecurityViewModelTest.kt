@@ -5,6 +5,7 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.docsmart.core.security.SecurityManager
 import com.docsmart.core.security.SecureMoveResult
+import com.docsmart.features.library.data.MediaDeletePermission
 import com.docsmart.features.security.domain.PdfPasswordMessages
 import com.docsmart.features.security.domain.PdfPasswordResult
 import com.docsmart.features.security.domain.PdfPasswordUseCase
@@ -55,6 +56,7 @@ class SecurityViewModelTest {
 
     private lateinit var securityManager: SecurityManager
     private lateinit var pdfPasswordUseCase: PdfPasswordUseCase
+    private lateinit var mediaDeletePermission: MediaDeletePermission
     private lateinit var secureFolder: File
 
     private val testMessages = PdfPasswordMessages(
@@ -78,6 +80,7 @@ class SecurityViewModelTest {
         every { securityManager.getSecureFiles() } returns emptyList()
 
         pdfPasswordUseCase = mockk(relaxed = true)
+        mediaDeletePermission = mockk(relaxed = true)
     }
 
     @AfterEach
@@ -86,7 +89,8 @@ class SecurityViewModelTest {
         secureFolder.parentFile?.deleteRecursively()
     }
 
-    private fun buildViewModel() = SecurityViewModel(securityManager, pdfPasswordUseCase)
+    private fun buildViewModel() =
+        SecurityViewModel(securityManager, pdfPasswordUseCase, mediaDeletePermission)
 
     // Con UnconfinedTestDispatcher no hay garantía de cuántas emisiones
     // intermedias produce un viewModelScope.launch{} antes de que el

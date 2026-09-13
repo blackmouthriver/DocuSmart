@@ -1,26 +1,46 @@
 package com.docsmart.features.security.presentation
 
 import android.content.Context
+import android.content.IntentSender
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.security.SecurityManager
+import com.docsmart.features.library.data.MediaDeletePermission
 import com.docsmart.features.security.domain.PdfPasswordMessages
 import com.docsmart.features.security.domain.PdfPasswordResult
 import com.docsmart.features.security.domain.PdfPasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
+
+/**
+ * Pedido explícito del usuario 2026-09-12, tras verificar en dispositivo real
+ * que `DocumentsContract.deleteDocument()` no está implementado para ciertos
+ * proveedores (confirmado: `UnsupportedOperationException: Unsupported call:
+ * android:deleteDocument` con un archivo de WhatsApp) -- el mismo problema
+ * que ya se resolvió en `DocumentRepository`/`TrashViewModel` para Biblioteca:
+ * `MediaStore.createDeleteRequest()` (API 30+) sí puede borrar esa fila, pero
+ * exige mostrarle al usuario un diálogo de confirmación del sistema. La
+ * Screen debe lanzar [intentSender] y avisar de vuelta con
+ * [SecurityViewModel.onOriginalDeleteConfirmed].
+ */
+data class PendingOriginalDeleteRequest(val intentSender: IntentSender, val uri: Uri)
 
 enum class SecurityScreenState { LOCKED, SETUP_PIN, UNLOCKED }
 
@@ -52,12 +72,16 @@ data class SecurityUiState(
 
 @HiltViewModel
 class SecurityViewModel @Inject constructor(
-    private val securityManager    : SecurityManager,
-    private val pdfPasswordUseCase : PdfPasswordUseCase
+    private val securityManager       : SecurityManager,
+    private val pdfPasswordUseCase    : PdfPasswordUseCase,
+    private val mediaDeletePermission : MediaDeletePermission
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SecurityUiState())
     val uiState: StateFlow<SecurityUiState> = _uiState.asStateFlow()
+
+    private val _pendingOriginalDelete = MutableSharedFlow<PendingOriginalDeleteRequest>(extraBufferCapacity = 1)
+    val pendingOriginalDelete: SharedFlow<PendingOriginalDeleteRequest> = _pendingOriginalDelete.asSharedFlow()
 
     init { loadInitialState() }
 
@@ -178,9 +202,24 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
+    // Mensajes localizados capturados en el momento de la acción -- ver
+    // PremiumViewModel.purchase() para el mismo patrón: onOriginalDeleteConfirmed()
+    // corre en respuesta a un IntentSender que la Screen lanza de forma
+    // asíncrona (el diálogo de confirmación del sistema), momento en el que
+    // ya no hay stringResource() disponible directamente.
+    private var pendingSuccessMessage = ""
+
     // RNF-SEC-01: para un Uri de SAF el borrado del original solo es posible si el
     // proveedor de almacenamiento lo permite — se intenta y se avisa si no se pudo,
     // en vez de fallar en silencio o prometer un borrado que no ocurrió.
+    //
+    // Hallazgo real en dispositivo 2026-09-12: DocumentsContract.deleteDocument()
+    // no está implementado para todos los proveedores (confirmado con un archivo
+    // de WhatsApp: "Unsupported call: android:deleteDocument"). Mismo problema ya
+    // resuelto para Biblioteca en DocumentRepository/TrashViewModel -- si el Uri es
+    // realmente de MediaStore, MediaStore.createDeleteRequest() (API 30+) sí puede
+    // borrarlo, pero exige mostrarle al usuario un diálogo de confirmación del
+    // sistema en vez de borrar en silencio.
     fun importFileToSecure(
         context: Context, uri: Uri,
         successMessage: String, errorMessage: String, originalKeptMessage: String
@@ -192,25 +231,65 @@ class SecurityViewModel @Inject constructor(
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     destFile.outputStream().use { output -> input.copyTo(output) }
                 }
-                val originalDeleted = try {
-                    android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)
+
+                val deleteResult = try {
+                    val deleted = android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)
+                    if (deleted) OriginalDeleteResult.Deleted else OriginalDeleteResult.Failed
                 } catch (e: Exception) {
-                    Timber.w(e, "No se pudo eliminar el archivo original tras protegerlo: $uri")
-                    false
+                    Timber.w(e, "No se pudo eliminar directamente el archivo original: $uri")
+                    intentSenderForFailedDelete(e, uri)
+                        ?.let { OriginalDeleteResult.NeedsPermission(it) }
+                        ?: OriginalDeleteResult.Failed
                 }
+
                 val files = securityManager.getSecureFiles()
-                _uiState.update {
-                    it.copy(
-                        secureFiles    = files,
-                        successMessage = if (originalDeleted) successMessage else null,
-                        originalNotDeletedWarning = if (originalDeleted) null else originalKeptMessage
-                    )
+                when (deleteResult) {
+                    OriginalDeleteResult.Deleted -> _uiState.update {
+                        it.copy(secureFiles = files, successMessage = successMessage)
+                    }
+                    OriginalDeleteResult.Failed -> _uiState.update {
+                        it.copy(secureFiles = files, originalNotDeletedWarning = originalKeptMessage)
+                    }
+                    is OriginalDeleteResult.NeedsPermission -> {
+                        pendingSuccessMessage = successMessage
+                        _uiState.update { it.copy(secureFiles = files) }
+                        _pendingOriginalDelete.emit(PendingOriginalDeleteRequest(deleteResult.intentSender, uri))
+                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error importando archivo: ${e.message}")
                 _uiState.update { it.copy(error = errorMessage) }
             }
         }
+    }
+
+    // La Screen llama a esto tras lanzar el IntentSender de un
+    // PendingOriginalDeleteRequest y recibir RESULT_OK -- Android ya borró la
+    // fila de MediaStore, solo falta mostrar el mensaje de éxito normal (el
+    // archivo ya estaba copiado a la carpeta segura desde importFileToSecure()).
+    fun onOriginalDeleteConfirmed() {
+        _uiState.update { it.copy(successMessage = pendingSuccessMessage) }
+    }
+
+    private fun intentSenderForFailedDelete(e: Exception, uri: Uri): IntentSender? {
+        val recoverable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            mediaDeletePermission.recoverableIntentSenderOrNull(e)
+        } else {
+            null
+        }
+        val canUseBulkDeleteRequest = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            uri.authority == MediaStore.AUTHORITY
+        return recoverable ?: if (canUseBulkDeleteRequest) {
+            mediaDeletePermission.createBulkDeleteRequest(listOf(uri))
+        } else {
+            null
+        }
+    }
+
+    private sealed interface OriginalDeleteResult {
+        data object Deleted : OriginalDeleteResult
+        data object Failed : OriginalDeleteResult
+        data class NeedsPermission(val intentSender: IntentSender) : OriginalDeleteResult
     }
 
     // ── PDF Password: proteger ────────────────────────────────────────────────

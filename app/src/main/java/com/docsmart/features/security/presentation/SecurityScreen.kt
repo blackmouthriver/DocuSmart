@@ -1,7 +1,9 @@
 package com.docsmart.features.security.presentation
 
+import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -99,6 +101,24 @@ fun SecurityScreen(
                 snackbarHostState.showSnackbar(it)
                 viewModel.dismissError()
             }
+        }
+    }
+
+    // Hallazgo real en dispositivo 2026-09-12: cuando DocumentsContract.
+    // deleteDocument() no está implementado para el proveedor del archivo,
+    // MediaStore.createDeleteRequest() (API 30+) sí puede borrarlo -- pero
+    // exige lanzar este IntentSender y que el usuario confirme en un diálogo
+    // del sistema, mismo patrón ya usado en TrashScreen para Biblioteca.
+    val originalDeleteLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.onOriginalDeleteConfirmed()
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.pendingOriginalDelete.collect { request ->
+            originalDeleteLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
         }
     }
 
