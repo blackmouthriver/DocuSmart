@@ -85,6 +85,8 @@
     <string name="settings_select_font_scale">Schriftgröße auswählen</string>
     <string name="settings_animated_background">Animierter Hintergrund</string>
     <string name="settings_animated_background_subtitle">Formen in der Akzentfarbe in Bewegung</string>
+    <string name="settings_sound_effects">Toneffekte</string>
+    <string name="settings_sound_effects_subtitle">Kurze Töne beim Scannen, Konvertieren und Löschen</string>
     <string name="settings_storage">Speicher</string>
     <string name="settings_storage_subtitle">Erstellte Dateien anzeigen</string>
     <string name="settings_about">Über die App</string>

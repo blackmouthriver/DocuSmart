@@ -59,6 +59,7 @@ fun SettingsScreen(
     val currentAccentColor by themeManager.accentColor.collectAsState()
     val currentFontScale   by themeManager.fontScale.collectAsState()
     val animatedBackgroundEnabled by themeManager.animatedBackgroundEnabled.collectAsState()
+    val soundEffectsEnabled by viewModel.soundEffectPlayer.enabled.collectAsState()
     val currentLanguage    by languageManager.currentLanguage.collectAsState()
     val isPremium          by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     // HU-54, AC1: revisando Ajustes, sin entrar a PremiumScreen, ya se ve
@@ -724,6 +725,18 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.settings_animated_background_subtitle),
                 checked  = animatedBackgroundEnabled,
                 onCheckedChange = { themeManager.setAnimatedBackgroundEnabled(it) }
+            )
+        }
+        item {
+            // Feedback de testers 2026-09-12: sonidos cortos al escanear,
+            // convertir y borrar -- con este interruptor apagado, todos se
+            // silencian (ver SoundEffectPlayer).
+            SettingsSwitchItem(
+                icon     = Icons.Rounded.VolumeUp,
+                title    = stringResource(R.string.settings_sound_effects),
+                subtitle = stringResource(R.string.settings_sound_effects_subtitle),
+                checked  = soundEffectsEnabled,
+                onCheckedChange = { viewModel.soundEffectPlayer.setEnabled(it) }
             )
         }
 

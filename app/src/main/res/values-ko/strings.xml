@@ -85,6 +85,8 @@
     <string name="settings_select_font_scale">글자 크기 선택</string>
     <string name="settings_animated_background">애니메이션 배경</string>
     <string name="settings_animated_background_subtitle">강조 색상의 도형이 움직입니다</string>
+    <string name="settings_sound_effects">효과음</string>
+    <string name="settings_sound_effects_subtitle">스캔, 변환, 삭제 시 짧은 소리를 재생합니다</string>
     <string name="settings_storage">저장 공간</string>
     <string name="settings_storage_subtitle">생성된 파일 보기</string>
     <string name="settings_about">정보</string>

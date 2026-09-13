@@ -3,6 +3,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,6 +13,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     val adManager: AdManager,
+    val soundEffectPlayer: SoundEffectPlayer,
     private val downloadsAccessManager: DownloadsAccessManager,
     private val trashRepository: TrashRepository
 ) : ViewModel() {

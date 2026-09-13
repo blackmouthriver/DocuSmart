@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.converter.domain.model.BatchConversionItem
@@ -67,7 +68,8 @@ class ConverterViewModel @Inject constructor(
     private val pptToText        : PptToTextUseCase,
     val adManager                : AdManager,
     private val dailyLimitManager: DailyLimitManager,  // ← NUEVO
-    private val premiumManager   : PremiumManager
+    private val premiumManager   : PremiumManager,
+    private val soundEffectPlayer: SoundEffectPlayer
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConverterUiState())
@@ -217,6 +219,7 @@ class ConverterViewModel @Inject constructor(
 
             if (isBatch) {
                 val items = runBatchConversion(context, type, files)
+                if (items.any { it.result is ConversionResult.Success }) soundEffectPlayer.playConvert()
                 _uiState.update { it.copy(
                     isConverting    = false,
                     batchResults    = items,
@@ -233,6 +236,7 @@ class ConverterViewModel @Inject constructor(
 
             Timber.d("ConverterViewModel: resultado $type → $result")
             logConversionOutcome(type, result)
+            if (result is ConversionResult.Success) soundEffectPlayer.playConvert()
 
             _uiState.update { state ->
                 applySingleConversionResult(state, result)

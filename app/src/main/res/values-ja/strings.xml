@@ -85,6 +85,8 @@
     <string name="settings_select_font_scale">文字サイズを選択</string>
     <string name="settings_animated_background">アニメーション背景</string>
     <string name="settings_animated_background_subtitle">アクセントカラーの図形が動きます</string>
+    <string name="settings_sound_effects">効果音</string>
+    <string name="settings_sound_effects_subtitle">スキャン・変換・削除時に短い音を鳴らします</string>
     <string name="settings_storage">ストレージ</string>
     <string name="settings_storage_subtitle">生成されたファイルを表示</string>
     <string name="settings_about">アプリについて</string>

@@ -85,6 +85,8 @@
     <string name="settings_select_font_scale">Выбрать размер шрифта</string>
     <string name="settings_animated_background">Анимированный фон</string>
     <string name="settings_animated_background_subtitle">Фигуры в цвете акцента в движении</string>
+    <string name="settings_sound_effects">Звуковые эффекты</string>
+    <string name="settings_sound_effects_subtitle">Короткие звуки при сканировании, конвертации и удалении</string>
     <string name="settings_storage">Хранилище</string>
     <string name="settings_storage_subtitle">Просмотр созданных файлов</string>
     <string name="settings_about">О приложении</string>

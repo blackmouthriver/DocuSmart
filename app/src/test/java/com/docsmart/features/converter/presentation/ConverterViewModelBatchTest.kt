@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.net.Uri
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
@@ -47,6 +48,7 @@ class ConverterViewModelBatchTest {
     private lateinit var adManager        : AdManager
     private lateinit var dailyLimitManager: DailyLimitManager
     private lateinit var premiumManager   : PremiumManager
+    private lateinit var soundEffectPlayer: SoundEffectPlayer
     private lateinit var viewModel        : ConverterViewModel
 
     @BeforeEach
@@ -59,6 +61,7 @@ class ConverterViewModelBatchTest {
         adManager         = mockk()
         dailyLimitManager = mockk(relaxed = true)
         premiumManager    = mockk()
+        soundEffectPlayer = mockk(relaxed = true)
 
         every { adManager.isPremium } returns MutableStateFlow(false)
         every { dailyLimitManager.canConvert() } returns true
@@ -84,7 +87,8 @@ class ConverterViewModelBatchTest {
             pptToText         = mockk(),
             adManager         = adManager,
             dailyLimitManager = dailyLimitManager,
-            premiumManager    = premiumManager
+            premiumManager    = premiumManager,
+            soundEffectPlayer = soundEffectPlayer
         )
     }
 

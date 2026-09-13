@@ -2,6 +2,7 @@ package com.docsmart.features.scanner.presentation
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import com.docsmart.core.media.SoundEffectPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,9 @@ data class ScannerUiState(
 )
 
 @HiltViewModel
-class ScannerViewModel @Inject constructor() : ViewModel() {
+class ScannerViewModel @Inject constructor(
+    private val soundEffectPlayer: SoundEffectPlayer
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScannerUiState())
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
@@ -35,6 +38,7 @@ class ScannerViewModel @Inject constructor() : ViewModel() {
 
     fun onScanComplete(pages: List<Uri>, isPdf: Boolean = false) {
         Timber.d("ScannerViewModel: ${pages.size} páginas, isPdf=$isPdf")
+        if (pages.isNotEmpty()) soundEffectPlayer.playScan()
         _uiState.update {
             it.copy(
                 scannedPages = pages,

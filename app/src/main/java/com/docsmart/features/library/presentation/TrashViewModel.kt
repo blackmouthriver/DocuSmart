@@ -3,6 +3,7 @@ package com.docsmart.features.library.presentation
 import android.content.IntentSender
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
@@ -39,7 +40,8 @@ sealed interface PendingDeleteRequest {
 
 @HiltViewModel
 class TrashViewModel @Inject constructor(
-    private val repository: TrashRepository
+    private val repository: TrashRepository,
+    private val soundEffectPlayer: SoundEffectPlayer
 ) : ViewModel() {
 
     private companion object {
@@ -79,7 +81,10 @@ class TrashViewModel @Inject constructor(
     fun deleteForever(documentId: String) {
         viewModelScope.launch {
             when (val outcome = repository.deleteForever(documentId)) {
-                DocumentRepository.DeleteOutcome.Deleted -> load()
+                DocumentRepository.DeleteOutcome.Deleted -> {
+                    soundEffectPlayer.playDelete()
+                    load()
+                }
                 DocumentRepository.DeleteOutcome.Failed ->
                     _uiState.update { it.copy(actionError = "No se pudo eliminar el archivo") }
                 is DocumentRepository.DeleteOutcome.NeedsPermission ->
@@ -93,6 +98,7 @@ class TrashViewModel @Inject constructor(
     fun onSingleDeleteConfirmed(documentId: String) {
         viewModelScope.launch {
             repository.finalizeDeleteForever(documentId)
+            soundEffectPlayer.playDelete()
             load()
         }
     }
@@ -102,7 +108,10 @@ class TrashViewModel @Inject constructor(
             val ids = _uiState.value.items.map { it.document.id }
             if (ids.isEmpty()) return@launch
             when (val outcome = repository.deleteAllForever(ids)) {
-                TrashRepository.BulkDeleteOutcome.Done -> load()
+                TrashRepository.BulkDeleteOutcome.Done -> {
+                    soundEffectPlayer.playDelete()
+                    load()
+                }
                 is TrashRepository.BulkDeleteOutcome.NeedsPermission ->
                     _pendingDeleteRequest.emit(
                         PendingDeleteRequest.Bulk(outcome.intentSender, outcome.documentIds)
@@ -122,6 +131,7 @@ class TrashViewModel @Inject constructor(
     fun onBulkDeleteConfirmed(documentIds: List<String>) {
         viewModelScope.launch {
             repository.finalizeDeleteForever(documentIds)
+            soundEffectPlayer.playDelete()
             load()
         }
     }

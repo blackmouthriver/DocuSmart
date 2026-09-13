@@ -85,6 +85,8 @@
     <string name="settings_select_font_scale">Seleccionar tamaño de letra</string>
     <string name="settings_animated_background">Fondo animado</string>
     <string name="settings_animated_background_subtitle">Formas con el color de acento en movimiento</string>
+    <string name="settings_sound_effects">Efectos de sonido</string>
+    <string name="settings_sound_effects_subtitle">Sonidos cortos al escanear, convertir y borrar</string>
     <string name="settings_storage">Almacenamiento</string>
     <string name="settings_storage_subtitle">Ver archivos generados</string>
     <string name="settings_about">Acerca de</string>

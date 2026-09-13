@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
+import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
@@ -42,7 +43,8 @@ class LibraryViewModel @Inject constructor(
     private val repository : DocumentRepository,
     private val trashRepository: TrashRepository,
     private val favoritesRepository: FavoritesRepository,
-    private val downloadsAccessManager: DownloadsAccessManager
+    private val downloadsAccessManager: DownloadsAccessManager,
+    private val soundEffectPlayer: SoundEffectPlayer
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
@@ -226,6 +228,7 @@ class LibraryViewModel @Inject constructor(
                 _uiState.update { it.copy(deleteError = "No se pudo eliminar el archivo") }
                 return@launch
             }
+            soundEffectPlayer.playDelete()
 
             val updated    = _uiState.value.allDocuments.filter { it.id != documentId }
             val deviceDocs = updated.filter { isDeviceDocument(it) }
