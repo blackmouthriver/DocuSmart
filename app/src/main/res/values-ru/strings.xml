@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">Имя файла</string>
     <string name="viewer_rename_empty_error">Имя не может быть пустым</string>
     <string name="viewer_delete_confirm_title">Удалить этот документ?</string>
-    <string name="viewer_delete_confirm_body">"%1$s будет удалён навсегда. Это действие нельзя отменить."</string>
+    <string name="viewer_delete_confirm_body">"%1$s будет перемещён в корзину. Вы сможете восстановить его в течение 30 дней, прежде чем он будет удалён окончательно."</string>
 
     <!-- ── Меню документа (Главная/Библиотека, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Добавить в избранное</string>

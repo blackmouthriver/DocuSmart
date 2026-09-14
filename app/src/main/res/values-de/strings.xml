@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">Dateiname</string>
     <string name="viewer_rename_empty_error">Der Name darf nicht leer sein</string>
     <string name="viewer_delete_confirm_title">Dieses Dokument löschen?</string>
-    <string name="viewer_delete_confirm_body">"%1$s wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."</string>
+    <string name="viewer_delete_confirm_body">"%1$s wird in den Papierkorb verschoben. Du kannst es 30 Tage lang wiederherstellen, bevor es endgültig gelöscht wird."</string>
 
     <!-- ── Dokumentmenü (Home/Bibliothek, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Zu Favoriten hinzufügen</string>

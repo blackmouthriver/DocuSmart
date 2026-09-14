@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
+import java.util.Collections
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -52,6 +53,28 @@ class SoundEffectPlayer @Inject constructor(
         )
         .build()
 
+    // Bug real encontrado 2026-09-14 (repaso general, prioridad Baja):
+    // SoundPool.load() es asíncrono -- si play() se llama antes de que
+    // termine de decodificar ese sonido en concreto, SoundPool.play() no
+    // hace nada, sin error. Con estos WAV sintetizados de <150ms y este
+    // Singleton construido al arrancar el proceso, la ventana real es
+    // mínima (ver ScannerViewModel/ConverterViewModel/TrashViewModel/
+    // LibraryViewModel: el primer playX() posible llega segundos después,
+    // tras un flujo de cámara o de I/O), pero no es imposible en un
+    // dispositivo muy lento -- este listener cierra el hueco de verdad en
+    // vez de confiar en el timing.
+    private val loadedSoundIds = Collections.synchronizedSet(mutableSetOf<Int>())
+
+    init {
+        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0) {
+                loadedSoundIds.add(sampleId)
+            } else {
+                Timber.w("SoundEffectPlayer: fallo al cargar el sonido $sampleId (status=$status)")
+            }
+        }
+    }
+
     private val scanSoundId    = soundPool.load(context, R.raw.sound_scan, 1)
     private val convertSoundId = soundPool.load(context, R.raw.sound_convert, 1)
     private val deleteSoundId  = soundPool.load(context, R.raw.sound_delete, 1)
@@ -68,6 +91,10 @@ class SoundEffectPlayer @Inject constructor(
 
     private fun play(soundId: Int) {
         if (!_enabled.value) return
+        if (soundId !in loadedSoundIds) {
+            Timber.w("SoundEffectPlayer: sonido $soundId aún no terminó de cargar, se omite")
+            return
+        }
         soundPool.play(soundId, VOLUME, VOLUME, 1, 0, 1f)
     }
 

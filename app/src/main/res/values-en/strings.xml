@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">File name</string>
     <string name="viewer_rename_empty_error">Name cannot be empty</string>
     <string name="viewer_delete_confirm_title">Delete this document?</string>
-    <string name="viewer_delete_confirm_body">"%1$s will be permanently deleted. This action cannot be undone."</string>
+    <string name="viewer_delete_confirm_body">"%1$s will be moved to Trash. You can recover it for 30 days before it's permanently deleted."</string>
 
     <!-- ── Document menu (Home/Library, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Add to favorites</string>

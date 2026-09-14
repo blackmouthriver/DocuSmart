@@ -183,7 +183,7 @@
     <string name="viewer_rename_label">Nom de l\'arxiu</string>
     <string name="viewer_rename_empty_error">El nom no pot estar buit</string>
     <string name="viewer_delete_confirm_title">Vols eliminar aquest document?</string>
-    <string name="viewer_delete_confirm_body">"%1$s s\'eliminarà de forma permanent. Aquesta acció no es pot desfer."</string>
+    <string name="viewer_delete_confirm_body">"%1$s es mourà a la Paperera. Podràs recuperar-lo durant 30 dies abans que s'elimini definitivament."</string>
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Afegir a favorits</string>

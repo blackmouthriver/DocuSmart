@@ -183,7 +183,7 @@
     <string name="viewer_rename_label">Fitxategiaren izena</string>
     <string name="viewer_rename_empty_error">Izena ezin da hutsik egon</string>
     <string name="viewer_delete_confirm_title">Dokumentu hau ezabatu nahi duzu?</string>
-    <string name="viewer_delete_confirm_body">"%1$s betiko ezabatuko da. Ekintza hau ezin da desegin."</string>
+    <string name="viewer_delete_confirm_body">"%1$s Zakarrontzira eramango da. 30 egunez berreskura dezakezu behin betiko ezabatu aurretik."</string>
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Gehitu gogokoetara</string>

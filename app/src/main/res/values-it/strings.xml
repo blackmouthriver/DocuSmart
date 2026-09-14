@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">Nome del file</string>
     <string name="viewer_rename_empty_error">Il nome non può essere vuoto</string>
     <string name="viewer_delete_confirm_title">Eliminare questo documento?</string>
-    <string name="viewer_delete_confirm_body">"%1$s verrà eliminato definitivamente. Questa azione non può essere annullata."</string>
+    <string name="viewer_delete_confirm_body">"%1$s verrà spostato nel Cestino. Potrai recuperarlo entro 30 giorni prima che venga eliminato definitivamente."</string>
 
     <!-- ── Menu documento (Home/Libreria, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Aggiungi ai preferiti</string>

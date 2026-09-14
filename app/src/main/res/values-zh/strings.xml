@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">文件名</string>
     <string name="viewer_rename_empty_error">文件名不能为空</string>
     <string name="viewer_delete_confirm_title">删除此文档？</string>
-    <string name="viewer_delete_confirm_body">"%1$s 将被永久删除，此操作无法撤销。"</string>
+    <string name="viewer_delete_confirm_body">"%1$s 将移至回收站。在彻底删除前，您有30天时间可以恢复它。"</string>
 
     <!-- ── 文档菜单（首页/资料库，DocuSmartDocumentItem） ── -->
     <string name="doc_item_add_favorite">添加到收藏</string>

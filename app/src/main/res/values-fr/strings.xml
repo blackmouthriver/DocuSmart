@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">Nom du fichier</string>
     <string name="viewer_rename_empty_error">Le nom ne peut pas être vide</string>
     <string name="viewer_delete_confirm_title">Supprimer ce document ?</string>
-    <string name="viewer_delete_confirm_body">"%1$s sera supprimé définitivement. Cette action est irréversible."</string>
+    <string name="viewer_delete_confirm_body">"%1$s sera déplacé vers la Corbeille. Vous pourrez le récupérer pendant 30 jours avant sa suppression définitive."</string>
 
     <!-- ── Menu du document (Accueil/Bibliothèque, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Ajouter aux favoris</string>

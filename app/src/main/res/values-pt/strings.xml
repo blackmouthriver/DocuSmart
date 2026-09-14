@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">Nome do arquivo</string>
     <string name="viewer_rename_empty_error">O nome não pode estar vazio</string>
     <string name="viewer_delete_confirm_title">Excluir este documento?</string>
-    <string name="viewer_delete_confirm_body">"%1$s será excluído permanentemente. Esta ação não pode ser desfeita."</string>
+    <string name="viewer_delete_confirm_body">"%1$s será movido para a Lixeira. Você poderá recuperá-lo durante 30 dias antes que seja excluído definitivamente."</string>
 
     <!-- ── Menu do documento (Início/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Adicionar aos favoritos</string>

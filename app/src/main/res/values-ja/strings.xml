@@ -173,7 +173,7 @@
     <string name="viewer_rename_label">ファイル名</string>
     <string name="viewer_rename_empty_error">名前を空にすることはできません</string>
     <string name="viewer_delete_confirm_title">このドキュメントを削除しますか?</string>
-    <string name="viewer_delete_confirm_body">"%1$sは完全に削除されます。この操作は取り消せません。"</string>
+    <string name="viewer_delete_confirm_body">"%1$s はゴミ箱に移動されます。完全に削除されるまで30日間、復元できます。"</string>
 
     <!-- ── ドキュメントメニュー(ホーム/ライブラリ、DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">お気に入りに追加</string>

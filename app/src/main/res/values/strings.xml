@@ -189,7 +189,13 @@
     <string name="viewer_rename_label">Nombre del archivo</string>
     <string name="viewer_rename_empty_error">El nombre no puede estar vacío</string>
     <string name="viewer_delete_confirm_title">¿Eliminar este documento?</string>
-    <string name="viewer_delete_confirm_body">"%1$s se eliminará de forma permanente. Esta acción no se puede deshacer."</string>
+    <!-- Bug real encontrado 2026-09-14 (repaso general, de paso): el texto
+         decía "se eliminará de forma permanente... no se puede deshacer",
+         pero confirmDelete() en realidad llama a trashRepository.moveToTrash()
+         (RF-VIS-07): el archivo va a la Papelera con 30 días de gracia,
+         igual que al eliminar desde Biblioteca/Home. Se corrige el texto
+         para que coincida con el comportamiento real. -->
+    <string name="viewer_delete_confirm_body">"%1$s se moverá a la Papelera. Podrás recuperarlo durante 30 días antes de que se elimine definitivamente."</string>
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Agregar a favoritos</string>

@@ -35,14 +35,19 @@ class DetectFormFieldsUseCase @Inject constructor(
     suspend operator fun invoke(pdfUri: Uri): List<FormFieldInfo> = withContext(Dispatchers.IO) {
         val cacheFile = copyUriToCache(pdfUri) ?: return@withContext emptyList()
         try {
-            val pdf = PdfDocument(PdfReader(cacheFile))
-            val form = PdfAcroForm.getAcroForm(pdf, false)
-            val fields = form?.getFormFields()
-                ?.filterValues { it.getFormType() == PdfName.Tx }
-                ?.map { (name, field) -> FormFieldInfo(name, field.getValueAsString() ?: "") }
-                ?: emptyList()
-            pdf.close()
-            fields
+            // Bug real encontrado 2026-09-14 (repaso general): pdf.close()
+            // manual solo se alcanzaba en el camino feliz -- una excepción
+            // al leer el AcroForm o mapear los campos dejaba el
+            // PdfDocument sin cerrar (mismo bug ya corregido antes esta
+            // sesión en NumberPagesUseCase/ComparePdfUseCase, ver esos
+            // comentarios). .use{} garantiza el cierre pase lo que pase.
+            PdfDocument(PdfReader(cacheFile)).use { pdf ->
+                val form = PdfAcroForm.getAcroForm(pdf, false)
+                form?.getFormFields()
+                    ?.filterValues { it.getFormType() == PdfName.Tx }
+                    ?.map { (name, field) -> FormFieldInfo(name, field.getValueAsString() ?: "") }
+                    ?: emptyList()
+            }
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error detectando campos del formulario")
             emptyList()
