@@ -90,7 +90,12 @@ class ConverterScreenTest {
             pptToText         = mockk(relaxed = true),
             adManager         = adManager,
             dailyLimitManager = dailyLimitManager,
-            premiumManager    = premiumManager
+            premiumManager    = premiumManager,
+            // Bug preexistente encontrado 2026-09-14: ConverterViewModel
+            // ganó soundEffectPlayer con los efectos de sonido (backlog
+            // 2026-09-12) pero este builder nunca se actualizó, dejando
+            // compileDebugAndroidTestKotlin roto para todo el módulo.
+            soundEffectPlayer = mockk(relaxed = true)
         )
     }
 

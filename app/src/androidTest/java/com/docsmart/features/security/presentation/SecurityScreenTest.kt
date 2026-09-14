@@ -70,7 +70,12 @@ class SecurityScreenTest {
 
         return SecurityViewModel(
             securityManager    = SecurityManager(context), // real, no mock
-            pdfPasswordUseCase = mockk<PdfPasswordUseCase>(relaxed = true)
+            pdfPasswordUseCase = mockk<PdfPasswordUseCase>(relaxed = true),
+            // Bug preexistente encontrado 2026-09-14: SecurityViewModel
+            // ganó mediaDeletePermission (borrado con permiso de MediaStore)
+            // pero este builder nunca se actualizó, dejando
+            // compileDebugAndroidTestKotlin roto para todo el módulo.
+            mediaDeletePermission = mockk(relaxed = true)
         )
     }
 

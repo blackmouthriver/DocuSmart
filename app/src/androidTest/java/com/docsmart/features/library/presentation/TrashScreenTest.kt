@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.test.forceLocale
@@ -83,7 +84,17 @@ class TrashScreenTest {
         coEvery { repository.loadTrashedDocuments() } returns listOf(
             TrashedDocumentUiModel(documentFixture("doc1"), System.currentTimeMillis())
         )
-        val viewModel = TrashViewModel(repository)
+        // Bug preexistente encontrado 2026-09-14: TrashViewModel ganó
+        // soundEffectPlayer con los efectos de sonido (backlog 2026-09-12)
+        // pero este test nunca se actualizó, dejando
+        // compileDebugAndroidTestKotlin roto para todo el módulo. context
+        // se suma ahora porque actionError se localiza vía
+        // context.getString() (fix 2026-09-14 del bug de mensajes
+        // hardcodeados en español).
+        val viewModel = TrashViewModel(
+            repository, mockk(relaxed = true),
+            InstrumentationRegistry.getInstrumentation().targetContext
+        )
 
         setContentWithLocale { TrashScreen(viewModel = viewModel) }
         waitForText("Restaurar")
@@ -101,7 +112,17 @@ class TrashScreenTest {
             TrashedDocumentUiModel(documentFixture("doc1"), System.currentTimeMillis())
         )
         coEvery { repository.deleteForever("doc1") } returns DocumentRepository.DeleteOutcome.Deleted
-        val viewModel = TrashViewModel(repository)
+        // Bug preexistente encontrado 2026-09-14: TrashViewModel ganó
+        // soundEffectPlayer con los efectos de sonido (backlog 2026-09-12)
+        // pero este test nunca se actualizó, dejando
+        // compileDebugAndroidTestKotlin roto para todo el módulo. context
+        // se suma ahora porque actionError se localiza vía
+        // context.getString() (fix 2026-09-14 del bug de mensajes
+        // hardcodeados en español).
+        val viewModel = TrashViewModel(
+            repository, mockk(relaxed = true),
+            InstrumentationRegistry.getInstrumentation().targetContext
+        )
 
         setContentWithLocale { TrashScreen(viewModel = viewModel) }
         waitForText("Eliminar ahora")
@@ -131,7 +152,17 @@ class TrashScreenTest {
         )
         val ids = listOf("doc1", "doc2")
         coEvery { repository.deleteAllForever(ids) } returns TrashRepository.BulkDeleteOutcome.Done
-        val viewModel = TrashViewModel(repository)
+        // Bug preexistente encontrado 2026-09-14: TrashViewModel ganó
+        // soundEffectPlayer con los efectos de sonido (backlog 2026-09-12)
+        // pero este test nunca se actualizó, dejando
+        // compileDebugAndroidTestKotlin roto para todo el módulo. context
+        // se suma ahora porque actionError se localiza vía
+        // context.getString() (fix 2026-09-14 del bug de mensajes
+        // hardcodeados en español).
+        val viewModel = TrashViewModel(
+            repository, mockk(relaxed = true),
+            InstrumentationRegistry.getInstrumentation().targetContext
+        )
 
         setContentWithLocale { TrashScreen(viewModel = viewModel) }
         waitForText("Borrar todo")

@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.R
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.data.FavoritesRepository
@@ -104,9 +105,13 @@ class ViewerViewModel @Inject constructor(
                 loadDocumentOrMock(documentId, context)
             } catch (e: Exception) {
                 Timber.e(e, "$TAG: error inesperado → ${e.javaClass.name}: ${e.message}")
+                // Bug real encontrado 2026-09-14: este mensaje estaba
+                // hardcodeado en español, saltándose el sistema de 12
+                // idiomas -- reusa viewer_error, el mismo texto que la UI ya
+                // mostraba como fallback cuando error era null.
                 _uiState.update { it.copy(
                     isLoading = false,
-                    error     = "Error al cargar el documento"
+                    error     = context.getString(R.string.viewer_error)
                 )}
             }
         }
@@ -327,7 +332,12 @@ class ViewerViewModel @Inject constructor(
                             val src = File(originalId)
                             Timber.d("$TAG: unlock ruta absoluta path=$originalId existe=${src.exists()}")
                             if (!src.exists()) {
-                                _uiState.update { it.copy(isLoading = false, passwordError = "No se pudo leer el archivo") }
+                                // Bug real encontrado 2026-09-14: hardcodeado
+                                // en español -- reusa pdf_pw_read_error
+                                // (mismo mensaje que ya usa PdfPasswordScreen
+                                // para este mismo escenario).
+                                val readError = context.getString(R.string.pdf_pw_read_error)
+                                _uiState.update { it.copy(isLoading = false, passwordError = readError) }
                                 return@withContext
                             }
                             src.copyTo(cacheIn, overwrite = true)
@@ -337,7 +347,12 @@ class ViewerViewModel @Inject constructor(
                             val src  = File(path)
                             Timber.d("$TAG: unlock file:// path=$path existe=${src.exists()}")
                             if (!src.exists()) {
-                                _uiState.update { it.copy(isLoading = false, passwordError = "No se pudo leer el archivo") }
+                                // Bug real encontrado 2026-09-14: hardcodeado
+                                // en español -- reusa pdf_pw_read_error
+                                // (mismo mensaje que ya usa PdfPasswordScreen
+                                // para este mismo escenario).
+                                val readError = context.getString(R.string.pdf_pw_read_error)
+                                _uiState.update { it.copy(isLoading = false, passwordError = readError) }
                                 return@withContext
                             }
                             src.copyTo(cacheIn, overwrite = true)
@@ -636,15 +651,18 @@ class ViewerViewModel @Inject constructor(
 
     // RF-VIS-07: "eliminar" mueve a la papelera, no borra de inmediato -- ver
     // DocumentRepository.moveToTrash().
-    fun confirmDelete() {
+    fun confirmDelete(context: Context) {
         val documentId = _uiState.value.document?.id ?: return
         viewModelScope.launch {
             val movedToTrash = trashRepository.moveToTrash(documentId)
             if (movedToTrash) {
                 _uiState.update { it.copy(showDeleteConfirm = false, documentDeleted = true) }
             } else {
+                // Bug real encontrado 2026-09-14: hardcodeado en español --
+                // reusa general_delete_error (mismo mensaje que Library/Trash/
+                // Home para este mismo escenario).
                 _uiState.update {
-                    it.copy(showDeleteConfirm = false, deleteError = "No se pudo eliminar el archivo")
+                    it.copy(showDeleteConfirm = false, deleteError = context.getString(R.string.general_delete_error))
                 }
             }
             Timber.d("$TAG: confirmDelete $documentId → $movedToTrash")
@@ -732,7 +750,10 @@ class ViewerViewModel @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error compartiendo documento")
-            _uiState.update { it.copy(error = "No se pudo compartir el archivo") }
+            // Bug real encontrado 2026-09-14: hardcodeado en español --
+            // reusa pdf_tools_share_error (mismo mensaje que Herramientas PDF
+            // para este mismo escenario).
+            _uiState.update { it.copy(error = context.getString(R.string.pdf_tools_share_error)) }
         }
     }
 

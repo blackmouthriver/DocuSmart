@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.core.media.SoundEffectPlayer
@@ -69,6 +70,12 @@ class ConverterViewModelBatchTest {
         every { dailyLimitManager.getConversionLimit() } returns 5
         every { premiumManager.isPremium } returns MutableStateFlow(false)
         every { premiumManager.canPerform(any()) } answers { firstArg<() -> Boolean>().invoke() }
+        // Bug real encontrado 2026-09-14: runBatchConversion() ahora localiza
+        // el mensaje de límite diario vía context.getString() en vez de un
+        // literal hardcodeado en español -- sin este stub, el mock no
+        // relajado de context lanza MockKException al llamarlo.
+        every { context.getString(R.string.converter_daily_limit_reached_error) } returns
+            "Límite diario de conversiones alcanzado"
 
         viewModel = ConverterViewModel(
             convertImageToPdf = convertImageToPdf,

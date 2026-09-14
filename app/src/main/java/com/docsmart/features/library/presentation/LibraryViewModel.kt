@@ -1,8 +1,10 @@
 package com.docsmart.features.library.presentation
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.R
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.media.SoundEffectPlayer
@@ -12,6 +14,7 @@ import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +47,10 @@ class LibraryViewModel @Inject constructor(
     private val trashRepository: TrashRepository,
     private val favoritesRepository: FavoritesRepository,
     private val downloadsAccessManager: DownloadsAccessManager,
-    private val soundEffectPlayer: SoundEffectPlayer
+    private val soundEffectPlayer: SoundEffectPlayer,
+    // Bug real encontrado 2026-09-14: deleteError estaba hardcodeado en
+    // español, saltándose el sistema de 12 idiomas.
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
@@ -225,7 +231,7 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             val movedToTrash = trashRepository.moveToTrash(documentId)
             if (!movedToTrash) {
-                _uiState.update { it.copy(deleteError = "No se pudo eliminar el archivo") }
+                _uiState.update { it.copy(deleteError = context.getString(R.string.general_delete_error)) }
                 return@launch
             }
             soundEffectPlayer.playDelete()

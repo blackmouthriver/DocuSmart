@@ -32,11 +32,21 @@ class SoundEffectPlayer @Inject constructor(
     private val _enabled = MutableStateFlow(loadEnabled())
     val enabled: StateFlow<Boolean> = _enabled.asStateFlow()
 
+    // Bug real reportado por el usuario 2026-09-14: "no se escuchan los
+    // sonidos" -- confirmado con `dumpsys audio` en dispositivo real:
+    // USAGE_ASSISTANCE_SONIFICATION enruta al stream STREAM_SYSTEM, que en
+    // Android sigue el modo silencio/vibración del timbre (ringer), no el
+    // volumen de medios -- con el teléfono en silencio/vibración (un estado
+    // cotidiano, no un caso raro), STREAM_SYSTEM queda muteado y ningún
+    // sonido de esta clase se escucha nunca, sin importar el volumen de
+    // medios. USAGE_MEDIA enruta a STREAM_MUSIC en su lugar, el mismo
+    // volumen que ya gobierna el resto de audio de la app y el que el
+    // usuario realmente sube/baja para "escuchar más o menos la app".
     private val soundPool = SoundPool.Builder()
         .setMaxStreams(2)
         .setAudioAttributes(
             AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
         )

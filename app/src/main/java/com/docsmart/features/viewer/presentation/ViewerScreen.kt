@@ -128,7 +128,7 @@ fun ViewerScreen(
     if (uiState.showDeleteConfirm) {
         ViewerDeleteConfirmDialog(
             fileName  = uiState.document?.name ?: "",
-            onConfirm = { viewModel.confirmDelete() },
+            onConfirm = { viewModel.confirmDelete(context) },
             onDismiss = { viewModel.dismissDeleteConfirm() }
         )
     }

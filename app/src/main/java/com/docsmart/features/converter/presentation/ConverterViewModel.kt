@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.R
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.core.media.SoundEffectPlayer
@@ -179,8 +180,11 @@ class ConverterViewModel @Inject constructor(
                 Timber.d("ConverterViewModel: +1 conversión por Rewarded Ad")
             },
             onFailed   = {
+                // Bug real encontrado 2026-09-14: hardcodeado en español --
+                // reusa pdf_tools_ad_not_available (mismo mensaje que
+                // Herramientas PDF para este mismo escenario).
                 _uiState.update { it.copy(
-                    errorMessage = "El anuncio no está disponible. Intenta de nuevo en unos segundos."
+                    errorMessage = activity.getString(R.string.pdf_tools_ad_not_available)
                 )}
             }
         )
@@ -312,8 +316,10 @@ class ConverterViewModel @Inject constructor(
             val nameNoExt    = originalName.substringBeforeLast('.').ifBlank { generateDefaultName() }
             val baseName     = uniqueBaseName(nameNoExt, usedNames)
 
+            // Bug real encontrado 2026-09-14: hardcodeado en español,
+            // saltándose el sistema de 12 idiomas.
             val result = if (!premiumManager.canPerform { dailyLimitManager.canConvert() }) {
-                ConversionResult.Error("Límite diario de conversiones alcanzado")
+                ConversionResult.Error(context.getString(R.string.converter_daily_limit_reached_error))
             } else {
                 runConversionForUri(type, uri, baseName).also {
                     if (it is ConversionResult.Success) dailyLimitManager.registerConversion()
@@ -361,9 +367,11 @@ class ConverterViewModel @Inject constructor(
             val allSaved = successFiles.all {
                 DownloadsSaver.saveFile(context, it, DownloadsSaver.mimeTypeForExtension(it.extension))
             }
+            // Bug real encontrado 2026-09-14: hardcodeado en español,
+            // saltándose el sistema de 12 idiomas.
             _uiState.update { state ->
                 if (allSaved) state.copy(batchSavedToDownloads = true)
-                else state.copy(errorMessage = "No se pudieron guardar todos los archivos en Descargas")
+                else state.copy(errorMessage = context.getString(R.string.converter_batch_save_error))
             }
         }
     }
@@ -409,12 +417,18 @@ class ConverterViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val saved = DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
+                // Bug real encontrado 2026-09-14: ambos mensajes estaban
+                // hardcodeados en español, saltándose el sistema de 12
+                // idiomas -- el primero reusa pdf_tools_save_error (mismo
+                // mensaje que Herramientas PDF para este mismo escenario).
                 _uiState.update { state ->
                     if (saved) state.copy(savedToDownloads = true)
-                    else state.copy(errorMessage = "No se pudo guardar en Descargas")
+                    else state.copy(errorMessage = context.getString(R.string.pdf_tools_save_error))
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "Error: ${e.message}") }
+                _uiState.update {
+                    it.copy(errorMessage = context.getString(R.string.general_error_format, e.message ?: ""))
+                }
             }
         }
     }

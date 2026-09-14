@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
@@ -79,7 +80,10 @@ class HomeScreenTest {
             adManager           = adManager,
             repository          = repository,
             trashRepository     = trashRepository,
-            favoritesRepository = favoritesRepository
+            favoritesRepository = favoritesRepository,
+            // deleteError ahora se localiza vía context.getString() (fix
+            // 2026-09-14 del bug de mensajes hardcodeados en español).
+            context             = InstrumentationRegistry.getInstrumentation().targetContext
         )
     }
 

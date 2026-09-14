@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
@@ -99,7 +100,15 @@ class LibraryScreenTest {
             repository            = repository,
             trashRepository       = trashRepository,
             favoritesRepository   = mockk<FavoritesRepository>(relaxed = true),
-            downloadsAccessManager = downloadsAccessManager
+            downloadsAccessManager = downloadsAccessManager,
+            // Bug preexistente encontrado 2026-09-14: LibraryViewModel ganó
+            // soundEffectPlayer con los efectos de sonido (backlog
+            // 2026-09-12) pero este builder nunca se actualizó, dejando
+            // compileDebugAndroidTestKotlin roto para todo el módulo.
+            soundEffectPlayer = mockk(relaxed = true),
+            // deleteError ahora se localiza vía context.getString() (fix
+            // 2026-09-14 del bug de mensajes hardcodeados en español).
+            context = InstrumentationRegistry.getInstrumentation().targetContext
         )
     }
 
