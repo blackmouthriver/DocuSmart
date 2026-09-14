@@ -118,6 +118,20 @@ fun QrReaderScreen(
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanner  = remember { BarcodeScanning.getClient() }
     val scope    = rememberCoroutineScope()
+
+    // Bug real encontrado 2026-09-14 (repaso general): ni el executor de
+    // CameraX ni el detector de ML Kit se cerraban nunca -- CameraX
+    // desvincula la cámara al salir de la pantalla (bindToLifecycle) pero
+    // no es dueño de este executor creado a mano, y BarcodeScanner
+    // mantiene recursos nativos abiertos hasta close(). Cada visita al
+    // lector de QR (entrar y salir es una acción trivial de repetir)
+    // dejaba un hilo vivo permanentemente filtrado.
+    DisposableEffect(Unit) {
+        onDispose {
+            executor.shutdown()
+            scanner.close()
+        }
+    }
     val openDocumentLabel     = stringResource(R.string.qr_open_document)
     val wrongQrPasswordMessage = stringResource(R.string.pdf_pw_wrong_password)
 
