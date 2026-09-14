@@ -808,6 +808,18 @@
     <string name="qr_generated_content_desc">生成されたQRコード</string>
     <string name="qr_protected_badge">保護済み</string>
     <string name="qr_share_chooser_title">QRを共有</string>
+    <string name="qr_history_title">履歴</string>
+    <string name="qr_history_subtitle">最近作成・読み取ったQRコード</string>
+    <string name="qr_history_empty_title">履歴はまだありません</string>
+    <string name="qr_history_empty_body">作成または読み取ったQRコードがここに表示されます</string>
+    <string name="qr_history_clear_all">履歴を削除</string>
+    <string name="qr_history_clear_all_confirm_title">履歴をすべて削除しますか？</string>
+    <string name="qr_history_clear_all_confirm_body">%1$d件の履歴が削除されます。この操作は元に戻せません。</string>
+    <string name="qr_history_delete_confirm_title">この履歴を削除しますか？</string>
+    <string name="qr_history_delete_confirm_body">この操作は元に戻せません。</string>
+    <string name="qr_history_source_created">作成</string>
+    <string name="qr_history_source_scanned">読み取り</string>
+    <string name="qr_history_protected_content">パスワードで保護された内容</string>
 
     <!-- ── 学習 ─────────────────────────────────── -->
     <string name="study_tab_reading">読書</string>

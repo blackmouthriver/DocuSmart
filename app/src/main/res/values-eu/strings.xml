@@ -824,6 +824,18 @@
     <string name="qr_generated_content_desc">Sortutako QR kodea</string>
     <string name="qr_protected_badge">Babestuta</string>
     <string name="qr_share_chooser_title">Partekatu QRa</string>
+    <string name="qr_history_title">Historia</string>
+    <string name="qr_history_subtitle">Sortu eta irakurri dituzun azken QR kodeak</string>
+    <string name="qr_history_empty_title">Oraindik ez dago historiarik</string>
+    <string name="qr_history_empty_body">Sortzen edo irakurtzen dituzun QRak hemen agertuko dira</string>
+    <string name="qr_history_clear_all">Hustu historia</string>
+    <string name="qr_history_clear_all_confirm_title">Historia osoa hustu?</string>
+    <string name="qr_history_clear_all_confirm_body">%1$d sarrera ezabatuko dira. Ekintza hau ezin da desegin.</string>
+    <string name="qr_history_delete_confirm_title">Sarrera hau ezabatu?</string>
+    <string name="qr_history_delete_confirm_body">Ekintza hau ezin da desegin.</string>
+    <string name="qr_history_source_created">Sortua</string>
+    <string name="qr_history_source_scanned">Irakurria</string>
+    <string name="qr_history_protected_content">Pasahitzez babestutako edukia</string>
 
     <!-- ── Estudio ─────────────────────────────────── -->
     <string name="study_tab_reading">Irakurketa</string>

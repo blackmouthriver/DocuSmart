@@ -836,6 +836,18 @@
     <string name="qr_generated_content_desc">Codi QR generat</string>
     <string name="qr_protected_badge">Protegit</string>
     <string name="qr_share_chooser_title">Compartir QR</string>
+    <string name="qr_history_title">Historial</string>
+    <string name="qr_history_subtitle">Els teus últims codis QR creats i llegits</string>
+    <string name="qr_history_empty_title">Encara no hi ha historial</string>
+    <string name="qr_history_empty_body">Els QR que creïs o llegeixis apareixeran aquí</string>
+    <string name="qr_history_clear_all">Buida l\'historial</string>
+    <string name="qr_history_clear_all_confirm_title">Vols buidar tot l\'historial?</string>
+    <string name="qr_history_clear_all_confirm_body">S\'eliminaran les %1$d entrades. Aquesta acció no es pot desfer.</string>
+    <string name="qr_history_delete_confirm_title">Vols eliminar aquesta entrada?</string>
+    <string name="qr_history_delete_confirm_body">Aquesta acció no es pot desfer.</string>
+    <string name="qr_history_source_created">Creat</string>
+    <string name="qr_history_source_scanned">Llegit</string>
+    <string name="qr_history_protected_content">Contingut protegit amb contrasenya</string>
 
     <!-- ── Estudio ─────────────────────────────────── -->
     <string name="study_tab_reading">Lectura</string>

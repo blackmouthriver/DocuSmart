@@ -57,6 +57,9 @@ import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.scanner.domain.QrContactContent
 import com.docsmart.features.scanner.domain.QrCrypto
 import com.docsmart.features.scanner.domain.QrEventContent
+import com.docsmart.features.scanner.domain.QrHistoryEntry
+import com.docsmart.features.scanner.domain.QrHistorySource
+import com.docsmart.features.scanner.domain.QrHistoryStorage
 import com.docsmart.features.scanner.domain.QrWifiContent
 import com.docsmart.features.scanner.domain.QrWifiSecurity
 import com.docsmart.features.scanner.domain.toQrPayload
@@ -87,6 +90,8 @@ private fun ImageProxy.toMediaImageOrNull() = image
 @Composable
 fun QrReaderScreen(
     onBack: () -> Unit = {},
+    // HU-44: acceso al Historial de QR desde el banner.
+    onHistoryClick: () -> Unit = {},
     viewModel: QrViewModel = hiltViewModel()
 ) {
     val context        = LocalContext.current
@@ -149,7 +154,6 @@ fun QrReaderScreen(
             scanner.close()
         }
     }
-    val openDocumentLabel     = stringResource(R.string.qr_open_document)
     val wrongQrPasswordMessage = stringResource(R.string.pdf_pw_wrong_password)
 
     fun resumeScanning() {
@@ -248,6 +252,15 @@ fun QrReaderScreen(
                 screenTitle    = stringResource(R.string.qr_reader_title),
                 screenSubtitle = stringResource(R.string.qr_reader_subtitle),
                 onBack         = onBack,
+                actions = {
+                    IconButton(onClick = onHistoryClick) {
+                        Icon(
+                            Icons.Rounded.History,
+                            contentDescription = stringResource(R.string.qr_history_title),
+                            tint = Color.White
+                        )
+                    }
+                },
                 modifier       = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -303,7 +316,34 @@ fun QrReaderScreen(
                                                 .addOnSuccessListener { barcodes ->
                                                     barcodes.firstOrNull()?.rawValue?.let { value ->
                                                         isScanning = false
-                                                        if (value.startsWith(QrCrypto.PREFIX)) {
+                                                        // HU-44: se guarda el valor CRUDO leído (con el
+                                                        // prefijo `PROTECTED:` intacto si estaba cifrado)
+                                                        // -- RNF2, nunca el texto plano de un QR protegido.
+                                                        val isProtectedScan = value.startsWith(QrCrypto.PREFIX)
+                                                        // Bug real encontrado en la revisión pre-fusión:
+                                                        // addOnSuccessListener sin Executor propio corre en
+                                                        // el hilo principal (no en el `executor` de
+                                                        // CameraX) -- el I/O de SharedPreferences de
+                                                        // QrHistoryStorage.save() se saca de ahí con
+                                                        // Dispatchers.IO para no sumarle jitter al
+                                                        // callback de detección de cada frame escaneado.
+                                                        scope.launch(Dispatchers.IO) {
+                                                            QrHistoryStorage.save(
+                                                                context,
+                                                                QrHistoryEntry(
+                                                                    id = java.util.UUID.randomUUID().toString(),
+                                                                    content = value,
+                                                                    typeName = if (isProtectedScan) {
+                                                                        "PROTECTED"
+                                                                    } else {
+                                                                        detectQrContentType(value).name
+                                                                    },
+                                                                    source = QrHistorySource.SCANNED,
+                                                                    createdAtMillis = System.currentTimeMillis()
+                                                                )
+                                                            )
+                                                        }
+                                                        if (isProtectedScan) {
                                                             pendingProtectedContent =
                                                                 value.removePrefix(QrCrypto.PREFIX)
                                                         } else {
@@ -383,31 +423,9 @@ fun QrReaderScreen(
                     // patrón de bug ya corregido antes en banners y sombras --
                     // ver `AccentGradient.kt`). Imagen/Teléfono se quedan en
                     // verde a propósito, como diferenciación semántica.
-                    val accentTypeColor = MaterialTheme.colorScheme.primary
-                    val (typeIcon, typeColor, typeLabel) = when (qrType) {
-                        QrContentType.URL ->
-                            Triple(Icons.Rounded.Link, accentTypeColor, stringResource(R.string.qr_type_url_detected))
-                        QrContentType.IMAGE ->
-                            Triple(Icons.Rounded.Image, SuccessGreen, stringResource(R.string.qr_type_image_detected))
-                        QrContentType.DOCUMENT ->
-                            Triple(
-                                Icons.Rounded.Description,
-                                accentTypeColor,
-                                stringResource(R.string.qr_type_document_detected)
-                            )
-                        QrContentType.EMAIL ->
-                            Triple(
-                                Icons.Rounded.Email, accentTypeColor, stringResource(R.string.qr_type_email_detected)
-                            )
-                        QrContentType.PHONE ->
-                            Triple(Icons.Rounded.Phone, SuccessGreen, stringResource(R.string.qr_type_phone_detected))
-                        QrContentType.TEXT ->
-                            Triple(
-                                Icons.Rounded.TextFields,
-                                accentTypeColor,
-                                stringResource(R.string.qr_type_text_detected)
-                            )
-                    }
+                    // Extraído a QrResultDisplay.kt (HU-44): el Historial
+                    // reutiliza el mismo mapeo tipo->ícono/color/etiqueta.
+                    val (typeIcon, typeColor, typeLabel) = qrContentTypeVisuals(qrType)
 
                     Box(
                         modifier = Modifier.size(80.dp).background(
@@ -516,143 +534,14 @@ fun QrReaderScreen(
                             }
 
                             // ── Botones según tipo ────────────────────────────
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                when (qrType) {
-                                    QrContentType.URL -> {
-                                        Button(
-                                            onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.OpenInBrowser, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_open_browser))
-                                        }
-                                        OutlinedButton(
-                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.ContentCopy, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_copy_url))
-                                        }
-                                    }
-                                    QrContentType.IMAGE -> {
-                                        Button(
-                                            onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.OpenInBrowser, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_open_image))
-                                        }
-                                        OutlinedButton(
-                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.ContentCopy, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_copy_link))
-                                        }
-                                    }
-                                    QrContentType.DOCUMENT -> {
-                                        Button(
-                                            onClick = { openDocumentExternally(context, qrResult ?: "", openDocumentLabel) },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.OpenInNew, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_open_document))
-                                        }
-                                        OutlinedButton(
-                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.ContentCopy, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_copy_path))
-                                        }
-                                    }
-                                    QrContentType.EMAIL -> {
-                                        Button(
-                                            onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.Email, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_send_email))
-                                        }
-                                        OutlinedButton(
-                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.ContentCopy, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_copy_email))
-                                        }
-                                    }
-                                    QrContentType.PHONE -> {
-                                        Button(
-                                            onClick = { openUrl(context, qrResult ?: "") },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.Phone, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_call))
-                                        }
-                                        OutlinedButton(
-                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.ContentCopy, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_copy_number))
-                                        }
-                                    }
-                                    QrContentType.TEXT -> {
-                                        Button(
-                                            onClick = { copyToClipboard(context, qrResult ?: ""); copiedMsg = true },
-                                            modifier = Modifier.fillMaxWidth()
-                                                .accentBorder(MaterialTheme.shapes.medium),
-                                            shape = MaterialTheme.shapes.medium
-                                        ) {
-                                            Icon(Icons.Rounded.ContentCopy, null,
-                                                modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_copy_text))
-                                        }
-                                    }
-                                }
-                            }
+                            // Extraído a QrResultDisplay.kt (HU-44): el
+                            // Historial reutiliza los mismos botones para una
+                            // entrada leída.
+                            QrContentActionButtons(
+                                qrType = qrType,
+                                content = qrResult ?: "",
+                                onCopied = { copiedMsg = true }
+                            )
                         }
                     }
 
@@ -730,6 +619,8 @@ fun QrCreatorScreen(
     initialFileUri : String? = null,
     initialFileType: String? = null,
     initialFileName: String? = null,
+    // HU-44: acceso al Historial de QR desde el banner.
+    onHistoryClick: () -> Unit = {},
     viewModel: QrViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -851,7 +742,16 @@ fun QrCreatorScreen(
             DocuSmartTopBanner(
                 screenTitle    = stringResource(R.string.qr_creator_title),
                 screenSubtitle = stringResource(R.string.qr_creator_subtitle),
-                onBack         = onBack
+                onBack         = onBack,
+                actions = {
+                    IconButton(onClick = onHistoryClick) {
+                        Icon(
+                            Icons.Rounded.History,
+                            contentDescription = stringResource(R.string.qr_history_title),
+                            tint = Color.White
+                        )
+                    }
+                }
             )
 
             // ── AdMob — solo para usuarios free (backlog UX §8) ───────────────
@@ -1270,6 +1170,31 @@ fun QrCreatorScreen(
                             else -> QrContentType.TEXT.name
                         }
                         DocuSmartAnalytics.logQrCreated(createdContentTypeName, usePassword)
+                        // HU-44: se guarda `finalContent` -- ya incluye el
+                        // prefijo `PROTECTED:` + cifrado cuando usePassword
+                        // está activo, nunca el texto plano -- RNF2. Bug real
+                        // encontrado en la revisión pre-fusión: guardar acá
+                        // `createdContentTypeName` (el tipo real, ej. "URL")
+                        // hacía que la fila del Historial mostrara el
+                        // ciphertext crudo sin enmascarar y sin ícono de
+                        // candado -- mismo criterio que ya usa el Lector
+                        // (`typeName = "PROTECTED"` cuando el QR está
+                        // cifrado), para que "Contenido protegido con
+                        // contraseña" se muestre en vez del contenido.
+                        QrHistoryStorage.save(
+                            context,
+                            QrHistoryEntry(
+                                id = java.util.UUID.randomUUID().toString(),
+                                content = finalContent,
+                                typeName = if (usePassword && password.isNotBlank()) {
+                                    "PROTECTED"
+                                } else {
+                                    createdContentTypeName
+                                },
+                                source = QrHistorySource.CREATED,
+                                createdAtMillis = System.currentTimeMillis()
+                            )
+                        )
                     }
                 },
                 enabled  = hasContent,
@@ -1420,7 +1345,7 @@ private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
         }
     }
 
-private fun openDocumentExternally(context: Context, uriString: String, chooserTitle: String) {
+internal fun openDocumentExternally(context: Context, uriString: String, chooserTitle: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse(uriString)
@@ -1432,7 +1357,7 @@ private fun openDocumentExternally(context: Context, uriString: String, chooserT
     }
 }
 
-private suspend fun generateQrBitmap(content: String): Bitmap? =
+internal suspend fun generateQrBitmap(content: String): Bitmap? =
     withContext(Dispatchers.IO) {
         try {
             val size      = 512
@@ -1453,7 +1378,7 @@ private suspend fun generateQrBitmap(content: String): Bitmap? =
     }
 
 
-private suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
+internal suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
     withContext(Dispatchers.IO) {
         try {
             val dir  = File(context.cacheDir, "qr").apply { mkdirs() }
@@ -1464,7 +1389,7 @@ private suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
     }
 
 
-private fun shareQrImage(context: Context, file: File, chooserTitle: String) {
+internal fun shareQrImage(context: Context, file: File, chooserTitle: String) {
     try {
         val uri = FileProvider.getUriForFile(
             context, "${context.packageName}.fileprovider", file)
@@ -1477,12 +1402,12 @@ private fun shareQrImage(context: Context, file: File, chooserTitle: String) {
     } catch (e: Exception) { Timber.e(e, "shareQrImage") }
 }
 
-private fun copyToClipboard(context: Context, text: String) {
+internal fun copyToClipboard(context: Context, text: String) {
     val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
     cb.setPrimaryClip(android.content.ClipData.newPlainText("QR", text))
 }
 
-private fun openUrl(context: Context, url: String) {
+internal fun openUrl(context: Context, url: String) {
     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     catch (e: Exception) { Timber.e(e, "openUrl") }
 }

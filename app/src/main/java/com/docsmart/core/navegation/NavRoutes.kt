@@ -70,6 +70,7 @@ sealed class NavRoutes(val route: String) {
     }
     data object Qr          : NavRoutes("qr")
     data object QrReader    : NavRoutes("qr_reader")
+    data object QrHistory   : NavRoutes("qr_history") // HU-44
     data object QrCreator : NavRoutes(
         "qr_creator?initialFileUri={initialFileUri}&initialFileType={initialFileType}" +
             "&initialFileName={initialFileName}"

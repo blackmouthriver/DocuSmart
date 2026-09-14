@@ -33,6 +33,7 @@ import com.docsmart.features.onboarding.presentation.hasCompletedOnboarding
 import com.docsmart.features.pdftools.presentation.PdfToolsScreen
 import com.docsmart.features.premium.presentation.PremiumScreen
 import com.docsmart.features.scanner.presentation.QrCreatorScreen
+import com.docsmart.features.scanner.presentation.QrHistoryScreen
 import com.docsmart.features.scanner.presentation.QrReaderScreen
 import com.docsmart.features.scanner.presentation.ScanResultDocumentActions
 import com.docsmart.features.scanner.presentation.ScanResultScreen
@@ -210,7 +211,10 @@ fun DocuSmartNavGraph(
 
         // ── QR Reader ─────────────────────────────────────────────────────────
         composable(NavRoutes.QrReader.route) {
-            QrReaderScreen(onBack = { navController.popBackStack() })
+            QrReaderScreen(
+                onBack         = { navController.popBackStack() },
+                onHistoryClick = { navController.navigate(NavRoutes.QrHistory.route) }
+            )
         }
 
         // ── QR Creator ────────────────────────────────────────────────────────
@@ -238,8 +242,14 @@ fun DocuSmartNavGraph(
                 onBack          = { navController.popBackStack() },
                 initialFileUri  = backStackEntry.arguments?.getString("initialFileUri"),
                 initialFileType = backStackEntry.arguments?.getString("initialFileType"),
-                initialFileName = backStackEntry.arguments?.getString("initialFileName")
+                initialFileName = backStackEntry.arguments?.getString("initialFileName"),
+                onHistoryClick  = { navController.navigate(NavRoutes.QrHistory.route) }
             )
+        }
+
+        // ── Historial de QR (HU-44) ──────────────────────────────────────────
+        composable(NavRoutes.QrHistory.route) {
+            QrHistoryScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Papelera (RF-VIS-07) ──────────────────────────────────────────────
@@ -278,6 +288,7 @@ private val SCREEN_NAMES_BY_ROUTE = mapOf(
     "study"             to "Study",
     "qr_reader"         to "QrReader",
     "qr_creator"        to "QrCreator",
+    "qr_history"        to "QrHistory",
     "trash"             to "Trash"
 )
 

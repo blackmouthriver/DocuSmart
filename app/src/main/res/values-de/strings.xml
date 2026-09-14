@@ -804,6 +804,18 @@
     <string name="qr_generated_content_desc">Erstellter QR-Code</string>
     <string name="qr_protected_badge">Geschützt</string>
     <string name="qr_share_chooser_title">QR teilen</string>
+    <string name="qr_history_title">Verlauf</string>
+    <string name="qr_history_subtitle">Deine zuletzt erstellten und gelesenen QR-Codes</string>
+    <string name="qr_history_empty_title">Noch kein Verlauf</string>
+    <string name="qr_history_empty_body">QR-Codes, die du erstellst oder liest, erscheinen hier</string>
+    <string name="qr_history_clear_all">Verlauf leeren</string>
+    <string name="qr_history_clear_all_confirm_title">Gesamten Verlauf leeren?</string>
+    <string name="qr_history_clear_all_confirm_body">Die %1$d Einträge werden gelöscht. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="qr_history_delete_confirm_title">Diesen Eintrag löschen?</string>
+    <string name="qr_history_delete_confirm_body">Das kann nicht rückgängig gemacht werden.</string>
+    <string name="qr_history_source_created">Erstellt</string>
+    <string name="qr_history_source_scanned">Gelesen</string>
+    <string name="qr_history_protected_content">Passwortgeschützter Inhalt</string>
 
     <!-- ── Lernmodus ─────────────────────────────────── -->
     <string name="study_tab_reading">Lesen</string>

@@ -804,6 +804,18 @@
     <string name="qr_generated_content_desc">Созданный QR-код</string>
     <string name="qr_protected_badge">Защищено</string>
     <string name="qr_share_chooser_title">Поделиться QR</string>
+    <string name="qr_history_title">История</string>
+    <string name="qr_history_subtitle">Ваши последние созданные и считанные QR-коды</string>
+    <string name="qr_history_empty_title">Истории пока нет</string>
+    <string name="qr_history_empty_body">Созданные или считанные QR-коды появятся здесь</string>
+    <string name="qr_history_clear_all">Очистить историю</string>
+    <string name="qr_history_clear_all_confirm_title">Очистить всю историю?</string>
+    <string name="qr_history_clear_all_confirm_body">Будут удалены %1$d записей. Это действие нельзя отменить.</string>
+    <string name="qr_history_delete_confirm_title">Удалить эту запись?</string>
+    <string name="qr_history_delete_confirm_body">Это действие нельзя отменить.</string>
+    <string name="qr_history_source_created">Создан</string>
+    <string name="qr_history_source_scanned">Считан</string>
+    <string name="qr_history_protected_content">Содержимое защищено паролем</string>
 
     <!-- ── Режим учёбы ─────────────────────────────────── -->
     <string name="study_tab_reading">Чтение</string>

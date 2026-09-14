@@ -811,6 +811,18 @@
     <string name="qr_generated_content_desc">Codice QR generato</string>
     <string name="qr_protected_badge">Protetto</string>
     <string name="qr_share_chooser_title">Condividi QR</string>
+    <string name="qr_history_title">Cronologia</string>
+    <string name="qr_history_subtitle">I tuoi ultimi codici QR creati e letti</string>
+    <string name="qr_history_empty_title">Ancora nessuna cronologia</string>
+    <string name="qr_history_empty_body">I QR che crei o leggi appariranno qui</string>
+    <string name="qr_history_clear_all">Svuota cronologia</string>
+    <string name="qr_history_clear_all_confirm_title">Svuotare tutta la cronologia?</string>
+    <string name="qr_history_clear_all_confirm_body">Le %1$d voci verranno eliminate. Questa azione non può essere annullata.</string>
+    <string name="qr_history_delete_confirm_title">Eliminare questa voce?</string>
+    <string name="qr_history_delete_confirm_body">Questa azione non può essere annullata.</string>
+    <string name="qr_history_source_created">Creato</string>
+    <string name="qr_history_source_scanned">Letto</string>
+    <string name="qr_history_protected_content">Contenuto protetto da password</string>
 
     <!-- ── Studio ─────────────────────────────────── -->
     <string name="study_tab_reading">Lettura</string>

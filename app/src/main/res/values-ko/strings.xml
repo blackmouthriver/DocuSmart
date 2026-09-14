@@ -808,6 +808,18 @@
     <string name="qr_generated_content_desc">생성된 QR 코드</string>
     <string name="qr_protected_badge">보호됨</string>
     <string name="qr_share_chooser_title">QR 공유</string>
+    <string name="qr_history_title">기록</string>
+    <string name="qr_history_subtitle">최근에 생성하거나 읽은 QR 코드</string>
+    <string name="qr_history_empty_title">아직 기록이 없습니다</string>
+    <string name="qr_history_empty_body">생성하거나 읽은 QR 코드가 여기에 표시됩니다</string>
+    <string name="qr_history_clear_all">기록 지우기</string>
+    <string name="qr_history_clear_all_confirm_title">전체 기록을 지울까요?</string>
+    <string name="qr_history_clear_all_confirm_body">%1$d개 항목이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="qr_history_delete_confirm_title">이 항목을 삭제할까요?</string>
+    <string name="qr_history_delete_confirm_body">이 작업은 되돌릴 수 없습니다.</string>
+    <string name="qr_history_source_created">생성됨</string>
+    <string name="qr_history_source_scanned">읽음</string>
+    <string name="qr_history_protected_content">비밀번호로 보호된 콘텐츠</string>
 
     <!-- ── 학습 ─────────────────────────────────── -->
     <string name="study_tab_reading">읽기</string>
