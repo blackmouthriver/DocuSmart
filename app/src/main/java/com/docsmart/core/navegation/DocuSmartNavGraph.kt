@@ -22,6 +22,7 @@ import com.docsmart.core.data.canonicalMediaUri
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.core.ui.theme.ThemeManager
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterScreen
@@ -33,6 +34,7 @@ import com.docsmart.features.pdftools.presentation.PdfToolsScreen
 import com.docsmart.features.premium.presentation.PremiumScreen
 import com.docsmart.features.scanner.presentation.QrCreatorScreen
 import com.docsmart.features.scanner.presentation.QrReaderScreen
+import com.docsmart.features.scanner.presentation.ScanResultDocumentActions
 import com.docsmart.features.scanner.presentation.ScanResultScreen
 import com.docsmart.features.scanner.presentation.ScannerScreen
 import com.docsmart.features.security.presentation.PdfPasswordScreen
@@ -130,7 +132,26 @@ fun DocuSmartNavGraph(
         }
 
         // ── PDF Tools ─────────────────────────────────────────────────────────
-        composable(NavRoutes.PdfTools.route) { PdfToolsScreen() }
+        composable(
+            route     = NavRoutes.PdfTools.route,
+            arguments = listOf(
+                navArgument("initialTool") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                },
+                navArgument("initialFileUri") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            PdfToolsScreen(
+                initialTool    = backStackEntry.arguments?.getString("initialTool"),
+                initialFileUri = backStackEntry.arguments?.getString("initialFileUri")
+            )
+        }
 
         settingsComposable(navController, themeManager, languageManager)
 
@@ -152,8 +173,20 @@ fun DocuSmartNavGraph(
         }
 
         // ── Carpeta Segura ────────────────────────────────────────────────────
-        composable(NavRoutes.SecureFolder.route) {
-            SecurityScreen(onBack = { navController.popBackStack() })
+        composable(
+            route     = NavRoutes.SecureFolder.route,
+            arguments = listOf(
+                navArgument("pendingFileUri") {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            SecurityScreen(
+                onBack          = { navController.popBackStack() },
+                pendingFileUri  = backStackEntry.arguments?.getString("pendingFileUri")
+            )
         }
 
         // ── PDF Password ──────────────────────────────────────────────────────
@@ -268,7 +301,11 @@ private fun DocumentType.toQrFileType(): String =
 private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
     navigate(
         NavRoutes.Converter.createRoute(
-            initialFileUri      = document.id,
+            // Bug real encontrado 2026-09-14 (revisión pre-fusión HU-42):
+            // `document.id` puede ser una ruta absoluta sin esquema (ver
+            // comentario de `toContentUri()`), que `Uri.parse()` no
+            // reconstruye como URI válido -- hay que normalizar siempre.
+            initialFileUri      = document.toContentUri().toString(),
             initialFileCategory = document.type.toConverterCategoryOrNull()
         )
     )
@@ -277,11 +314,28 @@ private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
 private fun NavHostController.navigateToQrCreator(document: DocumentUiModel) {
     navigate(
         NavRoutes.QrCreator.createRoute(
-            initialFileUri  = document.id,
+            initialFileUri  = document.toContentUri().toString(),
             initialFileType = document.type.toQrFileType(),
             initialFileName = document.name
         )
     )
+}
+
+// ── Accesos directos a OCR/Firmar/Carpeta Segura desde un archivo ya
+// elegido (backlog UX 2026-08-30/09-10, HU-42) -- mismo mecanismo de
+// "atajo de navegación con parámetros opcionales" que Convertir/Crear QR
+// (HU-UX-01/02) de arriba, extendido a Biblioteca/Recientes/Visor/lista de
+// sesión del Escáner (el mismo `DocumentContextMenu` compartido por los 4).
+private fun NavHostController.navigateToOcr(document: DocumentUiModel) {
+    navigate(NavRoutes.PdfTools.createRoute(initialTool = "OCR", initialFileUri = document.toContentUri().toString()))
+}
+
+private fun NavHostController.navigateToSign(document: DocumentUiModel) {
+    navigate(NavRoutes.PdfTools.createRoute(initialTool = "SIGN", initialFileUri = document.toContentUri().toString()))
+}
+
+private fun NavHostController.navigateToSecureFolder(document: DocumentUiModel) {
+    navigate(NavRoutes.SecureFolder.createRoute(pendingFileUri = document.toContentUri().toString()))
 }
 
 // ── Splash 1: MouthBlack ────────────────────────────────────────────────────
@@ -405,7 +459,10 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
             },
             onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) }
+            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) },
+            onMakeSearchableDocument   = { doc -> navController.navigateToOcr(doc) },
+            onSignDocument             = { doc -> navController.navigateToSign(doc) },
+            onMoveToSecureFolderDocument = { doc -> navController.navigateToSecureFolder(doc) }
         )
     }
 }
@@ -434,7 +491,10 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
             },
             onTrashClick    = { navController.navigate(NavRoutes.Trash.route) },
             onConvertClick  = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) }
+            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) },
+            onMakeSearchableClick   = { doc -> navController.navigateToOcr(doc) },
+            onSignClick             = { doc -> navController.navigateToSign(doc) },
+            onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) }
         )
     }
 }
@@ -470,7 +530,10 @@ private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
                 }
             },
             onConvertClick  = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) }
+            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) },
+            onMakeSearchableClick   = { doc -> navController.navigateToOcr(doc) },
+            onSignClick             = { doc -> navController.navigateToSign(doc) },
+            onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) }
         )
     }
 }
@@ -543,7 +606,12 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
             // persistente que sí necesita Library para MediaStore.
             onOpenDocument         = { documentId -> navController.navigate(NavRoutes.Viewer.createRoute(documentId)) },
             onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) }
+            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) },
+            documentActions = ScanResultDocumentActions(
+                onMakeSearchable     = { doc -> navController.navigateToOcr(doc) },
+                onSign               = { doc -> navController.navigateToSign(doc) },
+                onMoveToSecureFolder = { doc -> navController.navigateToSecureFolder(doc) }
+            )
         )
     }
 }

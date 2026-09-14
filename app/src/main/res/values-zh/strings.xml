@@ -193,6 +193,9 @@
 
     <!-- ── 文档菜单（首页/资料库，DocuSmartDocumentItem） ── -->
     <string name="doc_item_add_favorite">添加到收藏</string>
+    <string name="doc_item_make_searchable">设为可搜索</string>
+    <string name="doc_item_sign">签名</string>
+    <string name="doc_item_move_to_secure_folder">移动到安全文件夹</string>
     <string name="doc_item_remove_favorite">从收藏中移除</string>
     <string name="doc_item_rename_title">重命名文件</string>
 

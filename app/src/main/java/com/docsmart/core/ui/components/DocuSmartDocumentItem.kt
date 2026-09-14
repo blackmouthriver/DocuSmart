@@ -119,7 +119,13 @@ fun DocuSmartDocumentItem(
     onCreateQrClick: (() -> Unit)? = null,
     onShareClick   : (() -> Unit)? = null,
     onRenameClick  : (() -> Unit)? = null,
-    onDeleteClick  : (() -> Unit)? = null
+    onDeleteClick  : (() -> Unit)? = null,
+    // Backlog UX 2026-08-30/09-10 (HU-42): accesos directos a OCR/Firmar/
+    // Carpeta Segura desde un archivo ya elegido, mismo mecanismo que
+    // onConvertClick/onCreateQrClick de arriba (HU-UX-01/02).
+    onMakeSearchableClick   : (() -> Unit)? = null,
+    onSignClick             : (() -> Unit)? = null,
+    onMoveToSecureFolderClick: (() -> Unit)? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -132,6 +138,9 @@ fun DocuSmartDocumentItem(
             onRename   = onRenameClick?.let   { a -> { showMenu = false; a() } },
             onConvert  = onConvertClick?.let  { a -> { showMenu = false; a() } },
             onCreateQr = onCreateQrClick?.let { a -> { showMenu = false; a() } },
+            onMakeSearchable    = onMakeSearchableClick?.let    { a -> { showMenu = false; a() } },
+            onSign              = onSignClick?.let              { a -> { showMenu = false; a() } },
+            onMoveToSecureFolder = onMoveToSecureFolderClick?.let { a -> { showMenu = false; a() } },
             onShare    = onShareClick?.let    { a -> { showMenu = false; a() } },
             onDelete   = onDeleteClick?.let   { a -> { showMenu = false; a() } }
         )
@@ -221,6 +230,9 @@ fun DocumentContextMenu(
     onRename  : (() -> Unit)? = null,
     onConvert : (() -> Unit)? = null,
     onCreateQr: (() -> Unit)? = null,
+    onMakeSearchable    : (() -> Unit)? = null,
+    onSign              : (() -> Unit)? = null,
+    onMoveToSecureFolder: (() -> Unit)? = null,
     onShare   : (() -> Unit)? = null,
     onDelete  : (() -> Unit)? = null
 ) {
@@ -255,7 +267,23 @@ fun DocumentContextMenu(
                 tint    = if (document.isFavorite) MaterialTheme.colorScheme.error else null,
                 onClick = onFavorite
             )
-            OptionalContextMenuItems(onRename, onConvert, onCreateQr, onShare, onDelete)
+            // "Hacer buscable"/"Firmar" (HU-42) solo tienen sentido para un
+            // PDF real -- PdfToolsViewModel.OCR/SIGN operan exclusivamente
+            // sobre PDFs, mostrarlos para Word/Excel/Imagen sería un atajo
+            // que siempre falla. "Mover a Carpeta Segura" no tiene esa
+            // restricción (SecurityManager.moveToSecure() acepta cualquier
+            // archivo).
+            val isPdfDocument = document.type == DocumentType.PDF || document.type == DocumentType.OCR
+            OptionalContextMenuItems(
+                onRename             = onRename,
+                onConvert            = onConvert,
+                onCreateQr           = onCreateQr,
+                onMakeSearchable     = onMakeSearchable.takeIf { isPdfDocument },
+                onSign               = onSign.takeIf { isPdfDocument },
+                onMoveToSecureFolder = onMoveToSecureFolder,
+                onShare              = onShare,
+                onDelete             = onDelete
+            )
         }
     }
 }
@@ -304,6 +332,9 @@ private fun OptionalContextMenuItems(
     onRename  : (() -> Unit)?,
     onConvert : (() -> Unit)?,
     onCreateQr: (() -> Unit)?,
+    onMakeSearchable    : (() -> Unit)?,
+    onSign              : (() -> Unit)?,
+    onMoveToSecureFolder: (() -> Unit)?,
     onShare   : (() -> Unit)?,
     onDelete  : (() -> Unit)?
 ) {
@@ -326,6 +357,28 @@ private fun OptionalContextMenuItems(
             icon    = Icons.Rounded.QrCode,
             label   = stringResource(R.string.viewer_create_qr),
             onClick = onCreateQr
+        )
+    }
+    if (onMakeSearchable != null) {
+        // Mismo ícono que ya usa OCR en el menú de Herramientas PDF.
+        ContextMenuItem(
+            icon    = Icons.Rounded.FindInPage,
+            label   = stringResource(R.string.doc_item_make_searchable),
+            onClick = onMakeSearchable
+        )
+    }
+    if (onSign != null) {
+        ContextMenuItem(
+            icon    = Icons.Rounded.Draw,
+            label   = stringResource(R.string.doc_item_sign),
+            onClick = onSign
+        )
+    }
+    if (onMoveToSecureFolder != null) {
+        ContextMenuItem(
+            icon    = Icons.Rounded.Lock,
+            label   = stringResource(R.string.doc_item_move_to_secure_folder),
+            onClick = onMoveToSecureFolder
         )
     }
     if (onShare != null) {

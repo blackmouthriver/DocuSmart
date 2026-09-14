@@ -97,6 +97,17 @@ private fun mimeTypeForExtension(extension: String): String = when (extension.lo
     else          -> "application/octet-stream"
 }
 
+// Backlog UX 2026-08-30/09-10 (HU-42): accesos directos a OCR/Firmar/
+// Carpeta Segura desde el menú "⋮" de la lista de sesión -- agrupados acá
+// para no superar LongParameterList/LongMethod de detekt en
+// ScanResultScreen(). Público porque DocuSmartNavGraph (otro paquete) lo
+// construye al conectar la navegación real.
+data class ScanResultDocumentActions(
+    val onMakeSearchable: (DocumentUiModel) -> Unit = {},
+    val onSign: (DocumentUiModel) -> Unit = {},
+    val onMoveToSecureFolder: (DocumentUiModel) -> Unit = {}
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanResultScreen(
@@ -108,6 +119,8 @@ fun ScanResultScreen(
     onOpenDocument: (String) -> Unit = {},
     onConvertDocument: (DocumentUiModel) -> Unit = {},
     onCreateQrFromDocument: (DocumentUiModel) -> Unit = {},
+    // HU-42, agrupados (LongMethod de detekt):
+    documentActions: ScanResultDocumentActions = ScanResultDocumentActions(),
     converterViewModel: ConverterViewModel = hiltViewModel(),
     editorViewModel: ScanImageEditorViewModel = hiltViewModel(),
     scanSessionViewModel: ScanSessionViewModel = hiltViewModel()
@@ -241,7 +254,10 @@ fun ScanResultScreen(
                 onRename = { id, newName -> scanSessionViewModel.renameDocument(id, newName) },
                 onDelete = { id -> scanSessionViewModel.deleteDocument(id) },
                 onConvert = onConvertDocument,
-                onCreateQr = onCreateQrFromDocument
+                onCreateQr = onCreateQrFromDocument,
+                onMakeSearchable = documentActions.onMakeSearchable,
+                onSign = documentActions.onSign,
+                onMoveToSecureFolder = documentActions.onMoveToSecureFolder
             )
         ),
         defaultFlowArgs = ScanDefaultFlowArgs(
@@ -620,7 +636,10 @@ private data class ScanSessionRowActions(
     val onRename: (String, String) -> Unit,
     val onDelete: (String) -> Unit,
     val onConvert: (DocumentUiModel) -> Unit,
-    val onCreateQr: (DocumentUiModel) -> Unit
+    val onCreateQr: (DocumentUiModel) -> Unit,
+    val onMakeSearchable: (DocumentUiModel) -> Unit,
+    val onSign: (DocumentUiModel) -> Unit,
+    val onMoveToSecureFolder: (DocumentUiModel) -> Unit
 )
 
 private data class ScanSessionDisplayArgs(
@@ -875,6 +894,9 @@ private fun ScanSessionFinalizedSection(
                     onShareClick = { onShareFile(document) },
                     onConvertClick = { rowActions.onConvert(document) },
                     onCreateQrClick = { rowActions.onCreateQr(document) },
+                    onMakeSearchableClick = { rowActions.onMakeSearchable(document) },
+                    onSignClick = { rowActions.onSign(document) },
+                    onMoveToSecureFolderClick = { rowActions.onMoveToSecureFolder(document) },
                     onDeleteClick = { rowActions.onDelete(document.id) }
                 )
             }

@@ -215,6 +215,9 @@
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Agregar a favoritos</string>
+    <string name="doc_item_make_searchable">Hacer buscable</string>
+    <string name="doc_item_sign">Firmar</string>
+    <string name="doc_item_move_to_secure_folder">Mover a Carpeta Segura</string>
     <string name="doc_item_remove_favorite">Quitar de favoritos</string>
     <string name="doc_item_rename_title">Renombrar archivo</string>
 

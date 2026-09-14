@@ -29,6 +29,14 @@ fun ViewerTopBar(
     onSearchClick: () -> Unit,
     onConvertClick: () -> Unit,
     onCreateQrClick: () -> Unit,
+    // Backlog UX 2026-08-30/09-10 (HU-42): mismo criterio de
+    // DocumentContextMenu -- "Hacer buscable"/"Firmar" solo tienen sentido
+    // para un PDF real, así que se gatean con `isPdf`. "Mover a Carpeta
+    // Segura" no tiene esa restricción.
+    isPdf: Boolean,
+    onMakeSearchableClick: () -> Unit,
+    onSignClick: () -> Unit,
+    onMoveToSecureFolderClick: () -> Unit,
     onRenameClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -105,71 +113,101 @@ fun ViewerTopBar(
                     )
                 }
 
-                // Más opciones (renombrar/eliminar) — RF-VIS-06
-                var menuExpanded by remember { mutableStateOf(false) }
-                Box {
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = stringResource(R.string.viewer_more_options),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                        // Atajos "Convertir"/"Crear QR" desde el documento ya
-                        // abierto (backlog UX 2026-08-30, HU-UX-01/02, AC5) --
-                        // van antes de Renombrar/Eliminar por ser acciones no
-                        // destructivas, igual que en DocumentContextMenu.
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.viewer_convert)) },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.SwapHoriz, contentDescription = null)
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                onConvertClick()
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.viewer_create_qr)) },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.QrCode, contentDescription = null)
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                onCreateQrClick()
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.viewer_rename)) },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.Edit, contentDescription = null)
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                onRenameClick()
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.viewer_delete)) },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Rounded.DeleteOutline,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                onDeleteClick()
-                            }
-                        )
-                    }
-                }
+                // Más opciones (renombrar/eliminar/OCR/firmar/Carpeta Segura)
+                // — RF-VIS-06/HU-42
+                ViewerMoreOptionsMenu(
+                    isPdf   = isPdf,
+                    actions = ViewerMenuActions(
+                        onConvert            = onConvertClick,
+                        onCreateQr           = onCreateQrClick,
+                        onMakeSearchable     = onMakeSearchableClick,
+                        onSign               = onSignClick,
+                        onMoveToSecureFolder = onMoveToSecureFolderClick,
+                        onRename             = onRenameClick,
+                        onDelete             = onDeleteClick
+                    )
+                )
             }
+        }
+    }
+}
+
+// Extraído de ViewerTopBar() (LongMethod de detekt, disparado al agregar
+// los 2 accesos de HU-42 gateados por `isPdf`) -- el menú "⋮" completo.
+private data class ViewerMenuActions(
+    val onConvert           : () -> Unit,
+    val onCreateQr          : () -> Unit,
+    val onMakeSearchable    : () -> Unit,
+    val onSign              : () -> Unit,
+    val onMoveToSecureFolder: () -> Unit,
+    val onRename            : () -> Unit,
+    val onDelete            : () -> Unit
+)
+
+@Composable
+private fun ViewerMoreOptionsMenu(isPdf: Boolean, actions: ViewerMenuActions) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { menuExpanded = true }) {
+            Icon(
+                imageVector = Icons.Rounded.MoreVert,
+                contentDescription = stringResource(R.string.viewer_more_options),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
+        ) {
+            // Atajos "Convertir"/"Crear QR" desde el documento ya abierto
+            // (backlog UX 2026-08-30, HU-UX-01/02, AC5) -- van antes de
+            // Renombrar/Eliminar por ser acciones no destructivas, igual
+            // que en DocumentContextMenu.
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.viewer_convert)) },
+                leadingIcon = { Icon(Icons.Rounded.SwapHoriz, contentDescription = null) },
+                onClick = { menuExpanded = false; actions.onConvert() }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.viewer_create_qr)) },
+                leadingIcon = { Icon(Icons.Rounded.QrCode, contentDescription = null) },
+                onClick = { menuExpanded = false; actions.onCreateQr() }
+            )
+            // HU-42: "Hacer buscable"/"Firmar" solo tienen sentido para un
+            // PDF real -- mismo criterio que DocumentContextMenu.
+            if (isPdf) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.doc_item_make_searchable)) },
+                    leadingIcon = { Icon(Icons.Rounded.FindInPage, contentDescription = null) },
+                    onClick = { menuExpanded = false; actions.onMakeSearchable() }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.doc_item_sign)) },
+                    leadingIcon = { Icon(Icons.Rounded.Draw, contentDescription = null) },
+                    onClick = { menuExpanded = false; actions.onSign() }
+                )
+            }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.doc_item_move_to_secure_folder)) },
+                leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
+                onClick = { menuExpanded = false; actions.onMoveToSecureFolder() }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.viewer_rename)) },
+                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                onClick = { menuExpanded = false; actions.onRename() }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.viewer_delete)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Rounded.DeleteOutline,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                },
+                onClick = { menuExpanded = false; actions.onDelete() }
+            )
         }
     }
 }

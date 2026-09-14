@@ -203,6 +203,9 @@
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Gehitu gogokoetara</string>
+    <string name="doc_item_make_searchable">Bilagarri egin</string>
+    <string name="doc_item_sign">Sinatu</string>
+    <string name="doc_item_move_to_secure_folder">Eraman Karpeta Segurura</string>
     <string name="doc_item_remove_favorite">Kendu gogokoetatik</string>
     <string name="doc_item_rename_title">Aldatu fitxategiaren izena</string>
 

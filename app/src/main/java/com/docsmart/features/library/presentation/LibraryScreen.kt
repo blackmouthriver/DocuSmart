@@ -55,6 +55,9 @@ fun LibraryScreen(
     // Biblioteca no tiene un CTA genérico de Convertir/QR al cual caer.
     onConvertClick : (DocumentUiModel) -> Unit = {},
     onCreateQrClick: (DocumentUiModel) -> Unit = {},
+    onMakeSearchableClick   : (DocumentUiModel) -> Unit = {},
+    onSignClick             : (DocumentUiModel) -> Unit = {},
+    onMoveToSecureFolderClick: (DocumentUiModel) -> Unit = {},
     viewModel      : LibraryViewModel = hiltViewModel()
 ) {
     val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
@@ -226,6 +229,9 @@ fun LibraryScreen(
                 onDeleteClick   = { id -> viewModel.removeDocument(id) },
                 onConvertClick  = onConvertClick,
                 onCreateQrClick = onCreateQrClick,
+                onMakeSearchableClick    = onMakeSearchableClick,
+                onSignClick              = onSignClick,
+                onMoveToSecureFolderClick = onMoveToSecureFolderClick,
                 searchQuery     = uiState.searchQuery
             )
         }

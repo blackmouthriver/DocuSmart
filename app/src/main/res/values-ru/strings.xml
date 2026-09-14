@@ -193,6 +193,9 @@
 
     <!-- ── Меню документа (Главная/Библиотека, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Добавить в избранное</string>
+    <string name="doc_item_make_searchable">Сделать доступным для поиска</string>
+    <string name="doc_item_sign">Подписать</string>
+    <string name="doc_item_move_to_secure_folder">Переместить в Защищённую папку</string>
     <string name="doc_item_remove_favorite">Убрать из избранного</string>
     <string name="doc_item_rename_title">Переименовать файл</string>
 

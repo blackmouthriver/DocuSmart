@@ -197,6 +197,9 @@
 
     <!-- ── Menu du document (Accueil/Bibliothèque, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Ajouter aux favoris</string>
+    <string name="doc_item_make_searchable">Rendre recherchable</string>
+    <string name="doc_item_sign">Signer</string>
+    <string name="doc_item_move_to_secure_folder">Déplacer vers le Dossier sécurisé</string>
     <string name="doc_item_remove_favorite">Retirer des favoris</string>
     <string name="doc_item_rename_title">Renommer le fichier</string>
 

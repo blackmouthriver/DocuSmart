@@ -193,6 +193,9 @@
 
     <!-- ── ドキュメントメニュー(ホーム/ライブラリ、DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">お気に入りに追加</string>
+    <string name="doc_item_make_searchable">検索可能にする</string>
+    <string name="doc_item_sign">署名</string>
+    <string name="doc_item_move_to_secure_folder">セキュアフォルダに移動</string>
     <string name="doc_item_remove_favorite">お気に入りから削除</string>
     <string name="doc_item_rename_title">ファイル名を変更</string>
 

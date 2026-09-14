@@ -1,6 +1,7 @@
 package com.docsmart.features.pdftools.presentation
 
 import android.app.Activity
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -66,6 +67,13 @@ private const val MIME_PDF = "application/pdf"
 
 @Composable
 fun PdfToolsScreen(
+    // Acceso directo a OCR/Firmar desde un archivo ya elegido (backlog UX
+    // 2026-08-30/09-10, HU-42): salta el menú de herramientas y el
+    // selector de PDF. `initialTool` es el nombre del enum `PdfTool`
+    // (p.ej. "OCR"/"SIGN"). Ambos `null` (entrada genérica desde el menú
+    // principal) deja el comportamiento igual que antes.
+    initialTool   : String? = null,
+    initialFileUri: String? = null,
     viewModel: PdfToolsViewModel = hiltViewModel()
 ) {
     val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
@@ -345,6 +353,15 @@ fun PdfToolsScreen(
             snackbarHostState.showSnackbar(message)
             viewModel.dismissError()
         }
+    }
+
+    // HU-42: `initialTool`/`initialFileUri` son argumentos de navegación
+    // fijos para esta instancia de la pantalla -- corre una sola vez.
+    LaunchedEffect(initialTool, initialFileUri) {
+        if (initialTool == null || initialFileUri == null) return@LaunchedEffect
+        val tool = runCatching { PdfTool.valueOf(initialTool) }.getOrNull() ?: return@LaunchedEffect
+        viewModel.selectTool(tool)
+        viewModel.onPdfsSelected(listOf(Uri.parse(initialFileUri)))
     }
 
     // ── Dialog de límite diario ────────────────────────

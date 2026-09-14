@@ -193,6 +193,9 @@
 
     <!-- ── 문서 메뉴 (홈/보관함, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">즐겨찾기에 추가</string>
+    <string name="doc_item_make_searchable">검색 가능하게 만들기</string>
+    <string name="doc_item_sign">서명</string>
+    <string name="doc_item_move_to_secure_folder">보안 폴더로 이동</string>
     <string name="doc_item_remove_favorite">즐겨찾기에서 제거</string>
     <string name="doc_item_rename_title">파일 이름 바꾸기</string>
 

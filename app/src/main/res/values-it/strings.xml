@@ -193,6 +193,9 @@
 
     <!-- ── Menu documento (Home/Libreria, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Aggiungi ai preferiti</string>
+    <string name="doc_item_make_searchable">Rendi ricercabile</string>
+    <string name="doc_item_sign">Firma</string>
+    <string name="doc_item_move_to_secure_folder">Sposta nella Cartella Sicura</string>
     <string name="doc_item_remove_favorite">Rimuovi dai preferiti</string>
     <string name="doc_item_rename_title">Rinomina file</string>
 

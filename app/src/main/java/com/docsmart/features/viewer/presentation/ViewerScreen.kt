@@ -92,6 +92,9 @@ fun ViewerScreen(
     // abierto para poder precargarlo en la pantalla de destino.
     onConvertClick : (DocumentUiModel) -> Unit = {},
     onCreateQrClick: (DocumentUiModel) -> Unit = {},
+    onMakeSearchableClick   : (DocumentUiModel) -> Unit = {},
+    onSignClick             : (DocumentUiModel) -> Unit = {},
+    onMoveToSecureFolderClick: (DocumentUiModel) -> Unit = {},
     viewModel : ViewerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -264,78 +267,28 @@ fun ViewerScreen(
             }
         }
 
-        // ── TopBar + SearchBar ────────────────────────────────────────────────
+        // ── TopBar + SearchBar (extraído a ViewerTopBarSection -- LongMethod
+        // de detekt tras agregar los accesos de HU-42) ───────────────────────
         uiState.document?.let { doc ->
-            val mime        = (uiState.mimeType ?: "").lowercase()
-            val isPdf       = mime.contains("pdf") || doc.name.endsWith(".pdf", ignoreCase = true)
-            val isTextBased = isPdf ||
-                    mime.contains("word")       ||
-                    mime.contains("text")       ||
-                    mime.contains("excel")      ||
-                    mime.contains("powerpoint") ||
-                    doc.name.endsWith(".txt")   ||
-                    doc.name.endsWith(".md")    ||
-                    doc.name.endsWith(".csv")
-
-            // ── Búsqueda en PDF: los otros formatos filtran en línea vía
-            // searchQuery (ver WordViewerContent/ExcelViewerContent/etc.); el
-            // PDF necesita extraer texto por página (SearchPdfTextUseCase), así
-            // que se dispara desde acá con un pequeño debounce.
-            LaunchedEffect(searchQuery, isPdf, uiState.fileUri) {
-                if (!isPdf) return@LaunchedEffect
-                if (searchQuery.isBlank()) {
-                    viewModel.clearPdfSearch()
-                } else {
-                    delay(300)
-                    viewModel.searchInPdf(searchQuery)
-                }
-            }
-
-            ViewerTopBar(
-                fileName        = doc.name,
-                isFavorite      = uiState.isFavorite,
-                visible         = uiState.showControls,
-                onBackClick     = onBack,
-                onFavoriteClick = { viewModel.toggleFavorite() },
-                onShareClick    = { viewModel.shareDocument(context) },
-                onSearchClick   = {
-                    if (isTextBased) {
-                        showSearch = !showSearch
-                        if (!showSearch) searchQuery = ""
-                    }
-                },
-                onConvertClick  = { onConvertClick(doc) },
-                onCreateQrClick = { onCreateQrClick(doc) },
-                onRenameClick   = { viewModel.onRenameClick() },
-                onDeleteClick   = { viewModel.onDeleteClick() },
-                modifier        = Modifier.align(Alignment.TopCenter)
+            ViewerTopBarSection(
+                doc     = doc,
+                uiState = uiState,
+                onBack  = onBack,
+                viewModel = viewModel,
+                search  = ViewerSearchState(
+                    query          = searchQuery,
+                    active         = showSearch,
+                    onQueryChange  = { searchQuery = it },
+                    onActiveChange = { showSearch = it }
+                ),
+                documentActions = ViewerDocumentActions(
+                    onConvert            = onConvertClick,
+                    onCreateQr           = onCreateQrClick,
+                    onMakeSearchable     = onMakeSearchableClick,
+                    onSign               = onSignClick,
+                    onMoveToSecureFolder = onMoveToSecureFolderClick
+                )
             )
-
-            // ── Barra de búsqueda ─────────────────────────────────────────────
-            if (showSearch && isTextBased) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 56.dp)
-                        .statusBarsPadding()
-                        .zIndex(10f)
-                ) {
-                    SearchBar(
-                        query    = searchQuery,
-                        onQuery  = { searchQuery = it },
-                        onClose  = { showSearch = false; searchQuery = "" }
-                    )
-                    if (isPdf) {
-                        PdfSearchResultBar(
-                            matchCount   = uiState.pdfSearchMatches.size,
-                            currentIndex = uiState.pdfSearchIndex,
-                            hasQuery     = searchQuery.isNotBlank(),
-                            onNext       = { viewModel.nextPdfSearchResult() },
-                            onPrevious   = { viewModel.previousPdfSearchResult() }
-                        )
-                    }
-                }
-            }
         }
 
         Column(modifier = Modifier.align(Alignment.BottomCenter)) {
@@ -353,6 +306,132 @@ fun ViewerScreen(
                 totalPages  = uiState.totalPages,
                 visible     = uiState.showControls
             )
+        }
+    }
+}
+
+// Backlog UX 2026-08-30/09-10 (HU-42): agrupa los 5 accesos directos del
+// menú del Visor en un solo parámetro -- evita LongParameterList al
+// extraer ViewerTopBarSection() de abajo (fix de LongMethod de detekt,
+// disparado al agregar esos mismos accesos a ViewerScreen()).
+private data class ViewerDocumentActions(
+    val onConvert           : (DocumentUiModel) -> Unit,
+    val onCreateQr          : (DocumentUiModel) -> Unit,
+    val onMakeSearchable    : (DocumentUiModel) -> Unit,
+    val onSign              : (DocumentUiModel) -> Unit,
+    val onMoveToSecureFolder: (DocumentUiModel) -> Unit
+)
+
+// Estado mutable de la búsqueda, agrupado por el mismo motivo de arriba --
+// `searchQuery`/`showSearch` siguen viviendo en ViewerScreen() (también los
+// usa el contenido principal para Word/Excel/PowerPoint/Texto), acá solo se
+// pasan junto con sus setters.
+private data class ViewerSearchState(
+    val query         : String,
+    val active        : Boolean,
+    val onQueryChange : (String) -> Unit,
+    val onActiveChange: (Boolean) -> Unit
+)
+
+// Extraído de ViewerScreen() (LongMethod de detekt, disparado al agregar
+// los accesos directos de HU-42) -- la barra superior del Visor y su barra
+// de búsqueda inline, con toda la lógica de qué formatos son "de texto"
+// (habilitan buscar) y el debounce de búsqueda en PDF.
+@Composable
+private fun BoxScope.ViewerTopBarSection(
+    doc            : DocumentUiModel,
+    uiState        : ViewerUiState,
+    onBack         : () -> Unit,
+    viewModel      : ViewerViewModel,
+    search         : ViewerSearchState,
+    documentActions: ViewerDocumentActions
+) {
+    val context = LocalContext.current
+    val mime        = (uiState.mimeType ?: "").lowercase()
+    val isPdf       = mime.contains("pdf") || doc.name.endsWith(".pdf", ignoreCase = true)
+    // Bug real encontrado 2026-09-14 (revisión pre-fusión HU-42, preexistente
+    // -- no introducido por esta extracción): faltaba el mismo fallback por
+    // extensión que ya tiene el `when` de renderizado principal para
+    // Word/Excel/PowerPoint con MIME genérico (p.ej. `application/octet-stream`
+    // de algunos `DocumentsProvider`), lo que dejaba el botón de búsqueda
+    // inactivo aunque el documento sí se renderizara.
+    val isTextBased = isPdf ||
+            mime.contains("word")       ||
+            mime.contains("text")       ||
+            mime.contains("excel")      ||
+            mime.contains("powerpoint") ||
+            doc.name.endsWith(".txt")   ||
+            doc.name.endsWith(".md")    ||
+            doc.name.endsWith(".csv")   ||
+            doc.name.endsWith(".doc")   ||
+            doc.name.endsWith(".docx")  ||
+            doc.name.endsWith(".xls")   ||
+            doc.name.endsWith(".xlsx")  ||
+            doc.name.endsWith(".ppt")   ||
+            doc.name.endsWith(".pptx")
+
+    // ── Búsqueda en PDF: los otros formatos filtran en línea vía
+    // searchQuery (ver WordViewerContent/ExcelViewerContent/etc.); el
+    // PDF necesita extraer texto por página (SearchPdfTextUseCase), así
+    // que se dispara desde acá con un pequeño debounce.
+    LaunchedEffect(search.query, isPdf, uiState.fileUri) {
+        if (!isPdf) return@LaunchedEffect
+        if (search.query.isBlank()) {
+            viewModel.clearPdfSearch()
+        } else {
+            delay(300)
+            viewModel.searchInPdf(search.query)
+        }
+    }
+
+    ViewerTopBar(
+        fileName        = doc.name,
+        isFavorite      = uiState.isFavorite,
+        visible         = uiState.showControls,
+        onBackClick     = onBack,
+        onFavoriteClick = { viewModel.toggleFavorite() },
+        onShareClick    = { viewModel.shareDocument(context) },
+        onSearchClick   = {
+            if (isTextBased) {
+                val newActive = !search.active
+                search.onActiveChange(newActive)
+                if (!newActive) search.onQueryChange("")
+            }
+        },
+        onConvertClick  = { documentActions.onConvert(doc) },
+        onCreateQrClick = { documentActions.onCreateQr(doc) },
+        isPdf           = isPdf,
+        onMakeSearchableClick    = { documentActions.onMakeSearchable(doc) },
+        onSignClick              = { documentActions.onSign(doc) },
+        onMoveToSecureFolderClick = { documentActions.onMoveToSecureFolder(doc) },
+        onRenameClick   = { viewModel.onRenameClick() },
+        onDeleteClick   = { viewModel.onDeleteClick() },
+        modifier        = Modifier.align(Alignment.TopCenter)
+    )
+
+    // ── Barra de búsqueda ─────────────────────────────────────────────
+    if (search.active && isTextBased) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 56.dp)
+                .statusBarsPadding()
+                .zIndex(10f)
+        ) {
+            SearchBar(
+                query    = search.query,
+                onQuery  = { search.onQueryChange(it) },
+                onClose  = { search.onActiveChange(false); search.onQueryChange("") }
+            )
+            if (isPdf) {
+                PdfSearchResultBar(
+                    matchCount   = uiState.pdfSearchMatches.size,
+                    currentIndex = uiState.pdfSearchIndex,
+                    hasQuery     = search.query.isNotBlank(),
+                    onNext       = { viewModel.nextPdfSearchResult() },
+                    onPrevious   = { viewModel.previousPdfSearchResult() }
+                )
+            }
         }
     }
 }

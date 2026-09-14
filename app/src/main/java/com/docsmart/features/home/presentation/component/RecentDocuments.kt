@@ -29,6 +29,9 @@ fun RecentDocuments(
     onOpenFileClick: () -> Unit = {},
     onConvertClick : ((DocumentUiModel) -> Unit)? = null,
     onCreateQrClick: ((DocumentUiModel) -> Unit)? = null,
+    onMakeSearchableClick   : ((DocumentUiModel) -> Unit)? = null,
+    onSignClick             : ((DocumentUiModel) -> Unit)? = null,
+    onMoveToSecureFolderClick: ((DocumentUiModel) -> Unit)? = null,
     onDeleteClick  : ((String) -> Unit)? = null,
     onRenameClick  : ((String, String) -> Unit)? = null,  // ← NUEVO (id, newName)
     modifier       : Modifier = Modifier
@@ -103,6 +106,9 @@ fun RecentDocuments(
                         onOpenClick     = { onDocumentClick(document) },
                         onConvertClick  = onConvertClick?.let  { cb -> { cb(document) } },
                         onCreateQrClick = onCreateQrClick?.let { cb -> { cb(document) } },
+                        onMakeSearchableClick    = onMakeSearchableClick?.let    { cb -> { cb(document) } },
+                        onSignClick              = onSignClick?.let              { cb -> { cb(document) } },
+                        onMoveToSecureFolderClick = onMoveToSecureFolderClick?.let { cb -> { cb(document) } },
                         onShareClick    = { shareDocument(context, document, shareLabel) },
                         onRenameClick   = if (onRenameClick != null) {
                             { documentToRename = document }

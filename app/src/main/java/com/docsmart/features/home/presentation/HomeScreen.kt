@@ -40,6 +40,14 @@ fun HomeScreen(
     // archivo (mismo criterio ya usado en onQuickConvertImageToPdf).
     onConvertDocument     : (DocumentUiModel) -> Unit = { onConvert() },
     onCreateQrFromDocument: (DocumentUiModel) -> Unit = { onQrCreator() },
+    // Backlog UX 2026-08-30/09-10 (HU-42): sin CTA genérico al que caer --
+    // a diferencia de Convertir/Crear QR, no tiene sentido abrir OCR/
+    // Firmar/Carpeta Segura sin un archivo ya elegido, así que quedan
+    // `null` (opción no visible en el menú) si la pantalla llamante no las
+    // conecta.
+    onMakeSearchableDocument   : ((DocumentUiModel) -> Unit)? = null,
+    onSignDocument             : ((DocumentUiModel) -> Unit)? = null,
+    onMoveToSecureFolderDocument: ((DocumentUiModel) -> Unit)? = null,
     viewModel      : HomeViewModel = hiltViewModel()
 ) {
     Timber.d("HomeScreen: iniciando composición")
@@ -130,6 +138,9 @@ fun HomeScreen(
                 onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
                 onConvertClick  = onConvertDocument,
                 onCreateQrClick = onCreateQrFromDocument,
+                onMakeSearchableClick    = onMakeSearchableDocument,
+                onSignClick              = onSignDocument,
+                onMoveToSecureFolderClick = onMoveToSecureFolderDocument,
                 onDeleteClick   = { id -> viewModel.removeDocument(id) },
                 modifier        = Modifier.padding(horizontal = 20.dp)
             )

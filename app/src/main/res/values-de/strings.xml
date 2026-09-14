@@ -193,6 +193,9 @@
 
     <!-- ── Dokumentmenü (Home/Bibliothek, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Zu Favoriten hinzufügen</string>
+    <string name="doc_item_make_searchable">Durchsuchbar machen</string>
+    <string name="doc_item_sign">Unterschreiben</string>
+    <string name="doc_item_move_to_secure_folder">In den Sicheren Ordner verschieben</string>
     <string name="doc_item_remove_favorite">Aus Favoriten entfernen</string>
     <string name="doc_item_rename_title">Datei umbenennen</string>
 

@@ -30,6 +30,9 @@ fun DocumentListSection(
     onDeleteClick  : ((String) -> Unit)? = null,
     onConvertClick : ((DocumentUiModel) -> Unit)? = null,
     onCreateQrClick: ((DocumentUiModel) -> Unit)? = null,
+    onMakeSearchableClick   : ((DocumentUiModel) -> Unit)? = null,
+    onSignClick             : ((DocumentUiModel) -> Unit)? = null,
+    onMoveToSecureFolderClick: ((DocumentUiModel) -> Unit)? = null,
     modifier       : Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -90,6 +93,9 @@ fun DocumentListSection(
                         onShareClick    = { shareDocument(context, document, shareLabel) },
                         onConvertClick  = onConvertClick?.let  { cb -> { cb(document) } },
                         onCreateQrClick = onCreateQrClick?.let { cb -> { cb(document) } },
+                        onMakeSearchableClick    = onMakeSearchableClick?.let    { cb -> { cb(document) } },
+                        onSignClick              = onSignClick?.let              { cb -> { cb(document) } },
+                        onMoveToSecureFolderClick = onMoveToSecureFolderClick?.let { cb -> { cb(document) } },
                         onDeleteClick   = onDeleteClick?.let   { cb -> { cb(document.id) } }
                     )
                 }

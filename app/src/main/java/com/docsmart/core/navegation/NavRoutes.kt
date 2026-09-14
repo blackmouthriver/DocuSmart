@@ -39,7 +39,23 @@ sealed class NavRoutes(val route: String) {
             return if (params.isEmpty()) "converter" else "converter?${params.joinToString("&")}"
         }
     }
-    data object PdfTools    : NavRoutes("pdf_tools")
+    data object PdfTools : NavRoutes(
+        "pdf_tools?initialTool={initialTool}&initialFileUri={initialFileUri}"
+    ) {
+        // Acceso directo a OCR/Firmar desde un archivo ya elegido (backlog
+        // UX 2026-08-30/09-10, HU-42): salta el menú de herramientas y el
+        // selector de PDF -- llega directo con la herramienta y el archivo
+        // ya cargados. `initialTool` es el nombre del enum `PdfTool`
+        // (p.ej. "OCR"/"SIGN"). `initialTool = null` (la entrada genérica
+        // desde el menú principal) sigue funcionando igual que antes.
+        fun createRoute(initialTool: String? = null, initialFileUri: String? = null): String {
+            val params = buildList {
+                initialTool?.let { add("initialTool=$it") }
+                initialFileUri?.let { add("initialFileUri=${Uri.encode(it)}") }
+            }
+            return if (params.isEmpty()) "pdf_tools" else "pdf_tools?${params.joinToString("&")}"
+        }
+    }
     data object Settings    : NavRoutes("settings")
     data object Premium     : NavRoutes("premium")
     data object Scanner     : NavRoutes("scanner")
@@ -77,7 +93,17 @@ sealed class NavRoutes(val route: String) {
         }
     }
     data object Onboarding  : NavRoutes("onboarding")
-    data object SecureFolder : NavRoutes("secure_folder")
+    data object SecureFolder : NavRoutes("secure_folder?pendingFileUri={pendingFileUri}") {
+        // Acceso directo "Mover a Carpeta Segura" desde un archivo ya
+        // elegido (backlog UX 2026-08-30/09-10, HU-42): el archivo queda
+        // pendiente y se mueve en cuanto el usuario desbloquea la Carpeta
+        // Segura (PIN o biometría) -- no hay forma de saltarse ese
+        // desbloqueo, es la protección misma de la función.
+        // `pendingFileUri = null` (entrada normal desde Seguridad) sigue
+        // funcionando igual que antes.
+        fun createRoute(pendingFileUri: String? = null): String =
+            pendingFileUri?.let { "secure_folder?pendingFileUri=${Uri.encode(it)}" } ?: "secure_folder"
+    }
     data object Trash        : NavRoutes("trash") // RF-VIS-07
     data object Viewer : NavRoutes("viewer/{documentId}") {
         fun createRoute(documentId: String): String {

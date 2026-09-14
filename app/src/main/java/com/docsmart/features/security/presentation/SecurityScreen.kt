@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +47,11 @@ import timber.log.Timber
 fun SecurityScreen(
     onBack       : () -> Unit = {},
     onPdfPassword: () -> Unit = {},
+    // Acceso directo "Mover a Carpeta Segura" desde un archivo ya elegido
+    // (backlog UX 2026-08-30/09-10, HU-42): el archivo queda pendiente y
+    // se mueve automáticamente en cuanto el usuario desbloquea la Carpeta
+    // Segura (PIN o biometría) -- ver el LaunchedEffect más abajo.
+    pendingFileUri: String? = null,
     viewModel    : SecurityViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.collectAsState().value
@@ -89,6 +95,16 @@ fun SecurityScreen(
     val fileProtectedSuccess   = stringResource(R.string.security_file_protected_success)
     val fileProtectError       = stringResource(R.string.security_file_protect_error)
     val fileProtectedOriginalKept = stringResource(R.string.security_file_protected_original_kept)
+
+    PendingSecureFolderImport(
+        pendingFileUri  = pendingFileUri,
+        screenState     = uiState.screenState,
+        context         = context,
+        viewModel       = viewModel,
+        successMessage  = fileProtectedSuccess,
+        errorMessage    = fileProtectError,
+        originalKeptMessage = fileProtectedOriginalKept
+    )
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
@@ -218,6 +234,33 @@ fun SecurityScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+// Extraído de SecurityScreen() (LongMethod de detekt, disparado al agregar
+// HU-42) -- consumo único del archivo pendiente: se mueve a la Carpeta
+// Segura la primera vez que la pantalla queda UNLOCKED (PIN o biometría),
+// sin importar cuántas veces se recomponga después.
+@Composable
+private fun PendingSecureFolderImport(
+    pendingFileUri     : String?,
+    screenState        : SecurityScreenState,
+    context            : android.content.Context,
+    viewModel          : SecurityViewModel,
+    successMessage     : String,
+    errorMessage       : String,
+    originalKeptMessage: String
+) {
+    var consumed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(screenState, pendingFileUri) {
+        if (pendingFileUri == null || consumed) return@LaunchedEffect
+        if (screenState == SecurityScreenState.UNLOCKED) {
+            consumed = true
+            viewModel.importFileToSecure(
+                context, Uri.parse(pendingFileUri),
+                successMessage, errorMessage, originalKeptMessage
+            )
         }
     }
 }
