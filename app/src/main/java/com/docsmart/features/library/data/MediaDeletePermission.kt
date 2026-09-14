@@ -53,27 +53,40 @@ class MediaDeletePermission @Inject constructor(
      * ID"). Por eso el segundo intento también se protege: si igual falla,
      * se retorna null (el llamador ya trata `null` como fallo, no crash) en
      * vez de dejar escapar la excepción.
+     *
+     * Bug real reportado por Firebase Crashlytics (2026-09-14): la promesa
+     * de arriba no se cumplía del todo. `MediaStore.createDeleteRequest()`
+     * es una llamada Binder al proceso de `MediaProvider` -- del otro lado
+     * del IPC, `DatabaseUtils.readExceptionFromParcel` puede re-lanzar
+     * cualquier `RuntimeException` que el proveedor haya lanzado
+     * (`IllegalStateException`, `SecurityException`, etc.), no solo
+     * `IllegalArgumentException`. Atrapar solo ese subtipo dejaba escapar
+     * cualquier otro como crash real. Además, en `retryWithTypedUris()`, el
+     * `.map` que resuelve el Uri tipado (`typedUriForId` → `contentResolver.
+     * query()`, también una llamada Binder) quedaba FUERA del bloque
+     * try/catch, así que una excepción ahí tampoco quedaba protegida pese a
+     * lo que decía este comentario.
      */
     @RequiresApi(Build.VERSION_CODES.R)
+    @Suppress("TooGenericExceptionCaught")
     fun createBulkDeleteRequest(uris: List<Uri>): IntentSender? {
         if (uris.isEmpty()) return null
         return try {
             MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
-        } catch (e: IllegalArgumentException) {
+        } catch (e: Exception) {
             Timber.w(e, "createDeleteRequest rechazó los Uri sin tipar, se reintenta tipados: $uris")
             retryWithTypedUris(uris)
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    private fun retryWithTypedUris(uris: List<Uri>): IntentSender? {
+    @Suppress("TooGenericExceptionCaught")
+    private fun retryWithTypedUris(uris: List<Uri>): IntentSender? = try {
         val typedUris = uris.map { typedMediaUriOrSelf(it) }
-        return try {
-            MediaStore.createDeleteRequest(context.contentResolver, typedUris).intentSender
-        } catch (e: IllegalArgumentException) {
-            Timber.w(e, "createDeleteRequest también rechazó los Uri tipados (no son media): $typedUris")
-            null
-        }
+        MediaStore.createDeleteRequest(context.contentResolver, typedUris).intentSender
+    } catch (e: Exception) {
+        Timber.w(e, "createDeleteRequest también rechazó los Uri tipados (no son media): $uris")
+        null
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
