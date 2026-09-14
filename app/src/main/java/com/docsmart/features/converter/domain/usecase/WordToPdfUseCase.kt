@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import timber.log.Timber
 import java.io.File
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,39 +38,16 @@ class WordToPdfUseCase @Inject constructor(
                 val (format, input) = detectWordFormat(rawInput)
                 val writer = PdfWriter(outputFile)
                 val pdfDoc = PdfDocument(writer)
-                val document = Document(pdfDoc)
 
-                if (format == WordFileFormat.OLE2) {
-                    extractLegacyDocBlocks(input).forEach { (text, _) ->
-                        document.add(Paragraph(text))
-                    }
-                } else {
-                    // ── Leer Word (.docx) con Apache POI ──
-                    val wordDoc = XWPFDocument(input)
-
-                    // ── Extraer párrafos y escribir en PDF ─
-                    wordDoc.paragraphs.forEach { para ->
-                        val text = para.text
-                        if (text.isNotBlank()) {
-                            val paragraph = Paragraph(text)
-                            document.add(paragraph)
-                        }
-                    }
-
-                    // ── Extraer tablas ────────────────────
-                    wordDoc.tables.forEach { table ->
-                        document.add(Paragraph(""))
-                        table.rows.forEach { row ->
-                            val rowText = row.tableCells.joinToString(" | ") { it.text }
-                            if (rowText.isNotBlank()) {
-                                document.add(Paragraph(rowText))
-                            }
-                        }
-                    }
-                    wordDoc.close()
-                }
-
-                document.close()
+                // Bug real encontrado 2026-09-14 (repaso general):
+                // document.close()/wordDoc.close() manuales solo se
+                // alcanzaban en el camino feliz -- una excepción al extraer
+                // texto de un .docx/.doc con formato inesperado dejaba el
+                // PdfDocument/Document (y el XWPFDocument de POI) sin
+                // cerrar, con el FileOutputStream de outputFile abierto.
+                // .use{} anidado garantiza el cierre de ambos pase lo que
+                // pase.
+                Document(pdfDoc).use { document -> writeWordContent(document, format, input) }
             } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Word")
 
             ConversionResult.Success(
@@ -80,6 +58,41 @@ class WordToPdfUseCase @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Word a PDF")
             ConversionResult.Error("Error al convertir: ${e.message}")
+        }
+    }
+
+    // Extraído de invoke() -- además de mantener la complejidad ciclomática
+    // bajo el límite de detekt, agrupa toda la escritura del contenido en
+    // un solo lugar cubierto por el .use{} de Document en el llamador.
+    private fun writeWordContent(document: Document, format: WordFileFormat, input: InputStream) {
+        if (format == WordFileFormat.OLE2) {
+            extractLegacyDocBlocks(input).forEach { (text, _) ->
+                document.add(Paragraph(text))
+            }
+        } else {
+            // ── Leer Word (.docx) con Apache POI ──
+            XWPFDocument(input).use { wordDoc -> writeXwpfContent(document, wordDoc) }
+        }
+    }
+
+    private fun writeXwpfContent(document: Document, wordDoc: XWPFDocument) {
+        // ── Extraer párrafos y escribir en PDF ─
+        wordDoc.paragraphs.forEach { para ->
+            val text = para.text
+            if (text.isNotBlank()) {
+                document.add(Paragraph(text))
+            }
+        }
+
+        // ── Extraer tablas ────────────────────
+        wordDoc.tables.forEach { table ->
+            document.add(Paragraph(""))
+            table.rows.forEach { row ->
+                val rowText = row.tableCells.joinToString(" | ") { it.text }
+                if (rowText.isNotBlank()) {
+                    document.add(Paragraph(rowText))
+                }
+            }
         }
     }
 

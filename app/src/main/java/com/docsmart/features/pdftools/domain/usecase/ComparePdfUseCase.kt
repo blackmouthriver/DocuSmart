@@ -152,41 +152,54 @@ class ComparePdfUseCase @Inject constructor(
         totalPages     : Int,
         messages       : ComparePdfMessages
     ) {
-        val pdfDoc   = PdfDocument(PdfWriter(outputFile))
-        val document = Document(pdfDoc)
-
-        document.add(Paragraph(messages.reportTitle).setBold().setFontSize(18f))
-        document.add(
-            Paragraph(String.format(messages.differencesFound, differingPages, totalPages))
-                .setFontSize(12f)
-        )
-        document.add(Paragraph(" "))
-
-        pageResults.filter { it.hasDifferences }.forEach { page ->
+        // Bug real encontrado 2026-09-14 (repaso general): document.close()
+        // manual solo se alcanzaba si ningún document.add() lanzaba una
+        // excepción -- texto extraído de un PDF con caracteres no
+        // codificables por la fuente por defecto (plausible en esta misma
+        // herramienta, que compara texto de cualquier PDF) dejaba el
+        // PdfDocument/Document sin cerrar. .use{} garantiza el cierre pase
+        // lo que pase, mismo patrón ya aplicado a los PdfDocument lectores
+        // (pdfA/pdfB) de este mismo archivo.
+        val pdfDoc = PdfDocument(PdfWriter(outputFile))
+        Document(pdfDoc).use { document ->
+            document.add(Paragraph(messages.reportTitle).setBold().setFontSize(18f))
             document.add(
-                Paragraph(String.format(messages.reportPageHeader, page.pageNumber))
-                    .setBold().setFontSize(13f)
+                Paragraph(String.format(messages.differencesFound, differingPages, totalPages))
+                    .setFontSize(12f)
             )
-            when {
-                page.pageExistsOnlyInA -> document.add(Paragraph(messages.reportPageOnlyInA).setFontSize(11f))
-                page.pageExistsOnlyInB -> document.add(Paragraph(messages.reportPageOnlyInB).setFontSize(11f))
-                else -> {
-                    page.linesOnlyInA.forEach {
-                        document.add(Paragraph(String.format(messages.reportOnlyInALine, it)).setFontSize(10f))
-                    }
-                    page.linesOnlyInB.forEach {
-                        document.add(Paragraph(String.format(messages.reportOnlyInBLine, it)).setFontSize(10f))
-                    }
+            document.add(Paragraph(" "))
+
+            pageResults.filter { it.hasDifferences }.forEach { page ->
+                writePageDiff(document, page, messages)
+            }
+
+            if (differingPages == 0) {
+                document.add(Paragraph(messages.identical))
+            }
+        }
+    }
+
+    // Extraído de writeReport() -- además de mantener la profundidad de
+    // anidamiento bajo el límite de detekt, aísla la escritura de una sola
+    // página del reporte.
+    private fun writePageDiff(document: Document, page: PageDiffResult, messages: ComparePdfMessages) {
+        document.add(
+            Paragraph(String.format(messages.reportPageHeader, page.pageNumber))
+                .setBold().setFontSize(13f)
+        )
+        when {
+            page.pageExistsOnlyInA -> document.add(Paragraph(messages.reportPageOnlyInA).setFontSize(11f))
+            page.pageExistsOnlyInB -> document.add(Paragraph(messages.reportPageOnlyInB).setFontSize(11f))
+            else -> {
+                page.linesOnlyInA.forEach {
+                    document.add(Paragraph(String.format(messages.reportOnlyInALine, it)).setFontSize(10f))
+                }
+                page.linesOnlyInB.forEach {
+                    document.add(Paragraph(String.format(messages.reportOnlyInBLine, it)).setFontSize(10f))
                 }
             }
-            document.add(Paragraph(" "))
         }
-
-        if (differingPages == 0) {
-            document.add(Paragraph(messages.identical))
-        }
-
-        document.close()
+        document.add(Paragraph(" "))
     }
 
     private fun copyUriToCache(uri: Uri, prefix: String): File? {

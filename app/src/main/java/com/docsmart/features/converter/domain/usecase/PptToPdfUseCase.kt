@@ -49,14 +49,19 @@ class PptToPdfUseCase @Inject constructor(
             val baseName = fileName ?: generateTimestamp()
             val outputFile = File(outputDir, "$baseName.pdf")
 
+            // Bug real encontrado 2026-09-14 (repaso general): document.close()
+            // manual solo se alcanzaba en el camino feliz -- una excepción al
+            // escribir una diapositiva dejaba el PdfDocument/Document sin
+            // cerrar, con el FileOutputStream de outputFile abierto. .use{}
+            // garantiza el cierre pase lo que pase.
             val pdfDoc = PdfDocument(PdfWriter(outputFile))
-            val document = Document(pdfDoc)
-            slideMap.toSortedMap().entries.forEachIndexed { index, (num, text) ->
-                document.add(Paragraph("=== Diapositiva $num ===").setBold())
-                document.add(Paragraph(text))
-                if (index < slideMap.size - 1) document.add(AreaBreak())
+            Document(pdfDoc).use { document ->
+                slideMap.toSortedMap().entries.forEachIndexed { index, (num, text) ->
+                    document.add(Paragraph("=== Diapositiva $num ===").setBold())
+                    document.add(Paragraph(text))
+                    if (index < slideMap.size - 1) document.add(AreaBreak())
+                }
             }
-            document.close()
 
             ConversionResult.Success(
                 outputFile = outputFile,

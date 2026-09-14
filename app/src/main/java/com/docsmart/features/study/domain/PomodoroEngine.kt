@@ -86,6 +86,17 @@ object PomodoroEngine {
     }
 
     fun reset(context: Context) {
+        // Bug real encontrado 2026-09-14 (repaso general, confirmado en
+        // vivo: iniciar→pausar→reanudar rápido corría el cronómetro al
+        // doble de velocidad): reset()/pause() solo cambiaban isRunning,
+        // nunca cancelaban tickerJob. El bucle viejo sigue vivo esperando
+        // en delay(1000) y, si start() se llama de nuevo antes de que ese
+        // delay termine, el bucle viejo ve isRunning=true otra vez (puesto
+        // por el nuevo start()) y sigue tickeando en paralelo al nuevo --
+        // dos corrutinas decrementando el mismo StateFlow, duplicando
+        // también recordPomodoroCompletion()/logPomodoroCompleted().
+        tickerJob?.cancel()
+        tickerJob = null
         _state.value = PomodoroState()
         stopService(context)
     }
@@ -95,6 +106,9 @@ object PomodoroEngine {
         if (!_state.value.isBreak) DocuSmartAnalytics.logStudySessionStarted()
         _state.value = _state.value.copy(isRunning = true)
         startService(context)
+        // Cancela cualquier bucle viejo antes de lanzar uno nuevo -- ver
+        // el comentario en reset()/pause() sobre la condición de carrera.
+        tickerJob?.cancel()
         tickerJob = scope.launch {
             while (_state.value.isRunning) {
                 delay(1000)
@@ -105,6 +119,8 @@ object PomodoroEngine {
     }
 
     private fun pause(context: Context) {
+        tickerJob?.cancel()
+        tickerJob = null
         _state.value = _state.value.copy(isRunning = false)
         stopService(context)
     }

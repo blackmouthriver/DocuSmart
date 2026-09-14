@@ -30,32 +30,36 @@ class ExcelToPdfUseCase @Inject constructor(
             val baseName = fileName ?: generateTimestamp()
             val outputFile = File(outputDir, "$baseName.pdf")
 
+            // Bug real encontrado 2026-09-14 (repaso general): document.close()/
+            // workbook.close() manuales solo se alcanzaban en el camino feliz
+            // -- una excepción al leer una celda o escribir un párrafo dejaba
+            // el PdfDocument/Document y el Workbook de POI sin cerrar, con el
+            // FileOutputStream de outputFile abierto. .use{} anidado garantiza
+            // el cierre de ambos pase lo que pase.
             context.contentResolver.openInputStream(excelUri)?.use { input ->
-                val workbook = WorkbookFactory.create(input)
-                val writer = PdfWriter(outputFile)
-                val pdfDoc = PdfDocument(writer)
-                val document = Document(pdfDoc)
+                WorkbookFactory.create(input).use { workbook ->
+                    val writer = PdfWriter(outputFile)
+                    val pdfDoc = PdfDocument(writer)
+                    Document(pdfDoc).use { document ->
+                        for (sheetIndex in 0 until workbook.numberOfSheets) {
+                            val sheet = workbook.getSheetAt(sheetIndex)
+                            document.add(Paragraph("=== ${sheet.sheetName} ==="))
 
-                for (sheetIndex in 0 until workbook.numberOfSheets) {
-                    val sheet = workbook.getSheetAt(sheetIndex)
-                    document.add(Paragraph("=== ${sheet.sheetName} ==="))
-
-                    sheet.forEach { row ->
-                        val rowText = buildString {
-                            row.forEach { cell ->
-                                append(cell.toString().trim())
-                                append("\t")
+                            sheet.forEach { row ->
+                                val rowText = buildString {
+                                    row.forEach { cell ->
+                                        append(cell.toString().trim())
+                                        append("\t")
+                                    }
+                                }.trim()
+                                if (rowText.isNotBlank()) {
+                                    document.add(Paragraph(rowText))
+                                }
                             }
-                        }.trim()
-                        if (rowText.isNotBlank()) {
-                            document.add(Paragraph(rowText))
+                            document.add(Paragraph(""))
                         }
                     }
-                    document.add(Paragraph(""))
                 }
-
-                document.close()
-                workbook.close()
             } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Excel")
 
             ConversionResult.Success(

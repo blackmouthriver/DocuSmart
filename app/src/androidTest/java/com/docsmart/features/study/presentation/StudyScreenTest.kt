@@ -90,12 +90,26 @@ class StudyScreenTest {
             store[firstArg<String>()] = secondArg<String?>()
             editor
         }
+        // Bug real encontrado 2026-09-14 (repaso general): StudyStatsStorage
+        // (RF-STU-09, tiempo total leído) usa getLong/putLong -- este mock
+        // solo simulaba getString/putString, así que MockKException rompía
+        // el 100% de las veces cualquier prueba de Pomodoro/Lectura que
+        // tocara addReadingTime()/loadStats() (mismo tipo de bug ya
+        // encontrado y corregido esta sesión para otros mocks de prefs sin
+        // actualizar tras agregar una feature nueva).
+        every { editor.putLong(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Long>()
+            editor
+        }
         every { editor.apply() } just Runs
 
         val prefs = mockk<SharedPreferences>()
         every { prefs.edit() } returns editor
         every { prefs.getString(any(), any()) } answers {
             (store[firstArg<String>()] as? String) ?: secondArg()
+        }
+        every { prefs.getLong(any(), any()) } answers {
+            (store[firstArg<String>()] as? Long) ?: secondArg()
         }
         return prefs
     }

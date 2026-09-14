@@ -371,6 +371,19 @@ private fun ScanResultSideEffects(
         }
     )
 
+    // Bug real encontrado 2026-09-14 (repaso general): las 3 rutas de
+    // "Volver al inicio" ya limpiaban la sesión (ver goHomeAction en
+    // ScanResultScreen), pero la flecha "Volver" del banner y el gesto de
+    // retroceso del sistema/predictive back no lo hacían -- como
+    // ScanSessionManager es un @Singleton que no se destruye al salir de
+    // esta pantalla, una sesión abandonada por esas rutas se mezclaba con
+    // la siguiente sesión real. DisposableEffect cubre TODA salida real
+    // (cualquier ruta de navegación) sin duplicar la lógica existente --
+    // limpiar una sesión ya limpia es no-op.
+    DisposableEffect(Unit) {
+        onDispose { viewModels.scanSessionViewModel.clearSession() }
+    }
+
     LaunchedEffect(uiState.conversionResult) {
         (uiState.conversionResult as? ConversionResult.Success)?.let {
             callbacks.onSavedFileChange(it.outputFile)

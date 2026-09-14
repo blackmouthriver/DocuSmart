@@ -113,6 +113,24 @@ class PdfPasswordUseCaseTest {
         assertEquals(PdfPasswordResult.WrongPassword, result)
     }
 
+    // Bug real de seguridad encontrado 2026-09-14 (repaso general):
+    // openReaderOrNull() atrapaba CUALQUIER excepción al abrir el PDF (no
+    // solo contraseña incorrecta) y la reportaba siempre como
+    // WrongPassword -- un archivo corrupto o que ni siquiera es un PDF
+    // hacía que el usuario reintentara indefinidamente una contraseña que
+    // en realidad no era el problema.
+    @Test
+    fun `removePassword con un archivo que no es un PDF valido devuelve Error, no WrongPassword`() = runTest {
+        stubResolver("esto no es un pdf".toByteArray())
+
+        val result = useCase.removePassword(context, mockk<Uri>(), "cualquier-contrasena", "doc", messages)
+
+        assertTrue(
+            result is PdfPasswordResult.Error,
+            "un archivo corrupto no debería reportarse como contraseña incorrecta, resultado real: $result"
+        )
+    }
+
     // ── helpers ────────────────────────────────────────────────────────────
 
     private fun stubResolver(bytes: ByteArray) {

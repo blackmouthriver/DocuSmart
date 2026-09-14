@@ -119,12 +119,12 @@ class PdfPasswordUseCase @Inject constructor() {
         fileName: String,
         messages: PdfPasswordMessages
     ): PdfPasswordResult = withContext(Dispatchers.IO) {
+        var cacheFile: File? = null
         try {
             // ── Paso 1: copiar al caché ───────────────────────────────────────
-            val cacheFile = copyToCache(context, uri, "remove")
+            cacheFile = copyToCache(context, uri, "remove")
                 ?: return@withContext PdfPasswordResult.Error(messages.readError)
             if (cacheFile.length() == 0L) {
-                cacheFile.delete()
                 return@withContext PdfPasswordResult.Error(messages.emptyFile)
             }
 
@@ -136,9 +136,22 @@ class PdfPasswordUseCase @Inject constructor() {
             if (outputFile.exists()) outputFile.delete()
 
             // ── Paso 3: desencriptar ──────────────────────────────────────────
-            val reader = openReaderOrNull(cacheFile, password.toByteArray()) ?: run {
-                cacheFile.delete()
-                return@withContext PdfPasswordResult.WrongPassword
+            // Bug real de seguridad encontrado 2026-09-14 (repaso general):
+            // antes esto se envolvía en su propio try/catch (openReaderOrNull)
+            // que atrapaba CUALQUIER excepción -- PDF corrupto, un archivo
+            // que ni siquiera es un PDF -- y la reportaba siempre como
+            // "contraseña incorrecta". Un usuario con la contraseña correcta
+            // pero un archivo dañado reintentaba la misma contraseña
+            // indefinidamente sin ver nunca el error real. Ahora la
+            // excepción se deja propagar hasta el catch de abajo, que sí
+            // distingue (classifyRemoveError, ya existía pero nunca se
+            // alcanzaba desde acá) entre "contraseña incorrecta" real y
+            // cualquier otro error.
+            val reader = PdfReader(
+                cacheFile.absolutePath, ReaderProperties().setPassword(password.toByteArray())
+            ).apply {
+                setUnethicalReading(true)
+                setMemorySavingMode(true)
             }
 
             Timber.d("PdfPasswordUseCase: desencriptando → output=${outputFile.absolutePath}")
@@ -147,8 +160,6 @@ class PdfPasswordUseCase @Inject constructor() {
             val doc    = PdfDocument(reader, writer)
             val pages  = doc.numberOfPages
             doc.close()
-
-            cacheFile.delete()
 
             Timber.d("PdfPasswordUseCase: resultado → pages=$pages size=${outputFile.length()}b")
 
@@ -164,6 +175,12 @@ class PdfPasswordUseCase @Inject constructor() {
         } catch (e: Exception) {
             Timber.e(e, "PdfPasswordUseCase: error quitando contraseña → ${e.javaClass.simpleName}: ${e.message}")
             classifyRemoveError(e, messages)
+        } finally {
+            // Bug real encontrado 2026-09-14: cacheFile solo se borraba en
+            // las ramas explícitas de éxito/error temprano -- una excepción
+            // real al leer/desencriptar (justo el caso más común de este
+            // flujo) lo dejaba huérfano en cacheDir para siempre.
+            cacheFile?.delete()
         }
     }
 
@@ -174,16 +191,6 @@ class PdfPasswordUseCase @Inject constructor() {
         } ?: return null
         Timber.d("PdfPasswordUseCase: caché copiado → ${cacheFile.length()} bytes (copiados=$bytesCopied)")
         return cacheFile
-    }
-
-    private fun openReaderOrNull(cacheFile: File, userPass: ByteArray): PdfReader? = try {
-        PdfReader(cacheFile.absolutePath, ReaderProperties().setPassword(userPass)).apply {
-            setUnethicalReading(true)
-            setMemorySavingMode(true)
-        }
-    } catch (e: Exception) {
-        Timber.w("PdfPasswordUseCase: contraseña incorrecta → ${e.message}")
-        null
     }
 
     private fun classifyRemoveError(e: Exception, messages: PdfPasswordMessages): PdfPasswordResult {

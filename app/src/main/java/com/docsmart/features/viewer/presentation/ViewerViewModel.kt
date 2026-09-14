@@ -240,11 +240,33 @@ class ViewerViewModel @Inject constructor(
             val doc3   = PdfDocument(r3, PdfWriter(cacheOut.absolutePath, WriterProperties()), stamps)
             doc3.close()
             Timber.d("$TAG: Intento 3 StampingProperties → ${cacheOut.length()}b")
-            cacheOut.exists() && cacheOut.length() > 100L
+            // Bug real encontrado 2026-09-14 (repaso general): a diferencia
+            // de los Intentos 1 y 2, este nunca verificaba que el archivo
+            // resultante ya no estuviera encriptado -- StampingProperties
+            // "estampa" sobre el PDF original en vez de reescribirlo desde
+            // cero, así que puede arrastrar la encriptación de origen al
+            // archivo de salida. Sin esta verificación, un PDF que en
+            // realidad seguía encriptado podía marcarse como desbloqueado
+            // con éxito (requiresPassword = false), y el Visor fallaba en
+            // silencio más adelante al intentar renderizarlo.
+            cacheOut.exists() && cacheOut.length() > 100L && !isStillEncrypted(cacheOut)
         } catch (e3: Exception) {
             Timber.w("$TAG: Intento 3 falló → ${e3.message}")
             false
         }
+
+    // Compartido entre los 3 intentos de unlockPdfWithPassword -- confirma
+    // que el archivo de salida realmente ya no requiere contraseña.
+    private fun isStillEncrypted(file: File): Boolean = try {
+        val vr  = PdfReader(file.absolutePath)
+        val enc = vr.isEncrypted
+        PdfDocument(vr).close()
+        enc
+    } catch (ve: Exception) {
+        val msg = ve.message?.lowercase() ?: ""
+        Timber.e("$TAG: verificación output → ${ve.message}")
+        msg.contains("password") || msg.contains("encrypt")
+    }
 
     private fun isPdfPasswordProtected(
         uri       : Uri,
@@ -401,19 +423,9 @@ class ViewerViewModel @Inject constructor(
                         Timber.d("$TAG: Intento 1 copyPagesTo → ${cacheOut.length()}b")
 
                         // ── Verificar que el output NO está encriptado ────────
-                        val isStillEncrypted = try {
-                            val vr  = PdfReader(cacheOut.absolutePath)
-                            val enc = vr.isEncrypted
-                            PdfDocument(vr).close()
-                            enc
-                        } catch (ve: Exception) {
-                            val msg = ve.message?.lowercase() ?: ""
-                            Timber.e("$TAG: verificación output → ${ve.message}")
-                            msg.contains("password") || msg.contains("encrypt")
-                        }
-
-                        Timber.d("$TAG: OUTPUT isStillEncrypted=$isStillEncrypted")
-                        success = !isStillEncrypted
+                        val stillEncrypted1 = isStillEncrypted(cacheOut)
+                        Timber.d("$TAG: OUTPUT isStillEncrypted=$stillEncrypted1")
+                        success = !stillEncrypted1
 
                     } catch (e1: Exception) {
                         Timber.w("$TAG: Intento 1 falló → ${e1.message}")
@@ -430,18 +442,9 @@ class ViewerViewModel @Inject constructor(
                             doc.close()
                             Timber.d("$TAG: Intento 2 PdfDocument directo → ${cacheOut.length()}b")
 
-                            val isStillEncrypted2 = try {
-                                val vr  = PdfReader(cacheOut.absolutePath)
-                                val enc = vr.isEncrypted
-                                PdfDocument(vr).close()
-                                enc
-                            } catch (ve: Exception) {
-                                val msg = ve.message?.lowercase() ?: ""
-                                msg.contains("password") || msg.contains("encrypt")
-                            }
-
-                            Timber.d("$TAG: OUTPUT2 isStillEncrypted=$isStillEncrypted2")
-                            success = !isStillEncrypted2
+                            val stillEncrypted2 = isStillEncrypted(cacheOut)
+                            Timber.d("$TAG: OUTPUT2 isStillEncrypted=$stillEncrypted2")
+                            success = !stillEncrypted2
 
                         } catch (e2: Exception) {
                             Timber.w("$TAG: Intento 2 falló → ${e2.message}")
