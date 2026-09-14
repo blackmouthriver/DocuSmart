@@ -201,6 +201,7 @@
 
     <!-- ── Общее ────────────────────────────────── -->
     <string name="general_save">Сохранить</string>
+    <string name="general_accept">ОК</string>
     <string name="general_cancel">Отмена</string>
     <string name="general_back">Назад</string>
     <string name="general_share">Поделиться</string>
@@ -758,6 +759,26 @@
     <string name="qr_chip_phone">Тел</string>
     <string name="qr_chip_image">Изображение</string>
     <string name="qr_chip_document">Док</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">Контакт</string>
+    <string name="qr_chip_event">Событие</string>
+    <string name="qr_label_wifi_ssid">Имя сети (SSID)</string>
+    <string name="qr_label_wifi_password">Пароль сети</string>
+    <string name="qr_wifi_security_label">Безопасность</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">Нет</string>
+    <string name="qr_label_contact_name">Имя</string>
+    <string name="qr_label_contact_phone">Телефон</string>
+    <string name="qr_label_contact_email">Эл. почта</string>
+    <string name="qr_label_event_title">Название события</string>
+    <string name="qr_label_event_location">Место</string>
+    <string name="qr_label_event_start">Начало</string>
+    <string name="qr_label_event_end">Окончание</string>
+    <string name="qr_error_wifi_incomplete">Укажите имя сети и пароль</string>
+    <string name="qr_error_contact_name_required">Укажите имя контакта</string>
+    <string name="qr_error_event_title_required">Укажите название события</string>
+    <string name="qr_error_event_end_before_start">Дата окончания должна быть позже даты начала</string>
     <string name="qr_select_image">Выбрать изображение</string>
     <string name="qr_image_selected">Изображение выбрано ✓</string>
     <string name="qr_select_document">Выбрать документ</string>

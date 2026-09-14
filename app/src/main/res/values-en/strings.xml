@@ -203,6 +203,7 @@
 
     <!-- ── General ────────────────────────────────── -->
     <string name="general_save">Save</string>
+    <string name="general_accept">OK</string>
     <string name="general_cancel">Cancel</string>
     <string name="general_back">Back</string>
     <string name="general_share">Share</string>
@@ -767,6 +768,26 @@
     <string name="qr_chip_phone">Phone</string>
     <string name="qr_chip_image">Image</string>
     <string name="qr_chip_document">Doc</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">Contact</string>
+    <string name="qr_chip_event">Event</string>
+    <string name="qr_label_wifi_ssid">Network name (SSID)</string>
+    <string name="qr_label_wifi_password">Network password</string>
+    <string name="qr_wifi_security_label">Security</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">None</string>
+    <string name="qr_label_contact_name">Name</string>
+    <string name="qr_label_contact_phone">Phone</string>
+    <string name="qr_label_contact_email">Email</string>
+    <string name="qr_label_event_title">Event title</string>
+    <string name="qr_label_event_location">Location</string>
+    <string name="qr_label_event_start">Start</string>
+    <string name="qr_label_event_end">End</string>
+    <string name="qr_error_wifi_incomplete">Fill in the network name and password</string>
+    <string name="qr_error_contact_name_required">Enter a name for the contact</string>
+    <string name="qr_error_event_title_required">Enter a title for the event</string>
+    <string name="qr_error_event_end_before_start">The end date must be after the start</string>
     <string name="qr_select_image">Select image</string>
     <string name="qr_image_selected">Image selected ✓</string>
     <string name="qr_select_document">Select document</string>

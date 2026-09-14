@@ -54,7 +54,12 @@ import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentFilterChipColors
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.features.scanner.domain.QrContactContent
 import com.docsmart.features.scanner.domain.QrCrypto
+import com.docsmart.features.scanner.domain.QrEventContent
+import com.docsmart.features.scanner.domain.QrWifiContent
+import com.docsmart.features.scanner.domain.QrWifiSecurity
+import com.docsmart.features.scanner.domain.toQrPayload
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.google.zxing.BarcodeFormat
@@ -65,6 +70,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import java.time.LocalDateTime
 import java.util.concurrent.Executors
 
 // QrContentType y detectQrContentType viven en QrContentType.kt (mismo paquete).
@@ -692,7 +698,7 @@ private fun QrCornerDecoration() {
 // acento siempre visibles, no solo el contorno neutro por defecto de
 // Material3, más marcado cuando el chip está seleccionado.
 @Composable
-private fun qrTypeChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
+internal fun qrTypeChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
     containerColor           = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
     labelColor               = MaterialTheme.colorScheme.onSurface,
     iconColor                = MaterialTheme.colorScheme.primary,
@@ -702,7 +708,7 @@ private fun qrTypeChipColors(): SelectableChipColors = FilterChipDefaults.filter
 )
 
 @Composable
-private fun qrTypeChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
+internal fun qrTypeChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
     enabled             = true,
     selected            = selected,
     borderColor         = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
@@ -712,7 +718,8 @@ private fun qrTypeChipBorder(selected: Boolean) = FilterChipDefaults.filterChipB
 )
 
 // ── Pantalla: Crear QR ────────────────────────────────────────────────────────
-@OptIn(ExperimentalMaterial3Api::class)
+// HU-43: ExperimentalLayoutApi por el FlowRow del selector de tipo.
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun QrCreatorScreen(
     onBack: () -> Unit = {},
@@ -751,13 +758,34 @@ fun QrCreatorScreen(
     var savedMsg     by remember { mutableStateOf<String?>(null) }
     var errorMsg     by remember { mutableStateOf<String?>(null) }
 
+    // HU-43 (backlog UX 2026-08-30/09-14): estado de los 3 tipos nuevos --
+    // cada uno con sus propios campos (no comparten `content` como URL/
+    // Texto/Email/Teléfono), así que cambiar de tipo y volver conserva lo
+    // ya escrito sin necesitar lógica extra de reset.
+    var wifiSsid       by remember { mutableStateOf("") }
+    var wifiPassword   by remember { mutableStateOf("") }
+    var wifiShowPass   by remember { mutableStateOf(false) }
+    var wifiSecurity   by remember { mutableStateOf(QrWifiSecurity.WPA) }
+    var contactName    by remember { mutableStateOf("") }
+    var contactPhone   by remember { mutableStateOf("") }
+    var contactEmail   by remember { mutableStateOf("") }
+    var eventTitle     by remember { mutableStateOf("") }
+    var eventLocation  by remember { mutableStateOf("") }
+    var eventStart     by remember {
+        mutableStateOf(LocalDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0))
+    }
+    var eventEnd       by remember { mutableStateOf(eventStart.plusHours(1)) }
+
     val types = listOf(
         stringResource(R.string.qr_chip_url),
         stringResource(R.string.qr_chip_text),
         stringResource(R.string.qr_chip_email),
         stringResource(R.string.qr_chip_phone),
         stringResource(R.string.qr_chip_image),
-        stringResource(R.string.qr_chip_document)
+        stringResource(R.string.qr_chip_document),
+        stringResource(R.string.qr_chip_wifi),
+        stringResource(R.string.qr_chip_contact),
+        stringResource(R.string.qr_chip_event)
     )
     val typeIcons = listOf(
         Icons.Rounded.Link,
@@ -765,7 +793,10 @@ fun QrCreatorScreen(
         Icons.Rounded.Email,
         Icons.Rounded.Phone,
         Icons.Rounded.Image,
-        Icons.Rounded.Description
+        Icons.Rounded.Description,
+        Icons.Rounded.Wifi,
+        Icons.Rounded.ContactPage,
+        Icons.Rounded.Event
     )
 
     val defaultImageName    = stringResource(R.string.qr_chip_image)
@@ -833,75 +864,48 @@ fun QrCreatorScreen(
 
             Spacer(Modifier.height(4.dp))
 
-            // ── Selector de tipo en 2 filas ───────────────────────────────────
+            // ── Selector de tipo ──────────────────────────────────────────────
             // Pedido explícito del usuario 2026-09-08: los chips sin
             // seleccionar se veían sueltos, sin borde ni fondo propios (solo
             // el contorno gris neutro por defecto de Material3). Ahora
             // siempre llevan un fondo tintado y un borde con el Color de
             // acento, más marcado cuando están seleccionados.
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    types.take(3).forEachIndexed { index, label ->
-                        FilterChip(
-                            selected  = selectedType == index,
-                            onClick   = {
-                                selectedType = index
-                                content      = ""
-                                selectedUri  = null
-                                selectedName = ""
-                                qrBitmap     = null
-                                savedMsg     = null
-                                errorMsg     = null
-                            },
-                            label     = {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalAlignment     = Alignment.CenterVertically
-                                ) {
-                                    Icon(typeIcons[index], null, modifier = Modifier.size(14.dp))
-                                    Text(label, style = MaterialTheme.typography.labelSmall)
-                                }
-                            },
-                            modifier  = Modifier.weight(1f),
-                            colors    = qrTypeChipColors(),
-                            border    = qrTypeChipBorder(selectedType == index)
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    types.drop(3).forEachIndexed { i, label ->
-                        val index = i + 3
-                        FilterChip(
-                            selected  = selectedType == index,
-                            onClick   = {
-                                selectedType = index
-                                content      = ""
-                                selectedUri  = null
-                                selectedName = ""
-                                qrBitmap     = null
-                                savedMsg     = null
-                                errorMsg     = null
-                            },
-                            label     = {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalAlignment     = Alignment.CenterVertically
-                                ) {
-                                    Icon(typeIcons[index], null, modifier = Modifier.size(14.dp))
-                                    Text(label, style = MaterialTheme.typography.labelSmall)
-                                }
-                            },
-                            modifier  = Modifier.weight(1f),
-                            colors    = qrTypeChipColors(),
-                            border    = qrTypeChipBorder(selectedType == index)
-                        )
-                    }
+            // HU-43 (2026-09-14): antes eran 2 filas fijas de 3 chips
+            // (`take(3)`/`drop(3)`), hardcodeadas para exactamente 6 tipos.
+            // Al sumar Wi-Fi/Contacto/Evento (9 en total) se reemplaza por un
+            // `FlowRow` que ajusta solo el número de filas necesarias --
+            // mismo bug de overflow sin scroll que HU-41 encontró en los
+            // chips de modo de color del Escáner, evitado acá desde el
+            // diseño en vez de parchearlo después.
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                types.indices.forEach { index ->
+                    FilterChip(
+                        selected  = selectedType == index,
+                        onClick   = {
+                            selectedType = index
+                            content      = ""
+                            selectedUri  = null
+                            selectedName = ""
+                            qrBitmap     = null
+                            savedMsg     = null
+                            errorMsg     = null
+                        },
+                        label     = {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment     = Alignment.CenterVertically
+                            ) {
+                                Icon(typeIcons[index], null, modifier = Modifier.size(14.dp))
+                                Text(types[index], style = MaterialTheme.typography.labelSmall)
+                            }
+                        },
+                        colors    = qrTypeChipColors(),
+                        border    = qrTypeChipBorder(selectedType == index)
+                    )
                 }
             }
 
@@ -1004,6 +1008,43 @@ fun QrCreatorScreen(
                             }
                         }
                     }
+                }
+                6 -> {
+                    // HU-43: Wi-Fi
+                    QrWifiForm(
+                        ssid = wifiSsid,
+                        onSsidChange = { wifiSsid = it; qrBitmap = null; savedMsg = null },
+                        password = wifiPassword,
+                        onPasswordChange = { wifiPassword = it; qrBitmap = null; savedMsg = null },
+                        showPassword = wifiShowPass,
+                        onShowPasswordToggle = { wifiShowPass = !wifiShowPass },
+                        security = wifiSecurity,
+                        onSecurityChange = { wifiSecurity = it; qrBitmap = null; savedMsg = null }
+                    )
+                }
+                7 -> {
+                    // HU-43: Contacto
+                    QrContactForm(
+                        name = contactName,
+                        onNameChange = { contactName = it; qrBitmap = null; savedMsg = null },
+                        phone = contactPhone,
+                        onPhoneChange = { contactPhone = it; qrBitmap = null; savedMsg = null },
+                        email = contactEmail,
+                        onEmailChange = { contactEmail = it; qrBitmap = null; savedMsg = null }
+                    )
+                }
+                8 -> {
+                    // HU-43: Evento de calendario
+                    QrEventForm(
+                        title = eventTitle,
+                        onTitleChange = { eventTitle = it; qrBitmap = null; savedMsg = null },
+                        location = eventLocation,
+                        onLocationChange = { eventLocation = it; qrBitmap = null; savedMsg = null },
+                        start = eventStart,
+                        onStartChange = { eventStart = it; qrBitmap = null; savedMsg = null },
+                        end = eventEnd,
+                        onEndChange = { eventEnd = it; qrBitmap = null; savedMsg = null }
+                    )
                 }
                 else -> {
                     // URL, Texto, Email, Teléfono
@@ -1155,17 +1196,27 @@ fun QrCreatorScreen(
             }
 
             // ── Botón generar ─────────────────────────────────────────────────
+            // HU-43: Wi-Fi exige SSID (y contraseña salvo red abierta);
+            // Contacto exige al menos el nombre; Evento exige título y que
+            // el fin no sea anterior al inicio.
             val hasContent = when (selectedType) {
                 4, 5 -> selectedUri != null
+                6    -> wifiSsid.isNotBlank() && (wifiSecurity == QrWifiSecurity.NONE || wifiPassword.isNotBlank())
+                7    -> contactName.isNotBlank()
+                8    -> eventTitle.isNotBlank() && !eventEnd.isBefore(eventStart)
                 else -> content.isNotBlank()
             }
 
-            val errorSelectImage    = stringResource(R.string.qr_error_select_image)
-            val errorSelectDocument = stringResource(R.string.qr_error_select_document)
-            val errorEmptyContent   = stringResource(R.string.qr_error_empty_content)
-            val errorPasswordShort  = stringResource(R.string.qr_error_password_short)
-            val savedDownloadsMsg   = stringResource(R.string.general_saved_downloads)
-            val shareQrChooserTitle = stringResource(R.string.qr_share_chooser_title)
+            val errorSelectImage      = stringResource(R.string.qr_error_select_image)
+            val errorSelectDocument   = stringResource(R.string.qr_error_select_document)
+            val errorEmptyContent     = stringResource(R.string.qr_error_empty_content)
+            val errorPasswordShort    = stringResource(R.string.qr_error_password_short)
+            val errorWifiIncomplete   = stringResource(R.string.qr_error_wifi_incomplete)
+            val errorContactRequired  = stringResource(R.string.qr_error_contact_name_required)
+            val errorEventTitle       = stringResource(R.string.qr_error_event_title_required)
+            val errorEventEndBefore   = stringResource(R.string.qr_error_event_end_before_start)
+            val savedDownloadsMsg     = stringResource(R.string.general_saved_downloads)
+            val shareQrChooserTitle   = stringResource(R.string.qr_share_chooser_title)
 
             Button(
                 onClick = {
@@ -1173,6 +1224,9 @@ fun QrCreatorScreen(
                         errorMsg = when (selectedType) {
                             4    -> errorSelectImage
                             5    -> errorSelectDocument
+                            6    -> errorWifiIncomplete
+                            7    -> errorContactRequired
+                            8    -> if (eventTitle.isBlank()) errorEventTitle else errorEventEndBefore
                             else -> errorEmptyContent
                         }
                         return@Button
@@ -1190,6 +1244,9 @@ fun QrCreatorScreen(
                             0    -> if (!content.startsWith("http")) "https://$content" else content
                             2    -> "mailto:$content"
                             3    -> "tel:$content"
+                            6    -> QrWifiContent(wifiSsid, wifiPassword, wifiSecurity).toQrPayload()
+                            7    -> QrContactContent(contactName, contactPhone, contactEmail).toQrPayload()
+                            8    -> QrEventContent(eventTitle, eventLocation, eventStart, eventEnd).toQrPayload()
                             else -> content
                         }
                         val finalContent = if (usePassword && password.isNotBlank())
@@ -1197,15 +1254,22 @@ fun QrCreatorScreen(
                         else rawContent
                         qrBitmap     = generateQrBitmap(finalContent)
                         isGenerating = false
-                        val createdContentType = when (selectedType) {
-                            0    -> QrContentType.URL
-                            2    -> QrContentType.EMAIL
-                            3    -> QrContentType.PHONE
-                            4    -> QrContentType.IMAGE
-                            5    -> QrContentType.DOCUMENT
-                            else -> QrContentType.TEXT
+                        // HU-43: Wi-Fi/Contacto/Evento no están en el
+                        // QrContentType del Lector (namespace distinto, ver
+                        // QrContentType.kt) -- alcanza con un literal para
+                        // la analítica, que solo necesita el nombre.
+                        val createdContentTypeName = when (selectedType) {
+                            0    -> QrContentType.URL.name
+                            2    -> QrContentType.EMAIL.name
+                            3    -> QrContentType.PHONE.name
+                            4    -> QrContentType.IMAGE.name
+                            5    -> QrContentType.DOCUMENT.name
+                            6    -> "WIFI"
+                            7    -> "CONTACT"
+                            8    -> "EVENT"
+                            else -> QrContentType.TEXT.name
                         }
-                        DocuSmartAnalytics.logQrCreated(createdContentType.name, usePassword)
+                        DocuSmartAnalytics.logQrCreated(createdContentTypeName, usePassword)
                     }
                 },
                 enabled  = hasContent,

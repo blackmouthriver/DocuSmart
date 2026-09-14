@@ -214,6 +214,7 @@
 
     <!-- ── General ────────────────────────────────── -->
     <string name="general_save">Desar</string>
+    <string name="general_accept">D\'acord</string>
     <string name="general_cancel">Cancel·lar</string>
     <string name="general_back">Tornar</string>
     <string name="general_share">Compartir</string>
@@ -790,6 +791,26 @@
     <string name="qr_chip_phone">Tel</string>
     <string name="qr_chip_image">Imatge</string>
     <string name="qr_chip_document">Doc</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">Contacte</string>
+    <string name="qr_chip_event">Esdeveniment</string>
+    <string name="qr_label_wifi_ssid">Nom de la xarxa (SSID)</string>
+    <string name="qr_label_wifi_password">Contrasenya de la xarxa</string>
+    <string name="qr_wifi_security_label">Seguretat</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">Cap</string>
+    <string name="qr_label_contact_name">Nom</string>
+    <string name="qr_label_contact_phone">Telèfon</string>
+    <string name="qr_label_contact_email">Correu electrònic</string>
+    <string name="qr_label_event_title">Títol de l\'esdeveniment</string>
+    <string name="qr_label_event_location">Lloc</string>
+    <string name="qr_label_event_start">Inici</string>
+    <string name="qr_label_event_end">Fi</string>
+    <string name="qr_error_wifi_incomplete">Completa el nom de la xarxa i la contrasenya</string>
+    <string name="qr_error_contact_name_required">Escriu un nom per al contacte</string>
+    <string name="qr_error_event_title_required">Escriu un títol per a l\'esdeveniment</string>
+    <string name="qr_error_event_end_before_start">La data de fi ha de ser posterior a la d\'inici</string>
     <string name="qr_select_image">Seleccionar imatge</string>
     <string name="qr_image_selected">Imatge seleccionada ✓</string>
     <string name="qr_select_document">Seleccionar document</string>

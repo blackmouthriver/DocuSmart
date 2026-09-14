@@ -201,6 +201,7 @@
 
     <!-- ── 通用 ────────────────────────────────── -->
     <string name="general_save">保存</string>
+    <string name="general_accept">确定</string>
     <string name="general_cancel">取消</string>
     <string name="general_back">返回</string>
     <string name="general_share">分享</string>
@@ -762,6 +763,26 @@
     <string name="qr_chip_phone">电话</string>
     <string name="qr_chip_image">图片</string>
     <string name="qr_chip_document">文档</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">联系人</string>
+    <string name="qr_chip_event">日程</string>
+    <string name="qr_label_wifi_ssid">网络名称（SSID）</string>
+    <string name="qr_label_wifi_password">网络密码</string>
+    <string name="qr_wifi_security_label">安全性</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">无</string>
+    <string name="qr_label_contact_name">姓名</string>
+    <string name="qr_label_contact_phone">电话</string>
+    <string name="qr_label_contact_email">电子邮件</string>
+    <string name="qr_label_event_title">日程标题</string>
+    <string name="qr_label_event_location">地点</string>
+    <string name="qr_label_event_start">开始</string>
+    <string name="qr_label_event_end">结束</string>
+    <string name="qr_error_wifi_incomplete">请填写网络名称和密码</string>
+    <string name="qr_error_contact_name_required">请输入联系人姓名</string>
+    <string name="qr_error_event_title_required">请输入日程标题</string>
+    <string name="qr_error_event_end_before_start">结束时间必须晚于开始时间</string>
     <string name="qr_select_image">选择图片</string>
     <string name="qr_image_selected">已选择图片 ✓</string>
     <string name="qr_select_document">选择文档</string>

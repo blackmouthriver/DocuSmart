@@ -201,6 +201,7 @@
 
     <!-- ── 共通 ────────────────────────────── -->
     <string name="general_save">保存</string>
+    <string name="general_accept">OK</string>
     <string name="general_cancel">キャンセル</string>
     <string name="general_back">戻る</string>
     <string name="general_share">共有</string>
@@ -762,6 +763,26 @@
     <string name="qr_chip_phone">電話</string>
     <string name="qr_chip_image">画像</string>
     <string name="qr_chip_document">ドキュメント</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">連絡先</string>
+    <string name="qr_chip_event">イベント</string>
+    <string name="qr_label_wifi_ssid">ネットワーク名（SSID）</string>
+    <string name="qr_label_wifi_password">ネットワークのパスワード</string>
+    <string name="qr_wifi_security_label">セキュリティ</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">なし</string>
+    <string name="qr_label_contact_name">名前</string>
+    <string name="qr_label_contact_phone">電話番号</string>
+    <string name="qr_label_contact_email">メールアドレス</string>
+    <string name="qr_label_event_title">イベントのタイトル</string>
+    <string name="qr_label_event_location">場所</string>
+    <string name="qr_label_event_start">開始</string>
+    <string name="qr_label_event_end">終了</string>
+    <string name="qr_error_wifi_incomplete">ネットワーク名とパスワードを入力してください</string>
+    <string name="qr_error_contact_name_required">連絡先の名前を入力してください</string>
+    <string name="qr_error_event_title_required">イベントのタイトルを入力してください</string>
+    <string name="qr_error_event_end_before_start">終了日時は開始日時より後にしてください</string>
     <string name="qr_select_image">画像を選択</string>
     <string name="qr_image_selected">画像を選択しました ✓</string>
     <string name="qr_select_document">ドキュメントを選択</string>

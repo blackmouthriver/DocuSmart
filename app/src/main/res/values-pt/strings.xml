@@ -201,6 +201,7 @@
 
     <!-- ── Geral ────────────────────────────────── -->
     <string name="general_save">Salvar</string>
+    <string name="general_accept">OK</string>
     <string name="general_cancel">Cancelar</string>
     <string name="general_back">Voltar</string>
     <string name="general_share">Compartilhar</string>
@@ -758,6 +759,26 @@
     <string name="qr_chip_phone">Tel</string>
     <string name="qr_chip_image">Imagem</string>
     <string name="qr_chip_document">Doc</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">Contato</string>
+    <string name="qr_chip_event">Evento</string>
+    <string name="qr_label_wifi_ssid">Nome da rede (SSID)</string>
+    <string name="qr_label_wifi_password">Senha da rede</string>
+    <string name="qr_wifi_security_label">Segurança</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">Nenhuma</string>
+    <string name="qr_label_contact_name">Nome</string>
+    <string name="qr_label_contact_phone">Telefone</string>
+    <string name="qr_label_contact_email">Email</string>
+    <string name="qr_label_event_title">Título do evento</string>
+    <string name="qr_label_event_location">Local</string>
+    <string name="qr_label_event_start">Início</string>
+    <string name="qr_label_event_end">Fim</string>
+    <string name="qr_error_wifi_incomplete">Preencha o nome da rede e a senha</string>
+    <string name="qr_error_contact_name_required">Digite um nome para o contato</string>
+    <string name="qr_error_event_title_required">Digite um título para o evento</string>
+    <string name="qr_error_event_end_before_start">A data de término deve ser posterior ao início</string>
     <string name="qr_select_image">Selecionar imagem</string>
     <string name="qr_image_selected">Imagem selecionada ✓</string>
     <string name="qr_select_document">Selecionar documento</string>

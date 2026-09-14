@@ -211,6 +211,7 @@
 
     <!-- ── General ────────────────────────────────── -->
     <string name="general_save">Gorde</string>
+    <string name="general_accept">Ados</string>
     <string name="general_cancel">Utzi</string>
     <string name="general_back">Itzuli</string>
     <string name="general_share">Partekatu</string>
@@ -778,6 +779,26 @@
     <string name="qr_chip_phone">Tel.</string>
     <string name="qr_chip_image">Irudia</string>
     <string name="qr_chip_document">Dok.</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">Kontaktua</string>
+    <string name="qr_chip_event">Ekitaldia</string>
+    <string name="qr_label_wifi_ssid">Sarearen izena (SSID)</string>
+    <string name="qr_label_wifi_password">Sarearen pasahitza</string>
+    <string name="qr_wifi_security_label">Segurtasuna</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">Bat ere ez</string>
+    <string name="qr_label_contact_name">Izena</string>
+    <string name="qr_label_contact_phone">Telefonoa</string>
+    <string name="qr_label_contact_email">Helbide elektronikoa</string>
+    <string name="qr_label_event_title">Ekitaldiaren izenburua</string>
+    <string name="qr_label_event_location">Tokia</string>
+    <string name="qr_label_event_start">Hasiera</string>
+    <string name="qr_label_event_end">Amaiera</string>
+    <string name="qr_error_wifi_incomplete">Bete sarearen izena eta pasahitza</string>
+    <string name="qr_error_contact_name_required">Idatzi kontaktuaren izena</string>
+    <string name="qr_error_event_title_required">Idatzi ekitaldiaren izenburua</string>
+    <string name="qr_error_event_end_before_start">Amaiera-data hasiera baino geroagokoa izan behar da</string>
     <string name="qr_select_image">Hautatu irudia</string>
     <string name="qr_image_selected">Irudia hautatuta ✓</string>
     <string name="qr_select_document">Hautatu dokumentua</string>

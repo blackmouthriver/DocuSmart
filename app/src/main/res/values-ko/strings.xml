@@ -201,6 +201,7 @@
 
     <!-- ── 공통 ────────────────────────────────── -->
     <string name="general_save">저장</string>
+    <string name="general_accept">확인</string>
     <string name="general_cancel">취소</string>
     <string name="general_back">뒤로</string>
     <string name="general_share">공유</string>
@@ -762,6 +763,26 @@
     <string name="qr_chip_phone">전화</string>
     <string name="qr_chip_image">이미지</string>
     <string name="qr_chip_document">문서</string>
+    <string name="qr_chip_wifi">Wi-Fi</string>
+    <string name="qr_chip_contact">연락처</string>
+    <string name="qr_chip_event">일정</string>
+    <string name="qr_label_wifi_ssid">네트워크 이름(SSID)</string>
+    <string name="qr_label_wifi_password">네트워크 비밀번호</string>
+    <string name="qr_wifi_security_label">보안</string>
+    <string name="qr_wifi_security_wpa">WPA/WPA2</string>
+    <string name="qr_wifi_security_wep">WEP</string>
+    <string name="qr_wifi_security_none">없음</string>
+    <string name="qr_label_contact_name">이름</string>
+    <string name="qr_label_contact_phone">전화번호</string>
+    <string name="qr_label_contact_email">이메일</string>
+    <string name="qr_label_event_title">일정 제목</string>
+    <string name="qr_label_event_location">장소</string>
+    <string name="qr_label_event_start">시작</string>
+    <string name="qr_label_event_end">종료</string>
+    <string name="qr_error_wifi_incomplete">네트워크 이름과 비밀번호를 입력하세요</string>
+    <string name="qr_error_contact_name_required">연락처 이름을 입력하세요</string>
+    <string name="qr_error_event_title_required">일정 제목을 입력하세요</string>
+    <string name="qr_error_event_end_before_start">종료 날짜는 시작 날짜 이후여야 합니다</string>
     <string name="qr_select_image">이미지 선택</string>
     <string name="qr_image_selected">이미지 선택됨 ✓</string>
     <string name="qr_select_document">문서 선택</string>
