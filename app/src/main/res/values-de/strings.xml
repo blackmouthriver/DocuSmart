@@ -706,6 +706,11 @@
     <string name="scan_edit_contrast">Kontrast: %1$d%%</string>
     <string name="scan_edit_scale">Skalierung</string>
     <string name="scan_edit_apply">Anwenden</string>
+    <string name="scan_color_mode_label">Farbmodus</string>
+    <string name="scan_color_mode_color">Farbe</string>
+    <string name="scan_color_mode_bw">Schwarzweiß</string>
+    <string name="scan_color_mode_grayscale">Graustufen</string>
+    <string name="scan_color_mode_highlight">Text hervorheben</string>
     <string name="scan_page_count">%1$d von %2$d Seiten</string>
     <string name="scan_add_page">Seite hinzufügen</string>
     <string name="scan_page_limit_title">Seitenlimit erreicht</string>

@@ -710,6 +710,11 @@
     <string name="scan_edit_contrast">대비: %1$d%%</string>
     <string name="scan_edit_scale">크기 조절</string>
     <string name="scan_edit_apply">적용</string>
+    <string name="scan_color_mode_label">색상 모드</string>
+    <string name="scan_color_mode_color">컬러</string>
+    <string name="scan_color_mode_bw">흑백</string>
+    <string name="scan_color_mode_grayscale">회색조</string>
+    <string name="scan_color_mode_highlight">텍스트 강조</string>
     <string name="scan_page_count">%2$d페이지 중 %1$d페이지</string>
     <string name="scan_add_page">페이지 추가</string>
     <string name="scan_page_limit_title">페이지 한도 도달</string>

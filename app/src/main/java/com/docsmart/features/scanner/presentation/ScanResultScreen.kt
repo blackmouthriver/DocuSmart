@@ -58,9 +58,14 @@ import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterUiState
 import com.docsmart.features.converter.presentation.ConverterViewModel
 import com.docsmart.features.converter.presentation.components.BatchConversionSuccess
+import com.docsmart.features.scanner.domain.ScanColorMode
 import com.docsmart.features.scanner.domain.buildColorMatrix
+import com.docsmart.features.scanner.domain.buildColorModeMatrix
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -149,13 +154,46 @@ fun ScanResultScreen(
     var editableUris by remember(scannedUris) { mutableStateOf(scannedUris) }
     var editingIndex by remember { mutableStateOf<Int?>(null) }
 
+    // HU-41 (backlog UX 2026-08-30/09-14): modo de color por página (mismo
+    // índice que editableUris) + el último modo elegido como "default" del
+    // documento (RF1/RF2). Por defecto Color en ambos -- sin filtro, AC3.
+    var pageColorModes by remember(scannedUris) {
+        mutableStateOf(List(scannedUris.size) { ScanColorMode.COLOR })
+    }
+    var defaultColorMode by remember(scannedUris) { mutableStateOf(ScanColorMode.COLOR) }
+    // URIs realmente usadas para generar el resultado final: iguales a
+    // editableUris salvo que su modo de color no sea COLOR, en cuyo caso se
+    // reemplazan por la versión ya procesada (ScanImageEditor.applyColorMode).
+    // El cache evita reprocesar/reescribir el mismo archivo en cada cambio
+    // de modo si el usuario vuelve a uno ya aplicado antes.
+    val colorModeCache = remember { mutableMapOf<Pair<Uri, ScanColorMode>, Uri>() }
+    var colorFilteredUris by remember(scannedUris) { mutableStateOf(scannedUris) }
+
     val defaultNameTemplate = stringResource(R.string.scan_result_default_name_prefix)
     val shareChooserTitle   = stringResource(R.string.scan_result_share_format, selectedFormat.label)
 
+    LaunchedEffect(editableUris, pageColorModes) {
+        colorFilteredUris = coroutineScope {
+            editableUris.mapIndexed { index, uri ->
+                val mode = pageColorModes.getOrElse(index) { ScanColorMode.COLOR }
+                async {
+                    if (mode == ScanColorMode.COLOR) {
+                        uri
+                    } else {
+                        val key = uri to mode
+                        colorModeCache[key]
+                            ?: editorViewModel.applyColorMode(uri, mode)?.also { colorModeCache[key] = it }
+                            ?: uri
+                    }
+                }
+            }.awaitAll()
+        }
+    }
+
     // ── Inicializar según tipo de resultado ───────────
-    LaunchedEffect(editableUris, isPdf) {
+    LaunchedEffect(colorFilteredUris, isPdf) {
         if (!isPdf) {
-            converterViewModel.onImagesSelected(editableUris)
+            converterViewModel.onImagesSelected(colorFilteredUris)
         }
     }
 
@@ -167,6 +205,7 @@ fun ScanResultScreen(
     ScanResultSideEffects(
         editingIndex = editingIndex,
         editableUris = editableUris,
+        pageColorModes = pageColorModes,
         uiState = uiState,
         isRewardedReady = isRewardedReady,
         activity = activity,
@@ -174,6 +213,9 @@ fun ScanResultScreen(
         callbacks = ScanResultEffectCallbacks(
             onEditingIndexChange = { editingIndex = it },
             onEditableUrisChange = { editableUris = it },
+            onColorModeChange = { index, mode ->
+                pageColorModes = pageColorModes.toMutableList().apply { set(index, mode) }
+            },
             onSavedFileChange = { savedFile = it },
             onSessionFinalized = { sessionFinalized = true }
         )
@@ -204,7 +246,11 @@ fun ScanResultScreen(
     }
 
     // "Agregar página" (backlog UX 2026-09-06) -- ver ScanAddPageSection.
-    val onAddPage = rememberAddPageLauncher(activity) { editableUris = editableUris + it }
+    // HU-41: la página nueva hereda el modo de color "default" vigente.
+    val onAddPage = rememberAddPageLauncher(activity) { uri ->
+        editableUris = editableUris + uri
+        pageColorModes = pageColorModes + defaultColorMode
+    }
 
     ScanResultBody(
         headerArgs = ScanResultHeaderArgs(
@@ -216,7 +262,13 @@ fun ScanResultScreen(
         previewArgs = ScanPreviewArgs(
             isPdf = isPdf,
             editableUris = editableUris,
+            pageColorModes = pageColorModes,
+            defaultColorMode = defaultColorMode,
             onEditPage = { index -> editingIndex = index },
+            onDefaultColorModeSelected = { mode ->
+                defaultColorMode = mode
+                pageColorModes = List(pageColorModes.size) { mode }
+            },
             sessionFinalized = sessionFinalized
         ),
         addPageArgs = buildScanAddPageArgs(
@@ -356,6 +408,9 @@ private data class ScanResultViewModels(
 private data class ScanResultEffectCallbacks(
     val onEditingIndexChange: (Int?) -> Unit,
     val onEditableUrisChange: (List<Uri>) -> Unit,
+    // HU-41: override de modo de color de una sola página, desde el
+    // selector dentro de ScanImageEditorDialog.
+    val onColorModeChange: (index: Int, mode: ScanColorMode) -> Unit,
     val onSavedFileChange: (File?) -> Unit,
     val onSessionFinalized: () -> Unit
 )
@@ -369,6 +424,7 @@ private data class ScanResultEffectCallbacks(
 private fun ScanResultSideEffects(
     editingIndex: Int?,
     editableUris: List<Uri>,
+    pageColorModes: List<ScanColorMode>,
     uiState: ConverterUiState,
     isRewardedReady: Boolean,
     activity: Activity?,
@@ -378,13 +434,15 @@ private fun ScanResultSideEffects(
     ScanPageEditDialog(
         editingIndex = editingIndex,
         editableUris = editableUris,
+        pageColorModes = pageColorModes,
         editorViewModel = viewModels.editorViewModel,
         onDismiss = { callbacks.onEditingIndexChange(null) },
         onApplied = { index, result ->
             callbacks.onEditableUrisChange(
                 editableUris.toMutableList().apply { set(index, result) }
             )
-        }
+        },
+        onColorModeChanged = callbacks.onColorModeChange
     )
 
     // Bug real encontrado 2026-09-14 (repaso general): las 3 rutas de
@@ -446,13 +504,17 @@ private fun ScanResultSideEffects(
 private fun ScanPageEditDialog(
     editingIndex: Int?,
     editableUris: List<Uri>,
+    pageColorModes: List<ScanColorMode>,
     editorViewModel: ScanImageEditorViewModel,
     onDismiss: () -> Unit,
-    onApplied: (index: Int, result: Uri) -> Unit
+    onApplied: (index: Int, result: Uri) -> Unit,
+    onColorModeChanged: (index: Int, mode: ScanColorMode) -> Unit
 ) {
     val index = editingIndex ?: return
     ScanImageEditorDialog(
         uri = editableUris[index],
+        colorMode = pageColorModes.getOrElse(index) { ScanColorMode.COLOR },
+        onColorModeChange = { mode -> onColorModeChanged(index, mode) },
         onDismiss = onDismiss,
         onApply = { brightness, contrast, scalePercent ->
             editorViewModel.applyAdjustments(
@@ -571,7 +633,12 @@ private data class ScanResultHeaderArgs(
 private data class ScanPreviewArgs(
     val isPdf: Boolean,
     val editableUris: List<Uri>,
+    // HU-41: modo de color por página + el "default" del documento (chips
+    // arriba de "Agregar página", ver ScanColorModeSection).
+    val pageColorModes: List<ScanColorMode>,
+    val defaultColorMode: ScanColorMode,
     val onEditPage: (Int) -> Unit,
+    val onDefaultColorModeSelected: (ScanColorMode) -> Unit,
     val sessionFinalized: Boolean
 )
 
@@ -715,7 +782,21 @@ private fun LazyListScope.scanResultContent(
     // compartido) -- ver ScanSessionDisplayArgs/ScanSessionManager.
     if (!previewArgs.isPdf && previewArgs.editableUris.isNotEmpty() && !previewArgs.sessionFinalized) {
         item {
-            ScanPreviewSection(uris = previewArgs.editableUris, onEditPage = previewArgs.onEditPage)
+            ScanPreviewSection(
+                uris = previewArgs.editableUris,
+                colorModes = previewArgs.pageColorModes,
+                onEditPage = previewArgs.onEditPage
+            )
+        }
+        // HU-41 (RF1/RF2): modo de color por defecto del documento --
+        // ScanImageEditorDialog trae el mismo selector para el override por
+        // página (ver ScanColorModeChipRow, reutilizado en ambos lados).
+        item {
+            ScanColorModeSection(
+                previewUri = previewArgs.editableUris.firstOrNull(),
+                selected = previewArgs.defaultColorMode,
+                onSelect = previewArgs.onDefaultColorModeSelected
+            )
         }
         item {
             ScanAddPageSection(args = addPageArgs)
@@ -916,7 +997,11 @@ private fun ScanSessionFinalizedSection(
 // Extraído de ScanResultScreen (LongMethod de detekt) -- fila de miniaturas
 // de las páginas escaneadas, cada una con acceso al editor RF-SCAN-06/07.
 @Composable
-private fun ScanPreviewSection(uris: List<Uri>, onEditPage: (Int) -> Unit) {
+private fun ScanPreviewSection(
+    uris: List<Uri>,
+    colorModes: List<ScanColorMode>,
+    onEditPage: (Int) -> Unit
+) {
     Text(
         text = stringResource(R.string.scan_result_preview),
         style = MaterialTheme.typography.titleMedium,
@@ -928,6 +1013,9 @@ private fun ScanPreviewSection(uris: List<Uri>, onEditPage: (Int) -> Unit) {
             ScanPageThumbnail(
                 uri = uri,
                 pageNumber = index + 1,
+                // HU-41: la miniatura refleja el modo de color vigente de
+                // esta página -- lo que se ve acá es lo que queda guardado.
+                colorMode = colorModes.getOrElse(index) { ScanColorMode.COLOR },
                 onEditClick = { onEditPage(index) }
             )
         }
@@ -1415,6 +1503,7 @@ private suspend fun shareScanResult(context: Context, state: ScanResultActionsSt
 private fun ScanPageThumbnail(
     uri: Uri,
     pageNumber: Int,
+    colorMode: ScanColorMode,
     onEditClick: () -> Unit
 ) {
     Box(modifier = Modifier.size(120.dp, 160.dp)) {
@@ -1431,6 +1520,12 @@ private fun ScanPageThumbnail(
                 model = uri,
                 contentDescription = stringResource(R.string.scan_result_page_content_desc, pageNumber),
                 contentScale = ContentScale.Crop,
+                // HU-41: sin filtro en modo Color (AC3), igual que antes.
+                colorFilter = if (colorMode == ScanColorMode.COLOR) {
+                    null
+                } else {
+                    ColorFilter.colorMatrix(ColorMatrix(buildColorModeMatrix(colorMode)))
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(MaterialTheme.shapes.medium)
@@ -1512,6 +1607,12 @@ private fun PercentChipRow(
 @Composable
 private fun ScanImageEditorDialog(
     uri: Uri,
+    // HU-41: override de modo de color de esta página -- se aplica al
+    // instante al tocar un chip (mismo criterio que el resto de chips de
+    // esta pantalla), independiente del brillo/contraste/escala de abajo
+    // que sí requieren "Aplicar".
+    colorMode: ScanColorMode,
+    onColorModeChange: (ScanColorMode) -> Unit,
     onDismiss: () -> Unit,
     onApply: (brightness: Int, contrast: Int, scalePercent: Int) -> Unit
 ) {
@@ -1600,6 +1701,13 @@ private fun ScanImageEditorDialog(
                     options = SCAN_EDIT_SCALE_OPTIONS,
                     selected = scalePercent,
                     onSelect = { scalePercent = it }
+                )
+
+                Spacer(Modifier.height(16.dp))
+                ScanColorModeSection(
+                    previewUri = uri,
+                    selected = colorMode,
+                    onSelect = onColorModeChange
                 )
 
                 Spacer(Modifier.height(20.dp))

@@ -738,6 +738,11 @@
     <string name="scan_edit_contrast">Contrast: %1$d%%</string>
     <string name="scan_edit_scale">Escala</string>
     <string name="scan_edit_apply">Aplicar</string>
+    <string name="scan_color_mode_label">Mode de color</string>
+    <string name="scan_color_mode_color">Color</string>
+    <string name="scan_color_mode_bw">Blanc i negre</string>
+    <string name="scan_color_mode_grayscale">Escala de grisos</string>
+    <string name="scan_color_mode_highlight">Ressaltar text</string>
     <string name="scan_page_count">%1$d de %2$d pàgines</string>
     <string name="scan_add_page">Afegir pàgina</string>
     <string name="scan_page_limit_title">Límit de pàgines assolit</string>

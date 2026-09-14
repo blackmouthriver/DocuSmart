@@ -710,6 +710,11 @@
     <string name="scan_edit_contrast">コントラスト: %1$d%%</string>
     <string name="scan_edit_scale">スケール</string>
     <string name="scan_edit_apply">適用</string>
+    <string name="scan_color_mode_label">カラーモード</string>
+    <string name="scan_color_mode_color">カラー</string>
+    <string name="scan_color_mode_bw">白黒</string>
+    <string name="scan_color_mode_grayscale">グレースケール</string>
+    <string name="scan_color_mode_highlight">テキストを強調</string>
     <string name="scan_page_count">%2$d ページ中 %1$d ページ</string>
     <string name="scan_add_page">ページを追加</string>
     <string name="scan_page_limit_title">ページ数の上限に達しました</string>

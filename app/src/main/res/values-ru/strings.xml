@@ -706,6 +706,11 @@
     <string name="scan_edit_contrast">Контраст: %1$d%%</string>
     <string name="scan_edit_scale">Масштаб</string>
     <string name="scan_edit_apply">Применить</string>
+    <string name="scan_color_mode_label">Режим цвета</string>
+    <string name="scan_color_mode_color">Цвет</string>
+    <string name="scan_color_mode_bw">Черно-белый</string>
+    <string name="scan_color_mode_grayscale">Оттенки серого</string>
+    <string name="scan_color_mode_highlight">Выделить текст</string>
     <string name="scan_page_count">%1$d из %2$d страниц</string>
     <string name="scan_add_page">Добавить страницу</string>
     <string name="scan_page_limit_title">Достигнут лимит страниц</string>

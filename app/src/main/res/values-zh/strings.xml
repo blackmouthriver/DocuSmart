@@ -710,6 +710,11 @@
     <string name="scan_edit_contrast">对比度：%1$d%%</string>
     <string name="scan_edit_scale">缩放</string>
     <string name="scan_edit_apply">应用</string>
+    <string name="scan_color_mode_label">颜色模式</string>
+    <string name="scan_color_mode_color">彩色</string>
+    <string name="scan_color_mode_bw">黑白</string>
+    <string name="scan_color_mode_grayscale">灰度</string>
+    <string name="scan_color_mode_highlight">突出文字</string>
     <string name="scan_page_count">%1$d/%2$d 页</string>
     <string name="scan_add_page">添加页面</string>
     <string name="scan_page_limit_title">已达到页数上限</string>

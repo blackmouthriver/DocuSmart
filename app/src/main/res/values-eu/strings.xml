@@ -726,6 +726,11 @@
     <string name="scan_edit_contrast">Kontrastea: %1$d%%</string>
     <string name="scan_edit_scale">Eskala</string>
     <string name="scan_edit_apply">Aplikatu</string>
+    <string name="scan_color_mode_label">Kolore modua</string>
+    <string name="scan_color_mode_color">Kolorea</string>
+    <string name="scan_color_mode_bw">Zuri-beltza</string>
+    <string name="scan_color_mode_grayscale">Gris-eskala</string>
+    <string name="scan_color_mode_highlight">Testua nabarmendu</string>
     <string name="scan_page_count">%2$d(e)tik %1$d orrialde</string>
     <string name="scan_add_page">Gehitu orrialdea</string>
     <string name="scan_page_limit_title">Orrialde-muga bete da</string>

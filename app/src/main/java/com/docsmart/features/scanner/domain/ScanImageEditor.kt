@@ -50,6 +50,31 @@ class ScanImageEditor @Inject constructor(
         }
     }
 
+    /**
+     * HU-41 (backlog UX 2026-08-30/09-14): aplica un [ScanColorMode] a una
+     * página ya escaneada. `COLOR` no reprocesa nada y devuelve la misma
+     * URI de entrada -- AC3, cero regresión para quien no toca esta
+     * opción, sin gastar IO de más.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    suspend fun applyColorMode(sourceUri: Uri, mode: ScanColorMode): Uri? = withContext(Dispatchers.IO) {
+        if (mode == ScanColorMode.COLOR) return@withContext sourceUri
+        try {
+            val original = loadBitmap(sourceUri) ?: return@withContext null
+            val filtered = applyMatrix(original, buildColorModeMatrix(mode))
+
+            val outputFile = writeToCache(filtered)
+
+            filtered.recycle()
+            original.recycle()
+
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
+        } catch (e: Exception) {
+            Timber.e(e, "Error aplicando modo de color a la imagen escaneada")
+            null
+        }
+    }
+
     private fun loadBitmap(uri: Uri): Bitmap? =
         context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
 
@@ -61,12 +86,16 @@ class ScanImageEditor @Inject constructor(
 
     private fun applyColorAdjustments(bitmap: Bitmap, brightness: Int, contrast: Int): Bitmap {
         if (brightness == 0 && contrast == 0) return bitmap
+        return applyMatrix(bitmap, buildColorMatrix(brightness, contrast))
+    }
+
+    private fun applyMatrix(bitmap: Bitmap, matrix: FloatArray): Bitmap {
         val result = Bitmap.createBitmap(
             bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888
         )
         val canvas = Canvas(result)
         val paint = Paint().apply {
-            colorFilter = ColorMatrixColorFilter(buildColorMatrix(brightness, contrast))
+            colorFilter = ColorMatrixColorFilter(matrix)
         }
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
         return result
