@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.itextpdf.kernel.geom.Vector
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -81,7 +82,7 @@ class PdfToWordUseCase @Inject constructor(
             cacheFile = File(context.cacheDir, "pdftodocx_${System.currentTimeMillis()}.pdf")
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
                 cacheFile.outputStream().use { input.copyTo(it) }
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el PDF")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
 
             val pdfDoc = PdfDocument(PdfReader(cacheFile))
             val totalPages = pdfDoc.numberOfPages
@@ -94,7 +95,7 @@ class PdfToWordUseCase @Inject constructor(
 
             if (pages.all { page -> page.all { it.text.isBlank() } }) {
                 return@withContext ConversionResult.Error(
-                    "El PDF no contiene texto extraíble. Puede ser un PDF escaneado."
+                    context.getString(R.string.converter_error_empty_pdf_text_scanned)
                 )
             }
 
@@ -105,7 +106,9 @@ class PdfToWordUseCase @Inject constructor(
             buildDocx(pages, outputFile)
 
             if (outputFile.length() == 0L)
-                return@withContext ConversionResult.Error("Error al generar el archivo Word")
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_generate_word_failed)
+                )
 
             Timber.d("PdfToWordUseCase: docx creado — ${outputFile.length() / 1024} KB")
 
@@ -116,7 +119,9 @@ class PdfToWordUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "PdfToWordUseCase: error — ${e.message}")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         } finally {
             cacheFile?.delete()
         }

@@ -96,7 +96,18 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    fun verifyPin(pin: String, incorrectPinMessage: String) {
+    // Bug real encontrado 2026-09-14 (repaso general): el PIN no tenía
+    // límite de intentos -- ahora SecurityManager bloquea tras varios
+    // fallos seguidos (backoff creciente, ver pinLockoutRemainingMillis) y
+    // acá se revisa ese bloqueo antes de intentar verificar, en vez de
+    // dejar que verifyPin() lo rechace en silencio como "PIN incorrecto".
+    fun verifyPin(pin: String, incorrectPinMessage: String, lockedOutMessageFormat: String) {
+        val lockoutMs = securityManager.pinLockoutRemainingMillis()
+        if (lockoutMs > 0) {
+            val remainingSeconds = ((lockoutMs + 999) / 1000).toInt()
+            _uiState.update { it.copy(error = String.format(lockedOutMessageFormat, remainingSeconds)) }
+            return
+        }
         if (securityManager.verifyPin(pin)) {
             unlockAndLoadFiles()
         } else {

@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -25,38 +26,13 @@ class WordToTextUseCase @Inject constructor(
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
-            val sb = StringBuilder()
-            var pageCount = 0
+            val (text, pageCount) = readWordText(wordUri)
+                ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
 
-            context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
-                // RF-CONV-07: ver WordFormatDetection.kt.
-                val (format, input) = detectWordFormat(rawInput)
-
-                if (format == WordFileFormat.OLE2) {
-                    val blocks = extractLegacyDocBlocks(input)
-                    blocks.forEach { (text, _) -> sb.appendLine(text) }
-                    pageCount = blocks.size
-                } else {
-                    val wordDoc = XWPFDocument(input)
-
-                    wordDoc.paragraphs.forEach { para ->
-                        if (para.text.isNotBlank()) sb.appendLine(para.text)
-                    }
-                    wordDoc.tables.forEach { table ->
-                        sb.appendLine()
-                        table.rows.forEach { row ->
-                            val rowText = row.tableCells.joinToString(" | ") { it.text }
-                            if (rowText.isNotBlank()) sb.appendLine(rowText)
-                        }
-                    }
-                    pageCount = wordDoc.paragraphs.size
-                    wordDoc.close()
-                }
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Word")
-
-            val text = sb.toString().trim()
             if (text.isBlank()) {
-                return@withContext ConversionResult.Error("El documento no contiene texto extraíble.")
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_empty_word_document)
+                )
             }
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
@@ -71,8 +47,47 @@ class WordToTextUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Word a texto")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
+    }
+
+    // Extraído de invoke() -- además de mantener la complejidad ciclomática
+    // bajo el límite de detekt, agrupa toda la lectura OLE2/XWPF en un solo
+    // lugar (mismo patrón ya usado en WordToPdfUseCase/WordToHtmlUseCase).
+    private fun readWordText(wordUri: Uri): Pair<String, Int>? {
+        val sb = StringBuilder()
+        var pageCount = 0
+
+        context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
+            // RF-CONV-07: ver WordFormatDetection.kt.
+            val (format, input) = detectWordFormat(rawInput)
+
+            if (format == WordFileFormat.OLE2) {
+                val blocks = extractLegacyDocBlocks(input)
+                blocks.forEach { (text, _) -> sb.appendLine(text) }
+                pageCount = blocks.size
+            } else {
+                pageCount = XWPFDocument(input).use { wordDoc -> appendXwpfText(sb, wordDoc) }
+            }
+        } ?: return null
+
+        return sb.toString().trim() to pageCount
+    }
+
+    private fun appendXwpfText(sb: StringBuilder, wordDoc: XWPFDocument): Int {
+        wordDoc.paragraphs.forEach { para ->
+            if (para.text.isNotBlank()) sb.appendLine(para.text)
+        }
+        wordDoc.tables.forEach { table ->
+            sb.appendLine()
+            table.rows.forEach { row ->
+                val rowText = row.tableCells.joinToString(" | ") { it.text }
+                if (rowText.isNotBlank()) sb.appendLine(rowText)
+            }
+        }
+        return wordDoc.paragraphs.size
     }
 
     private fun generateTimestamp() =

@@ -376,7 +376,17 @@ class PdfToolsViewModel @Inject constructor(
                 )
             }
 
-            val result = runTool(state, customName, messages) ?: return@launch
+            val result = runTool(state, customName, messages)
+            if (result == null) {
+                // Bug real encontrado 2026-09-14 (repaso general): antes se
+                // salía con return@launch sin resetear isProcessing, dejando
+                // la UI bloqueada en estado de carga para siempre. Hoy solo
+                // es alcanzable si runAdvancedTool no encuentra una rama
+                // válida (p. ej. FIRMAR sin firma capturada), pero es un
+                // hueco real en la máquina de estados.
+                _uiState.update { it.copy(isProcessing = false) }
+                return@launch
+            }
 
             Timber.d("Resultado: $result")
 

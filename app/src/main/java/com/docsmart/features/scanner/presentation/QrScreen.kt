@@ -128,7 +128,18 @@ fun QrReaderScreen(
     // dejaba un hilo vivo permanentemente filtrado.
     DisposableEffect(Unit) {
         onDispose {
+            // Bug real encontrado 2026-09-14 (repaso general): shutdown() solo
+            // deja de aceptar tareas nuevas, no espera a que termine la que ya
+            // está en curso en el hilo del executor -- sin awaitTermination,
+            // scanner.close() podía ejecutarse mientras un análisis en vuelo
+            // todavía llamaba a scanner.process(image), una carrera con el
+            // recurso nativo que se está cerrando.
             executor.shutdown()
+            try {
+                executor.awaitTermination(500, java.util.concurrent.TimeUnit.MILLISECONDS)
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
             scanner.close()
         }
     }
@@ -1010,11 +1021,16 @@ fun QrCreatorScreen(
                         },
                         placeholder   = {
                             Text(
+                                // Bug real encontrado 2026-09-14 (repaso
+                                // general): estos placeholders estaban
+                                // hardcodeados en español/formato colombiano,
+                                // sin pasar por el sistema de 12 idiomas
+                                // que ya usa el resto de la pantalla.
                                 when (selectedType) {
-                                    0    -> "https://ejemplo.com"
+                                    0    -> stringResource(R.string.qr_placeholder_url)
                                     1    -> stringResource(R.string.qr_placeholder_text)
-                                    2    -> "correo@ejemplo.com"
-                                    else -> "+57 300 000 0000"
+                                    2    -> stringResource(R.string.qr_placeholder_email)
+                                    else -> stringResource(R.string.qr_placeholder_phone)
                                 },
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1330,7 +1346,10 @@ private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
             val connection = java.net.URL(url).openConnection()
             connection.connectTimeout = 5000
             connection.readTimeout    = 5000
-            BitmapFactory.decodeStream(connection.getInputStream())
+            // Bug real encontrado 2026-09-14 (repaso general): el
+            // InputStream de la conexión HTTP nunca se cerraba -- cada QR de
+            // tipo Imagen escaneado dejaba un socket/stream filtrado.
+            connection.getInputStream().use { BitmapFactory.decodeStream(it) }
         } catch (e: Exception) {
             Timber.e(e, "loadBitmapFromUrl: error")
             null

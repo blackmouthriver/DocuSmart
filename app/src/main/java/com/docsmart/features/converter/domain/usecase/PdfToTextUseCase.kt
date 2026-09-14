@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -33,7 +34,7 @@ class PdfToTextUseCase @Inject constructor(
             val cacheFile = File.createTempFile("temp_text", ".pdf", context.cacheDir)
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
                 cacheFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el PDF")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
 
             // ── Extraer texto con iText7 ──────────────
             val sb = StringBuilder()
@@ -51,7 +52,7 @@ class PdfToTextUseCase @Inject constructor(
             val text = sb.toString().trim()
             if (text.isBlank()) {
                 return@withContext ConversionResult.Error(
-                    "El PDF no contiene texto extraíble. Puede ser un PDF escaneado."
+                    context.getString(R.string.converter_error_empty_pdf_text_scanned)
                 )
             }
 
@@ -68,7 +69,9 @@ class PdfToTextUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "Error extrayendo texto del PDF")
-            ConversionResult.Error("Error: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
     }
 

@@ -497,24 +497,30 @@ private fun NoPermissionContent(
             modifier           = Modifier.size(64.dp),
             tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
+        // Bug real encontrado 2026-09-14 (repaso general): estos 5 textos
+        // estaban hardcodeados en español, saltándose el sistema de 12
+        // idiomas que ya usa el resto de la pantalla.
         Text(
-            text      = if (permissionDenied) "Permiso denegado" else "Acceso a archivos requerido",
+            text      = stringResource(
+                if (permissionDenied) R.string.library_no_permission_denied_title
+                else R.string.library_no_permission_required_title
+            ),
             style     = MaterialTheme.typography.titleMedium,
             color     = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
         Text(
-            text  = if (permissionDenied)
-                "Ve a Ajustes del sistema → DocuSmart → Permisos para habilitarlo manualmente."
-            else
-                "DocuSmart necesita acceso a tus archivos para mostrar tus documentos.",
+            text  = stringResource(
+                if (permissionDenied) R.string.library_no_permission_denied_body
+                else R.string.library_no_permission_required_body
+            ),
             style     = MaterialTheme.typography.bodyMedium,
             color     = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         if (!permissionDenied) {
             Button(onClick = onRequestPermission, shape = MaterialTheme.shapes.medium) {
-                Text("Permitir acceso")
+                Text(stringResource(R.string.library_no_permission_allow_button))
             }
         }
     }

@@ -8,6 +8,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import java.io.File
 import java.security.MessageDigest
+import java.security.SecureRandom
+import java.util.Base64
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,6 +25,28 @@ class SecurityManager @Inject constructor(
         "docusmart_security", Context.MODE_PRIVATE
     )
 
+    companion object {
+        // Bug real encontrado 2026-09-14 (repaso general): el PIN de 4
+        // dígitos (10.000 combinaciones) no tenía ningún límite de intentos
+        // ni backoff -- nada throttleaba reintentos programáticos, a
+        // diferencia del desbloqueo biométrico (limitado por el propio SO).
+        private const val PIN_MAX_FREE_ATTEMPTS = 5
+        private const val PIN_BASE_LOCKOUT_MS = 30_000L
+        private const val PIN_MAX_LOCKOUT_MS = 5 * 60_000L
+
+        // Bug real encontrado 2026-09-14 (repaso general): el hash del PIN
+        // era SHA-256 de una sola pasada sin salt -- si `SharedPreferences`
+        // "docusmart_security" se expone (backup, dispositivo rooteado), el
+        // espacio de 4 dígitos se prueba offline en microsegundos (sin
+        // salt, además, un rainbow table de las 10.000 combinaciones se
+        // precalcula una sola vez para todos los usuarios). PBKDF2 con salt
+        // aleatorio por instalación y 10.000 iteraciones hace que cada
+        // intento offline cueste órdenes de magnitud más, y obliga a
+        // recalcular por dispositivo.
+        private const val PIN_HASH_ITERATIONS = 10_000
+        private const val PIN_HASH_KEY_LENGTH_BITS = 256
+    }
+
     // ── Carpeta segura ────────────────────────────────
     val secureFolder: File
         get() = File(context.filesDir, "secure").apply { mkdirs() }
@@ -30,8 +56,14 @@ class SecurityManager @Inject constructor(
 
     fun setPin(pin: String): Boolean {
         return try {
-            val hash = hashPin(pin)
-            prefs.edit().putString("pin_hash", hash).apply()
+            val salt = generateSalt()
+            val hash = hashPinWithSalt(pin, salt)
+            prefs.edit()
+                .putString("pin_hash", hash)
+                .putString("pin_salt", Base64.getEncoder().encodeToString(salt))
+                .putInt("pin_fail_count", 0)
+                .remove("pin_lockout_until")
+                .apply()
             Timber.d("SecurityManager: PIN configurado")
             true
         } catch (e: Exception) {
@@ -40,13 +72,69 @@ class SecurityManager @Inject constructor(
         }
     }
 
+    // Milisegundos restantes de bloqueo por intentos fallidos (0 si no hay
+    // bloqueo activo). El llamador debe consultarlo antes de aceptar un
+    // nuevo intento de PIN.
+    fun pinLockoutRemainingMillis(): Long {
+        val lockUntil = prefs.getLong("pin_lockout_until", 0L)
+        val remaining = lockUntil - System.currentTimeMillis()
+        return if (remaining > 0) remaining else 0L
+    }
+
     fun verifyPin(pin: String): Boolean {
-        val storedHash = prefs.getString("pin_hash", null) ?: return false
-        return hashPin(pin) == storedHash
+        val storedHash = prefs.getString("pin_hash", null)
+        // Solo se intenta verificar (y solo se cuenta como intento fallido
+        // en caso de no coincidir) si no hay un bloqueo activo y ya existe
+        // un PIN configurado -- evita seguir acumulando bloqueo sobre un
+        // bloqueo ya activo, o registrar intentos cuando nunca se configuró
+        // un PIN.
+        val canAttempt = pinLockoutRemainingMillis() == 0L && storedHash != null
+
+        val matches = canAttempt && run {
+            val saltB64 = prefs.getString("pin_salt", null)
+            if (saltB64 != null) {
+                val salt = Base64.getDecoder().decode(saltB64)
+                hashPinWithSalt(pin, salt) == storedHash
+            } else {
+                // Formato legado (SHA-256 de una sola pasada, sin salt, de
+                // instalaciones previas a este fix) -- se migra en silencio
+                // al esquema salteado en el primer login correcto, sin
+                // forzar al usuario a restablecer su PIN.
+                val legacyMatches = hashPinLegacy(pin) == storedHash
+                if (legacyMatches) setPin(pin)
+                legacyMatches
+            }
+        }
+
+        if (canAttempt) {
+            if (matches) {
+                prefs.edit().putInt("pin_fail_count", 0).remove("pin_lockout_until").apply()
+            } else {
+                registerFailedPinAttempt()
+            }
+        }
+        return matches
+    }
+
+    private fun registerFailedPinAttempt() {
+        val failCount = prefs.getInt("pin_fail_count", 0) + 1
+        val editor = prefs.edit().putInt("pin_fail_count", failCount)
+        if (failCount >= PIN_MAX_FREE_ATTEMPTS) {
+            val extraFailures = (failCount - PIN_MAX_FREE_ATTEMPTS).coerceAtMost(10)
+            val lockoutMs = (PIN_BASE_LOCKOUT_MS shl extraFailures).coerceAtMost(PIN_MAX_LOCKOUT_MS)
+            editor.putLong("pin_lockout_until", System.currentTimeMillis() + lockoutMs)
+            Timber.w("SecurityManager: PIN bloqueado ${lockoutMs}ms tras $failCount intentos fallidos")
+        }
+        editor.apply()
     }
 
     fun clearPin() {
-        prefs.edit().remove("pin_hash").apply()
+        prefs.edit()
+            .remove("pin_hash")
+            .remove("pin_salt")
+            .remove("pin_fail_count")
+            .remove("pin_lockout_until")
+            .apply()
         Timber.d("SecurityManager: PIN eliminado")
     }
 
@@ -59,7 +147,20 @@ class SecurityManager @Inject constructor(
         Timber.d("SecurityManager: PIN restablecido y carpeta segura vaciada")
     }
 
-    private fun hashPin(pin: String): String {
+    private fun generateSalt(): ByteArray {
+        val salt = ByteArray(16)
+        SecureRandom().nextBytes(salt)
+        return salt
+    }
+
+    private fun hashPinWithSalt(pin: String, salt: ByteArray): String {
+        val spec = PBEKeySpec(pin.toCharArray(), salt, PIN_HASH_ITERATIONS, PIN_HASH_KEY_LENGTH_BITS)
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+        val hash = factory.generateSecret(spec).encoded
+        return hash.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun hashPinLegacy(pin: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
         val hash = digest.digest(pin.toByteArray())
         return hash.joinToString("") { "%02x".format(it) }

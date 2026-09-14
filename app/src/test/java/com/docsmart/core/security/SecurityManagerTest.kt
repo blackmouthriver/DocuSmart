@@ -24,6 +24,7 @@ class SecurityManagerTest {
 
     private lateinit var filesDir: File
     private lateinit var securityManager: SecurityManager
+    private lateinit var prefsStore: MutableMap<String, Any?>
 
     @BeforeEach
     fun setUp() {
@@ -64,6 +65,58 @@ class SecurityManagerTest {
     @Test
     fun `verifyPin es false si nunca se configuro un PIN`() {
         assertFalse(securityManager.verifyPin("0000"))
+    }
+
+    @Test
+    fun `setPin guarda un salt propio y no el hash en texto plano derivable sin el`() {
+        // Bug real encontrado 2026-09-14 (repaso general): el hash del PIN
+        // era SHA-256 de una sola pasada sin salt -- ahora debe guardarse un
+        // salt aleatorio por instalación junto al hash salteado.
+        securityManager.setPin("1234")
+
+        val salt = prefsStore["pin_salt"] as? String
+        assertTrue(salt != null && salt.isNotBlank())
+    }
+
+    @Test
+    fun `verifyPin migra en silencio un hash legado (sin salt) al esquema salteado`() {
+        // Simula una instalación previa a este fix: pin_hash con SHA-256 de
+        // una sola pasada, sin pin_salt.
+        val legacyHash = java.security.MessageDigest.getInstance("SHA-256")
+            .digest("1234".toByteArray())
+            .joinToString("") { "%02x".format(it) }
+        prefsStore["pin_hash"] = legacyHash
+
+        assertTrue(securityManager.verifyPin("1234"), "debe aceptar el PIN correcto con el hash legado")
+        assertTrue((prefsStore["pin_salt"] as? String)?.isNotBlank() == true, "debe migrar a un hash salteado")
+
+        // El PIN sigue siendo válido tras la migración, ahora vía el
+        // esquema nuevo (ya no queda ningún pin_salt nulo).
+        assertTrue(securityManager.verifyPin("1234"))
+    }
+
+    @Test
+    fun `verifyPin bloquea tras 5 intentos fallidos seguidos`() {
+        // Bug real encontrado 2026-09-14 (repaso general): el PIN de 4
+        // dígitos no tenía límite de intentos -- ahora debe bloquearse tras
+        // PIN_MAX_FREE_ATTEMPTS (5) fallos seguidos.
+        securityManager.setPin("1234")
+        repeat(5) { assertFalse(securityManager.verifyPin("0000")) }
+
+        assertTrue(securityManager.pinLockoutRemainingMillis() > 0)
+        // Con el bloqueo activo, ni siquiera el PIN correcto debe pasar.
+        assertFalse(securityManager.verifyPin("1234"))
+    }
+
+    @Test
+    fun `verifyPin exitoso resetea el contador de intentos fallidos`() {
+        securityManager.setPin("1234")
+        repeat(4) { securityManager.verifyPin("0000") }
+
+        assertTrue(securityManager.verifyPin("1234"))
+
+        assertEquals(0, prefsStore["pin_fail_count"])
+        assertEquals(0L, securityManager.pinLockoutRemainingMillis())
     }
 
     @Test
@@ -190,6 +243,7 @@ class SecurityManagerTest {
 
     private fun fakeSharedPreferences(): SharedPreferences {
         val store = mutableMapOf<String, Any?>()
+        prefsStore = store
         val editor = mockk<SharedPreferences.Editor>()
         every { editor.putString(any(), any()) } answers {
             store[firstArg<String>()] = secondArg<String?>()
@@ -197,6 +251,19 @@ class SecurityManagerTest {
         }
         every { editor.putBoolean(any(), any()) } answers {
             store[firstArg<String>()] = secondArg<Boolean>()
+            editor
+        }
+        // Bug real encontrado 2026-09-14: el fake solo soportaba
+        // String/Boolean -- el fix de bloqueo de intentos (pin_fail_count,
+        // pin_lockout_until) usa Int/Long, y sin estos stubs cualquier test
+        // que llamara a setPin()/verifyPin() fallaba con una llamada no
+        // mockeada del editor.
+        every { editor.putInt(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Int>()
+            editor
+        }
+        every { editor.putLong(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Long>()
             editor
         }
         every { editor.remove(any()) } answers {
@@ -212,6 +279,12 @@ class SecurityManagerTest {
         }
         every { prefs.getBoolean(any(), any()) } answers {
             (store[firstArg<String>()] as? Boolean) ?: secondArg()
+        }
+        every { prefs.getInt(any(), any()) } answers {
+            (store[firstArg<String>()] as? Int) ?: secondArg()
+        }
+        every { prefs.getLong(any(), any()) } answers {
+            (store[firstArg<String>()] as? Long) ?: secondArg()
         }
         return prefs
     }

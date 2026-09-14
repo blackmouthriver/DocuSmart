@@ -43,6 +43,11 @@
     <string name="library_tab_file_count">%1$d files</string>
     <string name="library_tab_device_description">Photos and documents you already had saved on your device</string>
     <string name="library_tab_app_files_description">Documents you created or converted inside DocuSmart</string>
+    <string name="library_no_permission_denied_title">Permission denied</string>
+    <string name="library_no_permission_required_title">File access required</string>
+    <string name="library_no_permission_denied_body">Go to System Settings → DocuSmart → Permissions to enable it manually.</string>
+    <string name="library_no_permission_required_body">DocuSmart needs access to your files to show your documents.</string>
+    <string name="library_no_permission_allow_button">Allow access</string>
 
     <!-- ── Converter ──────────────────────────────── -->
     <string name="converter_title">Converter</string>
@@ -174,6 +179,19 @@
     <string name="viewer_rename_empty_error">Name cannot be empty</string>
     <string name="viewer_delete_confirm_title">Delete this document?</string>
     <string name="viewer_delete_confirm_body">"%1$s will be moved to Trash. You can recover it for 30 days before it's permanently deleted."</string>
+    <string name="viewer_decrypt_failed">Couldn\'t decrypt the PDF</string>
+
+    <string name="viewer_open_error_format">Couldn\'t open the PDF: %1$s</string>
+
+    <string name="viewer_document_not_found">Document not found</string>
+    <string name="viewer_share_chooser_title">Share %1$s</string>
+    <string name="viewer_search_content_desc">Search in document</string>
+    <string name="viewer_favorite_content_desc">Favorite</string>
+    <string name="viewer_bottom_bar_page_format">Page %1$d of %2$d</string>
+    <string name="viewer_search_no_results">No results</string>
+    <string name="viewer_search_match_format">Match %1$d of %2$d</string>
+    <string name="viewer_search_previous_match">Previous match</string>
+    <string name="viewer_search_next_match">Next match</string>
 
     <!-- ── Document menu (Home/Library, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Add to favorites</string>
@@ -219,6 +237,31 @@
     <string name="scan_daily_save_limit_label">saved scans</string>
     <string name="converter_daily_limit_reached_error">Daily conversion limit reached</string>
     <string name="converter_batch_save_error">Not all files could be saved to Downloads</string>
+    <string name="converter_error_read_word">Couldn\'t read the Word file</string>
+
+    <string name="converter_error_read_excel">Couldn\'t read the Excel file</string>
+
+    <string name="converter_error_read_ppt">Couldn\'t read the PowerPoint file</string>
+
+    <string name="converter_error_read_pdf">Couldn\'t read the PDF</string>
+
+    <string name="converter_error_read_image">Couldn\'t read the image</string>
+
+    <string name="converter_error_empty_spreadsheet">The spreadsheet has no data</string>
+    <string name="converter_error_empty_presentation">The presentation has no text</string>
+    <string name="converter_error_empty_word_document">The document has no extractable text</string>
+    <string name="converter_error_empty_pdf_text">The PDF has no extractable text</string>
+    <string name="converter_error_empty_pdf_text_scanned">The PDF has no extractable text. It might be a scanned PDF.</string>
+    <string name="converter_error_extract_pages_failed">Couldn\'t extract pages</string>
+
+    <string name="converter_error_generate_word_failed">Couldn\'t generate the Word file</string>
+
+    <string name="converter_error_generate_pdf_failed">Couldn\'t generate the PDF. Try again.</string>
+
+    <string name="converter_error_no_images_selected">You must select at least one image</string>
+    <string name="converter_error_no_images_loaded">None of the selected images could be loaded</string>
+    <string name="converter_error_generic_format">Conversion error: %1$s</string>
+    <string name="converter_error_unknown">Unknown error</string>
 
     <!-- ── PDF Tools: main screen and result card ── -->
     <string name="pdf_tools_back_to_tools">Back to tools</string>
@@ -576,6 +619,7 @@
     <string name="security_pdf_password_desc">Add or remove a password from PDF files. Instant access, no PIN needed.</string>
     <string name="security_no_pin">No PIN</string>
     <string name="security_pin_incorrect">Incorrect PIN</string>
+    <string name="security_pin_locked_out">Too many attempts. Try again in %1$d seconds.</string>
     <string name="security_biometric_error">Error: %1$s</string>
     <string name="security_biometric_not_recognized">Biometrics not recognized</string>
     <string name="security_biometric_title">DocuSmart — Secure Folder</string>
@@ -724,6 +768,9 @@
     <string name="qr_label_email">Email address</string>
     <string name="qr_label_phone">Phone number</string>
     <string name="qr_placeholder_text">Write your message…</string>
+    <string name="qr_placeholder_url">https://example.com</string>
+    <string name="qr_placeholder_email">email@example.com</string>
+    <string name="qr_placeholder_phone">+1 555 123 4567</string>
     <string name="qr_protect_password">Protect with password</string>
     <string name="qr_protect_password_desc">Only someone with the password can see the content</string>
     <string name="qr_password_label">Password</string>

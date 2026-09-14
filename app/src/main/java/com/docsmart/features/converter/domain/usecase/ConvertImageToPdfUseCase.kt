@@ -11,6 +11,7 @@ import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +63,7 @@ class ConvertImageToPdfUseCase @Inject constructor(
         try {
             if (imageUris.isEmpty()) {
                 return@withContext ConversionResult.Error(
-                    "Debes seleccionar al menos una imagen"
+                    context.getString(R.string.converter_error_no_images_selected)
                 )
             }
 
@@ -74,6 +75,14 @@ class ConvertImageToPdfUseCase @Inject constructor(
                 isFilterBitmap = true
             }
 
+            // Bug real encontrado 2026-09-14 (repaso general): antes se
+            // reportaba pageCount = imageUris.size (el original) sin
+            // importar cuántas páginas se generaron de verdad -- si TODAS
+            // las imágenes fallaban al decodificar, el resultado igual
+            // llegaba como Success con 0 páginas reales (el header/xref de
+            // un PdfDocument vacío ya pesa > 0 bytes, así que el chequeo de
+            // abajo tampoco lo detectaba).
+            var pageCount = 0
             imageUris.forEachIndexed { index, uri ->
                 val bitmap = loadBitmapFromUri(uri)
                 if (bitmap == null) {
@@ -85,7 +94,7 @@ class ConvertImageToPdfUseCase @Inject constructor(
                 val embeddedBitmap = embedBitmapForDrawRect(bitmap, drawRect, highResolution)
 
                 val pageInfo = PdfDocument.PageInfo.Builder(
-                    PAGE_WIDTH, PAGE_HEIGHT, index + 1
+                    PAGE_WIDTH, PAGE_HEIGHT, pageCount + 1
                 ).create()
 
                 val page = pdfDocument.startPage(pageInfo)
@@ -97,8 +106,16 @@ class ConvertImageToPdfUseCase @Inject constructor(
 
                 if (embeddedBitmap != bitmap) embeddedBitmap.recycle()
                 bitmap.recycle()
+                pageCount++
 
-                Timber.d("Página ${index + 1} generada")
+                Timber.d("Página $pageCount generada")
+            }
+
+            if (pageCount == 0) {
+                pdfDocument.close()
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_no_images_loaded)
+                )
             }
 
             val outputDir = File(context.filesDir, "converted").apply {
@@ -116,20 +133,23 @@ class ConvertImageToPdfUseCase @Inject constructor(
 
             if (outputFile.length() == 0L) {
                 return@withContext ConversionResult.Error(
-                    "Error al generar el PDF. Intenta de nuevo."
+                    context.getString(R.string.converter_error_generate_pdf_failed)
                 )
             }
 
             ConversionResult.Success(
                 outputFile = outputFile,
-                pageCount  = imageUris.size,
+                pageCount  = pageCount,
                 fileSizeKb = (outputFile.length() / 1024).toInt()
             )
 
         } catch (e: Exception) {
             Timber.e(e, "Error en conversión: ${e.message}")
             ConversionResult.Error(
-                message = "Error al convertir: ${e.message ?: "Error desconocido"}",
+                message = String.format(
+                    context.getString(R.string.converter_error_generic_format),
+                    e.message ?: context.getString(R.string.converter_error_unknown)
+                ),
             )
         }
     }

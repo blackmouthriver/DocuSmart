@@ -126,7 +126,7 @@ class ViewerViewModel @Inject constructor(
     private suspend fun loadDocumentOrMock(documentId: String, context: Context) {
         val isReal = isRealUri(documentId)
         Timber.d("$TAG: isRealUri=$isReal")
-        if (isReal) loadFromUri(documentId, context) else loadFromMock(documentId)
+        if (isReal) loadFromUri(documentId, context) else loadFromMock(documentId, context)
     }
 
     private suspend fun loadFromUri(documentId: String, context: Context) {
@@ -399,9 +399,13 @@ class ViewerViewModel @Inject constructor(
                     } catch (e: Exception) {
                         cacheIn.delete()
                         Timber.w("$TAG: contraseña incorrecta → ${e.message}")
+                        // Bug real encontrado 2026-09-14 (repaso general):
+                        // hardcodeado en español -- reusa
+                        // pdf_pw_wrong_password_retry (mismo texto que ya
+                        // usa PdfPasswordScreen para este mismo escenario).
                         _uiState.update { it.copy(
                             isLoading     = false,
-                            passwordError = "Contraseña incorrecta. Intenta de nuevo."
+                            passwordError = context.getString(R.string.pdf_pw_wrong_password_retry)
                         )}
                         return@withContext
                     }
@@ -457,10 +461,15 @@ class ViewerViewModel @Inject constructor(
                     cacheIn.delete()
 
                     if (!success || !cacheOut.exists() || cacheOut.length() < 100L) {
+                        // Bug real encontrado 2026-09-14 (repaso general): si
+                        // los 3 intentos fallan, cacheOut (creado/reescrito
+                        // por cada intento) quedaba huérfano en cacheDir para
+                        // siempre -- nada barre ese directorio.
+                        if (cacheOut.exists()) cacheOut.delete()
                         Timber.e("$TAG: todos los intentos fallaron")
                         _uiState.update { it.copy(
                             isLoading     = false,
-                            passwordError = "No se pudo desencriptar el PDF"
+                            passwordError = context.getString(R.string.viewer_decrypt_failed)
                         )}
                         return@withContext
                     }
@@ -485,7 +494,9 @@ class ViewerViewModel @Inject constructor(
                     Timber.e(e, "$TAG: error desbloqueando PDF → ${e.message}")
                     _uiState.update { it.copy(
                         isLoading     = false,
-                        passwordError = "No se pudo abrir el PDF: ${e.message}"
+                        passwordError = String.format(
+                            context.getString(R.string.viewer_open_error_format), e.message ?: ""
+                        )
                     )}
                 }
             }
@@ -514,7 +525,7 @@ class ViewerViewModel @Inject constructor(
         else                                                                    -> DocumentType.PDF
     }
 
-    private fun loadFromMock(id: String) {
+    private fun loadFromMock(id: String, context: Context) {
         val mockDocument = getMockDocument(id)
         val isFavorite   = mockDocument?.let {
             favoritesRepository.isFavorite(it.id)
@@ -525,7 +536,11 @@ class ViewerViewModel @Inject constructor(
                 document   = mockDocument,
                 isFavorite = isFavorite,
                 isLoading  = false,
-                error      = if (mockDocument == null) "Documento no encontrado" else null
+                // Bug real encontrado 2026-09-14 (repaso general):
+                // hardcodeado en español, saltándose el sistema de idiomas.
+                error      = if (mockDocument == null)
+                    context.getString(R.string.viewer_document_not_found)
+                else null
             )
         }
     }
@@ -748,9 +763,12 @@ class ViewerViewModel @Inject constructor(
                 }
                 putExtra(Intent.EXTRA_SUBJECT, document.name)
             }
-            context.startActivity(
-                Intent.createChooser(shareIntent, "Compartir ${document.name}")
+            // Bug real encontrado 2026-09-14 (repaso general): hardcodeado
+            // en español, saltándose el sistema de idiomas.
+            val chooserTitle = String.format(
+                context.getString(R.string.viewer_share_chooser_title), document.name
             )
+            context.startActivity(Intent.createChooser(shareIntent, chooserTitle))
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error compartiendo documento")
             // Bug real encontrado 2026-09-14: hardcodeado en español --

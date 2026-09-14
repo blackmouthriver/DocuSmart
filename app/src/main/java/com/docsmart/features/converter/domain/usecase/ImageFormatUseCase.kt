@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,7 +29,7 @@ class ImageFormatUseCase @Inject constructor(
         try {
             val bitmap = context.contentResolver.openInputStream(imageUri)?.use {
                 BitmapFactory.decodeStream(it)
-            } ?: return@withContext ConversionResult.Error("No se pudo leer la imagen")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_image))
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName  = fileName ?: generateTimestamp()
@@ -54,7 +55,9 @@ class ImageFormatUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "ImageFormatUseCase: error")
-            ConversionResult.Error("Error: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
     }
 

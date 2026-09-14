@@ -55,7 +55,7 @@ fun ViewerTopBar(
                 IconButton(onClick = onBackClick) {
                     Icon(
                         imageVector = Icons.Rounded.ArrowBackIosNew,
-                        contentDescription = "Volver",
+                        contentDescription = stringResource(R.string.viewer_back),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -71,10 +71,12 @@ fun ViewerTopBar(
                 )
 
                 // Buscar
+                // Bug real encontrado 2026-09-14 (repaso general): estas 3
+                // content descriptions estaban hardcodeadas en español.
                 IconButton(onClick = onSearchClick) {
                     Icon(
                         imageVector = Icons.Rounded.Search,
-                        contentDescription = "Buscar en documento",
+                        contentDescription = stringResource(R.string.viewer_search_content_desc),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -86,7 +88,7 @@ fun ViewerTopBar(
                             Icons.Rounded.Favorite
                         else
                             Icons.Rounded.FavoriteBorder,
-                        contentDescription = "Favorito",
+                        contentDescription = stringResource(R.string.viewer_favorite_content_desc),
                         tint = if (isFavorite)
                             MaterialTheme.colorScheme.error
                         else
@@ -98,7 +100,7 @@ fun ViewerTopBar(
                 IconButton(onClick = onShareClick) {
                     Icon(
                         imageVector = Icons.Rounded.Share,
-                        contentDescription = "Compartir",
+                        contentDescription = stringResource(R.string.general_share),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

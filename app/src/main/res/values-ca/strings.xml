@@ -43,6 +43,12 @@
     <string name="library_tab_file_count">%1$d arxius</string>
     <string name="library_tab_device_description">Fotos i documents que ja tenies desats al teu dispositiu</string>
     <string name="library_tab_app_files_description">Documents que has creat o convertit dins de DocuSmart</string>
+    <string name="library_no_permission_denied_title">Permís denegat</string>
+    <string name="library_no_permission_required_title">Cal accés als fitxers</string>
+    <string name="library_no_permission_denied_body">Vés a Configuració del sistema → DocuSmart → Permisos per habilitar-ho manualment.</string>
+    <string name="library_no_permission_required_body">DocuSmart necessita accedir als teus fitxers per mostrar els teus documents.</string>
+    <string name="library_no_permission_allow_button">Permet l\'accés</string>
+
 
     <!-- ── Convertidor ────────────────────────────── -->
     <string name="converter_title">Convertidor</string>
@@ -184,6 +190,19 @@
     <string name="viewer_rename_empty_error">El nom no pot estar buit</string>
     <string name="viewer_delete_confirm_title">Vols eliminar aquest document?</string>
     <string name="viewer_delete_confirm_body">"%1$s es mourà a la Paperera. Podràs recuperar-lo durant 30 dies abans que s'elimini definitivament."</string>
+    <string name="viewer_decrypt_failed">No s\'ha pogut desxifrar el PDF</string>
+
+    <string name="viewer_open_error_format">No s\'ha pogut obrir el PDF: %1$s</string>
+
+    <string name="viewer_document_not_found">Document no trobat</string>
+    <string name="viewer_share_chooser_title">Comparteix %1$s</string>
+    <string name="viewer_search_content_desc">Cerca en el document</string>
+    <string name="viewer_favorite_content_desc">Preferit</string>
+    <string name="viewer_bottom_bar_page_format">Pàgina %1$d de %2$d</string>
+    <string name="viewer_search_no_results">Sense resultats</string>
+    <string name="viewer_search_match_format">Coincidència %1$d de %2$d</string>
+    <string name="viewer_search_previous_match">Coincidència anterior</string>
+    <string name="viewer_search_next_match">Coincidència següent</string>
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Afegir a favorits</string>
@@ -229,6 +248,32 @@
     <string name="scan_daily_save_limit_label">escanejos desats</string>
     <string name="converter_daily_limit_reached_error">S\'ha arribat al límit diari de conversions</string>
     <string name="converter_batch_save_error">No s\'han pogut desar tots els arxius a Baixades</string>
+    <string name="converter_error_read_word">No s\'ha pogut llegir el fitxer Word</string>
+
+    <string name="converter_error_read_excel">No s\'ha pogut llegir el fitxer Excel</string>
+
+    <string name="converter_error_read_ppt">No s\'ha pogut llegir el fitxer PowerPoint</string>
+
+    <string name="converter_error_read_pdf">No s\'ha pogut llegir el PDF</string>
+
+    <string name="converter_error_read_image">No s\'ha pogut llegir la imatge</string>
+
+    <string name="converter_error_empty_spreadsheet">El full de càlcul no conté dades</string>
+    <string name="converter_error_empty_presentation">La presentació no conté text</string>
+    <string name="converter_error_empty_word_document">El document no conté text extraïble</string>
+    <string name="converter_error_empty_pdf_text">El PDF no conté text extraïble</string>
+    <string name="converter_error_empty_pdf_text_scanned">El PDF no conté text extraïble. Pot ser un PDF escanejat.</string>
+    <string name="converter_error_extract_pages_failed">No s\'han pogut extreure les pàgines</string>
+
+    <string name="converter_error_generate_word_failed">No s\'ha pogut generar el fitxer Word</string>
+
+    <string name="converter_error_generate_pdf_failed">No s\'ha pogut generar el PDF. Torna-ho a provar.</string>
+
+    <string name="converter_error_no_images_selected">Has de seleccionar almenys una imatge</string>
+    <string name="converter_error_no_images_loaded">No s\'ha pogut carregar cap de les imatges seleccionades</string>
+
+    <string name="converter_error_generic_format">Error en convertir: %1$s</string>
+    <string name="converter_error_unknown">Error desconegut</string>
 
     <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
     <string name="pdf_tools_back_to_tools">Tornar a eines</string>
@@ -597,6 +642,7 @@
     <string name="security_pdf_password_desc">Afegeix o treu la contrasenya d\'arxius PDF. Accés immediat sense PIN.</string>
     <string name="security_no_pin">Sense PIN</string>
     <string name="security_pin_incorrect">PIN incorrecte</string>
+    <string name="security_pin_locked_out">Massa intents. Torna-ho a provar d’aquí a %1$d segons.</string>
     <string name="security_biometric_error">Error: %1$s</string>
     <string name="security_biometric_not_recognized">No s\'ha reconegut la biometria</string>
     <string name="security_biometric_title">DocuSmart — Carpeta Segura</string>
@@ -745,6 +791,9 @@
     <string name="qr_label_email">Adreça d\'email</string>
     <string name="qr_label_phone">Número de telèfon</string>
     <string name="qr_placeholder_text">Escriu el teu missatge…</string>
+    <string name="qr_placeholder_url">https://exemple.cat</string>
+    <string name="qr_placeholder_email">correu@exemple.cat</string>
+    <string name="qr_placeholder_phone">+34 600 00 00 00</string>
     <string name="qr_protect_password">Protegir amb contrasenya</string>
     <string name="qr_protect_password_desc">Només qui tingui la clau pot veure el contingut</string>
     <string name="qr_password_label">Contrasenya</string>

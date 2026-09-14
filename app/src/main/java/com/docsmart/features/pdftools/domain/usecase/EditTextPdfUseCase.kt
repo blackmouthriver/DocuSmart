@@ -78,12 +78,21 @@ class EditTextPdfUseCase @Inject constructor(
             var matchCount = 0
 
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
+                // Bug real encontrado 2026-09-14 (repaso general):
+                // PdfWriter(outputFile) ya crea el archivo en disco al
+                // abrirse -- sin delete() en estas dos ramas de error
+                // tempranas quedaba huérfano en filesDir/pdftools. La
+                // segunda rama (sin coincidencias) es la más alcanzable:
+                // cualquier búsqueda sin resultados es un caso normal, no
+                // una excepción.
                 if (pdf.numberOfPages == 0) {
+                    outputFile.delete()
                     return@withContext PdfToolResult.Error(messages.noPages)
                 }
 
                 val matches = findMatches(pdf, searchText)
                 if (matches.isEmpty()) {
+                    outputFile.delete()
                     return@withContext PdfToolResult.Error(messages.noMatchesError)
                 }
 

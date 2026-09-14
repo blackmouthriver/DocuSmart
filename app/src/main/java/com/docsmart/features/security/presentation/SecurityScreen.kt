@@ -79,6 +79,7 @@ fun SecurityScreen(
     }
 
     val incorrectPinMessage    = stringResource(R.string.security_pin_incorrect)
+    val lockedOutPinMessage    = stringResource(R.string.security_pin_locked_out)
     val setupPinErrorMessage   = stringResource(R.string.security_setup_pin_error)
     val biometricPromptTitle   = stringResource(R.string.security_biometric_title)
     val biometricPromptSubtitle = stringResource(R.string.security_biometric_subtitle)
@@ -167,7 +168,9 @@ fun SecurityScreen(
                         isBiometricAvailable = uiState.isBiometricAvailable,
                         isBiometricEnabled   = uiState.isBiometricEnabled,
                         error                = uiState.error,
-                        onPinEntered         = { pin -> viewModel.verifyPin(pin, incorrectPinMessage) },
+                        onPinEntered         = { pin ->
+                            viewModel.verifyPin(pin, incorrectPinMessage, lockedOutPinMessage)
+                        },
                         onBiometricClick     = {
                             activity?.let {
                                 viewModel.authenticateWithBiometric(

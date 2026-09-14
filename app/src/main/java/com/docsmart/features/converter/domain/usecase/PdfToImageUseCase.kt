@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +38,7 @@ class PdfToImageUseCase @Inject constructor(
             cacheFile = File(context.cacheDir, "temp_convert_${System.currentTimeMillis()}.pdf")
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
                 cacheFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el PDF")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName = fileName ?: generateTimestamp()
@@ -67,7 +68,9 @@ class PdfToImageUseCase @Inject constructor(
             }
 
             if (outputFiles.isEmpty()) {
-                return@withContext ConversionResult.Error("No se pudieron extraer páginas")
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_extract_pages_failed)
+                )
             }
 
             // Retornar el primer archivo como resultado principal
@@ -79,7 +82,9 @@ class PdfToImageUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo PDF a imagen")
-            ConversionResult.Error("Error: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         } finally {
             cacheFile?.delete()
         }

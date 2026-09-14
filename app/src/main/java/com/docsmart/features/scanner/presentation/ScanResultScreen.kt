@@ -1221,6 +1221,12 @@ private fun ScanResultActions(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // Bug real encontrado 2026-09-14 (repaso general): el botón "Guardar"
+    // no tenía protección contra doble toque -- a diferencia de "Compartir"
+    // (que ya se apoya en `state.isPreparingShare`), dos toques rápidos
+    // antes de que termine el guardado llamaban a onRequestSaveSlot() dos
+    // veces, duplicando el conteo del límite diario de guardado por sesión.
+    var isSaving by remember { mutableStateOf(false) }
     // Backlog UX #34: mismo criterio de "botón con borde/sombra de acento"
     // ya usado en las tarjetas de Inicio/Biblioteca -- acá en vez de sobre
     // un Card, envolviendo cada botón vía su `modifier` (los componentes
@@ -1248,27 +1254,39 @@ private fun ScanResultActions(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+            } else if (isSaving) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             } else {
                 DocuSmartPrimaryButton(
                     text = stringResource(R.string.converter_save),
                     modifier = accentButtonModifier,
                     onClick = {
                         if (onRequestSaveSlot()) {
+                            isSaving = true
                             scope.launch {
-                                val name = state.fileName.ifBlank {
-                                    String.format(state.defaultNameTemplate, generateTimestamp())
+                                try {
+                                    val name = state.fileName.ifBlank {
+                                        String.format(state.defaultNameTemplate, generateTimestamp())
+                                    }
+                                    val success = when {
+                                        state.savedFile != null -> DownloadsSaver.saveFile(
+                                            context, state.savedFile, mimeTypeForExtension(state.savedFile.extension)
+                                        )
+                                        state.isPdf -> DownloadsSaver.saveUri(
+                                            context, state.scannedUris.first(), MIME_PDF, "$name.pdf"
+                                        )
+                                        else -> false
+                                    }
+                                    onSavedToDownloadsChange(success)
+                                    if (success && state.savedFile != null) onFinalized(state.savedFile)
+                                } finally {
+                                    isSaving = false
                                 }
-                                val success = when {
-                                    state.savedFile != null -> DownloadsSaver.saveFile(
-                                        context, state.savedFile, mimeTypeForExtension(state.savedFile.extension)
-                                    )
-                                    state.isPdf -> DownloadsSaver.saveUri(
-                                        context, state.scannedUris.first(), MIME_PDF, "$name.pdf"
-                                    )
-                                    else -> false
-                                }
-                                onSavedToDownloadsChange(success)
-                                if (success && state.savedFile != null) onFinalized(state.savedFile)
                             }
                         }
                     },

@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
@@ -28,7 +29,7 @@ class PdfToHtmlUseCase @Inject constructor(
             cacheFile = File(context.cacheDir, "pdftohtml_${System.currentTimeMillis()}.pdf")
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
                 cacheFile.outputStream().use { input.copyTo(it) }
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el PDF")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
 
             // Extraer todo el texto ANTES de cerrar
             val pdfDoc     = PdfDocument(PdfReader(cacheFile))
@@ -43,7 +44,7 @@ class PdfToHtmlUseCase @Inject constructor(
 
             if (pageTexts.isEmpty())
                 return@withContext ConversionResult.Error(
-                    "El PDF no contiene texto extraíble."
+                    context.getString(R.string.converter_error_empty_pdf_text)
                 )
 
             // Generar HTML
@@ -88,7 +89,9 @@ class PdfToHtmlUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "PdfToHtmlUseCase: error — ${e.message}")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         } finally {
             cacheFile?.delete()
         }

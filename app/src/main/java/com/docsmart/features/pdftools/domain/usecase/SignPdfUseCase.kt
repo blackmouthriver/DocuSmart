@@ -70,6 +70,11 @@ class SignPdfUseCase @Inject constructor(
 
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
                 if (pdf.numberOfPages == 0) {
+                    // Bug real encontrado 2026-09-14 (repaso general):
+                    // PdfWriter(outputFile) ya crea el archivo en disco al
+                    // abrirse -- sin este delete() quedaba huérfano en
+                    // filesDir/pdftools para siempre.
+                    outputFile.delete()
                     return@withContext PdfToolResult.Error(messages.noPages)
                 }
 

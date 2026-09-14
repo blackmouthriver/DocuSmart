@@ -43,6 +43,11 @@
     <string name="library_tab_file_count">%1$d archivos</string>
     <string name="library_tab_device_description">Fotos y documentos que ya tenías guardados en tu dispositivo</string>
     <string name="library_tab_app_files_description">Documentos que creaste o convertiste dentro de DocuSmart</string>
+    <string name="library_no_permission_denied_title">Permiso denegado</string>
+    <string name="library_no_permission_required_title">Acceso a archivos requerido</string>
+    <string name="library_no_permission_denied_body">Ve a Ajustes del sistema → DocuSmart → Permisos para habilitarlo manualmente.</string>
+    <string name="library_no_permission_required_body">DocuSmart necesita acceso a tus archivos para mostrar tus documentos.</string>
+    <string name="library_no_permission_allow_button">Permitir acceso</string>
 
     <!-- ── Convertidor ────────────────────────────── -->
     <string name="converter_title">Convertidor</string>
@@ -196,6 +201,17 @@
          igual que al eliminar desde Biblioteca/Home. Se corrige el texto
          para que coincida con el comportamiento real. -->
     <string name="viewer_delete_confirm_body">"%1$s se moverá a la Papelera. Podrás recuperarlo durante 30 días antes de que se elimine definitivamente."</string>
+    <string name="viewer_decrypt_failed">No se pudo desencriptar el PDF</string>
+    <string name="viewer_open_error_format">No se pudo abrir el PDF: %1$s</string>
+    <string name="viewer_document_not_found">Documento no encontrado</string>
+    <string name="viewer_share_chooser_title">Compartir %1$s</string>
+    <string name="viewer_search_content_desc">Buscar en documento</string>
+    <string name="viewer_favorite_content_desc">Favorito</string>
+    <string name="viewer_bottom_bar_page_format">Página %1$d de %2$d</string>
+    <string name="viewer_search_no_results">Sin resultados</string>
+    <string name="viewer_search_match_format">Coincidencia %1$d de %2$d</string>
+    <string name="viewer_search_previous_match">Coincidencia anterior</string>
+    <string name="viewer_search_next_match">Siguiente coincidencia</string>
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Agregar a favoritos</string>
@@ -247,6 +263,23 @@
          el sistema de 12 idiomas. -->
     <string name="converter_daily_limit_reached_error">Límite diario de conversiones alcanzado</string>
     <string name="converter_batch_save_error">No se pudieron guardar todos los archivos en Descargas</string>
+    <string name="converter_error_read_word">No se pudo leer el archivo Word</string>
+    <string name="converter_error_read_excel">No se pudo leer el archivo Excel</string>
+    <string name="converter_error_read_ppt">No se pudo leer el archivo PowerPoint</string>
+    <string name="converter_error_read_pdf">No se pudo leer el PDF</string>
+    <string name="converter_error_read_image">No se pudo leer la imagen</string>
+    <string name="converter_error_empty_spreadsheet">La hoja de cálculo no contiene datos</string>
+    <string name="converter_error_empty_presentation">La presentación no contiene texto</string>
+    <string name="converter_error_empty_word_document">El documento no contiene texto extraíble</string>
+    <string name="converter_error_empty_pdf_text">El PDF no contiene texto extraíble</string>
+    <string name="converter_error_empty_pdf_text_scanned">El PDF no contiene texto extraíble. Puede ser un PDF escaneado.</string>
+    <string name="converter_error_extract_pages_failed">No se pudieron extraer páginas</string>
+    <string name="converter_error_generate_word_failed">No se pudo generar el archivo Word</string>
+    <string name="converter_error_generate_pdf_failed">No se pudo generar el PDF. Intenta de nuevo.</string>
+    <string name="converter_error_no_images_selected">Debes seleccionar al menos una imagen</string>
+    <string name="converter_error_no_images_loaded">No se pudo cargar ninguna de las imágenes seleccionadas</string>
+    <string name="converter_error_generic_format">Error al convertir: %1$s</string>
+    <string name="converter_error_unknown">Error desconocido</string>
 
     <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
     <string name="pdf_tools_back_to_tools">Volver a herramientas</string>
@@ -615,6 +648,7 @@
     <string name="security_pdf_password_desc">Agrega o quita contraseña a archivos PDF. Acceso inmediato sin PIN.</string>
     <string name="security_no_pin">Sin PIN</string>
     <string name="security_pin_incorrect">PIN incorrecto</string>
+    <string name="security_pin_locked_out">Demasiados intentos. Intenta de nuevo en %1$d segundos.</string>
     <string name="security_biometric_error">Error: %1$s</string>
     <string name="security_biometric_not_recognized">No se reconoció la biometría</string>
     <string name="security_biometric_title">DocuSmart — Carpeta Segura</string>
@@ -763,6 +797,9 @@
     <string name="qr_label_email">Dirección de email</string>
     <string name="qr_label_phone">Número de teléfono</string>
     <string name="qr_placeholder_text">Escribe tu mensaje…</string>
+    <string name="qr_placeholder_url">https://ejemplo.com</string>
+    <string name="qr_placeholder_email">correo@ejemplo.com</string>
+    <string name="qr_placeholder_phone">+57 300 000 0000</string>
     <string name="qr_protect_password">Proteger con contraseña</string>
     <string name="qr_protect_password_desc">Solo quien tenga la clave puede ver el contenido</string>
     <string name="qr_password_label">Contraseña</string>

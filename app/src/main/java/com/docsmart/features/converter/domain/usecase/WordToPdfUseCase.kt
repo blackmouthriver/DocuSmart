@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -48,7 +49,7 @@ class WordToPdfUseCase @Inject constructor(
                 // .use{} anidado garantiza el cierre de ambos pase lo que
                 // pase.
                 Document(pdfDoc).use { document -> writeWordContent(document, format, input) }
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Word")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
 
             ConversionResult.Success(
                 outputFile = outputFile,
@@ -57,7 +58,9 @@ class WordToPdfUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Word a PDF")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
     }
 

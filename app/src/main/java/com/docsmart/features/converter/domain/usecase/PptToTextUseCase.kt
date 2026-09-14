@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -23,10 +24,12 @@ class PptToTextUseCase @Inject constructor(
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
             val slideMap = extractSlideTexts(pptUri)
-                ?: return@withContext ConversionResult.Error("No se pudo leer el archivo PowerPoint")
+                ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_ppt))
 
             if (slideMap.isEmpty())
-                return@withContext ConversionResult.Error("La presentación no contiene texto")
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_empty_presentation)
+                )
 
             val outputDir  = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName   = fileName ?: generateTimestamp()
@@ -40,7 +43,9 @@ class PptToTextUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "PptToTextUseCase: error")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
     }
 

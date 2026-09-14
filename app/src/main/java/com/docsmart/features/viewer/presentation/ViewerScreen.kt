@@ -492,11 +492,16 @@ private fun PdfSearchResultBar(
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // Bug real encontrado 2026-09-14 (repaso general): estos textos
+            // y content descriptions estaban hardcodeados en español,
+            // saltándose el sistema de 12 idiomas.
             Text(
                 text = when {
                     !hasQuery       -> ""
-                    matchCount == 0 -> "Sin resultados"
-                    else            -> "Coincidencia ${currentIndex + 1} de $matchCount"
+                    matchCount == 0 -> stringResource(R.string.viewer_search_no_results)
+                    else            -> String.format(
+                        stringResource(R.string.viewer_search_match_format), currentIndex + 1, matchCount
+                    )
                 },
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -504,13 +509,15 @@ private fun PdfSearchResultBar(
             Row {
                 IconButton(onClick = onPrevious, enabled = matchCount > 0) {
                     Icon(
-                        Icons.Rounded.KeyboardArrowUp, contentDescription = "Coincidencia anterior",
+                        Icons.Rounded.KeyboardArrowUp,
+                        contentDescription = stringResource(R.string.viewer_search_previous_match),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 IconButton(onClick = onNext, enabled = matchCount > 0) {
                     Icon(
-                        Icons.Rounded.KeyboardArrowDown, contentDescription = "Siguiente coincidencia",
+                        Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = stringResource(R.string.viewer_search_next_match),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

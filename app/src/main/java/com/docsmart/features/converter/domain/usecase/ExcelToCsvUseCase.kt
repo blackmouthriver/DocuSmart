@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -41,10 +42,10 @@ class ExcelToCsvUseCase @Inject constructor(
                     }
                 }
                 workbook.close()
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Excel")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_excel))
 
             if (rowCount == 0) {
-                return@withContext ConversionResult.Error("La hoja de cálculo no contiene datos.")
+                return@withContext ConversionResult.Error(context.getString(R.string.converter_error_empty_spreadsheet))
             }
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
@@ -59,7 +60,9 @@ class ExcelToCsvUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Excel a CSV")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
     }
 

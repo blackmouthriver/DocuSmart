@@ -43,6 +43,11 @@
     <string name="library_tab_file_count">%1$d件のファイル</string>
     <string name="library_tab_device_description">すでに端末に保存されていた写真や書類</string>
     <string name="library_tab_app_files_description">DocuSmartで作成または変換した書類</string>
+    <string name="library_no_permission_denied_title">権限が拒否されました</string>
+    <string name="library_no_permission_required_title">ファイルへのアクセスが必要です</string>
+    <string name="library_no_permission_denied_body">システム設定 → DocuSmart → 権限 から手動で有効にしてください。</string>
+    <string name="library_no_permission_required_body">ドキュメントを表示するには、DocuSmartがファイルにアクセスできる必要があります。</string>
+    <string name="library_no_permission_allow_button">アクセスを許可</string>
 
     <!-- ── コンバーター ────────────────────────────── -->
     <string name="converter_title">コンバーター</string>
@@ -174,6 +179,17 @@
     <string name="viewer_rename_empty_error">名前を空にすることはできません</string>
     <string name="viewer_delete_confirm_title">このドキュメントを削除しますか?</string>
     <string name="viewer_delete_confirm_body">"%1$s はゴミ箱に移動されます。完全に削除されるまで30日間、復元できます。"</string>
+    <string name="viewer_decrypt_failed">PDFを復号できませんでした</string>
+    <string name="viewer_open_error_format">PDFを開けませんでした: %1$s</string>
+    <string name="viewer_document_not_found">ドキュメントが見つかりません</string>
+    <string name="viewer_share_chooser_title">%1$s を共有</string>
+    <string name="viewer_search_content_desc">ドキュメント内を検索</string>
+    <string name="viewer_favorite_content_desc">お気に入り</string>
+    <string name="viewer_bottom_bar_page_format">%2$d ページ中 %1$d ページ目</string>
+    <string name="viewer_search_no_results">結果なし</string>
+    <string name="viewer_search_match_format">%2$d件中%1$d件目</string>
+    <string name="viewer_search_previous_match">前の一致</string>
+    <string name="viewer_search_next_match">次の一致</string>
 
     <!-- ── ドキュメントメニュー(ホーム/ライブラリ、DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">お気に入りに追加</string>
@@ -219,6 +235,23 @@
     <string name="scan_daily_save_limit_label">保存したスキャン</string>
     <string name="converter_daily_limit_reached_error">1日の変換上限に達しました</string>
     <string name="converter_batch_save_error">すべてのファイルをダウンロードに保存できませんでした</string>
+    <string name="converter_error_read_word">Wordファイルを読み込めませんでした</string>
+    <string name="converter_error_read_excel">Excelファイルを読み込めませんでした</string>
+    <string name="converter_error_read_ppt">PowerPointファイルを読み込めませんでした</string>
+    <string name="converter_error_read_pdf">PDFを読み込めませんでした</string>
+    <string name="converter_error_read_image">画像を読み込めませんでした</string>
+    <string name="converter_error_empty_spreadsheet">表計算シートにデータがありません</string>
+    <string name="converter_error_empty_presentation">プレゼンテーションにテキストがありません</string>
+    <string name="converter_error_empty_word_document">ドキュメントに抽出可能なテキストがありません</string>
+    <string name="converter_error_empty_pdf_text">PDFに抽出可能なテキストがありません</string>
+    <string name="converter_error_empty_pdf_text_scanned">PDFに抽出可能なテキストがありません。スキャンされたPDFの可能性があります。</string>
+    <string name="converter_error_extract_pages_failed">ページを抽出できませんでした</string>
+    <string name="converter_error_generate_word_failed">Wordファイルを生成できませんでした</string>
+    <string name="converter_error_generate_pdf_failed">PDFを生成できませんでした。もう一度お試しください。</string>
+    <string name="converter_error_no_images_selected">少なくとも1枚の画像を選択してください</string>
+    <string name="converter_error_no_images_loaded">選択した画像を読み込めませんでした</string>
+    <string name="converter_error_generic_format">変換エラー: %1$s</string>
+    <string name="converter_error_unknown">不明なエラー</string>
 
     <!-- ── PDFツール: メイン画面と結果カード ── -->
     <string name="pdf_tools_back_to_tools">ツール一覧に戻る</string>
@@ -581,6 +614,7 @@
     <string name="security_pdf_password_desc">PDFファイルにパスワードを設定・解除します。PINなしですぐにアクセスできます。</string>
     <string name="security_no_pin">PINなし</string>
     <string name="security_pin_incorrect">PINが正しくありません</string>
+    <string name="security_pin_locked_out">試行回数が多すぎます。%1$d 秒後にもう一度お試しください。</string>
     <string name="security_biometric_error">エラー: %1$s</string>
     <string name="security_biometric_not_recognized">生体認証を認識できませんでした</string>
     <string name="security_biometric_title">DocuSmart — セキュアフォルダ</string>
@@ -729,6 +763,9 @@
     <string name="qr_label_email">メールアドレス</string>
     <string name="qr_label_phone">電話番号</string>
     <string name="qr_placeholder_text">メッセージを入力…</string>
+    <string name="qr_placeholder_url">https://example.jp</string>
+    <string name="qr_placeholder_email">email@example.jp</string>
+    <string name="qr_placeholder_phone">+81 90-1234-5678</string>
     <string name="qr_protect_password">パスワードで保護</string>
     <string name="qr_protect_password_desc">パスワードを知っている人だけが内容を見られます</string>
     <string name="qr_password_label">パスワード</string>

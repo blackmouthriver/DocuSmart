@@ -41,6 +41,10 @@ class PptToPdfUseCaseTest {
         filesDir = Files.createTempDirectory("docsmart_ppttopdf_").toFile()
         context = mockk()
         every { context.filesDir } returns filesDir
+        // Los mensajes de error ahora vienen de context.getString() (i18n,
+        // repaso general 2026-09-14) -- estos tests solo verifican el tipo
+        // de resultado, no el texto exacto.
+        every { context.getString(any()) } returns "error"
         useCase = PptToPdfUseCase(context)
     }
 

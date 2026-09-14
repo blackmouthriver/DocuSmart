@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -23,10 +24,12 @@ class WordToHtmlUseCase @Inject constructor(
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
             val paragraphs = extractParagraphs(wordUri)
-                ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Word")
+                ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
 
             if (paragraphs.isEmpty())
-                return@withContext ConversionResult.Error("El documento no contiene texto")
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_empty_word_document)
+                )
 
             val outputDir  = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName   = fileName ?: generateTimestamp()
@@ -40,7 +43,9 @@ class WordToHtmlUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "WordToHtmlUseCase: error")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
     }
 

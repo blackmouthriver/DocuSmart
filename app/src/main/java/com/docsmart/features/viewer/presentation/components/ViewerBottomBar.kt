@@ -6,7 +6,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -35,8 +37,12 @@ fun ViewerBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
+                // Bug real encontrado 2026-09-14 (repaso general):
+                // hardcodeado en español, saltándose el sistema de idiomas.
                 Text(
-                    text = "Página ${currentPage + 1} de $totalPages",
+                    text = String.format(
+                        stringResource(R.string.viewer_bottom_bar_page_format), currentPage + 1, totalPages
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -43,6 +43,11 @@
     <string name="library_tab_file_count">%1$d Dateien</string>
     <string name="library_tab_device_description">Fotos und Dokumente, die bereits auf deinem Gerät gespeichert waren</string>
     <string name="library_tab_app_files_description">Dokumente, die du in DocuSmart erstellt oder konvertiert hast</string>
+    <string name="library_no_permission_denied_title">Berechtigung verweigert</string>
+    <string name="library_no_permission_required_title">Dateizugriff erforderlich</string>
+    <string name="library_no_permission_denied_body">Gehe zu Systemeinstellungen → DocuSmart → Berechtigungen, um sie manuell zu aktivieren.</string>
+    <string name="library_no_permission_required_body">DocuSmart benötigt Zugriff auf deine Dateien, um deine Dokumente anzuzeigen.</string>
+    <string name="library_no_permission_allow_button">Zugriff erlauben</string>
 
     <!-- ── Konverter ────────────────────────────────── -->
     <string name="converter_title">Konverter</string>
@@ -174,6 +179,17 @@
     <string name="viewer_rename_empty_error">Der Name darf nicht leer sein</string>
     <string name="viewer_delete_confirm_title">Dieses Dokument löschen?</string>
     <string name="viewer_delete_confirm_body">"%1$s wird in den Papierkorb verschoben. Du kannst es 30 Tage lang wiederherstellen, bevor es endgültig gelöscht wird."</string>
+    <string name="viewer_decrypt_failed">PDF konnte nicht entschlüsselt werden</string>
+    <string name="viewer_open_error_format">PDF konnte nicht geöffnet werden: %1$s</string>
+    <string name="viewer_document_not_found">Dokument nicht gefunden</string>
+    <string name="viewer_share_chooser_title">%1$s teilen</string>
+    <string name="viewer_search_content_desc">Im Dokument suchen</string>
+    <string name="viewer_favorite_content_desc">Favorit</string>
+    <string name="viewer_bottom_bar_page_format">Seite %1$d von %2$d</string>
+    <string name="viewer_search_no_results">Keine Ergebnisse</string>
+    <string name="viewer_search_match_format">Treffer %1$d von %2$d</string>
+    <string name="viewer_search_previous_match">Vorheriger Treffer</string>
+    <string name="viewer_search_next_match">Nächster Treffer</string>
 
     <!-- ── Dokumentmenü (Home/Bibliothek, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Zu Favoriten hinzufügen</string>
@@ -219,6 +235,23 @@
     <string name="scan_daily_save_limit_label">gespeicherte Scans</string>
     <string name="converter_daily_limit_reached_error">Tägliches Konvertierungslimit erreicht</string>
     <string name="converter_batch_save_error">Nicht alle Dateien konnten in Downloads gespeichert werden</string>
+    <string name="converter_error_read_word">Word-Datei konnte nicht gelesen werden</string>
+    <string name="converter_error_read_excel">Excel-Datei konnte nicht gelesen werden</string>
+    <string name="converter_error_read_ppt">PowerPoint-Datei konnte nicht gelesen werden</string>
+    <string name="converter_error_read_pdf">PDF konnte nicht gelesen werden</string>
+    <string name="converter_error_read_image">Bild konnte nicht gelesen werden</string>
+    <string name="converter_error_empty_spreadsheet">Die Tabelle enthält keine Daten</string>
+    <string name="converter_error_empty_presentation">Die Präsentation enthält keinen Text</string>
+    <string name="converter_error_empty_word_document">Das Dokument enthält keinen extrahierbaren Text</string>
+    <string name="converter_error_empty_pdf_text">Das PDF enthält keinen extrahierbaren Text</string>
+    <string name="converter_error_empty_pdf_text_scanned">Das PDF enthält keinen extrahierbaren Text. Es könnte sich um ein gescanntes PDF handeln.</string>
+    <string name="converter_error_extract_pages_failed">Seiten konnten nicht extrahiert werden</string>
+    <string name="converter_error_generate_word_failed">Word-Datei konnte nicht erstellt werden</string>
+    <string name="converter_error_generate_pdf_failed">PDF konnte nicht erstellt werden. Versuche es erneut.</string>
+    <string name="converter_error_no_images_selected">Du musst mindestens ein Bild auswählen</string>
+    <string name="converter_error_no_images_loaded">Keines der ausgewählten Bilder konnte geladen werden</string>
+    <string name="converter_error_generic_format">Fehler bei der Konvertierung: %1$s</string>
+    <string name="converter_error_unknown">Unbekannter Fehler</string>
 
     <!-- ── PDF-Werkzeuge: Hauptbildschirm und Ergebniskarte ── -->
     <string name="pdf_tools_back_to_tools">Zurück zu den Werkzeugen</string>
@@ -577,6 +610,7 @@
     <string name="security_pdf_password_desc">Füge PDF-Dateien ein Passwort hinzu oder entferne es. Sofortiger Zugriff, ohne PIN.</string>
     <string name="security_no_pin">Ohne PIN</string>
     <string name="security_pin_incorrect">Falsche PIN</string>
+    <string name="security_pin_locked_out">Zu viele Versuche. Versuche es in %1$d Sekunden erneut.</string>
     <string name="security_biometric_error">Fehler: %1$s</string>
     <string name="security_biometric_not_recognized">Biometrie nicht erkannt</string>
     <string name="security_biometric_title">DocuSmart — Sicherer Ordner</string>
@@ -725,6 +759,9 @@
     <string name="qr_label_email">E-Mail-Adresse</string>
     <string name="qr_label_phone">Telefonnummer</string>
     <string name="qr_placeholder_text">Schreibe deine Nachricht …</string>
+    <string name="qr_placeholder_url">https://beispiel.de</string>
+    <string name="qr_placeholder_email">email@beispiel.de</string>
+    <string name="qr_placeholder_phone">+49 151 23456789</string>
     <string name="qr_protect_password">Mit Passwort schützen</string>
     <string name="qr_protect_password_desc">Nur wer das Passwort kennt, kann den Inhalt sehen</string>
     <string name="qr_password_label">Passwort</string>

@@ -45,12 +45,12 @@ class PdfPasswordUseCase @Inject constructor() {
         fileName: String,
         messages: PdfPasswordMessages
     ): PdfPasswordResult = withContext(Dispatchers.IO) {
+        var cacheFile: File? = null
         try {
             // ── Paso 1: copiar al caché ───────────────────────────────────────
-            val cacheFile = copyToCache(context, uri, "protect")
+            cacheFile = copyToCache(context, uri, "protect")
                 ?: return@withContext PdfPasswordResult.Error(messages.readError)
             if (cacheFile.length() == 0L) {
-                cacheFile.delete()
                 return@withContext PdfPasswordResult.Error(messages.emptyFile)
             }
 
@@ -92,8 +92,6 @@ class PdfPasswordUseCase @Inject constructor() {
             val pages  = doc.numberOfPages
             doc.close()
 
-            cacheFile.delete()
-
             Timber.d("PdfPasswordUseCase: resultado → pages=$pages size=${outputFile.length()}b")
 
             if (!outputFile.exists() || outputFile.length() < 100L) {
@@ -108,6 +106,12 @@ class PdfPasswordUseCase @Inject constructor() {
         } catch (e: Exception) {
             Timber.e(e, "PdfPasswordUseCase: error protegiendo PDF → ${e.javaClass.simpleName}: ${e.message}")
             PdfPasswordResult.Error(String.format(messages.protectError, e.message ?: ""))
+        } finally {
+            // Bug real encontrado 2026-09-14 (repaso general): mismo patrón
+            // de fuga ya corregido antes en removePassword() -- cacheFile
+            // solo se borraba en el camino feliz, una excepción al encriptar
+            // lo dejaba huérfano en cacheDir para siempre.
+            cacheFile?.delete()
         }
     }
 

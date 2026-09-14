@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,7 @@ class ExcelToHtmlUseCase @Inject constructor(
                     entry = zip.nextEntry
                 }
                 zip.close()
-            } ?: return@withContext ConversionResult.Error("No se pudo leer el archivo Excel")
+            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_excel))
 
             // Parsear shared strings
             val sharedStrings = mutableListOf<String>()
@@ -69,7 +70,7 @@ class ExcelToHtmlUseCase @Inject constructor(
             }
 
             if (rows.isEmpty())
-                return@withContext ConversionResult.Error("La hoja de cálculo no tiene datos")
+                return@withContext ConversionResult.Error(context.getString(R.string.converter_error_empty_spreadsheet))
 
             // Generar HTML con tabla
             val sb = StringBuilder()
@@ -109,7 +110,9 @@ class ExcelToHtmlUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "ExcelToHtmlUseCase: error")
-            ConversionResult.Error("Error al convertir: ${e.message}")
+            ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
+            )
         }
     }
 

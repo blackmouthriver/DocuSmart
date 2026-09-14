@@ -43,6 +43,11 @@
     <string name="library_tab_file_count">Файлов: %1$d</string>
     <string name="library_tab_device_description">Фото и документы, которые уже были сохранены на вашем устройстве</string>
     <string name="library_tab_app_files_description">Документы, созданные или преобразованные в DocuSmart</string>
+    <string name="library_no_permission_denied_title">Доступ запрещён</string>
+    <string name="library_no_permission_required_title">Требуется доступ к файлам</string>
+    <string name="library_no_permission_denied_body">Перейдите в Настройки системы → DocuSmart → Разрешения, чтобы включить вручную.</string>
+    <string name="library_no_permission_required_body">DocuSmart нужен доступ к вашим файлам, чтобы показывать ваши документы.</string>
+    <string name="library_no_permission_allow_button">Разрешить доступ</string>
 
     <!-- ── Конвертер ────────────────────────────────── -->
     <string name="converter_title">Конвертер</string>
@@ -174,6 +179,17 @@
     <string name="viewer_rename_empty_error">Имя не может быть пустым</string>
     <string name="viewer_delete_confirm_title">Удалить этот документ?</string>
     <string name="viewer_delete_confirm_body">"%1$s будет перемещён в корзину. Вы сможете восстановить его в течение 30 дней, прежде чем он будет удалён окончательно."</string>
+    <string name="viewer_decrypt_failed">Не удалось расшифровать PDF</string>
+    <string name="viewer_open_error_format">Не удалось открыть PDF: %1$s</string>
+    <string name="viewer_document_not_found">Документ не найден</string>
+    <string name="viewer_share_chooser_title">Поделиться %1$s</string>
+    <string name="viewer_search_content_desc">Поиск в документе</string>
+    <string name="viewer_favorite_content_desc">Избранное</string>
+    <string name="viewer_bottom_bar_page_format">Страница %1$d из %2$d</string>
+    <string name="viewer_search_no_results">Нет результатов</string>
+    <string name="viewer_search_match_format">Совпадение %1$d из %2$d</string>
+    <string name="viewer_search_previous_match">Предыдущее совпадение</string>
+    <string name="viewer_search_next_match">Следующее совпадение</string>
 
     <!-- ── Меню документа (Главная/Библиотека, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Добавить в избранное</string>
@@ -219,6 +235,23 @@
     <string name="scan_daily_save_limit_label">сохранённых сканов</string>
     <string name="converter_daily_limit_reached_error">Достигнут дневной лимит конвертаций</string>
     <string name="converter_batch_save_error">Не удалось сохранить все файлы в Загрузки</string>
+    <string name="converter_error_read_word">Не удалось прочитать файл Word</string>
+    <string name="converter_error_read_excel">Не удалось прочитать файл Excel</string>
+    <string name="converter_error_read_ppt">Не удалось прочитать файл PowerPoint</string>
+    <string name="converter_error_read_pdf">Не удалось прочитать PDF</string>
+    <string name="converter_error_read_image">Не удалось прочитать изображение</string>
+    <string name="converter_error_empty_spreadsheet">В таблице нет данных</string>
+    <string name="converter_error_empty_presentation">В презентации нет текста</string>
+    <string name="converter_error_empty_word_document">В документе нет текста для извлечения</string>
+    <string name="converter_error_empty_pdf_text">В PDF нет текста для извлечения</string>
+    <string name="converter_error_empty_pdf_text_scanned">В PDF нет текста для извлечения. Возможно, это отсканированный PDF.</string>
+    <string name="converter_error_extract_pages_failed">Не удалось извлечь страницы</string>
+    <string name="converter_error_generate_word_failed">Не удалось создать файл Word</string>
+    <string name="converter_error_generate_pdf_failed">Не удалось создать PDF. Попробуйте снова.</string>
+    <string name="converter_error_no_images_selected">Нужно выбрать хотя бы одно изображение</string>
+    <string name="converter_error_no_images_loaded">Не удалось загрузить ни одно из выбранных изображений</string>
+    <string name="converter_error_generic_format">Ошибка конвертации: %1$s</string>
+    <string name="converter_error_unknown">Неизвестная ошибка</string>
 
     <!-- ── Инструменты PDF: главный экран и карточка результата ── -->
     <string name="pdf_tools_back_to_tools">Назад к инструментам</string>
@@ -577,6 +610,7 @@
     <string name="security_pdf_password_desc">Добавьте или удалите пароль у PDF-файлов. Мгновенный доступ, без PIN.</string>
     <string name="security_no_pin">Без PIN</string>
     <string name="security_pin_incorrect">Неверный PIN</string>
+    <string name="security_pin_locked_out">Слишком много попыток. Попробуйте снова через %1$d с.</string>
     <string name="security_biometric_error">Ошибка: %1$s</string>
     <string name="security_biometric_not_recognized">Биометрия не распознана</string>
     <string name="security_biometric_title">DocuSmart — Защищённая папка</string>
@@ -725,6 +759,9 @@
     <string name="qr_label_email">Адрес email</string>
     <string name="qr_label_phone">Номер телефона</string>
     <string name="qr_placeholder_text">Введите ваше сообщение…</string>
+    <string name="qr_placeholder_url">https://example.ru</string>
+    <string name="qr_placeholder_email">email@example.ru</string>
+    <string name="qr_placeholder_phone">+7 912 345-67-89</string>
     <string name="qr_protect_password">Защитить паролем</string>
     <string name="qr_protect_password_desc">Только тот, у кого есть пароль, сможет увидеть содержимое</string>
     <string name="qr_password_label">Пароль</string>

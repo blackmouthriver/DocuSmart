@@ -60,9 +60,15 @@ class FillFormUseCase @Inject constructor(
             val outputFile = createOutputFile(outputFileName ?: "Formulario")
             var filledCount = 0
 
+            // Bug real encontrado 2026-09-14 (repaso general):
+            // PdfWriter(outputFile) ya crea el archivo en disco al abrirse
+            // -- sin delete() en estas dos ramas de error tempranas quedaba
+            // huérfano en filesDir/pdftools para siempre.
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
-                val form = PdfAcroForm.getAcroForm(pdf, false)
-                    ?: return@withContext PdfToolResult.Error(messages.noFieldsError)
+                val form = PdfAcroForm.getAcroForm(pdf, false) ?: run {
+                    outputFile.delete()
+                    return@withContext PdfToolResult.Error(messages.noFieldsError)
+                }
                 val fields = form.getFormFields()
                 values.forEach { (name, value) ->
                     fields[name]?.let { field ->
@@ -71,6 +77,7 @@ class FillFormUseCase @Inject constructor(
                     }
                 }
                 if (filledCount == 0) {
+                    outputFile.delete()
                     return@withContext PdfToolResult.Error(messages.noFieldsError)
                 }
                 form.flattenFields()

@@ -43,6 +43,11 @@
     <string name="library_tab_file_count">%1$d fitxategi</string>
     <string name="library_tab_device_description">Zure gailuan jada gordeta zenituen argazkiak eta dokumentuak</string>
     <string name="library_tab_app_files_description">DocuSmarten sortu edo bihurtu dituzun dokumentuak</string>
+    <string name="library_no_permission_denied_title">Baimena ukatuta</string>
+    <string name="library_no_permission_required_title">Fitxategietarako sarbidea behar da</string>
+    <string name="library_no_permission_denied_body">Joan Sistemaren ezarpenak → DocuSmart → Baimenak atalera, eskuz gaitzeko.</string>
+    <string name="library_no_permission_required_body">DocuSmart-ek zure fitxategietarako sarbidea behar du zure dokumentuak erakusteko.</string>
+    <string name="library_no_permission_allow_button">Sarbidea baimendu</string>
 
     <!-- ── Convertidor ────────────────────────────── -->
     <string name="converter_title">Bihurgailua</string>
@@ -184,6 +189,17 @@
     <string name="viewer_rename_empty_error">Izena ezin da hutsik egon</string>
     <string name="viewer_delete_confirm_title">Dokumentu hau ezabatu nahi duzu?</string>
     <string name="viewer_delete_confirm_body">"%1$s Zakarrontzira eramango da. 30 egunez berreskura dezakezu behin betiko ezabatu aurretik."</string>
+    <string name="viewer_decrypt_failed">Ezin izan da PDFa deszifratu</string>
+    <string name="viewer_open_error_format">Ezin izan da PDFa ireki: %1$s</string>
+    <string name="viewer_document_not_found">Dokumentua ez da aurkitu</string>
+    <string name="viewer_share_chooser_title">%1$s partekatu</string>
+    <string name="viewer_search_content_desc">Bilatu dokumentuan</string>
+    <string name="viewer_favorite_content_desc">Gogokoa</string>
+    <string name="viewer_bottom_bar_page_format">%1$d / %2$d orrialdea</string>
+    <string name="viewer_search_no_results">Emaitzarik ez</string>
+    <string name="viewer_search_match_format">%1$d / %2$d bat-etortzea</string>
+    <string name="viewer_search_previous_match">Aurreko bat-etortzea</string>
+    <string name="viewer_search_next_match">Hurrengo bat-etortzea</string>
 
     <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
     <string name="doc_item_add_favorite">Gehitu gogokoetara</string>
@@ -229,6 +245,23 @@
     <string name="scan_daily_save_limit_label">gordetako eskaneatze</string>
     <string name="converter_daily_limit_reached_error">Eguneko bihurketa-muga bete da</string>
     <string name="converter_batch_save_error">Ezin izan dira fitxategi guztiak Deskarguak karpetan gorde</string>
+    <string name="converter_error_read_word">Ezin izan da Word fitxategia irakurri</string>
+    <string name="converter_error_read_excel">Ezin izan da Excel fitxategia irakurri</string>
+    <string name="converter_error_read_ppt">Ezin izan da PowerPoint fitxategia irakurri</string>
+    <string name="converter_error_read_pdf">Ezin izan da PDFa irakurri</string>
+    <string name="converter_error_read_image">Ezin izan da irudia irakurri</string>
+    <string name="converter_error_empty_spreadsheet">Kalkulu-orriak ez du daturik</string>
+    <string name="converter_error_empty_presentation">Aurkezpenak ez du testurik</string>
+    <string name="converter_error_empty_word_document">Dokumentuak ez du atera daitekeen testurik</string>
+    <string name="converter_error_empty_pdf_text">PDFak ez du atera daitekeen testurik</string>
+    <string name="converter_error_empty_pdf_text_scanned">PDFak ez du atera daitekeen testurik. Eskaneatutako PDFa izan daiteke.</string>
+    <string name="converter_error_extract_pages_failed">Ezin izan dira orrialdeak atera</string>
+    <string name="converter_error_generate_word_failed">Ezin izan da Word fitxategia sortu</string>
+    <string name="converter_error_generate_pdf_failed">Ezin izan da PDFa sortu. Saiatu berriro.</string>
+    <string name="converter_error_no_images_selected">Gutxienez irudi bat hautatu behar duzu</string>
+    <string name="converter_error_no_images_loaded">Ezin izan da hautatutako irudirik kargatu</string>
+    <string name="converter_error_generic_format">Bihurketa-errorea: %1$s</string>
+    <string name="converter_error_unknown">Errore ezezaguna</string>
 
     <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
     <string name="pdf_tools_back_to_tools">Itzuli tresnetara</string>
@@ -597,6 +630,7 @@
     <string name="security_pdf_password_desc">Gehitu edo kendu pasahitza PDF fitxategiei. Berehalako sarbidea PINik gabe.</string>
     <string name="security_no_pin">PINik gabe</string>
     <string name="security_pin_incorrect">PIN okerra</string>
+    <string name="security_pin_locked_out">Saiakera gehiegi. Saiatu berriro %1$d segundo barru.</string>
     <string name="security_biometric_error">Errorea: %1$s</string>
     <string name="security_biometric_not_recognized">Ez da biometria ezagutu</string>
     <string name="security_biometric_title">DocuSmart — Karpeta Segurua</string>
@@ -745,6 +779,9 @@
     <string name="qr_label_email">Emailaren helbidea</string>
     <string name="qr_label_phone">Telefono-zenbakia</string>
     <string name="qr_placeholder_text">Idatzi zure mezua…</string>
+    <string name="qr_placeholder_url">https://adibidea.eus</string>
+    <string name="qr_placeholder_email">posta@adibidea.eus</string>
+    <string name="qr_placeholder_phone">+34 600 00 00 00</string>
     <string name="qr_protect_password">Babestu pasahitzarekin</string>
     <string name="qr_protect_password_desc">Klabea duenak bakarrik ikus dezake edukia</string>
     <string name="qr_password_label">Pasahitza</string>

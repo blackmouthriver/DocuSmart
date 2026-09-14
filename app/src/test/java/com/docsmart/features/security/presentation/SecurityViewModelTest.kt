@@ -139,7 +139,7 @@ class SecurityViewModelTest {
     fun `goToLocked cambia a LOCKED y limpia error`() = runTest {
         val viewModel = buildViewModel()
         every { securityManager.verifyPin("0000") } returns false
-        viewModel.verifyPin("0000", "PIN incorrecto")
+        viewModel.verifyPin("0000", "PIN incorrecto", "bloqueado %1\$d s")
         assertEquals("PIN incorrecto", viewModel.uiState.value.error)
 
         viewModel.goToLocked()
@@ -156,7 +156,7 @@ class SecurityViewModelTest {
         val viewModel = buildViewModel()
         viewModel.uiState.test {
             awaitItem() // estado inicial (LOCKED)
-            viewModel.verifyPin("1234", "PIN incorrecto")
+            viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
             assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
 
             viewModel.lockIfUnlocked()
@@ -191,7 +191,7 @@ class SecurityViewModelTest {
         val viewModel = buildViewModel()
         viewModel.uiState.test {
             assertTrue(awaitItem().hasPin) // LOCKED inicial, con PIN ya configurado
-            viewModel.verifyPin("1234", "PIN incorrecto")
+            viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
             assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
             viewModel.lockIfUnlocked()
             assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
@@ -217,7 +217,7 @@ class SecurityViewModelTest {
         viewModel.uiState.test {
             assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
 
-            viewModel.verifyPin("1234", "PIN incorrecto")
+            viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
 
             val unlocked = awaitItem()
             assertEquals(SecurityScreenState.UNLOCKED, unlocked.screenState)
@@ -231,11 +231,27 @@ class SecurityViewModelTest {
         every { securityManager.verifyPin("0000") } returns false
 
         val viewModel = buildViewModel()
-        viewModel.verifyPin("0000", "PIN incorrecto")
+        viewModel.verifyPin("0000", "PIN incorrecto", "bloqueado %1\$d s")
 
         val state = viewModel.uiState.value
         assertEquals("PIN incorrecto", state.error)
         assertEquals(SecurityScreenState.LOCKED, state.screenState)
+    }
+
+    @Test
+    fun `verifyPin con bloqueo activo muestra el mensaje de bloqueo y no llama a SecurityManager`() {
+        // Bug real encontrado 2026-09-14 (repaso general): el PIN no tenía
+        // límite de intentos. Ahora SecurityViewModel debe respetar el
+        // bloqueo que reporta SecurityManager.pinLockoutRemainingMillis()
+        // antes de intentar verificar, sin llamar a verifyPin() del manager.
+        every { securityManager.pinLockoutRemainingMillis() } returns 12_500L
+
+        val viewModel = buildViewModel()
+        viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
+
+        assertEquals("bloqueado 13 s", viewModel.uiState.value.error)
+        assertEquals(SecurityScreenState.LOCKED, viewModel.uiState.value.screenState)
+        verify(exactly = 0) { securityManager.verifyPin(any()) }
     }
 
     @Test
@@ -276,7 +292,7 @@ class SecurityViewModelTest {
     fun `dismissError limpia el error`() {
         every { securityManager.verifyPin("0000") } returns false
         val viewModel = buildViewModel()
-        viewModel.verifyPin("0000", "PIN incorrecto")
+        viewModel.verifyPin("0000", "PIN incorrecto", "bloqueado %1\$d s")
 
         viewModel.dismissError()
 
