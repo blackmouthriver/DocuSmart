@@ -1,0 +1,884 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── Navegación ─────────────────────────────── -->
+    <string name="nav_home">Hasiera</string>
+    <string name="nav_library">Liburutegia</string>
+    <string name="nav_converter">Bihurtu</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">Ezarpenak</string>
+
+    <!-- ── Home ───────────────────────────────────── -->
+    <string name="home_title">Zure dokumentuak\nleku bakarrean</string>
+    <string name="home_subtitle">Ireki, bihurtu eta kudeatu zure fitxategiak erraz</string>
+    <string name="home_open">Ireki</string>
+    <string name="home_convert">Bihurtu</string>
+    <string name="home_quick_access">Sarbide azkarrak</string>
+    <string name="home_scan">Eskaneatu</string>
+    <string name="home_img_pdf">Irudia→PDF</string>
+    <string name="home_security">Segurtasuna</string>
+    <string name="home_study">Ikasketa</string>
+    <string name="home_recent">Azkenak</string>
+    <string name="home_see_all">Ikusi guztiak</string>
+    <string name="home_no_recent_title">Ez dago azken dokumenturik</string>
+    <string name="home_no_recent_desc">Ireki fitxategi bat hemen ikusteko</string>
+    <string name="home_open_file_action">Ireki fitxategia</string>
+    <string name="home_share_document">Partekatu %1$s</string>
+    <string name="home_qr_read">Irakurri QRa</string>
+    <string name="home_qr_create">Sortu QRa</string>
+    <string name="home_scanner_sheet_title">Eskanerra</string>
+    <string name="home_scanner_sheet_subtitle">Aukeratu aukera bat</string>
+    <string name="home_scanner_option_scan_title">Eskaneatu dokumentua</string>
+    <string name="home_scanner_option_scan_subtitle">Kaptura automatikoa ML Kit-ekin</string>
+    <string name="home_scanner_option_qr_read_subtitle">URLak, testua eta gehiago detektatzen ditu</string>
+
+    <!-- ── Biblioteca ─────────────────────────────── -->
+    <string name="library_title">Liburutegia</string>
+    <string name="library_subtitle">Zure dokumentu guztiak</string>
+    <string name="library_search">Bilatu liburutegian…</string>
+    <string name="library_documents">dokumentu</string>
+    <string name="library_tab_device">Gailua</string>
+    <string name="library_tab_app_files">Nire fitxategiak</string>
+    <string name="library_tab_file_count">%1$d fitxategi</string>
+    <string name="library_tab_device_description">Zure gailuan jada gordeta zenituen argazkiak eta dokumentuak</string>
+    <string name="library_tab_app_files_description">DocuSmarten sortu edo bihurtu dituzun dokumentuak</string>
+
+    <!-- ── Convertidor ────────────────────────────── -->
+    <string name="converter_title">Bihurgailua</string>
+    <string name="converter_subtitle">Bihurtu zure dokumentuak modu errazean</string>
+    <string name="converter_select">Zer bihurtu nahi duzu?</string>
+    <string name="converter_save">Gorde Deskargak karpetan</string>
+    <string name="converter_view_document">Ikusi dokumentua</string>
+
+    <!-- ── PDF Tools ──────────────────────────────── -->
+    <string name="pdf_tools_title">PDF tresnak</string>
+    <string name="pdf_tools_subtitle">Kudeatu zure PDFak azkar</string>
+    <string name="pdf_tools_ad_not_available">Iragarkia ez dago erabilgarri. Saiatu berriro segundo batzuen buruan.</string>
+    <string name="pdf_merge">Batu PDFak</string>
+    <string name="pdf_split">Zatitu PDFa</string>
+    <string name="pdf_compress">Konprimitu PDFa</string>
+    <string name="pdf_rotate">Biratu PDFa</string>
+    <string name="pdf_number_pages">Zenbakitu orrialdeak</string>
+    <string name="pdf_watermark">Ur-marka</string>
+    <string name="pdf_reorder_pages">Berrantolatu orrialdeak</string>
+    <string name="pdf_compare">Alderatu PDFak</string>
+    <string name="pdf_redact">Zentsuratu edukia</string>
+    <string name="pdf_crop">Moztu orrialdeak</string>
+    <string name="pdf_edit_text">Editatu testua</string>
+    <string name="pdf_sign">Sinatu PDFa</string>
+    <string name="pdf_fill_form">Bete formularioa</string>
+    <string name="pdf_ocr">OCR aurreratua</string>
+
+    <!-- ── Ajustes ────────────────────────────────── -->
+    <string name="settings_title">Ezarpenak</string>
+    <string name="settings_subtitle">Pertsonalizatu zure esperientzia</string>
+    <string name="settings_premium">DocuSmart Premium</string>
+    <string name="settings_premium_subtitle">Desblokeatu funtzio guztiak</string>
+    <string name="settings_premium_trial_subtitle">Doako proba aktibo · ordainketa: %1$s</string>
+    <string name="settings_premium_auto_trial_subtitle">Premium doan probatzen · %1$d egun geratzen dira</string>
+    <string name="settings_language">Hizkuntza</string>
+    <string name="settings_theme">Gaia</string>
+    <string name="settings_accent_color">Nabarmentze-kolorea</string>
+    <string name="settings_font_scale">Letra-tamaina</string>
+    <string name="settings_animated_background">Atzeko plano animatua</string>
+    <string name="settings_animated_background_subtitle">Nabarmentze-kolorearekin mugitzen diren formak</string>
+    <string name="settings_sound_effects">Soinu-efektuak</string>
+    <string name="settings_sound_effects_subtitle">Soinu laburrak eskaneatzean, bihurtzean eta ezabatzean</string>
+    <string name="settings_storage">Biltegiratzea</string>
+    <string name="settings_storage_subtitle">Ikusi sortutako fitxategiak</string>
+    <string name="settings_about">Honi buruz</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">Hautatu hizkuntza</string>
+    <string name="settings_close">Itxi</string>
+    <string name="settings_language_subtitle">Aukeratu aplikazioaren hizkuntza</string>
+    <!-- Rediseño de Ajustes 2026-09-14: Apariencia agrupa Tema/Color de
+         acento/Tamaño de letra/Fondo animado/Sonidos/Idioma en una sola
+         tarjeta con controles en línea (antes cada uno abría un diálogo
+         aparte dentro de "Personalización"). -->
+    <string name="settings_section_appearance">Itxura</string>
+    <string name="settings_tutorial">Ikusi tutoriala</string>
+    <string name="settings_tutorial_subtitle">Berrikusi funtzio nagusiak</string>
+    <!-- Archivos y privacidad reemplaza a las antiguas secciones separadas
+         "Almacenamiento" y "Privacidad y seguridad", mismo contenido,
+         agrupado en una sola sección. -->
+    <string name="settings_section_files_privacy">Fitxategiak eta pribatutasuna</string>
+    <string name="settings_privacy_item">Pribatutasuna</string>
+    <string name="settings_privacy_item_subtitle">Datu-politika eta baimenak</string>
+    <string name="settings_ads_privacy_options">Iragarkien baimena</string>
+    <string name="settings_ads_privacy_options_subtitle">Aldatu iragarkietarako pribatutasun-hobespenak</string>
+    <string name="settings_share_app">Partekatu DocuSmart</string>
+    <string name="settings_share_app_subtitle">Gomendatu aplikazioa zure kontaktuei</string>
+    <string name="settings_rate">Baloratu Play Storen</string>
+    <string name="settings_rate_subtitle">DocuSmart gustatzen zaizu? Utzi iritzi bat!</string>
+    <!-- Ayuda y comunidad reemplaza a "Soporte", ahora también incluye
+         Tutorial (antes en Personalización), Compartir y Valorar (antes en
+         su propia sección sin encabezado propio). -->
+    <string name="settings_section_help_community">Laguntza eta komunitatea</string>
+    <string name="settings_help">Laguntza</string>
+    <string name="settings_help_subtitle">Galdera maiztuak</string>
+    <string name="settings_section_system">Sistema</string>
+    <string name="settings_reset">Berrezarri konfigurazioa</string>
+    <string name="settings_reset_subtitle">Itzuli balio lehenetsietara</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">Ulertuta</string>
+    <string name="settings_storage_conversions">Bihurketak</string>
+    <string name="settings_storage_total">Guztira</string>
+    <string name="settings_storage_files_unit">fitxategi</string>
+    <string name="settings_storage_clear_cache">Garbitu cache-a</string>
+    <string name="settings_privacy_body">DocuSmartek zure pribatutasuna errespetatzen du. Zure dokumentuak inoiz ez dira kanpoko zerbitzarietara igotzen. Prozesamendu guztia zure gailuan bertan gertatzen da.</string>
+    <string name="settings_privacy_manage_permissions">Kudeatu sistemaren baimenak</string>
+    <string name="settings_help_q1">Nola bihurtzen ditut irudiak PDF formatura?</string>
+    <string name="settings_help_a1">Joan Bihurtu → Irudia → hautatu zure irudiak → sakatu Bihurtu.</string>
+    <string name="settings_help_q2">Non gordetzen dira fitxategiak?</string>
+    <string name="settings_help_a2">Sortutako fitxategiak zure gailuko Deskargak karpetan gordetzen dira.</string>
+    <string name="settings_help_q3">Nola gehitzen dut gogoko bat?</string>
+    <string name="settings_help_a3">Sakatu edozein dokumentutako bihotz ikonoa edo erabili ⋮ menua.</string>
+    <string name="settings_help_q4">Nire dokumentuak seguru daude?</string>
+    <string name="settings_help_a4">Bai. Prozesamendu guztia lokala da. Fitxategirik ez da zure gailutik ateratzen.</string>
+    <string name="settings_reset_body">Gaia, azentu-kolorea, letra-tamaina, atzeko plano animatua, soinu-efektuak eta hizkuntza balio lehenetsietara berrezarriko dira, eta sortutako fitxategien cachea garbituko da. Zure dokumentuak ez dira ezabatuko. Jarraitu?</string>
+    <string name="settings_reset_confirm">Berrezarri</string>
+    <string name="settings_about_dialog_title">DocuSmarti buruz</string>
+    <string name="settings_about_body">Dokumentuen ikustaile eta bihurgailu adimenduna. Kudeatu, bihurtu eta antolatu zure fitxategiak modu azkar eta seguruan.</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── Temas ──────────────────────────────────── -->
+    <string name="theme_light">Argia</string>
+    <string name="theme_dark">Iluna</string>
+    <string name="theme_system">Sistema</string>
+    <string name="accent_color_blue">Urdina</string>
+    <string name="accent_color_purple">Morea</string>
+    <string name="accent_color_green">Berdea</string>
+    <string name="accent_color_orange">Laranja</string>
+    <string name="accent_color_pink">Arrosa</string>
+    <string name="accent_color_teal">Turkesa</string>
+    <string name="accent_color_indigo">Indigoa</string>
+    <string name="accent_color_red">Gorria</string>
+    <string name="accent_color_amber">Anbarra</string>
+    <string name="accent_color_cyan">Ziana</string>
+    <string name="font_scale_normal">Normala</string>
+    <string name="font_scale_large">Handia</string>
+    <string name="font_scale_extra_large">Oso handia</string>
+
+    <!-- ── Escáner ────────────────────────────────── -->
+    <string name="scanner_title">Eskanerra abiarazten</string>
+    <string name="scanner_hint">Prestatu dokumentua eta\nzuzendu kamera harengana</string>
+    <string name="scanner_result_title">Eskaneatutako dokumentua</string>
+    <string name="scanner_again">Eskaneatu berriro</string>
+    <string name="scan_result_share_format">Partekatu %1$s</string>
+    <string name="scanner_back">Itzuli hasierara</string>
+
+    <!-- ── Visor ──────────────────────────────────── -->
+    <string name="viewer_error">Errorea dokumentua irekitzean</string>
+    <string name="viewer_back">Itzuli</string>
+    <string name="viewer_rendering">Dokumentua errendatzen…</string>
+    <string name="viewer_unsupported">Formatu hau ez da bateragarria barneko ikustailearekin.</string>
+    <string name="viewer_open_other">Ireki beste aplikazio batekin</string>
+    <string name="viewer_more_options">Aukera gehiago</string>
+    <string name="viewer_convert">Bihurtu</string>
+    <string name="viewer_create_qr">Sortu QRa</string>
+    <string name="viewer_rename">Aldatu izena</string>
+    <string name="viewer_delete">Ezabatu</string>
+    <string name="viewer_rename_title">Aldatu dokumentuaren izena</string>
+    <string name="viewer_rename_label">Fitxategiaren izena</string>
+    <string name="viewer_rename_empty_error">Izena ezin da hutsik egon</string>
+    <string name="viewer_delete_confirm_title">Dokumentu hau ezabatu nahi duzu?</string>
+    <string name="viewer_delete_confirm_body">"%1$s betiko ezabatuko da. Ekintza hau ezin da desegin."</string>
+
+    <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">Gehitu gogokoetara</string>
+    <string name="doc_item_remove_favorite">Kendu gogokoetatik</string>
+    <string name="doc_item_rename_title">Aldatu fitxategiaren izena</string>
+
+    <!-- ── General ────────────────────────────────── -->
+    <string name="general_save">Gorde</string>
+    <string name="general_cancel">Utzi</string>
+    <string name="general_back">Itzuli</string>
+    <string name="general_share">Partekatu</string>
+    <string name="general_delete">Ezabatu</string>
+    <string name="general_close">Itxi</string>
+    <string name="general_saved_downloads">Deskargak karpetan gordeta</string>
+    <string name="general_delete_error">Ezin izan da fitxategia ezabatu</string>
+    <string name="general_error_format">Errorea: %1$s</string>
+
+    <!-- ── PDF Tools descriptions ─────────────────────── -->
+    <string name="pdf_merge_desc">Batu hainbat PDF bakar batean</string>
+    <string name="pdf_split_desc">Atera orrialdeak PDF batetik</string>
+    <string name="pdf_compress_desc">Murriztu fitxategiaren tamaina</string>
+    <string name="pdf_rotate_desc">Biratu dokumentuaren orrialdeak</string>
+    <string name="pdf_number_pages_desc">Gehitu zenbakitzea orrialdearen oinean</string>
+    <string name="pdf_watermark_desc">Gainjarri testua dokumentuaren gainean</string>
+    <string name="pdf_reorder_pages_desc">Arrastatu edo ezabatu orrialde bakoitza</string>
+    <string name="pdf_compare_desc">Aurkitu bi bertsioen arteko ezberdintasunak</string>
+    <string name="pdf_redact_desc">Ezabatu testu eta irudi sentikorrak modu itzulezinean</string>
+    <string name="pdf_crop_desc">Ezabatu orrialde bakoitzeko soberako bazterra</string>
+    <string name="pdf_edit_text_desc">Bilatu eta ordeztu dokumentuan dagoen testua</string>
+    <string name="pdf_sign_desc">Marraztu zure sinadura eta jarri dokumentuaren gainean</string>
+    <string name="pdf_fill_form_desc">Detektatu eta bete PDF formulario bateko testu-eremuak</string>
+    <string name="pdf_ocr_desc">Ezagutu eskaneatutako PDF baten testua bilagarri bihurtzeko</string>
+
+    <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
+    <string name="daily_limit_title">Eguneko muga bete da</string>
+    <string name="daily_limit_body">Gaur %1$d/%2$d %3$s erabili dituzu.</string>
+    <string name="daily_limit_resets_tomorrow">Muga bihar berrezarriko da.</string>
+    <string name="daily_limit_watch_ad">Ikusi iragarkia → +1 erabilera</string>
+    <string name="daily_limit_ad_not_ready">Iragarkia oraindik ez dago erabilgarri</string>
+    <string name="daily_limit_get_premium">Eskuratu Premium → mugarik gabe</string>
+    <string name="pdf_tools_daily_limit_label">tresna honen erabilera</string>
+    <string name="converter_daily_limit_label">bihurketa</string>
+    <string name="scan_daily_save_limit_label">gordetako eskaneatze</string>
+    <string name="converter_daily_limit_reached_error">Eguneko bihurketa-muga bete da</string>
+    <string name="converter_batch_save_error">Ezin izan dira fitxategi guztiak Deskarguak karpetan gorde</string>
+
+    <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
+    <string name="pdf_tools_back_to_tools">Itzuli tresnetara</string>
+    <string name="pdf_tools_usage_today">Gaurko erabilerak: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">Gorde Deskargak karpetan</string>
+    <string name="pdf_tools_share">Partekatu PDFa</string>
+    <string name="pdf_tools_share_error">Ezin izan da fitxategia partekatu</string>
+    <string name="pdf_tools_save_error">Ezin izan da Deskargak karpetan gorde</string>
+    <string name="pdf_tools_new_operation">Eragiketa berria</string>
+    <string name="pdf_tools_default_filename">fitxategia.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">Hautatu PDFa</string>
+    <string name="pdf_tools_filename_label">Irteerako fitxategiaren izena</string>
+    <string name="pdf_tools_filename_placeholder">Adib.: Dokumentuak_Batuta</string>
+    <string name="pdf_tools_filename_hint">Hutsik uzten baduzu, izen automatiko bat sortuko da</string>
+
+    <!-- ── Unir PDFs ── -->
+    <string name="pdf_merge_subtitle">Hautatu 2 PDF edo gehiago bakar batean batzeko</string>
+    <string name="pdf_merge_select_prompt">Sakatu PDFak hautatzeko</string>
+    <string name="pdf_merge_add_more">Gehitu PDF gehiago</string>
+    <string name="pdf_merge_order_hint">PDFak erakutsitako ordenan batuko dira</string>
+    <string name="pdf_merge_remove_desc">Kendu</string>
+    <string name="pdf_merge_file_fallback">%1$d. fitxategia</string>
+    <string name="pdf_merge_progress">%1$d PDF batzen…</string>
+    <string name="pdf_merge_select_at_least_2">Hautatu gutxienez 2 PDF</string>
+    <string name="pdf_merge_execute">Batu %1$d PDF</string>
+    <string name="pdf_merge_min_pdfs_error">Hautatu gutxienez 2 PDF batzeko</string>
+    <string name="pdf_merge_read_error">Ezin izan da hautatutako PDFen orrialderik irakurri.</string>
+    <string name="pdf_merge_generate_error">Errorea PDF batua sortzean.</string>
+    <string name="pdf_merge_success">PDFak ongi batu dira — %1$d fitxategi, %2$d orrialde</string>
+    <string name="pdf_merge_error">Errorea PDFak batzean: %1$s</string>
+
+    <!-- ── Dividir PDF ── -->
+    <string name="pdf_split_subtitle">Atera zure PDFeko orrialde-tarte bat</string>
+    <string name="pdf_split_selected">Hautatutako PDFa</string>
+    <string name="pdf_split_range_title">Atera beharreko orrialde-tartea</string>
+    <string name="pdf_split_from_page">Orrialdetik</string>
+    <string name="pdf_split_to_page">Orrialderaino</string>
+    <string name="pdf_split_summary">%1$d orrialde aterako dira · Orrialdeak: %2$d - %3$d</string>
+    <string name="pdf_split_progress">PDFa zatitzen…</string>
+    <string name="pdf_split_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_split_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_split_range_too_small">Tarteak gutxienez 2 orrialde izan behar ditu. PDFak %1$d orrialde ditu.</string>
+    <string name="pdf_split_generate_error">Errorea PDF zatitua sortzean.</string>
+    <string name="pdf_split_success">PDFa zatituta: %1$d orrialde atera dira · %2$d KB</string>
+    <string name="pdf_split_error">Errorea zatitzean: %1$s</string>
+
+    <!-- ── Comprimir PDF ── -->
+    <string name="pdf_compress_subtitle">Murriztu zure PDFaren tamaina irakurgarritasuna galdu gabe</string>
+    <string name="pdf_compress_ready">PDFa konprimitzeko prest</string>
+    <string name="pdf_compress_level_title">Konpresio-maila</string>
+    <string name="pdf_compress_level_high_quality">Kalitate handia</string>
+    <string name="pdf_compress_level_balanced">Orekatua</string>
+    <string name="pdf_compress_level_high_compression">Konpresio handia</string>
+    <string name="pdf_compress_level_max_compression">Konpresio maximoa</string>
+    <string name="pdf_compress_smaller">Txikiagoa</string>
+    <string name="pdf_compress_better_quality">Kalitate hobea</string>
+    <string name="pdf_compress_reduction_10_20">Murrizketa estimatua: %10-%20</string>
+    <string name="pdf_compress_reduction_30_50">Murrizketa estimatua: %30-%50</string>
+    <string name="pdf_compress_reduction_50_70">Murrizketa estimatua: %50-%70</string>
+    <string name="pdf_compress_reduction_70_85">Murrizketa estimatua: %70-%85</string>
+    <string name="pdf_compress_progress">PDFa konprimitzen…</string>
+    <string name="pdf_compress_read_error">Ezin izan da fitxategia irakurri. Egiaztatu PDF baliozkoa dela.</string>
+    <string name="pdf_compress_empty_file">PDF fitxategia hutsik dago edo hondatuta dago.</string>
+    <string name="pdf_compress_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_compress_generate_error">Errorea PDF konprimitua sortzean.</string>
+    <string name="pdf_compress_already_optimized">PDFa jada optimizatuta dago · Tamaina: %1$d KB</string>
+    <string name="pdf_compress_success">Lehen: %1$d KB → Orain: %2$d KB · Murrizketa: %3$d%%</string>
+    <string name="pdf_compress_error">Errorea konprimitzean: %1$s</string>
+
+    <!-- ── Rotar PDF ── -->
+    <string name="pdf_rotate_subtitle">Biratu dokumentuaren orrialde guztiak</string>
+    <string name="pdf_rotate_ready">PDFa biratzeko prest</string>
+    <string name="pdf_rotate_preview_title">Aurrebista eta biraketa-angelua</string>
+    <string name="pdf_rotate_preview_placeholder">Hautatu PDF bat\naurrebista ikusteko</string>
+    <string name="pdf_rotate_loading_preview">Aurrebista kargatzen…</string>
+    <string name="pdf_rotate_preview_desc">Biratutako aurrebista</string>
+    <string name="pdf_rotate_angle_90">90° biraketa erlojuaren noranzkoan</string>
+    <string name="pdf_rotate_angle_180">Buelta erdiko biraketa (buruz behera)</string>
+    <string name="pdf_rotate_angle_270">90° biraketa erlojuaren aurkako noranzkoan</string>
+    <string name="pdf_rotate_progress">PDFa %1$d° biratzen…</string>
+    <string name="pdf_rotate_execute">Biratu PDFa %1$d°</string>
+    <string name="pdf_rotate_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_rotate_generate_error">Errorea PDF biratua sortzean.</string>
+    <string name="pdf_rotate_success">PDFa %1$d° ongi biratu da</string>
+    <string name="pdf_rotate_error">Errorea PDFa biratzean: %1$s</string>
+
+    <!-- ── Numerar páginas ── -->
+    <string name="pdf_number_pages_subtitle">Gehitu orrialde-zenbakia orrialde bakoitzaren oinean</string>
+    <string name="pdf_number_pages_ready">PDFa zenbakitzeko prest</string>
+    <string name="pdf_number_pages_format_title">Zenbakitze-formatua</string>
+    <string name="pdf_number_pages_format_number_only">Zenbakia</string>
+    <string name="pdf_number_pages_format_number_of_total">Zenb. / Guztira</string>
+    <string name="pdf_number_pages_format_page_of_total">X orrialdea</string>
+    <string name="pdf_number_pages_example_number_only">Adibidez: 3</string>
+    <string name="pdf_number_pages_example_number_of_total">Adibidez: 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">Adibidez: 3. orrialdea 10etik</string>
+    <string name="pdf_number_pages_progress">Orrialdeak zenbakitzen…</string>
+    <string name="pdf_number_pages_execute">Zenbakitu orrialdeak</string>
+    <string name="pdf_number_pages_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_number_pages_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_number_pages_generate_error">Errorea PDF zenbakitua sortzean.</string>
+    <string name="pdf_number_pages_success">PDFa ongi zenbakitu da — %1$d orrialde</string>
+    <string name="pdf_number_pages_error">Errorea orrialdeak zenbakitzean: %1$s</string>
+    <string name="pdf_number_pages_footer_template">%2$d(e)tik %1$d. orrialdea</string>
+
+    <!-- ── Marca de agua ── -->
+    <string name="pdf_watermark_subtitle">Gainjarri testu diagonal eta erdi-gardena orrialde bakoitzean</string>
+    <string name="pdf_watermark_ready">PDFa marka jartzeko prest</string>
+    <string name="pdf_watermark_text_label">Ur-markaren testua</string>
+    <string name="pdf_watermark_text_placeholder">Adib.: KONFIDENTZIALA</string>
+    <string name="pdf_watermark_hint">Testua diagonalean eta erdi-gardentasunez agertuko da orrialde bakoitzean</string>
+    <string name="pdf_watermark_progress">Ur-marka ezartzen…</string>
+    <string name="pdf_watermark_execute">Ezarri ur-marka</string>
+    <string name="pdf_watermark_empty_text_error">Idatzi ur-markaren testua</string>
+    <string name="pdf_watermark_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_watermark_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_watermark_generate_error">Errorea ur-marka duen PDFa sortzean.</string>
+    <string name="pdf_watermark_success">Ur-marka ongi ezarri da — %1$d orrialde</string>
+    <string name="pdf_watermark_error">Errorea ur-marka ezartzean: %1$s</string>
+
+    <!-- ── Reordenar páginas ── -->
+    <string name="pdf_reorder_pages_subtitle">Arrastatu miniaturak berrantolatzeko edo ezabatu orrialdeak</string>
+    <string name="pdf_reorder_pages_ready">PDFa berrantolatzeko prest</string>
+    <string name="pdf_reorder_pages_hint">Eutsi sakatuta arrastatze-ikonoari orrialde bat beste posizio batera eramateko</string>
+    <string name="pdf_reorder_pages_page_label">%1$d. orrialdea</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">Arrastatu berrantolatzeko</string>
+    <string name="pdf_reorder_pages_progress">Ordena berria gordetzen…</string>
+    <string name="pdf_reorder_pages_execute">Gorde aldaketak</string>
+    <string name="pdf_reorder_pages_empty_order_error">Gutxienez orrialde bat mantendu behar duzu</string>
+    <string name="pdf_reorder_pages_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_reorder_pages_generate_error">Errorea PDF berrantolatua sortzean.</string>
+    <string name="pdf_reorder_pages_success">PDFa ongi eguneratu da — %1$d orrialde</string>
+    <string name="pdf_reorder_pages_error">Errorea orrialdeak berrantolatzean: %1$s</string>
+
+    <!-- ── Comparar PDFs ── -->
+    <string name="pdf_compare_subtitle">Hautatu bi PDF haien edukia alderatzeko</string>
+    <string name="pdf_compare_document_a">A dokumentua</string>
+    <string name="pdf_compare_document_b">B dokumentua</string>
+    <string name="pdf_compare_ready">PDFa alderatzeko prest</string>
+    <string name="pdf_compare_progress">Dokumentuak alderatzen…</string>
+    <string name="pdf_compare_execute">Alderatu PDFak</string>
+    <string name="pdf_compare_read_error_a">Ezin izan da A dokumentua irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_compare_read_error_b">Ezin izan da B dokumentua irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_compare_generate_error">Errorea alderaketa-txostena sortzean.</string>
+    <string name="pdf_compare_identical">Bi dokumentuak berdinak dira</string>
+    <string name="pdf_compare_differences_found">%2$d orrialdetik %1$dek ezberdintasunak dituzte</string>
+    <string name="pdf_compare_error">Errorea PDFak alderatzean: %1$s</string>
+    <string name="pdf_compare_report_title">Alderaketa-txostena</string>
+    <string name="pdf_compare_report_page_header">%1$d. orrialdea</string>
+    <string name="pdf_compare_report_page_only_in_a">Orrialde hau A dokumentuan bakarrik existitzen da</string>
+    <string name="pdf_compare_report_page_only_in_b">Orrialde hau B dokumentuan bakarrik existitzen da</string>
+    <string name="pdf_compare_report_only_in_a_line">A-n bakarrik: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">B-n bakarrik: %1$s</string>
+
+    <!-- ── Censurar contenido ── -->
+    <string name="pdf_redact_subtitle">Marraztu laukizuzenak zentsuratu nahi dituzun eremuen gainean</string>
+    <string name="pdf_redact_ready">PDFa zentsuratzeko prest</string>
+    <string name="pdf_redact_page_indicator">%1$d / %2$d orrialdea</string>
+    <string name="pdf_redact_prev_page">Aurreko orrialdea</string>
+    <string name="pdf_redact_next_page">Hurrengo orrialdea</string>
+    <string name="pdf_redact_loading_preview">Aurrebista kargatzen…</string>
+    <string name="pdf_redact_preview_desc">Orrialdearen aurrebista</string>
+    <string name="pdf_redact_draw_hint">Arrastatu aurrebistaren gainean zentsuratu beharreko eremu bat markatzeko</string>
+    <string name="pdf_redact_zones_marked">%1$d eremu markatuta</string>
+    <string name="pdf_redact_undo">Desegin</string>
+    <string name="pdf_redact_clear_all">Ezabatu dena</string>
+    <string name="pdf_redact_execute">Zentsuratu PDFa</string>
+    <string name="pdf_redact_progress">Edukia zentsuratzen…</string>
+    <string name="pdf_redact_empty_rects_error">Markatu gutxienez eremu bat zentsuratzeko</string>
+    <string name="pdf_redact_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_redact_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_redact_generate_error">Errorea PDF zentsuratua sortzean.</string>
+    <string name="pdf_redact_success">%1$d eremu ongi zentsuratu dira</string>
+    <string name="pdf_redact_error">Errorea PDFa zentsuratzean: %1$s</string>
+
+    <!-- ── Recortar páginas ── -->
+    <string name="pdf_crop_subtitle">Doitu moztuko den bazterra eta aurreikusi emaitza</string>
+    <string name="pdf_crop_ready">PDFa mozteko prest</string>
+    <string name="pdf_crop_preview_title">Aurrebista</string>
+    <string name="pdf_crop_preview_placeholder">Hautatu PDF bat aurrebista ikusteko</string>
+    <string name="pdf_crop_loading_preview">Aurrebista kargatzen…</string>
+    <string name="pdf_crop_preview_desc">Moztutako aurrebista</string>
+    <string name="pdf_crop_margin_label">Moztu beharreko bazterra: %1$d%%</string>
+    <string name="pdf_crop_execute">Moztu PDFa</string>
+    <string name="pdf_crop_progress">Orrialdeak mozten…</string>
+    <string name="pdf_crop_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_crop_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_crop_generate_error">Errorea PDF moztua sortzean.</string>
+    <string name="pdf_crop_success">PDFa ongi moztu da — %1$d%% bazterra</string>
+    <string name="pdf_crop_error">Errorea PDFa moztean: %1$s</string>
+
+    <!-- ── Editar texto ── -->
+    <string name="pdf_edit_text_subtitle">Idatzi bilatu beharreko testua eta ordezko testua</string>
+    <string name="pdf_edit_text_ready">PDFa editatzeko prest</string>
+    <string name="pdf_edit_text_search_label">Bilatu</string>
+    <string name="pdf_edit_text_search_placeholder">Bilatu beharreko testua</string>
+    <string name="pdf_edit_text_replace_label">Ordeztu honekin</string>
+    <string name="pdf_edit_text_replace_placeholder">Ordezko testua (hutsik ezabatzeko)</string>
+    <string name="pdf_edit_text_hint">Testua maiuskula/minuskulak bereizi gabe bilatzen da eta agerraldi guztietan ordezten da</string>
+    <string name="pdf_edit_text_execute">Aplikatu aldaketak</string>
+    <string name="pdf_edit_text_progress">Testua editatzen…</string>
+    <string name="pdf_edit_text_empty_search_error">Idatzi bilatu nahi duzun testua</string>
+    <string name="pdf_edit_text_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_edit_text_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_edit_text_no_matches_error">Ez da testu hori dokumentuan aurkitu</string>
+    <string name="pdf_edit_text_generate_error">Errorea PDF editatua sortzean.</string>
+    <string name="pdf_edit_text_success">%1$d agerraldi ongi ordeztu dira</string>
+    <string name="pdf_edit_text_error">Errorea PDFa editatzean: %1$s</string>
+
+    <!-- ── Firmar PDF ── -->
+    <string name="pdf_sign_subtitle">Aukeratu orrialdea eta marraztu zure sinadura hatzarekin</string>
+    <string name="pdf_sign_ready">PDFa sinatzeko prest</string>
+    <string name="pdf_sign_page_indicator">%1$d / %2$d orrialdea</string>
+    <string name="pdf_sign_prev_page">Aurreko orrialdea</string>
+    <string name="pdf_sign_next_page">Hurrengo orrialdea</string>
+    <string name="pdf_sign_draw_label">Zure sinadura</string>
+    <string name="pdf_sign_draw_hint">Marraztu zure sinadura hatzarekin goiko laukian</string>
+    <string name="pdf_sign_hint">Oraindik ez duzu zure sinadura marraztu</string>
+    <string name="pdf_sign_captured">Sinadura harrapatuta</string>
+    <string name="pdf_sign_clear">Ezabatu</string>
+    <string name="pdf_sign_execute">Sinatu PDFa</string>
+    <string name="pdf_sign_progress">Dokumentua sinatzen…</string>
+    <string name="pdf_sign_empty_signature_error">Marraztu zure sinadura jarraitu aurretik</string>
+    <string name="pdf_sign_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_sign_no_pages">PDFak ez du orrialderik.</string>
+    <string name="pdf_sign_generate_error">Errorea PDF sinatua sortzean.</string>
+    <string name="pdf_sign_success">PDFa ongi sinatu da — %1$d orrialdea</string>
+    <string name="pdf_sign_error">Errorea PDFa sinatzean: %1$s</string>
+
+    <!-- ── Rellenar formulario ── -->
+    <string name="pdf_fill_form_subtitle">Hautatu formulario-eremuak dituen PDF bat eta bete itzazu</string>
+    <string name="pdf_fill_form_ready">PDFa betetzeko prest</string>
+    <string name="pdf_fill_form_detecting">Formularioaren eremuak detektatzen…</string>
+    <string name="pdf_fill_form_no_fields">PDF honek ez du testu-formulario eremurik</string>
+    <string name="pdf_fill_form_fields_title">%1$d eremu detektatu dira</string>
+    <string name="pdf_fill_form_execute">Bete formularioa</string>
+    <string name="pdf_fill_form_progress">Formularioa betetzen…</string>
+    <string name="pdf_fill_form_empty_values_error">Ez dago betetzeko baliorik</string>
+    <string name="pdf_fill_form_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_fill_form_no_fields_error">PDF honek ez du betetzeko formulario-eremurik</string>
+    <string name="pdf_fill_form_generate_error">Errorea betetako formularioa duen PDFa sortzean.</string>
+    <string name="pdf_fill_form_success">%1$d eremu ongi bete dira</string>
+    <string name="pdf_fill_form_error">Errorea formularioa betetzean: %1$s</string>
+    <string name="pdf_ocr_subtitle">Hautatu eskaneatutako PDF bat testua ezagutzeko</string>
+    <string name="pdf_ocr_ready">PDFa ezagutzeko prest</string>
+    <string name="pdf_ocr_info">Testu-geruza ikusezin bat gehituko da eskaneatutako orrialde bakoitzaren gainean, itxura aldatu gabe — emaitzako PDFa bilagarria eta testu hautagarria izango du. Orrialde bakoitzeko segundo batzuk behar izan ditzake.</string>
+    <string name="pdf_ocr_execute">Ezagutu testua</string>
+    <string name="pdf_ocr_progress">Testua ezagutzen…</string>
+    <string name="pdf_ocr_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_ocr_no_pages">PDFak ez du prozesatzeko orrialderik</string>
+    <string name="pdf_ocr_already_has_text">PDF honek jada testu hautagarria du orrialde guztietan — ez da beharrezkoa OCR aplikatzea</string>
+    <string name="pdf_ocr_no_text_found">Ez da testurik ezagutu eskaneatutako PDFean</string>
+    <string name="pdf_ocr_generate_error">Errorea ezagututako testua duen PDFa sortzean.</string>
+    <string name="pdf_ocr_success">%1$d orrialde prozesatu dira, %2$d hitz ezagutu dira</string>
+    <string name="pdf_ocr_error">Errorea testua ezagutzean: %1$s</string>
+
+    <!-- ── Home empty state ───────────────────────────── -->
+
+    <!-- ── Converter categorías ──────────────────────── -->
+    <string name="converter_select_files">Sakatu %1$s hautatzeko</string>
+    <string name="converter_files_selected">%1$d fitxategi hautatuta</string>
+    <string name="converter_formats">Formatuak: %1$s</string>
+    <string name="converter_capture_camera">Kapturatu kamerarekin</string>
+    <string name="converter_to_format">Bihurtu %1$s formatura</string>
+    <string name="converter_file_name_label">Fitxategiaren izena</string>
+    <string name="converter_file_name_placeholder">Izen automatikoa</string>
+    <string name="format_name_image">Irudia</string>
+    <string name="converter_success_title">Bihurketa arrakastatsua!</string>
+    <string name="converter_success_page_count_size">%1$d orrialde · %2$d KB</string>
+    <string name="converter_saved_to_downloads">Deskargak karpetan gordeta</string>
+    <string name="converter_share">Partekatu fitxategia</string>
+    <string name="converter_convert_another">Bihurtu beste fitxategi bat</string>
+    <string name="general_back_action">Itzuli</string>
+
+    <!-- ── Converter: conversión por lotes (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">Fitxategi bakoitzak jatorrizko izena mantenduko du</string>
+    <string name="converter_convert_batch_button">Bihurtu %1$d fitxategi</string>
+    <string name="converter_batch_success_title">%2$d fitxategitik %1$d bihurtu dira</string>
+    <string name="converter_batch_save_all">Gorde denak Deskargak karpetan</string>
+    <string name="converter_batch_convert_another">Bihurtu beste lote bat</string>
+    <string name="converter_progress_title">Bihurtzen…</string>
+    <string name="converter_progress_subtitle">%1$d fitxategi prozesatzen</string>
+    <string name="converter_progress_footer">Itxaron mesedez, ez itxi aplikazioa</string>
+
+    <string name="splash_tagline">ESKANEATU · ANTOLATU</string>
+
+    <!-- ── Onboarding ─────────────────────────────────── -->
+    <string name="onboarding_1_title">Ongi etorri DocuSmartera</string>
+    <string name="onboarding_1_desc">Zure dokumentu-kudeatzaile adimenduna. Ireki, antolatu eta bihurtu zure fitxategiak modu azkar eta seguruan.</string>
+    <string name="onboarding_2_title">Bihurtu edozein formatu</string>
+    <string name="onboarding_2_desc">PDF eta irudiak, eta gehiago etorriko da. Sinplifikatu zure bihurketak berehala.</string>
+    <string name="onboarding_3_title">Babestu zure dokumentuak</string>
+    <string name="onboarding_3_desc">Gorde fitxategiak zure kutxa gotor pertsonalean PINarekin edo hatz-markarekin. Zure pribatutasuna lehenengo.</string>
+    <string name="onboarding_4_title">Ikasketa modua</string>
+    <string name="onboarding_4_desc">DocuSmartek zuretzat irakurtzen du, ahotsez oharrak hartzen ditu eta Pomodoro tenporizadorea erabiltzen du ikasten laguntzeko.</string>
+    <string name="onboarding_5_title">Lotu zure dokumentuak</string>
+    <string name="onboarding_5_desc">Aukeratu zure fitxategiak gordetzen dituzun gailuko karpeta, Liburutegian ikusteko. Zuk bakarrik izango duzu sarbidea — orain edo geroago Ezarpenetatik egin dezakezu.</string>
+    <string name="onboarding_folder_linked">Lotuta: %1$s</string>
+    <string name="onboarding_folder_change">Aldatu karpeta</string>
+    <string name="onboarding_folder_link_button">Lotu karpeta</string>
+    <string name="onboarding_skip">Saltatu</string>
+    <string name="onboarding_start">Hasi!</string>
+    <string name="onboarding_next">Hurrengoa</string>
+
+    <!-- ── Premium ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">Hilabetekoa</string>
+    <string name="premium_plan_annual">Urtekoa</string>
+    <string name="premium_period_month">hilean</string>
+    <string name="premium_period_year">urtean</string>
+    <!-- Se lee con stringResource() plano, nunca con args de formato: el
+         "%" es literal, no un placeholder (bug real corregido 2026-09-03:
+         antes decía "44%%" porque alguien lo escapó como si fuera a pasar
+         por String.format, mostrando el "%" duplicado en pantalla). -->
+    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">%44 aurreztu</string>
+    <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
+         configurada una fase de prueba real para el producto, nunca se
+         muestran como texto fijo sin que Play Billing la confirme. -->
+    <string name="premium_trial_badge">%1$d egun doan</string>
+    <string name="premium_start_trial">Hasi %1$d egun doan</string>
+    <string name="premium_trial_active_message">Doako proba aktibo — ordainketa: %1$s</string>
+    <!-- Trial automático sin tarjeta (pedido explícito del usuario
+         2026-09-12): todo el que instala la app tiene unos días de Premium
+         completo gratis sin suscribirse a nada. -->
+    <string name="premium_auto_trial_title">Probatu Premium doan</string>
+    <string name="premium_auto_trial_body">%1$d egun geratzen zaizkizu sarbide osoarekin, iragarkirik gabe. Aukeratu plan bat amaitu aurretik, ez galtzeko.</string>
+    <string name="premium_feature_no_ads_title">Iragarkirik gabe</string>
+    <string name="premium_feature_no_ads_desc">Gozatu DocuSmartez etenik gabe</string>
+    <string name="premium_feature_pdf_word_title">PDF Word-era</string>
+    <string name="premium_feature_pdf_word_desc">Bihurtu PDFak dokumentu editagarri</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">Bihurtu eskaneatutako PDFak testu erreal eta bilagarria duten dokumentu</string>
+    <string name="premium_feature_compress_title">Konpresio aurreratua</string>
+    <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">Murriztu PDFak %90 arte, ikusizko kalitate-galerarik gabe</string>
+    <string name="premium_feature_unlimited_title">Bihurketa mugagabeak</string>
+    <string name="premium_feature_unlimited_desc">Eguneko bihurketa-mugarik gabe</string>
+    <string name="premium_you_are_premium">Premium zara!</string>
+    <string name="premium_enjoy_unlimited">Gozatu funtzio guztiez mugarik gabe</string>
+    <string name="premium_processing_purchase">Erosketa prozesatzen…</string>
+    <string name="premium_get_plan">Eskuratu %1$s — %2$s</string>
+    <string name="premium_select_plan">Hautatu plan bat</string>
+    <string name="premium_restore_purchases">Berrezarri erosketak</string>
+    <string name="premium_continue_free">Jarraitu bertsio dohainekoarekin</string>
+    <string name="premium_terms">Harpidetzean Zerbitzu Baldintzak eta Pribatutasun Politika onartzen dituzu. Harpidetza automatikoki berritzen da. Utzi nahi duzunean.</string>
+    <string name="premium_active_title">Zure harpidetza aktibo dago</string>
+    <string name="premium_active_body">DocuSmart Premium-eko funtzio guztietarako sarbide osoa duzu</string>
+    <string name="premium_continue">Jarraitu</string>
+    <string name="premium_all_you_get">Eskuratzen duzun guztia</string>
+    <string name="premium_choose_plan">Aukeratu zure plana</string>
+    <string name="premium_recommended">Gomendatua</string>
+    <string name="premium_purchase_error">Ezin izan da erosketa osatu. Saiatu berriro.</string>
+    <string name="premium_no_purchases_found">Ez da aurreko erosketarik aurkitu</string>
+    <string name="premium_purchase_pending">Zure erosketa baieztapenaren zain dago (adibidez, eskudiruzko ordainketa). Automatikoki aktibatuko da osatzean.</string>
+    <string name="premium_restore_success">Erosketa berrezarri da — jada Premium duzu</string>
+
+    <!-- ── Escáner (adicional) ─────────────────────────── -->
+    <string name="scanner_start_error">Ezin izan da eskanerra abiarazi: %1$s</string>
+
+    <!-- ── Seguridad ─────────────────────────────────── -->
+    <string name="security_title">Segurtasuna</string>
+    <string name="security_subtitle">Babestu zure dokumentuak</string>
+    <string name="security_what_to_do">Zer egin nahi duzu?</string>
+    <string name="security_secure_folder">Karpeta Segurua</string>
+    <string name="security_secure_folder_desc">Gorde fitxategiak PINarekin eta biometriarekin babestuta. Zuk bakarrik sar zaitezke.</string>
+    <string name="security_pin_required">PIN behar da</string>
+    <string name="security_pdf_password">PDF pasahitza</string>
+    <string name="security_pdf_password_desc">Gehitu edo kendu pasahitza PDF fitxategiei. Berehalako sarbidea PINik gabe.</string>
+    <string name="security_no_pin">PINik gabe</string>
+    <string name="security_pin_incorrect">PIN okerra</string>
+    <string name="security_biometric_error">Errorea: %1$s</string>
+    <string name="security_biometric_not_recognized">Ez da biometria ezagutu</string>
+    <string name="security_biometric_title">DocuSmart — Karpeta Segurua</string>
+    <string name="security_biometric_subtitle">Erabili zure hatz-marka edo aurpegia sartzeko</string>
+    <string name="security_biometric_use_pin">Erabili PIN</string>
+    <string name="security_file_protected_success">Fitxategia ongi babestu da</string>
+    <string name="security_file_protect_error">Ezin izan da fitxategia babestu</string>
+    <string name="security_save_downloads_success">Deskargak karpetan gordeta: %1$s</string>
+    <string name="security_save_downloads_error">Ezin izan da Deskargak karpetan gorde</string>
+    <string name="pdf_pw_read_error">Ezin izan da fitxategia irakurri</string>
+    <string name="pdf_pw_empty_file">Fitxategia hutsik dago</string>
+    <string name="pdf_pw_protect_success">PDFa ongi babestu da</string>
+    <string name="pdf_pw_protect_generate_error">Babestutako fitxategia ez da behar bezala sortu (%1$d byte)</string>
+    <string name="pdf_pw_protect_error">Ezin izan da PDFa babestu: %1$s</string>
+    <string name="pdf_pw_remove_success">Pasahitza ongi ezabatu da</string>
+    <string name="pdf_pw_remove_generate_error">Pasahitzik gabeko fitxategia ez da behar bezala sortu (%1$d byte)</string>
+    <string name="pdf_pw_remove_error">Ezin izan da PDFa prozesatu: %1$s</string>
+    <string name="pdf_pw_wrong_password">Pasahitz okerra</string>
+    <string name="pdf_pw_wrong_password_retry">Pasahitz okerra. Egiaztatu eta saiatu berriro.</string>
+    <string name="security_enter_pin">Sartu zure PINa</string>
+    <string name="security_setup_pin_title">Konfiguratu zure PINa</string>
+    <string name="security_setup_pin_desc">Babestu zure fitxategiak 4 digituko PIN batekin</string>
+    <string name="security_configure_pin_button">Konfiguratu PINa</string>
+    <string name="security_use_biometric">Erabili biometria</string>
+    <string name="security_delete_desc">Ezabatu</string>
+    <string name="security_confirm_pin">Berretsi zure PINa</string>
+    <string name="security_create_pin">Sortu zure PINa</string>
+    <string name="security_confirm_pin_desc">Sartu PINa berriro berresteko</string>
+    <string name="security_create_pin_desc">Aukeratu 4 digituko PIN bat zure karpeta babesteko</string>
+    <string name="security_pins_dont_match">PINak ez datoz bat</string>
+    <string name="security_setup_pin_error">Ezin izan da PINa gorde. Saiatu berriro.</string>
+    <string name="security_forgot_pin">PINa ahaztu duzu?</string>
+    <string name="security_reset_pin_dialog_title">Berrezarri PINa</string>
+    <string name="security_reset_pin_dialog_body">Zure Karpeta Seguruko fitxategi guztiak ezabatuko dira. Ekintza hau ezin da desegin.</string>
+    <string name="security_reset_pin_confirm">Berrezarri eta ezabatu</string>
+    <string name="security_files_protected_count">%1$d fitxategi babestuta</string>
+    <string name="security_protect_new_file">Babestu fitxategi berria</string>
+    <string name="security_config_section">Konfigurazioa</string>
+    <string name="security_change_pin">Aldatu PINa</string>
+    <string name="security_biometric_unlock">Desblokeo biometrikoa</string>
+    <string name="security_protected_files_title">Babestutako fitxategiak</string>
+    <string name="security_no_protected_files">Ez dago babestutako fitxategirik</string>
+    <string name="security_no_protected_files_hint">Sakatu \"Babestu fitxategi berria\" fitxategiak gehitzeko</string>
+    <string name="security_restore">Berreskuratu</string>
+    <string name="security_protect_file_dialog_title">Babestu fitxategia</string>
+    <string name="pdf_pw_screen_subtitle">Babestu edo desblokeatu zure PDFak</string>
+    <string name="pdf_pw_mode_protect_title">Babestu PDFa</string>
+    <string name="pdf_pw_mode_protect_desc">Gehitu pasahitz bat PDF fitxategi bati. Pasahitza duenak bakarrik irekiko du.</string>
+    <string name="pdf_pw_mode_remove_title">Kendu pasahitza</string>
+    <string name="pdf_pw_mode_remove_desc">Ezabatu PDF baten babesa. Uneko pasahitza beharko duzu desblokeatzeko.</string>
+    <string name="pdf_pw_protect_section_title">Babestu PDFa pasahitzarekin</string>
+    <string name="pdf_pw_selected_placeholder">Hautatutako PDFa</string>
+    <string name="pdf_pw_tap_to_select">Sakatu PDFa hautatzeko</string>
+    <string name="pdf_pw_ready_to_protect">PDFa babesteko prest</string>
+    <string name="pdf_pw_new_password_label">Pasahitz berria</string>
+    <string name="pdf_pw_confirm_password_label">Berretsi pasahitza</string>
+    <string name="pdf_pw_passwords_dont_match">Pasahitzak ez datoz bat</string>
+    <string name="pdf_pw_protected_success_title">PDFa arrakastaz babestu da</string>
+    <string name="pdf_pw_save_downloads_button">Gorde Deskargak karpetan</string>
+    <string name="pdf_pw_protect_button">Babestu PDFa</string>
+    <string name="pdf_pw_remove_section_title">Kendu pasahitza PDFari</string>
+    <string name="pdf_pw_tap_to_select_protected">Sakatu babestutako PDFa hautatzeko</string>
+    <string name="pdf_pw_ready">PDFa prest</string>
+    <string name="pdf_pw_current_password_label">PDFaren uneko pasahitza</string>
+    <string name="pdf_pw_current_password_placeholder">Sartu pasahitza desblokeatzeko</string>
+    <string name="pdf_pw_remove_warning">Emaitzako PDFak ez du pasahitzik izango eta edonork ireki ahal izango du.</string>
+    <string name="pdf_pw_removed_success_title">Pasahitza arrakastaz ezabatu da</string>
+    <string name="pdf_pw_remove_button">Kendu pasahitza</string>
+    <string name="pdf_pw_default_document_name">dokumentua</string>
+    <string name="scan_result_title">Eskaneatzearen emaitza</string>
+    <string name="scan_result_subtitle_pages">%1$d orrialde</string>
+    <string name="scan_result_preview">Aurrebista</string>
+    <string name="scan_result_page_content_desc">%1$d. orrialdea</string>
+    <string name="scan_result_filename_label">Fitxategiaren izena</string>
+    <string name="scan_result_filename_placeholder">Adib.: Eskaneatutako_dokumentua</string>
+    <string name="scan_result_filename_hint">Hutsik uzten baduzu, izen automatiko bat sortuko da</string>
+    <string name="scan_result_generating_format">%1$s sortzen…</string>
+    <string name="scan_result_default_name_prefix">Eskaneatzea_%1$s</string>
+    <string name="scan_result_export_format_label">Irteerako formatua</string>
+    <string name="scan_result_generate_format">Sortu %1$s</string>
+    <string name="scan_result_high_res_title">Bereizmen handia</string>
+    <string name="scan_result_high_res_desc">PDF zorrotzagoa, inprimatzeko edo artxibatzeko aproposa</string>
+    <string name="scan_result_high_res_premium_content_desc">Premium funtzioa</string>
+    <string name="scan_session_title">Eskaneatutako fitxategiak</string>
+    <string name="scan_session_scan_another">Eskaneatu beste dokumentu bat</string>
+    <string name="scan_edit_page_content_desc">Editatu %1$d. orrialdea</string>
+    <string name="scan_edit_button_label">Doitu</string>
+    <string name="scan_edit_title">Editatu orrialdea</string>
+    <string name="scan_edit_brightness">Distira: %1$d%%</string>
+    <string name="scan_edit_contrast">Kontrastea: %1$d%%</string>
+    <string name="scan_edit_scale">Eskala</string>
+    <string name="scan_edit_apply">Aplikatu</string>
+    <string name="scan_page_count">%2$d(e)tik %1$d orrialde</string>
+    <string name="scan_add_page">Gehitu orrialdea</string>
+    <string name="scan_page_limit_title">Orrialde-muga bete da</string>
+    <string name="scan_page_limit_body">Dokumentu honek jada %2$d(e)tik %1$d orrialde ditu. Ikusi bideo bat orrialde bat gehiago gehitzeko, edo pasa Premiumera mugarik ez izateko.</string>
+    <string name="security_file_protected_original_kept">Fitxategia babestuta. Ezin izan da jatorrizkoa bere kokapenetik ezabatu — ezabatu eskuz erabat kentu nahi baduzu.</string>
+    <string name="security_original_kept_dialog_title">Jatorrizko fitxategia bere lekuan jarraitzen du</string>
+    <string name="security_original_kept_dialog_confirm">Ulertuta</string>
+    <string name="qr_protected_title">Babestutako QR kodea</string>
+    <string name="qr_protected_desc">Eduki hau pasahitz batekin babestuta dago. Sartu ikusteko.</string>
+    <string name="qr_unlock">Desblokeatu</string>
+
+    <!-- ── QR ─────────────────────────────────── -->
+    <string name="qr_reader_title">Irakurri QR kodea</string>
+    <string name="qr_reader_subtitle">Zuzendu kamera QR kodera</string>
+    <string name="qr_camera_permission_needed">Kamerarako sarbidea behar da QR kodeak eskaneatzeko</string>
+    <string name="qr_allow_camera_access">Baimendu kamerarako sarbidea</string>
+    <string name="qr_center_in_frame">Zentratu QR kodea markoan</string>
+    <string name="qr_type_url_detected">URLa detektatuta</string>
+    <string name="qr_type_image_detected">Irudia detektatuta</string>
+    <string name="qr_type_document_detected">Dokumentua detektatuta</string>
+    <string name="qr_type_email_detected">Emaila detektatuta</string>
+    <string name="qr_type_phone_detected">Telefonoa detektatuta</string>
+    <string name="qr_type_text_detected">Testua detektatuta</string>
+    <string name="qr_detected_title">QR kodea detektatu da!</string>
+    <string name="qr_image_content_desc">QRaren irudia</string>
+    <string name="qr_loading_image">Irudia kargatzen…</string>
+    <string name="qr_copied_clipboard">Arbelean kopiatuta</string>
+    <string name="qr_open_browser">Ireki nabigatzailean</string>
+    <string name="qr_copy_url">Kopiatu URLa</string>
+    <string name="qr_open_image">Ireki irudia</string>
+    <string name="qr_copy_link">Kopiatu esteka</string>
+    <string name="qr_open_document">Ireki dokumentua</string>
+    <string name="qr_copy_path">Kopiatu bidea</string>
+    <string name="qr_send_email">Bidali emaila</string>
+    <string name="qr_copy_email">Kopiatu emaila</string>
+    <string name="qr_call">Deitu</string>
+    <string name="qr_copy_number">Kopiatu zenbakia</string>
+    <string name="qr_copy_text">Kopiatu testua</string>
+    <string name="qr_scan_another">Eskaneatu beste kode bat</string>
+    <string name="qr_creator_title">Sortu QR kodea</string>
+    <string name="qr_creator_subtitle">Sortu QRa URL, testu, fitxategi eta gehiagorentzat</string>
+    <string name="qr_chip_url">URLa</string>
+    <string name="qr_chip_text">Testua</string>
+    <string name="qr_chip_email">Emaila</string>
+    <string name="qr_chip_phone">Tel.</string>
+    <string name="qr_chip_image">Irudia</string>
+    <string name="qr_chip_document">Dok.</string>
+    <string name="qr_select_image">Hautatu irudia</string>
+    <string name="qr_image_selected">Irudia hautatuta ✓</string>
+    <string name="qr_select_document">Hautatu dokumentua</string>
+    <string name="qr_document_selected">Dokumentua hautatuta ✓</string>
+    <string name="qr_label_url">Webgunearen URLa</string>
+    <string name="qr_label_text">Mezuaren testua</string>
+    <string name="qr_label_email">Emailaren helbidea</string>
+    <string name="qr_label_phone">Telefono-zenbakia</string>
+    <string name="qr_placeholder_text">Idatzi zure mezua…</string>
+    <string name="qr_protect_password">Babestu pasahitzarekin</string>
+    <string name="qr_protect_password_desc">Klabea duenak bakarrik ikus dezake edukia</string>
+    <string name="qr_password_label">Pasahitza</string>
+    <string name="qr_password_min_chars">Gutxienez 4 karaktere</string>
+    <string name="qr_error_select_image">Hautatu irudi bat</string>
+    <string name="qr_error_select_document">Hautatu dokumentu bat</string>
+    <string name="qr_error_empty_content">Idatzi QRaren edukia</string>
+    <string name="qr_error_password_short">Pasahitzak gutxienez 4 karaktere izan behar ditu</string>
+    <string name="qr_generate">Sortu QRa</string>
+    <string name="qr_your_code">Zure QR kodea</string>
+    <string name="qr_generated_content_desc">Sortutako QR kodea</string>
+    <string name="qr_protected_badge">Babestuta</string>
+    <string name="qr_share_chooser_title">Partekatu QRa</string>
+
+    <!-- ── Estudio ─────────────────────────────────── -->
+    <string name="study_tab_reading">Irakurketa</string>
+    <string name="study_tab_notes">Oharrak</string>
+    <string name="study_tab_pomodoro">Pomodoro</string>
+    <string name="study_tab_summary">Laburpena</string>
+    <string name="study_no_document">Dokumenturik gabe</string>
+    <string name="study_title">Ikasketa modua</string>
+    <string name="study_empty_state_desc">Ireki dokumentu bat ikasten hasteko</string>
+    <string name="study_reading_document">Dokumentua irakurtzen…</string>
+    <string name="study_highlighted_count">%1$d nabarmenduta</string>
+    <string name="study_stop">Gelditu</string>
+    <string name="study_read_all">Irakurri dena</string>
+    <!-- Selector de voz TTS (pedido explícito de testers 2026-09-12): solo
+         voces on-device, sin nube. -->
+    <string name="study_choose_voice">Aukeratu ahotsa</string>
+    <string name="study_voice_option_label">%1$d ahotsa — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">kalitate oso altua</string>
+    <string name="study_voice_quality_high">kalitate altua</string>
+    <string name="study_voice_quality_normal">kalitate normala</string>
+    <string name="study_voice_quality_low">kalitate oinarrizkoa</string>
+    <string name="study_generate_summary">Sortu laburpena</string>
+    <string name="study_summarizing">Zure laburpena sortzen… dokumentuaren tamainaren arabera minutu batzuk behar izan ditzake</string>
+    <string name="study_loading_document">Zure dokumentua kargatzen… une batzuk behar izan ditzake</string>
+    <string name="study_summary_local_note">Zure gailuan sortua, interneterako konexiorik gabe</string>
+    <string name="study_summary_share_title">Partekatu laburpena</string>
+    <string name="study_summary_sentences_count">%1$d gako-puntu</string>
+    <string name="study_reading_page">Irakurtzen… %2$d orrialdetik %1$d</string>
+    <string name="study_extracting_more">Dokumentuaren gainerakoa prozesatzen… (%1$d orrialde prest)</string>
+    <string name="study_continue_reading">Jarraitu irakurtzen</string>
+    <string name="study_resume_page_progress">%2$d orrialdetik %1$d</string>
+    <string name="study_resume_reading">Berrekin irakurketari</string>
+    <string name="study_remove_from_history">Kendu zerrendatik</string>
+    <string name="study_delete_all_notes_title">Ezabatu ohar guztiak</string>
+    <string name="study_delete_all_notes_body">Ziur zaude ohar guztiak ezabatu nahi dituzula? Ekintza hau ezin da desegin.</string>
+    <string name="study_highlighted_paragraphs_count">Nabarmendutako paragrafoak (%1$d)</string>
+    <string name="study_mark_current_paragraph">Markatu uneko paragrafoa</string>
+    <string name="study_new_note">Ohar berria</string>
+    <string name="study_note_title_label">Oharraren izenburua</string>
+    <string name="study_note_title_placeholder">Adib.: 3. kapituluko funtsezko kontzeptuak</string>
+    <string name="study_note_content_placeholder">Idatzi edo diktatu zure oharra…</string>
+    <string name="study_dictate_note">Diktatu oharra ahotsez</string>
+    <string name="study_listening">Entzuten… hitz egin orain</string>
+    <string name="study_save_note">Gorde oharra</string>
+    <string name="study_untitled_note">Izenbururik gabeko oharra</string>
+    <string name="study_no_saved_notes">Ez dago gordetako oharrik</string>
+    <string name="study_saved_notes_count">Gordetako oharrak (%1$d)</string>
+    <string name="study_delete_all">Ezabatu guztiak</string>
+    <string name="study_no_notes_yet">Oraindik ez duzu ohar gorderik</string>
+    <string name="study_delete_note_desc">Ezabatu oharra</string>
+    <string name="study_voice_prompt">Hitz egin zure oharra idazteko…</string>
+    <string name="study_break_label">Atsedena</string>
+    <string name="study_study_label">Ikasketa</string>
+    <string name="study_in_progress">martxan</string>
+    <string name="study_paused">pausatuta</string>
+    <string name="study_restart">Berrabiarazi</string>
+    <string name="study_pause">Pausatu</string>
+    <string name="study_start">Hasi</string>
+    <string name="study_pomodoros_completed">Osatutako pomodoroak</string>
+    <string name="study_pomodoros_hint">4 pomodoro bakoitzeko = atseden luzea</string>
+    <string name="study_pomodoro_technique_info">Pomodoro teknika: txandakatu 25 min ikasketa fokatuarekin eta 5 min atsedenarekin, kontzentratzen laguntzeko akitu gabe</string>
+    <string name="study_extract_could_not_read">Ezin izan da fitxategia irakurri</string>
+    <string name="study_extract_pdf_no_text">PDF honek ez du testu erauzgarririk. Eskaneatutako PDF bat izan daiteke.</string>
+    <string name="study_extract_pdf_error">Errorea PDFa irakurtzean: %1$s</string>
+    <string name="study_extract_generic_error">Errorea: %1$s</string>
+    <string name="study_default_document_name">Dokumentua</string>
+    <string name="study_pomodoro_notification_channel">Pomodoro</string>
+    <string name="study_pomodoro_notification_text">%1$s geratzen dira</string>
+    <string name="study_export_notes">Esportatu oharrak</string>
+    <string name="study_export_as_text">Testu gisa</string>
+    <string name="study_export_as_pdf">PDF gisa</string>
+    <string name="study_export_share_title">Partekatu oharrak</string>
+    <string name="study_stats_icon_desc">Ikusi estatistikak</string>
+    <string name="study_stats_title">Ikasketa-estatistikak</string>
+    <string name="study_stats_total_reading">Irakurritako denbora guztira</string>
+    <string name="study_stats_reading_value">%1$dh %2$dmin</string>
+    <string name="study_stats_pomodoros_this_week">Aste honetako pomodoroak</string>
+    <string name="study_stats_pomodoros_total">Guztira osatutako pomodoroak</string>
+    <string name="study_stats_empty">Oraindik ez dago estatistikarik — hasi ozen irakurtzen edo osatu zure lehen Pomodoroa.</string>
+
+    <!-- ── Papelera de reciclaje (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">Zakarrontzia</string>
+    <string name="trash_title">Zakarrontzia</string>
+    <string name="trash_subtitle">30 egunen buruan behin betiko ezabatzen dira</string>
+    <string name="trash_empty_title">Zakarrontzia hutsik dago</string>
+    <string name="trash_empty_body">Liburutegitik, Hasieratik edo Ikustailetik ezabatzen dituzun dokumentuak hemen agertuko dira betiko ezabatu aurretik.</string>
+    <string name="trash_deletes_today">Gaur ezabatzen da</string>
+    <string name="trash_days_remaining">%1$d egun geratzen dira</string>
+    <string name="trash_restore">Berreskuratu</string>
+    <string name="trash_delete_forever">Ezabatu orain</string>
+    <string name="trash_delete_forever_confirm_title">Behin betiko ezabatu?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s betiko ezabatuko da eta ezingo da gehiago berreskuratu."</string>
+    <string name="trash_delete_all">Ezabatu dena</string>
+    <string name="trash_delete_all_confirm_title">Zakarrontzia hustu?</string>
+    <string name="trash_delete_all_confirm_body">"%1$d fitxategi betiko ezabatuko dira eta ezingo dira gehiago berreskuratu."</string>
+    <string name="trash_total_size">%1$s zakarrontzian</string>
+    <string name="trash_delete_forever_permission_note">Android-ek aplikazio honek sortu ez dituen argazkien ezabaketa berresteko eska diezazuke.</string>
+    <string name="trash_bulk_delete_partial_error">Fitxategi batzuk banan-banan ezabatu behar dira</string>
+
+    <!-- ── Selector de archivo con biblioteca de la app (item #15, FileSourcePickerDialog) ── -->
+    <string name="filepicker_source_question">Nondik ekarri nahi duzu fitxategia?</string>
+    <string name="filepicker_from_device">Gailutik</string>
+    <string name="filepicker_browse_system_files">Arakatu sistemako fitxategiak</string>
+    <string name="filepicker_from_library">DocuSmarten liburutegitik</string>
+    <string name="filepicker_no_library_files">Oraindik ez duzu fitxategirik zure liburutegian</string>
+
+    <!-- ── Vincular carpeta de Descargas por SAF (fila 22 backlog UX) ── -->
+    <string name="library_link_downloads_title">Ikusi dokumentu gehiago hemen</string>
+    <string name="library_link_downloads_body">Aukeratu zure gailuko karpeta bat, Liburutegiak bertan dituzun dokumentuak ere erakuts ditzan</string>
+    <string name="library_link_downloads_button">Lotu karpeta</string>
+
+    <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
+    <string name="library_folder_shortcut_label">Lotutako karpeta</string>
+    <string name="library_folder_shortcut_subtitle">Ireki</string>
+    <string name="library_folder_shortcut_no_app">Ez dago karpetak irekitzeko aplikaziorik gailu honetan</string>
+
+    <!-- ── Ajustes: gestionar carpeta vinculada (fila 22 backlog UX) ── -->
+    <string name="settings_linked_downloads_title">Lotutako karpeta</string>
+    <string name="settings_linked_downloads_linked">Lotuta · sakatu desestekatzeko</string>
+    <string name="settings_linked_downloads_not_linked">Lotu gabe · sakatu lotzeko</string>
+    <string name="settings_unlink_downloads_title">Karpeta desestekatu?</string>
+    <string name="settings_unlink_downloads_body">Ez dituzu Deskargetako fitxategiak ikusiko gehiago Liburutegiko Gailua fitxan. Nahi duzunean berriro lotu dezakezu.</string>
+    <string name="settings_unlink_downloads_confirm">Desestekatu</string>
+</resources>

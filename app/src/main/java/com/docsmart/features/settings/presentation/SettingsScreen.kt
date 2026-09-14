@@ -14,6 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -23,11 +26,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import kotlinx.coroutines.delay
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.LanguageManager
@@ -84,6 +91,10 @@ fun SettingsScreen(
         AccentColor.ORANGE -> stringResource(R.string.accent_color_orange)
         AccentColor.PINK   -> stringResource(R.string.accent_color_pink)
         AccentColor.TEAL   -> stringResource(R.string.accent_color_teal)
+        AccentColor.INDIGO -> stringResource(R.string.accent_color_indigo)
+        AccentColor.RED    -> stringResource(R.string.accent_color_red)
+        AccentColor.AMBER  -> stringResource(R.string.accent_color_amber)
+        AccentColor.CYAN   -> stringResource(R.string.accent_color_cyan)
     }
 
     @Composable
@@ -93,9 +104,25 @@ fun SettingsScreen(
         FontScale.EXTRA_LARGE -> stringResource(R.string.font_scale_extra_large)
     }
 
-    var showThemeDialog       by remember { mutableStateOf(false) }
-    var showAccentColorDialog by remember { mutableStateOf(false) }
-    var showFontScaleDialog   by remember { mutableStateOf(false) }
+    // Compartida entre el diálogo de Almacenamiento ("Limpiar caché") y
+    // "Restablecer configuración" -- antes cada uno tenía su propia copia
+    // (Almacenamiento) o directamente no lo hacía (Restablecer, bug real
+    // encontrado 2026-09-14: el texto del diálogo prometía "se limpiará el
+    // caché" pero el handler nunca tocaba ningún archivo).
+    fun clearGeneratedFilesCache() {
+        val convertedDir = java.io.File(context.filesDir, "converted")
+        val pdfToolsDir  = java.io.File(context.filesDir, "pdftools")
+        val allFiles = convertedDir.listFiles()?.toList().orEmpty() +
+            pdfToolsDir.listFiles()?.toList().orEmpty()
+        if (allFiles.isNotEmpty()) {
+            viewModel.moveConvertedFilesToTrash(allFiles.map { it.absolutePath })
+        }
+    }
+
+    // Rediseño de Ajustes 2026-09-14: Tema/Color de acento/Tamaño de letra
+    // pasan de diálogo a controles en línea dentro de la tarjeta de
+    // Apariencia (ver AppearanceCard más abajo) -- ya no necesitan su
+    // propio diálogo, solo Idioma lo conserva (lista larga, no cabe inline).
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showStorageDialog  by remember { mutableStateOf(false) }
     var showAboutDialog    by remember { mutableStateOf(false) }
@@ -136,27 +163,32 @@ fun SettingsScreen(
                 // alto del diálogo -- la última entrada (Francés) quedaba con
                 // altura cero, invisible pese a que el RadioButton sí se
                 // dibujaba. Con más idiomas a futuro el problema solo crece.
+                // Pedido explícito del usuario 2026-09-14: nada de check/radio
+                // para elegir -- toda la fila es la acción, con la bandera del
+                // idioma a la izquierda; el único indicador de selección es un
+                // check al final, solo informativo (no es lo que se toca para
+                // elegir).
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     AppLanguage.entries.forEach { language ->
+                        val selected = currentLanguage == language
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.medium)
                                 .clickable {
                                     languageManager.setLanguage(language)
                                     showLanguageDialog = false
                                 }
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primaryContainer
+                                    else androidx.compose.ui.graphics.Color.Transparent
+                                )
+                                .padding(vertical = 12.dp, horizontal = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment     = Alignment.CenterVertically
                         ) {
-                            RadioButton(
-                                selected = currentLanguage == language,
-                                onClick  = {
-                                    languageManager.setLanguage(language)
-                                    showLanguageDialog = false
-                                }
-                            )
-                            Column {
+                            Text(language.flagEmoji, style = MaterialTheme.typography.headlineSmall)
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(language.nativeLabel,
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface)
@@ -164,152 +196,17 @@ fun SettingsScreen(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                            if (selected) {
+                                Icon(Icons.Rounded.Check, null,
+                                    tint     = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp))
+                            }
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showLanguageDialog = false }) {
-                    Text(stringResource(R.string.settings_close))
-                }
-            }
-        )
-    }
-
-    // ── Diálogo: Tema ─────────────────────────────────────────────────────────
-    if (showThemeDialog) {
-        AlertDialog(
-            onDismissRequest = { showThemeDialog = false },
-            shape = MaterialTheme.shapes.large,
-            title = { Text(stringResource(R.string.settings_select_theme),
-                style = MaterialTheme.typography.titleLarge) },
-            text = {
-                Column {
-                    AppTheme.entries.forEach { theme ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    themeManager.setTheme(theme)
-                                    showThemeDialog = false
-                                }
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment     = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = currentTheme == theme,
-                                onClick  = {
-                                    themeManager.setTheme(theme)
-                                    showThemeDialog = false
-                                }
-                            )
-                            Text(
-                                text  = themeLabel(theme),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
-                    Text(stringResource(R.string.settings_close))
-                }
-            }
-        )
-    }
-
-    // ── Diálogo: Color de acento (RF-SET-07) ─────────────────────────────────
-    if (showAccentColorDialog) {
-        AlertDialog(
-            onDismissRequest = { showAccentColorDialog = false },
-            shape = MaterialTheme.shapes.large,
-            title = { Text(stringResource(R.string.settings_select_accent_color),
-                style = MaterialTheme.typography.titleLarge) },
-            text = {
-                Column {
-                    AccentColor.entries.forEach { accent ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    themeManager.setAccentColor(accent)
-                                    showAccentColorDialog = false
-                                }
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment     = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = currentAccentColor == accent,
-                                onClick  = {
-                                    themeManager.setAccentColor(accent)
-                                    showAccentColorDialog = false
-                                }
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .background(accent.swatch, shape = CircleShape)
-                            )
-                            Text(
-                                text  = accentColorLabel(accent),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showAccentColorDialog = false }) {
-                    Text(stringResource(R.string.settings_close))
-                }
-            }
-        )
-    }
-
-    // ── Diálogo: Tamaño de letra (HU-UX-05) ──────────────────────────────────
-    if (showFontScaleDialog) {
-        AlertDialog(
-            onDismissRequest = { showFontScaleDialog = false },
-            shape = MaterialTheme.shapes.large,
-            title = { Text(stringResource(R.string.settings_select_font_scale),
-                style = MaterialTheme.typography.titleLarge) },
-            text = {
-                Column {
-                    FontScale.entries.forEach { scale ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    themeManager.setFontScale(scale)
-                                    showFontScaleDialog = false
-                                }
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment     = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = currentFontScale == scale,
-                                onClick  = {
-                                    themeManager.setFontScale(scale)
-                                    showFontScaleDialog = false
-                                }
-                            )
-                            Text(
-                                text  = fontScaleLabel(scale),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showFontScaleDialog = false }) {
                     Text(stringResource(R.string.settings_close))
                 }
             }
@@ -366,10 +263,7 @@ fun SettingsScreen(
             dismissButton = {
                 if (totalFiles > 0) {
                     TextButton(onClick = {
-                        val allFiles = convertedDir.listFiles()?.toList().orEmpty() +
-                            pdfToolsDir.listFiles()?.toList().orEmpty()
-                        val ids = allFiles.map { it.absolutePath }
-                        viewModel.moveConvertedFilesToTrash(ids)
+                        clearGeneratedFilesCache()
                         showStorageDialog = false
                     }) {
                         Text(
@@ -505,10 +399,18 @@ fun SettingsScreen(
             )},
             confirmButton = {
                 TextButton(onClick = {
+                    // Bug real encontrado 2026-09-14: este handler no
+                    // reseteaba fondo animado/sonido (quedaban como el
+                    // usuario los hubiera dejado, sin avisar) ni limpiaba el
+                    // caché, pese a que el texto del diálogo promete ambas
+                    // cosas -- ver settings_reset_body.
                     themeManager.setTheme(AppTheme.SYSTEM)
                     themeManager.setAccentColor(AccentColor.BLUE)
                     themeManager.setFontScale(FontScale.NORMAL)
+                    themeManager.setAnimatedBackgroundEnabled(true)
+                    viewModel.soundEffectPlayer.setEnabled(true)
                     languageManager.setLanguage(languageManager.deviceDefaultLanguage())
+                    clearGeneratedFilesCache()
                     showResetDialog = false
                 }) {
                     Text(
@@ -581,9 +483,199 @@ fun SettingsScreen(
         )
     }
 
+    // Rediseño de Ajustes 2026-09-14 (pedido explícito del usuario, con
+    // referencia visual propia): Tema/Tamaño de letra como segmented buttons,
+    // Color de acento como carrusel horizontal (con más colores de los que
+    // caben en pantalla, para dejar claro que se puede deslizar), Fondo
+    // animado/Sonidos como switch, e Idioma como fila que abre el selector --
+    // todo dentro de una sola tarjeta. Cada bloque es su propia función local
+    // (LongMethod de detekt) pero todas leen el estado de SettingsScreen
+    // directamente por clausura, sin repetir parámetros.
+    @Composable
+    fun AppearanceThemeRow() {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.settings_theme),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface)
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                AppTheme.entries.forEachIndexed { index, theme ->
+                    SegmentedButton(
+                        selected = currentTheme == theme,
+                        onClick  = { themeManager.setTheme(theme) },
+                        shape    = SegmentedButtonDefaults.itemShape(index, AppTheme.entries.size),
+                        label    = { Text(themeLabel(theme)) }
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun AppearanceAccentColorRow() {
+        val accentCarouselState = rememberLazyListState()
+        // Nudge de una sola vez (no un loop continuo, para no distraer ni
+        // gastar batería): desliza un poco y vuelve, así el usuario nota que
+        // hay más colores de los que se ven de entrada.
+        LaunchedEffect(Unit) {
+            delay(600)
+            accentCarouselState.animateScrollToItem(
+                (AccentColor.entries.size - 1).coerceAtMost(4)
+            )
+            delay(450)
+            accentCarouselState.animateScrollToItem(0)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(stringResource(R.string.settings_accent_color),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface)
+                Text(accentColorLabel(currentAccentColor),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            LazyRow(
+                state                 = accentCarouselState,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(AccentColor.entries.toList()) { accent ->
+                    val selected = currentAccentColor == accent
+                    val label = accentColorLabel(accent)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(accent.swatch, shape = CircleShape)
+                            // Antes no tenía ninguna etiqueta accesible (ni
+                            // texto ni contentDescription) -- ni TalkBack ni
+                            // un test de Compose podían identificar qué color
+                            // era cada círculo, solo la posición.
+                            .semantics { contentDescription = label }
+                            .clickable { themeManager.setAccentColor(accent) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (selected) {
+                            Icon(Icons.Rounded.Check, null,
+                                tint     = androidx.compose.ui.graphics.Color.White,
+                                modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun AppearanceFontScaleRow() {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.settings_font_scale),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface)
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                FontScale.entries.forEachIndexed { index, scale ->
+                    SegmentedButton(
+                        selected = currentFontScale == scale,
+                        onClick  = { themeManager.setFontScale(scale) },
+                        shape    = SegmentedButtonDefaults.itemShape(index, FontScale.entries.size),
+                        label    = { Text(fontScaleLabel(scale)) }
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun AppearanceToggleRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Switch(checked = checked, onCheckedChange = onCheckedChange)
+        }
+    }
+
+    @Composable
+    fun AppearanceLanguageRow(onClick: () -> Unit) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .clickable(onClick = onClick),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Rounded.Language, null,
+                tint     = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp))
+            Text(stringResource(R.string.settings_language),
+                style    = MaterialTheme.typography.titleSmall,
+                color    = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f))
+            Text(currentLanguage.flagEmoji,
+                style = MaterialTheme.typography.titleMedium)
+            Text(currentLanguage.nativeLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Rounded.ChevronRight, null,
+                tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp))
+        }
+    }
+
+    @Composable
+    fun AppearanceCard(onLanguageRowClick: () -> Unit) {
+        val shape = MaterialTheme.shapes.large
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                AppearanceThemeRow()
+                AppearanceAccentColorRow()
+                AppearanceFontScaleRow()
+                HorizontalDivider()
+                AppearanceToggleRow(
+                    title    = stringResource(R.string.settings_animated_background),
+                    subtitle = stringResource(R.string.settings_animated_background_subtitle),
+                    checked  = animatedBackgroundEnabled,
+                    onCheckedChange = { themeManager.setAnimatedBackgroundEnabled(it) }
+                )
+                AppearanceToggleRow(
+                    title    = stringResource(R.string.settings_sound_effects),
+                    subtitle = stringResource(R.string.settings_sound_effects_subtitle),
+                    checked  = soundEffectsEnabled,
+                    onCheckedChange = { viewModel.soundEffectPlayer.setEnabled(it) }
+                )
+                HorizontalDivider()
+                AppearanceLanguageRow(onClick = onLanguageRowClick)
+            }
+        }
+    }
+
     // ── UI Principal ──────────────────────────────────────────────────────────
     LazyColumn(
-        modifier       = Modifier.fillMaxSize(),
+        // Rediseño de Ajustes 2026-09-14: el carrusel de colores de acento
+        // agregó un segundo LazyRow con scroll dentro de esta lista -- un
+        // testTag propio evita la ambigüedad de hasScrollAction() en los
+        // tests de Compose (SettingsScreenTest ya la encontró real).
+        modifier       = Modifier.fillMaxSize().testTag("settings_list"),
         contentPadding = PaddingValues(
             bottom = 100.dp,
             start = 16.dp, end = 16.dp
@@ -673,75 +765,19 @@ fun SettingsScreen(
             }
         }
 
-        // ── Sección: Personalización ──────────────────────────────────────────
-        item { SettingsSectionHeader(stringResource(R.string.settings_section_personalization)) }
-        item {
-            SettingsItem(
-                icon     = Icons.Rounded.Language,
-                title    = stringResource(R.string.settings_language),
-                subtitle = stringResource(R.string.settings_language_subtitle),
-                onClick  = { showLanguageDialog = true }
-            )
-        }
-        item {
-            SettingsItem(
-                icon     = Icons.Rounded.Lightbulb,
-                title    = stringResource(R.string.settings_tutorial),
-                subtitle = stringResource(R.string.settings_tutorial_subtitle),
-                onClick  = {
-                    resetOnboarding(context)
-                    onShowOnboarding()
-                }
-            )
-        }
-        item {
-            SettingsItem(
-                icon     = Icons.Rounded.DarkMode,
-                title    = stringResource(R.string.settings_theme),
-                subtitle = themeLabel(currentTheme),
-                onClick  = { showThemeDialog = true }
-            )
-        }
-        item {
-            SettingsItem(
-                icon     = Icons.Rounded.Palette,
-                title    = stringResource(R.string.settings_accent_color),
-                subtitle = accentColorLabel(currentAccentColor),
-                onClick  = { showAccentColorDialog = true }
-            )
-        }
-        item {
-            SettingsItem(
-                icon     = Icons.Rounded.TextFields,
-                title    = stringResource(R.string.settings_font_scale),
-                subtitle = fontScaleLabel(currentFontScale),
-                onClick  = { showFontScaleDialog = true }
-            )
-        }
-        item {
-            SettingsSwitchItem(
-                icon     = Icons.Rounded.Gradient,
-                title    = stringResource(R.string.settings_animated_background),
-                subtitle = stringResource(R.string.settings_animated_background_subtitle),
-                checked  = animatedBackgroundEnabled,
-                onCheckedChange = { themeManager.setAnimatedBackgroundEnabled(it) }
-            )
-        }
-        item {
-            // Feedback de testers 2026-09-12: sonidos cortos al escanear,
-            // convertir y borrar -- con este interruptor apagado, todos se
-            // silencian (ver SoundEffectPlayer).
-            SettingsSwitchItem(
-                icon     = Icons.Rounded.VolumeUp,
-                title    = stringResource(R.string.settings_sound_effects),
-                subtitle = stringResource(R.string.settings_sound_effects_subtitle),
-                checked  = soundEffectsEnabled,
-                onCheckedChange = { viewModel.soundEffectPlayer.setEnabled(it) }
-            )
-        }
+        // ── Sección: Apariencia (rediseño 2026-09-14) ─────────────────────────
+        // Una sola tarjeta con controles en línea (Tema/Tamaño de letra en
+        // segmented buttons, Color de acento en carrusel, Fondo animado y
+        // Sonidos en switch, Idioma como fila que abre el selector) en vez de
+        // 6 filas sueltas que cada una abría su propio diálogo -- mismo orden
+        // pedido por el usuario, con referencia visual propia.
+        item { SettingsSectionHeader(stringResource(R.string.settings_section_appearance)) }
+        item { AppearanceCard(onLanguageRowClick = { showLanguageDialog = true }) }
 
-        // ── Sección: Almacenamiento ───────────────────────────────────────────
-        item { SettingsSectionHeader(stringResource(R.string.settings_storage)) }
+        // ── Sección: Archivos y privacidad (rediseño 2026-09-14) ──────────────
+        // Fusiona las antiguas secciones "Almacenamiento" y "Privacidad y
+        // seguridad" en una sola, mismo contenido de cada una.
+        item { SettingsSectionHeader(stringResource(R.string.settings_section_files_privacy)) }
         item {
             SettingsItem(
                 icon     = Icons.Rounded.Storage,
@@ -770,9 +806,6 @@ fun SettingsScreen(
                 }
             )
         }
-
-        // ── Sección: Privacidad ───────────────────────────────────────────────
-        item { SettingsSectionHeader(stringResource(R.string.settings_section_privacy)) }
         item {
             SettingsItem(
                 icon     = Icons.Rounded.PrivacyTip,
@@ -800,8 +833,30 @@ fun SettingsScreen(
             }
         }
 
-        // ── Sección: Compartir ────────────────────────────────────────────────
-        item { SettingsSectionHeader(stringResource(R.string.general_share)) }
+        // ── Sección: Ayuda y comunidad (rediseño 2026-09-14) ──────────────────
+        // Fusiona Tutorial (antes en Personalización), Ayuda (antes "Soporte")
+        // y Compartir/Valorar (antes sin encabezado propio) en una sección,
+        // mismo orden que el diseño de referencia.
+        item { SettingsSectionHeader(stringResource(R.string.settings_section_help_community)) }
+        item {
+            SettingsItem(
+                icon     = Icons.Rounded.Lightbulb,
+                title    = stringResource(R.string.settings_tutorial),
+                subtitle = stringResource(R.string.settings_tutorial_subtitle),
+                onClick  = {
+                    resetOnboarding(context)
+                    onShowOnboarding()
+                }
+            )
+        }
+        item {
+            SettingsItem(
+                icon     = Icons.Rounded.HelpOutline,
+                title    = stringResource(R.string.settings_help),
+                subtitle = stringResource(R.string.settings_help_subtitle),
+                onClick  = { showHelpDialog = true }
+            )
+        }
         item {
             SettingsItem(
                 icon     = Icons.Rounded.Share,
@@ -816,17 +871,6 @@ fun SettingsScreen(
                 title    = stringResource(R.string.settings_rate),
                 subtitle = stringResource(R.string.settings_rate_subtitle),
                 onClick  = { openPlayStore(context) }
-            )
-        }
-
-        // ── Sección: Soporte ──────────────────────────────────────────────────
-        item { SettingsSectionHeader(stringResource(R.string.settings_section_support)) }
-        item {
-            SettingsItem(
-                icon     = Icons.Rounded.HelpOutline,
-                title    = stringResource(R.string.settings_help),
-                subtitle = stringResource(R.string.settings_help_subtitle),
-                onClick  = { showHelpDialog = true }
             )
         }
 
@@ -898,46 +942,6 @@ private fun SettingsItem(
             Icon(Icons.Rounded.ChevronRight, null,
                 tint     = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp))
-        }
-    }
-}
-
-// Mismo estilo visual que SettingsItem, pero con un Switch en vez de
-// chevron+onClick -- para ajustes on/off como el fondo animado (backlog UX
-// 2026-09-06), en vez de abrir un diálogo de opciones.
-@Composable
-private fun SettingsSwitchItem(
-    icon    : androidx.compose.ui.graphics.vector.ImageVector,
-    title   : String,
-    subtitle: String,
-    checked : Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    tint    : androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary
-) {
-    val shape = MaterialTheme.shapes.large
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
-    ) {
-        Row(
-            modifier              = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment     = Alignment.CenterVertically
-        ) {
-            Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface)
-                Text(subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
         }
     }
 }

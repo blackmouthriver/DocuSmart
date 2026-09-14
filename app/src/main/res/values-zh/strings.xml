@@ -80,9 +80,7 @@
     <string name="settings_language">语言</string>
     <string name="settings_theme">主题</string>
     <string name="settings_accent_color">强调色</string>
-    <string name="settings_select_accent_color">选择强调色</string>
     <string name="settings_font_scale">字体大小</string>
-    <string name="settings_select_font_scale">选择字体大小</string>
     <string name="settings_animated_background">动态背景</string>
     <string name="settings_animated_background_subtitle">以强调色移动的图形</string>
     <string name="settings_sound_effects">音效</string>
@@ -92,13 +90,12 @@
     <string name="settings_about">关于</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">选择语言</string>
-    <string name="settings_select_theme">选择主题</string>
     <string name="settings_close">关闭</string>
     <string name="settings_language_subtitle">选择应用语言</string>
-    <string name="settings_section_personalization">个性化</string>
+    <string name="settings_section_appearance">外观</string>
     <string name="settings_tutorial">查看教程</string>
     <string name="settings_tutorial_subtitle">回顾主要功能</string>
-    <string name="settings_section_privacy">隐私与安全</string>
+    <string name="settings_section_files_privacy">文件与隐私</string>
     <string name="settings_privacy_item">隐私</string>
     <string name="settings_privacy_item_subtitle">数据政策与权限</string>
     <string name="settings_ads_privacy_options">广告同意设置</string>
@@ -107,7 +104,7 @@
     <string name="settings_share_app_subtitle">向你的联系人推荐这款应用</string>
     <string name="settings_rate">在 Play 商店评分</string>
     <string name="settings_rate_subtitle">喜欢 DocuSmart 吗？给我们留个评价吧！</string>
-    <string name="settings_section_support">支持</string>
+    <string name="settings_section_help_community">帮助与社区</string>
     <string name="settings_help">帮助</string>
     <string name="settings_help_subtitle">常见问题</string>
     <string name="settings_section_system">系统</string>
@@ -129,7 +126,7 @@
     <string name="settings_help_a3">点击任意文档上的心形图标，或使用 ⋮ 菜单。</string>
     <string name="settings_help_q4">我的文档安全吗？</string>
     <string name="settings_help_a4">是的。所有处理都在本地完成，任何文件都不会离开你的设备。</string>
-    <string name="settings_reset_body">主题将恢复为浅色模式，语言恢复为西班牙语，字体大小恢复为“正常”，并清除缓存。文档不会被删除。是否继续？</string>
+    <string name="settings_reset_body">主题、强调色、字体大小、动态背景、音效和语言将恢复为默认值，并清除已生成文件的缓存。您的文档不会被删除。是否继续?</string>
     <string name="settings_reset_confirm">重置</string>
     <string name="settings_about_dialog_title">关于 DocuSmart</string>
     <string name="settings_about_body">智能文档查看器和转换器。快速、安全地管理、转换和整理你的文件。</string>
@@ -145,6 +142,10 @@
     <string name="accent_color_orange">橙色</string>
     <string name="accent_color_pink">粉色</string>
     <string name="accent_color_teal">青绿色</string>
+    <string name="accent_color_indigo">靛蓝</string>
+    <string name="accent_color_red">红色</string>
+    <string name="accent_color_amber">琥珀色</string>
+    <string name="accent_color_cyan">青色</string>
     <string name="font_scale_normal">正常</string>
     <string name="font_scale_large">大</string>
     <string name="font_scale_extra_large">特大</string>
@@ -187,6 +188,8 @@
     <string name="general_delete">删除</string>
     <string name="general_close">关闭</string>
     <string name="general_saved_downloads">已保存到下载</string>
+    <string name="general_delete_error">无法删除文件</string>
+    <string name="general_error_format">错误：%1$s</string>
 
     <!-- ── PDF 工具说明 ─────────────────────── -->
     <string name="pdf_merge_desc">将多个 PDF 合并为一个</string>
@@ -214,6 +217,8 @@
     <string name="pdf_tools_daily_limit_label">该工具</string>
     <string name="converter_daily_limit_label">转换</string>
     <string name="scan_daily_save_limit_label">已保存的扫描</string>
+    <string name="converter_daily_limit_reached_error">已达到每日转换次数上限</string>
+    <string name="converter_batch_save_error">无法将所有文件保存到下载</string>
 
     <!-- ── PDF 工具：主界面与结果卡片 ── -->
     <string name="pdf_tools_back_to_tools">返回工具列表</string>
@@ -832,6 +837,7 @@
     <string name="trash_delete_all_confirm_body">"将永久删除 %1$d 个文件，且无法恢复。"</string>
     <string name="trash_total_size">回收站中共 %1$s</string>
     <string name="trash_delete_forever_permission_note">Android 可能会要求你确认删除非本应用创建的照片。</string>
+    <string name="trash_bulk_delete_partial_error">部分文件需要逐个删除</string>
 
     <!-- ── 应用内文件选择器（第 15 项，FileSourcePickerDialog） ── -->
     <string name="filepicker_source_question">你想从哪里获取文件？</string>

@@ -80,9 +80,7 @@
     <string name="settings_language">언어</string>
     <string name="settings_theme">테마</string>
     <string name="settings_accent_color">강조 색상</string>
-    <string name="settings_select_accent_color">강조 색상 선택</string>
     <string name="settings_font_scale">글자 크기</string>
-    <string name="settings_select_font_scale">글자 크기 선택</string>
     <string name="settings_animated_background">애니메이션 배경</string>
     <string name="settings_animated_background_subtitle">강조 색상의 도형이 움직입니다</string>
     <string name="settings_sound_effects">효과음</string>
@@ -92,13 +90,12 @@
     <string name="settings_about">정보</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">언어 선택</string>
-    <string name="settings_select_theme">테마 선택</string>
     <string name="settings_close">닫기</string>
     <string name="settings_language_subtitle">앱 언어를 선택하세요</string>
-    <string name="settings_section_personalization">개인 설정</string>
+    <string name="settings_section_appearance">외관</string>
     <string name="settings_tutorial">튜토리얼 보기</string>
     <string name="settings_tutorial_subtitle">주요 기능 다시보기</string>
-    <string name="settings_section_privacy">개인정보 및 보안</string>
+    <string name="settings_section_files_privacy">파일 및 개인정보 보호</string>
     <string name="settings_privacy_item">개인정보</string>
     <string name="settings_privacy_item_subtitle">데이터 정책 및 권한</string>
     <string name="settings_ads_privacy_options">광고 동의</string>
@@ -107,7 +104,7 @@
     <string name="settings_share_app_subtitle">지인에게 앱을 추천해 보세요</string>
     <string name="settings_rate">스토어에서 평가하기</string>
     <string name="settings_rate_subtitle">DocuSmart가 마음에 드시나요? 리뷰를 남겨주세요!</string>
-    <string name="settings_section_support">지원</string>
+    <string name="settings_section_help_community">도움말 및 커뮤니티</string>
     <string name="settings_help">도움말</string>
     <string name="settings_help_subtitle">자주 묻는 질문</string>
     <string name="settings_section_system">시스템</string>
@@ -129,7 +126,7 @@
     <string name="settings_help_a3">문서의 하트 아이콘을 터치하거나 ⋮ 메뉴를 이용하세요.</string>
     <string name="settings_help_q4">내 문서는 안전한가요?</string>
     <string name="settings_help_a4">네. 모든 처리는 로컬에서 이루어지며, 어떤 파일도 기기 밖으로 나가지 않습니다.</string>
-    <string name="settings_reset_body">테마는 라이트 모드로, 언어는 스페인어로, 글자 크기는 보통으로 초기화되고 캐시가 삭제됩니다. 문서는 삭제되지 않습니다. 계속하시겠습니까?</string>
+    <string name="settings_reset_body">테마, 강조 색상, 글자 크기, 애니메이션 배경, 효과음, 언어가 기본값으로 재설정되고 생성된 파일의 캐시가 삭제됩니다. 문서는 삭제되지 않습니다. 계속하시겠습니까?</string>
     <string name="settings_reset_confirm">초기화</string>
     <string name="settings_about_dialog_title">DocuSmart 정보</string>
     <string name="settings_about_body">스마트 문서 뷰어 및 변환기입니다. 파일을 빠르고 안전하게 관리, 변환, 정리하세요.</string>
@@ -145,6 +142,10 @@
     <string name="accent_color_orange">주황</string>
     <string name="accent_color_pink">분홍</string>
     <string name="accent_color_teal">청록</string>
+    <string name="accent_color_indigo">인디고</string>
+    <string name="accent_color_red">빨강</string>
+    <string name="accent_color_amber">앰버</string>
+    <string name="accent_color_cyan">시안</string>
     <string name="font_scale_normal">보통</string>
     <string name="font_scale_large">크게</string>
     <string name="font_scale_extra_large">아주 크게</string>
@@ -187,6 +188,8 @@
     <string name="general_delete">삭제</string>
     <string name="general_close">닫기</string>
     <string name="general_saved_downloads">다운로드에 저장됨</string>
+    <string name="general_delete_error">파일을 삭제할 수 없습니다</string>
+    <string name="general_error_format">오류: %1$s</string>
 
     <!-- ── PDF 도구 설명 ─────────────────────── -->
     <string name="pdf_merge_desc">여러 PDF를 하나로 합칩니다</string>
@@ -214,6 +217,8 @@
     <string name="pdf_tools_daily_limit_label">이 도구의 사용 횟수</string>
     <string name="converter_daily_limit_label">변환</string>
     <string name="scan_daily_save_limit_label">저장한 스캔</string>
+    <string name="converter_daily_limit_reached_error">일일 변환 한도에 도달했습니다</string>
+    <string name="converter_batch_save_error">일부 파일을 다운로드에 저장하지 못했습니다</string>
 
     <!-- ── PDF 도구: 메인 화면 및 결과 카드 ── -->
     <string name="pdf_tools_back_to_tools">도구로 돌아가기</string>
@@ -832,6 +837,7 @@
     <string name="trash_delete_all_confirm_body">"%1$d개 파일이 영구적으로 삭제되며 복구할 수 없습니다."</string>
     <string name="trash_total_size">휴지통에 %1$s</string>
     <string name="trash_delete_forever_permission_note">Android가 이 앱에서 생성하지 않은 사진의 삭제를 확인하도록 요청할 수 있습니다.</string>
+    <string name="trash_bulk_delete_partial_error">일부 파일은 하나씩 삭제해야 합니다</string>
 
     <!-- ── 앱 보관함을 포함한 파일 선택기 (항목 #15, FileSourcePickerDialog) ── -->
     <string name="filepicker_source_question">파일을 어디에서 가져올까요?</string>

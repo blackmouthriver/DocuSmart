@@ -14,18 +14,26 @@ import javax.inject.Singleton
 enum class AppLanguage(
     val code: String,
     val label: String,
-    val nativeLabel: String
+    val nativeLabel: String,
+    // Pedido explícito del usuario 2026-09-14 (rediseño de Ajustes): bandera
+    // por idioma en el selector. Catalán y euskera no tienen bandera propia
+    // en el estándar Unicode de emoji regionales (solo existen para países,
+    // no regiones/comunidades autónomas) -- se reutiliza la de España, el
+    // territorio donde ambos son oficiales.
+    val flagEmoji: String
 ) {
-    SPANISH("es", "Español", "Español"),
-    ENGLISH("en", "English", "English"),
-    PORTUGUESE("pt", "Portugués", "Português"),
-    GERMAN("de", "Alemán", "Deutsch"),
-    RUSSIAN("ru", "Ruso", "Русский"),
-    JAPANESE("ja", "Japonés", "日本語"),
-    KOREAN("ko", "Coreano", "한국어"),
-    CHINESE("zh", "Chino", "中文"),
-    ITALIAN("it", "Italiano", "Italiano"),
-    FRENCH("fr", "Francés", "Français")
+    SPANISH("es", "Español", "Español", "🇪🇸"),
+    ENGLISH("en", "English", "English", "🇬🇧"),
+    PORTUGUESE("pt", "Portugués", "Português", "🇵🇹"),
+    GERMAN("de", "Alemán", "Deutsch", "🇩🇪"),
+    RUSSIAN("ru", "Ruso", "Русский", "🇷🇺"),
+    JAPANESE("ja", "Japonés", "日本語", "🇯🇵"),
+    KOREAN("ko", "Coreano", "한국어", "🇰🇷"),
+    CHINESE("zh", "Chino", "中文", "🇨🇳"),
+    ITALIAN("it", "Italiano", "Italiano", "🇮🇹"),
+    FRENCH("fr", "Francés", "Français", "🇫🇷"),
+    CATALAN("ca", "Catalán", "Català", "🇪🇸"),
+    BASQUE("eu", "Euskera", "Euskara", "🇪🇸")
 }
 
 @Singleton

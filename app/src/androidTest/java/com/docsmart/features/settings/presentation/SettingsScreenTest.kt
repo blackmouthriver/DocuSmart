@@ -11,15 +11,17 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.core.ui.test.waitUntilOrDump
@@ -105,10 +107,30 @@ class SettingsScreenTest {
         return ThemeManager(isolatedContext) to LanguageManager(isolatedContext)
     }
 
+    // Bug preexistente encontrado 2026-09-14 (no introducido por el
+    // rediseño de Ajustes): SettingsViewModel ganó el parámetro
+    // `soundEffectPlayer` cuando se agregaron los efectos de sonido
+    // (backlog 2026-09-12), pero este helper nunca se actualizó -- dejaba
+    // compileDebugAndroidTestKotlin roto para TODO el módulo (confirmado
+    // reproduciendo el mismo error sobre `main` sin los cambios de esta
+    // sesión). Se corrige acá porque bloquea verificar los tests de este
+    // mismo archivo; ConverterScreenTest/LibraryScreenTest/TrashScreenTest/
+    // SecurityScreenTest tienen el mismo tipo de rotura por otros
+    // parámetros nuevos, fuera del alcance de este cambio.
     private fun buildSettingsViewModel(): SettingsViewModel {
         val adManager = mockk<AdManager>(relaxed = true)
         every { adManager.isPremium } returns MutableStateFlow(true)
         every { adManager.isInitialized } returns MutableStateFlow(false)
+        // Mismo bug preexistente que los 3 StateFlow<Boolean> ya documentados
+        // arriba, pero con StateFlow<Long?>/StateFlow<Int?> (HU-54 trial):
+        // sin stub explícito, un mock relajado devuelve un proxy de MockK en
+        // vez de null, y SettingsScreen lanza ClassCastException al leerlos
+        // (trialEndsAtMillis!! > System.currentTimeMillis()).
+        every { adManager.trialEndsAtMillis } returns MutableStateFlow(null)
+        every { adManager.autoTrialDaysRemaining } returns MutableStateFlow(null)
+
+        val soundEffectPlayer = mockk<SoundEffectPlayer>(relaxed = true)
+        every { soundEffectPlayer.enabled } returns MutableStateFlow(true)
 
         val downloadsAccessManager = mockk<DownloadsAccessManager>(relaxed = true)
         every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
@@ -117,6 +139,7 @@ class SettingsScreenTest {
 
         return SettingsViewModel(
             adManager = adManager,
+            soundEffectPlayer = soundEffectPlayer,
             downloadsAccessManager = downloadsAccessManager,
             trashRepository = trashRepository
         )
@@ -151,8 +174,13 @@ class SettingsScreenTest {
         }
     }
 
+    // Rediseño de Ajustes 2026-09-14: Tema/Color de acento/Tamaño de letra
+    // pasan de diálogo con RadioButton a controles en línea dentro de la
+    // tarjeta de Apariencia (segmented buttons + carrusel de círculos) --
+    // ya no hay diálogo que abrir para estos tres, se interactúa
+    // directamente. Solo Idioma conserva su diálogo (lista larga).
     @Test
-    fun cambiarTemaIdiomaYAcento_actualizanElSubtituloDeCadaOpcion() {
+    fun cambiarTemaAcentoTamanoDeLetraEIdioma_actualizanElEstado() {
         val (themeManager, languageManager) = buildManagers()
         val viewModel = buildSettingsViewModel()
 
@@ -161,21 +189,24 @@ class SettingsScreenTest {
         }
         waitForText("Tema")
 
-        // ── Tema: Sistema (default) → Oscuro ──────────────────────────────
-        composeRule.onNodeWithText("Tema").performClick()
-        waitForText("Seleccionar tema")
+        // ── Tema: Sistema (default) → Oscuro (segmented button) ───────────
         composeRule.onNodeWithText("Oscuro").performClick()
-        waitForText("Oscuro")
+        composeRule.waitForIdle()
         assertEquals(AppTheme.DARK, themeManager.currentTheme.value)
 
-        // ── Color de acento: Azul (default) → Verde ───────────────────────
-        composeRule.onNodeWithText("Color de acento").performClick()
-        waitForText("Seleccionar color de acento")
-        composeRule.onNodeWithText("Verde").performClick()
-        waitForText("Verde")
+        // ── Color de acento: Azul (default) → Verde (círculo con
+        // contentDescription, ya no tiene texto/RadioButton propio) ───────
+        composeRule.onNodeWithContentDescription("Verde").performClick()
+        composeRule.waitForIdle()
         assertEquals(AccentColor.GREEN, themeManager.accentColor.value)
 
-        // ── Idioma: nombre nativo, no traducido por forceLocale a propósito
+        // ── Tamaño de letra: Normal (default) → Grande (segmented button) ─
+        composeRule.onNodeWithText("Grande").performClick()
+        composeRule.waitForIdle()
+        assertEquals(FontScale.LARGE, themeManager.fontScale.value)
+
+        // ── Idioma: sigue con diálogo propio (lista larga, no cabe inline).
+        // Nombre nativo, no traducido por forceLocale a propósito
         // (AppLanguage.nativeLabel siempre se muestra en su propio idioma)
         composeRule.onNodeWithText("Idioma").performClick()
         waitForText("Seleccionar idioma")
@@ -198,7 +229,11 @@ class SettingsScreenTest {
         // "Restablecer configuración" está en la sección Sistema, al final
         // de la LazyColumn -- no se compone hasta hacer scroll hasta ahí
         // (a diferencia de Tema/Color de acento/Idioma, cerca del inicio).
-        composeRule.onNode(hasScrollAction())
+        // Rediseño de Ajustes 2026-09-14: hasScrollAction() ya no basta para
+        // identificar la lista -- el carrusel de colores de acento agregó un
+        // segundo nodo con scroll (LazyRow anidado dentro de la LazyColumn),
+        // por eso se usa el testTag propio de la lista principal.
+        composeRule.onNodeWithTag("settings_list")
             .performScrollToNode(hasText("Restablecer configuración"))
 
         composeRule.onNodeWithText("Restablecer configuración").performClick()

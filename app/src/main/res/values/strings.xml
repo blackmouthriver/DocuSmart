@@ -80,9 +80,7 @@
     <string name="settings_language">Idioma</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_accent_color">Color de acento</string>
-    <string name="settings_select_accent_color">Seleccionar color de acento</string>
     <string name="settings_font_scale">Tamaño de letra</string>
-    <string name="settings_select_font_scale">Seleccionar tamaño de letra</string>
     <string name="settings_animated_background">Fondo animado</string>
     <string name="settings_animated_background_subtitle">Formas con el color de acento en movimiento</string>
     <string name="settings_sound_effects">Efectos de sonido</string>
@@ -92,13 +90,19 @@
     <string name="settings_about">Acerca de</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Seleccionar idioma</string>
-    <string name="settings_select_theme">Seleccionar tema</string>
     <string name="settings_close">Cerrar</string>
     <string name="settings_language_subtitle">Elige el idioma de la app</string>
-    <string name="settings_section_personalization">Personalización</string>
+    <!-- Rediseño de Ajustes 2026-09-14: Apariencia agrupa Tema/Color de
+         acento/Tamaño de letra/Fondo animado/Sonidos/Idioma en una sola
+         tarjeta con controles en línea (antes cada uno abría un diálogo
+         aparte dentro de "Personalización"). -->
+    <string name="settings_section_appearance">Apariencia</string>
     <string name="settings_tutorial">Ver tutorial</string>
     <string name="settings_tutorial_subtitle">Repasa las funciones principales</string>
-    <string name="settings_section_privacy">Privacidad y seguridad</string>
+    <!-- Archivos y privacidad reemplaza a las antiguas secciones separadas
+         "Almacenamiento" y "Privacidad y seguridad", mismo contenido,
+         agrupado en una sola sección. -->
+    <string name="settings_section_files_privacy">Archivos y privacidad</string>
     <string name="settings_privacy_item">Privacidad</string>
     <string name="settings_privacy_item_subtitle">Política de datos y permisos</string>
     <string name="settings_ads_privacy_options">Consentimiento de anuncios</string>
@@ -107,7 +111,10 @@
     <string name="settings_share_app_subtitle">Recomienda la app a tus contactos</string>
     <string name="settings_rate">Valorar en Play Store</string>
     <string name="settings_rate_subtitle">¿Te gusta DocuSmart? ¡Déjanos una reseña!</string>
-    <string name="settings_section_support">Soporte</string>
+    <!-- Ayuda y comunidad reemplaza a "Soporte", ahora también incluye
+         Tutorial (antes en Personalización), Compartir y Valorar (antes en
+         su propia sección sin encabezado propio). -->
+    <string name="settings_section_help_community">Ayuda y comunidad</string>
     <string name="settings_help">Ayuda</string>
     <string name="settings_help_subtitle">Preguntas frecuentes</string>
     <string name="settings_section_system">Sistema</string>
@@ -129,7 +136,13 @@
     <string name="settings_help_a3">Toca el ícono de corazón en cualquier documento o usa el menú ⋮.</string>
     <string name="settings_help_q4">¿Mis documentos están seguros?</string>
     <string name="settings_help_a4">Sí. Todo el procesamiento es local. Ningún archivo sale de tu dispositivo.</string>
-    <string name="settings_reset_body">Se restablecerá el tema al modo claro, el idioma al español, el tamaño de letra a Normal y se limpiará el caché. Los documentos no se eliminarán. ¿Continuar?</string>
+    <!-- Bug real encontrado 2026-09-14: el texto original prometía "tema al
+         modo claro" (el código pone Sistema) e "idioma al español" (el
+         código usa el predeterminado del dispositivo, RF-SET-06), se
+         corrige el texto para que coincida con el comportamiento real, y se
+         suman fondo animado/efectos de sonido, que el handler ahora también
+         restablece. -->
+    <string name="settings_reset_body">Se restablecerán el tema, el color de acento, el tamaño de letra, el fondo animado, los efectos de sonido y el idioma a sus valores predeterminados, y se limpiará el caché de archivos generados. Los documentos no se eliminarán. ¿Continuar?</string>
     <string name="settings_reset_confirm">Restablecer</string>
     <string name="settings_about_dialog_title">Acerca de DocuSmart</string>
     <string name="settings_about_body">Visor y convertidor inteligente de documentos. Gestiona, convierte y organiza tus archivos de forma rápida y segura.</string>
@@ -145,6 +158,10 @@
     <string name="accent_color_orange">Naranja</string>
     <string name="accent_color_pink">Rosa</string>
     <string name="accent_color_teal">Turquesa</string>
+    <string name="accent_color_indigo">Índigo</string>
+    <string name="accent_color_red">Rojo</string>
+    <string name="accent_color_amber">Ámbar</string>
+    <string name="accent_color_cyan">Cian</string>
     <string name="font_scale_normal">Normal</string>
     <string name="font_scale_large">Grande</string>
     <string name="font_scale_extra_large">Muy grande</string>
@@ -187,6 +204,12 @@
     <string name="general_delete">Eliminar</string>
     <string name="general_close">Cerrar</string>
     <string name="general_saved_downloads">Guardado en Descargas</string>
+    <!-- Bug real encontrado 2026-09-14 (repaso general): estos mensajes
+         estaban hardcodeados en español directo en el ViewModel, saltándose
+         el sistema de 12 idiomas, un usuario en cualquier otro idioma veía
+         texto en español. -->
+    <string name="general_delete_error">No se pudo eliminar el archivo</string>
+    <string name="general_error_format">Error: %1$s</string>
 
     <!-- ── PDF Tools descriptions ─────────────────────── -->
     <string name="pdf_merge_desc">Combina varios PDFs en uno solo</string>
@@ -214,6 +237,10 @@
     <string name="pdf_tools_daily_limit_label">usos de esta herramienta</string>
     <string name="converter_daily_limit_label">conversiones</string>
     <string name="scan_daily_save_limit_label">escaneos guardados</string>
+    <!-- Bug real encontrado 2026-09-14: hardcodeado en español, saltándose
+         el sistema de 12 idiomas. -->
+    <string name="converter_daily_limit_reached_error">Límite diario de conversiones alcanzado</string>
+    <string name="converter_batch_save_error">No se pudieron guardar todos los archivos en Descargas</string>
 
     <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
     <string name="pdf_tools_back_to_tools">Volver a herramientas</string>
@@ -840,6 +867,9 @@
     <string name="trash_delete_all_confirm_body">"Se eliminarán %1$d archivos para siempre y ya no se podrán recuperar."</string>
     <string name="trash_total_size">%1$s en la papelera</string>
     <string name="trash_delete_forever_permission_note">Android puede pedirte que confirmes el borrado de fotos que no creó esta app.</string>
+    <!-- Bug real encontrado 2026-09-14: hardcodeado en español, saltándose
+         el sistema de 12 idiomas. -->
+    <string name="trash_bulk_delete_partial_error">Algunos archivos requieren eliminarse uno por uno</string>
 
     <!-- ── Selector de archivo con biblioteca de la app (item #15, FileSourcePickerDialog) ── -->
     <string name="filepicker_source_question">¿De dónde quieres traer el archivo?</string>

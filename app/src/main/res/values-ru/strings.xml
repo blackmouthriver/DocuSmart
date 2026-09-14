@@ -80,9 +80,7 @@
     <string name="settings_language">Язык</string>
     <string name="settings_theme">Тема</string>
     <string name="settings_accent_color">Акцентный цвет</string>
-    <string name="settings_select_accent_color">Выбрать акцентный цвет</string>
     <string name="settings_font_scale">Размер шрифта</string>
-    <string name="settings_select_font_scale">Выбрать размер шрифта</string>
     <string name="settings_animated_background">Анимированный фон</string>
     <string name="settings_animated_background_subtitle">Фигуры в цвете акцента в движении</string>
     <string name="settings_sound_effects">Звуковые эффекты</string>
@@ -92,13 +90,12 @@
     <string name="settings_about">О приложении</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Выбрать язык</string>
-    <string name="settings_select_theme">Выбрать тему</string>
     <string name="settings_close">Закрыть</string>
     <string name="settings_language_subtitle">Выберите язык приложения</string>
-    <string name="settings_section_personalization">Персонализация</string>
+    <string name="settings_section_appearance">Внешний вид</string>
     <string name="settings_tutorial">Посмотреть обучение</string>
     <string name="settings_tutorial_subtitle">Изучите основные функции</string>
-    <string name="settings_section_privacy">Конфиденциальность и безопасность</string>
+    <string name="settings_section_files_privacy">Файлы и конфиденциальность</string>
     <string name="settings_privacy_item">Конфиденциальность</string>
     <string name="settings_privacy_item_subtitle">Политика данных и разрешения</string>
     <string name="settings_ads_privacy_options">Согласие на рекламу</string>
@@ -107,7 +104,7 @@
     <string name="settings_share_app_subtitle">Порекомендуйте приложение друзьям</string>
     <string name="settings_rate">Оценить в Play Store</string>
     <string name="settings_rate_subtitle">Нравится DocuSmart? Оставьте отзыв!</string>
-    <string name="settings_section_support">Поддержка</string>
+    <string name="settings_section_help_community">Помощь и сообщество</string>
     <string name="settings_help">Помощь</string>
     <string name="settings_help_subtitle">Часто задаваемые вопросы</string>
     <string name="settings_section_system">Система</string>
@@ -129,7 +126,7 @@
     <string name="settings_help_a3">Нажмите на значок сердца на документе или используйте меню ⋮.</string>
     <string name="settings_help_q4">Мои документы в безопасности?</string>
     <string name="settings_help_a4">Да. Вся обработка выполняется локально. Ни один файл не покидает ваше устройство.</string>
-    <string name="settings_reset_body">Тема будет сброшена на светлую, язык — на испанский, размер шрифта — на обычный, а кэш будет очищен. Документы не будут удалены. Продолжить?</string>
+    <string name="settings_reset_body">Тема, акцентный цвет, размер шрифта, анимированный фон, звуковые эффекты и язык будут сброшены к значениям по умолчанию, а кэш созданных файлов будет очищен. Ваши документы не будут удалены. Продолжить?</string>
     <string name="settings_reset_confirm">Сбросить</string>
     <string name="settings_about_dialog_title">О DocuSmart</string>
     <string name="settings_about_body">Умный просмотрщик и конвертер документов. Управляйте, конвертируйте и организуйте файлы быстро и безопасно.</string>
@@ -145,6 +142,10 @@
     <string name="accent_color_orange">Оранжевый</string>
     <string name="accent_color_pink">Розовый</string>
     <string name="accent_color_teal">Бирюзовый</string>
+    <string name="accent_color_indigo">Индиго</string>
+    <string name="accent_color_red">Красный</string>
+    <string name="accent_color_amber">Янтарный</string>
+    <string name="accent_color_cyan">Голубой</string>
     <string name="font_scale_normal">Обычный</string>
     <string name="font_scale_large">Крупный</string>
     <string name="font_scale_extra_large">Очень крупный</string>
@@ -187,6 +188,8 @@
     <string name="general_delete">Удалить</string>
     <string name="general_close">Закрыть</string>
     <string name="general_saved_downloads">Сохранено в Загрузки</string>
+    <string name="general_delete_error">Не удалось удалить файл</string>
+    <string name="general_error_format">Ошибка: %1$s</string>
 
     <!-- ── Описания инструментов PDF ─────────────────────── -->
     <string name="pdf_merge_desc">Объединяет несколько PDF в один</string>
@@ -214,6 +217,8 @@
     <string name="pdf_tools_daily_limit_label">использований этого инструмента</string>
     <string name="converter_daily_limit_label">конвертаций</string>
     <string name="scan_daily_save_limit_label">сохранённых сканов</string>
+    <string name="converter_daily_limit_reached_error">Достигнут дневной лимит конвертаций</string>
+    <string name="converter_batch_save_error">Не удалось сохранить все файлы в Загрузки</string>
 
     <!-- ── Инструменты PDF: главный экран и карточка результата ── -->
     <string name="pdf_tools_back_to_tools">Назад к инструментам</string>
@@ -828,6 +833,7 @@
     <string name="trash_delete_all_confirm_body">"%1$d файлов будут удалены навсегда и их больше нельзя будет восстановить."</string>
     <string name="trash_total_size">%1$s в корзине</string>
     <string name="trash_delete_forever_permission_note">Android может попросить подтвердить удаление фото, которые создало не это приложение.</string>
+    <string name="trash_bulk_delete_partial_error">Некоторые файлы нужно удалять по одному</string>
 
     <!-- ── Выбор файла из библиотеки приложения (пункт #15, FileSourcePickerDialog) ── -->
     <string name="filepicker_source_question">Откуда взять файл?</string>

@@ -80,9 +80,7 @@
     <string name="settings_language">Idioma</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_accent_color">Cor de destaque</string>
-    <string name="settings_select_accent_color">Selecionar cor de destaque</string>
     <string name="settings_font_scale">Tamanho da fonte</string>
-    <string name="settings_select_font_scale">Selecionar tamanho da fonte</string>
     <string name="settings_animated_background">Fundo animado</string>
     <string name="settings_animated_background_subtitle">Formas com a cor de destaque em movimento</string>
     <string name="settings_sound_effects">Efeitos sonoros</string>
@@ -92,13 +90,12 @@
     <string name="settings_about">Sobre</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Selecionar idioma</string>
-    <string name="settings_select_theme">Selecionar tema</string>
     <string name="settings_close">Fechar</string>
     <string name="settings_language_subtitle">Escolha o idioma do app</string>
-    <string name="settings_section_personalization">Personalização</string>
+    <string name="settings_section_appearance">Aparência</string>
     <string name="settings_tutorial">Ver tutorial</string>
     <string name="settings_tutorial_subtitle">Reveja as principais funções</string>
-    <string name="settings_section_privacy">Privacidade e segurança</string>
+    <string name="settings_section_files_privacy">Arquivos e privacidade</string>
     <string name="settings_privacy_item">Privacidade</string>
     <string name="settings_privacy_item_subtitle">Política de dados e permissões</string>
     <string name="settings_ads_privacy_options">Consentimento de anúncios</string>
@@ -107,7 +104,7 @@
     <string name="settings_share_app_subtitle">Recomende o app aos seus contatos</string>
     <string name="settings_rate">Avaliar na Play Store</string>
     <string name="settings_rate_subtitle">Gosta do DocuSmart? Deixe uma avaliação!</string>
-    <string name="settings_section_support">Suporte</string>
+    <string name="settings_section_help_community">Ajuda e comunidade</string>
     <string name="settings_help">Ajuda</string>
     <string name="settings_help_subtitle">Perguntas frequentes</string>
     <string name="settings_section_system">Sistema</string>
@@ -129,7 +126,7 @@
     <string name="settings_help_a3">Toque no ícone de coração em qualquer documento ou use o menu ⋮.</string>
     <string name="settings_help_q4">Meus documentos estão seguros?</string>
     <string name="settings_help_a4">Sim. Todo o processamento é local. Nenhum arquivo sai do seu dispositivo.</string>
-    <string name="settings_reset_body">O tema será redefinido para claro, o idioma para espanhol, o tamanho da fonte para Normal, e o cache será limpo. Os documentos não serão excluídos. Continuar?</string>
+    <string name="settings_reset_body">O tema, a cor de destaque, o tamanho da letra, o fundo animado, os efeitos sonoros e o idioma serão redefinidos para os valores padrão, e o cache de arquivos gerados será limpo. Seus documentos não serão excluídos. Continuar?</string>
     <string name="settings_reset_confirm">Redefinir</string>
     <string name="settings_about_dialog_title">Sobre o DocuSmart</string>
     <string name="settings_about_body">Visualizador e conversor inteligente de documentos. Gerencie, converta e organize seus arquivos com rapidez e segurança.</string>
@@ -145,6 +142,10 @@
     <string name="accent_color_orange">Laranja</string>
     <string name="accent_color_pink">Rosa</string>
     <string name="accent_color_teal">Turquesa</string>
+    <string name="accent_color_indigo">Índigo</string>
+    <string name="accent_color_red">Vermelho</string>
+    <string name="accent_color_amber">Âmbar</string>
+    <string name="accent_color_cyan">Ciano</string>
     <string name="font_scale_normal">Normal</string>
     <string name="font_scale_large">Grande</string>
     <string name="font_scale_extra_large">Muito grande</string>
@@ -187,6 +188,8 @@
     <string name="general_delete">Excluir</string>
     <string name="general_close">Fechar</string>
     <string name="general_saved_downloads">Salvo em Downloads</string>
+    <string name="general_delete_error">Não foi possível excluir o arquivo</string>
+    <string name="general_error_format">Erro: %1$s</string>
 
     <!-- ── Descrições de ferramentas PDF ─────────────────────── -->
     <string name="pdf_merge_desc">Combina vários PDFs em um só</string>
@@ -214,6 +217,8 @@
     <string name="pdf_tools_daily_limit_label">usos desta ferramenta</string>
     <string name="converter_daily_limit_label">conversões</string>
     <string name="scan_daily_save_limit_label">digitalizações salvas</string>
+    <string name="converter_daily_limit_reached_error">Limite diário de conversões atingido</string>
+    <string name="converter_batch_save_error">Não foi possível salvar todos os arquivos em Downloads</string>
 
     <!-- ── Ferramentas PDF: tela principal e cartão de resultado ── -->
     <string name="pdf_tools_back_to_tools">Voltar às ferramentas</string>
@@ -828,6 +833,7 @@
     <string name="trash_delete_all_confirm_body">"%1$d arquivos serão excluídos para sempre e não poderão mais ser recuperados."</string>
     <string name="trash_total_size">%1$s na lixeira</string>
     <string name="trash_delete_forever_permission_note">O Android pode pedir que você confirme a exclusão de fotos que este app não criou.</string>
+    <string name="trash_bulk_delete_partial_error">Alguns arquivos precisam ser excluídos um por um</string>
 
     <!-- ── Seletor de arquivo com a biblioteca do app (item #15, FileSourcePickerDialog) ── -->
     <string name="filepicker_source_question">De onde você quer trazer o arquivo?</string>

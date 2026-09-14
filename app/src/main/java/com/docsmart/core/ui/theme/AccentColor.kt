@@ -70,5 +70,33 @@ enum class AccentColor(
         swatch = Color(0xFF0D9488),
         light = AccentTone(Color(0xFF0D9488), Color.White, Color(0xFFCCFBF1), Color(0xFF134E4A)),
         dark = AccentTone(Color(0xFF5EEAD4), Color(0xFF042F2E), Color(0xFF115E59), Color(0xFFCCFBF1))
+    ),
+    // Pedido explícito del usuario 2026-09-14: más colores de acento
+    // disponibles (rediseño de Ajustes) -- mismo criterio de tono que los 6
+    // anteriores (primary 600 con texto blanco en claro, primary 300 con
+    // texto oscuro en oscuro).
+    INDIGO(
+        label = "Índigo",
+        swatch = Color(0xFF4F46E5),
+        light = AccentTone(Color(0xFF4F46E5), Color.White, Color(0xFFE0E7FF), Color(0xFF312E81)),
+        dark = AccentTone(Color(0xFFA5B4FC), Color(0xFF1E1B4B), Color(0xFF4338CA), Color(0xFFE0E7FF))
+    ),
+    RED(
+        label = "Rojo",
+        swatch = Color(0xFFDC2626),
+        light = AccentTone(Color(0xFFDC2626), Color.White, Color(0xFFFEE2E2), Color(0xFF7F1D1D)),
+        dark = AccentTone(Color(0xFFFCA5A5), Color(0xFF450A0A), Color(0xFFB91C1C), Color(0xFFFEE2E2))
+    ),
+    AMBER(
+        label = "Ámbar",
+        swatch = Color(0xFFD97706),
+        light = AccentTone(Color(0xFFD97706), Color.White, Color(0xFFFEF3C7), Color(0xFF78350F)),
+        dark = AccentTone(Color(0xFFFCD34D), Color(0xFF451A03), Color(0xFFB45309), Color(0xFFFEF3C7))
+    ),
+    CYAN(
+        label = "Cian",
+        swatch = Color(0xFF0891B2),
+        light = AccentTone(Color(0xFF0891B2), Color.White, Color(0xFFCFFAFE), Color(0xFF164E63)),
+        dark = AccentTone(Color(0xFF67E8F9), Color(0xFF083344), Color(0xFF0E7490), Color(0xFFCFFAFE))
     )
 }

@@ -1,0 +1,884 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">DocuSmart</string>
+
+    <!-- ── Navegació ─────────────────────────────── -->
+    <string name="nav_home">Inici</string>
+    <string name="nav_library">Biblioteca</string>
+    <string name="nav_converter">Convertir</string>
+    <string name="nav_pdf">PDF</string>
+    <string name="nav_settings">Ajustos</string>
+
+    <!-- ── Home ───────────────────────────────────── -->
+    <string name="home_title">Els teus documents\nen un sol lloc</string>
+    <string name="home_subtitle">Obre, converteix i gestiona els teus arxius fàcilment</string>
+    <string name="home_open">Obrir</string>
+    <string name="home_convert">Convertir</string>
+    <string name="home_quick_access">Accessos ràpids</string>
+    <string name="home_scan">Escanejar</string>
+    <string name="home_img_pdf">Img→PDF</string>
+    <string name="home_security">Seguretat</string>
+    <string name="home_study">Estudi</string>
+    <string name="home_recent">Recents</string>
+    <string name="home_see_all">Veure-ho tot</string>
+    <string name="home_no_recent_title">Sense documents recents</string>
+    <string name="home_no_recent_desc">Obre un arxiu per veure\'l aquí</string>
+    <string name="home_open_file_action">Obrir arxiu</string>
+    <string name="home_share_document">Compartir %1$s</string>
+    <string name="home_qr_read">Llegir QR</string>
+    <string name="home_qr_create">Crear QR</string>
+    <string name="home_scanner_sheet_title">Escàner</string>
+    <string name="home_scanner_sheet_subtitle">Tria una opció</string>
+    <string name="home_scanner_option_scan_title">Escanejar document</string>
+    <string name="home_scanner_option_scan_subtitle">Captura automàtica amb ML Kit</string>
+    <string name="home_scanner_option_qr_read_subtitle">Detecta URL, text i més</string>
+
+    <!-- ── Biblioteca ─────────────────────────────── -->
+    <string name="library_title">Biblioteca</string>
+    <string name="library_subtitle">Tots els teus documents</string>
+    <string name="library_search">Cerca a la biblioteca…</string>
+    <string name="library_documents">documents</string>
+    <string name="library_tab_device">Dispositiu</string>
+    <string name="library_tab_app_files">Els meus arxius</string>
+    <string name="library_tab_file_count">%1$d arxius</string>
+    <string name="library_tab_device_description">Fotos i documents que ja tenies desats al teu dispositiu</string>
+    <string name="library_tab_app_files_description">Documents que has creat o convertit dins de DocuSmart</string>
+
+    <!-- ── Convertidor ────────────────────────────── -->
+    <string name="converter_title">Convertidor</string>
+    <string name="converter_subtitle">Converteix els teus documents fàcilment</string>
+    <string name="converter_select">Què vols convertir?</string>
+    <string name="converter_save">Desar a Baixades</string>
+    <string name="converter_view_document">Veure document</string>
+
+    <!-- ── PDF Tools ──────────────────────────────── -->
+    <string name="pdf_tools_title">Eines PDF</string>
+    <string name="pdf_tools_subtitle">Gestiona els teus PDF de forma ràpida</string>
+    <string name="pdf_tools_ad_not_available">L\'anunci no està disponible. Torna-ho a provar d\'aquí a uns segons.</string>
+    <string name="pdf_merge">Unir PDF</string>
+    <string name="pdf_split">Dividir PDF</string>
+    <string name="pdf_compress">Comprimir PDF</string>
+    <string name="pdf_rotate">Girar PDF</string>
+    <string name="pdf_number_pages">Numerar pàgines</string>
+    <string name="pdf_watermark">Marca d\'aigua</string>
+    <string name="pdf_reorder_pages">Reordenar pàgines</string>
+    <string name="pdf_compare">Comparar PDF</string>
+    <string name="pdf_redact">Censurar contingut</string>
+    <string name="pdf_crop">Retallar pàgines</string>
+    <string name="pdf_edit_text">Editar text</string>
+    <string name="pdf_sign">Signar PDF</string>
+    <string name="pdf_fill_form">Emplenar formulari</string>
+    <string name="pdf_ocr">OCR avançat</string>
+
+    <!-- ── Ajustos ────────────────────────────────── -->
+    <string name="settings_title">Ajustos</string>
+    <string name="settings_subtitle">Personalitza la teva experiència</string>
+    <string name="settings_premium">DocuSmart Premium</string>
+    <string name="settings_premium_subtitle">Desbloqueja totes les funcions</string>
+    <string name="settings_premium_trial_subtitle">Prova gratuïta activa · es cobrarà el %1$s</string>
+    <string name="settings_premium_auto_trial_subtitle">Provant Premium gratis · queden %1$d dies</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_accent_color">Color d\'accent</string>
+    <string name="settings_font_scale">Mida de lletra</string>
+    <string name="settings_animated_background">Fons animat</string>
+    <string name="settings_animated_background_subtitle">Formes amb el color d\'accent en moviment</string>
+    <string name="settings_sound_effects">Efectes de so</string>
+    <string name="settings_sound_effects_subtitle">Sons curts en escanejar, convertir i esborrar</string>
+    <string name="settings_storage">Emmagatzematge</string>
+    <string name="settings_storage_subtitle">Veure arxius generats</string>
+    <string name="settings_about">Quant a</string>
+    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_select_language">Seleccionar idioma</string>
+    <string name="settings_close">Tancar</string>
+    <string name="settings_language_subtitle">Tria l\'idioma de l\'aplicació</string>
+    <!-- Rediseño de Ajustes 2026-09-14: Apariencia agrupa Tema/Color de
+         acento/Tamaño de letra/Fondo animado/Sonidos/Idioma en una sola
+         tarjeta con controles en línea (antes cada uno abría un diálogo
+         aparte dentro de "Personalización"). -->
+    <string name="settings_section_appearance">Aparença</string>
+    <string name="settings_tutorial">Veure tutorial</string>
+    <string name="settings_tutorial_subtitle">Repassa les funcions principals</string>
+    <!-- Archivos y privacidad reemplaza a las antiguas secciones separadas
+         "Almacenamiento" y "Privacidad y seguridad", mismo contenido,
+         agrupado en una sola sección. -->
+    <string name="settings_section_files_privacy">Arxius i privadesa</string>
+    <string name="settings_privacy_item">Privadesa</string>
+    <string name="settings_privacy_item_subtitle">Política de dades i permisos</string>
+    <string name="settings_ads_privacy_options">Consentiment d\'anuncis</string>
+    <string name="settings_ads_privacy_options_subtitle">Canvia les teves preferències de privadesa per a anuncis</string>
+    <string name="settings_share_app">Compartir DocuSmart</string>
+    <string name="settings_share_app_subtitle">Recomana l\'aplicació als teus contactes</string>
+    <string name="settings_rate">Valorar a Play Store</string>
+    <string name="settings_rate_subtitle">T\'agrada DocuSmart? Deixa\'ns una ressenya!</string>
+    <!-- Ayuda y comunidad reemplaza a "Soporte", ahora también incluye
+         Tutorial (antes en Personalización), Compartir y Valorar (antes en
+         su propia sección sin encabezado propio). -->
+    <string name="settings_section_help_community">Ajuda i comunitat</string>
+    <string name="settings_help">Ajuda</string>
+    <string name="settings_help_subtitle">Preguntes freqüents</string>
+    <string name="settings_section_system">Sistema</string>
+    <string name="settings_reset">Restablir configuració</string>
+    <string name="settings_reset_subtitle">Tornar als valors predeterminats</string>
+    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_got_it">Entès</string>
+    <string name="settings_storage_conversions">Conversions</string>
+    <string name="settings_storage_total">Total</string>
+    <string name="settings_storage_files_unit">arxius</string>
+    <string name="settings_storage_clear_cache">Buidar la memòria cau</string>
+    <string name="settings_privacy_body">DocuSmart respecta la teva privadesa. Els teus documents mai es pugen a servidors externs. Tot el processament té lloc localment al teu dispositiu.</string>
+    <string name="settings_privacy_manage_permissions">Gestionar permisos del sistema</string>
+    <string name="settings_help_q1">Com converteixo imatges a PDF?</string>
+    <string name="settings_help_a1">Vés a Convertir → Imatge → selecciona les teves imatges → toca Convertir.</string>
+    <string name="settings_help_q2">On es desen els arxius?</string>
+    <string name="settings_help_a2">Els arxius generats es desen a Baixades del teu dispositiu.</string>
+    <string name="settings_help_q3">Com afegeixo un favorit?</string>
+    <string name="settings_help_a3">Toca la icona de cor en qualsevol document o fes servir el menú ⋮.</string>
+    <string name="settings_help_q4">Els meus documents estan segurs?</string>
+    <string name="settings_help_a4">Sí. Tot el processament és local. Cap arxiu surt del teu dispositiu.</string>
+    <string name="settings_reset_body">El tema, el color d\'accent, la mida de lletra, el fons animat, els efectes de so i l\'idioma es restabliran als valors predeterminats, i s\'esborrarà la memòria cau dels fitxers generats. Els teus documents no s\'eliminaran. Continuar?</string>
+    <string name="settings_reset_confirm">Restablir</string>
+    <string name="settings_about_dialog_title">Quant a DocuSmart</string>
+    <string name="settings_about_body">Visor i convertidor intel·ligent de documents. Gestiona, converteix i organitza els teus arxius de forma ràpida i segura.</string>
+    <string name="settings_copyright">© 2026 mouthblack technology</string>
+
+    <!-- ── Temes ──────────────────────────────────── -->
+    <string name="theme_light">Clar</string>
+    <string name="theme_dark">Fosc</string>
+    <string name="theme_system">Sistema</string>
+    <string name="accent_color_blue">Blau</string>
+    <string name="accent_color_purple">Morat</string>
+    <string name="accent_color_green">Verd</string>
+    <string name="accent_color_orange">Taronja</string>
+    <string name="accent_color_pink">Rosa</string>
+    <string name="accent_color_teal">Turquesa</string>
+    <string name="accent_color_indigo">Indi</string>
+    <string name="accent_color_red">Vermell</string>
+    <string name="accent_color_amber">Ambre</string>
+    <string name="accent_color_cyan">Cian</string>
+    <string name="font_scale_normal">Normal</string>
+    <string name="font_scale_large">Gran</string>
+    <string name="font_scale_extra_large">Molt gran</string>
+
+    <!-- ── Escàner ────────────────────────────────── -->
+    <string name="scanner_title">Iniciant l\'escàner</string>
+    <string name="scanner_hint">Prepara el document i\napunta la càmera cap a ell</string>
+    <string name="scanner_result_title">Document escanejat</string>
+    <string name="scanner_again">Escanejar de nou</string>
+    <string name="scan_result_share_format">Compartir %1$s</string>
+    <string name="scanner_back">Tornar a l\'inici</string>
+
+    <!-- ── Visor ──────────────────────────────────── -->
+    <string name="viewer_error">Error en obrir el document</string>
+    <string name="viewer_back">Tornar</string>
+    <string name="viewer_rendering">Renderitzant document…</string>
+    <string name="viewer_unsupported">Aquest format no és compatible amb el visor integrat.</string>
+    <string name="viewer_open_other">Obrir amb una altra aplicació</string>
+    <string name="viewer_more_options">Més opcions</string>
+    <string name="viewer_convert">Convertir</string>
+    <string name="viewer_create_qr">Crear QR</string>
+    <string name="viewer_rename">Reanomenar</string>
+    <string name="viewer_delete">Eliminar</string>
+    <string name="viewer_rename_title">Reanomenar document</string>
+    <string name="viewer_rename_label">Nom de l\'arxiu</string>
+    <string name="viewer_rename_empty_error">El nom no pot estar buit</string>
+    <string name="viewer_delete_confirm_title">Vols eliminar aquest document?</string>
+    <string name="viewer_delete_confirm_body">"%1$s s\'eliminarà de forma permanent. Aquesta acció no es pot desfer."</string>
+
+    <!-- ── Menú de documento (Home/Biblioteca, DocuSmartDocumentItem) ── -->
+    <string name="doc_item_add_favorite">Afegir a favorits</string>
+    <string name="doc_item_remove_favorite">Treure de favorits</string>
+    <string name="doc_item_rename_title">Reanomenar arxiu</string>
+
+    <!-- ── General ────────────────────────────────── -->
+    <string name="general_save">Desar</string>
+    <string name="general_cancel">Cancel·lar</string>
+    <string name="general_back">Tornar</string>
+    <string name="general_share">Compartir</string>
+    <string name="general_delete">Eliminar</string>
+    <string name="general_close">Tancar</string>
+    <string name="general_saved_downloads">Desat a Baixades</string>
+    <string name="general_delete_error">No s\'ha pogut eliminar l\'arxiu</string>
+    <string name="general_error_format">Error: %1$s</string>
+
+    <!-- ── PDF Tools descriptions ─────────────────────── -->
+    <string name="pdf_merge_desc">Combina diversos PDF en un de sol</string>
+    <string name="pdf_split_desc">Extreu pàgines d\'un PDF</string>
+    <string name="pdf_compress_desc">Redueix la mida de l\'arxiu</string>
+    <string name="pdf_rotate_desc">Gira les pàgines del document</string>
+    <string name="pdf_number_pages_desc">Afegeix numeració al peu de pàgina</string>
+    <string name="pdf_watermark_desc">Superposa un text sobre el document</string>
+    <string name="pdf_reorder_pages_desc">Arrossega o elimina pàgines individuals</string>
+    <string name="pdf_compare_desc">Troba les diferències entre dues versions</string>
+    <string name="pdf_redact_desc">Elimina text i imatges sensibles de forma irreversible</string>
+    <string name="pdf_crop_desc">Elimina el marge sobrant de cada pàgina</string>
+    <string name="pdf_edit_text_desc">Cerca i reemplaça text existent al document</string>
+    <string name="pdf_sign_desc">Dibuixa la teva signatura i estampa-la sobre el document</string>
+    <string name="pdf_fill_form_desc">Detecta i completa camps de text d\'un formulari PDF</string>
+    <string name="pdf_ocr_desc">Reconeix el text d\'un PDF escanejat per fer-lo cercable</string>
+
+    <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
+    <string name="daily_limit_title">Límit diari assolit</string>
+    <string name="daily_limit_body">Has fet servir %1$d de %2$d %3$s d\'avui.</string>
+    <string name="daily_limit_resets_tomorrow">El límit es reinicia demà.</string>
+    <string name="daily_limit_watch_ad">Veure anunci → +1 ús</string>
+    <string name="daily_limit_ad_not_ready">Anunci no disponible encara</string>
+    <string name="daily_limit_get_premium">Obtenir Premium → sense límits</string>
+    <string name="pdf_tools_daily_limit_label">usos d\'aquesta eina</string>
+    <string name="converter_daily_limit_label">conversions</string>
+    <string name="scan_daily_save_limit_label">escanejos desats</string>
+    <string name="converter_daily_limit_reached_error">S\'ha arribat al límit diari de conversions</string>
+    <string name="converter_batch_save_error">No s\'han pogut desar tots els arxius a Baixades</string>
+
+    <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
+    <string name="pdf_tools_back_to_tools">Tornar a eines</string>
+    <string name="pdf_tools_usage_today">Usos avui: %1$d / %2$d</string>
+    <string name="pdf_tools_save_to_downloads">Desar a Baixades</string>
+    <string name="pdf_tools_share">Compartir PDF</string>
+    <string name="pdf_tools_share_error">No s\'ha pogut compartir l\'arxiu</string>
+    <string name="pdf_tools_save_error">No s\'ha pogut desar a Baixades</string>
+    <string name="pdf_tools_new_operation">Nova operació</string>
+    <string name="pdf_tools_default_filename">arxiu.pdf</string>
+    <string name="pdf_tools_select_pdf_prompt">Seleccionar PDF</string>
+    <string name="pdf_tools_filename_label">Nom de l\'arxiu de sortida</string>
+    <string name="pdf_tools_filename_placeholder">Ex: Documents_Units</string>
+    <string name="pdf_tools_filename_hint">Si el deixes buit es generarà un nom automàtic</string>
+
+    <!-- ── Unir PDFs ── -->
+    <string name="pdf_merge_subtitle">Selecciona 2 o més PDF per combinar-los en un de sol</string>
+    <string name="pdf_merge_select_prompt">Toca per seleccionar PDF</string>
+    <string name="pdf_merge_add_more">Afegir més PDF</string>
+    <string name="pdf_merge_order_hint">Els PDF s\'uniran en l\'ordre mostrat</string>
+    <string name="pdf_merge_remove_desc">Treure</string>
+    <string name="pdf_merge_file_fallback">Arxiu %1$d</string>
+    <string name="pdf_merge_progress">Unint %1$d PDF…</string>
+    <string name="pdf_merge_select_at_least_2">Selecciona almenys 2 PDF</string>
+    <string name="pdf_merge_execute">Unir %1$d PDF</string>
+    <string name="pdf_merge_min_pdfs_error">Selecciona almenys 2 PDF per unir</string>
+    <string name="pdf_merge_read_error">No s\'ha pogut llegir cap pàgina dels PDF seleccionats.</string>
+    <string name="pdf_merge_generate_error">Error en generar el PDF combinat.</string>
+    <string name="pdf_merge_success">PDF units correctament — %1$d arxius, %2$d pàgines</string>
+    <string name="pdf_merge_error">Error en unir PDF: %1$s</string>
+
+    <!-- ── Dividir PDF ── -->
+    <string name="pdf_split_subtitle">Extreu un rang de pàgines del teu PDF</string>
+    <string name="pdf_split_selected">PDF seleccionat</string>
+    <string name="pdf_split_range_title">Rang de pàgines a extreure</string>
+    <string name="pdf_split_from_page">Des de la pàgina</string>
+    <string name="pdf_split_to_page">Fins a la pàgina</string>
+    <string name="pdf_split_summary">S\'extrauran %1$d pàgina(es) · Pàgines: %2$d a %3$d</string>
+    <string name="pdf_split_progress">Dividint PDF…</string>
+    <string name="pdf_split_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_split_no_pages">El PDF no té pàgines.</string>
+    <string name="pdf_split_range_too_small">El rang ha d\'incloure almenys 2 pàgines. El PDF té %1$d pàgines.</string>
+    <string name="pdf_split_generate_error">Error en generar el PDF dividit.</string>
+    <string name="pdf_split_success">PDF dividit: %1$d pàgina(es) extretes · %2$d KB</string>
+    <string name="pdf_split_error">Error en dividir: %1$s</string>
+
+    <!-- ── Comprimir PDF ── -->
+    <string name="pdf_compress_subtitle">Redueix la mida del teu PDF mantenint la llegibilitat</string>
+    <string name="pdf_compress_ready">PDF llest per comprimir</string>
+    <string name="pdf_compress_level_title">Nivell de compressió</string>
+    <string name="pdf_compress_level_high_quality">Alta qualitat</string>
+    <string name="pdf_compress_level_balanced">Equilibrat</string>
+    <string name="pdf_compress_level_high_compression">Alta compressió</string>
+    <string name="pdf_compress_level_max_compression">Màxima compressió</string>
+    <string name="pdf_compress_smaller">Més petit</string>
+    <string name="pdf_compress_better_quality">Millor qualitat</string>
+    <string name="pdf_compress_reduction_10_20">Reducció estimada: 10-20%</string>
+    <string name="pdf_compress_reduction_30_50">Reducció estimada: 30-50%</string>
+    <string name="pdf_compress_reduction_50_70">Reducció estimada: 50-70%</string>
+    <string name="pdf_compress_reduction_70_85">Reducció estimada: 70-85%</string>
+    <string name="pdf_compress_progress">Comprimint PDF…</string>
+    <string name="pdf_compress_read_error">No s\'ha pogut llegir l\'arxiu. Comprova que sigui un PDF vàlid.</string>
+    <string name="pdf_compress_empty_file">L\'arxiu PDF està buit o malmès.</string>
+    <string name="pdf_compress_no_pages">El PDF no conté pàgines.</string>
+    <string name="pdf_compress_generate_error">Error en generar el PDF comprimit.</string>
+    <string name="pdf_compress_already_optimized">El PDF ja està optimitzat · Mida: %1$d KB</string>
+    <string name="pdf_compress_success">Abans: %1$d KB → Després: %2$d KB · Reducció: %3$d%%</string>
+    <string name="pdf_compress_error">Error en comprimir: %1$s</string>
+
+    <!-- ── Rotar PDF ── -->
+    <string name="pdf_rotate_subtitle">Gira totes les pàgines del document</string>
+    <string name="pdf_rotate_ready">PDF llest per girar</string>
+    <string name="pdf_rotate_preview_title">Vista prèvia i angle de rotació</string>
+    <string name="pdf_rotate_preview_placeholder">Selecciona un PDF\nper veure la vista prèvia</string>
+    <string name="pdf_rotate_loading_preview">Carregant vista prèvia…</string>
+    <string name="pdf_rotate_preview_desc">Vista prèvia girada</string>
+    <string name="pdf_rotate_angle_90">Rotació de 90° en sentit horari</string>
+    <string name="pdf_rotate_angle_180">Rotació de mitja volta (cap per avall)</string>
+    <string name="pdf_rotate_angle_270">Rotació de 90° en sentit antihorari</string>
+    <string name="pdf_rotate_progress">Girant PDF %1$d°…</string>
+    <string name="pdf_rotate_execute">Girar PDF %1$d°</string>
+    <string name="pdf_rotate_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_rotate_generate_error">Error en generar el PDF girat.</string>
+    <string name="pdf_rotate_success">PDF girat %1$d° correctament</string>
+    <string name="pdf_rotate_error">Error en girar el PDF: %1$s</string>
+
+    <!-- ── Numerar páginas ── -->
+    <string name="pdf_number_pages_subtitle">Afegeix el número de pàgina al peu de cada pàgina</string>
+    <string name="pdf_number_pages_ready">PDF llest per numerar</string>
+    <string name="pdf_number_pages_format_title">Format de numeració</string>
+    <string name="pdf_number_pages_format_number_only">Número</string>
+    <string name="pdf_number_pages_format_number_of_total">Núm. / Total</string>
+    <string name="pdf_number_pages_format_page_of_total">Pàgina X</string>
+    <string name="pdf_number_pages_example_number_only">Exemple: 3</string>
+    <string name="pdf_number_pages_example_number_of_total">Exemple: 3 / 10</string>
+    <string name="pdf_number_pages_example_page_of_total">Exemple: Pàgina 3 de 10</string>
+    <string name="pdf_number_pages_progress">Numerant pàgines…</string>
+    <string name="pdf_number_pages_execute">Numerar pàgines</string>
+    <string name="pdf_number_pages_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_number_pages_no_pages">El PDF no té pàgines.</string>
+    <string name="pdf_number_pages_generate_error">Error en generar el PDF numerat.</string>
+    <string name="pdf_number_pages_success">PDF numerat correctament — %1$d pàgines</string>
+    <string name="pdf_number_pages_error">Error en numerar pàgines: %1$s</string>
+    <string name="pdf_number_pages_footer_template">Pàgina %1$d de %2$d</string>
+
+    <!-- ── Marca de agua ── -->
+    <string name="pdf_watermark_subtitle">Superposa un text diagonal i semitransparent a cada pàgina</string>
+    <string name="pdf_watermark_ready">PDF llest per marcar</string>
+    <string name="pdf_watermark_text_label">Text de la marca d\'aigua</string>
+    <string name="pdf_watermark_text_placeholder">Ex: CONFIDENCIAL</string>
+    <string name="pdf_watermark_hint">El text apareixerà en diagonal i semitransparent sobre cada pàgina</string>
+    <string name="pdf_watermark_progress">Aplicant marca d\'aigua…</string>
+    <string name="pdf_watermark_execute">Aplicar marca d\'aigua</string>
+    <string name="pdf_watermark_empty_text_error">Escriu un text per a la marca d\'aigua</string>
+    <string name="pdf_watermark_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_watermark_no_pages">El PDF no té pàgines.</string>
+    <string name="pdf_watermark_generate_error">Error en generar el PDF amb marca d\'aigua.</string>
+    <string name="pdf_watermark_success">Marca d\'aigua aplicada correctament — %1$d pàgines</string>
+    <string name="pdf_watermark_error">Error en aplicar la marca d\'aigua: %1$s</string>
+
+    <!-- ── Reordenar páginas ── -->
+    <string name="pdf_reorder_pages_subtitle">Arrossega les miniatures per reordenar o elimina pàgines</string>
+    <string name="pdf_reorder_pages_ready">PDF llest per reordenar</string>
+    <string name="pdf_reorder_pages_hint">Mantén premuda la icona d\'arrossegament per moure una pàgina a una altra posició</string>
+    <string name="pdf_reorder_pages_page_label">Pàgina %1$d</string>
+    <string name="pdf_reorder_pages_drag_handle_desc">Arrossegar per reordenar</string>
+    <string name="pdf_reorder_pages_progress">Desant el nou ordre…</string>
+    <string name="pdf_reorder_pages_execute">Desar canvis</string>
+    <string name="pdf_reorder_pages_empty_order_error">Has de conservar almenys una pàgina</string>
+    <string name="pdf_reorder_pages_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_reorder_pages_generate_error">Error en generar el PDF reordenat.</string>
+    <string name="pdf_reorder_pages_success">PDF actualitzat correctament — %1$d pàgines</string>
+    <string name="pdf_reorder_pages_error">Error en reordenar pàgines: %1$s</string>
+
+    <!-- ── Comparar PDFs ── -->
+    <string name="pdf_compare_subtitle">Selecciona dos PDF per comparar-ne el contingut</string>
+    <string name="pdf_compare_document_a">Document A</string>
+    <string name="pdf_compare_document_b">Document B</string>
+    <string name="pdf_compare_ready">PDF llest per comparar</string>
+    <string name="pdf_compare_progress">Comparant documents…</string>
+    <string name="pdf_compare_execute">Comparar PDF</string>
+    <string name="pdf_compare_read_error_a">No s\'ha pogut llegir el Document A. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_compare_read_error_b">No s\'ha pogut llegir el Document B. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_compare_generate_error">Error en generar l\'informe de comparació.</string>
+    <string name="pdf_compare_identical">Els dos documents són idèntics</string>
+    <string name="pdf_compare_differences_found">%1$d de %2$d pàgines tenen diferències</string>
+    <string name="pdf_compare_error">Error en comparar PDF: %1$s</string>
+    <string name="pdf_compare_report_title">Informe de comparació</string>
+    <string name="pdf_compare_report_page_header">Pàgina %1$d</string>
+    <string name="pdf_compare_report_page_only_in_a">Aquesta pàgina només existeix al Document A</string>
+    <string name="pdf_compare_report_page_only_in_b">Aquesta pàgina només existeix al Document B</string>
+    <string name="pdf_compare_report_only_in_a_line">Només a A: %1$s</string>
+    <string name="pdf_compare_report_only_in_b_line">Només a B: %1$s</string>
+
+    <!-- ── Censurar contenido ── -->
+    <string name="pdf_redact_subtitle">Dibuixa rectangles sobre les zones que vulguis censurar</string>
+    <string name="pdf_redact_ready">PDF llest per censurar</string>
+    <string name="pdf_redact_page_indicator">Pàgina %1$d de %2$d</string>
+    <string name="pdf_redact_prev_page">Pàgina anterior</string>
+    <string name="pdf_redact_next_page">Pàgina següent</string>
+    <string name="pdf_redact_loading_preview">Carregant vista prèvia…</string>
+    <string name="pdf_redact_preview_desc">Vista prèvia de la pàgina</string>
+    <string name="pdf_redact_draw_hint">Arrossega sobre la vista prèvia per marcar una zona a censurar</string>
+    <string name="pdf_redact_zones_marked">%1$d zones marcades</string>
+    <string name="pdf_redact_undo">Desfer</string>
+    <string name="pdf_redact_clear_all">Esborrar-ho tot</string>
+    <string name="pdf_redact_execute">Censurar PDF</string>
+    <string name="pdf_redact_progress">Censurant contingut…</string>
+    <string name="pdf_redact_empty_rects_error">Marca almenys una zona per censurar</string>
+    <string name="pdf_redact_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_redact_no_pages">El PDF no té pàgines.</string>
+    <string name="pdf_redact_generate_error">Error en generar el PDF censurat.</string>
+    <string name="pdf_redact_success">%1$d zones censurades correctament</string>
+    <string name="pdf_redact_error">Error en censurar el PDF: %1$s</string>
+
+    <!-- ── Recortar páginas ── -->
+    <string name="pdf_crop_subtitle">Ajusta el marge a retallar i previsualitza el resultat</string>
+    <string name="pdf_crop_ready">PDF llest per retallar</string>
+    <string name="pdf_crop_preview_title">Vista prèvia</string>
+    <string name="pdf_crop_preview_placeholder">Selecciona un PDF per veure la vista prèvia</string>
+    <string name="pdf_crop_loading_preview">Carregant vista prèvia…</string>
+    <string name="pdf_crop_preview_desc">Vista prèvia retallada</string>
+    <string name="pdf_crop_margin_label">Marge a retallar: %1$d%%</string>
+    <string name="pdf_crop_execute">Retallar PDF</string>
+    <string name="pdf_crop_progress">Retallant pàgines…</string>
+    <string name="pdf_crop_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_crop_no_pages">El PDF no té pàgines.</string>
+    <string name="pdf_crop_generate_error">Error en generar el PDF retallat.</string>
+    <string name="pdf_crop_success">PDF retallat correctament — %1$d%% de marge</string>
+    <string name="pdf_crop_error">Error en retallar el PDF: %1$s</string>
+
+    <!-- ── Editar texto ── -->
+    <string name="pdf_edit_text_subtitle">Escriu el text a cercar i el text de reemplaçament</string>
+    <string name="pdf_edit_text_ready">PDF llest per editar</string>
+    <string name="pdf_edit_text_search_label">Cercar</string>
+    <string name="pdf_edit_text_search_placeholder">Text a cercar</string>
+    <string name="pdf_edit_text_replace_label">Reemplaçar amb</string>
+    <string name="pdf_edit_text_replace_placeholder">Text de reemplaçament (buit per eliminar)</string>
+    <string name="pdf_edit_text_hint">El text es cerca sense distingir majúscules/minúscules i es reemplaça a totes les aparicions</string>
+    <string name="pdf_edit_text_execute">Aplicar canvis</string>
+    <string name="pdf_edit_text_progress">Editant text…</string>
+    <string name="pdf_edit_text_empty_search_error">Escriu el text que vols cercar</string>
+    <string name="pdf_edit_text_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_edit_text_no_pages">El PDF no té pàgines.</string>
+    <string name="pdf_edit_text_no_matches_error">No s\'ha trobat aquest text al document</string>
+    <string name="pdf_edit_text_generate_error">Error en generar el PDF editat.</string>
+    <string name="pdf_edit_text_success">%1$d aparicions reemplaçades correctament</string>
+    <string name="pdf_edit_text_error">Error en editar el PDF: %1$s</string>
+
+    <!-- ── Firmar PDF ── -->
+    <string name="pdf_sign_subtitle">Tria la pàgina i dibuixa la teva signatura amb el dit</string>
+    <string name="pdf_sign_ready">PDF llest per signar</string>
+    <string name="pdf_sign_page_indicator">Pàgina %1$d de %2$d</string>
+    <string name="pdf_sign_prev_page">Pàgina anterior</string>
+    <string name="pdf_sign_next_page">Pàgina següent</string>
+    <string name="pdf_sign_draw_label">La teva signatura</string>
+    <string name="pdf_sign_draw_hint">Dibuixa la teva signatura amb el dit al requadre de dalt</string>
+    <string name="pdf_sign_hint">Encara no has dibuixat la teva signatura</string>
+    <string name="pdf_sign_captured">Signatura capturada</string>
+    <string name="pdf_sign_clear">Esborrar</string>
+    <string name="pdf_sign_execute">Signar PDF</string>
+    <string name="pdf_sign_progress">Signant document…</string>
+    <string name="pdf_sign_empty_signature_error">Dibuixa la teva signatura abans de continuar</string>
+    <string name="pdf_sign_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_sign_no_pages">El PDF no té pàgines.</string>
+    <string name="pdf_sign_generate_error">Error en generar el PDF signat.</string>
+    <string name="pdf_sign_success">PDF signat correctament — pàgina %1$d</string>
+    <string name="pdf_sign_error">Error en signar el PDF: %1$s</string>
+
+    <!-- ── Rellenar formulario ── -->
+    <string name="pdf_fill_form_subtitle">Selecciona un PDF amb camps de formulari i emplena\'ls</string>
+    <string name="pdf_fill_form_ready">PDF llest per emplenar</string>
+    <string name="pdf_fill_form_detecting">Detectant camps del formulari…</string>
+    <string name="pdf_fill_form_no_fields">Aquest PDF no té camps de formulari de text</string>
+    <string name="pdf_fill_form_fields_title">%1$d camps detectats</string>
+    <string name="pdf_fill_form_execute">Emplenar formulari</string>
+    <string name="pdf_fill_form_progress">Emplenant formulari…</string>
+    <string name="pdf_fill_form_empty_values_error">No hi ha valors per emplenar</string>
+    <string name="pdf_fill_form_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_fill_form_no_fields_error">Aquest PDF no té camps de formulari per emplenar</string>
+    <string name="pdf_fill_form_generate_error">Error en generar el PDF amb el formulari emplenat.</string>
+    <string name="pdf_fill_form_success">%1$d camps emplenats correctament</string>
+    <string name="pdf_fill_form_error">Error en emplenar el formulari: %1$s</string>
+    <string name="pdf_ocr_subtitle">Selecciona un PDF escanejat per reconèixer-ne el text</string>
+    <string name="pdf_ocr_ready">PDF llest per reconèixer</string>
+    <string name="pdf_ocr_info">S\'afegirà una capa de text invisible sobre cada pàgina escanejada, sense canviar-ne l\'aparença — el PDF resultant queda cercable i amb el text seleccionable. Pot trigar diversos segons per pàgina.</string>
+    <string name="pdf_ocr_execute">Reconèixer text</string>
+    <string name="pdf_ocr_progress">Reconeixent text…</string>
+    <string name="pdf_ocr_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_ocr_no_pages">El PDF no té pàgines per processar</string>
+    <string name="pdf_ocr_already_has_text">Aquest PDF ja té text seleccionable a totes les seves pàgines — no cal aplicar OCR</string>
+    <string name="pdf_ocr_no_text_found">No s\'ha reconegut cap text al PDF escanejat</string>
+    <string name="pdf_ocr_generate_error">Error en generar el PDF amb el text reconegut.</string>
+    <string name="pdf_ocr_success">%1$d pàgines processades, %2$d paraules reconegudes</string>
+    <string name="pdf_ocr_error">Error en reconèixer el text: %1$s</string>
+
+    <!-- ── Home empty state ───────────────────────────── -->
+
+    <!-- ── Converter categorías ──────────────────────── -->
+    <string name="converter_select_files">Toca per seleccionar %1$s</string>
+    <string name="converter_files_selected">%1$d arxiu(s) seleccionat(s)</string>
+    <string name="converter_formats">Formats: %1$s</string>
+    <string name="converter_capture_camera">Capturar amb càmera</string>
+    <string name="converter_to_format">Convertir a %1$s</string>
+    <string name="converter_file_name_label">Nom de l\'arxiu</string>
+    <string name="converter_file_name_placeholder">Nom automàtic</string>
+    <string name="format_name_image">Imatge</string>
+    <string name="converter_success_title">Conversió amb èxit!</string>
+    <string name="converter_success_page_count_size">%1$d pàgina(es) · %2$d KB</string>
+    <string name="converter_saved_to_downloads">Desat a Baixades</string>
+    <string name="converter_share">Compartir arxiu</string>
+    <string name="converter_convert_another">Convertir un altre arxiu</string>
+    <string name="general_back_action">Tornar</string>
+
+    <!-- ── Converter: conversión por lotes (RF-CONV-08) ── -->
+    <string name="converter_batch_hint">Es conservarà el nom original de cada arxiu</string>
+    <string name="converter_convert_batch_button">Convertir %1$d arxius</string>
+    <string name="converter_batch_success_title">%1$d de %2$d arxius convertits</string>
+    <string name="converter_batch_save_all">Desar-los tots a Baixades</string>
+    <string name="converter_batch_convert_another">Convertir un altre lot</string>
+    <string name="converter_progress_title">Convertint…</string>
+    <string name="converter_progress_subtitle">Processant %1$d arxiu(s)</string>
+    <string name="converter_progress_footer">Si us plau, espera, no tanquis l\'aplicació</string>
+
+    <string name="splash_tagline">ESCANEJA · ORGANITZA</string>
+
+    <!-- ── Onboarding ─────────────────────────────────── -->
+    <string name="onboarding_1_title">Benvingut a DocuSmart</string>
+    <string name="onboarding_1_desc">El teu gestor intel·ligent de documents. Obre, organitza i converteix els teus arxius de forma ràpida i segura.</string>
+    <string name="onboarding_2_title">Converteix qualsevol format</string>
+    <string name="onboarding_2_desc">PDF i imatges, i més per venir. Simplifica les teves conversions a l\'instant.</string>
+    <string name="onboarding_3_title">Protegeix els teus documents</string>
+    <string name="onboarding_3_desc">Desa arxius a la teva caixa forta personal amb PIN o petjada dactilar. La teva privadesa és el primer.</string>
+    <string name="onboarding_4_title">Mode Estudi</string>
+    <string name="onboarding_4_desc">DocuSmart llegeix per tu, pren notes amb veu i fa servir el temporitzador Pomodoro per ajudar-te a estudiar.</string>
+    <string name="onboarding_5_title">Vincula els teus documents</string>
+    <string name="onboarding_5_desc">Tria la carpeta del teu dispositiu on desis els teus arxius per veure\'ls a Biblioteca. Només tu hi tindràs accés — pots fer-ho ara o més tard des d\'Ajustos.</string>
+    <string name="onboarding_folder_linked">Vinculada: %1$s</string>
+    <string name="onboarding_folder_change">Canviar carpeta</string>
+    <string name="onboarding_folder_link_button">Vincular carpeta</string>
+    <string name="onboarding_skip">Ometre</string>
+    <string name="onboarding_start">Comencem!</string>
+    <string name="onboarding_next">Següent</string>
+
+    <!-- ── Premium ─────────────────────────────────── -->
+    <string name="premium_plan_monthly">Mensual</string>
+    <string name="premium_plan_annual">Anual</string>
+    <string name="premium_period_month">per mes</string>
+    <string name="premium_period_year">per any</string>
+    <!-- Se lee con stringResource() plano, nunca con args de formato: el
+         "%" es literal, no un placeholder (bug real corregido 2026-09-03:
+         antes decía "44%%" porque alguien lo escapó como si fuera a pasar
+         por String.format, mostrando el "%" duplicado en pantalla). -->
+    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Estalvia un 44%</string>
+    <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
+         configurada una fase de prueba real para el producto, nunca se
+         muestran como texto fijo sin que Play Billing la confirme. -->
+    <string name="premium_trial_badge">%1$d dies gratis</string>
+    <string name="premium_start_trial">Començar %1$d dies gratis</string>
+    <string name="premium_trial_active_message">Prova gratuïta activa — es cobrarà el %1$s</string>
+    <!-- Trial automático sin tarjeta (pedido explícito del usuario
+         2026-09-12): todo el que instala la app tiene unos días de Premium
+         completo gratis sin suscribirse a nada. -->
+    <string name="premium_auto_trial_title">Prova Premium gratis</string>
+    <string name="premium_auto_trial_body">Et queden %1$d dies amb accés complet, sense anuncis. Tria un pla abans que s\'acabi per no perdre\'l.</string>
+    <string name="premium_feature_no_ads_title">Sense anuncis</string>
+    <string name="premium_feature_no_ads_desc">Gaudeix de DocuSmart sense interrupcions</string>
+    <string name="premium_feature_pdf_word_title">PDF a Word</string>
+    <string name="premium_feature_pdf_word_desc">Converteix PDF a documents editables</string>
+    <string name="premium_feature_ocr_title">OCR</string>
+    <string name="premium_feature_ocr_desc">Converteix PDF escanejats en documents amb text real i cercable</string>
+    <string name="premium_feature_compress_title">Compressió avançada</string>
+    <string name="premium_feature_compress_desc" tools:ignore="StringFormatInvalid">Redueix PDF fins a un 90% sense pèrdua visible</string>
+    <string name="premium_feature_unlimited_title">Conversions il·limitades</string>
+    <string name="premium_feature_unlimited_desc">Sense límit diari de conversions</string>
+    <string name="premium_you_are_premium">Ets Premium!</string>
+    <string name="premium_enjoy_unlimited">Gaudeix de totes les funcions sense límits</string>
+    <string name="premium_processing_purchase">Processant la compra…</string>
+    <string name="premium_get_plan">Obtenir %1$s — %2$s</string>
+    <string name="premium_select_plan">Selecciona un pla</string>
+    <string name="premium_restore_purchases">Restaurar compres</string>
+    <string name="premium_continue_free">Continuar amb la versió gratuïta</string>
+    <string name="premium_terms">En subscriure\'t acceptes els Termes de Servei i la Política de Privadesa. La subscripció es renova automàticament. Cancel·la quan vulguis.</string>
+    <string name="premium_active_title">La teva subscripció està activa</string>
+    <string name="premium_active_body">Tens accés complet a totes les funcions de DocuSmart Premium</string>
+    <string name="premium_continue">Continuar</string>
+    <string name="premium_all_you_get">Tot el que obtens</string>
+    <string name="premium_choose_plan">Tria el teu pla</string>
+    <string name="premium_recommended">Recomanat</string>
+    <string name="premium_purchase_error">No s\'ha pogut completar la compra. Torna-ho a provar.</string>
+    <string name="premium_no_purchases_found">No s\'han trobat compres anteriors</string>
+    <string name="premium_purchase_pending">La teva compra està pendent de confirmació (per exemple, pagament en efectiu). S\'activarà automàticament quan es completi.</string>
+    <string name="premium_restore_success">Compra restaurada — ja tens Premium</string>
+
+    <!-- ── Escáner (adicional) ─────────────────────────── -->
+    <string name="scanner_start_error">No s\'ha pogut iniciar l\'escàner: %1$s</string>
+
+    <!-- ── Seguridad ─────────────────────────────────── -->
+    <string name="security_title">Seguretat</string>
+    <string name="security_subtitle">Protegeix els teus documents</string>
+    <string name="security_what_to_do">Què vols fer?</string>
+    <string name="security_secure_folder">Carpeta Segura</string>
+    <string name="security_secure_folder_desc">Desa arxius protegits amb PIN i biometria. Només tu hi pots accedir.</string>
+    <string name="security_pin_required">Cal PIN</string>
+    <string name="security_pdf_password">Contrasenya PDF</string>
+    <string name="security_pdf_password_desc">Afegeix o treu la contrasenya d\'arxius PDF. Accés immediat sense PIN.</string>
+    <string name="security_no_pin">Sense PIN</string>
+    <string name="security_pin_incorrect">PIN incorrecte</string>
+    <string name="security_biometric_error">Error: %1$s</string>
+    <string name="security_biometric_not_recognized">No s\'ha reconegut la biometria</string>
+    <string name="security_biometric_title">DocuSmart — Carpeta Segura</string>
+    <string name="security_biometric_subtitle">Fes servir la teva empremta o cara per accedir-hi</string>
+    <string name="security_biometric_use_pin">Fer servir PIN</string>
+    <string name="security_file_protected_success">Arxiu protegit correctament</string>
+    <string name="security_file_protect_error">No s\'ha pogut protegir l\'arxiu</string>
+    <string name="security_save_downloads_success">Desat a Baixades: %1$s</string>
+    <string name="security_save_downloads_error">No s\'ha pogut desar a Baixades</string>
+    <string name="pdf_pw_read_error">No s\'ha pogut llegir l\'arxiu</string>
+    <string name="pdf_pw_empty_file">L\'arxiu està buit</string>
+    <string name="pdf_pw_protect_success">PDF protegit correctament</string>
+    <string name="pdf_pw_protect_generate_error">L\'arxiu protegit no s\'ha generat correctament (%1$d bytes)</string>
+    <string name="pdf_pw_protect_error">No s\'ha pogut protegir el PDF: %1$s</string>
+    <string name="pdf_pw_remove_success">Contrasenya eliminada correctament</string>
+    <string name="pdf_pw_remove_generate_error">L\'arxiu sense contrasenya no s\'ha generat correctament (%1$d bytes)</string>
+    <string name="pdf_pw_remove_error">No s\'ha pogut processar el PDF: %1$s</string>
+    <string name="pdf_pw_wrong_password">Contrasenya incorrecta</string>
+    <string name="pdf_pw_wrong_password_retry">Contrasenya incorrecta. Comprova-la i torna-ho a provar.</string>
+    <string name="security_enter_pin">Introdueix el teu PIN</string>
+    <string name="security_setup_pin_title">Configura el teu PIN</string>
+    <string name="security_setup_pin_desc">Protegeix els teus arxius amb un PIN de 4 dígits</string>
+    <string name="security_configure_pin_button">Configurar PIN</string>
+    <string name="security_use_biometric">Fer servir biometria</string>
+    <string name="security_delete_desc">Esborrar</string>
+    <string name="security_confirm_pin">Confirma el teu PIN</string>
+    <string name="security_create_pin">Crea el teu PIN</string>
+    <string name="security_confirm_pin_desc">Introdueix el PIN de nou per confirmar-lo</string>
+    <string name="security_create_pin_desc">Tria un PIN de 4 dígits per protegir la teva carpeta</string>
+    <string name="security_pins_dont_match">Els PIN no coincideixen</string>
+    <string name="security_setup_pin_error">No s\'ha pogut desar el PIN. Torna-ho a provar.</string>
+    <string name="security_forgot_pin">Has oblidat el teu PIN?</string>
+    <string name="security_reset_pin_dialog_title">Restablir PIN</string>
+    <string name="security_reset_pin_dialog_body">S\'eliminaran tots els arxius de la teva Carpeta Segura. Aquesta acció no es pot desfer.</string>
+    <string name="security_reset_pin_confirm">Restablir i esborrar</string>
+    <string name="security_files_protected_count">%1$d arxius protegits</string>
+    <string name="security_protect_new_file">Protegir un arxiu nou</string>
+    <string name="security_config_section">Configuració</string>
+    <string name="security_change_pin">Canviar PIN</string>
+    <string name="security_biometric_unlock">Desbloqueig biomètric</string>
+    <string name="security_protected_files_title">Arxius protegits</string>
+    <string name="security_no_protected_files">No hi ha arxius protegits</string>
+    <string name="security_no_protected_files_hint">Toca \"Protegir un arxiu nou\" per afegir arxius</string>
+    <string name="security_restore">Restaurar</string>
+    <string name="security_protect_file_dialog_title">Protegir arxiu</string>
+    <string name="pdf_pw_screen_subtitle">Protegeix o desbloqueja els teus PDF</string>
+    <string name="pdf_pw_mode_protect_title">Protegir PDF</string>
+    <string name="pdf_pw_mode_protect_desc">Afegeix una contrasenya a un arxiu PDF. Només qui tingui la contrasenya podrà obrir-lo.</string>
+    <string name="pdf_pw_mode_remove_title">Treure contrasenya</string>
+    <string name="pdf_pw_mode_remove_desc">Elimina la protecció d\'un PDF. Necessitaràs la contrasenya actual per desbloquejar-lo.</string>
+    <string name="pdf_pw_protect_section_title">Protegir PDF amb contrasenya</string>
+    <string name="pdf_pw_selected_placeholder">PDF seleccionat</string>
+    <string name="pdf_pw_tap_to_select">Toca per seleccionar PDF</string>
+    <string name="pdf_pw_ready_to_protect">PDF llest per protegir</string>
+    <string name="pdf_pw_new_password_label">Contrasenya nova</string>
+    <string name="pdf_pw_confirm_password_label">Confirmar contrasenya</string>
+    <string name="pdf_pw_passwords_dont_match">Les contrasenyes no coincideixen</string>
+    <string name="pdf_pw_protected_success_title">PDF protegit amb èxit</string>
+    <string name="pdf_pw_save_downloads_button">Desar a Baixades</string>
+    <string name="pdf_pw_protect_button">Protegir PDF</string>
+    <string name="pdf_pw_remove_section_title">Treure contrasenya d\'un PDF</string>
+    <string name="pdf_pw_tap_to_select_protected">Toca per seleccionar el PDF protegit</string>
+    <string name="pdf_pw_ready">PDF llest</string>
+    <string name="pdf_pw_current_password_label">Contrasenya actual del PDF</string>
+    <string name="pdf_pw_current_password_placeholder">Introdueix la contrasenya per desbloquejar-lo</string>
+    <string name="pdf_pw_remove_warning">El PDF resultant no tindrà contrasenya i qualsevol el podrà obrir.</string>
+    <string name="pdf_pw_removed_success_title">Contrasenya eliminada amb èxit</string>
+    <string name="pdf_pw_remove_button">Treure contrasenya</string>
+    <string name="pdf_pw_default_document_name">document</string>
+    <string name="scan_result_title">Resultat de l\'escaneig</string>
+    <string name="scan_result_subtitle_pages">%1$d pàgina(es)</string>
+    <string name="scan_result_preview">Vista prèvia</string>
+    <string name="scan_result_page_content_desc">Pàgina %1$d</string>
+    <string name="scan_result_filename_label">Nom de l\'arxiu</string>
+    <string name="scan_result_filename_placeholder">Ex: Document_escanejat</string>
+    <string name="scan_result_filename_hint">Si el deixes buit es generarà un nom automàtic</string>
+    <string name="scan_result_generating_format">Generant %1$s…</string>
+    <string name="scan_result_default_name_prefix">Escaneig_%1$s</string>
+    <string name="scan_result_export_format_label">Format de sortida</string>
+    <string name="scan_result_generate_format">Generar %1$s</string>
+    <string name="scan_result_high_res_title">Alta resolució</string>
+    <string name="scan_result_high_res_desc">PDF més nítid, ideal per imprimir o arxivar</string>
+    <string name="scan_result_high_res_premium_content_desc">Funció Premium</string>
+    <string name="scan_session_title">Arxius escanejats</string>
+    <string name="scan_session_scan_another">Escanejar un altre document</string>
+    <string name="scan_edit_page_content_desc">Editar pàgina %1$d</string>
+    <string name="scan_edit_button_label">Ajustar</string>
+    <string name="scan_edit_title">Editar pàgina</string>
+    <string name="scan_edit_brightness">Brillantor: %1$d%%</string>
+    <string name="scan_edit_contrast">Contrast: %1$d%%</string>
+    <string name="scan_edit_scale">Escala</string>
+    <string name="scan_edit_apply">Aplicar</string>
+    <string name="scan_page_count">%1$d de %2$d pàgines</string>
+    <string name="scan_add_page">Afegir pàgina</string>
+    <string name="scan_page_limit_title">Límit de pàgines assolit</string>
+    <string name="scan_page_limit_body">Aquest document ja té %1$d de %2$d pàgines. Mira un vídeo per afegir una pàgina més, o passa a Premium per no tenir límit.</string>
+    <string name="security_file_protected_original_kept">Arxiu protegit. No s\'ha pogut eliminar l\'original de la seva ubicació — esborra\'l manualment si vols treure\'l del tot.</string>
+    <string name="security_original_kept_dialog_title">L\'arxiu original continua al seu lloc</string>
+    <string name="security_original_kept_dialog_confirm">Entès</string>
+    <string name="qr_protected_title">Codi QR protegit</string>
+    <string name="qr_protected_desc">Aquest contingut està protegit amb contrasenya. Introdueix-la per veure\'l.</string>
+    <string name="qr_unlock">Desbloquejar</string>
+
+    <!-- ── QR ─────────────────────────────────── -->
+    <string name="qr_reader_title">Llegir codi QR</string>
+    <string name="qr_reader_subtitle">Apunta la càmera al codi QR</string>
+    <string name="qr_camera_permission_needed">Cal accés a la càmera per escanejar codis QR</string>
+    <string name="qr_allow_camera_access">Permetre accés a la càmera</string>
+    <string name="qr_center_in_frame">Centra el codi QR al requadre</string>
+    <string name="qr_type_url_detected">URL detectada</string>
+    <string name="qr_type_image_detected">Imatge detectada</string>
+    <string name="qr_type_document_detected">Document detectat</string>
+    <string name="qr_type_email_detected">Email detectat</string>
+    <string name="qr_type_phone_detected">Telèfon detectat</string>
+    <string name="qr_type_text_detected">Text detectat</string>
+    <string name="qr_detected_title">Codi QR detectat!</string>
+    <string name="qr_image_content_desc">Imatge del QR</string>
+    <string name="qr_loading_image">Carregant imatge…</string>
+    <string name="qr_copied_clipboard">Copiat al porta-retalls</string>
+    <string name="qr_open_browser">Obrir al navegador</string>
+    <string name="qr_copy_url">Copiar URL</string>
+    <string name="qr_open_image">Obrir imatge</string>
+    <string name="qr_copy_link">Copiar enllaç</string>
+    <string name="qr_open_document">Obrir document</string>
+    <string name="qr_copy_path">Copiar ruta</string>
+    <string name="qr_send_email">Enviar email</string>
+    <string name="qr_copy_email">Copiar email</string>
+    <string name="qr_call">Trucar</string>
+    <string name="qr_copy_number">Copiar número</string>
+    <string name="qr_copy_text">Copiar text</string>
+    <string name="qr_scan_another">Escanejar un altre codi</string>
+    <string name="qr_creator_title">Crear codi QR</string>
+    <string name="qr_creator_subtitle">Genera QR per a URL, text, arxius i més</string>
+    <string name="qr_chip_url">URL</string>
+    <string name="qr_chip_text">Text</string>
+    <string name="qr_chip_email">Email</string>
+    <string name="qr_chip_phone">Tel</string>
+    <string name="qr_chip_image">Imatge</string>
+    <string name="qr_chip_document">Doc</string>
+    <string name="qr_select_image">Seleccionar imatge</string>
+    <string name="qr_image_selected">Imatge seleccionada ✓</string>
+    <string name="qr_select_document">Seleccionar document</string>
+    <string name="qr_document_selected">Document seleccionat ✓</string>
+    <string name="qr_label_url">URL del lloc web</string>
+    <string name="qr_label_text">Text del missatge</string>
+    <string name="qr_label_email">Adreça d\'email</string>
+    <string name="qr_label_phone">Número de telèfon</string>
+    <string name="qr_placeholder_text">Escriu el teu missatge…</string>
+    <string name="qr_protect_password">Protegir amb contrasenya</string>
+    <string name="qr_protect_password_desc">Només qui tingui la clau pot veure el contingut</string>
+    <string name="qr_password_label">Contrasenya</string>
+    <string name="qr_password_min_chars">Mínim 4 caràcters</string>
+    <string name="qr_error_select_image">Selecciona una imatge</string>
+    <string name="qr_error_select_document">Selecciona un document</string>
+    <string name="qr_error_empty_content">Escriu el contingut del QR</string>
+    <string name="qr_error_password_short">La contrasenya ha de tenir almenys 4 caràcters</string>
+    <string name="qr_generate">Generar QR</string>
+    <string name="qr_your_code">El teu codi QR</string>
+    <string name="qr_generated_content_desc">Codi QR generat</string>
+    <string name="qr_protected_badge">Protegit</string>
+    <string name="qr_share_chooser_title">Compartir QR</string>
+
+    <!-- ── Estudio ─────────────────────────────────── -->
+    <string name="study_tab_reading">Lectura</string>
+    <string name="study_tab_notes">Notes</string>
+    <string name="study_tab_pomodoro">Pomodoro</string>
+    <string name="study_tab_summary">Resum</string>
+    <string name="study_no_document">Sense document</string>
+    <string name="study_title">Mode Estudi</string>
+    <string name="study_empty_state_desc">Obre un document per començar a estudiar</string>
+    <string name="study_reading_document">Llegint el document…</string>
+    <string name="study_highlighted_count">%1$d ressaltats</string>
+    <string name="study_stop">Aturar</string>
+    <string name="study_read_all">Llegir-ho tot</string>
+    <!-- Selector de voz TTS (pedido explícito de testers 2026-09-12): solo
+         voces on-device, sin nube. -->
+    <string name="study_choose_voice">Triar veu</string>
+    <string name="study_voice_option_label">Veu %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_quality_very_high">qualitat molt alta</string>
+    <string name="study_voice_quality_high">qualitat alta</string>
+    <string name="study_voice_quality_normal">qualitat normal</string>
+    <string name="study_voice_quality_low">qualitat bàsica</string>
+    <string name="study_generate_summary">Generar resum</string>
+    <string name="study_summarizing">Generant el teu resum… pot trigar uns minuts segons la mida del document</string>
+    <string name="study_loading_document">Carregant el teu document… pot trigar uns moments</string>
+    <string name="study_summary_local_note">Generat al teu dispositiu, sense connexió a internet</string>
+    <string name="study_summary_share_title">Compartir resum</string>
+    <string name="study_summary_sentences_count">%1$d punts clau</string>
+    <string name="study_reading_page">Llegint… pàgina %1$d de %2$d</string>
+    <string name="study_extracting_more">Processant la resta del document… (%1$d pàgines llestes)</string>
+    <string name="study_continue_reading">Continuar llegint</string>
+    <string name="study_resume_page_progress">Pàgina %1$d de %2$d</string>
+    <string name="study_resume_reading">Represa de la lectura</string>
+    <string name="study_remove_from_history">Treure de la llista</string>
+    <string name="study_delete_all_notes_title">Eliminar totes les notes</string>
+    <string name="study_delete_all_notes_body">Segur que vols eliminar totes les notes? Aquesta acció no es pot desfer.</string>
+    <string name="study_highlighted_paragraphs_count">Paràgrafs ressaltats (%1$d)</string>
+    <string name="study_mark_current_paragraph">Marcar el paràgraf actual</string>
+    <string name="study_new_note">Nota nova</string>
+    <string name="study_note_title_label">Títol de la nota</string>
+    <string name="study_note_title_placeholder">Ex: Conceptes clau del capítol 3</string>
+    <string name="study_note_content_placeholder">Escriu o dicta la teva nota…</string>
+    <string name="study_dictate_note">Dictar nota per veu</string>
+    <string name="study_listening">Escoltant… parla ara</string>
+    <string name="study_save_note">Desar nota</string>
+    <string name="study_untitled_note">Nota sense títol</string>
+    <string name="study_no_saved_notes">Sense notes desades</string>
+    <string name="study_saved_notes_count">Notes desades (%1$d)</string>
+    <string name="study_delete_all">Eliminar-les totes</string>
+    <string name="study_no_notes_yet">Encara no tens notes desades</string>
+    <string name="study_delete_note_desc">Eliminar nota</string>
+    <string name="study_voice_prompt">Parla per redactar la teva nota…</string>
+    <string name="study_break_label">Descans</string>
+    <string name="study_study_label">Estudi</string>
+    <string name="study_in_progress">en curs</string>
+    <string name="study_paused">en pausa</string>
+    <string name="study_restart">Reiniciar</string>
+    <string name="study_pause">Pausar</string>
+    <string name="study_start">Iniciar</string>
+    <string name="study_pomodoros_completed">Pomodoros completats</string>
+    <string name="study_pomodoros_hint">Cada 4 pomodoros = descans llarg</string>
+    <string name="study_pomodoro_technique_info">Tècnica Pomodoro: alterna 25 min d\'estudi concentrat amb 5 min de descans per ajudar-te a concentrar-te sense esgotar-te</string>
+    <string name="study_extract_could_not_read">No s\'ha pogut llegir l\'arxiu</string>
+    <string name="study_extract_pdf_no_text">Aquest PDF no conté text extraïble. Pot ser un PDF escanejat.</string>
+    <string name="study_extract_pdf_error">Error en llegir el PDF: %1$s</string>
+    <string name="study_extract_generic_error">Error: %1$s</string>
+    <string name="study_default_document_name">Document</string>
+    <string name="study_pomodoro_notification_channel">Pomodoro</string>
+    <string name="study_pomodoro_notification_text">%1$s restants</string>
+    <string name="study_export_notes">Exportar notes</string>
+    <string name="study_export_as_text">Com a text</string>
+    <string name="study_export_as_pdf">Com a PDF</string>
+    <string name="study_export_share_title">Compartir notes</string>
+    <string name="study_stats_icon_desc">Veure estadístiques</string>
+    <string name="study_stats_title">Estadístiques d\'estudi</string>
+    <string name="study_stats_total_reading">Temps total llegit</string>
+    <string name="study_stats_reading_value">%1$dh %2$dmin</string>
+    <string name="study_stats_pomodoros_this_week">Pomodoros aquesta setmana</string>
+    <string name="study_stats_pomodoros_total">Pomodoros completats en total</string>
+    <string name="study_stats_empty">Encara no hi ha estadístiques — comença a llegir en veu alta o completa el teu primer Pomodoro.</string>
+
+    <!-- ── Papelera de reciclaje (RF-VIS-07) ───────────────────────── -->
+    <string name="library_trash">Paperera</string>
+    <string name="trash_title">Paperera</string>
+    <string name="trash_subtitle">S\'eliminen definitivament als 30 dies</string>
+    <string name="trash_empty_title">La paperera és buida</string>
+    <string name="trash_empty_body">Els documents que eliminis des de Biblioteca, Inici o el Visor apareixeran aquí abans d\'esborrar-se per sempre.</string>
+    <string name="trash_deletes_today">S\'elimina avui</string>
+    <string name="trash_days_remaining">Queden %1$d dies</string>
+    <string name="trash_restore">Restaurar</string>
+    <string name="trash_delete_forever">Eliminar ara</string>
+    <string name="trash_delete_forever_confirm_title">Vols eliminar-ho definitivament?</string>
+    <string name="trash_delete_forever_confirm_body">"%1$s s\'eliminarà per sempre i ja no es podrà recuperar."</string>
+    <string name="trash_delete_all">Esborrar-ho tot</string>
+    <string name="trash_delete_all_confirm_title">Vols buidar la paperera?</string>
+    <string name="trash_delete_all_confirm_body">"S\'eliminaran %1$d arxius per sempre i ja no es podran recuperar."</string>
+    <string name="trash_total_size">%1$s a la paperera</string>
+    <string name="trash_delete_forever_permission_note">Android pot demanar-te que confirmis l\'esborrat de fotos que no ha creat aquesta aplicació.</string>
+    <string name="trash_bulk_delete_partial_error">Alguns arxius s\'han d\'eliminar d\'un en un</string>
+
+    <!-- ── Selector de archivo con biblioteca de la app (item #15, FileSourcePickerDialog) ── -->
+    <string name="filepicker_source_question">D\'on vols portar l\'arxiu?</string>
+    <string name="filepicker_from_device">Des del dispositiu</string>
+    <string name="filepicker_browse_system_files">Explorar arxius del sistema</string>
+    <string name="filepicker_from_library">Des de la biblioteca de DocuSmart</string>
+    <string name="filepicker_no_library_files">Encara no hi ha arxius a la teva biblioteca</string>
+
+    <!-- ── Vincular carpeta de Descargas por SAF (fila 22 backlog UX) ── -->
+    <string name="library_link_downloads_title">Veure més documents aquí</string>
+    <string name="library_link_downloads_body">Tria una carpeta del teu dispositiu perquè Biblioteca també mostri els documents que ja hi tens</string>
+    <string name="library_link_downloads_button">Vincular carpeta</string>
+
+    <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
+    <string name="library_folder_shortcut_label">Carpeta vinculada</string>
+    <string name="library_folder_shortcut_subtitle">Obrir</string>
+    <string name="library_folder_shortcut_no_app">No hi ha cap aplicació per obrir carpetes en aquest dispositiu</string>
+
+    <!-- ── Ajustes: gestionar carpeta vinculada (fila 22 backlog UX) ── -->
+    <string name="settings_linked_downloads_title">Carpeta vinculada</string>
+    <string name="settings_linked_downloads_linked">Vinculada · toca per desvincular-la</string>
+    <string name="settings_linked_downloads_not_linked">Sense vincular · toca per vincular-la</string>
+    <string name="settings_unlink_downloads_title">Vols desvincular la carpeta?</string>
+    <string name="settings_unlink_downloads_body">Deixaràs de veure els arxius de Baixades a la pestanya Dispositiu de Biblioteca. Pots tornar a vincular-la quan vulguis.</string>
+    <string name="settings_unlink_downloads_confirm">Desvincular</string>
+</resources>

@@ -58,6 +58,22 @@ class LanguageManagerTest {
         assertEquals(AppLanguage.ENGLISH, manager.deviceDefaultLanguage())
     }
 
+    // Rediseño de Ajustes 2026-09-14: catalán y euskera se agregan como
+    // idiomas soportados (pedido explícito del usuario).
+    @Test
+    fun `deviceDefaultLanguage reconoce catalan`() {
+        Locale.setDefault(Locale("ca"))
+
+        assertEquals(AppLanguage.CATALAN, manager.deviceDefaultLanguage())
+    }
+
+    @Test
+    fun `deviceDefaultLanguage reconoce euskera`() {
+        Locale.setDefault(Locale("eu"))
+
+        assertEquals(AppLanguage.BASQUE, manager.deviceDefaultLanguage())
+    }
+
     // ── RF-SET-06: idioma por defecto en una instalación nueva ───────────────
     // currentLanguage se calcula al construir LanguageManager (loadLanguage()
     // en el inicializador), así que el locale del dispositivo debe fijarse

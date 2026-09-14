@@ -80,9 +80,7 @@
     <string name="settings_language">言語</string>
     <string name="settings_theme">テーマ</string>
     <string name="settings_accent_color">アクセントカラー</string>
-    <string name="settings_select_accent_color">アクセントカラーを選択</string>
     <string name="settings_font_scale">文字サイズ</string>
-    <string name="settings_select_font_scale">文字サイズを選択</string>
     <string name="settings_animated_background">アニメーション背景</string>
     <string name="settings_animated_background_subtitle">アクセントカラーの図形が動きます</string>
     <string name="settings_sound_effects">効果音</string>
@@ -92,13 +90,12 @@
     <string name="settings_about">アプリについて</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">言語を選択</string>
-    <string name="settings_select_theme">テーマを選択</string>
     <string name="settings_close">閉じる</string>
     <string name="settings_language_subtitle">アプリの言語を選択してください</string>
-    <string name="settings_section_personalization">パーソナライズ</string>
+    <string name="settings_section_appearance">外観</string>
     <string name="settings_tutorial">チュートリアルを見る</string>
     <string name="settings_tutorial_subtitle">主な機能をおさらいする</string>
-    <string name="settings_section_privacy">プライバシーとセキュリティ</string>
+    <string name="settings_section_files_privacy">ファイルとプライバシー</string>
     <string name="settings_privacy_item">プライバシー</string>
     <string name="settings_privacy_item_subtitle">データポリシーと権限</string>
     <string name="settings_ads_privacy_options">広告の同意設定</string>
@@ -107,7 +104,7 @@
     <string name="settings_share_app_subtitle">友達にアプリをおすすめしよう</string>
     <string name="settings_rate">Playストアで評価する</string>
     <string name="settings_rate_subtitle">DocuSmartを気に入っていただけましたか?レビューをお願いします!</string>
-    <string name="settings_section_support">サポート</string>
+    <string name="settings_section_help_community">ヘルプとコミュニティ</string>
     <string name="settings_help">ヘルプ</string>
     <string name="settings_help_subtitle">よくある質問</string>
     <string name="settings_section_system">システム</string>
@@ -129,7 +126,7 @@
     <string name="settings_help_a3">ドキュメントのハートアイコンをタップするか、⋮メニューを使用してください。</string>
     <string name="settings_help_q4">ドキュメントは安全ですか?</string>
     <string name="settings_help_a4">はい。すべての処理はローカルで行われます。ファイルが端末の外に出ることはありません。</string>
-    <string name="settings_reset_body">テーマはライトモード、言語はスペイン語、文字サイズは「標準」にリセットされ、キャッシュが削除されます。ドキュメントは削除されません。続けますか?</string>
+    <string name="settings_reset_body">テーマ、アクセントカラー、文字サイズ、アニメーション背景、効果音、言語が初期設定に戻り、生成されたファイルのキャッシュが削除されます。ドキュメントは削除されません。続行しますか?</string>
     <string name="settings_reset_confirm">リセット</string>
     <string name="settings_about_dialog_title">DocuSmartについて</string>
     <string name="settings_about_body">スマートなドキュメントビューア&amp;コンバーター。ファイルをすばやく安全に管理・変換・整理できます。</string>
@@ -145,6 +142,10 @@
     <string name="accent_color_orange">オレンジ</string>
     <string name="accent_color_pink">ピンク</string>
     <string name="accent_color_teal">ティール</string>
+    <string name="accent_color_indigo">インディゴ</string>
+    <string name="accent_color_red">レッド</string>
+    <string name="accent_color_amber">アンバー</string>
+    <string name="accent_color_cyan">シアン</string>
     <string name="font_scale_normal">標準</string>
     <string name="font_scale_large">大</string>
     <string name="font_scale_extra_large">特大</string>
@@ -187,6 +188,8 @@
     <string name="general_delete">削除</string>
     <string name="general_close">閉じる</string>
     <string name="general_saved_downloads">ダウンロードに保存しました</string>
+    <string name="general_delete_error">ファイルを削除できませんでした</string>
+    <string name="general_error_format">エラー: %1$s</string>
 
     <!-- ── PDFツールの説明 ─────────────────────── -->
     <string name="pdf_merge_desc">複数のPDFを1つに結合します</string>
@@ -214,6 +217,8 @@
     <string name="pdf_tools_daily_limit_label">このツールの利用回数</string>
     <string name="converter_daily_limit_label">変換回数</string>
     <string name="scan_daily_save_limit_label">保存したスキャン</string>
+    <string name="converter_daily_limit_reached_error">1日の変換上限に達しました</string>
+    <string name="converter_batch_save_error">すべてのファイルをダウンロードに保存できませんでした</string>
 
     <!-- ── PDFツール: メイン画面と結果カード ── -->
     <string name="pdf_tools_back_to_tools">ツール一覧に戻る</string>
@@ -832,6 +837,7 @@
     <string name="trash_delete_all_confirm_body">"%1$d個のファイルが完全に削除され、復元できなくなります。"</string>
     <string name="trash_total_size">ゴミ箱内: %1$s</string>
     <string name="trash_delete_forever_permission_note">このアプリで作成されていない写真を削除する場合、Androidが確認を求めることがあります。</string>
+    <string name="trash_bulk_delete_partial_error">一部のファイルは1つずつ削除する必要があります</string>
 
     <!-- ── アプリのライブラリを使ったファイル選択(item #15、FileSourcePickerDialog) ── -->
     <string name="filepicker_source_question">ファイルの取得元を選択してください</string>
