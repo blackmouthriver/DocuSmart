@@ -791,6 +791,13 @@
     <string name="qr_placeholder_url">https://example.ru</string>
     <string name="qr_placeholder_email">email@example.ru</string>
     <string name="qr_placeholder_phone">+7 912 345-67-89</string>
+    <string name="qr_design_label">Настроить дизайн</string>
+    <string name="qr_design_contrast_warning">У этого цвета низкий контраст на белом фоне — выберите более тёмный, чтобы камера могла его считать</string>
+    <string name="qr_design_add_logo">Добавить логотип</string>
+    <string name="qr_design_logo_added">Логотип добавлен</string>
+    <string name="qr_design_remove_logo">Убрать логотип</string>
+    <string name="qr_error_logo_load">Не удалось загрузить это изображение как логотип</string>
+    <string name="qr_error_low_contrast">Выберите цвет с большим контрастом перед созданием</string>
     <string name="qr_protect_password">Защитить паролем</string>
     <string name="qr_protect_password_desc">Только тот, у кого есть пароль, сможет увидеть содержимое</string>
     <string name="qr_password_label">Пароль</string>

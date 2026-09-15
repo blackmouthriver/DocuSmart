@@ -795,6 +795,13 @@
     <string name="qr_placeholder_url">https://example.cn</string>
     <string name="qr_placeholder_email">email@example.cn</string>
     <string name="qr_placeholder_phone">+86 138 0013 8000</string>
+    <string name="qr_design_label">自定义样式</string>
+    <string name="qr_design_contrast_warning">这个颜色在白色背景上对比度较低——选择更深的颜色，方便摄像头识别</string>
+    <string name="qr_design_add_logo">添加标志</string>
+    <string name="qr_design_logo_added">已添加标志</string>
+    <string name="qr_design_remove_logo">移除标志</string>
+    <string name="qr_error_logo_load">无法将该图片加载为标志</string>
+    <string name="qr_error_low_contrast">生成前请选择对比度更高的颜色</string>
     <string name="qr_protect_password">用密码保护</string>
     <string name="qr_protect_password_desc">只有拥有密码的人才能查看内容</string>
     <string name="qr_password_label">密码</string>

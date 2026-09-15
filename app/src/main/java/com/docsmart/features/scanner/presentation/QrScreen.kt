@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.net.Uri
 import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -62,11 +64,14 @@ import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
 import com.docsmart.features.scanner.domain.QrWifiContent
 import com.docsmart.features.scanner.domain.QrWifiSecurity
+import com.docsmart.features.scanner.domain.hasSufficientContrast
 import com.docsmart.features.scanner.domain.toQrPayload
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -667,6 +672,12 @@ fun QrCreatorScreen(
     }
     var eventEnd       by remember { mutableStateOf(eventStart.plusHours(1)) }
 
+    // HU-45 (backlog UX 2026-08-30/09-14): color de los módulos (RF1,
+    // Negro por defecto -- AC3 de HU-43/mismo criterio de "sin cambios
+    // para quien no toca la opción") y logo opcional (RF2).
+    var moduleColor by remember { mutableStateOf(QR_DEFAULT_MODULE_COLOR) }
+    var logoBitmap  by remember { mutableStateOf<Bitmap?>(null) }
+
     val types = listOf(
         stringResource(R.string.qr_chip_url),
         stringResource(R.string.qr_chip_text),
@@ -715,6 +726,37 @@ fun QrCreatorScreen(
             content      = it.toString()
             qrBitmap     = null
             savedMsg     = null
+        }
+    }
+
+    // HU-45 (RF2): selector de logo -- mismo patrón GetContent()/"image/*"
+    // que ya usa el chip "Imagen" de arriba, pero acá se decodifica el
+    // bitmap real de inmediato (para la vista previa y para pasarlo tal
+    // cual a generateQrBitmap) en vez de guardar la Uri como contenido del
+    // QR.
+    val errorLogoLoad = stringResource(R.string.qr_error_logo_load)
+    val logoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val decoded = withContext(Dispatchers.IO) {
+                    runCatching { decodeSampledBitmap(context, uri, LOGO_TARGET_SIZE) }.getOrNull()
+                }
+                if (decoded != null) {
+                    logoBitmap = decoded
+                    qrBitmap = null
+                    savedMsg = null
+                    errorMsg = null
+                } else {
+                    // Bug real encontrado en la revisión pre-fusión: un
+                    // fallo de decodificación (imagen corrupta/formato no
+                    // soportado) dejaba `logoBitmap` en null sin ningún
+                    // aviso -- la opción de logo simplemente desaparecía
+                    // sin explicación.
+                    errorMsg = errorLogoLoad
+                }
+            }
         }
     }
 
@@ -1004,6 +1046,16 @@ fun QrCreatorScreen(
                 }
             }
 
+            // ── Diseño (HU-45: color de módulos + logo) ────────────────────────
+            QrDesignSection(
+                selectedColor = moduleColor,
+                onColorSelected = { moduleColor = it; qrBitmap = null; savedMsg = null },
+                hasSufficientContrast = hasSufficientContrast(moduleColor, android.graphics.Color.WHITE),
+                logoBitmap = logoBitmap,
+                onPickLogo = { logoLauncher.launch("image/*") },
+                onRemoveLogo = { logoBitmap = null; qrBitmap = null; savedMsg = null }
+            )
+
             // ── Contraseña ────────────────────────────────────────────────────
             val passwordCardShape = MaterialTheme.shapes.large
             Box(
@@ -1111,6 +1163,7 @@ fun QrCreatorScreen(
             val errorSelectDocument   = stringResource(R.string.qr_error_select_document)
             val errorEmptyContent     = stringResource(R.string.qr_error_empty_content)
             val errorPasswordShort    = stringResource(R.string.qr_error_password_short)
+            val errorLowContrast      = stringResource(R.string.qr_error_low_contrast)
             val errorWifiIncomplete   = stringResource(R.string.qr_error_wifi_incomplete)
             val errorContactRequired  = stringResource(R.string.qr_error_contact_name_required)
             val errorEventTitle       = stringResource(R.string.qr_error_event_title_required)
@@ -1135,6 +1188,14 @@ fun QrCreatorScreen(
                         errorMsg = errorPasswordShort
                         return@Button
                     }
+                    // HU-45/AC1: en vez de generar un QR probablemente
+                    // ilegible, se bloquea la generación y se pide elegir
+                    // otro color -- mismo criterio que las validaciones de
+                    // arriba (contenido vacío, contraseña corta).
+                    if (!hasSufficientContrast(moduleColor, android.graphics.Color.WHITE)) {
+                        errorMsg = errorLowContrast
+                        return@Button
+                    }
                     errorMsg     = null
                     savedMsg     = null
                     isGenerating = true
@@ -1152,7 +1213,7 @@ fun QrCreatorScreen(
                         val finalContent = if (usePassword && password.isNotBlank())
                             "${QrCrypto.PREFIX}${QrCrypto.encrypt(rawContent, password)}"
                         else rawContent
-                        qrBitmap     = generateQrBitmap(finalContent)
+                        qrBitmap     = generateQrBitmap(finalContent, moduleColor = moduleColor, logo = logoBitmap)
                         isGenerating = false
                         // HU-43: Wi-Fi/Contacto/Evento no están en el
                         // QrContentType del Lector (namespace distinto, ver
@@ -1357,25 +1418,96 @@ internal fun openDocumentExternally(context: Context, uriString: String, chooser
     }
 }
 
-internal suspend fun generateQrBitmap(content: String): Bitmap? =
+// HU-45 (backlog UX 2026-08-30/09-14): `moduleColor` personaliza el color
+// de los módulos (RF1, ya validado contra el fondo blanco antes de llegar
+// acá -- ver `hasSufficientContrast` y el chequeo en el botón "Generar").
+// `logo` superpone una imagen al centro (RF2); cuando hay logo se sube el
+// nivel de corrección de errores a H (~30% de tolerancia a daño/oclusión,
+// bastante más que el ~5% que tapa un logo de este tamaño) para que el QR
+// siga siendo legible -- RNF1.
+internal suspend fun generateQrBitmap(
+    content: String,
+    moduleColor: Int = QR_DEFAULT_MODULE_COLOR,
+    logo: Bitmap? = null
+): Bitmap? =
     withContext(Dispatchers.IO) {
         try {
-            val size      = 512
-            val bitMatrix = MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
-            val bitmap    = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+            val size = 512
+            val hints = if (logo != null) {
+                mapOf(EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.H)
+            } else {
+                emptyMap()
+            }
+            val bitMatrix = MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints)
+            // ARGB_8888 (antes RGB_565, sin canal alfa) -- necesario para
+            // poder dibujar el logo encima con un Canvas normal sin perder
+            // su transparencia si el PNG del logo la tiene.
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
             for (x in 0 until size) {
                 for (y in 0 until size) {
                     bitmap.setPixel(x, y,
-                        if (bitMatrix[x, y]) android.graphics.Color.BLACK
+                        if (bitMatrix[x, y]) moduleColor
                         else android.graphics.Color.WHITE)
                 }
             }
+            logo?.let { overlayQrLogo(bitmap, it) }
             bitmap
         } catch (e: Exception) {
             Timber.e(e, "generateQrBitmap: error")
             null
         }
     }
+
+// Logo centrado con su propio fondo blanco (mismo margen de "quiet zone"
+// que usan los generadores de QR con logo estándar) para no perder
+// contraste contra los módulos que quedan justo alrededor.
+private fun overlayQrLogo(bitmap: Bitmap, logo: Bitmap) {
+    val canvas = Canvas(bitmap)
+    val logoSize = (bitmap.width * 0.22f).toInt()
+    val scaledLogo = Bitmap.createScaledBitmap(logo, logoSize, logoSize, true)
+    val left = (bitmap.width - logoSize) / 2f
+    val top = (bitmap.height - logoSize) / 2f
+    val padding = logoSize * 0.1f
+    val backgroundPaint = Paint().apply {
+        isAntiAlias = true
+        color = android.graphics.Color.WHITE
+    }
+    canvas.drawRoundRect(
+        left - padding, top - padding, left + logoSize + padding, top + logoSize + padding,
+        16f, 16f, backgroundPaint
+    )
+    canvas.drawBitmap(scaledLogo, left, top, Paint().apply { isAntiAlias = true })
+    if (scaledLogo !== logo) scaledLogo.recycle()
+}
+
+// El logo termina reescalado a un cuadrado pequeño (`overlayQrLogo`), así
+// que decodificarlo a su resolución de cámara/galería original (a veces
+// 12-108 MP) desperdicia memoria sin ningún beneficio visual -- bug real
+// encontrado en la revisión pre-fusión, riesgo de OutOfMemoryError en
+// dispositivos con poca RAM. Mismo patrón estándar de Android (decodificar
+// primero solo los bounds, calcular `inSampleSize`, volver a decodificar
+// ya reducido) para no cargar más que [targetSize] px de lado.
+private const val LOGO_TARGET_SIZE = 512
+
+private fun decodeSampledBitmap(context: Context, uri: Uri, targetSize: Int): Bitmap? {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        ?: return null
+
+    var sampleSize = 1
+    var width = bounds.outWidth
+    var height = bounds.outHeight
+    while (width / 2 >= targetSize || height / 2 >= targetSize) {
+        width /= 2
+        height /= 2
+        sampleSize *= 2
+    }
+
+    val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+    return context.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, options)
+    }
+}
 
 
 internal suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =

@@ -798,6 +798,13 @@
     <string name="qr_placeholder_url">https://esempio.it</string>
     <string name="qr_placeholder_email">email@esempio.it</string>
     <string name="qr_placeholder_phone">+39 333 123 4567</string>
+    <string name="qr_design_label">Personalizza design</string>
+    <string name="qr_design_contrast_warning">Questo colore ha poco contrasto su sfondo bianco — sceglline uno più scuro perché la fotocamera lo legga bene</string>
+    <string name="qr_design_add_logo">Aggiungi logo</string>
+    <string name="qr_design_logo_added">Logo aggiunto</string>
+    <string name="qr_design_remove_logo">Rimuovi logo</string>
+    <string name="qr_error_logo_load">Impossibile caricare questa immagine come logo</string>
+    <string name="qr_error_low_contrast">Scegli un colore con più contrasto prima di generare</string>
     <string name="qr_protect_password">Proteggi con password</string>
     <string name="qr_protect_password_desc">Solo chi ha la chiave può vedere il contenuto</string>
     <string name="qr_password_label">Password</string>

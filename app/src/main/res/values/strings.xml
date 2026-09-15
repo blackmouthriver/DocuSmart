@@ -829,6 +829,13 @@
     <string name="qr_placeholder_url">https://ejemplo.com</string>
     <string name="qr_placeholder_email">correo@ejemplo.com</string>
     <string name="qr_placeholder_phone">+57 300 000 0000</string>
+    <string name="qr_design_label">Personalizar diseño</string>
+    <string name="qr_design_contrast_warning">Este color tiene poco contraste sobre fondo blanco — elige uno más oscuro para que la cámara lo lea bien</string>
+    <string name="qr_design_add_logo">Agregar logo</string>
+    <string name="qr_design_logo_added">Logo agregado</string>
+    <string name="qr_design_remove_logo">Quitar logo</string>
+    <string name="qr_error_logo_load">No se pudo cargar esa imagen como logo</string>
+    <string name="qr_error_low_contrast">Elige un color con más contraste antes de generar</string>
     <string name="qr_protect_password">Proteger con contraseña</string>
     <string name="qr_protect_password_desc">Solo quien tenga la clave puede ver el contenido</string>
     <string name="qr_password_label">Contraseña</string>

@@ -811,6 +811,13 @@
     <string name="qr_placeholder_url">https://adibidea.eus</string>
     <string name="qr_placeholder_email">posta@adibidea.eus</string>
     <string name="qr_placeholder_phone">+34 600 00 00 00</string>
+    <string name="qr_design_label">Pertsonalizatu diseinua</string>
+    <string name="qr_design_contrast_warning">Kolore honek kontraste gutxi du atzeko plano zurian — aukeratu ilunago bat kamerak ondo irakur dezan</string>
+    <string name="qr_design_add_logo">Gehitu logoa</string>
+    <string name="qr_design_logo_added">Logoa gehituta</string>
+    <string name="qr_design_remove_logo">Kendu logoa</string>
+    <string name="qr_error_logo_load">Ezin izan da irudi hori logo gisa kargatu</string>
+    <string name="qr_error_low_contrast">Aukeratu kontraste handiagoko kolore bat sortu aurretik</string>
     <string name="qr_protect_password">Babestu pasahitzarekin</string>
     <string name="qr_protect_password_desc">Klabea duenak bakarrik ikus dezake edukia</string>
     <string name="qr_password_label">Pasahitza</string>

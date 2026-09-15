@@ -823,6 +823,13 @@
     <string name="qr_placeholder_url">https://exemple.cat</string>
     <string name="qr_placeholder_email">correu@exemple.cat</string>
     <string name="qr_placeholder_phone">+34 600 00 00 00</string>
+    <string name="qr_design_label">Personalitza el disseny</string>
+    <string name="qr_design_contrast_warning">Aquest color té poc contrast sobre fons blanc — tria’n un de més fosc perquè la càmera el llegeixi bé</string>
+    <string name="qr_design_add_logo">Afegeix un logo</string>
+    <string name="qr_design_logo_added">Logo afegit</string>
+    <string name="qr_design_remove_logo">Treu el logo</string>
+    <string name="qr_error_logo_load">No s’ha pogut carregar aquesta imatge com a logo</string>
+    <string name="qr_error_low_contrast">Tria un color amb més contrast abans de generar</string>
     <string name="qr_protect_password">Protegir amb contrasenya</string>
     <string name="qr_protect_password_desc">Només qui tingui la clau pot veure el contingut</string>
     <string name="qr_password_label">Contrasenya</string>

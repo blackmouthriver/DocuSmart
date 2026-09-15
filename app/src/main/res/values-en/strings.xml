@@ -800,6 +800,13 @@
     <string name="qr_placeholder_url">https://example.com</string>
     <string name="qr_placeholder_email">email@example.com</string>
     <string name="qr_placeholder_phone">+1 555 123 4567</string>
+    <string name="qr_design_label">Customize design</string>
+    <string name="qr_design_contrast_warning">This color has low contrast on a white background — pick a darker one so the camera can read it well</string>
+    <string name="qr_design_add_logo">Add logo</string>
+    <string name="qr_design_logo_added">Logo added</string>
+    <string name="qr_design_remove_logo">Remove logo</string>
+    <string name="qr_error_logo_load">Couldn\'t load that image as a logo</string>
+    <string name="qr_error_low_contrast">Pick a color with more contrast before generating</string>
     <string name="qr_protect_password">Protect with password</string>
     <string name="qr_protect_password_desc">Only someone with the password can see the content</string>
     <string name="qr_password_label">Password</string>

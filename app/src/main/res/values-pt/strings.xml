@@ -791,6 +791,13 @@
     <string name="qr_placeholder_url">https://exemplo.pt</string>
     <string name="qr_placeholder_email">email@exemplo.pt</string>
     <string name="qr_placeholder_phone">+351 912 345 678</string>
+    <string name="qr_design_label">Personalizar design</string>
+    <string name="qr_design_contrast_warning">Esta cor tem pouco contraste sobre fundo branco — escolha uma mais escura para que a câmera consiga ler bem</string>
+    <string name="qr_design_add_logo">Adicionar logo</string>
+    <string name="qr_design_logo_added">Logo adicionado</string>
+    <string name="qr_design_remove_logo">Remover logo</string>
+    <string name="qr_error_logo_load">Não foi possível carregar essa imagem como logo</string>
+    <string name="qr_error_low_contrast">Escolha uma cor com mais contraste antes de gerar</string>
     <string name="qr_protect_password">Proteger com senha</string>
     <string name="qr_protect_password_desc">Só quem tiver a senha pode ver o conteúdo</string>
     <string name="qr_password_label">Senha</string>

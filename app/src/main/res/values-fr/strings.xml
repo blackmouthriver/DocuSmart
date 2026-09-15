@@ -803,6 +803,13 @@
     <string name="qr_placeholder_url">https://exemple.fr</string>
     <string name="qr_placeholder_email">email@exemple.fr</string>
     <string name="qr_placeholder_phone">+33 6 12 34 56 78</string>
+    <string name="qr_design_label">Personnaliser le design</string>
+    <string name="qr_design_contrast_warning">Cette couleur manque de contraste sur fond blanc — choisis-en une plus foncée pour que la caméra la lise bien</string>
+    <string name="qr_design_add_logo">Ajouter un logo</string>
+    <string name="qr_design_logo_added">Logo ajouté</string>
+    <string name="qr_design_remove_logo">Retirer le logo</string>
+    <string name="qr_error_logo_load">Impossible de charger cette image comme logo</string>
+    <string name="qr_error_low_contrast">Choisis une couleur avec plus de contraste avant de générer</string>
     <string name="qr_protect_password">Protéger par mot de passe</string>
     <string name="qr_protect_password_desc">Seule la personne qui a la clé peut voir le contenu</string>
     <string name="qr_password_label">Mot de passe</string>
