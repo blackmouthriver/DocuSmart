@@ -187,6 +187,35 @@
 
     <string name="viewer_document_not_found">Document introuvable</string>
     <string name="viewer_share_chooser_title">Partager %1$s</string>
+    <string name="viewer_annotate_content_desc">Annoter</string>
+    <string name="viewer_annotate_toolbar_label">Surligner :</string>
+    <string name="viewer_annotate_note_chip">Note</string>
+    <string name="viewer_annotate_done">Terminé</string>
+    <string name="viewer_annotate_note_dialog_title">Nouvelle note</string>
+    <string name="viewer_annotate_note_dialog_placeholder">Écris ta note ici…</string>
+    <string name="viewer_annotate_note_detail_title">Note</string>
+    <string name="viewer_annotate_highlight_detail_title">Surlignage</string>
+    <string name="viewer_annotate_highlight_detail_body">Supprimer ce surlignage ?</string>
+    <string name="viewer_share_choice_title">Partager le document</string>
+    <string name="viewer_share_choice_preparing">Préparation du document…</string>
+    <string name="viewer_share_choice_body">Ce document contient des annotations. Comment veux-tu le partager ?</string>
+    <string name="viewer_share_choice_with_annotations">Avec annotations</string>
+    <string name="viewer_share_choice_original">Original</string>
+    <string name="viewer_search_placeholder">Rechercher dans le document…</string>
+    <string name="viewer_word_read_error">Impossible de lire le contenu du fichier Word</string>
+    <string name="viewer_excel_read_error">Impossible de lire le contenu du fichier Excel</string>
+    <string name="viewer_ppt_read_error">Impossible de lire le contenu de la présentation</string>
+    <string name="viewer_search_results_count">%1$d résultat(s) pour « %2$s »</string>
+    <string name="viewer_slide_number">Diapositive %1$d</string>
+    <string name="viewer_empty_file">Le fichier est vide</string>
+    <string name="viewer_text_results_count">%1$d résultat(s) :</string>
+    <string name="viewer_pdf_password_title">Document protégé</string>
+    <string name="viewer_pdf_password_label">Mot de passe</string>
+    <string name="viewer_pdf_password_placeholder">Entrez le mot de passe</string>
+    <string name="viewer_pdf_password_open_button">Ouvrir le document</string>
+    <string name="viewer_format_text">Texte</string>
+    <string name="viewer_format_generic">Fichier</string>
+    <string name="viewer_pdf_password_body">« %1$s » est protégé par mot de passe.</string>
     <string name="viewer_search_content_desc">Rechercher dans le document</string>
     <string name="viewer_favorite_content_desc">Favori</string>
     <string name="viewer_bottom_bar_page_format">Page %1$d sur %2$d</string>
@@ -795,6 +824,7 @@
     <string name="qr_image_selected">Image sélectionnée ✓</string>
     <string name="qr_select_document">Sélectionner un document</string>
     <string name="qr_document_selected">Document sélectionné ✓</string>
+    <string name="qr_local_only_hint">Ce QR ne fonctionne que sur cet appareil : il pointe vers un fichier local, pas une copie partagée.</string>
     <string name="qr_label_url">URL du site web</string>
     <string name="qr_label_text">Texte du message</string>
     <string name="qr_label_email">Adresse e-mail</string>
@@ -835,6 +865,10 @@
     <string name="qr_history_source_created">Créé</string>
     <string name="qr_history_source_scanned">Lu</string>
     <string name="qr_history_protected_content">Contenu protégé par mot de passe</string>
+    <string name="qr_history_wifi_preview">Wi-Fi : %1$s (mot de passe masqué)</string>
+    <string name="qr_history_contact_preview">Contact : %1$s (données masquées)</string>
+    <string name="qr_history_wifi_unknown_ssid">réseau masqué</string>
+    <string name="qr_history_contact_unknown_name">masqué</string>
 
     <!-- ── Étude ─────────────────────────────────── -->
     <string name="study_tab_reading">Lecture</string>

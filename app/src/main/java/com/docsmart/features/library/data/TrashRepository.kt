@@ -3,6 +3,7 @@ package com.docsmart.features.library.data
 import android.content.IntentSender
 import android.os.Build
 import com.docsmart.core.data.FavoritesRepository
+import com.docsmart.core.data.db.AnnotationDao
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.data.db.TrashEntry
@@ -37,7 +38,8 @@ class TrashRepository @Inject constructor(
     private val trashDao: TrashDao,
     private val documentHistoryDao: DocumentHistoryDao,
     private val favoritesRepository: FavoritesRepository,
-    private val mediaDeletePermission: MediaDeletePermission
+    private val mediaDeletePermission: MediaDeletePermission,
+    private val annotationDao: AnnotationDao
 ) {
     companion object {
         const val TRASH_RETENTION_DAYS = 30
@@ -116,6 +118,7 @@ class TrashRepository @Inject constructor(
         if (outcome is DocumentRepository.DeleteOutcome.Deleted) {
             trashDao.remove(documentId)
             favoritesRepository.removeAlias(documentId)
+            annotationDao.deleteByDocument(documentId)
         }
         outcome
     }
@@ -125,12 +128,14 @@ class TrashRepository @Inject constructor(
     suspend fun finalizeDeleteForever(documentId: String) = withContext(Dispatchers.IO) {
         trashDao.remove(documentId)
         favoritesRepository.removeAlias(documentId)
+        annotationDao.deleteByDocument(documentId)
     }
 
     suspend fun finalizeDeleteForever(documentIds: List<String>) = withContext(Dispatchers.IO) {
         documentIds.forEach {
             trashDao.remove(it)
             favoritesRepository.removeAlias(it)
+            annotationDao.deleteByDocument(it)
         }
     }
 
@@ -157,6 +162,7 @@ class TrashRepository @Inject constructor(
             if (documentRepository.deleteDocument(id) is DocumentRepository.DeleteOutcome.Deleted) {
                 trashDao.remove(id)
                 favoritesRepository.removeAlias(id)
+                annotationDao.deleteByDocument(id)
             }
         }
 
@@ -174,6 +180,7 @@ class TrashRepository @Inject constructor(
                 is DocumentRepository.DeleteOutcome.Deleted -> {
                     trashDao.remove(id)
                     favoritesRepository.removeAlias(id)
+                    annotationDao.deleteByDocument(id)
                 }
                 is DocumentRepository.DeleteOutcome.NeedsPermission -> pendingPermission = true
                 DocumentRepository.DeleteOutcome.Failed -> Unit
@@ -203,6 +210,7 @@ class TrashRepository @Inject constructor(
                     is DocumentRepository.DeleteOutcome.Deleted
                 ) {
                     trashDao.remove(entry.documentId)
+                    annotationDao.deleteByDocument(entry.documentId)
                 }
             }
     }

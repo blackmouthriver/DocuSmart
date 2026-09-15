@@ -183,6 +183,35 @@
     <string name="viewer_open_error_format">PDFを開けませんでした: %1$s</string>
     <string name="viewer_document_not_found">ドキュメントが見つかりません</string>
     <string name="viewer_share_chooser_title">%1$s を共有</string>
+    <string name="viewer_annotate_content_desc">注釈</string>
+    <string name="viewer_annotate_toolbar_label">ハイライト:</string>
+    <string name="viewer_annotate_note_chip">メモ</string>
+    <string name="viewer_annotate_done">完了</string>
+    <string name="viewer_annotate_note_dialog_title">新しいメモ</string>
+    <string name="viewer_annotate_note_dialog_placeholder">ここにメモを入力…</string>
+    <string name="viewer_annotate_note_detail_title">メモ</string>
+    <string name="viewer_annotate_highlight_detail_title">ハイライト</string>
+    <string name="viewer_annotate_highlight_detail_body">このハイライトを削除しますか?</string>
+    <string name="viewer_share_choice_title">ドキュメントを共有</string>
+    <string name="viewer_share_choice_preparing">ドキュメントを準備中…</string>
+    <string name="viewer_share_choice_body">このドキュメントには注釈があります。どのように共有しますか?</string>
+    <string name="viewer_share_choice_with_annotations">注釈付き</string>
+    <string name="viewer_share_choice_original">オリジナル</string>
+    <string name="viewer_search_placeholder">ドキュメント内を検索…</string>
+    <string name="viewer_word_read_error">Wordファイルの内容を読み込めませんでした</string>
+    <string name="viewer_excel_read_error">Excelファイルの内容を読み込めませんでした</string>
+    <string name="viewer_ppt_read_error">プレゼンテーションの内容を読み込めませんでした</string>
+    <string name="viewer_search_results_count">\"%2$s\" の検索結果 %1$d 件</string>
+    <string name="viewer_slide_number">スライド %1$d</string>
+    <string name="viewer_empty_file">ファイルが空です</string>
+    <string name="viewer_text_results_count">検索結果 %1$d 件:</string>
+    <string name="viewer_pdf_password_title">保護されたドキュメント</string>
+    <string name="viewer_pdf_password_label">パスワード</string>
+    <string name="viewer_pdf_password_placeholder">パスワードを入力</string>
+    <string name="viewer_pdf_password_open_button">ドキュメントを開く</string>
+    <string name="viewer_format_text">テキスト</string>
+    <string name="viewer_format_generic">ファイル</string>
+    <string name="viewer_pdf_password_body">\"%1$s\" はパスワードで保護されています。</string>
     <string name="viewer_search_content_desc">ドキュメント内を検索</string>
     <string name="viewer_favorite_content_desc">お気に入り</string>
     <string name="viewer_bottom_bar_page_format">%2$d ページ中 %1$d ページ目</string>
@@ -787,6 +816,7 @@
     <string name="qr_image_selected">画像を選択しました ✓</string>
     <string name="qr_select_document">ドキュメントを選択</string>
     <string name="qr_document_selected">ドキュメントを選択しました ✓</string>
+    <string name="qr_local_only_hint">このQRコードはこの端末でのみ有効です。共有されたコピーではなくローカルファイルを指しています。</string>
     <string name="qr_label_url">ウェブサイトのURL</string>
     <string name="qr_label_text">メッセージのテキスト</string>
     <string name="qr_label_email">メールアドレス</string>
@@ -827,6 +857,10 @@
     <string name="qr_history_source_created">作成</string>
     <string name="qr_history_source_scanned">読み取り</string>
     <string name="qr_history_protected_content">パスワードで保護された内容</string>
+    <string name="qr_history_wifi_preview">Wi-Fi: %1$s (パスワードは非表示)</string>
+    <string name="qr_history_contact_preview">連絡先: %1$s (詳細は非表示)</string>
+    <string name="qr_history_wifi_unknown_ssid">非表示のネットワーク</string>
+    <string name="qr_history_contact_unknown_name">非表示</string>
 
     <!-- ── 学習 ─────────────────────────────────── -->
     <string name="study_tab_reading">読書</string>

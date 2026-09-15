@@ -222,6 +222,13 @@ fun ConverterScreen(
                         type             = uiState.selectedType!!,
                         selectedFiles    = uiState.selectedFiles,
                         fileName         = uiState.fileName,
+                        // Hallazgo real de la revisión general 2026-09-16
+                        // (#31): el guard de re-entrada real ya vive en
+                        // ConverterViewModel.convert() (sincrónico, antes
+                        // del launch) -- esto es defensa adicional en la UI
+                        // para que el botón no quede tocable un instante
+                        // entre el tap y la recomposición.
+                        isConverting     = uiState.isConverting,
                         onFileNameChange = { viewModel.onFileNameChange(it) },
                         onSelectFiles    = { fileLauncher.launch(getMimeForType(uiState.selectedType!!)) },
                         // La cámara solo puede producir imágenes -- ofrecerla
@@ -525,6 +532,7 @@ private fun ConversionDetailCard(
     type               : ConversionType,
     selectedFiles      : List<Uri>,
     fileName           : String,
+    isConverting       : Boolean = false,
     onFileNameChange   : (String) -> Unit,
     onSelectFiles      : () -> Unit,
     onCaptureWithCamera: (() -> Unit)? = null,
@@ -650,6 +658,7 @@ private fun ConversionDetailCard(
 
             Button(
                 onClick  = onConvert,
+                enabled  = !isConverting,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape    = MaterialTheme.shapes.medium,
                 colors   = ButtonDefaults.buttonColors(

@@ -9,7 +9,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -28,7 +28,11 @@ fun ViewerRenameDialog(
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var text by remember(currentName) { mutableStateOf(currentName) }
+    // Hallazgo real de la revisión general 2026-09-16: `remember` simple
+    // perdía el texto tecleado al rotar el dispositivo (o si el sistema
+    // recreaba la Activity por memoria baja) -- `rememberSaveable`
+    // sobrevive ambos casos.
+    var text by rememberSaveable(currentName) { mutableStateOf(currentName) }
     val isValid = text.isNotBlank()
 
     AlertDialog(

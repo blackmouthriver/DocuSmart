@@ -11,6 +11,9 @@ import com.itextpdf.layout.element.Paragraph
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.DataFormatter
+import org.apache.poi.ss.usermodel.FormulaEvaluator
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import timber.log.Timber
 import java.io.File
@@ -41,6 +44,12 @@ class ExcelToPdfUseCase @Inject constructor(
                 WorkbookFactory.create(input).use { workbook ->
                     val writer = PdfWriter(outputFile)
                     val pdfDoc = PdfDocument(writer)
+                    // Hallazgo real de la revisión general 2026-09-16:
+                    // cell.toString() en una celda de fórmula devuelve el
+                    // texto de la fórmula, no el resultado calculado --
+                    // mismo bug que en ExcelToCsvUseCase.
+                    val evaluator     = workbook.creationHelper.createFormulaEvaluator()
+                    val dataFormatter = DataFormatter()
                     Document(pdfDoc).use { document ->
                         for (sheetIndex in 0 until workbook.numberOfSheets) {
                             val sheet = workbook.getSheetAt(sheetIndex)
@@ -49,7 +58,7 @@ class ExcelToPdfUseCase @Inject constructor(
                             sheet.forEach { row ->
                                 val rowText = buildString {
                                     row.forEach { cell ->
-                                        append(cell.toString().trim())
+                                        append(formatCellSafely(cell, dataFormatter, evaluator))
                                         append("\t")
                                     }
                                 }.trim()
@@ -75,6 +84,21 @@ class ExcelToPdfUseCase @Inject constructor(
             )
         }
     }
+
+    // Hallazgo real de la revisión de corrección 2026-09-16: evaluator.evaluate()
+    // puede lanzar (referencia circular, función no soportada por POI,
+    // referencia a otro libro) para UNA celda puntual -- sin este try por
+    // celda, esa excepción no la atrapaba nada más que el catch genérico de
+    // invoke(), abortando TODA la conversión (regresión frente al
+    // cell.toString() anterior, que nunca lanzaba). Mismo criterio que
+    // extractExcelSheets() en ViewerScreen.kt.
+    private fun formatCellSafely(cell: Cell, dataFormatter: DataFormatter, evaluator: FormulaEvaluator): String =
+        try {
+            dataFormatter.formatCellValue(cell, evaluator).trim()
+        } catch (e: Exception) {
+            Timber.w(e, "formatCellSafely: no se pudo formatear una celda, se usa el texto crudo")
+            cell.toString().trim()
+        }
 
     private fun generateTimestamp() =
         SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())

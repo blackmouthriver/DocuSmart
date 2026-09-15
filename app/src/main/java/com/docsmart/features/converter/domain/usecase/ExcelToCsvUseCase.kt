@@ -7,6 +7,9 @@ import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.DataFormatter
+import org.apache.poi.ss.usermodel.FormulaEvaluator
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import timber.log.Timber
 import java.io.File
@@ -33,9 +36,16 @@ class ExcelToCsvUseCase @Inject constructor(
                 val workbook = WorkbookFactory.create(input)
                 // Solo la primera hoja: CSV es de una sola tabla, no soporta múltiples hojas.
                 val sheet = workbook.getSheetAt(0)
+                // Hallazgo real de la revisión general 2026-09-16: cell.toString()
+                // en una celda de fórmula devuelve el texto de la fórmula
+                // ("=SUM(A1:A2)"), no el resultado calculado -- pérdida
+                // silenciosa de datos. DataFormatter + FormulaEvaluator la
+                // evalúa y la formatea igual que Excel lo mostraría.
+                val evaluator    = workbook.creationHelper.createFormulaEvaluator()
+                val dataFormatter = DataFormatter()
 
                 sheet.forEach { row ->
-                    val cells = row.map { cell -> escapeCsv(cell.toString().trim()) }
+                    val cells = row.map { cell -> escapeCsv(formatCellSafely(cell, dataFormatter, evaluator)) }
                     if (cells.any { it.isNotBlank() }) {
                         sb.appendLine(cells.joinToString(","))
                         rowCount++
@@ -65,6 +75,22 @@ class ExcelToCsvUseCase @Inject constructor(
             )
         }
     }
+
+    // Hallazgo real de la revisión de corrección 2026-09-16: evaluator.evaluate()
+    // puede lanzar (referencia circular, función no soportada por POI,
+    // referencia a otro libro) para UNA celda puntual -- sin este try por
+    // celda, esa excepción no la atrapaba nada más que el catch genérico de
+    // invoke(), abortando TODA la conversión (regresión frente al
+    // cell.toString() anterior, que nunca lanzaba). Mismo criterio que
+    // extractExcelSheets() en ViewerScreen.kt.
+    @Suppress("TooGenericExceptionCaught")
+    private fun formatCellSafely(cell: Cell, dataFormatter: DataFormatter, evaluator: FormulaEvaluator): String =
+        try {
+            dataFormatter.formatCellValue(cell, evaluator).trim()
+        } catch (e: Exception) {
+            Timber.w(e, "formatCellSafely: no se pudo formatear una celda, se usa el texto crudo")
+            cell.toString().trim()
+        }
 
     private fun escapeCsv(value: String): String =
         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {

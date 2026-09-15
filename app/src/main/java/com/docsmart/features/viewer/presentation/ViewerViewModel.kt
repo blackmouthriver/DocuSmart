@@ -11,12 +11,17 @@ import com.docsmart.R
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.data.FavoritesRepository
+import com.docsmart.core.data.db.AnnotationDao
+import com.docsmart.core.data.db.AnnotationEntity
+import com.docsmart.core.data.db.AnnotationType
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
+import com.docsmart.features.viewer.domain.annotation.PdfRectPts
+import com.docsmart.features.viewer.domain.usecase.FlattenAnnotationsPdfUseCase
 import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -26,6 +31,7 @@ import com.itextpdf.kernel.pdf.ReaderProperties
 import com.itextpdf.kernel.pdf.WriterProperties
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,10 +40,32 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.util.UUID
 import javax.inject.Inject
 
 private const val MIME_PDF  = "application/pdf"
 private const val MIME_JPEG = "image/jpeg"
+
+// HU-46: modo de anotación activo sobre el PDF -- NONE es el
+// comportamiento normal de siempre (zoom/pan libres, tocar alterna los
+// controles); HIGHLIGHT/NOTE deshabilitan el zoom/pan mientras están
+// activos para no pelear con el gesto de dibujar/anclar (ver PdfViewerContent).
+enum class AnnotationMode { NONE, HIGHLIGHT, NOTE }
+
+// Paleta de colores para resaltar -- al menos 3 pedidos por RF1, con un
+// cuarto para dar más variedad sin complicar la UI (misma cantidad de
+// chips que ya usa el selector de "Modo de color" del Escáner).
+val ANNOTATION_HIGHLIGHT_COLORS = listOf(
+    0xFFFFEB3B.toInt(), // Amarillo (mismo tono que el resaltado de búsqueda)
+    0xFF66BB6A.toInt(), // Verde
+    0xFFF06292.toInt(), // Rosa
+    0xFF4FC3F7.toInt()  // Celeste
+)
+private const val ANNOTATION_NOTE_COLOR = 0xFFFF7043.toInt() // Naranja -- fijo, distingue notas de resaltados
+// Hallazgo de la revisión de seguridad HU-46: sin límite, una nota de
+// tamaño arbitrario queda persistida en Room y luego incrustada tal cual en
+// el PDF aplanado al compartir -- acota el tamaño real de archivo/DB.
+const val MAX_NOTE_LENGTH = 2000
 
 data class ViewerUiState(
     val document         : DocumentUiModel? = null,
@@ -61,7 +89,31 @@ data class ViewerUiState(
     val showRenameDialog : Boolean = false,
     val showDeleteConfirm: Boolean = false,
     val deleteError      : String? = null,
-    val documentDeleted  : Boolean = false
+    val documentDeleted  : Boolean = false,
+    // ── HU-46: anotaciones (resaltado + notas adhesivas) ──────────────────
+    // Hallazgo real de la revisión general 2026-09-16: esta bandera vivía
+    // como estado local de Compose (`remember`) en ViewerScreen -- al rotar
+    // el dispositivo se reiniciaba a `false` (barra/ícono "Anotar" ya no se
+    // ven activos) mientras `annotationMode` (acá, sobrevive rotación
+    // porque el ViewModel sobrevive) seguía en HIGHLIGHT/NOTE, dejando el
+    // zoom/pan deshabilitado sin ninguna barra visible para volver a NONE.
+    // Vive acá para que ambos sobrevivan la rotación juntos, sincronizados.
+    val showAnnotationToolbar : Boolean = false,
+    val annotationMode        : AnnotationMode = AnnotationMode.NONE,
+    val selectedHighlightColor: Int = ANNOTATION_HIGHLIGHT_COLORS.first(),
+    val annotations            : Map<Int, List<AnnotationEntity>> = emptyMap(), // página (1-based) → anotaciones
+    val pendingNoteAnchor      : PdfRectPts? = null, // punto tocado en modo NOTE, a la espera del texto
+    val pendingNotePage        : Int? = null,
+    val viewingAnnotation      : AnnotationEntity? = null, // tap sobre una anotación ya existente
+    val showShareChoiceDialog  : Boolean = false, // "con anotaciones" / "original", solo si hay >=1
+    val isFlatteningForShare   : Boolean = false,
+    // Hallazgo de la revisión de correctitud HU-46: un fallo al compartir
+    // usaba `error` (el mismo campo que reemplaza TODA la vista del Visor
+    // por una pantalla de "documento roto", ver el `when` de nivel superior
+    // en ViewerScreen) -- un aviso transitorio (mismo patrón que deleteError)
+    // no debe expulsar al usuario del documento que sigue perfectamente
+    // legible.
+    val shareError             : String? = null
 )
 
 @HiltViewModel
@@ -73,7 +125,10 @@ class ViewerViewModel @Inject constructor(
     private val trashRepository: TrashRepository,
     // Backlog UX 2026-08-30 (HU-UX-07): banner de anuncios consistente en
     // pantallas de contenido, faltaba en el Visor.
-    val adManager: AdManager
+    val adManager: AdManager,
+    // HU-46: anotaciones (resaltado + notas adhesivas) sobre el PDF.
+    private val annotationDao: AnnotationDao,
+    private val flattenAnnotationsPdfUseCase: FlattenAnnotationsPdfUseCase
 ) : ViewModel() {
 
     companion object {
@@ -84,6 +139,20 @@ class ViewerViewModel @Inject constructor(
     val uiState: StateFlow<ViewerUiState> = _uiState.asStateFlow()
 
     private var pendingDocumentId: String  = ""
+    private var annotationsJob: Job? = null
+
+    // HU-46: se re-suscribe cada vez que cambia el documento cargado --
+    // Flow, no una sola carga, para que altas/bajas hechas en esta misma
+    // sesión (agregar resaltado, borrar nota) se reflejen sin recargar la
+    // pantalla. Mismo `documentId` (uriString) que usan favoritos/historial.
+    private fun observeAnnotations(documentId: String) {
+        annotationsJob?.cancel()
+        annotationsJob = viewModelScope.launch {
+            annotationDao.observeByDocument(documentId).collect { entries ->
+                _uiState.update { it.copy(annotations = entries.groupBy { entry -> entry.page }) }
+            }
+        }
+    }
 
     // Se guarda applicationContext (no la Activity), por eso no hay fuga real
     // pese a lo que reporta el detector StaticFieldLeak de lint.
@@ -220,6 +289,7 @@ class ViewerViewModel @Inject constructor(
             )
         }
         recordHistoryOpen(uriString)
+        observeAnnotations(uriString)
         DocuSmartAnalytics.logDocumentOpened(documentType.name)
     }
 
@@ -476,7 +546,15 @@ class ViewerViewModel @Inject constructor(
 
                     Timber.d("$TAG: PDF desbloqueado exitosamente → ${cacheOut.length()}b")
                     // Id ya publicado en el estado, no originalId crudo (pueden diferir)
-                    recordHistoryOpen(_uiState.value.document?.id ?: originalId)
+                    val unlockedDocumentId = _uiState.value.document?.id ?: originalId
+                    recordHistoryOpen(unlockedDocumentId)
+                    // Bug real encontrado por la revisión de seguridad HU-46: para un PDF
+                    // protegido con contraseña, observeAnnotations() nunca se llamaba (solo
+                    // publishLoadedDocument() la dispara, y ese camino no se usa para PDFs
+                    // que piden contraseña) -- las anotaciones creadas tras desbloquear
+                    // quedaban invisibles y shareDocument() tomaba siempre el camino "sin
+                    // anotaciones" en silencio, aunque el usuario ya hubiera resaltado/anotado.
+                    observeAnnotations(unlockedDocumentId)
                     _uiState.update { state ->
                         state.copy(
                             isLoading        = false,
@@ -751,7 +829,24 @@ class ViewerViewModel @Inject constructor(
         return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(path))
     }
 
+    // HU-46 (RNF2): un documento SIN anotaciones comparte exactamente igual
+    // que siempre (AC2, sin diálogo de por medio) -- el diálogo "con
+    // anotaciones/original" solo aparece si hay algo que aplanar.
     fun shareDocument(context: Context) {
+        val hasAnnotations = _uiState.value.annotations.values.any { it.isNotEmpty() }
+        if (hasAnnotations) {
+            _uiState.update { it.copy(showShareChoiceDialog = true) }
+        } else {
+            shareOriginal(context)
+        }
+    }
+
+    fun dismissShareChoiceDialog() {
+        _uiState.update { it.copy(showShareChoiceDialog = false) }
+    }
+
+    fun shareOriginal(context: Context) {
+        _uiState.update { it.copy(showShareChoiceDialog = false) }
         val state    = _uiState.value
         val document = state.document ?: return
         try {
@@ -774,7 +869,156 @@ class ViewerViewModel @Inject constructor(
             // Bug real encontrado 2026-09-14: hardcodeado en español --
             // reusa pdf_tools_share_error (mismo mensaje que Herramientas PDF
             // para este mismo escenario).
-            _uiState.update { it.copy(error = context.getString(R.string.pdf_tools_share_error)) }
+            _uiState.update { it.copy(shareError = context.getString(R.string.pdf_tools_share_error)) }
+        }
+    }
+
+    fun dismissShareError() {
+        _uiState.update { it.copy(shareError = null) }
+    }
+
+    // HU-46 (RNF1): aplana sobre una COPIA en caché (FlattenAnnotationsPdfUseCase)
+    // y comparte esa copia -- el archivo original (state.fileUri) nunca se
+    // toca ni se sobrescribe.
+    fun shareWithAnnotations(context: Context) {
+        val state       = _uiState.value
+        val document    = state.document
+        val sourceUri   = state.fileUri
+        if (document == null || sourceUri == null) {
+            // Hallazgo de la revisión de seguridad HU-46: los `?: return`
+            // tempranos dejaban isFlatteningForShare/showShareChoiceDialog
+            // sin resetear si document/fileUri fueran null en este punto.
+            _uiState.update { it.copy(showShareChoiceDialog = false) }
+            return
+        }
+        _uiState.update { it.copy(showShareChoiceDialog = false, isFlatteningForShare = true) }
+        val allAnnotations = state.annotations.values.flatten()
+        viewModelScope.launch {
+            val flattened = flattenAnnotationsPdfUseCase(sourceUri, allAnnotations)
+            _uiState.update { it.copy(isFlatteningForShare = false) }
+            if (flattened == null) {
+                _uiState.update { it.copy(shareError = context.getString(R.string.pdf_tools_share_error)) }
+                return@launch
+            }
+            try {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = MIME_PDF
+                    putExtra(Intent.EXTRA_STREAM, shareableUri(context, Uri.fromFile(flattened)))
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    putExtra(Intent.EXTRA_SUBJECT, document.name)
+                }
+                val chooserTitle = String.format(
+                    context.getString(R.string.viewer_share_chooser_title), document.name
+                )
+                context.startActivity(Intent.createChooser(shareIntent, chooserTitle))
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: error compartiendo documento anotado")
+                _uiState.update { it.copy(shareError = context.getString(R.string.pdf_tools_share_error)) }
+            }
+        }
+    }
+
+    // ── HU-46: anotaciones (resaltado + notas adhesivas) ──────────────────────
+    fun setAnnotationMode(mode: AnnotationMode) {
+        _uiState.update { it.copy(annotationMode = mode, pendingNoteAnchor = null, pendingNotePage = null) }
+    }
+
+    // Hallazgo real de la revisión general 2026-09-16: showAnnotationToolbar
+    // y annotationMode deben cambiar siempre juntos -- ver el comentario en
+    // ViewerUiState. toggleAnnotationToolbar() es el único punto que los
+    // toca a los dos, evitando que queden desincronizados otra vez.
+    fun toggleAnnotationToolbar() {
+        val opening = !_uiState.value.showAnnotationToolbar
+        _uiState.update {
+            it.copy(
+                showAnnotationToolbar = opening,
+                annotationMode        = if (opening) it.annotationMode else AnnotationMode.NONE
+            )
+        }
+    }
+
+    fun closeAnnotationToolbar() {
+        _uiState.update { it.copy(showAnnotationToolbar = false, annotationMode = AnnotationMode.NONE) }
+    }
+
+    fun setHighlightColor(colorArgb: Int) {
+        _uiState.update { it.copy(selectedHighlightColor = colorArgb) }
+    }
+
+    fun addHighlight(page: Int, rect: PdfRectPts) {
+        val documentId = _uiState.value.document?.id ?: return
+        val color       = _uiState.value.selectedHighlightColor
+        viewModelScope.launch {
+            annotationDao.insert(
+                AnnotationEntity(
+                    id         = UUID.randomUUID().toString(),
+                    documentId = documentId,
+                    type       = AnnotationType.HIGHLIGHT,
+                    page       = page,
+                    xPts       = rect.xPts,
+                    yPts       = rect.yPts,
+                    widthPts   = rect.widthPts,
+                    heightPts  = rect.heightPts,
+                    color      = color,
+                    text       = "",
+                    createdAt  = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    // RF2: tocar un punto en modo NOTE no guarda de inmediato -- deja el
+    // anclaje pendiente hasta que el usuario escribe el texto (o cancela).
+    fun requestAddNote(page: Int, anchor: PdfRectPts) {
+        _uiState.update { it.copy(pendingNoteAnchor = anchor, pendingNotePage = page) }
+    }
+
+    fun cancelPendingNote() {
+        _uiState.update { it.copy(pendingNoteAnchor = null, pendingNotePage = null) }
+    }
+
+    fun confirmNote(text: String) {
+        if (text.isBlank()) {
+            cancelPendingNote()
+            return
+        }
+        val state      = _uiState.value
+        val documentId = state.document?.id
+        val anchor     = state.pendingNoteAnchor
+        val page       = state.pendingNotePage
+        if (documentId == null || anchor == null || page == null) return
+        viewModelScope.launch {
+            annotationDao.insert(
+                AnnotationEntity(
+                    id         = UUID.randomUUID().toString(),
+                    documentId = documentId,
+                    type       = AnnotationType.NOTE,
+                    page       = page,
+                    xPts       = anchor.xPts,
+                    yPts       = anchor.yPts,
+                    widthPts   = 0f,
+                    heightPts  = 0f,
+                    color      = ANNOTATION_NOTE_COLOR,
+                    text       = text.trim().take(MAX_NOTE_LENGTH),
+                    createdAt  = System.currentTimeMillis()
+                )
+            )
+            _uiState.update { it.copy(pendingNoteAnchor = null, pendingNotePage = null) }
+        }
+    }
+
+    fun viewAnnotation(annotation: AnnotationEntity) {
+        _uiState.update { it.copy(viewingAnnotation = annotation) }
+    }
+
+    fun dismissAnnotationDetail() {
+        _uiState.update { it.copy(viewingAnnotation = null) }
+    }
+
+    fun deleteAnnotation(id: String) {
+        viewModelScope.launch {
+            annotationDao.delete(id)
+            _uiState.update { it.copy(viewingAnnotation = null) }
         }
     }
 

@@ -238,11 +238,7 @@ private fun QrHistoryRow(entry: QrHistoryEntry, onClick: () -> Unit, onDelete: (
                 )
             }
             Text(
-                if (entry.typeName == "PROTECTED") {
-                    stringResource(R.string.qr_history_protected_content)
-                } else {
-                    entry.content
-                },
+                historyContentPreview(entry),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -277,6 +273,49 @@ private fun historyTypeIcon(typeName: String): ImageVector = when (typeName) {
     "PROTECTED" -> Icons.Rounded.Lock
     else        -> Icons.Rounded.QrCode
 }
+
+// Hallazgo real de la revisión general 2026-09-16: la contraseña Wi-Fi (o
+// el teléfono/email de un Contacto) quedaba visible en texto plano en esta
+// fila del Historial -- el enmascarado de `typeName == "PROTECTED"` solo
+// cubre el cifrado opcional con contraseña del propio QR, no estos campos
+// sensibles del payload WIFI:/vCard. Se muestra solo el dato no sensible
+// (SSID / nombre) y se omite el resto.
+// Hallazgo real de la revisión de seguridad 2026-09-16: el enmascarado por
+// entry.typeName == "WIFI"/"CONTACT" solo cubría los QR CREADOS acá (donde
+// QrScreen.kt fija ese typeName a mano) -- un QR Wi-Fi/vCard ESCANEADO (el
+// caso de uso principal del hallazgo original: leer el Wi-Fi de casa) cae en
+// typeName="TEXT" (QrContentType no reconoce estos prefijos, ver hallazgo
+// #5 pendiente) y mostraba la contraseña/datos crudos sin enmascarar. Se
+// detecta directamente sobre el contenido (WIFI:/BEGIN:VCARD), sin depender
+// de typeName, para cubrir ambos orígenes por igual. Tampoco se recurre más
+// a `?: entry.content` como fallback: si el SSID/nombre no se puede extraer,
+// se muestra un texto genérico -- nunca el payload crudo sin enmascarar.
+@Composable
+private fun historyContentPreview(entry: QrHistoryEntry): String = when {
+    entry.typeName == "PROTECTED"        -> stringResource(R.string.qr_history_protected_content)
+    entry.content.startsWith("WIFI:")    -> stringResource(
+        R.string.qr_history_wifi_preview,
+        extractWifiSsid(entry.content) ?: stringResource(R.string.qr_history_wifi_unknown_ssid)
+    )
+    entry.content.startsWith("BEGIN:VCARD") -> stringResource(
+        R.string.qr_history_contact_preview,
+        extractContactName(entry.content) ?: stringResource(R.string.qr_history_contact_unknown_name)
+    )
+    else        -> entry.content
+}
+
+private fun unescapeReservedField(value: String): String =
+    value
+        .replace("\\;", ";")
+        .replace("\\,", ",")
+        .replace("\\:", ":")
+        .replace("\\\\", "\\")
+
+private fun extractWifiSsid(content: String): String? =
+    Regex("S:((?:\\\\.|[^;])*);").find(content)?.groupValues?.get(1)?.let(::unescapeReservedField)
+
+private fun extractContactName(content: String): String? =
+    Regex("FN:(.*)").find(content)?.groupValues?.get(1)?.trim()?.let(::unescapeReservedField)
 
 @Composable
 private fun historyTypeLabel(typeName: String): String = when (typeName) {

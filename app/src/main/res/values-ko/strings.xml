@@ -183,6 +183,35 @@
     <string name="viewer_open_error_format">PDF를 열 수 없습니다: %1$s</string>
     <string name="viewer_document_not_found">문서를 찾을 수 없습니다</string>
     <string name="viewer_share_chooser_title">%1$s 공유</string>
+    <string name="viewer_annotate_content_desc">주석</string>
+    <string name="viewer_annotate_toolbar_label">강조 표시:</string>
+    <string name="viewer_annotate_note_chip">메모</string>
+    <string name="viewer_annotate_done">완료</string>
+    <string name="viewer_annotate_note_dialog_title">새 메모</string>
+    <string name="viewer_annotate_note_dialog_placeholder">여기에 메모를 입력하세요…</string>
+    <string name="viewer_annotate_note_detail_title">메모</string>
+    <string name="viewer_annotate_highlight_detail_title">강조 표시</string>
+    <string name="viewer_annotate_highlight_detail_body">이 강조 표시를 삭제하시겠습니까?</string>
+    <string name="viewer_share_choice_title">문서 공유</string>
+    <string name="viewer_share_choice_preparing">문서 준비 중…</string>
+    <string name="viewer_share_choice_body">이 문서에는 주석이 있습니다. 어떻게 공유하시겠습니까?</string>
+    <string name="viewer_share_choice_with_annotations">주석 포함</string>
+    <string name="viewer_share_choice_original">원본</string>
+    <string name="viewer_search_placeholder">문서에서 검색…</string>
+    <string name="viewer_word_read_error">Word 파일의 내용을 읽을 수 없습니다</string>
+    <string name="viewer_excel_read_error">Excel 파일의 내용을 읽을 수 없습니다</string>
+    <string name="viewer_ppt_read_error">프레젠테이션의 내용을 읽을 수 없습니다</string>
+    <string name="viewer_search_results_count">\"%2$s\"에 대한 결과 %1$d개</string>
+    <string name="viewer_slide_number">슬라이드 %1$d</string>
+    <string name="viewer_empty_file">파일이 비어 있습니다</string>
+    <string name="viewer_text_results_count">결과 %1$d개:</string>
+    <string name="viewer_pdf_password_title">보호된 문서</string>
+    <string name="viewer_pdf_password_label">비밀번호</string>
+    <string name="viewer_pdf_password_placeholder">비밀번호 입력</string>
+    <string name="viewer_pdf_password_open_button">문서 열기</string>
+    <string name="viewer_format_text">텍스트</string>
+    <string name="viewer_format_generic">파일</string>
+    <string name="viewer_pdf_password_body">\"%1$s\" 파일은 비밀번호로 보호되어 있습니다.</string>
     <string name="viewer_search_content_desc">문서에서 검색</string>
     <string name="viewer_favorite_content_desc">즐겨찾기</string>
     <string name="viewer_bottom_bar_page_format">%2$d페이지 중 %1$d페이지</string>
@@ -787,6 +816,7 @@
     <string name="qr_image_selected">이미지 선택됨 ✓</string>
     <string name="qr_select_document">문서 선택</string>
     <string name="qr_document_selected">문서 선택됨 ✓</string>
+    <string name="qr_local_only_hint">이 QR 코드는 이 기기에서만 작동합니다. 공유된 사본이 아니라 로컬 파일을 가리킵니다.</string>
     <string name="qr_label_url">웹사이트 URL</string>
     <string name="qr_label_text">메시지 텍스트</string>
     <string name="qr_label_email">이메일 주소</string>
@@ -827,6 +857,10 @@
     <string name="qr_history_source_created">생성됨</string>
     <string name="qr_history_source_scanned">읽음</string>
     <string name="qr_history_protected_content">비밀번호로 보호된 콘텐츠</string>
+    <string name="qr_history_wifi_preview">Wi-Fi: %1$s (비밀번호 숨김)</string>
+    <string name="qr_history_contact_preview">연락처: %1$s (세부정보 숨김)</string>
+    <string name="qr_history_wifi_unknown_ssid">숨겨진 네트워크</string>
+    <string name="qr_history_contact_unknown_name">숨김</string>
 
     <!-- ── 학습 ─────────────────────────────────── -->
     <string name="study_tab_reading">읽기</string>

@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.docsmart.core.data.db.AnnotationDao
 import com.docsmart.core.security.SecurityManager
 import com.docsmart.features.library.data.MediaDeletePermission
 import com.docsmart.features.security.domain.PdfPasswordMessages
@@ -74,7 +75,8 @@ data class SecurityUiState(
 class SecurityViewModel @Inject constructor(
     private val securityManager       : SecurityManager,
     private val pdfPasswordUseCase    : PdfPasswordUseCase,
-    private val mediaDeletePermission : MediaDeletePermission
+    private val mediaDeletePermission : MediaDeletePermission,
+    private val annotationDao         : AnnotationDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SecurityUiState())
@@ -197,8 +199,15 @@ class SecurityViewModel @Inject constructor(
         file: File, successMessage: String, errorMessage: String, originalKeptMessage: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
+            val oldId = file.absolutePath
             val result = securityManager.moveToSecure(file)
             if (result.success) {
+                // Hallazgo real de la revisión general 2026-09-16: las
+                // anotaciones del Visor (HU-46) quedaban huérfanas bajo el
+                // id viejo al mover un documento a Carpeta Segura -- se
+                // migran a la ruta nueva dentro de secure/.
+                val newId = File(securityManager.secureFolder, file.name).absolutePath
+                annotationDao.updateDocumentId(oldId, newId)
                 val secureFiles = securityManager.getSecureFiles()
                 _uiState.update {
                     it.copy(
@@ -242,6 +251,10 @@ class SecurityViewModel @Inject constructor(
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     destFile.outputStream().use { output -> input.copyTo(output) }
                 }
+                // Mismo criterio que importLocalFile(): migrar anotaciones
+                // existentes (documentId = el propio content:// del origen)
+                // a la ruta nueva dentro de Carpeta Segura.
+                annotationDao.updateDocumentId(uri.toString(), destFile.absolutePath)
 
                 val deleteResult = try {
                     val deleted = android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)
@@ -393,8 +406,16 @@ class SecurityViewModel @Inject constructor(
 
     fun restoreFile(file: File, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
+            val oldId  = file.absolutePath
             val destDir = File(context.filesDir, "converted")
-            securityManager.moveFromSecure(file, destDir)
+            val restored = securityManager.moveFromSecure(file, destDir)
+            if (restored) {
+                // Hallazgo real de la revisión general 2026-09-16: mismo
+                // criterio que al mover a Carpeta Segura -- migrar las
+                // anotaciones a la ruta restaurada en vez de perderlas.
+                val newId = File(destDir, file.name).absolutePath
+                annotationDao.updateDocumentId(oldId, newId)
+            }
             val files = securityManager.getSecureFiles()
             _uiState.update { it.copy(secureFiles = files) }
         }

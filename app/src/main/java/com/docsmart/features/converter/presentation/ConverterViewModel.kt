@@ -199,7 +199,17 @@ class ConverterViewModel @Inject constructor(
         val state = _uiState.value
         val type  = state.selectedType
         val files = state.selectedFiles
-        if (type == null || files.isEmpty()) return
+        // Hallazgo real de la revisión general 2026-09-16: un doble-toque
+        // llamaba a convert() dos veces antes de que la primera corrutina
+        // alcanzara a marcar isConverting = true (esa actualización pasaba
+        // recién adentro de viewModelScope.launch, de forma asíncrona), así
+        // que ambas pasaban canConvert() antes de que cualquiera registrara
+        // el conteo -- se superaba el límite diario en 1. El guard debe
+        // fijarse acá mismo, de forma sincrónica, antes de cualquier punto
+        // de suspensión: dos taps se procesan uno tras otro en el hilo
+        // principal, así que para cuando llega el segundo, este chequeo ya
+        // ve el estado que dejó el primero.
+        if (type == null || files.isEmpty() || state.isConverting) return
 
         if (!premiumManager.canPerform { dailyLimitManager.canConvert() }) {
             _uiState.update { it.copy(showLimitDialog = true) }
@@ -207,20 +217,23 @@ class ConverterViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(isConverting = true, errorMessage = null) }
+
         // "Alta resolución" (backlog UX #33) es Premium -- se revalida acá,
         // no solo en la UI, para que el estado de la pantalla nunca pueda
         // saltarse el gate (defensa en profundidad, mismo criterio que
         // premiumManager ya se revalida en el límite diario arriba).
         val useHighRes = highResolutionPdf && premiumManager.isPremium.value
 
-        val customName = state.fileName.trim().ifBlank { generateDefaultName() }
+        // Hallazgo real de la revisión general 2026-09-16 (path traversal):
+        // saneado en este único punto para los 14 use cases del Conversor,
+        // ver sanitizeOutputFileName().
+        val customName = com.docsmart.core.util.sanitizeOutputFileName(state.fileName).ifBlank { generateDefaultName() }
         val isBatch    = type != ConversionType.IMAGE_TO_PDF && files.size > 1
 
         DocuSmartAnalytics.logConversion(type.name)
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isConverting = true, errorMessage = null) }
-
             if (isBatch) {
                 val items = runBatchConversion(context, type, files)
                 if (items.any { it.result is ConversionResult.Success }) soundEffectPlayer.playConvert()

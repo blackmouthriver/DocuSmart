@@ -183,6 +183,35 @@
     <string name="viewer_open_error_format">无法打开 PDF：%1$s</string>
     <string name="viewer_document_not_found">未找到文档</string>
     <string name="viewer_share_chooser_title">分享 %1$s</string>
+    <string name="viewer_annotate_content_desc">批注</string>
+    <string name="viewer_annotate_toolbar_label">高亮:</string>
+    <string name="viewer_annotate_note_chip">备注</string>
+    <string name="viewer_annotate_done">完成</string>
+    <string name="viewer_annotate_note_dialog_title">新建备注</string>
+    <string name="viewer_annotate_note_dialog_placeholder">在此输入备注…</string>
+    <string name="viewer_annotate_note_detail_title">备注</string>
+    <string name="viewer_annotate_highlight_detail_title">高亮</string>
+    <string name="viewer_annotate_highlight_detail_body">删除此高亮?</string>
+    <string name="viewer_share_choice_title">分享文档</string>
+    <string name="viewer_share_choice_preparing">正在准备文档…</string>
+    <string name="viewer_share_choice_body">此文档包含批注。您想如何分享?</string>
+    <string name="viewer_share_choice_with_annotations">包含批注</string>
+    <string name="viewer_share_choice_original">原始文件</string>
+    <string name="viewer_search_placeholder">在文档中搜索…</string>
+    <string name="viewer_word_read_error">无法读取 Word 文件内容</string>
+    <string name="viewer_excel_read_error">无法读取 Excel 文件内容</string>
+    <string name="viewer_ppt_read_error">无法读取演示文稿内容</string>
+    <string name="viewer_search_results_count">找到 %1$d 个与\"%2$s\"匹配的结果</string>
+    <string name="viewer_slide_number">幻灯片 %1$d</string>
+    <string name="viewer_empty_file">文件为空</string>
+    <string name="viewer_text_results_count">%1$d 个结果:</string>
+    <string name="viewer_pdf_password_title">受保护的文档</string>
+    <string name="viewer_pdf_password_label">密码</string>
+    <string name="viewer_pdf_password_placeholder">输入密码</string>
+    <string name="viewer_pdf_password_open_button">打开文档</string>
+    <string name="viewer_format_text">文本</string>
+    <string name="viewer_format_generic">文件</string>
+    <string name="viewer_pdf_password_body">\"%1$s\" 已受密码保护。</string>
     <string name="viewer_search_content_desc">在文档中搜索</string>
     <string name="viewer_favorite_content_desc">收藏</string>
     <string name="viewer_bottom_bar_page_format">第 %1$d 页，共 %2$d 页</string>
@@ -787,6 +816,7 @@
     <string name="qr_image_selected">已选择图片 ✓</string>
     <string name="qr_select_document">选择文档</string>
     <string name="qr_document_selected">已选择文档 ✓</string>
+    <string name="qr_local_only_hint">此二维码仅在本设备上有效：它指向本地文件，而不是共享副本。</string>
     <string name="qr_label_url">网站网址</string>
     <string name="qr_label_text">消息文本</string>
     <string name="qr_label_email">邮箱地址</string>
@@ -827,6 +857,10 @@
     <string name="qr_history_source_created">已创建</string>
     <string name="qr_history_source_scanned">已扫描</string>
     <string name="qr_history_protected_content">受密码保护的内容</string>
+    <string name="qr_history_wifi_preview">Wi-Fi：%1$s（密码已隐藏）</string>
+    <string name="qr_history_contact_preview">联系人：%1$s（详情已隐藏）</string>
+    <string name="qr_history_wifi_unknown_ssid">隐藏网络</string>
+    <string name="qr_history_contact_unknown_name">已隐藏</string>
 
     <!-- ── 学习模式 ─────────────────────────────────── -->
     <string name="study_tab_reading">阅读</string>

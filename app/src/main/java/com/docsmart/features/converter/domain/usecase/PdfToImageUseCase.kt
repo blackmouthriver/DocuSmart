@@ -47,22 +47,7 @@ class PdfToImageUseCase @Inject constructor(
             ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fileDescriptor ->
                 PdfRenderer(fileDescriptor).use { renderer ->
                     for (i in 0 until renderer.pageCount) {
-                        val page = renderer.openPage(i)
-                        val bitmap = Bitmap.createBitmap(
-                            page.width * 2,
-                            page.height * 2,
-                            Bitmap.Config.ARGB_8888
-                        )
-                        bitmap.eraseColor(android.graphics.Color.WHITE)
-                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        page.close()
-
-                        val outputFile = File(outputDir, "${baseName}_pagina${i + 1}.jpg")
-                        outputFile.outputStream().use { out ->
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                        }
-                        bitmap.recycle()
-                        outputFiles.add(outputFile)
+                        outputFiles.add(renderPageToFile(renderer, i, outputDir, baseName))
                     }
                 }
             }
@@ -85,9 +70,43 @@ class PdfToImageUseCase @Inject constructor(
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )
+        } catch (e: OutOfMemoryError) {
+            // OutOfMemoryError no hereda de Exception -- sin este catch,
+            // una página de alta resolución (width*2 x height*2) sin
+            // memoria suficiente crasheaba toda la conversión.
+            Timber.e(e, "Sin memoria convirtiendo PDF a imagen")
+            ConversionResult.Error(
+                String.format(
+                    context.getString(R.string.converter_error_generic_format),
+                    context.getString(R.string.converter_error_unknown)
+                )
+            )
         } finally {
             cacheFile?.delete()
         }
+    }
+
+    // Hallazgo real de la revisión general 2026-09-16: page.close() manual
+    // solo se alcanzaba si createBitmap/render no fallaban -- .use{} (a
+    // diferencia de un try/catch(Exception)) cierra la page pase lo que
+    // pase, OutOfMemoryError incluido. Extraído de invoke() además para
+    // bajar la complejidad ciclomática (detekt).
+    private fun renderPageToFile(
+        renderer: PdfRenderer,
+        pageIndex: Int,
+        outputDir: File,
+        baseName: String
+    ): File = renderer.openPage(pageIndex).use { page ->
+        val bitmap = Bitmap.createBitmap(page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(android.graphics.Color.WHITE)
+        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+        val outputFile = File(outputDir, "${baseName}_pagina${pageIndex + 1}.jpg")
+        outputFile.outputStream().use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+        }
+        bitmap.recycle()
+        outputFile
     }
 
     private fun generateTimestamp() =

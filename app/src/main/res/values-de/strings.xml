@@ -183,6 +183,35 @@
     <string name="viewer_open_error_format">PDF konnte nicht geöffnet werden: %1$s</string>
     <string name="viewer_document_not_found">Dokument nicht gefunden</string>
     <string name="viewer_share_chooser_title">%1$s teilen</string>
+    <string name="viewer_annotate_content_desc">Anmerken</string>
+    <string name="viewer_annotate_toolbar_label">Markieren:</string>
+    <string name="viewer_annotate_note_chip">Notiz</string>
+    <string name="viewer_annotate_done">Fertig</string>
+    <string name="viewer_annotate_note_dialog_title">Neue Notiz</string>
+    <string name="viewer_annotate_note_dialog_placeholder">Schreibe deine Notiz hier…</string>
+    <string name="viewer_annotate_note_detail_title">Notiz</string>
+    <string name="viewer_annotate_highlight_detail_title">Markierung</string>
+    <string name="viewer_annotate_highlight_detail_body">Diese Markierung löschen?</string>
+    <string name="viewer_share_choice_title">Dokument teilen</string>
+    <string name="viewer_share_choice_preparing">Dokument wird vorbereitet…</string>
+    <string name="viewer_share_choice_body">Dieses Dokument enthält Anmerkungen. Wie möchtest du es teilen?</string>
+    <string name="viewer_share_choice_with_annotations">Mit Anmerkungen</string>
+    <string name="viewer_share_choice_original">Original</string>
+    <string name="viewer_search_placeholder">Im Dokument suchen…</string>
+    <string name="viewer_word_read_error">Der Inhalt der Word-Datei konnte nicht gelesen werden</string>
+    <string name="viewer_excel_read_error">Der Inhalt der Excel-Datei konnte nicht gelesen werden</string>
+    <string name="viewer_ppt_read_error">Der Inhalt der Präsentation konnte nicht gelesen werden</string>
+    <string name="viewer_search_results_count">%1$d Ergebnis(se) für \"%2$s\"</string>
+    <string name="viewer_slide_number">Folie %1$d</string>
+    <string name="viewer_empty_file">Die Datei ist leer</string>
+    <string name="viewer_text_results_count">%1$d Ergebnis(se):</string>
+    <string name="viewer_pdf_password_title">Geschütztes Dokument</string>
+    <string name="viewer_pdf_password_label">Passwort</string>
+    <string name="viewer_pdf_password_placeholder">Passwort eingeben</string>
+    <string name="viewer_pdf_password_open_button">Dokument öffnen</string>
+    <string name="viewer_format_text">Text</string>
+    <string name="viewer_format_generic">Datei</string>
+    <string name="viewer_pdf_password_body">\"%1$s\" ist passwortgeschützt.</string>
     <string name="viewer_search_content_desc">Im Dokument suchen</string>
     <string name="viewer_favorite_content_desc">Favorit</string>
     <string name="viewer_bottom_bar_page_format">Seite %1$d von %2$d</string>
@@ -783,6 +812,7 @@
     <string name="qr_image_selected">Bild ausgewählt ✓</string>
     <string name="qr_select_document">Dokument auswählen</string>
     <string name="qr_document_selected">Dokument ausgewählt ✓</string>
+    <string name="qr_local_only_hint">Dieser QR-Code funktioniert nur auf diesem Gerät: Er verweist auf eine lokale Datei, nicht auf eine geteilte Kopie.</string>
     <string name="qr_label_url">Website-URL</string>
     <string name="qr_label_text">Nachrichtentext</string>
     <string name="qr_label_email">E-Mail-Adresse</string>
@@ -823,6 +853,10 @@
     <string name="qr_history_source_created">Erstellt</string>
     <string name="qr_history_source_scanned">Gelesen</string>
     <string name="qr_history_protected_content">Passwortgeschützter Inhalt</string>
+    <string name="qr_history_wifi_preview">WLAN: %1$s (Passwort ausgeblendet)</string>
+    <string name="qr_history_contact_preview">Kontakt: %1$s (Daten ausgeblendet)</string>
+    <string name="qr_history_wifi_unknown_ssid">verborgenes Netzwerk</string>
+    <string name="qr_history_contact_unknown_name">verborgen</string>
 
     <!-- ── Lernmodus ─────────────────────────────────── -->
     <string name="study_tab_reading">Lesen</string>

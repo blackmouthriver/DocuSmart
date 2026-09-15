@@ -8,6 +8,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +33,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -53,6 +57,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
+import com.docsmart.core.data.db.AnnotationEntity
+import com.docsmart.core.data.db.AnnotationType
 import com.docsmart.core.pdf.PdfPageBitmap
 import com.docsmart.core.pdf.renderPdfPagesToBitmaps
 import com.docsmart.core.ui.components.DocumentUiModel
@@ -62,10 +68,19 @@ import com.docsmart.features.converter.domain.usecase.WordFileFormat
 import com.docsmart.features.converter.domain.usecase.detectWordFormat
 import com.docsmart.features.converter.domain.usecase.extractLegacyDocBlocks
 import com.docsmart.features.converter.domain.usecase.isHeadingStyleName
+import com.docsmart.features.viewer.domain.annotation.PdfRectPts
+import com.docsmart.features.viewer.domain.annotation.isValidHighlightSize
+import com.docsmart.features.viewer.domain.annotation.screenDragToPdfRect
+import com.docsmart.features.viewer.domain.annotation.screenPointToPdfPoint
+import com.docsmart.features.viewer.domain.annotation.pdfPointToScreenPoint
 import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
+import com.docsmart.features.viewer.presentation.components.ViewerAnnotationDetailDialog
+import com.docsmart.features.viewer.presentation.components.ViewerAnnotationToolbar
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
 import com.docsmart.features.viewer.presentation.components.ViewerDeleteConfirmDialog
+import com.docsmart.features.viewer.presentation.components.ViewerNoteInputDialog
 import com.docsmart.features.viewer.presentation.components.ViewerRenameDialog
+import com.docsmart.features.viewer.presentation.components.ViewerShareChoiceDialog
 import com.docsmart.features.viewer.presentation.components.ViewerTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -120,6 +135,17 @@ fun ViewerScreen(
         }
     }
 
+    // HU-46: aviso transitorio si falla compartir -- mismo criterio que
+    // deleteError arriba, no el `error` de nivel superior (ese reemplaza
+    // toda la vista del documento por una pantalla de "documento roto";
+    // un fallo al compartir no debería expulsar al usuario del documento).
+    LaunchedEffect(uiState.shareError) {
+        uiState.shareError?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+            viewModel.dismissShareError()
+        }
+    }
+
     // ── RF-VIS-06: diálogos de renombrar/eliminar ────────────────────────────
     if (uiState.showRenameDialog) {
         ViewerRenameDialog(
@@ -133,6 +159,29 @@ fun ViewerScreen(
             fileName  = uiState.document?.name ?: "",
             onConfirm = { viewModel.confirmDelete(context) },
             onDismiss = { viewModel.dismissDeleteConfirm() }
+        )
+    }
+
+    // ── HU-46: anotaciones (resaltado + notas adhesivas) ──────────────────────
+    if (uiState.pendingNoteAnchor != null) {
+        ViewerNoteInputDialog(
+            onConfirm = { text -> viewModel.confirmNote(text) },
+            onDismiss = { viewModel.cancelPendingNote() }
+        )
+    }
+    uiState.viewingAnnotation?.let { annotation ->
+        ViewerAnnotationDetailDialog(
+            annotation = annotation,
+            onDelete   = { viewModel.deleteAnnotation(annotation.id) },
+            onDismiss  = { viewModel.dismissAnnotationDetail() }
+        )
+    }
+    if (uiState.showShareChoiceDialog) {
+        ViewerShareChoiceDialog(
+            isFlattening           = uiState.isFlatteningForShare,
+            onShareWithAnnotations = { viewModel.shareWithAnnotations(context) },
+            onShareOriginal        = { viewModel.shareOriginal(context) },
+            onDismiss               = { viewModel.dismissShareChoiceDialog() }
         )
     }
 
@@ -214,9 +263,15 @@ fun ViewerScreen(
                                 targetPage    = uiState.pdfSearchMatches
                                     .getOrNull(uiState.pdfSearchIndex)
                                     ?.minus(1),
-                                highlights    = uiState.pdfSearchHighlights,
-                                onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
-                                onTap         = { viewModel.toggleControls() }
+                                highlights           = uiState.pdfSearchHighlights,
+                                onPageChanged        = { page, total -> viewModel.onPageChanged(page, total) },
+                                onTap                = { viewModel.toggleControls() },
+                                annotationMode       = uiState.annotationMode,
+                                selectedHighlightColor = uiState.selectedHighlightColor,
+                                documentAnnotations  = uiState.annotations,
+                                onHighlightDrawn     = { page, rect -> viewModel.addHighlight(page, rect) },
+                                onNoteRequested       = { page, anchor -> viewModel.requestAddNote(page, anchor) },
+                                onAnnotationTap       = { annotation -> viewModel.viewAnnotation(annotation) }
                             )
                         }
                     }
@@ -396,6 +451,12 @@ private fun BoxScope.ViewerTopBarSection(
                 val newActive = !search.active
                 search.onActiveChange(newActive)
                 if (!newActive) search.onQueryChange("")
+                // HU-46: hallazgo de la revisión de correctitud -- buscar y
+                // anotar no tenían exclusión mutua, ambas barras se dibujaban
+                // superpuestas en el mismo lugar si se abrían las dos.
+                if (newActive && uiState.showAnnotationToolbar) {
+                    viewModel.closeAnnotationToolbar()
+                }
             }
         },
         onConvertClick  = { documentActions.onConvert(doc) },
@@ -406,6 +467,15 @@ private fun BoxScope.ViewerTopBarSection(
         onMoveToSecureFolderClick = { documentActions.onMoveToSecureFolder(doc) },
         onRenameClick   = { viewModel.onRenameClick() },
         onDeleteClick   = { viewModel.onDeleteClick() },
+        isAnnotating    = uiState.showAnnotationToolbar,
+        onAnnotateClick = {
+            viewModel.toggleAnnotationToolbar()
+            // HU-46: misma exclusión mutua que arriba, en el sentido inverso.
+            if (search.active) {
+                search.onActiveChange(false)
+                search.onQueryChange("")
+            }
+        },
         modifier        = Modifier.align(Alignment.TopCenter)
     )
 
@@ -433,6 +503,26 @@ private fun BoxScope.ViewerTopBarSection(
                 )
             }
         }
+    }
+
+    // ── HU-46: barra de herramientas de anotación ─────────────────────
+    if (uiState.showAnnotationToolbar && isPdf) {
+        ViewerAnnotationToolbar(
+            mode            = uiState.annotationMode,
+            selectedColor   = uiState.selectedHighlightColor,
+            highlightColors = ANNOTATION_HIGHLIGHT_COLORS,
+            onColorSelected = { color ->
+                viewModel.setHighlightColor(color)
+                viewModel.setAnnotationMode(AnnotationMode.HIGHLIGHT)
+            },
+            onNoteSelected  = { viewModel.setAnnotationMode(AnnotationMode.NOTE) },
+            onDone          = { viewModel.closeAnnotationToolbar() },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 56.dp)
+                .statusBarsPadding()
+                .zIndex(10f)
+        )
     }
 }
 
@@ -467,7 +557,7 @@ private fun SearchBar(
                 modifier      = Modifier.weight(1f),
                 placeholder   = {
                     Text(
-                        "Buscar en documento...",
+                        stringResource(R.string.viewer_search_placeholder),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 },
@@ -609,6 +699,12 @@ private fun PdfSearchResultBar(
 // mismo tono que usan la mayoría de lectores/navegadores para esto.
 private val PdfHighlightColor = Color(0xFFFFEB3B).copy(alpha = 0.4f)
 
+// HU-46: alpha del resaltado persistido (mismo criterio que PdfHighlightColor
+// de arriba, aplicada sobre el color elegido por el usuario en vez de fijo).
+private const val ANNOTATION_HIGHLIGHT_ALPHA = 0.35f
+private val NoteMarkerRadiusDp = 9.dp
+private val NoteHitRadiusDp    = 22.dp // más grande que el marcador visual -- objetivo táctil cómodo
+
 // ── Visor de PDF ──────────────────────────────────────────────────────────────
 @Composable
 private fun PdfViewerContent(
@@ -616,7 +712,14 @@ private fun PdfViewerContent(
     targetPage   : Int?,
     highlights   : Map<Int, List<PdfMatchRect>>,
     onPageChanged: (Int, Int) -> Unit,
-    onTap        : () -> Unit
+    onTap        : () -> Unit,
+    // HU-46: resaltado + notas adhesivas persistentes por documento.
+    annotationMode         : AnnotationMode = AnnotationMode.NONE,
+    selectedHighlightColor : Int = ANNOTATION_HIGHLIGHT_COLORS.first(),
+    documentAnnotations    : Map<Int, List<AnnotationEntity>> = emptyMap(),
+    onHighlightDrawn       : (Int, PdfRectPts) -> Unit = { _, _ -> },
+    onNoteRequested        : (Int, PdfRectPts) -> Unit = { _, _ -> },
+    onAnnotationTap        : (AnnotationEntity) -> Unit = {}
 ) {
     val context   = LocalContext.current
     var pages     by remember { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
@@ -626,6 +729,7 @@ private fun PdfViewerContent(
     var offsetY       by remember { mutableFloatStateOf(0f) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val listState = rememberLazyListState()
+    val noteHitRadiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { NoteHitRadiusDp.toPx() }
 
     LaunchedEffect(targetPage, pages.size) {
         if (targetPage != null && targetPage in pages.indices) {
@@ -673,38 +777,48 @@ private fun PdfViewerContent(
         return
     }
 
+    // HU-46: mientras se está anotando (HIGHLIGHT/NOTE), se deshabilita el
+    // zoom/pan libre y el "tap para alternar controles" del modo normal --
+    // conviven mal con arrastrar un rectángulo o tocar para anclar una nota.
+    // En AnnotationMode.NONE el comportamiento es exactamente el de antes.
+    val isAnnotating = annotationMode != AnnotationMode.NONE
+    val columnModifier = Modifier
+        .fillMaxSize()
+        .onSizeChanged { containerSize = it }
+        .let { base ->
+            if (isAnnotating) base else base
+                .clickable { onTap() }
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        val newScale = (scale * zoom).coerceIn(0.5f, 4f)
+                        // Bug real (QA): sin límite, arrastrar tras hacer zoom
+                        // podía sacar el contenido del área visible por
+                        // completo -- "el PDF se pierde arriba" -- sin ninguna
+                        // forma de recuperarlo salvo adivinar cuánto arrastrar
+                        // de vuelta. `graphicsLayer` escala/traslada desde el
+                        // centro por defecto, así que el desplazamiento máximo
+                        // que deja al menos el borde del contenido visible es
+                        // `tamaño * (escala - 1) / 2` por eje -- en escala 1 el
+                        // rango es [0, 0], forzando el desplazamiento de vuelta
+                        // a cero en cuanto se hace pinch-zoom-out del todo.
+                        val maxX = (containerSize.width  * (newScale - 1) / 2f).coerceAtLeast(0f)
+                        val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
+                        scale   = newScale
+                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
+                    }
+                }
+        }
+        .graphicsLayer(
+            scaleX       = if (isAnnotating) 1f else scale,
+            scaleY       = if (isAnnotating) 1f else scale,
+            translationX = if (isAnnotating) 0f else offsetX,
+            translationY = if (isAnnotating) 0f else offsetY
+        )
+
     LazyColumn(
         state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .onSizeChanged { containerSize = it }
-            .clickable { onTap() }
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val newScale = (scale * zoom).coerceIn(0.5f, 4f)
-                    // Bug real (QA): sin límite, arrastrar tras hacer zoom
-                    // podía sacar el contenido del área visible por
-                    // completo -- "el PDF se pierde arriba" -- sin ninguna
-                    // forma de recuperarlo salvo adivinar cuánto arrastrar
-                    // de vuelta. `graphicsLayer` escala/traslada desde el
-                    // centro por defecto, así que el desplazamiento máximo
-                    // que deja al menos el borde del contenido visible es
-                    // `tamaño * (escala - 1) / 2` por eje -- en escala 1 el
-                    // rango es [0, 0], forzando el desplazamiento de vuelta
-                    // a cero en cuanto se hace pinch-zoom-out del todo.
-                    val maxX = (containerSize.width  * (newScale - 1) / 2f).coerceAtLeast(0f)
-                    val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
-                    scale   = newScale
-                    offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
-                    offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
-                }
-            }
-            .graphicsLayer(
-                scaleX       = scale,
-                scaleY       = scale,
-                translationX = offsetX,
-                translationY = offsetY
-            ),
+        modifier = columnModifier,
         contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -712,7 +826,11 @@ private fun PdfViewerContent(
             LaunchedEffect(index, pages.size) {
                 onPageChanged(index, pages.size)
             }
-            val pageHighlights = highlights[index + 1]
+            val pageNumber      = index + 1
+            val pageHighlights  = highlights[pageNumber]
+            val pageAnnotations = documentAnnotations[pageNumber].orEmpty()
+            var dragStart   by remember { mutableStateOf<Offset?>(null) }
+            var dragCurrent by remember { mutableStateOf<Offset?>(null) }
             val shape = MaterialTheme.shapes.small
             Box(
                 modifier = Modifier
@@ -724,32 +842,186 @@ private fun PdfViewerContent(
             ) {
                 Image(
                     bitmap             = pageBitmap.bitmap.asImageBitmap(),
-                    contentDescription = "Página ${index + 1}",
+                    contentDescription = "Página $pageNumber",
                     modifier           = Modifier
                         .fillMaxWidth()
+                        .pdfAnnotationGestures(
+                            annotationMode  = annotationMode,
+                            pageBitmap      = pageBitmap,
+                            pageNumber      = pageNumber,
+                            pageAnnotations = pageAnnotations,
+                            noteHitRadiusPx = noteHitRadiusPx,
+                            onDragPreview   = { start, current -> dragStart = start; dragCurrent = current },
+                            callbacks = PdfAnnotationCallbacks(
+                                onHighlightDrawn = onHighlightDrawn,
+                                onNoteRequested  = onNoteRequested,
+                                onAnnotationTap  = onAnnotationTap,
+                                onTap            = onTap
+                            )
+                        )
                         .drawWithContent {
                             drawContent()
-                            // RF-VIS-08: resaltado inline -- convierte cada
-                            // coincidencia de puntos PDF (origen abajo-izquierda)
-                            // a píxeles de pantalla (origen arriba-izquierda),
-                            // inverso exacto de mapOcrBoxToPdf en OcrPdfUseCase.
-                            if (!pageHighlights.isNullOrEmpty()) {
-                                val displayScale = size.width / pageBitmap.pageWidthPts
-                                pageHighlights.forEach { r ->
-                                    val screenX = r.xPts * displayScale
-                                    val screenY = (pageBitmap.pageHeightPts - (r.yPts + r.heightPts)) * displayScale
-                                    drawRect(
-                                        color   = PdfHighlightColor,
-                                        topLeft = Offset(screenX, screenY),
-                                        size    = ComposeSize(r.widthPts * displayScale, r.heightPts * displayScale)
-                                    )
-                                }
-                            }
+                            val preview = dragStart?.let { s -> dragCurrent?.let { c -> s to c } }
+                            drawPdfPageOverlays(
+                                pageBitmap             = pageBitmap,
+                                pageHighlights         = pageHighlights,
+                                pageAnnotations        = pageAnnotations,
+                                dragPreview            = preview,
+                                selectedHighlightColor = selectedHighlightColor
+                            )
                         }
                 )
             }
         }
     }
+}
+
+// HU-46: agrupa los callbacks de gestos de anotación -- evita
+// LongParameterList en pdfAnnotationGestures() de abajo (mismo criterio ya
+// usado en ViewerDocumentActions/ViewerMenuActions de este mismo archivo).
+private data class PdfAnnotationCallbacks(
+    val onHighlightDrawn: (Int, PdfRectPts) -> Unit,
+    val onNoteRequested : (Int, PdfRectPts) -> Unit,
+    val onAnnotationTap : (AnnotationEntity) -> Unit,
+    val onTap           : () -> Unit
+)
+
+// HU-46: gestos de anotación de una página -- extraído de PdfViewerContent
+// (LongMethod de detekt) para mantener el composable principal corto. En
+// HIGHLIGHT arrastra un rectángulo (estado del arrastre vive local al
+// bloque suspendido, no en `remember` -- `onDragPreview` es el único canal
+// hacia la composición, para poder dibujar la vista previa en vivo); en
+// NOTE/NONE un tap decide entre "abrir anotación existente", "anclar nota
+// nueva" o "alternar controles" (comportamiento normal, sin regresión).
+private fun Modifier.pdfAnnotationGestures(
+    annotationMode  : AnnotationMode,
+    pageBitmap      : PdfPageBitmap,
+    pageNumber      : Int,
+    pageAnnotations : List<AnnotationEntity>,
+    noteHitRadiusPx : Float,
+    onDragPreview   : (Offset?, Offset?) -> Unit,
+    callbacks       : PdfAnnotationCallbacks
+): Modifier = pointerInput(annotationMode, pageAnnotations, pageBitmap) {
+    val displayScale = size.width / pageBitmap.pageWidthPts
+    if (annotationMode == AnnotationMode.HIGHLIGHT) {
+        var dragStart  : Offset? = null
+        var dragCurrent: Offset? = null
+        detectDragGestures(
+            onDragStart = { offset -> dragStart = offset; dragCurrent = offset; onDragPreview(offset, offset) },
+            onDrag      = { change, _ -> dragCurrent = change.position; onDragPreview(dragStart, dragCurrent) },
+            onDragEnd   = {
+                val start   = dragStart
+                val current = dragCurrent
+                if (start != null && current != null) {
+                    val rect = screenDragToPdfRect(
+                        start.x, start.y, current.x, current.y, displayScale, pageBitmap.pageHeightPts
+                    )
+                    if (isValidHighlightSize(rect)) callbacks.onHighlightDrawn(pageNumber, rect)
+                }
+                dragStart = null; dragCurrent = null
+                onDragPreview(null, null)
+            },
+            onDragCancel = { dragStart = null; dragCurrent = null; onDragPreview(null, null) }
+        )
+    } else {
+        detectTapGestures(onTap = { offset ->
+            val hit = hitTestAnnotation(
+                offset, pageAnnotations, displayScale, pageBitmap.pageHeightPts, noteHitRadiusPx
+            )
+            when {
+                hit != null -> callbacks.onAnnotationTap(hit)
+                annotationMode == AnnotationMode.NOTE -> callbacks.onNoteRequested(
+                    pageNumber,
+                    screenPointToPdfPoint(offset.x, offset.y, displayScale, pageBitmap.pageHeightPts)
+                )
+                else -> callbacks.onTap()
+            }
+        })
+    }
+}
+
+// HU-46: dibuja, sobre el bitmap ya renderizado de una página, el
+// resaltado de búsqueda (RF-VIS-08, ya existente), las anotaciones
+// persistidas y la vista previa en vivo del resaltado que se está
+// arrastrando -- extraído de PdfViewerContent (LongMethod de detekt).
+private fun DrawScope.drawPdfPageOverlays(
+    pageBitmap             : PdfPageBitmap,
+    pageHighlights         : List<PdfMatchRect>?,
+    pageAnnotations        : List<AnnotationEntity>,
+    dragPreview            : Pair<Offset, Offset>?,
+    selectedHighlightColor : Int
+) {
+    val displayScale = size.width / pageBitmap.pageWidthPts
+    // RF-VIS-08: resaltado inline -- convierte cada coincidencia de puntos
+    // PDF (origen abajo-izquierda) a píxeles de pantalla (origen
+    // arriba-izquierda), inverso exacto de mapOcrBoxToPdf en OcrPdfUseCase.
+    pageHighlights?.forEach { r ->
+        val screenX = r.xPts * displayScale
+        val screenY = (pageBitmap.pageHeightPts - (r.yPts + r.heightPts)) * displayScale
+        drawRect(
+            color   = PdfHighlightColor,
+            topLeft = Offset(screenX, screenY),
+            size    = ComposeSize(r.widthPts * displayScale, r.heightPts * displayScale)
+        )
+    }
+    pageAnnotations.forEach { annotation ->
+        when (annotation.type) {
+            AnnotationType.HIGHLIGHT -> {
+                val screenX = annotation.xPts * displayScale
+                val screenY = (pageBitmap.pageHeightPts - (annotation.yPts + annotation.heightPts)) * displayScale
+                drawRect(
+                    color   = Color(annotation.color).copy(alpha = ANNOTATION_HIGHLIGHT_ALPHA),
+                    topLeft = Offset(screenX, screenY),
+                    size    = ComposeSize(annotation.widthPts * displayScale, annotation.heightPts * displayScale)
+                )
+            }
+            AnnotationType.NOTE -> {
+                val (cx, cy) = pdfPointToScreenPoint(
+                    annotation.xPts, annotation.yPts, displayScale, pageBitmap.pageHeightPts
+                )
+                drawCircle(color = Color(annotation.color), radius = NoteMarkerRadiusDp.toPx(), center = Offset(cx, cy))
+            }
+        }
+    }
+    dragPreview?.let { (start, current) ->
+        drawRect(
+            color   = Color(selectedHighlightColor).copy(alpha = ANNOTATION_HIGHLIGHT_ALPHA),
+            topLeft = Offset(minOf(start.x, current.x), minOf(start.y, current.y)),
+            size    = ComposeSize(kotlin.math.abs(current.x - start.x), kotlin.math.abs(current.y - start.y))
+        )
+    }
+}
+
+// HU-46: busca si un tap cae sobre una anotación ya persistida -- de la más
+// reciente a la más vieja, para que una superposición favorezca la de
+// arriba. NOTE usa un radio táctil (más grande que el marcador visual);
+// HIGHLIGHT usa su rectángulo real.
+private fun hitTestAnnotation(
+    tap          : Offset,
+    annotations  : List<AnnotationEntity>,
+    displayScale : Float,
+    pageHeightPts: Float,
+    noteHitRadiusPx: Float
+): AnnotationEntity? {
+    for (annotation in annotations.asReversed()) {
+        val hit = when (annotation.type) {
+            AnnotationType.NOTE -> {
+                val (cx, cy) = pdfPointToScreenPoint(annotation.xPts, annotation.yPts, displayScale, pageHeightPts)
+                val dx = tap.x - cx
+                val dy = tap.y - cy
+                (dx * dx + dy * dy) <= noteHitRadiusPx * noteHitRadiusPx
+            }
+            AnnotationType.HIGHLIGHT -> {
+                val screenX = annotation.xPts * displayScale
+                val screenY = (pageHeightPts - (annotation.yPts + annotation.heightPts)) * displayScale
+                val screenW = annotation.widthPts * displayScale
+                val screenH = annotation.heightPts * displayScale
+                tap.x in screenX..(screenX + screenW) && tap.y in screenY..(screenY + screenH)
+            }
+        }
+        if (hit) return annotation
+    }
+    return null
 }
 
 // ── Visor de Word ─────────────────────────────────────────────────────────────
@@ -887,7 +1159,7 @@ private fun WordViewerContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text      = "No se pudo leer el contenido del archivo Word",
+                    text      = stringResource(R.string.viewer_word_read_error),
                     style     = MaterialTheme.typography.bodyMedium,
                     color     = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -901,7 +1173,9 @@ private fun WordViewerContent(
                 if (searchQuery.isNotBlank()) {
                     item {
                         Text(
-                            text     = "${displayBlocks.size} resultado(s) para \"$searchQuery\"",
+                            text     = stringResource(
+                                R.string.viewer_search_results_count, displayBlocks.size, searchQuery
+                            ),
                             style    = MaterialTheme.typography.labelMedium,
                             color    = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -1104,7 +1378,7 @@ private fun ExcelViewerContent(
                 color    = MaterialTheme.colorScheme.primary
             )
             hasError || sheets.isEmpty() -> Text(
-                text      = "No se pudo leer el contenido del archivo Excel",
+                text      = stringResource(R.string.viewer_excel_read_error),
                 modifier  = Modifier.align(Alignment.Center).padding(32.dp),
                 color     = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -1127,7 +1401,9 @@ private fun ExcelViewerContent(
                 if (searchQuery.isNotBlank()) {
                     item {
                         Text(
-                            text     = "${displayRows.size} resultado(s) para \"$searchQuery\"",
+                            text     = stringResource(
+                                R.string.viewer_search_results_count, displayRows.size, searchQuery
+                            ),
                             style    = MaterialTheme.typography.labelMedium,
                             color    = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -1366,7 +1642,7 @@ private fun PptViewerContent(
                 color    = MaterialTheme.colorScheme.primary
             )
             slides.isEmpty() -> Text(
-                text      = "No se pudo leer el contenido de la presentación",
+                text      = stringResource(R.string.viewer_ppt_read_error),
                 modifier  = Modifier.align(Alignment.Center).padding(32.dp),
                 color     = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -1379,7 +1655,9 @@ private fun PptViewerContent(
                 if (searchQuery.isNotBlank()) {
                     item {
                         Text(
-                            text     = "${displaySlides.size} slide(s) con \"$searchQuery\"",
+                            text     = stringResource(
+                                R.string.viewer_search_results_count, displaySlides.size, searchQuery
+                            ),
                             style    = MaterialTheme.typography.labelMedium,
                             color    = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 4.dp)
@@ -1394,7 +1672,7 @@ private fun PptViewerContent(
                 itemsIndexed(displaySlides) { _, slide ->
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text     = "Diapositiva ${slide.number}",
+                            text     = stringResource(R.string.viewer_slide_number, slide.number),
                             style    = MaterialTheme.typography.labelSmall,
                             color    = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp)
@@ -1517,7 +1795,7 @@ private fun TextViewerBody(text: String, searchQuery: String) {
     ) {
         if (searchQuery.isBlank()) {
             Text(
-                text       = text.ifBlank { "El archivo está vacío" },
+                text       = text.ifBlank { stringResource(R.string.viewer_empty_file) },
                 style      = MaterialTheme.typography.bodyMedium,
                 fontSize   = 15.sp,
                 color      = MaterialTheme.colorScheme.onSurface,
@@ -1534,14 +1812,14 @@ private fun TextViewerSearchResults(text: String, searchQuery: String) {
     val lines = text.lines().filter { it.contains(searchQuery, ignoreCase = true) }
     if (lines.isEmpty()) {
         Text(
-            text  = "Sin resultados para \"$searchQuery\"",
+            text  = stringResource(R.string.viewer_search_no_results),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         return
     }
     Text(
-        text     = "${lines.size} resultado(s):",
+        text     = stringResource(R.string.viewer_text_results_count, lines.size),
         style    = MaterialTheme.typography.labelMedium,
         color    = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(bottom = 8.dp)
@@ -1574,8 +1852,11 @@ private fun PdfPasswordDialog(
     onConfirm    : (String) -> Unit,
     onDismiss    : () -> Unit
 ) {
-    var password    by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
+    // Hallazgo real de la revisión general 2026-09-16: `remember` simple
+    // perdía la contraseña tecleada al rotar el dispositivo -- mismo fix
+    // que en ViewerNoteInputDialog/ViewerRenameDialog.
+    var password    by rememberSaveable { mutableStateOf("") }
+    var showPassword by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1589,7 +1870,7 @@ private fun PdfPasswordDialog(
         },
         title = {
             Text(
-                text      = "Documento protegido",
+                text      = stringResource(R.string.viewer_pdf_password_title),
                 style     = MaterialTheme.typography.titleLarge,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
@@ -1615,7 +1896,7 @@ private fun PdfPasswordDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
         }
     )
 }
@@ -1631,7 +1912,7 @@ private fun PdfPasswordDialogBody(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text  = "\"$fileName\" está protegido con contraseña.",
+            text  = stringResource(R.string.viewer_pdf_password_body, fileName),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1640,8 +1921,8 @@ private fun PdfPasswordDialogBody(
             value         = password,
             onValueChange = onPasswordChange,
             modifier      = Modifier.fillMaxWidth(),
-            label         = { Text("Contraseña") },
-            placeholder   = { Text("Ingresa la contraseña") },
+            label         = { Text(stringResource(R.string.viewer_pdf_password_label)) },
+            placeholder   = { Text(stringResource(R.string.viewer_pdf_password_placeholder)) },
             visualTransformation = if (showPassword)
                 androidx.compose.ui.text.input.VisualTransformation.None
             else
@@ -1684,7 +1965,7 @@ private fun PdfPasswordConfirmButtonContent(isLoading: Boolean) {
     } else {
         Icon(Icons.Rounded.LockOpen, null, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
-        Text("Abrir documento")
+        Text(stringResource(R.string.viewer_pdf_password_open_button))
     }
 }
 // ── Formato no soportado ──────────────────────────────────────────────────────
@@ -1703,8 +1984,8 @@ private fun UnsupportedFormatContent(
         mimeType.contains("word")       || mimeType.contains("msword")       -> "Word"
         mimeType.contains("excel")      || mimeType.contains("sheet")        -> "Excel"
         mimeType.contains("powerpoint") || mimeType.contains("presentation") -> "PowerPoint"
-        mimeType.contains("text")                                             -> "Texto"
-        else                                                                  -> "Archivo"
+        mimeType.contains("text") -> stringResource(R.string.viewer_format_text)
+        else                      -> stringResource(R.string.viewer_format_generic)
     }
 
     Box(

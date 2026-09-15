@@ -365,7 +365,10 @@ class PdfToolsViewModel @Inject constructor(
             return
         }
 
-        val customName = state.outputFileName.trim().ifBlank { null }
+        // Hallazgo real de la revisión general 2026-09-16 (path traversal):
+        // saneado en este único punto para las 13 herramientas, ver
+        // sanitizeOutputFileName().
+        val customName = com.docsmart.core.util.sanitizeOutputFileName(state.outputFileName).ifBlank { null }
 
         viewModelScope.launch {
             _uiState.update {

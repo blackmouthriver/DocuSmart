@@ -90,7 +90,10 @@ class SecurityViewModelTest {
     }
 
     private fun buildViewModel() =
-        SecurityViewModel(securityManager, pdfPasswordUseCase, mediaDeletePermission)
+        SecurityViewModel(
+            securityManager, pdfPasswordUseCase, mediaDeletePermission,
+            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
+        )
 
     // Con UnconfinedTestDispatcher no hay garantía de cuántas emisiones
     // intermedias produce un viewModelScope.launch{} antes de que el

@@ -196,6 +196,35 @@
 
     <string name="viewer_document_not_found">Document no trobat</string>
     <string name="viewer_share_chooser_title">Comparteix %1$s</string>
+    <string name="viewer_annotate_content_desc">Anotar</string>
+    <string name="viewer_annotate_toolbar_label">Ressaltar:</string>
+    <string name="viewer_annotate_note_chip">Nota</string>
+    <string name="viewer_annotate_done">Fet</string>
+    <string name="viewer_annotate_note_dialog_title">Nota nova</string>
+    <string name="viewer_annotate_note_dialog_placeholder">Escriu la teva nota aquí…</string>
+    <string name="viewer_annotate_note_detail_title">Nota</string>
+    <string name="viewer_annotate_highlight_detail_title">Ressaltat</string>
+    <string name="viewer_annotate_highlight_detail_body">Vols eliminar aquest ressaltat?</string>
+    <string name="viewer_share_choice_title">Comparteix document</string>
+    <string name="viewer_share_choice_preparing">Preparant el document…</string>
+    <string name="viewer_share_choice_body">Aquest document té anotacions. Com el vols compartir?</string>
+    <string name="viewer_share_choice_with_annotations">Amb anotacions</string>
+    <string name="viewer_share_choice_original">Original</string>
+    <string name="viewer_search_placeholder">Cerca al document…</string>
+    <string name="viewer_word_read_error">No s’ha pogut llegir el contingut de l’arxiu Word</string>
+    <string name="viewer_excel_read_error">No s’ha pogut llegir el contingut de l’arxiu Excel</string>
+    <string name="viewer_ppt_read_error">No s’ha pogut llegir el contingut de la presentació</string>
+    <string name="viewer_search_results_count">%1$d resultat(s) per a \"%2$s\"</string>
+    <string name="viewer_slide_number">Diapositiva %1$d</string>
+    <string name="viewer_empty_file">L’arxiu està buit</string>
+    <string name="viewer_text_results_count">%1$d resultat(s):</string>
+    <string name="viewer_pdf_password_title">Document protegit</string>
+    <string name="viewer_pdf_password_label">Contrasenya</string>
+    <string name="viewer_pdf_password_placeholder">Introdueix la contrasenya</string>
+    <string name="viewer_pdf_password_open_button">Obre el document</string>
+    <string name="viewer_format_text">Text</string>
+    <string name="viewer_format_generic">Arxiu</string>
+    <string name="viewer_pdf_password_body">\"%1$s\" està protegit amb contrasenya.</string>
     <string name="viewer_search_content_desc">Cerca en el document</string>
     <string name="viewer_favorite_content_desc">Preferit</string>
     <string name="viewer_bottom_bar_page_format">Pàgina %1$d de %2$d</string>
@@ -815,6 +844,7 @@
     <string name="qr_image_selected">Imatge seleccionada ✓</string>
     <string name="qr_select_document">Seleccionar document</string>
     <string name="qr_document_selected">Document seleccionat ✓</string>
+    <string name="qr_local_only_hint">Aquest QR només funciona en aquest dispositiu: apunta a un arxiu local, no a una còpia compartida.</string>
     <string name="qr_label_url">URL del lloc web</string>
     <string name="qr_label_text">Text del missatge</string>
     <string name="qr_label_email">Adreça d\'email</string>
@@ -855,6 +885,10 @@
     <string name="qr_history_source_created">Creat</string>
     <string name="qr_history_source_scanned">Llegit</string>
     <string name="qr_history_protected_content">Contingut protegit amb contrasenya</string>
+    <string name="qr_history_wifi_preview">Wi-Fi: %1$s (contrasenya oculta)</string>
+    <string name="qr_history_contact_preview">Contacte: %1$s (dades ocultes)</string>
+    <string name="qr_history_wifi_unknown_ssid">xarxa oculta</string>
+    <string name="qr_history_contact_unknown_name">ocult</string>
 
     <!-- ── Estudio ─────────────────────────────────── -->
     <string name="study_tab_reading">Lectura</string>

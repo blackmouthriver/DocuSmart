@@ -47,11 +47,14 @@ class TrashRepositoryTest {
         favorites = mockk()
         coEvery { favorites.removeAlias(any()) } just Runs
         val mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
+        val annotationDao = mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
         documentRepository = DocumentRepository(
             context, favorites, historyDao, trashDao, mediaDeletePermission,
-            mockk<DownloadsAccessManager>(relaxed = true)
+            mockk<DownloadsAccessManager>(relaxed = true), annotationDao
         )
-        repository = TrashRepository(documentRepository, trashDao, historyDao, favorites, mediaDeletePermission)
+        repository = TrashRepository(
+            documentRepository, trashDao, historyDao, favorites, mediaDeletePermission, annotationDao
+        )
     }
 
     @AfterEach

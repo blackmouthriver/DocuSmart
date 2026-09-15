@@ -39,6 +39,9 @@ fun ViewerTopBar(
     onMoveToSecureFolderClick: () -> Unit,
     onRenameClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    // HU-46: alterna el modo de anotación (resaltar/nota) -- solo PDF.
+    isAnnotating: Boolean = false,
+    onAnnotateClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -111,6 +114,19 @@ fun ViewerTopBar(
                         contentDescription = stringResource(R.string.general_share),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                // HU-46: Anotar (resaltar/nota) -- solo tiene sentido sobre
+                // un PDF real, mismo criterio que "Hacer buscable"/"Firmar".
+                if (isPdf) {
+                    IconButton(onClick = onAnnotateClick) {
+                        Icon(
+                            imageVector = Icons.Rounded.EditNote,
+                            contentDescription = stringResource(R.string.viewer_annotate_content_desc),
+                            tint = if (isAnnotating) MaterialTheme.colorScheme.primary
+                                   else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 // Más opciones (renombrar/eliminar/OCR/firmar/Carpeta Segura)

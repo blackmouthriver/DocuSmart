@@ -236,10 +236,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Hallazgo real de seguridad (revisión general 2026-09-16): un Intent
+    // VIEW de OTRA app instalada podía traer un `file://` (o cualquier otro
+    // esquema) apuntando a `filesDir` interno de DocuSmart -- incluida
+    // `secure/`, la Carpeta Segura -- y el Visor lo abría sin pedir PIN,
+    // porque ViewerViewModel.resolveUri() lee cualquier `file://` con
+    // File I/O directo, sin pasar por FileProvider. Solo un `content://`
+    // (el único esquema que una app externa puede usar legítimamente para
+    // ofrecer SU PROPIO archivo a DocuSmart) es un origen válido para un
+    // Intent que viene de fuera; la navegación interna de la app (abrir un
+    // documento generado por ella misma) nunca pasa por acá, usa
+    // NavController.navigate() directo con el id ya resuelto.
     private fun resolveExternalIntent(intent: Intent?): Uri? {
         if (intent == null) return null
         if (intent.action != Intent.ACTION_VIEW) return null
         val uri = intent.data ?: return null
+        if (uri.scheme != "content") {
+            Timber.w("resolveExternalIntent: esquema no permitido desde un Intent externo -> ${uri.scheme}")
+            return null
+        }
         return try {
             contentResolver.takePersistableUriPermission(
                 uri, Intent.FLAG_GRANT_READ_URI_PERMISSION

@@ -183,6 +183,35 @@
     <string name="viewer_open_error_format">Не удалось открыть PDF: %1$s</string>
     <string name="viewer_document_not_found">Документ не найден</string>
     <string name="viewer_share_chooser_title">Поделиться %1$s</string>
+    <string name="viewer_annotate_content_desc">Аннотировать</string>
+    <string name="viewer_annotate_toolbar_label">Выделить:</string>
+    <string name="viewer_annotate_note_chip">Заметка</string>
+    <string name="viewer_annotate_done">Готово</string>
+    <string name="viewer_annotate_note_dialog_title">Новая заметка</string>
+    <string name="viewer_annotate_note_dialog_placeholder">Напишите свою заметку здесь…</string>
+    <string name="viewer_annotate_note_detail_title">Заметка</string>
+    <string name="viewer_annotate_highlight_detail_title">Выделение</string>
+    <string name="viewer_annotate_highlight_detail_body">Удалить это выделение?</string>
+    <string name="viewer_share_choice_title">Поделиться документом</string>
+    <string name="viewer_share_choice_preparing">Подготовка документа…</string>
+    <string name="viewer_share_choice_body">В этом документе есть аннотации. Как вы хотите им поделиться?</string>
+    <string name="viewer_share_choice_with_annotations">С аннотациями</string>
+    <string name="viewer_share_choice_original">Оригинал</string>
+    <string name="viewer_search_placeholder">Поиск в документе…</string>
+    <string name="viewer_word_read_error">Не удалось прочитать содержимое файла Word</string>
+    <string name="viewer_excel_read_error">Не удалось прочитать содержимое файла Excel</string>
+    <string name="viewer_ppt_read_error">Не удалось прочитать содержимое презентации</string>
+    <string name="viewer_search_results_count">Результатов: %1$d по запросу «%2$s»</string>
+    <string name="viewer_slide_number">Слайд %1$d</string>
+    <string name="viewer_empty_file">Файл пуст</string>
+    <string name="viewer_text_results_count">Результатов: %1$d</string>
+    <string name="viewer_pdf_password_title">Защищённый документ</string>
+    <string name="viewer_pdf_password_label">Пароль</string>
+    <string name="viewer_pdf_password_placeholder">Введите пароль</string>
+    <string name="viewer_pdf_password_open_button">Открыть документ</string>
+    <string name="viewer_format_text">Текст</string>
+    <string name="viewer_format_generic">Файл</string>
+    <string name="viewer_pdf_password_body">Файл «%1$s» защищён паролем.</string>
     <string name="viewer_search_content_desc">Поиск в документе</string>
     <string name="viewer_favorite_content_desc">Избранное</string>
     <string name="viewer_bottom_bar_page_format">Страница %1$d из %2$d</string>
@@ -783,6 +812,7 @@
     <string name="qr_image_selected">Изображение выбрано ✓</string>
     <string name="qr_select_document">Выбрать документ</string>
     <string name="qr_document_selected">Документ выбран ✓</string>
+    <string name="qr_local_only_hint">Этот QR-код работает только на этом устройстве: он указывает на локальный файл, а не на общую копию.</string>
     <string name="qr_label_url">URL сайта</string>
     <string name="qr_label_text">Текст сообщения</string>
     <string name="qr_label_email">Адрес email</string>
@@ -823,6 +853,10 @@
     <string name="qr_history_source_created">Создан</string>
     <string name="qr_history_source_scanned">Считан</string>
     <string name="qr_history_protected_content">Содержимое защищено паролем</string>
+    <string name="qr_history_wifi_preview">Wi-Fi: %1$s (пароль скрыт)</string>
+    <string name="qr_history_contact_preview">Контакт: %1$s (данные скрыты)</string>
+    <string name="qr_history_wifi_unknown_ssid">скрытая сеть</string>
+    <string name="qr_history_contact_unknown_name">скрыто</string>
 
     <!-- ── Режим учёбы ─────────────────────────────────── -->
     <string name="study_tab_reading">Чтение</string>

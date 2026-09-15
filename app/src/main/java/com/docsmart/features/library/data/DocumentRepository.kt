@@ -69,7 +69,8 @@ class DocumentRepository @Inject constructor(
     private val documentHistoryDao: DocumentHistoryDao,
     private val trashDao: TrashDao,
     private val mediaDeletePermission: MediaDeletePermission,
-    private val downloadsAccessManager: DownloadsAccessManager
+    private val downloadsAccessManager: DownloadsAccessManager,
+    private val annotationDao: com.docsmart.core.data.db.AnnotationDao
 ) {
     // Buffer sobre el límite pedido: algunos ids del historial pueden
     // apuntar a archivos que ya no existen (borrados/movidos fuera de la
@@ -264,9 +265,21 @@ class DocumentRepository @Inject constructor(
         try {
             if (!documentId.startsWith("content://")) {
                 val file = File(documentId)
-                val newFile = File(file.parent, newName)
+                // Hallazgo real de la revisión de seguridad 2026-09-16: esta
+                // función quedó fuera del alcance del saneo de path traversal
+                // de #19/#35 -- newName llega tal cual desde el diálogo
+                // "Renombrar" (Visor/Home/Biblioteca/Escáner), y File(parent,
+                // child) resuelve ".." como ruta relativa real. Mismo saneo
+                // ya usado en PdfToolsViewModel/ConverterViewModel.
+                val safeName = com.docsmart.core.util.sanitizeOutputFileName(newName).ifBlank { file.name }
+                val newFile = File(file.parent, safeName)
                 if (file.renameTo(newFile)) {
                     favoritesRepository.removeAlias(documentId)
+                    // Hallazgo real de la revisión general 2026-09-16: las
+                    // anotaciones del Visor (HU-46) quedaban huérfanas bajo
+                    // el id viejo -- se migran a la ruta nueva en vez de
+                    // perderse.
+                    annotationDao.updateDocumentId(documentId, newFile.absolutePath)
                     return@withContext newFile.absolutePath
                 }
             }
@@ -474,7 +487,16 @@ class DocumentRepository @Inject constructor(
         val documents = mutableListOf<DocumentUiModel>()
         val dirs = listOf(
             File(context.filesDir, "converted"),
-            File(context.filesDir, "pdftools")
+            File(context.filesDir, "pdftools"),
+            // HU-46: hallazgo real de la revisión de seguridad -- las copias
+            // aplanadas de "Compartir con anotaciones" (FlattenAnnotationsPdfUseCase)
+            // quedaban invisibles para el usuario, sin forma de verlas ni borrarlas
+            // desde la app, a diferencia del resto de archivos generados.
+            File(context.filesDir, "viewer_share"),
+            // Hallazgo real de la revisión general 2026-09-16: mismo bug que
+            // viewer_share en HU-46, pero nunca extendido a las notas/resúmenes
+            // exportados desde Modo Estudio (StudyNotesExporter/StudySummaryExporter).
+            File(context.filesDir, "study_exports")
         )
         dirs.forEach { dir ->
             if (!dir.exists()) return@forEach

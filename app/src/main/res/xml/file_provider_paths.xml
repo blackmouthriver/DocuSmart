@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hallazgo real de seguridad (revision general 2026-09-16): el path "." de
+  files-path exponia TODO filesDir, incluida secure/ (Carpeta Segura), un
+  content URI hacia ese path (aunque nunca otorgado explicitamente por la
+  app) seguia resolviendo porque FileProvider solo exige que el path este
+  declarado aca, no que haya un grant activo, para servirlo dentro del
+  propio proceso de DocuSmart. Se reemplaza por una lista explicita de las
+  unicas carpetas pensadas para compartirse; secure/ queda deliberadamente
+  afuera, asi una URI armada a mano hacia files/secure/... falla en
+  FileProvider (Failed to find configured root) en vez de servirse.
+-->
 <paths>
     <cache-path name="cache" path="." />
-    <files-path name="files" path="." />
+    <files-path name="converted" path="converted/" />
+    <files-path name="pdftools" path="pdftools/" />
+    <files-path name="viewer_share" path="viewer_share/" />
+    <files-path name="study_exports" path="study_exports/" />
     <external-files-path name="external_files" path="." />
 </paths>

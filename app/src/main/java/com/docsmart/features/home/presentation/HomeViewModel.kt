@@ -102,16 +102,25 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(deleteError = null) }
     }
 
+    // Hallazgo real de la revisión general 2026-09-16: se descartaba el id
+    // nuevo que devuelve repository.renameDocument() (la ruta cambia de
+    // verdad para un archivo generado por la app) -- la tarjeta de
+    // Recientes quedaba mostrando el nombre nuevo pero con el id VIEJO, que
+    // ya no existe en disco; tocarla llevaba a un documento roto. Mismo
+    // criterio ya usado por LibraryViewModel.renameDocument().
     fun renameDocument(documentId: String, newName: String) {
         viewModelScope.launch {
-            repository.renameDocument(documentId, newName)
-            // Actualiza UI en memoria
-            _uiState.update { state ->
-                state.copy(
-                    recentDocuments = state.recentDocuments.map { doc ->
-                        if (doc.id == documentId) doc.copy(name = newName) else doc
-                    }
-                )
+            val newId = repository.renameDocument(documentId, newName)
+            if (newId != documentId) {
+                loadRecentDocuments()
+            } else {
+                _uiState.update { state ->
+                    state.copy(
+                        recentDocuments = state.recentDocuments.map { doc ->
+                            if (doc.id == documentId) doc.copy(name = newName) else doc
+                        }
+                    )
+                }
             }
         }
     }

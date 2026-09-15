@@ -53,7 +53,8 @@ class DocumentRepositoryTest {
         trashDao = FakeTrashDao()
         repository = DocumentRepository(
             context, mockk<FavoritesRepository>(relaxed = true), historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
+            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
         )
         mockkStatic(Uri::class)
     }
@@ -149,7 +150,8 @@ class DocumentRepositoryTest {
         coEvery { favorites.removeAlias(any()) } just Runs
         val repo = DocumentRepository(
             context, favorites, historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
+            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
         )
         val dir  = File(filesDir, "converted").apply { mkdirs() }
         val file = File(dir, "original.pdf").apply { writeText("contenido") }
@@ -168,7 +170,8 @@ class DocumentRepositoryTest {
         coEvery { favorites.saveAlias(any(), any()) } just Runs
         val repo = DocumentRepository(
             context, favorites, historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
+            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
         )
         val uriString = "content://media/external/downloads/12345"
 
@@ -184,7 +187,8 @@ class DocumentRepositoryTest {
         coEvery { favorites.saveAlias(any(), any()) } just Runs
         val repo = DocumentRepository(
             context, favorites, historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true)
+            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
+            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
         )
         val missing = File(filesDir, "no_existe.pdf") // File.renameTo() sobre un origen inexistente devuelve false
 

@@ -90,25 +90,10 @@ class ConvertImageToPdfUseCase @Inject constructor(
                     return@forEachIndexed
                 }
 
-                val drawRect = pageDrawRect(bitmap.width, bitmap.height)
-                val embeddedBitmap = embedBitmapForDrawRect(bitmap, drawRect, highResolution)
-
-                val pageInfo = PdfDocument.PageInfo.Builder(
-                    PAGE_WIDTH, PAGE_HEIGHT, pageCount + 1
-                ).create()
-
-                val page = pdfDocument.startPage(pageInfo)
-                val canvas: Canvas = page.canvas
-
-                canvas.drawColor(Color.WHITE)
-                canvas.drawBitmap(embeddedBitmap, null, drawRect, paint)
-                pdfDocument.finishPage(page)
-
-                if (embeddedBitmap != bitmap) embeddedBitmap.recycle()
-                bitmap.recycle()
-                pageCount++
-
-                Timber.d("Página $pageCount generada")
+                if (drawImagePage(pdfDocument, paint, bitmap, pageCount + 1, highResolution, index)) {
+                    pageCount++
+                    Timber.d("Página $pageCount generada")
+                }
             }
 
             if (pageCount == 0) {
@@ -151,7 +136,52 @@ class ConvertImageToPdfUseCase @Inject constructor(
                     e.message ?: context.getString(R.string.converter_error_unknown)
                 ),
             )
+        } catch (e: OutOfMemoryError) {
+            // Defensa en profundidad además del catch de loadBitmapFromUri:
+            // el reescalado (embedBitmapForDrawRect) o el propio canvas
+            // también pueden agotar la memoria con imágenes de alta
+            // resolución -- OutOfMemoryError no hereda de Exception.
+            Timber.e(e, "Sin memoria durante la conversión")
+            ConversionResult.Error(
+                context.getString(R.string.converter_error_generic_format)
+                    .let { String.format(it, context.getString(R.string.converter_error_unknown)) }
+            )
         }
+    }
+
+    // Hallazgo real de la revisión de corrección 2026-09-16: el catch de
+    // loadBitmapFromUri solo cubre la decodificación -- embedBitmapForDrawRect
+    // puede reescalar hasta HIGH_RES_MULTIPLIER (4x) el recuadro de la
+    // página, y sin un try propio acá esa falta de memoria abortaba TODO el
+    // lote en vez de saltarse solo esta imagen (mismo criterio que
+    // loadBitmapFromUri). Extraído de invoke() además para bajar la
+    // complejidad ciclomática (detekt).
+    private fun drawImagePage(
+        pdfDocument: PdfDocument,
+        paint: Paint,
+        bitmap: Bitmap,
+        pageNumber: Int,
+        highResolution: Boolean,
+        index: Int
+    ): Boolean = try {
+        val drawRect = pageDrawRect(bitmap.width, bitmap.height)
+        val embeddedBitmap = embedBitmapForDrawRect(bitmap, drawRect, highResolution)
+
+        val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas: Canvas = page.canvas
+
+        canvas.drawColor(Color.WHITE)
+        canvas.drawBitmap(embeddedBitmap, null, drawRect, paint)
+        pdfDocument.finishPage(page)
+
+        if (embeddedBitmap != bitmap) embeddedBitmap.recycle()
+        true
+    } catch (e: OutOfMemoryError) {
+        Timber.e(e, "Sin memoria procesando imagen $index, se salta")
+        false
+    } finally {
+        bitmap.recycle()
     }
 
     // Bug real reportado por testers 2026-09-11: fotos tomadas en vertical
@@ -176,6 +206,14 @@ class ConvertImageToPdfUseCase @Inject constructor(
             rotateBitmapForOrientation(rawBitmap, orientation)
         } catch (e: Exception) {
             Timber.e("Error cargando imagen: ${e.message}")
+            null
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la revisión general 2026-09-16: una sola
+            // imagen muy grande en el lote no debe tirar abajo TODA la
+            // conversión -- OutOfMemoryError no hereda de Exception, así
+            // que el catch de arriba nunca la atrapaba. Se trata igual que
+            // cualquier otra imagen que no se pudo cargar: se salta.
+            Timber.e(e, "Sin memoria decodificando imagen, se salta")
             null
         }
     }

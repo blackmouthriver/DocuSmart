@@ -38,6 +38,7 @@ import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
+import java.io.File
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.theme.rememberAccentGradient
@@ -257,10 +258,23 @@ private fun PendingSecureFolderImport(
         if (pendingFileUri == null || consumed) return@LaunchedEffect
         if (screenState == SecurityScreenState.UNLOCKED) {
             consumed = true
-            viewModel.importFileToSecure(
-                context, Uri.parse(pendingFileUri),
-                successMessage, errorMessage, originalKeptMessage
-            )
+            val uri = Uri.parse(pendingFileUri)
+            // Hallazgo real de la revisión general 2026-09-16: este atajo
+            // siempre llamaba a importFileToSecure() (pensado para un Uri
+            // real de SAF/MediaStore, borrado vía DocumentsContract), nunca
+            // a importLocalFile() -- para un documento GENERADO por la app
+            // (id = ruta absoluta, `document.toContentUri()` lo envuelve
+            // como `file://...`) DocumentsContract.deleteDocument() no
+            // aplica nunca, así que el original quedaba siempre sin borrar:
+            // el usuario creía haber protegido el archivo, pero una copia
+            // sin PIN seguía visible en Biblioteca.
+            if (uri.scheme == "file") {
+                uri.path?.let { path ->
+                    viewModel.importLocalFile(File(path), successMessage, errorMessage, originalKeptMessage)
+                }
+            } else {
+                viewModel.importFileToSecure(context, uri, successMessage, errorMessage, originalKeptMessage)
+            }
         }
     }
 }

@@ -128,7 +128,7 @@ fun SignPdfScreen(
                 }
             }
 
-            SignatureCanvas(onSignatureCaptured = onSignatureCaptured)
+            SignatureCanvas(hasSignature = hasSignature, onSignatureCaptured = onSignatureCaptured)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -166,10 +166,24 @@ fun SignPdfScreen(
 }
 
 @Composable
-private fun SignatureCanvas(onSignatureCaptured: (ByteArray) -> Unit) {
+private fun SignatureCanvas(hasSignature: Boolean, onSignatureCaptured: (ByteArray) -> Unit) {
     var strokes by remember { mutableStateOf<List<List<Offset>>>(emptyList()) }
     var currentStroke by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Hallazgo real de la revisión general 2026-09-16: "Limpiar" solo
+    // borraba signatureImageBytes en el ViewModel -- el trazo dibujado acá
+    // (estado local del Canvas) nunca se reiniciaba, así que el dibujo
+    // seguía visible y se reincorporaba al próximo trazo (o se mezclaba
+    // entre documentos distintos al cambiar de PDF, que también pone
+    // hasSignature en false). hasSignature ya refleja ambos casos -- limpiar
+    // el lienzo cuando pasa a false cubre los dos sin parámetros nuevos.
+    LaunchedEffect(hasSignature) {
+        if (!hasSignature) {
+            strokes = emptyList()
+            currentStroke = emptyList()
+        }
+    }
 
     fun publishSignature(allStrokes: List<List<Offset>>) {
         if (allStrokes.isEmpty() || canvasSize.width == 0 || canvasSize.height == 0) return

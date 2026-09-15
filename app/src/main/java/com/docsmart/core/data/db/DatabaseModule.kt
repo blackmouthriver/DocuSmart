@@ -20,6 +20,7 @@ object DatabaseModule {
     @Singleton
     fun provideDocuSmartDatabase(@ApplicationContext context: Context): DocuSmartDatabase =
         Room.databaseBuilder(context, DocuSmartDatabase::class.java, "docsmart.db")
+            .addMigrations(MIGRATION_2_3)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
@@ -30,4 +31,8 @@ object DatabaseModule {
     @Provides
     fun provideTrashDao(database: DocuSmartDatabase): TrashDao =
         database.trashDao()
+
+    @Provides
+    fun provideAnnotationDao(database: DocuSmartDatabase): AnnotationDao =
+        database.annotationDao()
 }

@@ -112,8 +112,19 @@ fun SettingsScreen(
     fun clearGeneratedFilesCache() {
         val convertedDir = java.io.File(context.filesDir, "converted")
         val pdfToolsDir  = java.io.File(context.filesDir, "pdftools")
+        // HU-46: hallazgo real de la revisión de seguridad -- las copias
+        // aplanadas de "Compartir con anotaciones" quedaban fuera de "Limpiar
+        // caché", acumulándose para siempre sin que el usuario pudiera verlas
+        // ni borrarlas.
+        val viewerShareDir = java.io.File(context.filesDir, "viewer_share")
+        // Hallazgo real de la revisión general 2026-09-16: mismo bug que
+        // viewer_share en HU-46, nunca extendido a las notas/resúmenes
+        // exportados desde Modo Estudio.
+        val studyExportsDir = java.io.File(context.filesDir, "study_exports")
         val allFiles = convertedDir.listFiles()?.toList().orEmpty() +
-            pdfToolsDir.listFiles()?.toList().orEmpty()
+            pdfToolsDir.listFiles()?.toList().orEmpty() +
+            viewerShareDir.listFiles()?.toList().orEmpty() +
+            studyExportsDir.listFiles()?.toList().orEmpty()
         if (allFiles.isNotEmpty()) {
             viewModel.moveConvertedFilesToTrash(allFiles.map { it.absolutePath })
         }
@@ -215,14 +226,22 @@ fun SettingsScreen(
 
     // ── Diálogo: Almacenamiento ───────────────────────────────────────────────
     if (showStorageDialog) {
-        val convertedDir   = java.io.File(context.filesDir, "converted")
-        val pdfToolsDir    = java.io.File(context.filesDir, "pdftools")
-        val convertedFiles = convertedDir.listFiles()?.size ?: 0
-        val pdfToolsFiles  = pdfToolsDir.listFiles()?.size ?: 0
-        val totalFiles     = convertedFiles + pdfToolsFiles
-        val convertedSize  = convertedDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
-        val pdfToolsSize   = pdfToolsDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
-        val totalSize      = convertedSize + pdfToolsSize
+        val convertedDir    = java.io.File(context.filesDir, "converted")
+        val pdfToolsDir     = java.io.File(context.filesDir, "pdftools")
+        val viewerShareDir  = java.io.File(context.filesDir, "viewer_share")
+        // Hallazgo real de la revisión general 2026-09-16: mismo bug que
+        // viewer_share en HU-46, nunca extendido a study_exports/.
+        val studyExportsDir  = java.io.File(context.filesDir, "study_exports")
+        val convertedFiles  = convertedDir.listFiles()?.size ?: 0
+        val pdfToolsFiles   = pdfToolsDir.listFiles()?.size ?: 0
+        val viewerShareFiles = viewerShareDir.listFiles()?.size ?: 0
+        val studyExportsFiles = studyExportsDir.listFiles()?.size ?: 0
+        val totalFiles      = convertedFiles + pdfToolsFiles + viewerShareFiles + studyExportsFiles
+        val convertedSize   = convertedDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
+        val pdfToolsSize    = pdfToolsDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
+        val viewerShareSize = viewerShareDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
+        val studyExportsSize = studyExportsDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
+        val totalSize       = convertedSize + pdfToolsSize + viewerShareSize + studyExportsSize
 
         AlertDialog(
             onDismissRequest = { showStorageDialog = false },

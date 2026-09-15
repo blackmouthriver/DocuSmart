@@ -193,6 +193,35 @@
     <string name="viewer_open_error_format">Ezin izan da PDFa ireki: %1$s</string>
     <string name="viewer_document_not_found">Dokumentua ez da aurkitu</string>
     <string name="viewer_share_chooser_title">%1$s partekatu</string>
+    <string name="viewer_annotate_content_desc">Oharra</string>
+    <string name="viewer_annotate_toolbar_label">Nabarmendu:</string>
+    <string name="viewer_annotate_note_chip">Oharra</string>
+    <string name="viewer_annotate_done">Eginda</string>
+    <string name="viewer_annotate_note_dialog_title">Ohar berria</string>
+    <string name="viewer_annotate_note_dialog_placeholder">Idatzi zure oharra hemen…</string>
+    <string name="viewer_annotate_note_detail_title">Oharra</string>
+    <string name="viewer_annotate_highlight_detail_title">Nabarmendua</string>
+    <string name="viewer_annotate_highlight_detail_body">Nabarmendu hau ezabatu?</string>
+    <string name="viewer_share_choice_title">Dokumentua partekatu</string>
+    <string name="viewer_share_choice_preparing">Dokumentua prestatzen…</string>
+    <string name="viewer_share_choice_body">Dokumentu honek oharrak ditu. Nola partekatu nahi duzu?</string>
+    <string name="viewer_share_choice_with_annotations">Oharrekin</string>
+    <string name="viewer_share_choice_original">Jatorrizkoa</string>
+    <string name="viewer_search_placeholder">Bilatu dokumentuan…</string>
+    <string name="viewer_word_read_error">Ezin izan da Word fitxategiaren edukia irakurri</string>
+    <string name="viewer_excel_read_error">Ezin izan da Excel fitxategiaren edukia irakurri</string>
+    <string name="viewer_ppt_read_error">Ezin izan da aurkezpenaren edukia irakurri</string>
+    <string name="viewer_search_results_count">\"%2$s\"(r)en %1$d emaitza</string>
+    <string name="viewer_slide_number">%1$d diapositiba</string>
+    <string name="viewer_empty_file">Fitxategia hutsik dago</string>
+    <string name="viewer_text_results_count">%1$d emaitza:</string>
+    <string name="viewer_pdf_password_title">Babestutako dokumentua</string>
+    <string name="viewer_pdf_password_label">Pasahitza</string>
+    <string name="viewer_pdf_password_placeholder">Sartu pasahitza</string>
+    <string name="viewer_pdf_password_open_button">Ireki dokumentua</string>
+    <string name="viewer_format_text">Testua</string>
+    <string name="viewer_format_generic">Fitxategia</string>
+    <string name="viewer_pdf_password_body">\"%1$s\" pasahitzarekin babestuta dago.</string>
     <string name="viewer_search_content_desc">Bilatu dokumentuan</string>
     <string name="viewer_favorite_content_desc">Gogokoa</string>
     <string name="viewer_bottom_bar_page_format">%1$d / %2$d orrialdea</string>
@@ -803,6 +832,7 @@
     <string name="qr_image_selected">Irudia hautatuta ✓</string>
     <string name="qr_select_document">Hautatu dokumentua</string>
     <string name="qr_document_selected">Dokumentua hautatuta ✓</string>
+    <string name="qr_local_only_hint">QR hau gailu honetan bakarrik funtzionatzen du: fitxategi lokal batera zuzentzen du, ez partekatutako kopia batera.</string>
     <string name="qr_label_url">Webgunearen URLa</string>
     <string name="qr_label_text">Mezuaren testua</string>
     <string name="qr_label_email">Emailaren helbidea</string>
@@ -843,6 +873,10 @@
     <string name="qr_history_source_created">Sortua</string>
     <string name="qr_history_source_scanned">Irakurria</string>
     <string name="qr_history_protected_content">Pasahitzez babestutako edukia</string>
+    <string name="qr_history_wifi_preview">Wi-Fi: %1$s (pasahitza ezkutatuta)</string>
+    <string name="qr_history_contact_preview">Kontaktua: %1$s (datuak ezkutatuta)</string>
+    <string name="qr_history_wifi_unknown_ssid">ezkutuko sarea</string>
+    <string name="qr_history_contact_unknown_name">ezkutuan</string>
 
     <!-- ── Estudio ─────────────────────────────────── -->
     <string name="study_tab_reading">Irakurketa</string>

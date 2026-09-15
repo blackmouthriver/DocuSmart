@@ -704,11 +704,23 @@ fun QrCreatorScreen(
     val defaultImageName    = stringResource(R.string.qr_chip_image)
     val defaultDocumentName = stringResource(R.string.pdf_pw_default_document_name)
 
-    // Launchers para seleccionar imagen o documento
+    // Launchers para seleccionar imagen o documento.
+    // Hallazgo real de la revisión general 2026-09-16: con GetContent() el
+    // content:// devuelto no admite takePersistableUriPermission -- el
+    // permiso de lectura moría con el proceso y escanear el QR más tarde
+    // (incluso en este mismo dispositivo) fallaba. OpenDocument() sí está
+    // pensado para esto y permite persistir el permiso entre reinicios.
     val imageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: SecurityException) {
+                Timber.w(e, "imageLauncher: no se pudo persistir el permiso de lectura")
+            }
             selectedUri  = it
             selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultImageName
             content      = it.toString()
@@ -718,9 +730,16 @@ fun QrCreatorScreen(
     }
 
     val documentLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: SecurityException) {
+                Timber.w(e, "documentLauncher: no se pudo persistir el permiso de lectura")
+            }
             selectedUri  = it
             selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultDocumentName
             content      = it.toString()
@@ -867,7 +886,7 @@ fun QrCreatorScreen(
                                 else MaterialTheme.colorScheme.surface
                             )
                             .accentBorder(imagePickerShape)
-                            .clickable { imageLauncher.launch("image/*") }
+                            .clickable { imageLauncher.launch(arrayOf("image/*")) }
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -901,6 +920,12 @@ fun QrCreatorScreen(
                             }
                         }
                     }
+                    Text(
+                        stringResource(R.string.qr_local_only_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
                 }
                 5 -> {
                     // Documento
@@ -916,7 +941,7 @@ fun QrCreatorScreen(
                                 else MaterialTheme.colorScheme.surface
                             )
                             .accentBorder(documentPickerShape)
-                            .clickable { documentLauncher.launch("*/*") }
+                            .clickable { documentLauncher.launch(arrayOf("*/*")) }
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -950,6 +975,12 @@ fun QrCreatorScreen(
                             }
                         }
                     }
+                    Text(
+                        stringResource(R.string.qr_local_only_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
                 }
                 6 -> {
                     // HU-43: Wi-Fi
