@@ -59,7 +59,14 @@ class ViewerScreenTest {
             documentHistoryDao = mockk<DocumentHistoryDao>(relaxed = true),
             documentRepository = mockk<DocumentRepository>(relaxed = true),
             trashRepository = mockk<TrashRepository>(relaxed = true),
-            adManager = adManager
+            adManager = adManager,
+            // Hallazgo real 2026-09-15 (CI): ViewerViewModel ganó estos dos
+            // parámetros con HU-46 (migración de anotaciones) pero este
+            // builder no se actualizó -- detectado por
+            // compileDebugAndroidTestKotlin en CI, que no corre localmente
+            // sin un dispositivo/emulador.
+            annotationDao = mockk(relaxed = true),
+            flattenAnnotationsPdfUseCase = mockk(relaxed = true)
         )
     }
 

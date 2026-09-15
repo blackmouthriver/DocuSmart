@@ -69,7 +69,12 @@ class ViewerSearchTest {
             documentHistoryDao  = mockk<DocumentHistoryDao>(relaxed = true),
             documentRepository  = mockk<DocumentRepository>(relaxed = true),
             trashRepository     = mockk<TrashRepository>(relaxed = true),
-            adManager           = adManager
+            adManager           = adManager,
+            // Hallazgo real 2026-09-15 (CI): ViewerViewModel ganó estos dos
+            // parámetros con HU-46 (migración de anotaciones) -- ver
+            // ViewerScreenTest.kt para el mismo fix.
+            annotationDao = mockk(relaxed = true),
+            flattenAnnotationsPdfUseCase = mockk(relaxed = true)
         )
     }
 

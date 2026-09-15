@@ -73,7 +73,12 @@ class ViewerRenameDeleteTest {
             documentHistoryDao  = mockk<DocumentHistoryDao>(relaxed = true),
             documentRepository  = documentRepository,
             trashRepository     = trashRepository,
-            adManager           = adManager
+            adManager           = adManager,
+            // Hallazgo real 2026-09-15 (CI): ViewerViewModel ganó estos dos
+            // parámetros con HU-46 (migración de anotaciones) -- ver
+            // ViewerScreenTest.kt para el mismo fix.
+            annotationDao = mockk(relaxed = true),
+            flattenAnnotationsPdfUseCase = mockk(relaxed = true)
         )
     }
 

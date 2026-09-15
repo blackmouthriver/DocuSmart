@@ -75,7 +75,14 @@ class SecurityScreenTest {
             // ganó mediaDeletePermission (borrado con permiso de MediaStore)
             // pero este builder nunca se actualizó, dejando
             // compileDebugAndroidTestKotlin roto para todo el módulo.
-            mediaDeletePermission = mockk(relaxed = true)
+            mediaDeletePermission = mockk(relaxed = true),
+            // Hallazgo real 2026-09-15 (CI): SecurityViewModel ganó
+            // annotationDao (migración de anotaciones del Visor al mover/
+            // restaurar de Carpeta Segura) pero este builder tampoco se
+            // actualizó -- mismo bug de fondo que mediaDeletePermission
+            // arriba, esta vez detectado por compileDebugAndroidTestKotlin
+            // en CI (no corre localmente sin un dispositivo/emulador).
+            annotationDao = mockk(relaxed = true)
         )
     }
 
