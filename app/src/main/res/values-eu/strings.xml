@@ -192,6 +192,8 @@
     <string name="viewer_more_options">Aukera gehiago</string>
     <string name="viewer_convert">Bihurtu</string>
     <string name="viewer_create_qr">Sortu QRa</string>
+    <string name="viewer_linked_notes">Estekatutako oharrak (%1$d)</string>
+    <string name="viewer_linked_notes_title">Estekatutako oharrak</string>
     <string name="viewer_rename">Aldatu izena</string>
     <string name="viewer_delete">Ezabatu</string>
     <string name="viewer_rename_title">Aldatu dokumentuaren izena</string>
@@ -244,6 +246,11 @@
     <string name="viewer_page_content_desc">%1$d. orrialdea</string>
     <string name="viewer_favorite_content_desc">Gogokoa</string>
     <string name="viewer_bottom_bar_page_format">%1$d / %2$d orrialdea</string>
+    <string name="viewer_bookmarks_title">Orrialde-laster-markak</string>
+    <string name="viewer_bookmarks_empty">Oraindik ez dago laster-marka duen orrialderik</string>
+    <string name="viewer_bookmarks_page_format">%1$d. orrialdea</string>
+    <string name="viewer_bookmark_add">Markatu orrialde hau</string>
+    <string name="viewer_bookmark_remove">Kendu laster-marka</string>
     <string name="viewer_search_no_results">Emaitzarik ez</string>
     <string name="viewer_search_match_format">%1$d / %2$d bat-etortzea</string>
     <string name="viewer_search_previous_match">Aurreko bat-etortzea</string>
@@ -1007,6 +1014,12 @@
     <string name="study_export_notes">Esportatu oharrak</string>
     <string name="study_export_as_text">Testu gisa</string>
     <string name="study_export_as_pdf">PDF gisa</string>
+    <string name="note_export_as_word">Word gisa</string>
+    <string name="note_export_note_desc">Esportatu ohar hau</string>
+    <string name="note_link_document_title">Estekatu dokumentua</string>
+    <string name="note_link_document_empty">Oraindik ez dago dokumenturik Liburutegian</string>
+    <string name="note_unlink_document">Kendu esteka</string>
+    <string name="note_linked_document_desc">Estekatutako dokumentua</string>
     <string name="study_export_share_title">Partekatu oharrak</string>
     <string name="study_stats_icon_desc">Ikusi estatistikak</string>
     <string name="study_stats_title">Ikasketa-estatistikak</string>

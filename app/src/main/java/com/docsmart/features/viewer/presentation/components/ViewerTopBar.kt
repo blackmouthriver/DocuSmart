@@ -3,6 +3,7 @@ package com.docsmart.features.viewer.presentation.components
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -48,6 +49,10 @@ fun ViewerTopBar(
     // Renombrar/Eliminar quedan ocultos para no simular acciones que en
     // realidad no tocan el archivo protegido.
     isReadOnlyPreview: Boolean = false,
+    // Backlog UX #50: cuántas notas de Modo Estudio están vinculadas a este
+    // documento -- el ítem del menú "⋮" solo aparece si hay al menos una.
+    linkedNotesCount: Int = 0,
+    onOpenLinkedNotesClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -141,6 +146,7 @@ fun ViewerTopBar(
                 ViewerMoreOptionsMenu(
                     isPdf             = isPdf,
                     isReadOnlyPreview = isReadOnlyPreview,
+                    linkedNotesCount  = linkedNotesCount,
                     actions = ViewerMenuActions(
                         onConvert            = onConvertClick,
                         onCreateQr           = onCreateQrClick,
@@ -148,7 +154,8 @@ fun ViewerTopBar(
                         onSign               = onSignClick,
                         onMoveToSecureFolder = onMoveToSecureFolderClick,
                         onRename             = onRenameClick,
-                        onDelete             = onDeleteClick
+                        onDelete             = onDeleteClick,
+                        onOpenLinkedNotes    = onOpenLinkedNotesClick
                     )
                 )
             }
@@ -165,11 +172,17 @@ private data class ViewerMenuActions(
     val onSign              : () -> Unit,
     val onMoveToSecureFolder: () -> Unit,
     val onRename            : () -> Unit,
-    val onDelete            : () -> Unit
+    val onDelete            : () -> Unit,
+    val onOpenLinkedNotes   : () -> Unit
 )
 
 @Composable
-private fun ViewerMoreOptionsMenu(isPdf: Boolean, isReadOnlyPreview: Boolean, actions: ViewerMenuActions) {
+private fun ViewerMoreOptionsMenu(
+    isPdf: Boolean,
+    isReadOnlyPreview: Boolean,
+    linkedNotesCount: Int,
+    actions: ViewerMenuActions
+) {
     var menuExpanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { menuExpanded = true }) {
@@ -216,6 +229,16 @@ private fun ViewerMoreOptionsMenu(isPdf: Boolean, isReadOnlyPreview: Boolean, ac
                 leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
                 onClick = { menuExpanded = false; actions.onMoveToSecureFolder() }
             )
+            // Backlog UX #50, AC1: indicador de que este documento tiene
+            // notas de Modo Estudio vinculadas -- solo aparece si hay al
+            // menos una.
+            if (linkedNotesCount > 0) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.viewer_linked_notes, linkedNotesCount)) },
+                    leadingIcon = { Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null) },
+                    onClick = { menuExpanded = false; actions.onOpenLinkedNotes() }
+                )
+            }
             // Hallazgo real de la revisión general 2026-09-16 (cuarta
             // pasada): renombrar/eliminar durante una vista previa de
             // Carpeta Segura solo tocan la copia efímera de caché, nunca el

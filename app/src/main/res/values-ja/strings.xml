@@ -182,6 +182,8 @@
     <string name="viewer_more_options">その他のオプション</string>
     <string name="viewer_convert">変換</string>
     <string name="viewer_create_qr">QRを作成</string>
+    <string name="viewer_linked_notes">リンクされたメモ（%1$d）</string>
+    <string name="viewer_linked_notes_title">リンクされたメモ</string>
     <string name="viewer_rename">名前を変更</string>
     <string name="viewer_delete">削除</string>
     <string name="viewer_rename_title">ドキュメント名を変更</string>
@@ -234,6 +236,11 @@
     <string name="viewer_page_content_desc">%1$dページ</string>
     <string name="viewer_favorite_content_desc">お気に入り</string>
     <string name="viewer_bottom_bar_page_format">%2$d ページ中 %1$d ページ目</string>
+    <string name="viewer_bookmarks_title">ページのブックマーク</string>
+    <string name="viewer_bookmarks_empty">まだブックマークしたページがありません</string>
+    <string name="viewer_bookmarks_page_format">%1$d ページ目</string>
+    <string name="viewer_bookmark_add">このページをブックマークする</string>
+    <string name="viewer_bookmark_remove">ブックマークを削除</string>
     <string name="viewer_search_no_results">結果なし</string>
     <string name="viewer_search_match_format">%2$d件中%1$d件目</string>
     <string name="viewer_search_previous_match">前の一致</string>
@@ -989,6 +996,12 @@
     <string name="study_export_notes">メモをエクスポート</string>
     <string name="study_export_as_text">テキストとして</string>
     <string name="study_export_as_pdf">PDFとして</string>
+    <string name="note_export_as_word">Wordとして</string>
+    <string name="note_export_note_desc">このメモをエクスポート</string>
+    <string name="note_link_document_title">ドキュメントをリンク</string>
+    <string name="note_link_document_empty">ライブラリにまだドキュメントがありません</string>
+    <string name="note_unlink_document">リンクを解除</string>
+    <string name="note_linked_document_desc">リンクされたドキュメント</string>
     <string name="study_export_share_title">メモを共有</string>
     <string name="study_stats_icon_desc">統計を見る</string>
     <string name="study_stats_title">学習統計</string>

@@ -1,7 +1,14 @@
 package com.docsmart.features.viewer.presentation.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -13,7 +20,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.docsmart.R
+import com.docsmart.core.data.db.NoteEntity
 
 /**
  * RF-VIS-06: diálogo de renombrar propio del Visor, localizado desde el
@@ -89,6 +99,41 @@ fun ViewerDeleteConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
+        }
+    )
+}
+
+/**
+ * Backlog UX #50, RF2: lista de solo lectura de las notas de Modo Estudio
+ * vinculadas a este documento -- abrirlas para editar queda fuera de
+ * alcance (exigiría navegar hasta la pestaña Notas de Modo Estudio con un
+ * id específico), esto solo cumple "permite abrirlas" mostrando el
+ * contenido completo acá mismo.
+ */
+@Composable
+fun ViewerLinkedNotesDialog(notes: List<NoteEntity>, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.viewer_linked_notes_title)) },
+        text = {
+            LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                items(notes, key = { it.id }) { note ->
+                    Column {
+                        Text(note.title, style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            text     = note.text,
+                            style    = MaterialTheme.typography.bodySmall,
+                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 4,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
         }
     )
 }

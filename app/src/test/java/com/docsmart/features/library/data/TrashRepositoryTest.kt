@@ -52,13 +52,23 @@ class TrashRepositoryTest {
         // flag de favorito, no solo el alias.
         coEvery { favorites.removeFavorite(any()) } just Runs
         val mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
-        val annotationDao = mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
+        // Instancia real (no mock): así los coVerify sobre `favorites` de
+        // abajo siguen viendo las mismas llamadas que antes de consolidar
+        // el borrado/la migración en DocumentIdentityMaintenance -- solo se
+        // mockean sus otras dependencias, que estos tests no verifican.
+        val identityMaintenance = com.docsmart.core.data.DocumentIdentityMaintenance(
+            favorites,
+            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true),
+            mockk<com.docsmart.core.data.db.PageBookmarkDao>(relaxed = true),
+            mockk<com.docsmart.core.data.db.LastViewedPageDao>(relaxed = true),
+            mockk<com.docsmart.core.data.db.NoteDao>(relaxed = true)
+        )
         documentRepository = DocumentRepository(
             context, favorites, historyDao, trashDao, mediaDeletePermission,
-            mockk<DownloadsAccessManager>(relaxed = true), annotationDao
+            mockk<DownloadsAccessManager>(relaxed = true), identityMaintenance
         )
         repository = TrashRepository(
-            documentRepository, trashDao, historyDao, favorites, mediaDeletePermission, annotationDao
+            documentRepository, trashDao, historyDao, mediaDeletePermission, identityMaintenance
         )
     }
 

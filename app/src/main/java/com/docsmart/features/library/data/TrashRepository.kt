@@ -2,8 +2,7 @@ package com.docsmart.features.library.data
 
 import android.content.IntentSender
 import android.os.Build
-import com.docsmart.core.data.FavoritesRepository
-import com.docsmart.core.data.db.AnnotationDao
+import com.docsmart.core.data.DocumentIdentityMaintenance
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.data.db.TrashEntry
@@ -37,9 +36,8 @@ class TrashRepository @Inject constructor(
     private val documentRepository: DocumentRepository,
     private val trashDao: TrashDao,
     private val documentHistoryDao: DocumentHistoryDao,
-    private val favoritesRepository: FavoritesRepository,
     private val mediaDeletePermission: MediaDeletePermission,
-    private val annotationDao: AnnotationDao
+    private val documentIdentityMaintenance: DocumentIdentityMaintenance
 ) {
     companion object {
         const val TRASH_RETENTION_DAYS = 30
@@ -117,12 +115,7 @@ class TrashRepository @Inject constructor(
         val outcome = documentRepository.deleteDocument(documentId)
         if (outcome is DocumentRepository.DeleteOutcome.Deleted) {
             trashDao.remove(documentId)
-            favoritesRepository.removeAlias(documentId)
-            // Hallazgo real #50: solo se limpiaba el alias, nunca la marca
-            // de favorito -- un archivo nuevo que reutilizara la misma
-            // ruta podía aparecer "favorito" sin que el usuario lo marcara.
-            favoritesRepository.removeFavorite(documentId)
-            annotationDao.deleteByDocument(documentId)
+            documentIdentityMaintenance.onPermanentlyDeleted(documentId)
         }
         outcome
     }
@@ -131,17 +124,13 @@ class TrashRepository @Inject constructor(
      *  diálogo de sistema (Android ya borró la fila en ese punto). */
     suspend fun finalizeDeleteForever(documentId: String) = withContext(Dispatchers.IO) {
         trashDao.remove(documentId)
-        favoritesRepository.removeAlias(documentId)
-        favoritesRepository.removeFavorite(documentId)
-        annotationDao.deleteByDocument(documentId)
+        documentIdentityMaintenance.onPermanentlyDeleted(documentId)
     }
 
     suspend fun finalizeDeleteForever(documentIds: List<String>) = withContext(Dispatchers.IO) {
         documentIds.forEach {
             trashDao.remove(it)
-            favoritesRepository.removeAlias(it)
-            favoritesRepository.removeFavorite(it)
-            annotationDao.deleteByDocument(it)
+            documentIdentityMaintenance.onPermanentlyDeleted(it)
         }
     }
 
@@ -167,9 +156,7 @@ class TrashRepository @Inject constructor(
         plainFiles.forEach { id ->
             if (documentRepository.deleteDocument(id) is DocumentRepository.DeleteOutcome.Deleted) {
                 trashDao.remove(id)
-                favoritesRepository.removeAlias(id)
-                favoritesRepository.removeFavorite(id)
-                annotationDao.deleteByDocument(id)
+                documentIdentityMaintenance.onPermanentlyDeleted(id)
             }
         }
 
@@ -186,9 +173,7 @@ class TrashRepository @Inject constructor(
             when (documentRepository.deleteDocument(id)) {
                 is DocumentRepository.DeleteOutcome.Deleted -> {
                     trashDao.remove(id)
-                    favoritesRepository.removeAlias(id)
-                    favoritesRepository.removeFavorite(id)
-                    annotationDao.deleteByDocument(id)
+                    documentIdentityMaintenance.onPermanentlyDeleted(id)
                 }
                 is DocumentRepository.DeleteOutcome.NeedsPermission -> pendingPermission = true
                 DocumentRepository.DeleteOutcome.Failed -> Unit
@@ -224,9 +209,7 @@ class TrashRepository @Inject constructor(
                     // definitivo de este archivo, que ya limpiaban el
                     // alias (aunque tampoco el favorito, hasta este mismo
                     // hallazgo).
-                    favoritesRepository.removeAlias(entry.documentId)
-                    favoritesRepository.removeFavorite(entry.documentId)
-                    annotationDao.deleteByDocument(entry.documentId)
+                    documentIdentityMaintenance.onPermanentlyDeleted(entry.documentId)
                 }
             }
     }

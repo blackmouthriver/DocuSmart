@@ -70,7 +70,7 @@ class DocumentRepository @Inject constructor(
     private val trashDao: TrashDao,
     private val mediaDeletePermission: MediaDeletePermission,
     private val downloadsAccessManager: DownloadsAccessManager,
-    private val annotationDao: com.docsmart.core.data.db.AnnotationDao
+    private val documentIdentityMaintenance: com.docsmart.core.data.DocumentIdentityMaintenance
 ) {
     // Buffer sobre el límite pedido: algunos ids del historial pueden
     // apuntar a archivos que ya no existen (borrados/movidos fuera de la
@@ -280,17 +280,14 @@ class DocumentRepository @Inject constructor(
                     // no hace falta -- mismo criterio que antes.
                     favoritesRepository.removeAlias(documentId)
                     // Hallazgo real de la revisión general 2026-09-16 (#50):
-                    // a diferencia del alias, el estado de favorito SÍ debe
-                    // migrar -- sin esto, renombrar un documento favorito le
-                    // hacía perder la marca en silencio porque el id (ruta)
-                    // cambia. migrateId() no toca el alias de nuevo (ya se
-                    // limpió arriba).
-                    favoritesRepository.migrateId(documentId, newFile.absolutePath)
-                    // Hallazgo real de la revisión general 2026-09-16: las
-                    // anotaciones del Visor (HU-46) quedaban huérfanas bajo
-                    // el id viejo -- se migran a la ruta nueva en vez de
-                    // perderse.
-                    annotationDao.updateDocumentId(documentId, newFile.absolutePath)
+                    // a diferencia del alias, el estado de favorito, las
+                    // anotaciones del Visor (HU-46), y luego marcadores de
+                    // página/última página vista SÍ deben migrar -- sin
+                    // esto, renombrar un documento con cualquiera de estos
+                    // le hacía perder la marca en silencio porque el id
+                    // (ruta) cambia. onIdChanged() no toca el alias de nuevo
+                    // (ya se limpió arriba).
+                    documentIdentityMaintenance.onIdChanged(documentId, newFile.absolutePath)
                     return@withContext newFile.absolutePath
                 }
             }

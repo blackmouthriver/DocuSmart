@@ -16,6 +16,12 @@ import com.docsmart.core.data.db.AnnotationEntity
 import com.docsmart.core.data.db.AnnotationType
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
+import com.docsmart.core.data.db.LastViewedPageDao
+import com.docsmart.core.data.db.LastViewedPageEntity
+import com.docsmart.core.data.db.NoteDao
+import com.docsmart.core.data.db.NoteEntity
+import com.docsmart.core.data.db.PageBookmarkDao
+import com.docsmart.core.data.db.PageBookmarkEntity
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
@@ -32,6 +38,7 @@ import com.itextpdf.kernel.pdf.WriterProperties
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -125,7 +132,20 @@ data class ViewerUiState(
     // en ViewerScreen) -- un aviso transitorio (mismo patrón que deleteError)
     // no debe expulsar al usuario del documento que sigue perfectamente
     // legible.
-    val shareError             : String? = null
+    val shareError             : String? = null,
+    // ── Backlog UX #47/#48: marcadores de página + última página vista ────
+    val bookmarkedPages   : Set<Int> = emptySet(), // páginas (0-based) marcadas del documento actual
+    val showBookmarksSheet: Boolean  = false,
+    // Salto de página pendiente de consumir -- generaliza el mecanismo que
+    // antes solo usaba la búsqueda in-PDF (ver targetPage en ViewerScreen):
+    // se dispara al abrir un PDF con última página vista guardada, o al
+    // tocar un marcador en la lista. PdfViewerContent lo consume (llama
+    // onPageJumpConsumed) apenas termina de saltar, así que no vuelve a
+    // dispararse en la siguiente recomposición.
+    val pendingPageJump   : Int?     = null,
+    // Backlog UX #50: notas de Modo Estudio vinculadas a este documento.
+    val linkedNotes           : List<NoteEntity> = emptyList(),
+    val showLinkedNotesDialog : Boolean = false
 )
 
 @HiltViewModel
@@ -140,11 +160,24 @@ class ViewerViewModel @Inject constructor(
     val adManager: AdManager,
     // HU-46: anotaciones (resaltado + notas adhesivas) sobre el PDF.
     private val annotationDao: AnnotationDao,
-    private val flattenAnnotationsPdfUseCase: FlattenAnnotationsPdfUseCase
+    private val flattenAnnotationsPdfUseCase: FlattenAnnotationsPdfUseCase,
+    // Backlog UX #47/#48: marcadores de página + última página vista.
+    private val pageBookmarkDao: PageBookmarkDao,
+    private val lastViewedPageDao: LastViewedPageDao,
+    // Backlog UX #50: notas de Modo Estudio vinculadas a este documento.
+    private val noteDao: NoteDao
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "ViewerViewModel"
+
+        // Backlog UX #48: onPageChanged() se dispara por cada página que
+        // entra en composición durante el scroll (LazyColumn), no solo al
+        // asentarse -- escribir en Room en cada llamada sería demasiado
+        // frecuente en un scroll rápido por un documento largo. Se debounce
+        // (cancelar + reprogramar) para persistir solo la página en la que
+        // el usuario realmente se detuvo.
+        private const val SAVE_LAST_PAGE_DEBOUNCE_MS = 600L
     }
 
     private val _uiState = MutableStateFlow(ViewerUiState())
@@ -152,6 +185,9 @@ class ViewerViewModel @Inject constructor(
 
     private var pendingDocumentId: String  = ""
     private var annotationsJob: Job? = null
+    private var bookmarksJob: Job? = null
+    private var saveLastPageJob: Job? = null
+    private var linkedNotesJob: Job? = null
 
     // HU-46: se re-suscribe cada vez que cambia el documento cargado --
     // Flow, no una sola carga, para que altas/bajas hechas en esta misma
@@ -164,6 +200,52 @@ class ViewerViewModel @Inject constructor(
                 _uiState.update { it.copy(annotations = entries.groupBy { entry -> entry.page }) }
             }
         }
+    }
+
+    // Backlog UX #47: mismo criterio que observeAnnotations() -- Flow, no
+    // una sola carga, para que marcar/desmarcar en esta misma sesión se
+    // refleje sin recargar la pantalla.
+    private fun observeBookmarks(documentId: String) {
+        bookmarksJob?.cancel()
+        bookmarksJob = viewModelScope.launch {
+            pageBookmarkDao.observeByDocument(documentId).collect { entries ->
+                _uiState.update { it.copy(bookmarkedPages = entries.map { entry -> entry.page }.toSet()) }
+            }
+        }
+    }
+
+    // Backlog UX #48: se dispara una sola vez al abrir el documento -- si
+    // hay una página guardada, PdfViewerContent salta ahí apenas termina de
+    // renderizar (ver pendingPageJump/onPageJumpConsumed). page=0 (primera
+    // página) no dispara salto: es el mismo lugar donde ya abriría por
+    // defecto, no hace falta un salto "de vuelta al principio".
+    private fun loadLastViewedPage(documentId: String) {
+        viewModelScope.launch {
+            val saved = lastViewedPageDao.getByDocument(documentId)
+            if (saved != null && saved.page > 0) {
+                _uiState.update { it.copy(pendingPageJump = saved.page) }
+            }
+        }
+    }
+
+    // Backlog UX #50: mismo criterio reactivo que observeBookmarks() -- se
+    // refleja solo al vincular/desvincular una nota desde Modo Estudio,
+    // sin recargar el Visor.
+    private fun observeLinkedNotes(documentId: String) {
+        linkedNotesJob?.cancel()
+        linkedNotesJob = viewModelScope.launch {
+            noteDao.observeByDocument(documentId).collect { notes ->
+                _uiState.update { it.copy(linkedNotes = notes.map { entry -> entry.note }) }
+            }
+        }
+    }
+
+    fun showLinkedNotesDialog() {
+        _uiState.update { it.copy(showLinkedNotesDialog = true) }
+    }
+
+    fun dismissLinkedNotesDialog() {
+        _uiState.update { it.copy(showLinkedNotesDialog = false) }
     }
 
     // Se guarda applicationContext (no la Activity), por eso no hay fuga real
@@ -309,6 +391,15 @@ class ViewerViewModel @Inject constructor(
         // mientras la copia siguiera viva.
         if (!isReadOnlyPreview) recordHistoryOpen(uriString)
         observeAnnotations(uriString)
+        // Backlog UX #47/#48: mismo criterio de solo-lectura que el resto
+        // de la vista previa de Carpeta Segura -- no observar marcadores ni
+        // saltar a una "última página" de la copia efímera (que además
+        // nunca tendría ninguna guardada, al no registrarse el historial).
+        if (!isReadOnlyPreview) {
+            observeBookmarks(uriString)
+            loadLastViewedPage(uriString)
+            observeLinkedNotes(uriString)
+        }
         DocuSmartAnalytics.logDocumentOpened(documentType.name)
     }
 
@@ -710,6 +801,56 @@ class ViewerViewModel @Inject constructor(
 
     fun onPageChanged(page: Int, total: Int) {
         _uiState.update { it.copy(currentPage = page, totalPages = total) }
+        scheduleSaveLastViewedPage(page)
+    }
+
+    private fun scheduleSaveLastViewedPage(page: Int) {
+        if (_uiState.value.isReadOnlyPreview) return
+        val documentId = _uiState.value.document?.id ?: return
+        saveLastPageJob?.cancel()
+        saveLastPageJob = viewModelScope.launch {
+            delay(SAVE_LAST_PAGE_DEBOUNCE_MS)
+            lastViewedPageDao.save(LastViewedPageEntity(documentId, page, System.currentTimeMillis()))
+        }
+    }
+
+    // ── Backlog UX #47: marcadores de página ──────────────────────────────
+    fun toggleBookmarkCurrentPage() {
+        if (_uiState.value.isReadOnlyPreview) return
+        val documentId = _uiState.value.document?.id ?: return
+        val page = _uiState.value.currentPage
+        val alreadyBookmarked = page in _uiState.value.bookmarkedPages
+        viewModelScope.launch {
+            if (alreadyBookmarked) {
+                pageBookmarkDao.delete(documentId, page)
+            } else {
+                pageBookmarkDao.insert(PageBookmarkEntity(documentId, page, System.currentTimeMillis()))
+            }
+        }
+    }
+
+    fun removeBookmark(page: Int) {
+        val documentId = _uiState.value.document?.id ?: return
+        viewModelScope.launch { pageBookmarkDao.delete(documentId, page) }
+    }
+
+    fun showBookmarksSheet() {
+        _uiState.update { it.copy(showBookmarksSheet = true) }
+    }
+
+    fun dismissBookmarksSheet() {
+        _uiState.update { it.copy(showBookmarksSheet = false) }
+    }
+
+    fun navigateToBookmark(page: Int) {
+        _uiState.update { it.copy(showBookmarksSheet = false, pendingPageJump = page) }
+    }
+
+    // PdfViewerContent lo llama apenas termina de saltar -- evita que el
+    // mismo salto se repita en la siguiente recomposición (ej. al rotar la
+    // pantalla, que recompone con el mismo pendingPageJump si no se limpia).
+    fun onPageJumpConsumed() {
+        _uiState.update { it.copy(pendingPageJump = null) }
     }
 
     fun toggleFavorite() {
@@ -767,8 +908,14 @@ class ViewerViewModel @Inject constructor(
             // seguía filtrando por el id VIEJO (sin filas), así que Room
             // emitía lista vacía y los resaltados/notas desaparecían de la
             // pantalla hasta reabrir el documento (los datos seguían
-            // intactos bajo el id nuevo).
-            if (newId != document.id) observeAnnotations(newId)
+            // intactos bajo el id nuevo). Mismo criterio para marcadores de
+            // página (#47) -- la última página vista (#48) no necesita
+            // re-suscripción porque solo se lee una vez al abrir.
+            if (newId != document.id) {
+                observeAnnotations(newId)
+                observeBookmarks(newId)
+                observeLinkedNotes(newId)
+            }
             Timber.d("$TAG: renameDocument ${document.id} → $newId ($trimmed)")
         }
     }

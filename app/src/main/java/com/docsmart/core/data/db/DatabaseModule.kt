@@ -20,7 +20,7 @@ object DatabaseModule {
     @Singleton
     fun provideDocuSmartDatabase(@ApplicationContext context: Context): DocuSmartDatabase =
         Room.databaseBuilder(context, DocuSmartDatabase::class.java, "docsmart.db")
-            .addMigrations(MIGRATION_2_3)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
@@ -35,4 +35,16 @@ object DatabaseModule {
     @Provides
     fun provideAnnotationDao(database: DocuSmartDatabase): AnnotationDao =
         database.annotationDao()
+
+    @Provides
+    fun providePageBookmarkDao(database: DocuSmartDatabase): PageBookmarkDao =
+        database.pageBookmarkDao()
+
+    @Provides
+    fun provideLastViewedPageDao(database: DocuSmartDatabase): LastViewedPageDao =
+        database.lastViewedPageDao()
+
+    @Provides
+    fun provideNoteDao(database: DocuSmartDatabase): NoteDao =
+        database.noteDao()
 }

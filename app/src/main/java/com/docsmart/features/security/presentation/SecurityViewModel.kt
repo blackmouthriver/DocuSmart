@@ -12,7 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.docsmart.core.data.db.AnnotationDao
+import com.docsmart.core.data.DocumentIdentityMaintenance
 import com.docsmart.core.security.SecurityManager
 import com.docsmart.features.library.data.MediaDeletePermission
 import com.docsmart.features.security.domain.PdfPasswordMessages
@@ -78,11 +78,11 @@ class SecurityViewModel @Inject constructor(
     private val securityManager       : SecurityManager,
     private val pdfPasswordUseCase    : PdfPasswordUseCase,
     private val mediaDeletePermission : MediaDeletePermission,
-    private val annotationDao         : AnnotationDao,
     // Hallazgo real de la revisión general 2026-09-16 (#50): favoritos/
-    // alias quedaban huérfanos bajo el id viejo al mover/restaurar de
-    // Carpeta Segura, mismo criterio que ya se aplica a las anotaciones.
-    private val favoritesRepository   : com.docsmart.core.data.FavoritesRepository,
+    // alias/anotaciones (y luego marcadores de página/última página vista)
+    // quedaban huérfanos bajo el id viejo al mover/restaurar de Carpeta
+    // Segura -- consolidado en DocumentIdentityMaintenance.
+    private val documentIdentityMaintenance: DocumentIdentityMaintenance,
     // Hallazgo real de la revisión de seguridad adversarial de este mismo
     // lote (2026-09-16): envoltorio inyectable sobre ProcessLifecycleOwner
     // (ver AppLifecycleTracker) -- llamar a ProcessLifecycleOwner.get()
@@ -255,8 +255,7 @@ class SecurityViewModel @Inject constructor(
                 // result.destFile (no un recálculo propio) porque #61 puede
                 // haber elegido un nombre distinto por colisión.
                 val newId = result.destFile?.absolutePath ?: oldId
-                annotationDao.updateDocumentId(oldId, newId)
-                favoritesRepository.migrateId(oldId, newId)
+                documentIdentityMaintenance.onIdChanged(oldId, newId)
                 val secureFiles = securityManager.getSecureFiles()
                 _uiState.update {
                     it.copy(
@@ -324,8 +323,7 @@ class SecurityViewModel @Inject constructor(
                 // favoritos/alias existentes (documentId = el propio
                 // content:// del origen) a la ruta nueva dentro de Carpeta
                 // Segura.
-                annotationDao.updateDocumentId(uri.toString(), destFile.absolutePath)
-                favoritesRepository.migrateId(uri.toString(), destFile.absolutePath)
+                documentIdentityMaintenance.onIdChanged(uri.toString(), destFile.absolutePath)
 
                 val deleteResult = try {
                     val deleted = android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)
@@ -478,9 +476,7 @@ class SecurityViewModel @Inject constructor(
         val documentId = file.absolutePath
         viewModelScope.launch(Dispatchers.IO) {
             securityManager.deleteSecureFile(file)
-            favoritesRepository.removeFavorite(documentId)
-            favoritesRepository.removeAlias(documentId)
-            annotationDao.deleteByDocument(documentId)
+            documentIdentityMaintenance.onPermanentlyDeleted(documentId)
             val files = securityManager.getSecureFiles()
             _uiState.update { it.copy(secureFiles = files) }
         }
@@ -520,8 +516,7 @@ class SecurityViewModel @Inject constructor(
                 // usa el File que devuelve moveFromSecure() (no un
                 // recálculo propio) porque #61 puede haber elegido un
                 // nombre distinto por colisión.
-                annotationDao.updateDocumentId(oldId, restoredFile.absolutePath)
-                favoritesRepository.migrateId(oldId, restoredFile.absolutePath)
+                documentIdentityMaintenance.onIdChanged(oldId, restoredFile.absolutePath)
             }
             val files = securityManager.getSecureFiles()
             _uiState.update { it.copy(secureFiles = files) }

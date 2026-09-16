@@ -182,6 +182,8 @@
     <string name="viewer_more_options">Weitere Optionen</string>
     <string name="viewer_convert">Konvertieren</string>
     <string name="viewer_create_qr">QR-Code erstellen</string>
+    <string name="viewer_linked_notes">Verknüpfte Notizen (%1$d)</string>
+    <string name="viewer_linked_notes_title">Verknüpfte Notizen</string>
     <string name="viewer_rename">Umbenennen</string>
     <string name="viewer_delete">Löschen</string>
     <string name="viewer_rename_title">Dokument umbenennen</string>
@@ -234,6 +236,11 @@
     <string name="viewer_page_content_desc">Seite %1$d</string>
     <string name="viewer_favorite_content_desc">Favorit</string>
     <string name="viewer_bottom_bar_page_format">Seite %1$d von %2$d</string>
+    <string name="viewer_bookmarks_title">Seitenlesezeichen</string>
+    <string name="viewer_bookmarks_empty">Noch keine Seiten mit Lesezeichen versehen</string>
+    <string name="viewer_bookmarks_page_format">Seite %1$d</string>
+    <string name="viewer_bookmark_add">Diese Seite mit Lesezeichen versehen</string>
+    <string name="viewer_bookmark_remove">Lesezeichen entfernen</string>
     <string name="viewer_search_no_results">Keine Ergebnisse</string>
     <string name="viewer_search_match_format">Treffer %1$d von %2$d</string>
     <string name="viewer_search_previous_match">Vorheriger Treffer</string>
@@ -985,6 +992,12 @@
     <string name="study_export_notes">Notizen exportieren</string>
     <string name="study_export_as_text">Als Text</string>
     <string name="study_export_as_pdf">Als PDF</string>
+    <string name="note_export_as_word">Als Word</string>
+    <string name="note_export_note_desc">Diese Notiz exportieren</string>
+    <string name="note_link_document_title">Dokument verknüpfen</string>
+    <string name="note_link_document_empty">Noch keine Dokumente in der Bibliothek</string>
+    <string name="note_unlink_document">Verknüpfung entfernen</string>
+    <string name="note_linked_document_desc">Verknüpftes Dokument</string>
     <string name="study_export_share_title">Notizen teilen</string>
     <string name="study_stats_icon_desc">Statistiken ansehen</string>
     <string name="study_stats_title">Lernstatistiken</string>

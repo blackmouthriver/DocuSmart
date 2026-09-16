@@ -79,8 +79,10 @@ import com.docsmart.features.viewer.domain.annotation.pdfPointToScreenPoint
 import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.presentation.components.ViewerAnnotationDetailDialog
 import com.docsmart.features.viewer.presentation.components.ViewerAnnotationToolbar
+import com.docsmart.features.viewer.presentation.components.ViewerBookmarksSheet
 import com.docsmart.features.viewer.presentation.components.ViewerBottomBar
 import com.docsmart.features.viewer.presentation.components.ViewerDeleteConfirmDialog
+import com.docsmart.features.viewer.presentation.components.ViewerLinkedNotesDialog
 import com.docsmart.features.viewer.presentation.components.ViewerNoteInputDialog
 import com.docsmart.features.viewer.presentation.components.ViewerRenameDialog
 import com.docsmart.features.viewer.presentation.components.ViewerShareChoiceDialog
@@ -188,6 +190,14 @@ fun ViewerScreen(
         )
     }
 
+    // ── Backlog UX #50: notas de Modo Estudio vinculadas a este documento ────
+    if (uiState.showLinkedNotesDialog) {
+        ViewerLinkedNotesDialog(
+            notes     = uiState.linkedNotes,
+            onDismiss = { viewModel.dismissLinkedNotesDialog() }
+        )
+    }
+
     // ── Dialog de contraseña PDF ──────────────────────────────────────────────
     if (uiState.requiresPassword) {
         PdfPasswordDialog(
@@ -263,9 +273,19 @@ fun ViewerScreen(
                         key(fileUri?.toString()) {
                             PdfViewerContent(
                                 uri           = fileUri,
-                                targetPage    = uiState.pdfSearchMatches
-                                    .getOrNull(uiState.pdfSearchIndex)
-                                    ?.minus(1),
+                                // Backlog UX #47/#48: un salto pendiente
+                                // (marcador tocado o última página vista al
+                                // abrir) tiene prioridad sobre el resultado
+                                // de búsqueda -- ambos son mutuamente
+                                // excluyentes en la práctica (no se puede
+                                // buscar y tocar un marcador en el mismo
+                                // instante), así que el orden solo importa
+                                // el primer frame tras cualquiera de los dos.
+                                targetPage    = uiState.pendingPageJump
+                                    ?: uiState.pdfSearchMatches
+                                        .getOrNull(uiState.pdfSearchIndex)
+                                        ?.minus(1),
+                                onTargetPageConsumed = { viewModel.onPageJumpConsumed() },
                                 highlights           = uiState.pdfSearchHighlights,
                                 onPageChanged        = { page, total -> viewModel.onPageChanged(page, total) },
                                 onTap                = { viewModel.toggleControls() },
@@ -360,9 +380,21 @@ fun ViewerScreen(
                 )
             }
             ViewerBottomBar(
-                currentPage = uiState.currentPage,
-                totalPages  = uiState.totalPages,
-                visible     = uiState.showControls
+                currentPage             = uiState.currentPage,
+                totalPages              = uiState.totalPages,
+                visible                 = uiState.showControls,
+                isCurrentPageBookmarked = uiState.currentPage in uiState.bookmarkedPages,
+                onToggleBookmark        = { viewModel.toggleBookmarkCurrentPage() },
+                onShowBookmarks         = { viewModel.showBookmarksSheet() }
+            )
+        }
+
+        if (uiState.showBookmarksSheet) {
+            ViewerBookmarksSheet(
+                bookmarkedPages = uiState.bookmarkedPages.sorted(),
+                onNavigate      = { page -> viewModel.navigateToBookmark(page) },
+                onRemove        = { page -> viewModel.removeBookmark(page) },
+                onDismiss       = { viewModel.dismissBookmarksSheet() }
             )
         }
     }
@@ -480,6 +512,8 @@ private fun BoxScope.ViewerTopBarSection(
             }
         },
         isReadOnlyPreview = uiState.isReadOnlyPreview,
+        linkedNotesCount  = uiState.linkedNotes.size,
+        onOpenLinkedNotesClick = { viewModel.showLinkedNotesDialog() },
         modifier        = Modifier.align(Alignment.TopCenter)
     )
 
@@ -714,6 +748,7 @@ private val NoteHitRadiusDp    = 22.dp // más grande que el marcador visual -- 
 private fun PdfViewerContent(
     uri          : Uri?,
     targetPage   : Int?,
+    onTargetPageConsumed: () -> Unit = {},
     highlights   : Map<Int, List<PdfMatchRect>>,
     onPageChanged: (Int, Int) -> Unit,
     onTap        : () -> Unit,
@@ -736,9 +771,19 @@ private fun PdfViewerContent(
     val noteHitRadiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { NoteHitRadiusDp.toPx() }
 
     LaunchedEffect(targetPage, pages.size) {
-        if (targetPage != null && targetPage in pages.indices) {
+        if (pages.isEmpty() || targetPage == null) return@LaunchedEffect
+        if (targetPage in pages.indices) {
             listState.animateScrollToItem(targetPage)
         }
+        // Backlog UX #47/#48: avisa al ViewModel para que limpie
+        // pendingPageJump siempre que ya se resolvió, incluso si el salto
+        // no se hizo por estar fuera de rango (ej. una "última página
+        // vista" guardada de una versión más larga del mismo documento,
+        // reemplazado luego por una más corta) -- sin esto, un
+        // pendingPageJump inválido queda pegado en el estado para siempre y
+        // bloquea cualquier salto de búsqueda futuro en la misma sesión
+        // (targetPage siempre prioriza pendingPageJump sobre la búsqueda).
+        onTargetPageConsumed()
     }
 
     LaunchedEffect(uri) {

@@ -74,7 +74,13 @@ class ViewerSearchTest {
             // parámetros con HU-46 (migración de anotaciones) -- ver
             // ViewerScreenTest.kt para el mismo fix.
             annotationDao = mockk(relaxed = true),
-            flattenAnnotationsPdfUseCase = mockk(relaxed = true)
+            flattenAnnotationsPdfUseCase = mockk(relaxed = true),
+            // Backlog UX #47/#48: marcadores de página + última página
+            // vista, mismo criterio que annotationDao arriba.
+            pageBookmarkDao = mockk(relaxed = true),
+            lastViewedPageDao = mockk(relaxed = true),
+            // Backlog UX #50: notas de Modo Estudio vinculadas.
+            noteDao = mockk(relaxed = true)
         )
     }
 

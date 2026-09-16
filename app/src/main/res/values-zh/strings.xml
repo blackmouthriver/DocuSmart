@@ -182,6 +182,8 @@
     <string name="viewer_more_options">更多选项</string>
     <string name="viewer_convert">转换</string>
     <string name="viewer_create_qr">生成二维码</string>
+    <string name="viewer_linked_notes">已关联笔记 (%1$d)</string>
+    <string name="viewer_linked_notes_title">已关联笔记</string>
     <string name="viewer_rename">重命名</string>
     <string name="viewer_delete">删除</string>
     <string name="viewer_rename_title">重命名文档</string>
@@ -234,6 +236,11 @@
     <string name="viewer_page_content_desc">第 %1$d 页</string>
     <string name="viewer_favorite_content_desc">收藏</string>
     <string name="viewer_bottom_bar_page_format">第 %1$d 页，共 %2$d 页</string>
+    <string name="viewer_bookmarks_title">页面书签</string>
+    <string name="viewer_bookmarks_empty">还没有添加书签的页面</string>
+    <string name="viewer_bookmarks_page_format">第 %1$d 页</string>
+    <string name="viewer_bookmark_add">为此页添加书签</string>
+    <string name="viewer_bookmark_remove">移除书签</string>
     <string name="viewer_search_no_results">无结果</string>
     <string name="viewer_search_match_format">第 %1$d 项，共 %2$d 项匹配</string>
     <string name="viewer_search_previous_match">上一个匹配项</string>
@@ -989,6 +996,12 @@
     <string name="study_export_notes">导出笔记</string>
     <string name="study_export_as_text">导出为文本</string>
     <string name="study_export_as_pdf">导出为 PDF</string>
+    <string name="note_export_as_word">导出为 Word</string>
+    <string name="note_export_note_desc">导出这条笔记</string>
+    <string name="note_link_document_title">关联文档</string>
+    <string name="note_link_document_empty">资料库中还没有文档</string>
+    <string name="note_unlink_document">取消关联</string>
+    <string name="note_linked_document_desc">已关联文档</string>
     <string name="study_export_share_title">分享笔记</string>
     <string name="study_stats_icon_desc">查看统计信息</string>
     <string name="study_stats_title">学习统计</string>

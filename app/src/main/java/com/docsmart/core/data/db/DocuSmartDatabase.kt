@@ -7,16 +7,19 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 // exportSchema = false: sin historial de migraciones que verificar todavía.
-// version=3 agrega la tabla `annotations` (HU-46) vía MIGRATION_2_3 --
-// a diferencia del salto anterior (version=2, trash_entries), acá SÍ hace
-// falta una migración explícita en vez de fallbackToDestructiveMigration:
-// `trash_entries` ya contiene datos reales de usuarios en producción
-// (documentos movidos a la papelera) y dropAllTables=true en
-// DatabaseModule borraría esa tabla completa en cuanto alguien actualice a
-// esta versión si no hay una ruta de migración real registrada.
+// version=5 agrega `notes`/`note_images` (backlog UX #49-#52, reemplazan
+// SavedNote/StudyNotesStorage -- SharedPreferences con toda la lista como
+// un único JSON, sin documentId indexado ni borrado en cascada posible)
+// vía MIGRATION_4_5, mismo criterio que los saltos anteriores:
+// dropAllTables=true en DatabaseModule borraría datos reales de usuarios
+// si no hay una ruta de migración real registrada para cada versión nueva.
 @Database(
-    entities = [DocumentHistoryEntry::class, TrashEntry::class, AnnotationEntity::class],
-    version = 3,
+    entities = [
+        DocumentHistoryEntry::class, TrashEntry::class, AnnotationEntity::class,
+        PageBookmarkEntity::class, LastViewedPageEntity::class,
+        NoteEntity::class, NoteImageEntity::class
+    ],
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(AnnotationTypeConverter::class)
@@ -24,6 +27,9 @@ abstract class DocuSmartDatabase : RoomDatabase() {
     abstract fun documentHistoryDao(): DocumentHistoryDao
     abstract fun trashDao(): TrashDao
     abstract fun annotationDao(): AnnotationDao
+    abstract fun pageBookmarkDao(): PageBookmarkDao
+    abstract fun lastViewedPageDao(): LastViewedPageDao
+    abstract fun noteDao(): NoteDao
 }
 
 val MIGRATION_2_3 = object : Migration(2, 3) {
@@ -46,5 +52,60 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
             """.trimIndent()
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS index_annotations_documentId ON annotations(documentId)")
+    }
+}
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS page_bookmarks (
+                documentId TEXT NOT NULL,
+                page INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL,
+                PRIMARY KEY(documentId, page)
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_page_bookmarks_documentId ON page_bookmarks(documentId)")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS last_viewed_page (
+                documentId TEXT NOT NULL PRIMARY KEY,
+                page INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS notes (
+                id TEXT NOT NULL PRIMARY KEY,
+                title TEXT NOT NULL,
+                text TEXT NOT NULL,
+                createdAt INTEGER NOT NULL,
+                documentId TEXT,
+                reminderAt INTEGER
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_documentId ON notes(documentId)")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS note_images (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                noteId TEXT NOT NULL,
+                filePath TEXT NOT NULL,
+                position INTEGER NOT NULL,
+                FOREIGN KEY(noteId) REFERENCES notes(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_note_images_noteId ON note_images(noteId)")
     }
 }

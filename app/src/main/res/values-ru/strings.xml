@@ -182,6 +182,8 @@
     <string name="viewer_more_options">Дополнительные параметры</string>
     <string name="viewer_convert">Конвертировать</string>
     <string name="viewer_create_qr">Создать QR-код</string>
+    <string name="viewer_linked_notes">Связанные заметки (%1$d)</string>
+    <string name="viewer_linked_notes_title">Связанные заметки</string>
     <string name="viewer_rename">Переименовать</string>
     <string name="viewer_delete">Удалить</string>
     <string name="viewer_rename_title">Переименовать документ</string>
@@ -234,6 +236,11 @@
     <string name="viewer_page_content_desc">Страница %1$d</string>
     <string name="viewer_favorite_content_desc">Избранное</string>
     <string name="viewer_bottom_bar_page_format">Страница %1$d из %2$d</string>
+    <string name="viewer_bookmarks_title">Закладки страниц</string>
+    <string name="viewer_bookmarks_empty">Пока нет страниц с закладками</string>
+    <string name="viewer_bookmarks_page_format">Страница %1$d</string>
+    <string name="viewer_bookmark_add">Добавить закладку на эту страницу</string>
+    <string name="viewer_bookmark_remove">Удалить закладку</string>
     <string name="viewer_search_no_results">Нет результатов</string>
     <string name="viewer_search_match_format">Совпадение %1$d из %2$d</string>
     <string name="viewer_search_previous_match">Предыдущее совпадение</string>
@@ -985,6 +992,12 @@
     <string name="study_export_notes">Экспортировать заметки</string>
     <string name="study_export_as_text">Как текст</string>
     <string name="study_export_as_pdf">Как PDF</string>
+    <string name="note_export_as_word">Как Word</string>
+    <string name="note_export_note_desc">Экспортировать эту заметку</string>
+    <string name="note_link_document_title">Связать документ</string>
+    <string name="note_link_document_empty">В библиотеке пока нет документов</string>
+    <string name="note_unlink_document">Убрать связь</string>
+    <string name="note_linked_document_desc">Связанный документ</string>
     <string name="study_export_share_title">Поделиться заметками</string>
     <string name="study_stats_icon_desc">Посмотреть статистику</string>
     <string name="study_stats_title">Статистика учёбы</string>

@@ -76,18 +76,14 @@ class SecurityScreenTest {
             // pero este builder nunca se actualizó, dejando
             // compileDebugAndroidTestKotlin roto para todo el módulo.
             mediaDeletePermission = mockk(relaxed = true),
-            // Hallazgo real 2026-09-15 (CI): SecurityViewModel ganó
-            // annotationDao (migración de anotaciones del Visor al mover/
-            // restaurar de Carpeta Segura) pero este builder tampoco se
-            // actualizó -- mismo bug de fondo que mediaDeletePermission
-            // arriba, esta vez detectado por compileDebugAndroidTestKotlin
-            // en CI (no corre localmente sin un dispositivo/emulador).
-            annotationDao = mockk(relaxed = true),
-            // Hallazgo real 2026-09-16: SecurityViewModel ganó
-            // favoritesRepository (migración de favoritos/alias al mover/
-            // restaurar de Carpeta Segura, hallazgo #50) -- mismo bug de
-            // fondo que annotationDao arriba.
-            favoritesRepository = mockk(relaxed = true),
+            // Hallazgo real 2026-09-15/16 (CI): SecurityViewModel ganó
+            // dependencias (migración de anotaciones/favoritos al mover/
+            // restaurar de Carpeta Segura) y este builder no se actualizaba
+            // en su momento -- mismo bug de fondo, detectado por
+            // compileDebugAndroidTestKotlin en CI (no corre localmente sin
+            // un dispositivo/emulador). Ahora consolidado en
+            // DocumentIdentityMaintenance.
+            documentIdentityMaintenance = mockk(relaxed = true),
             // Hallazgo real de la revisión de seguridad adversarial de este
             // mismo lote (2026-09-16): SecurityViewModel ganó
             // appLifecycleTracker (envoltorio inyectable sobre

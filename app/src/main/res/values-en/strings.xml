@@ -182,6 +182,8 @@
     <string name="viewer_more_options">More options</string>
     <string name="viewer_convert">Convert</string>
     <string name="viewer_create_qr">Create QR</string>
+    <string name="viewer_linked_notes">Linked notes (%1$d)</string>
+    <string name="viewer_linked_notes_title">Linked notes</string>
     <string name="viewer_rename">Rename</string>
     <string name="viewer_delete">Delete</string>
     <string name="viewer_rename_title">Rename document</string>
@@ -236,6 +238,11 @@
     <string name="viewer_page_content_desc">Page %1$d</string>
     <string name="viewer_favorite_content_desc">Favorite</string>
     <string name="viewer_bottom_bar_page_format">Page %1$d of %2$d</string>
+    <string name="viewer_bookmarks_title">Page bookmarks</string>
+    <string name="viewer_bookmarks_empty">No bookmarked pages yet</string>
+    <string name="viewer_bookmarks_page_format">Page %1$d</string>
+    <string name="viewer_bookmark_add">Bookmark this page</string>
+    <string name="viewer_bookmark_remove">Remove bookmark</string>
     <string name="viewer_search_no_results">No results</string>
     <string name="viewer_search_match_format">Match %1$d of %2$d</string>
     <string name="viewer_search_previous_match">Previous match</string>
@@ -994,6 +1001,12 @@
     <string name="study_export_notes">Export notes</string>
     <string name="study_export_as_text">As text</string>
     <string name="study_export_as_pdf">As PDF</string>
+    <string name="note_export_as_word">As Word</string>
+    <string name="note_export_note_desc">Export this note</string>
+    <string name="note_link_document_title">Link document</string>
+    <string name="note_link_document_empty">No documents in your Library yet</string>
+    <string name="note_unlink_document">Remove link</string>
+    <string name="note_linked_document_desc">Linked document</string>
     <string name="study_export_share_title">Share notes</string>
     <string name="study_stats_icon_desc">View statistics</string>
     <string name="study_stats_title">Study statistics</string>

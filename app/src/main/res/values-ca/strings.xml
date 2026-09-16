@@ -193,6 +193,8 @@
     <string name="viewer_more_options">Més opcions</string>
     <string name="viewer_convert">Convertir</string>
     <string name="viewer_create_qr">Crear QR</string>
+    <string name="viewer_linked_notes">Notes vinculades (%1$d)</string>
+    <string name="viewer_linked_notes_title">Notes vinculades</string>
     <string name="viewer_rename">Reanomenar</string>
     <string name="viewer_delete">Eliminar</string>
     <string name="viewer_rename_title">Reanomenar document</string>
@@ -247,6 +249,11 @@
     <string name="viewer_page_content_desc">Pàgina %1$d</string>
     <string name="viewer_favorite_content_desc">Preferit</string>
     <string name="viewer_bottom_bar_page_format">Pàgina %1$d de %2$d</string>
+    <string name="viewer_bookmarks_title">Marcadors de pàgina</string>
+    <string name="viewer_bookmarks_empty">Encara no hi ha cap pàgina marcada</string>
+    <string name="viewer_bookmarks_page_format">Pàgina %1$d</string>
+    <string name="viewer_bookmark_add">Marca aquesta pàgina</string>
+    <string name="viewer_bookmark_remove">Treu el marcador</string>
     <string name="viewer_search_no_results">Sense resultats</string>
     <string name="viewer_search_match_format">Coincidència %1$d de %2$d</string>
     <string name="viewer_search_previous_match">Coincidència anterior</string>
@@ -1019,6 +1026,12 @@
     <string name="study_export_notes">Exportar notes</string>
     <string name="study_export_as_text">Com a text</string>
     <string name="study_export_as_pdf">Com a PDF</string>
+    <string name="note_export_as_word">Com a Word</string>
+    <string name="note_export_note_desc">Exporta aquesta nota</string>
+    <string name="note_link_document_title">Vincula un document</string>
+    <string name="note_link_document_empty">Encara no hi ha documents a la Biblioteca</string>
+    <string name="note_unlink_document">Treu el vincle</string>
+    <string name="note_linked_document_desc">Document vinculat</string>
     <string name="study_export_share_title">Compartir notes</string>
     <string name="study_stats_icon_desc">Veure estadístiques</string>
     <string name="study_stats_title">Estadístiques d\'estudi</string>

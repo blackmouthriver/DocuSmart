@@ -54,7 +54,7 @@ class DocumentRepositoryTest {
         repository = DocumentRepository(
             context, mockk<FavoritesRepository>(relaxed = true), historyDao, trashDao,
             mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
+            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
         )
         mockkStatic(Uri::class)
     }
@@ -148,11 +148,12 @@ class DocumentRepositoryTest {
     fun `renameDocument renombra un archivo real de la app y devuelve la nueva ruta`() = runTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.removeAlias(any()) } just Runs
-        coEvery { favorites.migrateId(any(), any()) } just Runs
+        val identityMaintenance = mockk<com.docsmart.core.data.DocumentIdentityMaintenance>()
+        coEvery { identityMaintenance.onIdChanged(any(), any()) } just Runs
         val repo = DocumentRepository(
             context, favorites, historyDao, trashDao,
             mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
+            identityMaintenance
         )
         val dir  = File(filesDir, "converted").apply { mkdirs() }
         val file = File(dir, "original.pdf").apply { writeText("contenido") }
@@ -164,9 +165,10 @@ class DocumentRepositoryTest {
         assertFalse(file.exists())
         coVerify { favorites.removeAlias(file.absolutePath) }
         // Hallazgo #50 (revisión general 2026-09-16): un rename físico
-        // también debe migrar el flag de favorito al nuevo id (la ruta
-        // absoluta del archivo renombrado).
-        coVerify { favorites.migrateId(file.absolutePath, File(dir, "nuevo.pdf").absolutePath) }
+        // también debe migrar favorito/anotaciones/marcadores/última página
+        // (DocumentIdentityMaintenance) al nuevo id (la ruta absoluta del
+        // archivo renombrado).
+        coVerify { identityMaintenance.onIdChanged(file.absolutePath, File(dir, "nuevo.pdf").absolutePath) }
     }
 
     @Test
@@ -176,7 +178,7 @@ class DocumentRepositoryTest {
         val repo = DocumentRepository(
             context, favorites, historyDao, trashDao,
             mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
+            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
         )
         val uriString = "content://media/external/downloads/12345"
 
@@ -193,7 +195,7 @@ class DocumentRepositoryTest {
         val repo = DocumentRepository(
             context, favorites, historyDao, trashDao,
             mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
+            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
         )
         val missing = File(filesDir, "no_existe.pdf") // File.renameTo() sobre un origen inexistente devuelve false
 

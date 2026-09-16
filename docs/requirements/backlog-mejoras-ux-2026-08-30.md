@@ -68,11 +68,11 @@ priorización para decidir qué se aborda y en qué orden.
 | 44 | Creador/Lector de QR — Historial de códigos creados y leídos | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.2 |
 | 45 | Creador de QR — Diseño personalizado (color/logo en el centro) | Mejora | Baja | Media-Alta | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.2 |
 | 46 | Visor — Anotaciones (resaltar texto, notas adhesivas) sobre el PDF | Mejora (épica) | Alta | Alta | Medio-Alto | 🆕 Propuesto 2026-09-10 — ver §34.3 |
-| 47 | Visor — Marcadores de página | Mejora | Media | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.3 |
-| 48 | Visor — Recordar la última página vista por documento (distinto de "Retomar lectura" en audio, ya existente en Modo Estudio §33) | Mejora | Media | Baja | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.3 |
-| 49 | Notas (Modo Estudio) — Adjuntar una imagen o recorte escaneado a una nota | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.4 |
-| 50 | Notas — Vincular una nota a un documento específico de la Biblioteca | Mejora | Baja | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.4 |
-| 51 | Notas — Exportar una nota a PDF/Word (reutilizando el Convertidor) | Mejora | Media | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.4 |
+| 47 | Visor — Marcadores de página | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.3 |
+| 48 | Visor — Recordar la última página vista por documento (distinto de "Retomar lectura" en audio, ya existente en Modo Estudio §33) | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.3 |
+| 49 | Notas (Modo Estudio) — Adjuntar una imagen o recorte escaneado a una nota | Mejora | Media | Media | Bajo | 🟡 Solo esquema de datos (`NoteImageEntity`, CASCADE) migrado 2026-09-16, falta el picker de cámara/galería — ver §34.4 |
+| 50 | Notas — Vincular una nota a un documento específico de la Biblioteca | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
+| 51 | Notas — Exportar una nota a PDF/Word (reutilizando el Convertidor) | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
 | 52 | Notas — Recordatorio de repaso (notificación local) | Mejora | Baja | Media | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.4 |
 | 53 | Herramientas PDF — Extraer imágenes embebidas de un PDF | Mejora | Baja | Media | Bajo | 🆕 Propuesto 2026-09-10 — única novedad real de esta categoría, ver §34.5 |
 | 54 | Monetización — Prueba gratuita de Premium (trial de 7 días) | Mejora | Alta | Media | Medio | 🆕 Propuesto 2026-09-10 — ver §34.6 |
@@ -3378,6 +3378,56 @@ documento en el Visor.
   página 8.
 - **AC2** Un documento abierto por primera vez sigue abriendo en la
   página 1 (sin cambio para el caso nuevo).
+
+### Implementado y verificado en dispositivo real (2026-09-16)
+
+- **HU-47/HU-48, ambas cerradas juntas** (mismo mecanismo de
+  persistencia): 2 tablas Room nuevas (`page_bookmarks`, clave primaria
+  compuesta `documentId`+`page`; `last_viewed_page`, una fila por
+  documento) vía `MIGRATION_3_4` (`version` 3→4). `ViewerBottomBar`
+  ganó un ícono de marcador (izquierda/derecha del indicador de
+  página) para abrir la lista (`ViewerBookmarksSheet`, `ModalBottomSheet`)
+  y marcar/desmarcar la página actual. El salto de página (marcador
+  tocado, o "última página vista" al abrir) se generalizó en
+  `ViewerUiState.pendingPageJump`, unificado con el mecanismo ya
+  existente de salto a resultado de búsqueda.
+- **Refactor de paso, motivado por agregar estas 2 tablas**: el mismo
+  bloque de 2-3 líneas (`favoritesRepository.migrateId()` +
+  `annotationDao.updateDocumentId()`, o `removeAlias()`+`removeFavorite()`+
+  `deleteByDocument()`) estaba repetido en 11 sitios (`TrashRepository`
+  ×6, `SecurityViewModel` ×4, `DocumentRepository.renameDocument()` ×1)
+  — agregar las 2 tablas nuevas ahí habría dejado 22 llamadas más
+  dispersas. Se extrajo `DocumentIdentityMaintenance` (`onIdChanged`/
+  `onPermanentlyDeleted`), reemplazando los 11 sitios existentes además
+  de cubrir las 2 tablas nuevas.
+- **Bug real encontrado en la revisión propia del código, antes de
+  verificar en dispositivo**: `pendingPageJump` nunca se limpiaba si el
+  salto quedaba fuera de rango (ej. una "última página vista" guardada
+  de una versión más larga del mismo documento, luego reemplazado por
+  una más corta) -- quedaba pegado en el estado y bloqueaba cualquier
+  salto de búsqueda futuro en la misma sesión (el salto pendiente
+  siempre tiene prioridad sobre la búsqueda). Corregido: se limpia
+  siempre que se resuelve, haya saltado o no.
+- Gauntlet completo (`compileDebugKotlin`, `detekt`, `lintDebug`,
+  `testDebugUnitTest`, `compileDebugAndroidTestKotlin`) en verde,
+  incluidos tests de integración reales contra SQLite (`PageBookmarkDaoTest`,
+  `LastViewedPageDaoTest`, mismo patrón que `DocumentHistoryDaoTest`) y
+  `DocumentIdentityMaintenanceTest`. Un intento de test de migración
+  real (abrir un archivo .db en versión 3, migrar, verificar) se
+  descartó: `BundledSQLiteDriver` (el driver de test, JVM puro) falla
+  incluso al reabrir un archivo con el MISMO esquema sin ninguna
+  migración de por medio -- limitación del driver de pruebas, no del
+  SQL de la migración real (verificado a mano, línea por línea, contra
+  el mismo patrón ya usado por `MIGRATION_2_3`, en producción).
+- Verificado en dispositivo real (Motorola Edge 30 Neo, PDF real de 8
+  páginas): marcar la página 1 y la página 6 desde la barra inferior,
+  abrir la lista y ver ambas ordenadas ascendente, tocar "Página 1"
+  desde la página 6 y confirmar el salto real, quitar un marcador desde
+  la lista (ícono de basura) y confirmar que desaparece de inmediato.
+  Cerrar el documento en la página 5, forzar el cierre de la app,
+  reabrir el mismo documento y confirmar que abre directo en la página
+  5. Sin errores en logcat (`AndroidRuntime:E`/`com.docsmart:E`) en
+  ningún punto del flujo.
 
 ### §34.4 — Notas (Modo Estudio)
 
