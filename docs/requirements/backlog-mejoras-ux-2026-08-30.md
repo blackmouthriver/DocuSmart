@@ -84,7 +84,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 60 | IA generativa on-device (Gemini Nano/AICore) — Flashcards de estudio desde una nota | Mejora | Media | Alta | Medio-Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio, ver §34.7 |
 | 61 | IA en la nube — Chat con el documento (preguntas y respuestas sobre un PDF) | Mejora | Alta | Alta | Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio previa (privacidad + costo), ver §34.7 |
 | 62 | IA en la nube — Extracción estructurada de datos de recibos/facturas | Mejora | Media | Alta | Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio previa (privacidad + costo), ver §34.7 |
-| 63 | Fondo animado — más movimiento perceptible (refinamiento del ítem 26) | Mejora | Media-Alta | Baja | Bajo | 🆕 Propuesto 2026-09-10 — ver §36 |
+| 63 | Fondo animado — más movimiento perceptible (refinamiento del ítem 26) | Mejora | Media-Alta | Baja | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §36 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle

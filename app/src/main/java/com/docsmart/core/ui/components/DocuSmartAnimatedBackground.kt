@@ -42,8 +42,10 @@ import com.docsmart.core.ui.theme.rememberAccentGradient
  * automáticamente, sin agregar una opción de personalización aparte, y sin
  * repetir el bug de colores fijos corregido antes en esta misma sesión.
  *
- * Formas geométricas con degradado que derivan muy lento (20-30s por ciclo)
- * para no verse estáticas sin llamar la atención sobre el contenido real.
+ * Formas geométricas con degradado que derivan (10-14s por ciclo, HU-63
+ * backlog UX 2026-09-10 -- el usuario reportó que la versión original,
+ * 23-30s con desplazamientos de pocos milímetros, era casi imperceptible
+ * salvo mirando fijo) sin llamar la atención sobre el contenido real.
  * Va como capa 0, detrás del contenido (ver MainActivity) -- puramente
  * decorativo, no intercepta toques.
  *
@@ -65,10 +67,14 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
     }
 
     val transition = rememberInfiniteTransition(label = "docuSmartBg")
-    val a by drift(transition, 26_000, "bgDriftA", reduceMotion)
-    val b by drift(transition, 30_000, "bgDriftB", reduceMotion)
-    val c by drift(transition, 23_000, "bgDriftC", reduceMotion)
-    val pulse by drift(transition, 12_000, "bgPulse", reduceMotion)
+    // HU-63: ciclos acortados de 26/30/23/12s a 11/13.5/10/8s -- se
+    // mantienen las 4 duraciones distintas entre sí a propósito, para que
+    // las formas no se sincronicen visualmente (mismo criterio de diseño
+    // que ya usaba la versión original).
+    val a by drift(transition, 11_000, "bgDriftA", reduceMotion)
+    val b by drift(transition, 13_500, "bgDriftB", reduceMotion)
+    val c by drift(transition, 10_000, "bgDriftC", reduceMotion)
+    val pulse by drift(transition, 8_000, "bgPulse", reduceMotion)
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize().background(base)
@@ -82,9 +88,9 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
             corner = 40.dp,
             colors = listOf(accent[0], accent[1]),
             alpha = 0.16f,
-            x = (-24).dp + (18.dp * a),
-            y = (-30).dp - (26.dp * a),
-            rotation = 8f * a
+            x = (-24).dp + (30.dp * a),
+            y = (-30).dp - (40.dp * a),
+            rotation = 14f * a
         )
 
         // Acento → oscuro, a media altura a la derecha
@@ -93,9 +99,9 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
             corner = 48.dp,
             colors = listOf(accent[1], accent[2]),
             alpha = 0.14f,
-            x = w - 144.dp - (22.dp * b),
-            y = 90.dp + (20.dp * b),
-            rotation = -6f + 12f * b
+            x = w - 144.dp - (36.dp * b),
+            y = 90.dp + (32.dp * b),
+            rotation = -10f + 20f * b
         )
 
         // Claro → oscuro, abajo a la izquierda, respira con escala
@@ -104,10 +110,10 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
             corner = 30.dp,
             colors = listOf(accent[0], accent[2]),
             alpha = 0.15f,
-            x = 40.dp + (14.dp * c),
-            y = h - 216.dp + (18.dp * c),
-            rotation = 12f - 16f * c,
-            scale = 1f + 0.08f * c
+            x = 40.dp + (24.dp * c),
+            y = h - 216.dp + (30.dp * c),
+            rotation = 16f - 28f * c,
+            scale = 1f + 0.14f * c
         )
 
         // Destello claro que respira, arriba al centro
