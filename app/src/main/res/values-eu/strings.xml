@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Hautatu hizkuntza</string>
     <string name="settings_close">Itxi</string>
+    <string name="settings_contact_support">Laguntzarekin harremanetan jarri</string>
     <string name="settings_language_subtitle">Aukeratu aplikazioaren hizkuntza</string>
     <!-- Rediseño de Ajustes 2026-09-14: Apariencia agrupa Tema/Color de
          acento/Tamaño de letra/Fondo animado/Sonidos/Idioma en una sola
@@ -187,6 +188,7 @@
     <string name="viewer_rendering">Dokumentua errendatzen…</string>
     <string name="viewer_unsupported">Formatu hau ez da bateragarria barneko ikustailearekin.</string>
     <string name="viewer_open_other">Ireki beste aplikazio batekin</string>
+    <string name="viewer_open_other_error">Ezin izan da beste aplikazio batekin ireki</string>
     <string name="viewer_more_options">Aukera gehiago</string>
     <string name="viewer_convert">Bihurtu</string>
     <string name="viewer_create_qr">Sortu QRa</string>
@@ -239,6 +241,7 @@
     <string name="viewer_format_generic">Fitxategia</string>
     <string name="viewer_pdf_password_body">\"%1$s\" pasahitzarekin babestuta dago.</string>
     <string name="viewer_search_content_desc">Bilatu dokumentuan</string>
+    <string name="viewer_page_content_desc">%1$d. orrialdea</string>
     <string name="viewer_favorite_content_desc">Gogokoa</string>
     <string name="viewer_bottom_bar_page_format">%1$d / %2$d orrialdea</string>
     <string name="viewer_search_no_results">Emaitzarik ez</string>
@@ -312,6 +315,12 @@
     <string name="converter_error_no_images_selected">Gutxienez irudi bat hautatu behar duzu</string>
     <string name="converter_error_no_images_loaded">Ezin izan da hautatutako irudirik kargatu</string>
     <string name="converter_error_generic_format">Bihurketa-errorea: %1$s</string>
+    <string name="converter_html_title_pdf">PDF dokumentua</string>
+    <string name="converter_html_page_label">%1$d. orrialdea</string>
+    <string name="converter_txt_page_label">=== %1$d. orrialdea ===</string>
+    <string name="converter_html_title_word">Word dokumentua</string>
+    <string name="converter_html_title_excel">Kalkulu-orria</string>
+    <string name="converter_pdf_slide_label">=== %1$d. diapositiba ===</string>
     <string name="converter_error_unknown">Errore ezezaguna</string>
 
     <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
@@ -571,6 +580,9 @@
     <string name="pdf_ocr_error">Errorea testua ezagutzean: %1$s</string>
     <string name="pdf_tools_unexpected_error">Ustekabeko errore bat gertatu da. Saiatu berriz fitxategi txikiago batekin.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 
@@ -870,6 +882,7 @@
     <string name="qr_document_selected">Dokumentua hautatuta ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">Ezin da fitxategi honentzako QR bat sortu</string>
     <string name="qr_local_only_hint">QR hau gailu honetan bakarrik funtzionatzen du: fitxategi lokal batera zuzentzen du, ez partekatutako kopia batera.</string>
     <string name="qr_label_url">Webgunearen URLa</string>
     <string name="qr_label_text">Mezuaren testua</string>
@@ -983,7 +996,7 @@
     <string name="study_start">Hasi</string>
     <string name="study_pomodoros_completed">Osatutako pomodoroak</string>
     <string name="study_pomodoros_hint">4 pomodoro bakoitzeko = atseden luzea</string>
-    <string name="study_pomodoro_technique_info">Pomodoro teknika: txandakatu 25 min ikasketa fokatuarekin eta 5 min atsedenarekin, kontzentratzen laguntzeko akitu gabe</string>
+    <string name="study_pomodoro_technique_info">Pomodoro teknika: txandakatu 25 min ikasketa fokatuarekin eta 5 min atsedenarekin (15 min 4 pomodorotik behin), kontzentratzen laguntzeko akitu gabe</string>
     <string name="study_extract_could_not_read">Ezin izan da fitxategia irakurri</string>
     <string name="study_extract_pdf_no_text">PDF honek ez du testu erauzgarririk. Eskaneatutako PDF bat izan daiteke.</string>
     <string name="study_extract_pdf_error">Errorea PDFa irakurtzean: %1$s</string>

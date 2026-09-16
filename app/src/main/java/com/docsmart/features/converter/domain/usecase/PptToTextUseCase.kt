@@ -104,10 +104,14 @@ class PptToTextUseCase @Inject constructor(
                 if (t.isNotBlank()) t else null
             }.joinToString("\n")
 
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada,
+    // #26, latente -- PPT_TO_TXT está oculto de la grilla hoy):
+    // hardcodeado en español pese al idioma configurado -- este es el
+    // CONTENIDO real del .txt que el usuario recibe.
     private fun buildOutputText(slideMap: Map<Int, String>): String {
         val sb = StringBuilder()
         slideMap.toSortedMap().forEach { (num, text) ->
-            sb.appendLine("=== Diapositiva $num ===")
+            sb.appendLine(context.getString(R.string.converter_pdf_slide_label, num))
             sb.appendLine(text)
             sb.appendLine()
         }

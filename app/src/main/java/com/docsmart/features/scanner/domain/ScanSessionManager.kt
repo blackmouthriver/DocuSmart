@@ -1,10 +1,13 @@
 package com.docsmart.features.scanner.domain
 
+import android.content.Context
+import com.docsmart.R
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +40,8 @@ import javax.inject.Singleton
 class ScanSessionManager @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
     private val documentRepository: DocumentRepository,
-    private val trashRepository: TrashRepository
+    private val trashRepository: TrashRepository,
+    @ApplicationContext private val context: Context
 ) {
 
     private val _scannedFiles = MutableStateFlow<List<DocumentUiModel>>(emptyList())
@@ -92,9 +96,16 @@ class ScanSessionManager @Inject constructor(
         else -> DocumentType.PDF
     }
 
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+    // unidades "B"/"KB"/"MB" hardcodeadas sin stringResource, fuera del
+    // sistema de 12 idiomas. Mismo patrón ya corregido para
+    // PdfToolsScreen (hallazgo #30 del backlog anterior).
     private fun formatFileSize(bytes: Long): String = when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        else -> String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
+        bytes < 1024 -> context.getString(R.string.file_size_bytes, bytes)
+        bytes < 1024 * 1024 -> context.getString(R.string.file_size_kb, bytes / 1024)
+        else -> context.getString(
+            R.string.file_size_mb,
+            String.format(Locale.getDefault(), "%.1f", bytes / (1024.0 * 1024.0))
+        )
     }
 }

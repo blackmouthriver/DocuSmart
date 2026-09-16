@@ -36,6 +36,10 @@ import java.io.File
 fun ConversionSuccess(
     result: ConversionResult.Success,
     savedToDownloads: Boolean,
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): sin
+    // esto, un doble-toque rápido en "Guardar" lanzaba saveToDownloads()
+    // dos veces en paralelo -- mismo patrón ya corregido para "Convertir".
+    isSaving: Boolean = false,
     onConvertAnother: () -> Unit,
     onSaveToDownloads: () -> Unit,
     onOpenDocument: () -> Unit,
@@ -166,6 +170,7 @@ fun ConversionSuccess(
             ConversionSuccessButtons(
                 result = result,
                 savedToDownloads = savedToDownloads,
+                isSaving = isSaving,
                 shareLabel = shareLabel,
                 onConvertAnother = onConvertAnother,
                 onSaveToDownloads = onSaveToDownloads,
@@ -183,6 +188,7 @@ fun ConversionSuccess(
 private fun ConversionSuccessButtons(
     result: ConversionResult.Success,
     savedToDownloads: Boolean,
+    isSaving: Boolean,
     shareLabel: String,
     onConvertAnother: () -> Unit,
     onSaveToDownloads: () -> Unit,
@@ -223,6 +229,7 @@ private fun ConversionSuccessButtons(
         if (!savedToDownloads) {
             OutlinedButton(
                 onClick = onSaveToDownloads,
+                enabled = !isSaving,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),

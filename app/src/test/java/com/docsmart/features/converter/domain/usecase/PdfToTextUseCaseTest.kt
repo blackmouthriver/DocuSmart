@@ -49,6 +49,11 @@ class PdfToTextUseCaseTest {
         // repaso general 2026-09-14) -- estos tests solo verifican el tipo
         // de resultado, no el texto exacto.
         every { context.getString(any()) } returns "error"
+        // fix #26 (repaso general 2026-09-16, cuarta pasada): el encabezado
+        // "=== Página N ===" ahora viene de context.getString(Int, vararg) en
+        // vez de un literal hardcodeado en español -- ese overload necesita
+        // su propio stub, mockk no relaxed no responde nada por defecto.
+        every { context.getString(any(), any()) } returns "=== Página N ==="
         useCase = PdfToTextUseCase(context)
     }
 

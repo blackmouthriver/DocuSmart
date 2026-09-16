@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Selecionar idioma</string>
     <string name="settings_close">Fechar</string>
+    <string name="settings_contact_support">Contatar suporte</string>
     <string name="settings_language_subtitle">Escolha o idioma do app</string>
     <string name="settings_section_appearance">Aparência</string>
     <string name="settings_tutorial">Ver tutorial</string>
@@ -177,6 +178,7 @@
     <string name="viewer_rendering">Renderizando documento…</string>
     <string name="viewer_unsupported">Este formato não é compatível com o visualizador integrado.</string>
     <string name="viewer_open_other">Abrir com outro aplicativo</string>
+    <string name="viewer_open_other_error">Não foi possível abrir com outro aplicativo</string>
     <string name="viewer_more_options">Mais opções</string>
     <string name="viewer_convert">Converter</string>
     <string name="viewer_create_qr">Criar QR</string>
@@ -229,6 +231,7 @@
     <string name="viewer_format_generic">Arquivo</string>
     <string name="viewer_pdf_password_body">\"%1$s\" está protegido por senha.</string>
     <string name="viewer_search_content_desc">Pesquisar no documento</string>
+    <string name="viewer_page_content_desc">Página %1$d</string>
     <string name="viewer_favorite_content_desc">Favorito</string>
     <string name="viewer_bottom_bar_page_format">Página %1$d de %2$d</string>
     <string name="viewer_search_no_results">Nenhum resultado</string>
@@ -302,6 +305,12 @@
     <string name="converter_error_no_images_selected">Você deve selecionar pelo menos uma imagem</string>
     <string name="converter_error_no_images_loaded">Não foi possível carregar nenhuma das imagens selecionadas</string>
     <string name="converter_error_generic_format">Erro ao converter: %1$s</string>
+    <string name="converter_html_title_pdf">Documento PDF</string>
+    <string name="converter_html_page_label">Página %1$d</string>
+    <string name="converter_txt_page_label">=== Página %1$d ===</string>
+    <string name="converter_html_title_word">Documento Word</string>
+    <string name="converter_html_title_excel">Planilha</string>
+    <string name="converter_pdf_slide_label">=== Slide %1$d ===</string>
     <string name="converter_error_unknown">Erro desconhecido</string>
 
     <!-- ── Ferramentas PDF: tela principal e cartão de resultado ── -->
@@ -561,6 +570,9 @@
     <string name="pdf_ocr_error">Erro ao reconhecer o texto: %1$s</string>
     <string name="pdf_tools_unexpected_error">Ocorreu um erro inesperado. Tente novamente com um arquivo menor.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── Estado vazio da Início ───────────────────────────── -->
 
@@ -850,6 +862,7 @@
     <string name="qr_document_selected">Documento selecionado ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">Não é possível criar um QR para este arquivo</string>
     <string name="qr_local_only_hint">Este QR só funciona neste dispositivo: aponta para um arquivo local, não para uma cópia compartilhada.</string>
     <string name="qr_label_url">URL do site</string>
     <string name="qr_label_text">Texto da mensagem</string>
@@ -961,7 +974,7 @@
     <string name="study_start">Iniciar</string>
     <string name="study_pomodoros_completed">Pomodoros concluídos</string>
     <string name="study_pomodoros_hint">A cada 4 pomodoros = descanso longo</string>
-    <string name="study_pomodoro_technique_info">Técnica Pomodoro: alterna 25 min de estudo focado com 5 min de descanso para ajudar você a se concentrar sem se esgotar</string>
+    <string name="study_pomodoro_technique_info">Técnica Pomodoro: alterna 25 min de estudo focado com 5 min de descanso (15 min a cada 4 pomodoros) para ajudar você a se concentrar sem se esgotar</string>
     <string name="study_extract_could_not_read">Não foi possível ler o arquivo</string>
     <string name="study_extract_pdf_no_text">Este PDF não contém texto extraível. Pode ser um PDF escaneado.</string>
     <string name="study_extract_pdf_error">Erro ao ler o PDF: %1$s</string>

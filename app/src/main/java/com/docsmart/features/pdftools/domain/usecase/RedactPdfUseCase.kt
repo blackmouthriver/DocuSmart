@@ -70,11 +70,17 @@ class RedactPdfUseCase @Inject constructor(
         }
 
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si algo lanzaba a
+        // mitad de camino, mismo patrón ya corregido en Compare/Compress/
+        // OCR (hallazgos #25-27).
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val outputFile = createOutputFile(outputFileName ?: "Censurado")
+            outputFile = createOutputFile(outputFileName ?: "Censurado")
 
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
                 if (pdf.numberOfPages == 0) {
@@ -83,7 +89,7 @@ class RedactPdfUseCase @Inject constructor(
                     // abrirse -- sin este delete() quedaba huérfano en
                     // filesDir/pdftools para siempre (mismo bug ya corregido
                     // antes en NumberPagesUseCase/WatermarkPdfUseCase).
-                    outputFile.delete()
+                    outputFile!!.delete()
                     return@withContext PdfToolResult.Error(messages.noPages)
                 }
 
@@ -99,7 +105,7 @@ class RedactPdfUseCase @Inject constructor(
                 PdfCleaner.cleanUp(pdf, locations)
             }
 
-            if (outputFile.length() == 0L) {
+            if (outputFile!!.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
@@ -111,6 +117,7 @@ class RedactPdfUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al censurar PDF")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()

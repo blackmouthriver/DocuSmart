@@ -262,19 +262,25 @@ private fun strokesToPngBytes(strokes: List<List<Offset>>, width: Int, height: I
     return out.toByteArray()
 }
 
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): `fd`/
+// `renderer` solo se cerraban y `file` solo se borraba en el camino feliz
+// -- un PDF con contraseña de propietario (PdfRenderer(fd) lanza) dejaba
+// los dos sin cerrar y el archivo temporal huérfano en cacheDir en cada
+// intento. `.use{}` anidado + `finally { file.delete() }`.
 private fun loadTotalPages(context: android.content.Context, pdfUri: Uri, onTotalPagesLoaded: (Int) -> Unit) {
+    val file = File(context.cacheDir, "sign_pages_${System.currentTimeMillis()}.pdf")
     try {
-        val file = File(context.cacheDir, "sign_pages_${System.currentTimeMillis()}.pdf")
         context.contentResolver.openInputStream(pdfUri)?.use { input ->
             file.outputStream().use { output -> input.copyTo(output) }
         }
-        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        val renderer = PdfRenderer(fd)
-        onTotalPagesLoaded(renderer.pageCount)
-        renderer.close()
-        fd.close()
-        file.delete()
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { renderer ->
+                onTotalPagesLoaded(renderer.pageCount)
+            }
+        }
     } catch (e: Exception) {
         Timber.e(e, "SignPdfScreen: error obteniendo el total de páginas")
+    } finally {
+        file.delete()
     }
 }

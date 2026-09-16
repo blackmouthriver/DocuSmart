@@ -219,4 +219,19 @@ class QrContentFormatTest {
         assertEquals(LocalDateTime.of(2026, 1, 1, 10, 0), parsed?.start)
         assertEquals(LocalDateTime.of(2026, 1, 1, 10, 0), parsed?.end)
     }
+
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): un
+    // evento "de todo el día" (VALUE=DATE, sin hora) no matcheaba el
+    // formato datetime esperado -- parseVEventPayload devolvía null y
+    // "Agregar al calendario" no hacía nada, sin aviso.
+    @Test
+    fun `parseVEventPayload con evento de todo el dia -sin hora- usa medianoche`() {
+        val payload = "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Feriado\n" +
+            "DTSTART;VALUE=DATE:20261225\nDTEND;VALUE=DATE:20261226\nEND:VEVENT\nEND:VCALENDAR"
+
+        val parsed = parseVEventPayload(payload)
+
+        assertEquals(LocalDateTime.of(2026, 12, 25, 0, 0), parsed?.start)
+        assertEquals(LocalDateTime.of(2026, 12, 26, 0, 0), parsed?.end)
+    }
 }

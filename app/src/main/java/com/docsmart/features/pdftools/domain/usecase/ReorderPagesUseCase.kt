@@ -50,11 +50,17 @@ class ReorderPagesUseCase @Inject constructor(
         }
 
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si copyPagesTo()
+        // lanzaba a mitad del loop, mismo patrón ya corregido en Compare/
+        // Compress/OCR (hallazgos #25-27).
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val outputFile = createOutputFile(outputFileName ?: "Reordered")
+            outputFile = createOutputFile(outputFileName ?: "Reordered")
 
             // Bug real corregido 2026-09-08: `sourcePdf`/`destPdf` antes se
             // cerraban a mano solo en el camino feliz -- si `copyPagesTo`
@@ -70,7 +76,7 @@ class ReorderPagesUseCase @Inject constructor(
                 }
             }
 
-            if (outputFile.length() == 0L) {
+            if (outputFile!!.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
@@ -82,6 +88,7 @@ class ReorderPagesUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al reordenar páginas")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()

@@ -78,12 +78,22 @@ class PdfToHtmlUseCase @Inject constructor(
     // Extraído de invoke() -- baja la complejidad ciclomática bajo el
     // umbral de detekt (el hallazgo #40 sumó una rama más al agregar
     // .use{}).
+    //
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada,
+    // #26): `lang="es"`, el título y "Página N" quedaban hardcodeados en
+    // español pese al idioma configurado -- a diferencia de los mensajes
+    // de error (ya corregidos), este es el CONTENIDO real del HTML que el
+    // usuario recibe. `lang` usa el idioma activo de la app (no el del
+    // texto extraído del PDF, imposible de detectar acá) en vez de "es"
+    // fijo.
     private fun buildHtml(pageTexts: List<Pair<Int, String>>): String {
+        val htmlLang = Locale.getDefault().language
+        val title    = context.getString(R.string.converter_html_title_pdf)
         val sb = StringBuilder()
         sb.appendLine("""<!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8">
+<html lang="$htmlLang"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Documento PDF</title>
+<title>$title</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #333; }
   .page { border-bottom: 2px solid #e0e0e0; padding-bottom: 24px; margin-bottom: 24px; }
@@ -93,8 +103,9 @@ class PdfToHtmlUseCase @Inject constructor(
 </head><body>""")
 
         pageTexts.forEach { (pageNum, text) ->
+            val pageLabel = context.getString(R.string.converter_html_page_label, pageNum)
             sb.appendLine("<div class=\"page\">")
-            sb.appendLine("<div class=\"page-num\">Página $pageNum</div>")
+            sb.appendLine("<div class=\"page-num\">$pageLabel</div>")
             text.split("\n").forEach { line ->
                 val escaped = line.trim()
                     .replace("&", "&amp;")

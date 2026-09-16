@@ -38,6 +38,14 @@ class PptToPdfUseCase @Inject constructor(
         pptUri: Uri,
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada,
+        // #22, latente -- PPT_TO_PDF está oculto de la grilla hoy):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si algo lanzaba
+        // después de que PdfWriter(outputFile) ya creó el archivo en
+        // disco, mismo patrón ya corregido en Herramientas PDF
+        // (hallazgos #25-27) y en el resto del Convertidor.
+        var outputFile: File? = null
         try {
             // Hallazgo real #38: ConversionType declara .ppt (OLE2, pre-
             // Office 2007) como origen soportado, pero este parser solo
@@ -60,29 +68,37 @@ class PptToPdfUseCase @Inject constructor(
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName = fileName ?: generateTimestamp()
-            val outputFile = File(outputDir, "$baseName.pdf")
+            outputFile = File(outputDir, "$baseName.pdf")
 
             // Bug real encontrado 2026-09-14 (repaso general): document.close()
             // manual solo se alcanzaba en el camino feliz -- una excepción al
             // escribir una diapositiva dejaba el PdfDocument/Document sin
             // cerrar, con el FileOutputStream de outputFile abierto. .use{}
             // garantiza el cierre pase lo que pase.
-            val pdfDoc = PdfDocument(PdfWriter(outputFile))
+            val pdfDoc = PdfDocument(PdfWriter(outputFile!!))
             Document(pdfDoc).use { document ->
                 slideMap.toSortedMap().entries.forEachIndexed { index, (num, text) ->
-                    document.add(Paragraph("=== Diapositiva $num ===").setBold())
+                    // Hallazgo real de la revisión general 2026-09-16
+                    // (cuarta pasada, #26, latente -- PPT_TO_PDF está
+                    // oculto de la grilla hoy): hardcodeado en español
+                    // pese al idioma configurado -- este es el CONTENIDO
+                    // real del PDF que el usuario recibe.
+                    document.add(
+                        Paragraph(context.getString(R.string.converter_pdf_slide_label, num)).setBold()
+                    )
                     document.add(Paragraph(text))
                     if (index < slideMap.size - 1) document.add(AreaBreak())
                 }
             }
 
             ConversionResult.Success(
-                outputFile = outputFile,
+                outputFile = outputFile!!,
                 pageCount = slideMap.size,
-                fileSizeKb = (outputFile.length() / 1024).toInt()
+                fileSizeKb = (outputFile!!.length() / 1024).toInt()
             )
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo PowerPoint a PDF")
+            outputFile?.delete()
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )

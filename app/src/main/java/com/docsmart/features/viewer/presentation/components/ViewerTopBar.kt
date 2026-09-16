@@ -42,6 +42,12 @@ fun ViewerTopBar(
     // HU-46: alterna el modo de anotación (resaltar/nota) -- solo PDF.
     isAnnotating: Boolean = false,
     onAnnotateClick: () -> Unit = {},
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): una
+    // vista previa de Carpeta Segura (ver ViewerUiState.isReadOnlyPreview)
+    // opera sobre una copia efímera, no el documento real -- Anotar/
+    // Renombrar/Eliminar quedan ocultos para no simular acciones que en
+    // realidad no tocan el archivo protegido.
+    isReadOnlyPreview: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -118,7 +124,8 @@ fun ViewerTopBar(
 
                 // HU-46: Anotar (resaltar/nota) -- solo tiene sentido sobre
                 // un PDF real, mismo criterio que "Hacer buscable"/"Firmar".
-                if (isPdf) {
+                // Oculto en vista previa de solo lectura (ver arriba).
+                if (isPdf && !isReadOnlyPreview) {
                     IconButton(onClick = onAnnotateClick) {
                         Icon(
                             imageVector = Icons.Rounded.EditNote,
@@ -132,7 +139,8 @@ fun ViewerTopBar(
                 // Más opciones (renombrar/eliminar/OCR/firmar/Carpeta Segura)
                 // — RF-VIS-06/HU-42
                 ViewerMoreOptionsMenu(
-                    isPdf   = isPdf,
+                    isPdf             = isPdf,
+                    isReadOnlyPreview = isReadOnlyPreview,
                     actions = ViewerMenuActions(
                         onConvert            = onConvertClick,
                         onCreateQr           = onCreateQrClick,
@@ -161,7 +169,7 @@ private data class ViewerMenuActions(
 )
 
 @Composable
-private fun ViewerMoreOptionsMenu(isPdf: Boolean, actions: ViewerMenuActions) {
+private fun ViewerMoreOptionsMenu(isPdf: Boolean, isReadOnlyPreview: Boolean, actions: ViewerMenuActions) {
     var menuExpanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { menuExpanded = true }) {
@@ -208,22 +216,29 @@ private fun ViewerMoreOptionsMenu(isPdf: Boolean, actions: ViewerMenuActions) {
                 leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
                 onClick = { menuExpanded = false; actions.onMoveToSecureFolder() }
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.viewer_rename)) },
-                leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
-                onClick = { menuExpanded = false; actions.onRename() }
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.viewer_delete)) },
-                leadingIcon = {
-                    Icon(
-                        Icons.Rounded.DeleteOutline,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                },
-                onClick = { menuExpanded = false; actions.onDelete() }
-            )
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta
+            // pasada): renombrar/eliminar durante una vista previa de
+            // Carpeta Segura solo tocan la copia efímera de caché, nunca el
+            // archivo protegido real -- simulan una acción que en realidad
+            // no pasó. Se ocultan en modo de solo lectura.
+            if (!isReadOnlyPreview) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.viewer_rename)) },
+                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                    onClick = { menuExpanded = false; actions.onRename() }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.viewer_delete)) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Rounded.DeleteOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    },
+                    onClick = { menuExpanded = false; actions.onDelete() }
+                )
+            }
         }
     }
 }

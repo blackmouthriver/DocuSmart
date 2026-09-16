@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">言語を選択</string>
     <string name="settings_close">閉じる</string>
+    <string name="settings_contact_support">サポートに問い合わせる</string>
     <string name="settings_language_subtitle">アプリの言語を選択してください</string>
     <string name="settings_section_appearance">外観</string>
     <string name="settings_tutorial">チュートリアルを見る</string>
@@ -177,6 +178,7 @@
     <string name="viewer_rendering">ドキュメントをレンダリング中…</string>
     <string name="viewer_unsupported">この形式は内蔵ビューアでサポートされていません。</string>
     <string name="viewer_open_other">別のアプリで開く</string>
+    <string name="viewer_open_other_error">他のアプリで開けませんでした</string>
     <string name="viewer_more_options">その他のオプション</string>
     <string name="viewer_convert">変換</string>
     <string name="viewer_create_qr">QRを作成</string>
@@ -229,6 +231,7 @@
     <string name="viewer_format_generic">ファイル</string>
     <string name="viewer_pdf_password_body">\"%1$s\" はパスワードで保護されています。</string>
     <string name="viewer_search_content_desc">ドキュメント内を検索</string>
+    <string name="viewer_page_content_desc">%1$dページ</string>
     <string name="viewer_favorite_content_desc">お気に入り</string>
     <string name="viewer_bottom_bar_page_format">%2$d ページ中 %1$d ページ目</string>
     <string name="viewer_search_no_results">結果なし</string>
@@ -302,6 +305,12 @@
     <string name="converter_error_no_images_selected">少なくとも1枚の画像を選択してください</string>
     <string name="converter_error_no_images_loaded">選択した画像を読み込めませんでした</string>
     <string name="converter_error_generic_format">変換エラー: %1$s</string>
+    <string name="converter_html_title_pdf">PDFドキュメント</string>
+    <string name="converter_html_page_label">%1$dページ</string>
+    <string name="converter_txt_page_label">=== %1$dページ ===</string>
+    <string name="converter_html_title_word">Wordドキュメント</string>
+    <string name="converter_html_title_excel">スプレッドシート</string>
+    <string name="converter_pdf_slide_label">=== スライド %1$d ===</string>
     <string name="converter_error_unknown">不明なエラー</string>
 
     <!-- ── PDFツール: メイン画面と結果カード ── -->
@@ -561,6 +570,9 @@
     <string name="pdf_ocr_error">テキストの認識中にエラーが発生しました: %1$s</string>
     <string name="pdf_tools_unexpected_error">予期しないエラーが発生しました。もっと小さいファイルで再度お試しください。</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── ホームの空の状態 ───────────────────────────── -->
 
@@ -854,6 +866,7 @@
     <string name="qr_document_selected">ドキュメントを選択しました ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">このファイルのQRコードは作成できません</string>
     <string name="qr_local_only_hint">このQRコードはこの端末でのみ有効です。共有されたコピーではなくローカルファイルを指しています。</string>
     <string name="qr_label_url">ウェブサイトのURL</string>
     <string name="qr_label_text">メッセージのテキスト</string>
@@ -965,7 +978,7 @@
     <string name="study_start">開始</string>
     <string name="study_pomodoros_completed">完了したポモドーロ</string>
     <string name="study_pomodoros_hint">4回ごとに長い休憩があります</string>
-    <string name="study_pomodoro_technique_info">ポモドーロ・テクニック: 25分の集中学習と5分の休憩を繰り返すことで、疲れずに集中力を保てます</string>
+    <string name="study_pomodoro_technique_info">ポモドーロ・テクニック: 25分の集中学習と5分の休憩を繰り返し（4回ごとに15分の長い休憩）、疲れずに集中力を保てます</string>
     <string name="study_extract_could_not_read">ファイルを読み取れませんでした</string>
     <string name="study_extract_pdf_no_text">このPDFには抽出可能なテキストが含まれていません。スキャンされたPDFの可能性があります。</string>
     <string name="study_extract_pdf_error">PDFの読み取り中にエラーが発生しました: %1$s</string>

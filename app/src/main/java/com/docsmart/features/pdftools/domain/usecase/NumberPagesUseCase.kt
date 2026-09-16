@@ -55,11 +55,17 @@ class NumberPagesUseCase @Inject constructor(
         messages      : NumberPagesMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si algo lanzaba a
+        // mitad de camino, mismo patrón ya corregido en Compare/Compress/
+        // OCR (hallazgos #25-27).
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val outputFile = createOutputFile(outputFileName ?: "Numbered")
+            outputFile = createOutputFile(outputFileName ?: "Numbered")
             val font       = PdfFontFactory.createFont(StandardFonts.HELVETICA)
 
             // .use{} en vez de pdf.close() manual (mismo criterio ya
@@ -85,11 +91,11 @@ class NumberPagesUseCase @Inject constructor(
             }
 
             if (totalPages == 0) {
-                outputFile.delete()
+                outputFile!!.delete()
                 return@withContext PdfToolResult.Error(messages.noPages)
             }
 
-            if (outputFile.length() == 0L) {
+            if (outputFile!!.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
@@ -101,6 +107,7 @@ class NumberPagesUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al numerar páginas")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()

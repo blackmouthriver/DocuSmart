@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Sprache auswählen</string>
     <string name="settings_close">Schließen</string>
+    <string name="settings_contact_support">Support kontaktieren</string>
     <string name="settings_language_subtitle">Wähle die Sprache der App</string>
     <string name="settings_section_appearance">Erscheinungsbild</string>
     <string name="settings_tutorial">Tutorial ansehen</string>
@@ -177,6 +178,7 @@
     <string name="viewer_rendering">Dokument wird gerendert…</string>
     <string name="viewer_unsupported">Dieses Format wird vom integrierten Viewer nicht unterstützt.</string>
     <string name="viewer_open_other">Mit anderer App öffnen</string>
+    <string name="viewer_open_other_error">Öffnen mit einer anderen App fehlgeschlagen</string>
     <string name="viewer_more_options">Weitere Optionen</string>
     <string name="viewer_convert">Konvertieren</string>
     <string name="viewer_create_qr">QR-Code erstellen</string>
@@ -229,6 +231,7 @@
     <string name="viewer_format_generic">Datei</string>
     <string name="viewer_pdf_password_body">\"%1$s\" ist passwortgeschützt.</string>
     <string name="viewer_search_content_desc">Im Dokument suchen</string>
+    <string name="viewer_page_content_desc">Seite %1$d</string>
     <string name="viewer_favorite_content_desc">Favorit</string>
     <string name="viewer_bottom_bar_page_format">Seite %1$d von %2$d</string>
     <string name="viewer_search_no_results">Keine Ergebnisse</string>
@@ -302,6 +305,12 @@
     <string name="converter_error_no_images_selected">Du musst mindestens ein Bild auswählen</string>
     <string name="converter_error_no_images_loaded">Keines der ausgewählten Bilder konnte geladen werden</string>
     <string name="converter_error_generic_format">Fehler bei der Konvertierung: %1$s</string>
+    <string name="converter_html_title_pdf">PDF-Dokument</string>
+    <string name="converter_html_page_label">Seite %1$d</string>
+    <string name="converter_txt_page_label">=== Seite %1$d ===</string>
+    <string name="converter_html_title_word">Word-Dokument</string>
+    <string name="converter_html_title_excel">Tabelle</string>
+    <string name="converter_pdf_slide_label">=== Folie %1$d ===</string>
     <string name="converter_error_unknown">Unbekannter Fehler</string>
 
     <!-- ── PDF-Werkzeuge: Hauptbildschirm und Ergebniskarte ── -->
@@ -561,6 +570,9 @@
     <string name="pdf_ocr_error">Fehler bei der Texterkennung: %1$s</string>
     <string name="pdf_tools_unexpected_error">Ein unerwarteter Fehler ist aufgetreten. Versuche es mit einer kleineren Datei erneut.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── Home leerer Zustand ───────────────────────────── -->
 
@@ -850,6 +862,7 @@
     <string name="qr_document_selected">Dokument ausgewählt ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">Für diese Datei kann kein QR-Code erstellt werden</string>
     <string name="qr_local_only_hint">Dieser QR-Code funktioniert nur auf diesem Gerät: Er verweist auf eine lokale Datei, nicht auf eine geteilte Kopie.</string>
     <string name="qr_label_url">Website-URL</string>
     <string name="qr_label_text">Nachrichtentext</string>
@@ -961,7 +974,7 @@
     <string name="study_start">Start</string>
     <string name="study_pomodoros_completed">Abgeschlossene Pomodoros</string>
     <string name="study_pomodoros_hint">Alle 4 Pomodoros = lange Pause</string>
-    <string name="study_pomodoro_technique_info">Pomodoro-Technik: wechselt 25 Min. fokussiertes Lernen mit 5 Min. Pausen ab, damit du dich konzentrieren kannst, ohne auszubrennen</string>
+    <string name="study_pomodoro_technique_info">Pomodoro-Technik: wechselt 25 Min. fokussiertes Lernen mit 5 Min. Pausen ab (alle 4 Pomodoros 15 Min.), damit du dich konzentrieren kannst, ohne auszubrennen</string>
     <string name="study_extract_could_not_read">Datei konnte nicht gelesen werden</string>
     <string name="study_extract_pdf_no_text">Dieses PDF enthält keinen extrahierbaren Text. Es könnte ein gescanntes PDF sein.</string>
     <string name="study_extract_pdf_error">Fehler beim Lesen des PDFs: %1$s</string>

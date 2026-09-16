@@ -103,6 +103,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Seleccionar idioma</string>
     <string name="settings_close">Tancar</string>
+    <string name="settings_contact_support">Contacta amb suport</string>
     <string name="settings_language_subtitle">Tria l\'idioma de l\'aplicació</string>
     <!-- Rediseño de Ajustes 2026-09-14: Apariencia agrupa Tema/Color de
          acento/Tamaño de letra/Fondo animado/Sonidos/Idioma en una sola
@@ -188,6 +189,7 @@
     <string name="viewer_rendering">Renderitzant document…</string>
     <string name="viewer_unsupported">Aquest format no és compatible amb el visor integrat.</string>
     <string name="viewer_open_other">Obrir amb una altra aplicació</string>
+    <string name="viewer_open_other_error">No s\'ha pogut obrir amb una altra aplicació</string>
     <string name="viewer_more_options">Més opcions</string>
     <string name="viewer_convert">Convertir</string>
     <string name="viewer_create_qr">Crear QR</string>
@@ -242,6 +244,7 @@
     <string name="viewer_format_generic">Arxiu</string>
     <string name="viewer_pdf_password_body">\"%1$s\" està protegit amb contrasenya.</string>
     <string name="viewer_search_content_desc">Cerca en el document</string>
+    <string name="viewer_page_content_desc">Pàgina %1$d</string>
     <string name="viewer_favorite_content_desc">Preferit</string>
     <string name="viewer_bottom_bar_page_format">Pàgina %1$d de %2$d</string>
     <string name="viewer_search_no_results">Sense resultats</string>
@@ -324,6 +327,12 @@
     <string name="converter_error_no_images_loaded">No s\'ha pogut carregar cap de les imatges seleccionades</string>
 
     <string name="converter_error_generic_format">Error en convertir: %1$s</string>
+    <string name="converter_html_title_pdf">Document PDF</string>
+    <string name="converter_html_page_label">Pàgina %1$d</string>
+    <string name="converter_txt_page_label">=== Pàgina %1$d ===</string>
+    <string name="converter_html_title_word">Document Word</string>
+    <string name="converter_html_title_excel">Full de càlcul</string>
+    <string name="converter_pdf_slide_label">=== Diapositiva %1$d ===</string>
     <string name="converter_error_unknown">Error desconegut</string>
 
     <!-- ── Herramientas PDF: pantalla principal y tarjeta de resultado ── -->
@@ -583,6 +592,9 @@
     <string name="pdf_ocr_error">Error en reconèixer el text: %1$s</string>
     <string name="pdf_tools_unexpected_error">S\'ha produït un error inesperat. Torna-ho a provar amb un fitxer més petit.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 
@@ -882,6 +894,7 @@
     <string name="qr_document_selected">Document seleccionat ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">No es pot crear un QR per a aquest fitxer</string>
     <string name="qr_local_only_hint">Aquest QR només funciona en aquest dispositiu: apunta a un arxiu local, no a una còpia compartida.</string>
     <string name="qr_label_url">URL del lloc web</string>
     <string name="qr_label_text">Text del missatge</string>
@@ -995,7 +1008,7 @@
     <string name="study_start">Iniciar</string>
     <string name="study_pomodoros_completed">Pomodoros completats</string>
     <string name="study_pomodoros_hint">Cada 4 pomodoros = descans llarg</string>
-    <string name="study_pomodoro_technique_info">Tècnica Pomodoro: alterna 25 min d\'estudi concentrat amb 5 min de descans per ajudar-te a concentrar-te sense esgotar-te</string>
+    <string name="study_pomodoro_technique_info">Tècnica Pomodoro: alterna 25 min d\'estudi concentrat amb 5 min de descans (15 min cada 4 pomodoros) per ajudar-te a concentrar-te sense esgotar-te</string>
     <string name="study_extract_could_not_read">No s\'ha pogut llegir l\'arxiu</string>
     <string name="study_extract_pdf_no_text">Aquest PDF no conté text extraïble. Pot ser un PDF escanejat.</string>
     <string name="study_extract_pdf_error">Error en llegir el PDF: %1$s</string>

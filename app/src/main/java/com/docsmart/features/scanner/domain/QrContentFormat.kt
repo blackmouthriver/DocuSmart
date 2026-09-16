@@ -78,6 +78,15 @@ fun QrContactContent.toQrPayload(): String = buildString {
 private val ICAL_DATE_TIME_FORMAT: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss", Locale.US)
 
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): un
+// evento "de todo el día" (DTSTART;VALUE=DATE:20261225, sin hora) -- formato
+// habitual en invitaciones de calendario reales -- no matchea
+// ICAL_DATE_TIME_FORMAT (que exige la 'T' y la hora), así que
+// parseIcalDateTime() devolvía null y "Agregar al calendario" no hacía
+// nada, sin aviso.
+private val ICAL_DATE_FORMAT: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyyMMdd", Locale.US)
+
 /**
  * iCalendar `VEVENT` (RFC 5545) -- formato estándar que la cámara nativa
  * reconoce como "Agregar al calendario". Usa hora local "flotante" (sin
@@ -207,10 +216,17 @@ fun parseVCardPayload(payload: String): QrContactContent? {
     else QrContactContent(name, phone, email)
 }
 
-private fun parseIcalDateTime(value: String): LocalDateTime? = try {
-    LocalDateTime.parse(value.removeSuffix("Z"), ICAL_DATE_TIME_FORMAT)
-} catch (e: java.time.format.DateTimeParseException) {
-    null
+private fun parseIcalDateTime(value: String): LocalDateTime? {
+    val clean = value.removeSuffix("Z")
+    return try {
+        LocalDateTime.parse(clean, ICAL_DATE_TIME_FORMAT)
+    } catch (e: java.time.format.DateTimeParseException) {
+        try {
+            java.time.LocalDate.parse(clean, ICAL_DATE_FORMAT).atStartOfDay()
+        } catch (e2: java.time.format.DateTimeParseException) {
+            null
+        }
+    }
 }
 
 fun parseVEventPayload(payload: String): QrEventContent? {

@@ -162,6 +162,12 @@ class PremiumViewModel @Inject constructor(
     }
 
     fun purchase(activity: Activity, purchaseErrorMessage: String, pendingMessage: String) {
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // sin este guard, un doble-toque rápido en "Comprar" podía lanzar
+        // dos flujos de Play Billing superpuestos antes de que la
+        // recomposición ocultara el botón -- mismo patrón ya corregido en
+        // Convertidor (#31) y el creador de QR (#6/#13).
+        if (_uiState.value.isPurchasing) return
         val plan = _uiState.value.selectedPlan ?: return
         this.purchaseErrorMessage = purchaseErrorMessage
         this.pendingMessage = pendingMessage

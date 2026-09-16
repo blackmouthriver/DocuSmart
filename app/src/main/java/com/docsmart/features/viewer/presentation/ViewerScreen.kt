@@ -4,6 +4,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -477,6 +479,7 @@ private fun BoxScope.ViewerTopBarSection(
                 search.onQueryChange("")
             }
         },
+        isReadOnlyPreview = uiState.isReadOnlyPreview,
         modifier        = Modifier.align(Alignment.TopCenter)
     )
 
@@ -843,7 +846,7 @@ private fun PdfViewerContent(
             ) {
                 Image(
                     bitmap             = pageBitmap.bitmap.asImageBitmap(),
-                    contentDescription = "Página $pageNumber",
+                    contentDescription = stringResource(R.string.viewer_page_content_desc, pageNumber),
                     modifier           = Modifier
                         .fillMaxWidth()
                         .pdfAnnotationGestures(
@@ -2018,6 +2021,7 @@ private fun UnsupportedFormatContent(
 ) {
     val context         = LocalContext.current
     val openWithText    = stringResource(R.string.viewer_open_other)
+    val openErrorText   = stringResource(R.string.viewer_open_other_error)
     val unsupportedText = stringResource(R.string.viewer_unsupported)
 
     val formatLabel = when {
@@ -2054,13 +2058,32 @@ private fun UnsupportedFormatContent(
             if (fileUri != null) {
                 Button(onClick = {
                     try {
+                        // Hallazgo real de la revisión general 2026-09-16
+                        // (cuarta pasada): un documento propio de la app
+                        // (id = ruta absoluta) resuelve acá a un `file://`
+                        // crudo -- lanzarlo en un Intent.ACTION_VIEW
+                        // externo dispara FileUriExposedException con
+                        // targetSdk 36, atrapada en silencio antes de este
+                        // fix. Mismo criterio que ya usa
+                        // ViewerViewModel.shareableUri() para "Compartir":
+                        // envolver con FileProvider antes de lanzar el
+                        // Intent.
+                        val safePath = fileUri.path
+                        val safeUri = if (fileUri.scheme == "file" && safePath != null) {
+                            FileProvider.getUriForFile(
+                                context, "${context.packageName}.fileprovider", java.io.File(safePath)
+                            )
+                        } else {
+                            fileUri
+                        }
                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(fileUri, mimeType)
+                            setDataAndType(safeUri, mimeType)
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         context.startActivity(Intent.createChooser(intent, openWithText))
                     } catch (e: Exception) {
-                        Timber.e("No se pudo abrir: ${e.message}")
+                        Timber.e(e, "No se pudo abrir con otra app: ${e.message}")
+                        Toast.makeText(context, openErrorText, Toast.LENGTH_SHORT).show()
                     }
                 }) { Text(openWithText) }
             }

@@ -468,8 +468,19 @@ class SecurityViewModel @Inject constructor(
     }
 
     fun deleteFile(file: File) {
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // a diferencia de TODAS las demás vías de borrado definitivo del
+        // proyecto (TrashRepository, hallazgo #50), esto no limpiaba
+        // favorito/alias/anotación del documentId borrado -- si otro
+        // documento distinto luego se protege y su nombre saneado
+        // colisiona con el del primero, hereda en silencio el favorito/las
+        // notas del ya borrado.
+        val documentId = file.absolutePath
         viewModelScope.launch(Dispatchers.IO) {
             securityManager.deleteSecureFile(file)
+            favoritesRepository.removeFavorite(documentId)
+            favoritesRepository.removeAlias(documentId)
+            annotationDao.deleteByDocument(documentId)
             val files = securityManager.getSecureFiles()
             _uiState.update { it.copy(secureFiles = files) }
         }

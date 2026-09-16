@@ -1,9 +1,13 @@
 package com.docsmart.features.scanner.presentation
 
 import android.app.Activity
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,6 +71,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -1380,9 +1385,15 @@ private fun ScanResultActions(
                             isSaving = true
                             scope.launch {
                                 try {
-                                    val name = state.fileName.ifBlank {
-                                        String.format(state.defaultNameTemplate, generateTimestamp())
-                                    }
+                                    // Hallazgo real de la revisión general
+                                    // 2026-09-16 (cuarta pasada): el nombre
+                                    // libre nunca pasaba por
+                                    // sanitizeOutputFileName() antes de
+                                    // construir la ruta de salida -- mismo
+                                    // saneo ya aplicado en Herramientas PDF/
+                                    // Convertidor/Renombrar.
+                                    val name = com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
+                                        .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
                                     val success = when {
                                         state.savedFile != null -> DownloadsSaver.saveFile(
                                             context, state.savedFile, mimeTypeForExtension(state.savedFile.extension)
@@ -1420,8 +1431,20 @@ private fun ScanResultActions(
                             scope.launch {
                                 onPreparingShareChange(true)
                                 try {
-                                    shareScanResult(context, state)
-                                    if (state.savedFile != null) onFinalized(state.savedFile)
+                                    // Hallazgo real de la revisión general
+                                    // 2026-09-16 (cuarta pasada):
+                                    // Intent.createChooser() sin PendingIntent
+                                    // no espera a que el usuario elija una
+                                    // app -- startActivity() devuelve el
+                                    // control de inmediato tanto si el
+                                    // usuario comparte como si cancela.
+                                    // shareScanResult() ahora usa el overload
+                                    // con IntentSender (API 22+) para recibir
+                                    // un broadcast SOLO cuando el usuario de
+                                    // verdad elige una app -- si cancela, el
+                                    // broadcast nunca llega y no se finaliza.
+                                    val chosen = shareScanResult(context, state)
+                                    if (chosen && state.savedFile != null) onFinalized(state.savedFile)
                                 } finally {
                                     onPreparingShareChange(false)
                                 }
@@ -1478,23 +1501,29 @@ private fun ScanResultActions(
     }
 }
 
-private suspend fun shareScanResult(context: Context, state: ScanResultActionsState) {
+// Devuelve true solo si el usuario de verdad eligió una app en el
+// selector del sistema (ver shareFileAwaitingSelection) -- el llamador la
+// usa para decidir si corresponde finalizar la sesión de escaneo.
+private suspend fun shareScanResult(context: Context, state: ScanResultActionsState): Boolean =
     when {
-        state.savedFile != null -> shareFile(context, state.savedFile, state.shareChooserTitle)
+        state.savedFile != null ->
+            shareFileAwaitingSelection(context, state.savedFile, state.shareChooserTitle)
         state.isPdf -> {
             val cacheFile = copyUriToCache(
                 context,
                 state.scannedUris.first(),
-                state.fileName.ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
+                com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
+                    .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
             )
             if (cacheFile != null) {
-                shareFile(context, cacheFile, state.shareChooserTitle)
+                shareFileAwaitingSelection(context, cacheFile, state.shareChooserTitle)
             } else {
                 Timber.e("No se pudo copiar PDF al cache")
+                false
             }
         }
+        else -> false
     }
-}
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- una página
 // escaneada en la fila de vista previa, con su botón de edición
@@ -1607,10 +1636,9 @@ private fun PercentChipRow(
 @Composable
 private fun ScanImageEditorDialog(
     uri: Uri,
-    // HU-41: override de modo de color de esta página -- se aplica al
-    // instante al tocar un chip (mismo criterio que el resto de chips de
-    // esta pantalla), independiente del brillo/contraste/escala de abajo
-    // que sí requieren "Aplicar".
+    // HU-41: override de modo de color de esta página -- el valor ya
+    // confirmado (ver pendingColorMode más abajo para el estado local
+    // mientras el diálogo está abierto).
     colorMode: ScanColorMode,
     onColorModeChange: (ScanColorMode) -> Unit,
     onDismiss: () -> Unit,
@@ -1621,6 +1649,15 @@ private fun ScanImageEditorDialog(
     var scalePercent by remember { mutableIntStateOf(100) }
     val brightness = displayToInternal(brightnessDisplay)
     val contrast = displayToInternal(contrastDisplay)
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): el
+    // modo de color se aplicaba al padre (onColorModeChange) al instante,
+    // a diferencia de brillo/contraste/escala (locales, solo se propagan
+    // con "Aplicar") -- "Cancelar" después de probar un modo de color no
+    // lo descartaba, rompiendo la simetría con el resto del diálogo. Se
+    // vuelve local igual que los demás controles; el preview de
+    // ScanColorModeSection sigue respondiendo al instante porque lee este
+    // estado local, no el del padre.
+    var pendingColorMode by remember(colorMode) { mutableStateOf(colorMode) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -1706,8 +1743,8 @@ private fun ScanImageEditorDialog(
                 Spacer(Modifier.height(16.dp))
                 ScanColorModeSection(
                     previewUri = uri,
-                    selected = colorMode,
-                    onSelect = onColorModeChange
+                    selected = pendingColorMode,
+                    onSelect = { pendingColorMode = it }
                 )
 
                 Spacer(Modifier.height(20.dp))
@@ -1719,7 +1756,10 @@ private fun ScanImageEditorDialog(
                         Text(stringResource(R.string.general_cancel))
                     }
                     Button(
-                        onClick = { onApply(brightness, contrast, scalePercent) },
+                        onClick = {
+                            if (pendingColorMode != colorMode) onColorModeChange(pendingColorMode)
+                            onApply(brightness, contrast, scalePercent)
+                        },
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(stringResource(R.string.scan_edit_apply))
@@ -1752,26 +1792,80 @@ private suspend fun copyUriToCache(
 }
 
 // ── Compartir archivo via FileProvider ────────────────
+private fun buildShareIntentOrNull(context: Context, file: File): Intent? {
+    if (!file.exists()) {
+        Timber.e("shareFile: archivo no existe — ${file.absolutePath}")
+        return null
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    return Intent(Intent.ACTION_SEND).apply {
+        type = mimeTypeForExtension(file.extension)
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+}
+
 private fun shareFile(context: Context, file: File, chooserTitle: String) {
     try {
-        if (!file.exists()) {
-            Timber.e("shareFile: archivo no existe — ${file.absolutePath}")
-            return
-        }
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = mimeTypeForExtension(file.extension)
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val intent = buildShareIntentOrNull(context, file) ?: return
         context.startActivity(Intent.createChooser(intent, chooserTitle))
         Timber.d("shareFile: compartiendo ${file.name}")
     } catch (e: Exception) {
         Timber.e(e, "Error compartiendo archivo: ${e.message}")
+    }
+}
+
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+// Intent.createChooser() sin PendingIntent no espera a que el usuario
+// elija una app -- startActivity() devuelve el control de inmediato
+// tanto si comparte como si cancela. Se usa el overload con IntentSender
+// (API 22+, bien por debajo de minSdk=26): el sistema solo entrega ese
+// broadcast cuando el usuario de verdad elige una app -- si cancela el
+// selector, el broadcast nunca llega y esta función nunca retorna true.
+// Acotado a este único call site (no se toca shareFile(), que sigue
+// fire-and-forget para sus otros 2 llamadores, donde no hace falta saber
+// si el usuario terminó de compartir).
+private suspend fun shareFileAwaitingSelection(
+    context: Context, file: File, chooserTitle: String
+): Boolean {
+    val intent = buildShareIntentOrNull(context, file) ?: return false
+    return try {
+        suspendCancellableCoroutine { cont ->
+            val action = "com.docsmart.action.SCAN_SHARE_CHOSEN.${System.nanoTime()}"
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(ctx: Context, received: Intent) {
+                    // Benigno: puede llegar a dispararse después de que
+                    // invokeOnCancellation ya lo haya desregistrado.
+                    try { context.unregisterReceiver(this) } catch (e: IllegalArgumentException) {
+                        Timber.v(e, "shareFileAwaitingSelection: receiver ya estaba desregistrado")
+                    }
+                    if (cont.isActive) cont.resume(true, onCancellation = null)
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(receiver, IntentFilter(action), Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                @Suppress("UnspecifiedRegisterReceiverFlag")
+                context.registerReceiver(receiver, IntentFilter(action))
+            }
+            cont.invokeOnCancellation {
+                // Benigno: puede llegar a dispararse después de que
+                // onReceive ya lo haya desregistrado.
+                try { context.unregisterReceiver(receiver) } catch (e: IllegalArgumentException) {
+                    Timber.v(e, "shareFileAwaitingSelection: receiver ya estaba desregistrado")
+                }
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, System.nanoTime().toInt(),
+                Intent(action).setPackage(context.packageName),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            context.startActivity(Intent.createChooser(intent, chooserTitle, pendingIntent.intentSender))
+            Timber.d("shareFileAwaitingSelection: compartiendo ${file.name}")
+        }
+    } catch (e: Exception) {
+        Timber.e(e, "Error compartiendo archivo: ${e.message}")
+        false
     }
 }
 

@@ -61,11 +61,17 @@ class SignPdfUseCase @Inject constructor(
         }
 
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si algo lanzaba a
+        // mitad de camino, mismo patrón ya corregido en Compare/Compress/
+        // OCR (hallazgos #25-27).
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val outputFile = createOutputFile(outputFileName ?: "Firmado")
+            outputFile = createOutputFile(outputFileName ?: "Firmado")
             var signedPage = 1
 
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
@@ -74,7 +80,7 @@ class SignPdfUseCase @Inject constructor(
                     // PdfWriter(outputFile) ya crea el archivo en disco al
                     // abrirse -- sin este delete() quedaba huérfano en
                     // filesDir/pdftools para siempre.
-                    outputFile.delete()
+                    outputFile!!.delete()
                     return@withContext PdfToolResult.Error(messages.noPages)
                 }
 
@@ -96,7 +102,7 @@ class SignPdfUseCase @Inject constructor(
                 signedPage = safePage
             }
 
-            if (outputFile.length() == 0L) {
+            if (outputFile!!.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
@@ -108,6 +114,7 @@ class SignPdfUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al firmar PDF")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()

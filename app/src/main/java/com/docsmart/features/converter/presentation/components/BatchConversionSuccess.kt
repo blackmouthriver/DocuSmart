@@ -31,6 +31,10 @@ import com.docsmart.features.converter.domain.model.ConversionResult
 fun BatchConversionSuccess(
     items               : List<BatchConversionItem>,
     savedToDownloads    : Boolean,
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): sin
+    // esto, un doble-toque rápido en "Guardar todas" lanzaba
+    // saveAllToDownloads() dos veces en paralelo.
+    isSaving            : Boolean = false,
     onConvertAnother    : () -> Unit,
     onSaveAllToDownloads: () -> Unit,
     onOpenDocument      : (java.io.File) -> Unit,
@@ -109,6 +113,7 @@ fun BatchConversionSuccess(
                 } else if (successCount > 0) {
                     Button(
                         onClick  = onSaveAllToDownloads,
+                        enabled  = !isSaving,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape    = MaterialTheme.shapes.medium,
                         colors   = ButtonDefaults.buttonColors(

@@ -319,36 +319,49 @@ private fun RedactRectsSummary(
     }
 }
 
-private fun loadPage(
-    context: android.content.Context,
-    pdfUri: Uri,
-    pageIndex: Int,
-    onTotalPagesLoaded: (Int) -> Unit
-): Bitmap? {
-    return try {
-        val file = File(context.cacheDir, "redact_preview_${System.currentTimeMillis()}.pdf")
-        context.contentResolver.openInputStream(pdfUri)?.use { input ->
-            file.outputStream().use { output -> input.copyTo(output) }
-        }
-        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        val renderer = PdfRenderer(fd)
-        onTotalPagesLoaded(renderer.pageCount)
-
-        val safeIndex = pageIndex.coerceIn(0, renderer.pageCount - 1)
-        val page = renderer.openPage(safeIndex)
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): `fd`/
+// `renderer`/`page` solo se cerraban y `file` solo se borraba en el camino
+// feliz. Además, `pageIndex.coerceIn(0, renderer.pageCount - 1)` con un
+// PDF de 0 páginas evalúa `coerceIn(0, -1)` -- rango vacío, lanza
+// IllegalArgumentException -- así que un PDF de 0 páginas ya disparaba la
+// excepción (y por lo tanto el leak) en cada intento. `.use{}` anidado +
+// `finally { file.delete() }`, con el chequeo explícito de 0 páginas antes
+// del coerceIn.
+private fun renderRedactPageBitmap(renderer: PdfRenderer, pageIndex: Int): Bitmap? {
+    if (renderer.pageCount == 0) return null
+    val safeIndex = pageIndex.coerceIn(0, renderer.pageCount - 1)
+    return renderer.openPage(safeIndex).use { page ->
         val scale = PAGE_PREVIEW_TARGET_WIDTH_PX.toFloat() / page.width
         val width = PAGE_PREVIEW_TARGET_WIDTH_PX
         val height = max((page.height * scale).toInt(), 1)
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         bmp.eraseColor(android.graphics.Color.WHITE)
         page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        page.close()
-        renderer.close()
-        fd.close()
-        file.delete()
         bmp
+    }
+}
+
+private fun loadPage(
+    context: android.content.Context,
+    pdfUri: Uri,
+    pageIndex: Int,
+    onTotalPagesLoaded: (Int) -> Unit
+): Bitmap? {
+    val file = File(context.cacheDir, "redact_preview_${System.currentTimeMillis()}.pdf")
+    return try {
+        context.contentResolver.openInputStream(pdfUri)?.use { input ->
+            file.outputStream().use { output -> input.copyTo(output) }
+        }
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { renderer ->
+                onTotalPagesLoaded(renderer.pageCount)
+                renderRedactPageBitmap(renderer, pageIndex)
+            }
+        }
     } catch (e: Exception) {
         Timber.e(e, "RedactPdfScreen: error generando vista previa de página")
         null
+    } finally {
+        file.delete()
     }
 }

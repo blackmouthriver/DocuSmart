@@ -53,11 +53,17 @@ class FillFormUseCase @Inject constructor(
         }
 
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si algo lanzaba a
+        // mitad de camino, mismo patrón ya corregido en Compare/Compress/
+        // OCR (hallazgos #25-27).
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val outputFile = createOutputFile(outputFileName ?: "Formulario")
+            outputFile = createOutputFile(outputFileName ?: "Formulario")
             var filledCount = 0
 
             // Bug real encontrado 2026-09-14 (repaso general):
@@ -66,7 +72,7 @@ class FillFormUseCase @Inject constructor(
             // huérfano en filesDir/pdftools para siempre.
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
                 val form = PdfAcroForm.getAcroForm(pdf, false) ?: run {
-                    outputFile.delete()
+                    outputFile!!.delete()
                     return@withContext PdfToolResult.Error(messages.noFieldsError)
                 }
                 val fields = form.getFormFields()
@@ -77,13 +83,13 @@ class FillFormUseCase @Inject constructor(
                     }
                 }
                 if (filledCount == 0) {
-                    outputFile.delete()
+                    outputFile!!.delete()
                     return@withContext PdfToolResult.Error(messages.noFieldsError)
                 }
                 form.flattenFields()
             }
 
-            if (outputFile.length() == 0L) {
+            if (outputFile!!.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
@@ -95,6 +101,7 @@ class FillFormUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al rellenar formulario")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()

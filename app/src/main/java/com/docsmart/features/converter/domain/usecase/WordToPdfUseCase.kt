@@ -27,17 +27,25 @@ class WordToPdfUseCase @Inject constructor(
         wordUri: Uri,
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada,
+        // #22, latente -- WORD_TO_PDF está oculto de la grilla hoy):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si algo lanzaba
+        // después de que PdfWriter(outputFile) ya creó el archivo en
+        // disco, mismo patrón ya corregido en Herramientas PDF
+        // (hallazgos #25-27) y en el resto del Convertidor.
+        var outputFile: File? = null
         try {
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName = fileName ?: generateTimestamp()
-            val outputFile = File(outputDir, "$baseName.pdf")
+            outputFile = File(outputDir, "$baseName.pdf")
 
             context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
                 // RF-CONV-07: detecta OOXML (.docx) vs OLE2 (.doc) por firma
                 // binaria antes de decidir con qué API de POI leer -- ver
                 // WordFormatDetection.kt.
                 val (format, input) = detectWordFormat(rawInput)
-                val writer = PdfWriter(outputFile)
+                val writer = PdfWriter(outputFile!!)
                 val pdfDoc = PdfDocument(writer)
 
                 // Bug real encontrado 2026-09-14 (repaso general):
@@ -52,12 +60,13 @@ class WordToPdfUseCase @Inject constructor(
             } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
 
             ConversionResult.Success(
-                outputFile = outputFile,
+                outputFile = outputFile!!,
                 pageCount = 1,
-                fileSizeKb = (outputFile.length() / 1024).toInt()
+                fileSizeKb = (outputFile!!.length() / 1024).toInt()
             )
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Word a PDF")
+            outputFile?.delete()
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )

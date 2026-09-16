@@ -104,7 +104,14 @@ class PdfPasswordUseCase @Inject constructor() {
             PdfPasswordResult.Success(outputFile, messages.protectSuccess)
 
         } catch (e: Exception) {
-            Timber.e(e, "PdfPasswordUseCase: error protegiendo PDF → ${e.javaClass.simpleName}: ${e.message}")
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta
+            // pasada): IOException/FileNotFoundException reales traen la
+            // ruta absoluta completa en su propio .message (ej. disco
+            // lleno, permiso denegado) -- CrashlyticsTree reenvía a
+            // Firebase Crashlytics tanto el mensaje de este log como el
+            // Throwable pasado, subiendo esa ruta a un servidor de Google.
+            // Se loguea solo el tipo de excepción, no el mensaje real.
+            Timber.e(redactedForLog(e), "PdfPasswordUseCase: error protegiendo PDF → ${e.javaClass.simpleName}")
             PdfPasswordResult.Error(String.format(messages.protectError, e.message ?: ""))
         } finally {
             // Bug real encontrado 2026-09-14 (repaso general): mismo patrón
@@ -177,7 +184,8 @@ class PdfPasswordUseCase @Inject constructor() {
             PdfPasswordResult.Success(outputFile, messages.removeSuccess)
 
         } catch (e: Exception) {
-            Timber.e(e, "PdfPasswordUseCase: error quitando contraseña → ${e.javaClass.simpleName}: ${e.message}")
+            // Ver el comentario equivalente en protectPdf() más arriba.
+            Timber.e(redactedForLog(e), "PdfPasswordUseCase: error quitando contraseña → ${e.javaClass.simpleName}")
             classifyRemoveError(e, messages)
         } finally {
             // Bug real encontrado 2026-09-14: cacheFile solo se borraba en
@@ -196,6 +204,12 @@ class PdfPasswordUseCase @Inject constructor() {
         Timber.d("PdfPasswordUseCase: caché copiado → ${cacheFile.length()} bytes (copiados=$bytesCopied)")
         return cacheFile
     }
+
+    // Ver el comentario de redactedForLog() en el catch de protectPdf() --
+    // evita que CrashlyticsTree reenvíe a la nube el .message real de una
+    // IOException/FileNotFoundException, que trae la ruta absoluta completa
+    // del PDF.
+    private fun redactedForLog(e: Exception) = RuntimeException("PdfPasswordUseCase: ${e.javaClass.simpleName}")
 
     private fun classifyRemoveError(e: Exception, messages: PdfPasswordMessages): PdfPasswordResult {
         val msg = e.message?.lowercase() ?: ""

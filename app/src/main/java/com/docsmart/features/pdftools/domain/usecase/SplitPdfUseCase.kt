@@ -40,6 +40,14 @@ class SplitPdfUseCase @Inject constructor(
         messages      : SplitPdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // outputFile era un `lateinit var` dentro del try -- el catch de
+        // abajo ni siquiera podía referenciarlo para borrarlo si
+        // copyPagesTo() lanzaba a mitad de camino, mismo patrón ya
+        // corregido en Compare/Compress/OCR (hallazgos #25-27). `File?` en
+        // vez de `lateinit` porque `::localVar.isInitialized` no está
+        // soportado para variables locales (solo propiedades).
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
@@ -55,7 +63,6 @@ class SplitPdfUseCase @Inject constructor(
             // mismo patrón ya usado en `RotatePdfUseCase`.
             var startPage = 0
             var endPage = 0
-            lateinit var outputFile: File
 
             PdfDocument(PdfReader(cacheFile)).use { sourcePdf ->
                 val totalPages = sourcePdf.numberOfPages
@@ -77,7 +84,7 @@ class SplitPdfUseCase @Inject constructor(
                 }
             }
 
-            if (outputFile.length() == 0L)
+            if (outputFile!!.length() == 0L)
                 return@withContext PdfToolResult.Error(messages.generateError)
 
             val pagesExtracted = endPage - startPage + 1
@@ -90,6 +97,7 @@ class SplitPdfUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al dividir PDF")
+            outputFile?.delete()
             PdfToolResult.Error(
                 message = String.format(messages.genericError, e.message ?: ""),
                 cause   = e

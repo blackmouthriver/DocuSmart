@@ -183,6 +183,7 @@ fun ConverterScreen(
                     BatchConversionSuccess(
                         items                = uiState.batchResults,
                         savedToDownloads     = uiState.batchSavedToDownloads,
+                        isSaving             = uiState.isSaving,
                         onConvertAnother     = { viewModel.clearAll() },
                         onSaveAllToDownloads = { viewModel.saveAllToDownloads(context) },
                         onOpenDocument       = { file -> onOpenDocument(file.absolutePath) },
@@ -198,6 +199,7 @@ fun ConverterScreen(
                     ConversionSuccess(
                         result            = result,
                         savedToDownloads  = uiState.savedToDownloads,
+                        isSaving          = uiState.isSaving,
                         onConvertAnother  = { viewModel.clearAll() },
                         onSaveToDownloads = { viewModel.saveToDownloads(context) },
                         onOpenDocument    = { onOpenDocument(result.outputFile.absolutePath) },
@@ -827,9 +829,17 @@ private fun getMimeForType(type: ConversionType): String = when (type) {
     ConversionType.PDF_TO_TXT,
     ConversionType.PDF_TO_WORD,
     ConversionType.PDF_TO_HTML   -> "application/pdf"
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada, #25,
+    // latente -- WORD_TO_* está oculto de la grilla hoy): "application/
+    // msword" solo cubre .doc legado -- un .docx real (el formato Word
+    // más común) tiene otro MIME
+    // (application/vnd.openxmlformats-officedocument.wordprocessingml.document),
+    // así que muchos proveedores de documentos lo filtraban fuera del
+    // selector. Excel/PowerPoint ya usan "*/*" para evitar este mismo
+    // problema -- mismo criterio acá.
     ConversionType.WORD_TO_PDF,
     ConversionType.WORD_TO_TXT,
-    ConversionType.WORD_TO_HTML  -> "application/msword"
+    ConversionType.WORD_TO_HTML  -> "*/*"
     ConversionType.EXCEL_TO_PDF,
     ConversionType.EXCEL_TO_CSV,
     ConversionType.EXCEL_TO_HTML -> "*/*"

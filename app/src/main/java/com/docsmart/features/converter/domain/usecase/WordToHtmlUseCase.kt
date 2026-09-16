@@ -94,12 +94,20 @@ class WordToHtmlUseCase @Inject constructor(
         }.toList()
     }
 
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada,
+    // #26, latente -- WORD_TO_HTML está oculto de la grilla hoy):
+    // `lang="es"` y el título quedaban hardcodeados en español pese al
+    // idioma configurado -- este es el CONTENIDO real del HTML que el
+    // usuario recibe, no un mensaje de error. `lang` usa el idioma activo
+    // de la app (no el del documento fuente, imposible de detectar acá).
     private fun buildHtml(paragraphs: List<Pair<String, Boolean>>): String {
+        val htmlLang = Locale.getDefault().language
+        val title    = context.getString(R.string.converter_html_title_word)
         val sb = StringBuilder()
         sb.appendLine("""<!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8">
+<html lang="$htmlLang"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Documento Word</title>
+<title>$title</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.7; color: #222; }
   h1, h2 { color: #1D4ED8; border-bottom: 1px solid #dbeafe; padding-bottom: 6px; }

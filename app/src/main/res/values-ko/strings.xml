@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">언어 선택</string>
     <string name="settings_close">닫기</string>
+    <string name="settings_contact_support">지원팀에 문의</string>
     <string name="settings_language_subtitle">앱 언어를 선택하세요</string>
     <string name="settings_section_appearance">외관</string>
     <string name="settings_tutorial">튜토리얼 보기</string>
@@ -177,6 +178,7 @@
     <string name="viewer_rendering">문서를 렌더링하는 중…</string>
     <string name="viewer_unsupported">이 형식은 내장 뷰어에서 지원되지 않습니다.</string>
     <string name="viewer_open_other">다른 앱으로 열기</string>
+    <string name="viewer_open_other_error">다른 앱으로 열 수 없습니다</string>
     <string name="viewer_more_options">더보기</string>
     <string name="viewer_convert">변환</string>
     <string name="viewer_create_qr">QR 만들기</string>
@@ -229,6 +231,7 @@
     <string name="viewer_format_generic">파일</string>
     <string name="viewer_pdf_password_body">\"%1$s\" 파일은 비밀번호로 보호되어 있습니다.</string>
     <string name="viewer_search_content_desc">문서에서 검색</string>
+    <string name="viewer_page_content_desc">%1$d페이지</string>
     <string name="viewer_favorite_content_desc">즐겨찾기</string>
     <string name="viewer_bottom_bar_page_format">%2$d페이지 중 %1$d페이지</string>
     <string name="viewer_search_no_results">결과 없음</string>
@@ -302,6 +305,12 @@
     <string name="converter_error_no_images_selected">이미지를 하나 이상 선택해야 합니다</string>
     <string name="converter_error_no_images_loaded">선택한 이미지를 하나도 불러올 수 없습니다</string>
     <string name="converter_error_generic_format">변환 오류: %1$s</string>
+    <string name="converter_html_title_pdf">PDF 문서</string>
+    <string name="converter_html_page_label">%1$d페이지</string>
+    <string name="converter_txt_page_label">=== %1$d페이지 ===</string>
+    <string name="converter_html_title_word">Word 문서</string>
+    <string name="converter_html_title_excel">스프레드시트</string>
+    <string name="converter_pdf_slide_label">=== 슬라이드 %1$d ===</string>
     <string name="converter_error_unknown">알 수 없는 오류</string>
 
     <!-- ── PDF 도구: 메인 화면 및 결과 카드 ── -->
@@ -561,6 +570,9 @@
     <string name="pdf_ocr_error">텍스트 인식 오류: %1$s</string>
     <string name="pdf_tools_unexpected_error">예기치 않은 오류가 발생했습니다. 더 작은 파일로 다시 시도해 보세요.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── 홈 빈 상태 ───────────────────────────── -->
 
@@ -854,6 +866,7 @@
     <string name="qr_document_selected">문서 선택됨 ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">이 파일에 대한 QR 코드를 만들 수 없습니다</string>
     <string name="qr_local_only_hint">이 QR 코드는 이 기기에서만 작동합니다. 공유된 사본이 아니라 로컬 파일을 가리킵니다.</string>
     <string name="qr_label_url">웹사이트 URL</string>
     <string name="qr_label_text">메시지 텍스트</string>
@@ -965,7 +978,7 @@
     <string name="study_start">시작</string>
     <string name="study_pomodoros_completed">완료한 뽀모도로</string>
     <string name="study_pomodoros_hint">뽀모도로 4회마다 긴 휴식</string>
-    <string name="study_pomodoro_technique_info">뽀모도로 기법: 25분 집중 학습과 5분 휴식을 번갈아 하여 지치지 않고 집중할 수 있도록 도와줍니다</string>
+    <string name="study_pomodoro_technique_info">뽀모도로 기법: 25분 집중 학습과 5분 휴식을 번갈아 하며(4회마다 15분 긴 휴식) 지치지 않고 집중할 수 있도록 도와줍니다</string>
     <string name="study_extract_could_not_read">파일을 읽을 수 없습니다</string>
     <string name="study_extract_pdf_no_text">이 PDF에는 추출 가능한 텍스트가 없습니다. 스캔된 PDF일 수 있습니다.</string>
     <string name="study_extract_pdf_error">PDF 읽기 오류: %1$s</string>

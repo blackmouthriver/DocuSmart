@@ -236,8 +236,13 @@ private fun WifiActionButtons(context: Context, content: String, onCopied: () ->
 @Composable
 private fun ContactActionButtons(context: Context, content: String, onCopied: () -> Unit) {
     val contact = parseVCardPayload(content)
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): el
+    // botón quedaba clickeable pero sin hacer nada si el payload no se
+    // pudo interpretar -- se deshabilita en vez de simular una acción que
+    // no pasa nada.
     Button(
         onClick = { if (contact != null) addContact(context, contact.name, contact.phone, contact.email) },
+        enabled = contact != null,
         modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
         shape = MaterialTheme.shapes.medium
     ) {
@@ -259,10 +264,12 @@ private fun ContactActionButtons(context: Context, content: String, onCopied: ()
 @Composable
 private fun EventActionButtons(context: Context, content: String, onCopied: () -> Unit) {
     val event = parseVEventPayload(content)
+    // Ver el comentario equivalente en ContactActionButtons más arriba.
     Button(
         onClick = {
             if (event != null) addCalendarEvent(context, event.title, event.location, event.start, event.end)
         },
+        enabled = event != null,
         modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
         shape = MaterialTheme.shapes.medium
     ) {

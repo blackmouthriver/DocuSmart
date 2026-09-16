@@ -65,7 +65,12 @@ class PdfToTextUseCase @Inject constructor(
                 for (i in 1..pageCount) {
                     val pageText = PdfTextExtractor.getTextFromPage(pdfDoc.getPage(i))
                     if (pageText.isNotBlank()) hasRealText = true
-                    sb.appendLine("=== Página $i ===")
+                    // Hallazgo real de la revisión general 2026-09-16
+                    // (cuarta pasada, #26): hardcodeado en español pese al
+                    // idioma configurado -- a diferencia de los mensajes
+                    // de error (ya corregidos), este es el CONTENIDO real
+                    // del .txt que el usuario recibe.
+                    sb.appendLine(context.getString(R.string.converter_txt_page_label, i))
                     sb.appendLine(pageText)
                     sb.appendLine()
                 }

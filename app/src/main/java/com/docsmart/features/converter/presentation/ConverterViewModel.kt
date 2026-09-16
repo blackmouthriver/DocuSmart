@@ -42,6 +42,12 @@ data class ConverterUiState(
     val outputFile        : File?            = null,
     val savedToDownloads  : Boolean          = false,
     val errorMessage      : String?          = null,
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): el
+    // botón "Guardar" no tenía guard de re-entrada -- a diferencia de
+    // "Convertir" (ya corregido por el hallazgo #31), un doble-toque
+    // rápido lanzaba saveToDownloads()/saveAllToDownloads() dos veces en
+    // paralelo, duplicando el archivo en Descargas.
+    val isSaving          : Boolean          = false,
     // ── RF-CONV-08: conversión por lotes ──────────────
     val batchResults      : List<BatchConversionItem> = emptyList(),
     val batchSavedToDownloads: Boolean       = false,
@@ -400,17 +406,24 @@ class ConverterViewModel @Inject constructor(
     fun saveAllToDownloads(context: Context) {
         val successFiles = _uiState.value.batchResults
             .mapNotNull { (it.result as? ConversionResult.Success)?.outputFile }
-        if (successFiles.isEmpty()) return
+        if (successFiles.isEmpty() || _uiState.value.isSaving) return
 
+        _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
-            val allSaved = successFiles.all {
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta
+            // pasada): Iterable.all{} corta en cortocircuito en el primer
+            // `false` -- si el primer archivo del lote fallaba al
+            // guardarse, el resto (que hubieran funcionado) ni se
+            // intentaba. .map{} sí procesa todos antes de evaluar el
+            // resultado.
+            val allSaved = successFiles.map {
                 DownloadsSaver.saveFile(context, it, DownloadsSaver.mimeTypeForExtension(it.extension))
-            }
+            }.all { it }
             // Bug real encontrado 2026-09-14: hardcodeado en español,
             // saltándose el sistema de 12 idiomas.
             _uiState.update { state ->
-                if (allSaved) state.copy(batchSavedToDownloads = true)
-                else state.copy(errorMessage = context.getString(R.string.converter_batch_save_error))
+                if (allSaved) state.copy(batchSavedToDownloads = true, isSaving = false)
+                else state.copy(errorMessage = context.getString(R.string.converter_batch_save_error), isSaving = false)
             }
         }
     }
@@ -453,27 +466,39 @@ class ConverterViewModel @Inject constructor(
 
     fun saveToDownloads(context: Context) {
         val file = _uiState.value.outputFile ?: return
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // sin este guard, un doble-toque rápido en "Guardar" lanzaba esta
+        // función dos veces en paralelo -- mismo patrón ya corregido para
+        // "Convertir" (hallazgo #31).
+        if (_uiState.value.isSaving) return
         // Hallazgo real de la revisión general 2026-09-16 (#45): PDF→Imagen
         // con varias páginas genera un extraFiles con el resto de las
         // páginas (ver ConversionResult.Success) que nunca se guardaba --
         // el usuario solo podía recuperar la primera. Se guardan todas.
         val extraFiles = (_uiState.value.conversionResult as? ConversionResult.Success)?.extraFiles.orEmpty()
+        _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             try {
-                val allSaved = (listOf(file) + extraFiles).all {
+                // Ver el comentario equivalente en saveAllToDownloads():
+                // .map{} en vez de .all{} para que un fallo en el primer
+                // archivo no impida intentar el resto.
+                val allSaved = (listOf(file) + extraFiles).map {
                     DownloadsSaver.saveFile(context, it, DownloadsSaver.mimeTypeForExtension(it.extension))
-                }
+                }.all { it }
                 // Bug real encontrado 2026-09-14: ambos mensajes estaban
                 // hardcodeados en español, saltándose el sistema de 12
                 // idiomas -- el primero reusa pdf_tools_save_error (mismo
                 // mensaje que Herramientas PDF para este mismo escenario).
                 _uiState.update { state ->
-                    if (allSaved) state.copy(savedToDownloads = true)
-                    else state.copy(errorMessage = context.getString(R.string.pdf_tools_save_error))
+                    if (allSaved) state.copy(savedToDownloads = true, isSaving = false)
+                    else state.copy(errorMessage = context.getString(R.string.pdf_tools_save_error), isSaving = false)
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(errorMessage = context.getString(R.string.general_error_format, e.message ?: ""))
+                    it.copy(
+                        errorMessage = context.getString(R.string.general_error_format, e.message ?: ""),
+                        isSaving = false
+                    )
                 }
             }
         }

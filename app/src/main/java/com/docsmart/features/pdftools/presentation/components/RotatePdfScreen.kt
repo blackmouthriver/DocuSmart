@@ -29,6 +29,7 @@ import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 
 @Composable
@@ -54,50 +55,47 @@ fun RotatePdfScreen(
             return@LaunchedEffect
         }
         isLoadingPreview = true
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // `fd`/`renderer`/`page` solo se cerraban en el camino feliz (ej.
+        // un PDF con contraseña de propietario -- PdfRenderer no lo abre,
+        // aunque iText sí -- o de 0 páginas -- openPage(0) sin chequear
+        // pageCount lanza de inmediato), y el archivo temporal `file`
+        // nunca se borraba ni siquiera en el camino feliz. `.use{}`
+        // anidado + `finally { file.delete() }`, mismo patrón ya usado en
+        // OcrPdfUseCase.
         previewBitmap = withContext(Dispatchers.IO) {
+            val file = File(context.cacheDir, "preview_${System.currentTimeMillis()}.pdf")
             try {
-                val file = File(
-                    context.cacheDir,
-                    "preview_${System.currentTimeMillis()}.pdf"
-                )
                 context.contentResolver.openInputStream(selectedPdf)?.use { input ->
                     file.outputStream().use { output -> input.copyTo(output) }
                 }
-                val fd = ParcelFileDescriptor.open(
-                    file,
-                    ParcelFileDescriptor.MODE_READ_ONLY
-                )
-                val renderer = PdfRenderer(fd)
-                val page = renderer.openPage(0)
-                val bmp = Bitmap.createBitmap(
-                    page.width,
-                    page.height,
-                    Bitmap.Config.ARGB_8888
-                )
-                bmp.eraseColor(android.graphics.Color.WHITE)
-                page.render(
-                    bmp, null, null,
-                    PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-                )
-                page.close()
-                renderer.close()
-                fd.close()
+                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+                    PdfRenderer(fd).use { renderer ->
+                        if (renderer.pageCount == 0) return@withContext null
+                        renderer.openPage(0).use { page ->
+                            val bmp = Bitmap.createBitmap(
+                                page.width, page.height, Bitmap.Config.ARGB_8888
+                            )
+                            bmp.eraseColor(android.graphics.Color.WHITE)
+                            page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
-                // Aplica rotación real al Bitmap
-                val matrix = android.graphics.Matrix().apply {
-                    postRotate(degrees.toFloat())
+                            // Aplica rotación real al Bitmap
+                            val matrix = android.graphics.Matrix().apply {
+                                postRotate(degrees.toFloat())
+                            }
+                            val rotated = Bitmap.createBitmap(
+                                bmp, 0, 0, bmp.width, bmp.height, matrix, true
+                            )
+                            bmp.recycle()
+                            rotated
+                        }
+                    }
                 }
-                val rotated = Bitmap.createBitmap(
-                    bmp, 0, 0,
-                    bmp.width, bmp.height,
-                    matrix, true
-                )
-                bmp.recycle()
-                rotated
-
             } catch (e: Exception) {
-                e.printStackTrace()
+                Timber.e(e, "RotatePdfScreen: error generando vista previa")
                 null
+            } finally {
+                file.delete()
             }
         }
         isLoadingPreview = false

@@ -1,8 +1,12 @@
 package com.docsmart.core.navegation
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.widget.Toast
+import androidx.core.content.FileProvider
+import com.docsmart.R
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -44,6 +48,7 @@ import com.docsmart.features.settings.presentation.SettingsScreen
 import com.docsmart.features.splash.presentation.SplashDocuSmartScreen
 import com.docsmart.features.splash.presentation.SplashMouthBlackScreen
 import com.docsmart.features.study.presentation.StudyScreen
+import java.io.File
 import com.docsmart.features.library.presentation.TrashScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
 import com.docsmart.features.security.presentation.SecurityMenuScreen
@@ -326,10 +331,41 @@ private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
     )
 }
 
-private fun NavHostController.navigateToQrCreator(document: DocumentUiModel) {
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): a
+// diferencia de Convertir/OCR/Firmar/Mover a Carpeta Segura (que solo leen
+// el archivo dentro del propio proceso vía ContentResolver, donde un
+// `file://` crudo funciona sin problema), "Crear QR" incrusta la Uri TAL
+// CUAL como el contenido de texto del código -- al escanearlo y tocar
+// "Abrir documento", se lanza un Intent.ACTION_VIEW externo con ese
+// `file://`, que en un dispositivo con targetSdk 36 dispara
+// FileUriExposedException (atrapada en silencio, sin aviso). Para un
+// documento propio de la app (id = ruta absoluta) hay que envolverlo con
+// FileProvider ANTES de generar el QR, igual que ya hace
+// ViewerViewModel.shareableUri() para "Compartir".
+private fun safeShareableUriOrNull(context: Context, document: DocumentUiModel): Uri? {
+    if (document.id.startsWith("content://")) return Uri.parse(document.id)
+    return try {
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(document.id))
+    } catch (e: IllegalArgumentException) {
+        // Ruta fuera de las carpetas declaradas en file_provider_paths.xml
+        // (ej. un archivo de Carpeta Segura) -- no hay forma segura de
+        // compartirlo por QR.
+        Timber.w(e, "safeShareableUriOrNull: sin Uri compartible para ${document.name}")
+        null
+    }
+}
+
+private fun NavHostController.navigateToQrCreator(context: Context, document: DocumentUiModel) {
+    val safeUri = safeShareableUriOrNull(context, document)
+    if (safeUri == null) {
+        Toast.makeText(
+            context, context.getString(R.string.qr_document_not_shareable), Toast.LENGTH_SHORT
+        ).show()
+        return
+    }
     navigate(
         NavRoutes.QrCreator.createRoute(
-            initialFileUri  = document.toContentUri().toString(),
+            initialFileUri  = safeUri.toString(),
             initialFileType = document.type.toQrFileType(),
             initialFileName = document.name
         )
@@ -474,7 +510,7 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
             },
             onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) },
+            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(context, doc) },
             onMakeSearchableDocument   = { doc -> navController.navigateToOcr(doc) },
             onSignDocument             = { doc -> navController.navigateToSign(doc) },
             onMoveToSecureFolderDocument = { doc -> navController.navigateToSecureFolder(doc) }
@@ -506,7 +542,7 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
             },
             onTrashClick    = { navController.navigate(NavRoutes.Trash.route) },
             onConvertClick  = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) },
+            onCreateQrClick = { doc -> navController.navigateToQrCreator(context, doc) },
             onMakeSearchableClick   = { doc -> navController.navigateToOcr(doc) },
             onSignClick             = { doc -> navController.navigateToSign(doc) },
             onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) }
@@ -545,7 +581,7 @@ private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
                 }
             },
             onConvertClick  = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrClick = { doc -> navController.navigateToQrCreator(doc) },
+            onCreateQrClick = { doc -> navController.navigateToQrCreator(context, doc) },
             onMakeSearchableClick   = { doc -> navController.navigateToOcr(doc) },
             onSignClick             = { doc -> navController.navigateToSign(doc) },
             onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) }
@@ -603,6 +639,7 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
             .get<List<String>>("scanned_uris") ?: emptyList()
         val isPdf = scannerEntry.savedStateHandle.get<Boolean>("is_pdf") ?: false
         val uris  = uriStrings.map { Uri.parse(it) }
+        val context = LocalContext.current
         ScanResultScreen(
             scannedUris    = uris,
             isPdf          = isPdf,
@@ -621,7 +658,7 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
             // persistente que sí necesita Library para MediaStore.
             onOpenDocument         = { documentId -> navController.navigate(NavRoutes.Viewer.createRoute(documentId)) },
             onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
-            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(doc) },
+            onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(context, doc) },
             documentActions = ScanResultDocumentActions(
                 onMakeSearchable     = { doc -> navController.navigateToOcr(doc) },
                 onSign               = { doc -> navController.navigateToSign(doc) },

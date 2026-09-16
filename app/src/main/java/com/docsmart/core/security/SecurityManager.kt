@@ -217,7 +217,7 @@ class SecurityManager @Inject constructor(
             }
             SecureMoveResult(success = true, originalDeleted = originalDeleted, destFile = dest)
         } catch (e: Exception) {
-            Timber.e(e, "Error moviendo archivo a carpeta segura")
+            Timber.e(redactedForLog(e), "Error moviendo archivo a carpeta segura")
             SecureMoveResult(success = false, originalDeleted = false)
         }
     }
@@ -230,10 +230,24 @@ class SecurityManager @Inject constructor(
             Timber.d("SecurityManager: archivo restaurado: ${dest.name}")
             dest
         } catch (e: Exception) {
-            Timber.e(e, "Error restaurando archivo")
+            Timber.e(redactedForLog(e), "Error restaurando archivo")
             null
         }
     }
+
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+    // IOException/FileNotFoundException reales de Java traen la ruta
+    // absoluta completa en su propio `.message` (ej. disco lleno, permiso
+    // denegado, colisión de nombre) -- CrashlyticsTree reenvía CUALQUIER
+    // Throwable pasado a Timber.e(t, ...) a
+    // FirebaseCrashlytics.recordException(t), que lo sube a un servidor de
+    // Google. Para los catches de esta clase (todos sobre archivos de
+    // Carpeta Segura), eso filtraba la ruta real -- y con ella la
+    // existencia/nombre de un documento protegido -- contradiciendo la
+    // promesa "100% local" sin ningún aviso al usuario. Se registra un
+    // Throwable nuevo (mismo tipo, stack trace del propio catch) en vez del
+    // original, para conservar valor de diagnóstico sin filtrar la ruta.
+    private fun redactedForLog(e: Exception) = RuntimeException("SecurityManager: ${e.javaClass.simpleName}")
 
     // Hallazgo real de la revisión general 2026-09-16 (#61): moveToSecure()/
     // moveFromSecure() usaban File(dir, file.name) con overwrite=true -- si
@@ -267,7 +281,7 @@ class SecurityManager @Inject constructor(
             Timber.d("SecurityManager: archivo eliminado: ${file.name}")
             true
         } catch (e: Exception) {
-            Timber.e(e, "Error eliminando archivo seguro")
+            Timber.e(redactedForLog(e), "Error eliminando archivo seguro")
             false
         }
     }
@@ -299,7 +313,7 @@ class SecurityManager @Inject constructor(
             file.copyTo(dest, overwrite = true)
             dest
         } catch (e: Exception) {
-            Timber.e(e, "Error copiando archivo seguro para vista previa")
+            Timber.e(redactedForLog(e), "Error copiando archivo seguro para vista previa")
             null
         }
     }

@@ -46,11 +46,17 @@ class CropPdfUseCase @Inject constructor(
         messages      : CropPdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // outputFile era un `val` dentro del try -- el catch de abajo ni
+        // siquiera podía referenciarlo para borrarlo si el for de páginas
+        // lanzaba a mitad de camino, mismo patrón ya corregido en
+        // Compare/Compress/OCR (hallazgos #25-27).
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val outputFile = createOutputFile(outputFileName ?: "Recortado")
+            outputFile = createOutputFile(outputFileName ?: "Recortado")
             val percent = marginPercent.coerceIn(0, 40)
 
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
@@ -59,7 +65,7 @@ class CropPdfUseCase @Inject constructor(
                     // PdfWriter(outputFile) ya crea el archivo en disco al
                     // abrirse -- sin este delete() quedaba huérfano en
                     // filesDir/pdftools para siempre.
-                    outputFile.delete()
+                    outputFile!!.delete()
                     return@withContext PdfToolResult.Error(messages.noPages)
                 }
                 for (pageNumber in 1..pdf.numberOfPages) {
@@ -78,7 +84,7 @@ class CropPdfUseCase @Inject constructor(
                 }
             }
 
-            if (outputFile.length() == 0L) {
+            if (outputFile!!.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
@@ -90,6 +96,7 @@ class CropPdfUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al recortar PDF")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()

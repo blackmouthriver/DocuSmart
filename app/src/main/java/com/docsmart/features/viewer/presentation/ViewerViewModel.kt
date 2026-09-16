@@ -107,6 +107,18 @@ data class ViewerUiState(
     val viewingAnnotation      : AnnotationEntity? = null, // tap sobre una anotación ya existente
     val showShareChoiceDialog  : Boolean = false, // "con anotaciones" / "original", solo si hay >=1
     val isFlatteningForShare   : Boolean = false,
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): la
+    // vista previa de Carpeta Segura (hallazgo #53) abre esta pantalla sobre
+    // una copia efímera en cacheDir/secure_preview/, con TODA la
+    // funcionalidad del Visor real -- eso permitía que "Eliminar" simulara
+    // un borrado que nunca tocaba el archivo protegido real, que
+    // anotaciones nuevas quedaran huérfanas bajo un id temporal, y que el
+    // documento protegido quedara expuesto en Recientes/Biblioteca sin PIN
+    // mientras la copia siguiera viva (ver recordHistoryOpen). Con esta
+    // bandera, la pantalla pasa a modo genuinamente de solo lectura:
+    // renombrar/eliminar/anotar se ocultan y el acceso no se registra en el
+    // historial.
+    val isReadOnlyPreview      : Boolean = false,
     // Hallazgo de la revisión de correctitud HU-46: un fallo al compartir
     // usaba `error` (el mismo campo que reemplaza TODA la vista del Visor
     // por una pantalla de "documento roto", ver el `when` de nivel superior
@@ -268,8 +280,9 @@ class ViewerViewModel @Inject constructor(
     }
 
     private suspend fun publishLoadedDocument(uriString: String, uri: Uri, mimeType: String, fileName: String) {
-        val documentType = detectDocumentType(mimeType)
-        val isFavorite   = favoritesRepository.isFavorite(uriString)
+        val documentType   = detectDocumentType(mimeType)
+        val isFavorite      = favoritesRepository.isFavorite(uriString)
+        val isReadOnlyPreview = isPreviewCacheDocument(uriString)
         val document = DocumentUiModel(
             id         = uriString,
             name       = fileName,
@@ -280,18 +293,33 @@ class ViewerViewModel @Inject constructor(
         )
         _uiState.update { state ->
             state.copy(
-                document   = document,
-                fileUri    = uri,
-                mimeType   = mimeType,
-                isFavorite = isFavorite,
-                isLoading  = false,
-                error      = null
+                document          = document,
+                fileUri           = uri,
+                mimeType          = mimeType,
+                isFavorite        = isFavorite,
+                isLoading         = false,
+                error             = null,
+                isReadOnlyPreview = isReadOnlyPreview
             )
         }
-        recordHistoryOpen(uriString)
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // registrar la copia efímera de vista previa en el historial la
+        // hacía aparecer en Recientes/Biblioteca (que solo exigen que el
+        // archivo exista en disco) con su nombre real, sin pedir PIN,
+        // mientras la copia siguiera viva.
+        if (!isReadOnlyPreview) recordHistoryOpen(uriString)
         observeAnnotations(uriString)
         DocuSmartAnalytics.logDocumentOpened(documentType.name)
     }
+
+    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): la
+    // vista previa de Carpeta Segura (SecurityManager.copyForPreview) copia
+    // siempre a `cacheDir/secure_preview/<nombre>` -- detectar ese path por
+    // el nombre de su carpeta padre (no por un flag explícito que habría
+    // que enhebrar por toda la navegación) alcanza para identificar el
+    // documentId sin acoplar el Visor a SecurityManager.
+    private fun isPreviewCacheDocument(documentId: String) =
+        File(documentId).parentFile?.name == "secure_preview"
 
     // RF-VIS/HOME: registra el acceso real para que "recientes" en Home
     // refleje uso, no solo la fecha de modificación del archivo.
@@ -715,7 +743,10 @@ class ViewerViewModel @Inject constructor(
     fun renameDocument(newName: String) {
         val document = _uiState.value.document ?: return
         val trimmed  = newName.trim()
-        if (trimmed.isBlank() || trimmed == document.name) {
+        // Defensa en profundidad, mismo criterio que toggleAnnotationToolbar:
+        // renombrar durante una vista previa de Carpeta Segura solo tocaría
+        // la copia efímera de caché, no el archivo protegido real.
+        if (_uiState.value.isReadOnlyPreview || trimmed.isBlank() || trimmed == document.name) {
             _uiState.update { it.copy(showRenameDialog = false) }
             return
         }
@@ -729,6 +760,15 @@ class ViewerViewModel @Inject constructor(
                     fileUri          = newUri
                 )
             }
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta
+            // pasada): DocumentRepository.renameDocument() ya migra las
+            // anotaciones al id nuevo (hallazgo #48), pero acá nunca se
+            // volvía a suscribir con ese id -- la suscripción activa
+            // seguía filtrando por el id VIEJO (sin filas), así que Room
+            // emitía lista vacía y los resaltados/notas desaparecían de la
+            // pantalla hasta reabrir el documento (los datos seguían
+            // intactos bajo el id nuevo).
+            if (newId != document.id) observeAnnotations(newId)
             Timber.d("$TAG: renameDocument ${document.id} → $newId ($trimmed)")
         }
     }
@@ -748,6 +788,16 @@ class ViewerViewModel @Inject constructor(
     // RF-VIS-07: "eliminar" mueve a la papelera, no borra de inmediato -- ver
     // DocumentRepository.moveToTrash().
     fun confirmDelete(context: Context) {
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // "Eliminar" durante una vista previa de Carpeta Segura llamaba
+        // trashRepository.moveToTrash() con el id de la copia efímera de
+        // caché -- eso solo insertaba una fila de papelera huérfana, sin
+        // tocar el archivo protegido real, mientras la UI mostraba el
+        // borrado como exitoso.
+        if (_uiState.value.isReadOnlyPreview) {
+            _uiState.update { it.copy(showDeleteConfirm = false) }
+            return
+        }
         val documentId = _uiState.value.document?.id ?: return
         viewModelScope.launch {
             val movedToTrash = trashRepository.moveToTrash(documentId)
@@ -928,6 +978,11 @@ class ViewerViewModel @Inject constructor(
     // ViewerUiState. toggleAnnotationToolbar() es el único punto que los
     // toca a los dos, evitando que queden desincronizados otra vez.
     fun toggleAnnotationToolbar() {
+        // Defensa en profundidad: la UI ya oculta el botón "Anotar" en modo
+        // de solo lectura (ver ViewerUiState.isReadOnlyPreview), pero este
+        // es el único punto de entrada real a anotar -- guardarlo acá
+        // también cierra el hueco aunque algo llegue a invocarlo igual.
+        if (_uiState.value.isReadOnlyPreview) return
         val opening = !_uiState.value.showAnnotationToolbar
         _uiState.update {
             it.copy(

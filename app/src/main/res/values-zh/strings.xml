@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">选择语言</string>
     <string name="settings_close">关闭</string>
+    <string name="settings_contact_support">联系支持</string>
     <string name="settings_language_subtitle">选择应用语言</string>
     <string name="settings_section_appearance">外观</string>
     <string name="settings_tutorial">查看教程</string>
@@ -177,6 +178,7 @@
     <string name="viewer_rendering">正在渲染文档…</string>
     <string name="viewer_unsupported">内置查看器不支持此格式。</string>
     <string name="viewer_open_other">用其他应用打开</string>
+    <string name="viewer_open_other_error">无法用其他应用打开</string>
     <string name="viewer_more_options">更多选项</string>
     <string name="viewer_convert">转换</string>
     <string name="viewer_create_qr">生成二维码</string>
@@ -229,6 +231,7 @@
     <string name="viewer_format_generic">文件</string>
     <string name="viewer_pdf_password_body">\"%1$s\" 已受密码保护。</string>
     <string name="viewer_search_content_desc">在文档中搜索</string>
+    <string name="viewer_page_content_desc">第 %1$d 页</string>
     <string name="viewer_favorite_content_desc">收藏</string>
     <string name="viewer_bottom_bar_page_format">第 %1$d 页，共 %2$d 页</string>
     <string name="viewer_search_no_results">无结果</string>
@@ -302,6 +305,12 @@
     <string name="converter_error_no_images_selected">你必须至少选择一张图片</string>
     <string name="converter_error_no_images_loaded">无法加载所选的任何图片</string>
     <string name="converter_error_generic_format">转换错误：%1$s</string>
+    <string name="converter_html_title_pdf">PDF 文档</string>
+    <string name="converter_html_page_label">第 %1$d 页</string>
+    <string name="converter_txt_page_label">=== 第 %1$d 页 ===</string>
+    <string name="converter_html_title_word">Word 文档</string>
+    <string name="converter_html_title_excel">电子表格</string>
+    <string name="converter_pdf_slide_label">=== 幻灯片 %1$d ===</string>
     <string name="converter_error_unknown">未知错误</string>
 
     <!-- ── PDF 工具：主界面与结果卡片 ── -->
@@ -561,6 +570,9 @@
     <string name="pdf_ocr_error">识别文字时出错：%1$s</string>
     <string name="pdf_tools_unexpected_error">发生了意外错误。请用更小的文件重试。</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── 首页空状态 ───────────────────────────────── -->
 
@@ -854,6 +866,7 @@
     <string name="qr_document_selected">已选择文档 ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">无法为此文件创建二维码</string>
     <string name="qr_local_only_hint">此二维码仅在本设备上有效：它指向本地文件，而不是共享副本。</string>
     <string name="qr_label_url">网站网址</string>
     <string name="qr_label_text">消息文本</string>
@@ -965,7 +978,7 @@
     <string name="study_start">开始</string>
     <string name="study_pomodoros_completed">已完成的番茄钟</string>
     <string name="study_pomodoros_hint">每完成 4 个番茄钟 = 一次长休息</string>
-    <string name="study_pomodoro_technique_info">番茄工作法：交替进行 25 分钟专注学习和 5 分钟休息，帮助你保持专注而不疲惫</string>
+    <string name="study_pomodoro_technique_info">番茄工作法：交替进行 25 分钟专注学习和 5 分钟休息（每 4 个番茄钟休息 15 分钟），帮助你保持专注而不疲惫</string>
     <string name="study_extract_could_not_read">无法读取文件</string>
     <string name="study_extract_pdf_no_text">此 PDF 不包含可提取的文本，可能是扫描版 PDF。</string>
     <string name="study_extract_pdf_error">读取 PDF 时出错：%1$s</string>

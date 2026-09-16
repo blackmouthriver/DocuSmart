@@ -33,6 +33,14 @@ class PdfToImageUseCase @Inject constructor(
         // `OutOfMemoryError` al renderizar una página a 2x, que ni siquiera
         // hereda de `Exception` y no la atrapa el catch de más abajo).
         var cacheFile: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+        // si el loop de páginas fallaba a mitad de camino (OutOfMemoryError
+        // u otra excepción al renderizar la página N de un PDF grande),
+        // las páginas 1..N-1 ya escritas a disco quedaban huérfanas en
+        // filesDir/converted para siempre -- la función nunca llegaba a
+        // Success, así que nada las referenciaba ni las borraba. Se
+        // declara afuera del try para poder limpiarlas en ambos catch.
+        val outputFiles = mutableListOf<File>()
         try {
             // ── Copiar al cache ───────────────────────
             cacheFile = File(context.cacheDir, "temp_convert_${System.currentTimeMillis()}.pdf")
@@ -42,7 +50,6 @@ class PdfToImageUseCase @Inject constructor(
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName = fileName ?: generateTimestamp()
-            val outputFiles = mutableListOf<File>()
 
             ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fileDescriptor ->
                 PdfRenderer(fileDescriptor).use { renderer ->
@@ -67,23 +74,28 @@ class PdfToImageUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo PDF a imagen")
-            ConversionResult.Error(
-                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
-            )
+            cleanupOrphanPages(outputFiles, e.message ?: "")
         } catch (e: OutOfMemoryError) {
             // OutOfMemoryError no hereda de Exception -- sin este catch,
             // una página de alta resolución (width*2 x height*2) sin
             // memoria suficiente crasheaba toda la conversión.
             Timber.e(e, "Sin memoria convirtiendo PDF a imagen")
-            ConversionResult.Error(
-                String.format(
-                    context.getString(R.string.converter_error_generic_format),
-                    context.getString(R.string.converter_error_unknown)
-                )
-            )
+            cleanupOrphanPages(outputFiles, context.getString(R.string.converter_error_unknown))
         } finally {
             cacheFile?.delete()
         }
+    }
+
+    // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al
+    // sumar la limpieza de páginas huérfanas de la revisión general
+    // 2026-09-16, cuarta pasada, hallazgo #21) -- agrupa el borrado de las
+    // páginas ya escritas a disco antes del fallo con la construcción del
+    // Error, compartido por los dos catch.
+    private fun cleanupOrphanPages(outputFiles: List<File>, errorDetail: String): ConversionResult {
+        outputFiles.forEach { it.delete() }
+        return ConversionResult.Error(
+            String.format(context.getString(R.string.converter_error_generic_format), errorDetail)
+        )
     }
 
     // Hallazgo real de la revisión general 2026-09-16: page.close() manual

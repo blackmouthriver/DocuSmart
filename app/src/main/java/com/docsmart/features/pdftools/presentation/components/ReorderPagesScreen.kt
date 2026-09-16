@@ -154,38 +154,45 @@ fun ReorderPagesScreen(
     }
 }
 
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): `fd`/
+// `renderer` (y `file`) solo se cerraban/borraban si el loop de TODAS las
+// páginas terminaba sin lanzar -- una excepción a mitad del loop (una
+// página particular sin poder renderizarse) los dejaba sin cerrar. `page`
+// ya se cerraba por página, pero no si `page.render()` lanzaba antes de
+// llegar a `page.close()`. `.use{}` anidado (incluido por página) +
+// `finally { file.delete() }`.
 private suspend fun loadThumbnails(
     context: android.content.Context,
     pdfUri: Uri,
     onPagesLoaded: (Int) -> Unit
 ): Map<Int, Bitmap?> {
+    val file = File(context.cacheDir, "reorder_preview_${System.currentTimeMillis()}.pdf")
     return try {
-        val file = File(context.cacheDir, "reorder_preview_${System.currentTimeMillis()}.pdf")
         context.contentResolver.openInputStream(pdfUri)?.use { input ->
             file.outputStream().use { output -> input.copyTo(output) }
         }
-        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        val renderer = PdfRenderer(fd)
-        onPagesLoaded(renderer.pageCount)
-
-        val result = (0 until renderer.pageCount).associate { index ->
-            val page = renderer.openPage(index)
-            val scale = THUMBNAIL_TARGET_WIDTH_PX.toFloat() / page.width
-            val width = THUMBNAIL_TARGET_WIDTH_PX
-            val height = (page.height * scale).roundToInt().coerceAtLeast(1)
-            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            bmp.eraseColor(android.graphics.Color.WHITE)
-            page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            page.close()
-            (index + 1) to bmp
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { renderer ->
+                onPagesLoaded(renderer.pageCount)
+                (0 until renderer.pageCount).associate { index ->
+                    val bmp = renderer.openPage(index).use { page ->
+                        val scale = THUMBNAIL_TARGET_WIDTH_PX.toFloat() / page.width
+                        val width = THUMBNAIL_TARGET_WIDTH_PX
+                        val height = (page.height * scale).roundToInt().coerceAtLeast(1)
+                        val pageBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                        pageBmp.eraseColor(android.graphics.Color.WHITE)
+                        page.render(pageBmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        pageBmp
+                    }
+                    (index + 1) to bmp
+                }
+            }
         }
-        renderer.close()
-        fd.close()
-        file.delete()
-        result
     } catch (e: Exception) {
         Timber.e(e, "ReorderPagesScreen: error generando miniaturas")
         emptyMap()
+    } finally {
+        file.delete()
     }
 }
 

@@ -241,25 +241,36 @@ private fun CropPreviewCard(
     }
 }
 
-private fun loadFirstPage(context: android.content.Context, pdfUri: Uri): Bitmap? {
-    return try {
-        val file = File(context.cacheDir, "crop_preview_${System.currentTimeMillis()}.pdf")
-        context.contentResolver.openInputStream(pdfUri)?.use { input ->
-            file.outputStream().use { output -> input.copyTo(output) }
-        }
-        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        val renderer = PdfRenderer(fd)
-        val page = renderer.openPage(0)
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): `fd`/
+// `renderer`/`page` solo se cerraban y `file` solo se borraba en el camino
+// feliz -- un PDF con contraseña de propietario o de 0 páginas
+// (openPage(0) sin chequear pageCount lanza de inmediato) dejaba los tres
+// sin cerrar y el archivo temporal huérfano en cacheDir en cada intento.
+// `.use{}` anidado + `finally { file.delete() }`, mismo patrón ya usado en
+// OcrPdfUseCase.
+private fun renderFirstPageBitmap(renderer: PdfRenderer): Bitmap? {
+    if (renderer.pageCount == 0) return null
+    return renderer.openPage(0).use { page ->
         val bmp = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
         bmp.eraseColor(android.graphics.Color.WHITE)
         page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        page.close()
-        renderer.close()
-        fd.close()
-        file.delete()
         bmp
+    }
+}
+
+private fun loadFirstPage(context: android.content.Context, pdfUri: Uri): Bitmap? {
+    val file = File(context.cacheDir, "crop_preview_${System.currentTimeMillis()}.pdf")
+    return try {
+        context.contentResolver.openInputStream(pdfUri)?.use { input ->
+            file.outputStream().use { output -> input.copyTo(output) }
+        }
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { renderer -> renderFirstPageBitmap(renderer) }
+        }
     } catch (e: Exception) {
         Timber.e(e, "CropPdfScreen: error generando vista previa")
         null
+    } finally {
+        file.delete()
     }
 }

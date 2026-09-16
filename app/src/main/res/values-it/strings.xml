@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Seleziona lingua</string>
     <string name="settings_close">Chiudi</string>
+    <string name="settings_contact_support">Contatta il supporto</string>
     <string name="settings_language_subtitle">Scegli la lingua dell\'app</string>
     <string name="settings_section_appearance">Aspetto</string>
     <string name="settings_tutorial">Guarda il tutorial</string>
@@ -177,6 +178,7 @@
     <string name="viewer_rendering">Rendering del documento…</string>
     <string name="viewer_unsupported">Questo formato non è supportato dal visualizzatore integrato.</string>
     <string name="viewer_open_other">Apri con un\'altra app</string>
+    <string name="viewer_open_other_error">Impossibile aprire con un\'altra app</string>
     <string name="viewer_more_options">Altre opzioni</string>
     <string name="viewer_convert">Converti</string>
     <string name="viewer_create_qr">Crea QR</string>
@@ -229,6 +231,7 @@
     <string name="viewer_format_generic">File</string>
     <string name="viewer_pdf_password_body">\"%1$s\" è protetto da password.</string>
     <string name="viewer_search_content_desc">Cerca nel documento</string>
+    <string name="viewer_page_content_desc">Pagina %1$d</string>
     <string name="viewer_favorite_content_desc">Preferito</string>
     <string name="viewer_bottom_bar_page_format">Pagina %1$d di %2$d</string>
     <string name="viewer_search_no_results">Nessun risultato</string>
@@ -304,6 +307,12 @@
 
     <string name="converter_error_no_images_loaded">Non è stato possibile caricare nessuna delle immagini selezionate</string>
     <string name="converter_error_generic_format">Errore di conversione: %1$s</string>
+    <string name="converter_html_title_pdf">Documento PDF</string>
+    <string name="converter_html_page_label">Pagina %1$d</string>
+    <string name="converter_txt_page_label">=== Pagina %1$d ===</string>
+    <string name="converter_html_title_word">Documento Word</string>
+    <string name="converter_html_title_excel">Foglio di calcolo</string>
+    <string name="converter_pdf_slide_label">=== Diapositiva %1$d ===</string>
     <string name="converter_error_unknown">Errore sconosciuto</string>
 
     <!-- ── Strumenti PDF: schermata principale e scheda risultato ── -->
@@ -563,6 +572,9 @@
     <string name="pdf_ocr_error">Errore durante il riconoscimento del testo: %1$s</string>
     <string name="pdf_tools_unexpected_error">Si è verificato un errore imprevisto. Riprova con un file più piccolo.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
+    <string name="file_size_bytes">%1$d B</string>
+    <string name="file_size_kb">%1$d KB</string>
+    <string name="file_size_mb">%1$s MB</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 
@@ -857,6 +869,7 @@
     <string name="qr_document_selected">Documento selezionato ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">Impossibile creare un QR per questo file</string>
     <string name="qr_local_only_hint">Questo QR funziona solo su questo dispositivo: punta a un file locale, non a una copia condivisa.</string>
     <string name="qr_label_url">URL del sito web</string>
     <string name="qr_label_text">Testo del messaggio</string>
@@ -968,7 +981,7 @@
     <string name="study_start">Avvia</string>
     <string name="study_pomodoros_completed">Pomodoro completati</string>
     <string name="study_pomodoros_hint">Ogni 4 pomodoro = pausa lunga</string>
-    <string name="study_pomodoro_technique_info">Tecnica Pomodoro: alterna 25 min di studio concentrato con 5 min di pausa per aiutarti a concentrarti senza stancarti</string>
+    <string name="study_pomodoro_technique_info">Tecnica Pomodoro: alterna 25 min di studio concentrato con 5 min di pausa (15 min ogni 4 pomodori) per aiutarti a concentrarti senza stancarti</string>
     <string name="study_extract_could_not_read">Impossibile leggere il file</string>
     <string name="study_extract_pdf_no_text">Questo PDF non contiene testo estraibile. Potrebbe essere un PDF scansionato.</string>
     <string name="study_extract_pdf_error">Errore durante la lettura del PDF: %1$s</string>

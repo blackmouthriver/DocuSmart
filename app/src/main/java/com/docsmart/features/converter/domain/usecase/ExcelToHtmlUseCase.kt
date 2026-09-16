@@ -93,12 +93,21 @@ class ExcelToHtmlUseCase @Inject constructor(
             if (rows.isEmpty())
                 return@withContext ConversionResult.Error(context.getString(R.string.converter_error_empty_spreadsheet))
 
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta
+            // pasada, #26, latente -- EXCEL_TO_HTML está oculto de la
+            // grilla hoy): `lang="es"` y el título quedaban hardcodeados
+            // en español pese al idioma configurado -- este es el
+            // CONTENIDO real del HTML que el usuario recibe. `lang` usa
+            // el idioma activo de la app (no el del documento fuente,
+            // imposible de detectar acá).
+            val htmlLang = Locale.getDefault().language
+            val htmlTitle = context.getString(R.string.converter_html_title_excel)
             // Generar HTML con tabla
             val sb = StringBuilder()
             sb.appendLine("""<!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8">
+<html lang="$htmlLang"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hoja de cálculo</title>
+<title>$htmlTitle</title>
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; }
   table { border-collapse: collapse; width: 100%; font-size: 13px; }

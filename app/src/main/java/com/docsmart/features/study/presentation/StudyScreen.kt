@@ -2413,36 +2413,57 @@ private suspend fun extractTextFromUri(
 // > 1.6x el tamaño de fuente = párrafo nuevo, uno menor = ajuste de línea
 // dentro del mismo párrafo lógico) para que "leer este párrafo" lea un
 // párrafo real, no medio renglón.
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada, #28):
+// pdfDoc.close()/cacheFile.delete() manuales solo se alcanzaban en el
+// camino feliz -- un PDF protegido/corrupto elegido en "Abrir documento"
+// (PdfDocument(PdfReader(cacheFile)) lanza, o cualquier excepción a mitad
+// del loop de páginas) dejaba el PdfDocument/PdfReader sin cerrar y el
+// archivo temporal huérfano en cacheDir en cada intento. Mismo patrón ya
+// corregido en PdfToTextUseCase (hallazgo #39): cacheFile se declara
+// afuera del try para poder borrarlo en el finally, y .use{} cierra
+// pdfDoc pase lo que pase.
 private suspend fun extractPdfText(
     context : Context,
     uri     : Uri,
     messages: StudyExtractionMessages,
     onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> }
 ): Pair<List<String>, List<Int>> {
+    var cacheFile: File? = null
     return try {
-        val cacheFile = File.createTempFile("study_temp", ".pdf", context.cacheDir)
+        cacheFile = File.createTempFile("study_temp", ".pdf", context.cacheDir)
         context.contentResolver.openInputStream(uri)?.use { input ->
             cacheFile.outputStream().use { output -> input.copyTo(output) }
         } ?: return listOf(messages.couldNotRead) to emptyList()
 
-        val pdfDoc = PdfDocument(PdfReader(cacheFile))
-
         val paragraphs = mutableListOf<String>()
         val pageBoundaries = mutableListOf<Int>()
-        for (i in 1..pdfDoc.numberOfPages) {
-            val listener = StudyPdfLineListener()
-            PdfCanvasProcessor(listener).processPageContent(pdfDoc.getPage(i))
-            paragraphs.addAll(groupPdfChunksIntoParagraphs(listener.chunks))
-            pageBoundaries.add(paragraphs.size)
-            if (paragraphs.isNotEmpty()) onPageExtracted(paragraphs.toList(), pageBoundaries.toList())
+        PdfDocument(PdfReader(cacheFile)).use { pdfDoc ->
+            extractPdfPages(pdfDoc, paragraphs, pageBoundaries, onPageExtracted)
         }
-        pdfDoc.close()
-        cacheFile.delete()
 
         if (paragraphs.isEmpty()) listOf(messages.pdfNoText) to emptyList() else paragraphs to pageBoundaries
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto PDF")
         listOf(String.format(messages.pdfErrorTemplate, e.message ?: "")) to emptyList()
+    } finally {
+        cacheFile?.delete()
+    }
+}
+
+// Extraído de extractPdfText() (detekt: NestedBlockDepth, disparado al
+// hoistear cacheFile fuera del try para el fix del hallazgo #28).
+private suspend fun extractPdfPages(
+    pdfDoc: PdfDocument,
+    paragraphs: MutableList<String>,
+    pageBoundaries: MutableList<Int>,
+    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit
+) {
+    for (i in 1..pdfDoc.numberOfPages) {
+        val listener = StudyPdfLineListener()
+        PdfCanvasProcessor(listener).processPageContent(pdfDoc.getPage(i))
+        paragraphs.addAll(groupPdfChunksIntoParagraphs(listener.chunks))
+        pageBoundaries.add(paragraphs.size)
+        if (paragraphs.isNotEmpty()) onPageExtracted(paragraphs.toList(), pageBoundaries.toList())
     }
 }
 

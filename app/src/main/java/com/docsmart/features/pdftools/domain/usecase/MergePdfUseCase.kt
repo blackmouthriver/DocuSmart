@@ -84,6 +84,13 @@ class MergePdfUseCase @Inject constructor(
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al unir PDFs")
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta
+            // pasada): outputFile SÍ está en scope acá (a diferencia de
+            // las otras herramientas), pero nunca se borraba si
+            // copyPagesTo()/etc. lanzaba a mitad de camino -- mismo patrón
+            // de archivo huérfano que #25-27, solo que por un motivo
+            // distinto (el delete() faltaba, no el scope).
+            outputFile.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFiles.forEach { it.delete() }

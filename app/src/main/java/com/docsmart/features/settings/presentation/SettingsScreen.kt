@@ -417,6 +417,18 @@ fun SettingsScreen(
                 TextButton(onClick = { showHelpDialog = false }) {
                     Text(stringResource(R.string.settings_close))
                 }
+            },
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta
+            // pasada, #30): sendSupportEmail() ya existía y compilaba,
+            // pero ningún botón/fila de la UI la invocaba -- un usuario
+            // que necesitaba soporte real no tenía forma de llegar a ella.
+            dismissButton = {
+                TextButton(onClick = {
+                    showHelpDialog = false
+                    sendSupportEmail(context, isEs = currentLanguage.code == "es")
+                }) {
+                    Text(stringResource(R.string.settings_contact_support))
+                }
             }
         )
     }

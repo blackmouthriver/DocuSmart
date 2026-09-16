@@ -102,6 +102,7 @@
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Выбрать язык</string>
     <string name="settings_close">Закрыть</string>
+    <string name="settings_contact_support">Связаться с поддержкой</string>
     <string name="settings_language_subtitle">Выберите язык приложения</string>
     <string name="settings_section_appearance">Внешний вид</string>
     <string name="settings_tutorial">Посмотреть обучение</string>
@@ -177,6 +178,7 @@
     <string name="viewer_rendering">Рендеринг документа…</string>
     <string name="viewer_unsupported">Этот формат не поддерживается встроенным просмотрщиком.</string>
     <string name="viewer_open_other">Открыть в другом приложении</string>
+    <string name="viewer_open_other_error">Не удалось открыть в другом приложении</string>
     <string name="viewer_more_options">Дополнительные параметры</string>
     <string name="viewer_convert">Конвертировать</string>
     <string name="viewer_create_qr">Создать QR-код</string>
@@ -229,6 +231,7 @@
     <string name="viewer_format_generic">Файл</string>
     <string name="viewer_pdf_password_body">Файл «%1$s» защищён паролем.</string>
     <string name="viewer_search_content_desc">Поиск в документе</string>
+    <string name="viewer_page_content_desc">Страница %1$d</string>
     <string name="viewer_favorite_content_desc">Избранное</string>
     <string name="viewer_bottom_bar_page_format">Страница %1$d из %2$d</string>
     <string name="viewer_search_no_results">Нет результатов</string>
@@ -302,6 +305,12 @@
     <string name="converter_error_no_images_selected">Нужно выбрать хотя бы одно изображение</string>
     <string name="converter_error_no_images_loaded">Не удалось загрузить ни одно из выбранных изображений</string>
     <string name="converter_error_generic_format">Ошибка конвертации: %1$s</string>
+    <string name="converter_html_title_pdf">Документ PDF</string>
+    <string name="converter_html_page_label">Страница %1$d</string>
+    <string name="converter_txt_page_label">=== Страница %1$d ===</string>
+    <string name="converter_html_title_word">Документ Word</string>
+    <string name="converter_html_title_excel">Таблица</string>
+    <string name="converter_pdf_slide_label">=== Слайд %1$d ===</string>
     <string name="converter_error_unknown">Неизвестная ошибка</string>
 
     <!-- ── Инструменты PDF: главный экран и карточка результата ── -->
@@ -561,6 +570,9 @@
     <string name="pdf_ocr_error">Ошибка при распознавании текста: %1$s</string>
     <string name="pdf_tools_unexpected_error">Произошла непредвиденная ошибка. Попробуйте ещё раз с файлом меньшего размера.</string>
     <string name="pdf_tools_result_size_kb">%1$d КБ</string>
+    <string name="file_size_bytes">%1$d Б</string>
+    <string name="file_size_kb">%1$d КБ</string>
+    <string name="file_size_mb">%1$s МБ</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 
@@ -850,6 +862,7 @@
     <string name="qr_document_selected">Документ выбран ✓</string>
     <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
     <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
+    <string name="qr_document_not_shareable">Не удалось создать QR-код для этого файла</string>
     <string name="qr_local_only_hint">Этот QR-код работает только на этом устройстве: он указывает на локальный файл, а не на общую копию.</string>
     <string name="qr_label_url">URL сайта</string>
     <string name="qr_label_text">Текст сообщения</string>
@@ -961,7 +974,7 @@
     <string name="study_start">Начать</string>
     <string name="study_pomodoros_completed">Завершено помодоро</string>
     <string name="study_pomodoros_hint">Каждые 4 помодоро = длинный перерыв</string>
-    <string name="study_pomodoro_technique_info">Техника Помодоро: чередует 25 мин сфокусированной учёбы с 5-минутными перерывами, помогая сосредоточиться без переутомления</string>
+    <string name="study_pomodoro_technique_info">Техника Помодоро: чередует 25 мин сфокусированной учёбы с 5-минутными перерывами (15 мин каждые 4 помодоро), помогая сосредоточиться без переутомления</string>
     <string name="study_extract_could_not_read">Не удалось прочитать файл</string>
     <string name="study_extract_pdf_no_text">В этом PDF нет извлекаемого текста. Возможно, это отсканированный PDF.</string>
     <string name="study_extract_pdf_error">Ошибка чтения PDF: %1$s</string>
