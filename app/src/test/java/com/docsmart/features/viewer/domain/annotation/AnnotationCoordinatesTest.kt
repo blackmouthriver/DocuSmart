@@ -90,4 +90,82 @@ class AnnotationCoordinatesTest {
 
         assertTrue(isValidHighlightSize(atThreshold))
     }
+
+    // ── visualRectToRawPageRect (hallazgo #16, revisión general 2026-09-16) ──
+    // Página cruda de 200×300 puntos (rawPageWidthPts=200, rawPageHeightPts=300)
+    // en los 4 casos, para poder comparar los resultados entre rotaciones.
+    // Valores esperados calculados a mano con las fórmulas derivadas de una
+    // matriz de rotación clockwise estándar -- ver el comentario de
+    // `visualRectToRawPageRect` en PdfRectPts.kt.
+
+    @Test
+    fun `visualRectToRawPageRect con rotacion 0 no transforma nada`() {
+        val visual = PdfRectPts(xPts = 5f, yPts = 6f, widthPts = 7f, heightPts = 8f)
+
+        val raw = visualRectToRawPageRect(visual, rotationDegrees = 0, rawPageWidthPts = 200f, rawPageHeightPts = 300f)
+
+        assertEquals(visual.xPts, raw.x, EPS)
+        assertEquals(visual.yPts, raw.y, EPS)
+        assertEquals(visual.widthPts, raw.width, EPS)
+        assertEquals(visual.heightPts, raw.height, EPS)
+    }
+
+    @Test
+    fun `visualRectToRawPageRect con rotacion 90 intercambia ejes y ubica el rectangulo correctamente`() {
+        val visual = PdfRectPts(xPts = 10f, yPts = 180f, widthPts = 20f, heightPts = 10f)
+
+        val raw = visualRectToRawPageRect(visual, rotationDegrees = 90, rawPageWidthPts = 200f, rawPageHeightPts = 300f)
+
+        assertEquals(10f, raw.x, EPS)
+        assertEquals(10f, raw.y, EPS)
+        assertEquals(10f, raw.width, EPS)  // ancho crudo = alto visual
+        assertEquals(20f, raw.height, EPS) // alto crudo = ancho visual
+    }
+
+    @Test
+    fun `visualRectToRawPageRect con rotacion 180 refleja ambos ejes sin intercambiarlos`() {
+        val visual = PdfRectPts(xPts = 10f, yPts = 20f, widthPts = 30f, heightPts = 40f)
+
+        val raw = visualRectToRawPageRect(
+            visual, rotationDegrees = 180, rawPageWidthPts = 200f, rawPageHeightPts = 300f
+        )
+
+        assertEquals(160f, raw.x, EPS)
+        assertEquals(240f, raw.y, EPS)
+        assertEquals(30f, raw.width, EPS)
+        assertEquals(40f, raw.height, EPS)
+    }
+
+    @Test
+    fun `visualRectToRawPageRect con rotacion 270 intercambia ejes en sentido opuesto a 90`() {
+        val visual = PdfRectPts(xPts = 10f, yPts = 20f, widthPts = 30f, heightPts = 40f)
+
+        val raw = visualRectToRawPageRect(
+            visual, rotationDegrees = 270, rawPageWidthPts = 200f, rawPageHeightPts = 300f
+        )
+
+        assertEquals(20f, raw.x, EPS)
+        assertEquals(260f, raw.y, EPS)
+        assertEquals(40f, raw.width, EPS)
+        assertEquals(30f, raw.height, EPS)
+    }
+
+    @Test
+    fun `visualRectToRawPageRect normaliza rotaciones negativas y mayores a 360`() {
+        val visual = PdfRectPts(xPts = 10f, yPts = 180f, widthPts = 20f, heightPts = 10f)
+
+        // -270 y 450 son ambos equivalentes a 90 grados.
+        val fromNegative = visualRectToRawPageRect(
+            visual, rotationDegrees = -270, rawPageWidthPts = 200f, rawPageHeightPts = 300f
+        )
+        val fromOver360 = visualRectToRawPageRect(
+            visual, rotationDegrees = 450, rawPageWidthPts = 200f, rawPageHeightPts = 300f
+        )
+        val expected = visualRectToRawPageRect(
+            visual, rotationDegrees = 90, rawPageWidthPts = 200f, rawPageHeightPts = 300f
+        )
+
+        assertEquals(expected, fromNegative)
+        assertEquals(expected, fromOver360)
+    }
 }

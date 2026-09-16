@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.Uri
 import com.docsmart.core.data.db.AnnotationEntity
 import com.docsmart.core.data.db.AnnotationType
+import com.docsmart.features.viewer.domain.annotation.PdfRectPts
+import com.docsmart.features.viewer.domain.annotation.RawPageRect
+import com.docsmart.features.viewer.domain.annotation.visualRectToRawPageRect
 import com.itextpdf.kernel.colors.DeviceRgb
 import com.itextpdf.kernel.geom.Rectangle
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -31,18 +34,16 @@ import javax.inject.Inject
  * cualquier lector de PDF), no solo como un marcador dibujado -- así el
  * texto de la nota sigue siendo legible incluso fuera de DocuSmart.
  *
- * Límite conocido (hallazgo de la revisión de correctitud, sin confirmar en
- * dispositivo real por un problema de entorno -- ver memoria de sesión):
- * `xPts`/`yPts` de cada anotación se calculan contra `pageWidthPts`/
- * `pageHeightPts` de `PdfPageBitmap`, que vienen de `PdfRenderer.Page` de
- * Android -- esas dimensiones ya reflejan la rotación `/Rotate` de la
- * página (ancho/alto intercambiados si es 90°/270°, bitmap ya "derecho").
- * Acá se dibuja con `PdfCanvas` directo sobre el content stream crudo de
- * iText7, que usa el MediaBox SIN rotar y no aplica `page.getRotation()`.
- * Para una página con `/Rotate` 90/270 (frecuente en escaneos), el
- * resaltado/nota podría quedar desplazado en el PDF aplanado que se
- * comparte, aunque en pantalla (que sí usa esas mismas dimensiones de forma
- * consistente en todo el flujo de guardado/redibujado) se vea correcto.
+ * Corrección de rotación (hallazgo #16 de la revisión general 2026-09-16,
+ * cuarta pasada): `xPts`/`yPts` de cada anotación se calculan contra
+ * `pageWidthPts`/`pageHeightPts` de `PdfPageBitmap`, que vienen de
+ * `PdfRenderer.Page` de Android -- esas dimensiones ya reflejan la rotación
+ * `/Rotate` de la página (ancho/alto intercambiados si es 90°/270°, bitmap
+ * ya "derecho"). Pero `PdfCanvas` dibuja directo sobre el content stream
+ * crudo de iText7, que usa el MediaBox SIN rotar. `visualRectToRawPageRect()`
+ * (`PdfRectPts.kt`) deshace esa rotación antes de dibujar, para que el
+ * resaltado/nota quede en el mismo lugar visual tanto en pantalla como en el
+ * PDF aplanado que se comparte.
  */
 class FlattenAnnotationsPdfUseCase @Inject constructor(
     @ApplicationContext private val context: Context
@@ -95,14 +96,12 @@ class FlattenAnnotationsPdfUseCase @Inject constructor(
         annotation: AnnotationEntity,
         gState: PdfExtGState
     ) {
+        val raw = rawRectFor(page, annotation.xPts, annotation.yPts, annotation.widthPts, annotation.heightPts)
         val canvas = PdfCanvas(page.newContentStreamAfter(), page.resources, page.document)
         canvas.saveState()
         canvas.setExtGState(gState)
         canvas.setFillColor(argbToDeviceRgb(annotation.color))
-        canvas.rectangle(
-            annotation.xPts.toDouble(), annotation.yPts.toDouble(),
-            annotation.widthPts.toDouble(), annotation.heightPts.toDouble()
-        )
+        canvas.rectangle(raw.x.toDouble(), raw.y.toDouble(), raw.width.toDouble(), raw.height.toDouble())
         canvas.fill()
         canvas.restoreState()
     }
@@ -111,16 +110,20 @@ class FlattenAnnotationsPdfUseCase @Inject constructor(
         // Marcador visual (círculo relleno pequeño) + PdfTextAnnotation nativa
         // en el mismo punto -- doble representación: se ve como un ícono al
         // mirar la página, y también aparece como comentario nativo del PDF.
+        // El punto de anclaje se transforma como un rect de tamaño cero -- el
+        // marcador es un círculo (mismo radio en ambos ejes), así que no hace
+        // falta transformar su extensión, solo su centro.
+        val rawCenter = rawRectFor(page, annotation.xPts, annotation.yPts, 0f, 0f)
         val canvas = PdfCanvas(page.newContentStreamAfter(), page.resources, page.document)
         canvas.saveState()
         canvas.setFillColor(argbToDeviceRgb(annotation.color))
-        canvas.circle(annotation.xPts.toDouble(), annotation.yPts.toDouble(), NOTE_MARKER_RADIUS_PTS.toDouble())
+        canvas.circle(rawCenter.x.toDouble(), rawCenter.y.toDouble(), NOTE_MARKER_RADIUS_PTS.toDouble())
         canvas.fill()
         canvas.restoreState()
 
         val rect = Rectangle(
-            annotation.xPts - NOTE_MARKER_RADIUS_PTS,
-            annotation.yPts - NOTE_MARKER_RADIUS_PTS,
+            rawCenter.x - NOTE_MARKER_RADIUS_PTS,
+            rawCenter.y - NOTE_MARKER_RADIUS_PTS,
             NOTE_MARKER_RADIUS_PTS * 2,
             NOTE_MARKER_RADIUS_PTS * 2
         )
@@ -128,6 +131,19 @@ class FlattenAnnotationsPdfUseCase @Inject constructor(
             .setContents(annotation.text)
             .setColor(argbToDeviceRgb(annotation.color))
         page.addAnnotation(textAnnotation)
+    }
+
+    private fun rawRectFor(
+        page: com.itextpdf.kernel.pdf.PdfPage,
+        xPts: Float, yPts: Float, widthPts: Float, heightPts: Float
+    ): RawPageRect {
+        val mediaBox = page.mediaBox
+        return visualRectToRawPageRect(
+            visual = PdfRectPts(xPts, yPts, widthPts, heightPts),
+            rotationDegrees = page.rotation,
+            rawPageWidthPts = mediaBox.width,
+            rawPageHeightPts = mediaBox.height
+        )
     }
 
     private fun argbToDeviceRgb(argb: Int): DeviceRgb {

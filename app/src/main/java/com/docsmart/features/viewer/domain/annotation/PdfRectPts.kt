@@ -66,3 +66,58 @@ fun pdfPointToScreenPoint(
 
 fun isValidHighlightSize(rect: PdfRectPts): Boolean =
     rect.widthPts >= MIN_HIGHLIGHT_SIZE_PTS && rect.heightPts >= MIN_HIGHLIGHT_SIZE_PTS
+
+/** Rectángulo en el sistema de coordenadas CRUDO del MediaBox (sin rotar). */
+data class RawPageRect(
+    val x     : Float,
+    val y     : Float,
+    val width : Float,
+    val height: Float
+)
+
+// Hallazgo real de la revisión general 2026-09-16 (cuarta pasada, #16):
+// xPts/yPts/widthPts/heightPts de una anotación están en el sistema de
+// coordenadas VISUAL de la página (el que ve el usuario en pantalla, ya con
+// la rotación /Rotate aplicada -- así lo definen screenDragToPdfRect/
+// screenPointToPdfPoint arriba, contra pageHeightPts de PdfRenderer.Page,
+// que Android ya devuelve intercambiado para 90°/270°). Pero
+// FlattenAnnotationsPdfUseCase dibuja con PdfCanvas directo sobre el content
+// stream crudo de iText7, que usa el MediaBox SIN rotar. Para una página con
+// /Rotate 90/180/270 el resaltado quedaba desplazado en el PDF compartido
+// aunque se viera bien en pantalla. Esta función deshace la rotación clockwise
+// que un visor le aplica al contenido crudo al mostrarlo, derivada con una
+// matriz de rotación estándar (x'=x·cosθ+y·senθ, y'=-x·senθ+y·cosθ para una
+// rotación clockwise en un sistema con Y hacia arriba) + la traslación que
+// centra la caja rotada en el origen -- verificada a mano para las 4
+// rotaciones válidas en AnnotationCoordinatesTest.
+fun visualRectToRawPageRect(
+    visual: PdfRectPts,
+    rotationDegrees: Int,
+    rawPageWidthPts : Float,
+    rawPageHeightPts: Float
+): RawPageRect {
+    val vx = visual.xPts
+    val vy = visual.yPts
+    val vw = visual.widthPts
+    val vh = visual.heightPts
+    return when (normalizeRotation(rotationDegrees)) {
+        90 -> RawPageRect(
+            x = rawPageWidthPts - (vy + vh), y = vx,
+            width = vh, height = vw
+        )
+        180 -> RawPageRect(
+            x = rawPageWidthPts - (vx + vw), y = rawPageHeightPts - (vy + vh),
+            width = vw, height = vh
+        )
+        270 -> RawPageRect(
+            x = vy, y = rawPageHeightPts - (vx + vw),
+            width = vh, height = vw
+        )
+        else -> RawPageRect(x = vx, y = vy, width = vw, height = vh)
+    }
+}
+
+private fun normalizeRotation(rotationDegrees: Int): Int {
+    val normalized = rotationDegrees % 360
+    return if (normalized < 0) normalized + 360 else normalized
+}
