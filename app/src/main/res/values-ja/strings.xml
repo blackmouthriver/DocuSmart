@@ -80,6 +80,7 @@
     <string name="pdf_sign">PDFに署名</string>
     <string name="pdf_fill_form">フォームに入力</string>
     <string name="pdf_ocr">高度なOCR</string>
+    <string name="pdf_extract_images">画像を抽出</string>
 
     <!-- ── 設定 ────────────────────────────────── -->
     <string name="settings_title">設定</string>
@@ -281,6 +282,7 @@
     <string name="pdf_sign_desc">署名を描いてドキュメントに押印します</string>
     <string name="pdf_fill_form_desc">PDFフォームのテキストフィールドを検出して入力します</string>
     <string name="pdf_ocr_desc">スキャンしたPDFのテキストを認識し、検索できるようにします</string>
+    <string name="pdf_extract_images_desc">PDF内の画像を個別のJPG/PNGファイルとして保存します</string>
 
     <!-- ── 1日の利用上限ダイアログ(コンバーターとPDFツールで共有) ── -->
     <string name="daily_limit_title">本日の上限に達しました</string>
@@ -325,6 +327,7 @@
     <string name="pdf_tools_usage_today">本日の利用回数: %1$d / %2$d</string>
     <string name="pdf_tools_save_to_downloads">ダウンロードに保存</string>
     <string name="pdf_tools_share">PDFを共有</string>
+    <string name="pdf_tools_share_images">画像を共有</string>
     <string name="pdf_tools_share_error">ファイルを共有できませんでした</string>
     <string name="pdf_tools_save_error">ダウンロードに保存できませんでした</string>
     <string name="pdf_tools_new_operation">新しい操作</string>
@@ -575,6 +578,14 @@
     <string name="pdf_ocr_generate_error">テキスト認識済みPDFの生成中にエラーが発生しました。</string>
     <string name="pdf_ocr_success">%1$dページを処理、%2$d語を認識しました</string>
     <string name="pdf_ocr_error">テキストの認識中にエラーが発生しました: %1$s</string>
+    <string name="pdf_extract_images_subtitle">画像を保存したいPDFを選択してください</string>
+    <string name="pdf_extract_images_ready">画像抽出の準備ができたPDF</string>
+    <string name="pdf_extract_images_progress">画像を抽出中…</string>
+    <string name="pdf_extract_images_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_extract_images_no_pages">処理するページがこのPDFにはありません</string>
+    <string name="pdf_extract_images_no_images">このPDFには抽出できる画像がありません</string>
+    <string name="pdf_extract_images_success">%1$d件の画像を抽出しました</string>
+    <string name="pdf_extract_images_error">画像の抽出中にエラーが発生しました: %1$s</string>
     <string name="pdf_tools_unexpected_error">予期しないエラーが発生しました。もっと小さいファイルで再度お試しください。</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
     <string name="file_size_bytes">%1$d B</string>

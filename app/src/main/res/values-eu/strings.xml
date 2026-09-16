@@ -80,6 +80,7 @@
     <string name="pdf_sign">Sinatu PDFa</string>
     <string name="pdf_fill_form">Bete formularioa</string>
     <string name="pdf_ocr">OCR aurreratua</string>
+    <string name="pdf_extract_images">Erauzi irudiak</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ezarpenak</string>
@@ -291,6 +292,7 @@
     <string name="pdf_sign_desc">Marraztu zure sinadura eta jarri dokumentuaren gainean</string>
     <string name="pdf_fill_form_desc">Detektatu eta bete PDF formulario bateko testu-eremuak</string>
     <string name="pdf_ocr_desc">Ezagutu eskaneatutako PDF baten testua bilagarri bihurtzeko</string>
+    <string name="pdf_extract_images_desc">PDF baten irudiak JPG/PNG fitxategi bereizi gisa gordetzen ditu</string>
 
     <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
     <string name="daily_limit_title">Eguneko muga bete da</string>
@@ -335,6 +337,7 @@
     <string name="pdf_tools_usage_today">Gaurko erabilerak: %1$d / %2$d</string>
     <string name="pdf_tools_save_to_downloads">Gorde Deskargak karpetan</string>
     <string name="pdf_tools_share">Partekatu PDFa</string>
+    <string name="pdf_tools_share_images">Partekatu irudiak</string>
     <string name="pdf_tools_share_error">Ezin izan da fitxategia partekatu</string>
     <string name="pdf_tools_save_error">Ezin izan da Deskargak karpetan gorde</string>
     <string name="pdf_tools_new_operation">Eragiketa berria</string>
@@ -585,6 +588,14 @@
     <string name="pdf_ocr_generate_error">Errorea ezagututako testua duen PDFa sortzean.</string>
     <string name="pdf_ocr_success">%1$d orrialde prozesatu dira, %2$d hitz ezagutu dira</string>
     <string name="pdf_ocr_error">Errorea testua ezagutzean: %1$s</string>
+    <string name="pdf_extract_images_subtitle">Hautatu PDF bat bere irudiak fitxategi bereizi gisa gordetzeko</string>
+    <string name="pdf_extract_images_ready">PDFa irudiak erauzteko prest</string>
+    <string name="pdf_extract_images_progress">Irudiak erauzten…</string>
+    <string name="pdf_extract_images_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_extract_images_no_pages">PDFak ez du prozesatzeko orrialderik</string>
+    <string name="pdf_extract_images_no_images">PDF honek ez du erauzteko irudirik</string>
+    <string name="pdf_extract_images_success">%1$d irudi erauzi dira</string>
+    <string name="pdf_extract_images_error">Errorea irudiak erauztean: %1$s</string>
     <string name="pdf_tools_unexpected_error">Ustekabeko errore bat gertatu da. Saiatu berriz fitxategi txikiago batekin.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
     <string name="file_size_bytes">%1$d B</string>

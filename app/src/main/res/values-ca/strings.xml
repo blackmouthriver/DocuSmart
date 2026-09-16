@@ -81,6 +81,7 @@
     <string name="pdf_sign">Signar PDF</string>
     <string name="pdf_fill_form">Emplenar formulari</string>
     <string name="pdf_ocr">OCR avançat</string>
+    <string name="pdf_extract_images">Extreure imatges</string>
 
     <!-- ── Ajustos ────────────────────────────────── -->
     <string name="settings_title">Ajustos</string>
@@ -294,6 +295,7 @@
     <string name="pdf_sign_desc">Dibuixa la teva signatura i estampa-la sobre el document</string>
     <string name="pdf_fill_form_desc">Detecta i completa camps de text d\'un formulari PDF</string>
     <string name="pdf_ocr_desc">Reconeix el text d\'un PDF escanejat per fer-lo cercable</string>
+    <string name="pdf_extract_images_desc">Desa les imatges d\'un PDF com a arxius JPG/PNG separats</string>
 
     <!-- ── Diálogo de límite diario (compartido: Conversor y Herramientas PDF) ── -->
     <string name="daily_limit_title">Límit diari assolit</string>
@@ -347,6 +349,7 @@
     <string name="pdf_tools_usage_today">Usos avui: %1$d / %2$d</string>
     <string name="pdf_tools_save_to_downloads">Desar a Baixades</string>
     <string name="pdf_tools_share">Compartir PDF</string>
+    <string name="pdf_tools_share_images">Compartir imatges</string>
     <string name="pdf_tools_share_error">No s\'ha pogut compartir l\'arxiu</string>
     <string name="pdf_tools_save_error">No s\'ha pogut desar a Baixades</string>
     <string name="pdf_tools_new_operation">Nova operació</string>
@@ -597,6 +600,14 @@
     <string name="pdf_ocr_generate_error">Error en generar el PDF amb el text reconegut.</string>
     <string name="pdf_ocr_success">%1$d pàgines processades, %2$d paraules reconegudes</string>
     <string name="pdf_ocr_error">Error en reconèixer el text: %1$s</string>
+    <string name="pdf_extract_images_subtitle">Selecciona un PDF per desar-ne les imatges com a arxius separats</string>
+    <string name="pdf_extract_images_ready">PDF llest per extreure imatges</string>
+    <string name="pdf_extract_images_progress">Extraient imatges…</string>
+    <string name="pdf_extract_images_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_extract_images_no_pages">El PDF no té pàgines per processar</string>
+    <string name="pdf_extract_images_no_images">Aquest PDF no té imatges per extreure</string>
+    <string name="pdf_extract_images_success">%1$d imatges extretes</string>
+    <string name="pdf_extract_images_error">Error en extreure les imatges: %1$s</string>
     <string name="pdf_tools_unexpected_error">S\'ha produït un error inesperat. Torna-ho a provar amb un fitxer més petit.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
     <string name="file_size_bytes">%1$d B</string>

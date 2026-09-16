@@ -80,6 +80,7 @@
     <string name="pdf_sign">Assinar PDF</string>
     <string name="pdf_fill_form">Preencher formulário</string>
     <string name="pdf_ocr">OCR avançado</string>
+    <string name="pdf_extract_images">Extrair imagens</string>
 
     <!-- ── Ajustes ────────────────────────────────── -->
     <string name="settings_title">Ajustes</string>
@@ -281,6 +282,7 @@
     <string name="pdf_sign_desc">Desenhe sua assinatura e aplique-a no documento</string>
     <string name="pdf_fill_form_desc">Detecta e preenche campos de texto de um formulário PDF</string>
     <string name="pdf_ocr_desc">Reconhece o texto de um PDF digitalizado para torná-lo pesquisável</string>
+    <string name="pdf_extract_images_desc">Salva as imagens de um PDF como arquivos JPG/PNG separados</string>
 
     <!-- ── Diálogo de limite diário (compartilhado: Conversor e Ferramentas PDF) ── -->
     <string name="daily_limit_title">Limite diário atingido</string>
@@ -325,6 +327,7 @@
     <string name="pdf_tools_usage_today">Usos hoje: %1$d / %2$d</string>
     <string name="pdf_tools_save_to_downloads">Salvar em Downloads</string>
     <string name="pdf_tools_share">Compartilhar PDF</string>
+    <string name="pdf_tools_share_images">Compartilhar imagens</string>
     <string name="pdf_tools_share_error">Não foi possível compartilhar o arquivo</string>
     <string name="pdf_tools_save_error">Não foi possível salvar em Downloads</string>
     <string name="pdf_tools_new_operation">Nova operação</string>
@@ -575,6 +578,14 @@
     <string name="pdf_ocr_generate_error">Erro ao gerar o PDF com o texto reconhecido.</string>
     <string name="pdf_ocr_success">%1$d páginas processadas, %2$d palavras reconhecidas</string>
     <string name="pdf_ocr_error">Erro ao reconhecer o texto: %1$s</string>
+    <string name="pdf_extract_images_subtitle">Selecione um PDF para salvar suas imagens como arquivos separados</string>
+    <string name="pdf_extract_images_ready">PDF pronto para extração de imagens</string>
+    <string name="pdf_extract_images_progress">Extraindo imagens…</string>
+    <string name="pdf_extract_images_read_error">Não foi possível ler o PDF. Verifique se é um arquivo válido.</string>
+    <string name="pdf_extract_images_no_pages">O PDF não tem páginas para processar</string>
+    <string name="pdf_extract_images_no_images">Este PDF não tem imagens para extrair</string>
+    <string name="pdf_extract_images_success">%1$d imagens extraídas</string>
+    <string name="pdf_extract_images_error">Erro ao extrair as imagens: %1$s</string>
     <string name="pdf_tools_unexpected_error">Ocorreu um erro inesperado. Tente novamente com um arquivo menor.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
     <string name="file_size_bytes">%1$d B</string>

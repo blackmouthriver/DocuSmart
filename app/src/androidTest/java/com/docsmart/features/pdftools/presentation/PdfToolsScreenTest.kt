@@ -89,6 +89,7 @@ class PdfToolsScreenTest {
             detectFormFields = mockk(relaxed = true),
             fillForm         = mockk(relaxed = true),
             ocrPdf           = mockk(relaxed = true),
+            extractImagesFromPdf = mockk(relaxed = true),
             dailyLimitManager = dailyLimitManager,
             premiumManager    = premiumManager,
             adManager         = adManager

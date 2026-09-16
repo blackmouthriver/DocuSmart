@@ -12,7 +12,11 @@ import com.docsmart.R
 fun OutputFileNameField(
     fileName: String,
     onFileNameChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // HU-53 (extraer imágenes): el nombre acá es la base de VARIOS archivos
+    // .jpg/.png, no un único .pdf -- mostrar el sufijo ".pdf" sería
+    // directamente incorrecto para esa herramienta.
+    showPdfSuffix: Boolean = true
 ) {
     Column(
         modifier = modifier,
@@ -34,14 +38,16 @@ fun OutputFileNameField(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
-            trailingIcon = {
-                Text(
-                    text = ".pdf",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp)
-                )
-            },
+            trailingIcon = if (showPdfSuffix) {
+                {
+                    Text(
+                        text = ".pdf",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                }
+            } else null,
             singleLine = true,
             shape = MaterialTheme.shapes.medium,
             colors = OutlinedTextFieldDefaults.colors(

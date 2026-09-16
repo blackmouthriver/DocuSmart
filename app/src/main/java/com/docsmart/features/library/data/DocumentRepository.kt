@@ -53,7 +53,14 @@ private val SUPPORTED_DOWNLOAD_MIME_TYPES = listOf(
     "application/vnd.ms-powerpoint",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "text/plain",
-    "text/markdown"
+    "text/markdown",
+    // HU-53 (extraer imágenes de un PDF): "Guardar en Descargas" inserta
+    // filas image/jpeg y image/png en MediaStore.Downloads (mismo mecanismo
+    // que el resto de las herramientas PDF, DownloadsSaver.saveFile) -- sin
+    // esto quedaban filtradas en silencio de la vista "Descargas" de
+    // Biblioteca, aunque el archivo sí se guardara.
+    "image/jpeg",
+    "image/png"
 )
 
 // Tope de profundidad al recorrer subcarpetas de una carpeta vinculada por

@@ -80,6 +80,7 @@
     <string name="pdf_sign">Подписать PDF</string>
     <string name="pdf_fill_form">Заполнить форму</string>
     <string name="pdf_ocr">Расширенное OCR</string>
+    <string name="pdf_extract_images">Извлечь изображения</string>
 
     <!-- ── Настройки ────────────────────────────────── -->
     <string name="settings_title">Настройки</string>
@@ -281,6 +282,7 @@
     <string name="pdf_sign_desc">Нарисуйте подпись и поставьте её на документ</string>
     <string name="pdf_fill_form_desc">Определяет и заполняет текстовые поля формы PDF</string>
     <string name="pdf_ocr_desc">Распознаёт текст отсканированного PDF, чтобы сделать его доступным для поиска</string>
+    <string name="pdf_extract_images_desc">Сохраняет изображения из PDF как отдельные файлы JPG/PNG</string>
 
     <!-- ── Диалог дневного лимита (общий: Конвертер и Инструменты PDF) ── -->
     <string name="daily_limit_title">Дневной лимит достигнут</string>
@@ -325,6 +327,7 @@
     <string name="pdf_tools_usage_today">Использований сегодня: %1$d / %2$d</string>
     <string name="pdf_tools_save_to_downloads">Сохранить в Загрузки</string>
     <string name="pdf_tools_share">Поделиться PDF</string>
+    <string name="pdf_tools_share_images">Поделиться изображениями</string>
     <string name="pdf_tools_share_error">Не удалось поделиться файлом</string>
     <string name="pdf_tools_save_error">Не удалось сохранить в Загрузки</string>
     <string name="pdf_tools_new_operation">Новая операция</string>
@@ -575,6 +578,14 @@
     <string name="pdf_ocr_generate_error">Ошибка при создании PDF с распознанным текстом.</string>
     <string name="pdf_ocr_success">Обработано страниц: %1$d, распознано слов: %2$d</string>
     <string name="pdf_ocr_error">Ошибка при распознавании текста: %1$s</string>
+    <string name="pdf_extract_images_subtitle">Выберите PDF, чтобы сохранить его изображения как отдельные файлы</string>
+    <string name="pdf_extract_images_ready">PDF готов к извлечению изображений</string>
+    <string name="pdf_extract_images_progress">Извлечение изображений…</string>
+    <string name="pdf_extract_images_read_error">Не удалось прочитать PDF. Убедитесь, что это допустимый файл.</string>
+    <string name="pdf_extract_images_no_pages">В PDF нет страниц для обработки</string>
+    <string name="pdf_extract_images_no_images">В этом PDF нет изображений для извлечения</string>
+    <string name="pdf_extract_images_success">Извлечено изображений: %1$d</string>
+    <string name="pdf_extract_images_error">Ошибка при извлечении изображений: %1$s</string>
     <string name="pdf_tools_unexpected_error">Произошла непредвиденная ошибка. Попробуйте ещё раз с файлом меньшего размера.</string>
     <string name="pdf_tools_result_size_kb">%1$d КБ</string>
     <string name="file_size_bytes">%1$d Б</string>

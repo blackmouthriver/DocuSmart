@@ -80,6 +80,7 @@
     <string name="pdf_sign">Sign PDF</string>
     <string name="pdf_fill_form">Fill form</string>
     <string name="pdf_ocr">Advanced OCR</string>
+    <string name="pdf_extract_images">Extract images</string>
 
     <!-- ── Settings ───────────────────────────────── -->
     <string name="settings_title">Settings</string>
@@ -283,6 +284,7 @@
     <string name="pdf_sign_desc">Draw your signature and stamp it on the document</string>
     <string name="pdf_fill_form_desc">Detects and fills text fields in a PDF form</string>
     <string name="pdf_ocr_desc">Recognizes text in a scanned PDF to make it searchable</string>
+    <string name="pdf_extract_images_desc">Saves a PDF\'s images as separate JPG/PNG files</string>
 
     <!-- ── Daily limit dialog (shared: Converter and PDF Tools) ── -->
     <string name="daily_limit_title">Daily limit reached</string>
@@ -335,6 +337,7 @@
     <string name="pdf_tools_usage_today">Uses today: %1$d / %2$d</string>
     <string name="pdf_tools_save_to_downloads">Save to Downloads</string>
     <string name="pdf_tools_share">Share PDF</string>
+    <string name="pdf_tools_share_images">Share images</string>
     <string name="pdf_tools_share_error">Couldn\'t share the file</string>
     <string name="pdf_tools_save_error">Couldn\'t save to Downloads</string>
     <string name="pdf_tools_new_operation">New operation</string>
@@ -585,6 +588,14 @@
     <string name="pdf_ocr_generate_error">Error generating the PDF with the recognized text.</string>
     <string name="pdf_ocr_success">%1$d pages processed, %2$d words recognized</string>
     <string name="pdf_ocr_error">Error recognizing text: %1$s</string>
+    <string name="pdf_extract_images_subtitle">Select a PDF to save its images as separate files</string>
+    <string name="pdf_extract_images_ready">PDF ready to extract images</string>
+    <string name="pdf_extract_images_progress">Extracting images…</string>
+    <string name="pdf_extract_images_read_error">Could not read the PDF. Check that it is a valid file.</string>
+    <string name="pdf_extract_images_no_pages">The PDF has no pages to process</string>
+    <string name="pdf_extract_images_no_images">This PDF has no images to extract</string>
+    <string name="pdf_extract_images_success">%1$d images extracted</string>
+    <string name="pdf_extract_images_error">Error extracting images: %1$s</string>
     <string name="pdf_tools_unexpected_error">An unexpected error occurred. Try again with a smaller file.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
     <string name="file_size_bytes">%1$d B</string>

@@ -80,6 +80,7 @@
     <string name="pdf_sign">PDF 서명</string>
     <string name="pdf_fill_form">양식 작성</string>
     <string name="pdf_ocr">고급 OCR</string>
+    <string name="pdf_extract_images">이미지 추출</string>
 
     <!-- ── 설정 ────────────────────────────────── -->
     <string name="settings_title">설정</string>
@@ -281,6 +282,7 @@
     <string name="pdf_sign_desc">서명을 그려서 문서에 찍습니다</string>
     <string name="pdf_fill_form_desc">PDF 양식의 텍스트 필드를 감지하고 채웁니다</string>
     <string name="pdf_ocr_desc">스캔된 PDF의 텍스트를 인식하여 검색 가능하게 만듭니다</string>
+    <string name="pdf_extract_images_desc">PDF의 이미지를 별도의 JPG/PNG 파일로 저장합니다</string>
 
     <!-- ── 일일 한도 다이얼로그 (변환기 및 PDF 도구 공용) ── -->
     <string name="daily_limit_title">일일 한도 도달</string>
@@ -325,6 +327,7 @@
     <string name="pdf_tools_usage_today">오늘 사용량: %1$d / %2$d</string>
     <string name="pdf_tools_save_to_downloads">다운로드에 저장</string>
     <string name="pdf_tools_share">PDF 공유</string>
+    <string name="pdf_tools_share_images">이미지 공유</string>
     <string name="pdf_tools_share_error">파일을 공유할 수 없습니다</string>
     <string name="pdf_tools_save_error">다운로드에 저장할 수 없습니다</string>
     <string name="pdf_tools_new_operation">새 작업</string>
@@ -575,6 +578,14 @@
     <string name="pdf_ocr_generate_error">인식된 텍스트가 포함된 PDF를 생성하는 중 오류가 발생했습니다.</string>
     <string name="pdf_ocr_success">%1$d페이지 처리 완료, %2$d개 단어 인식됨</string>
     <string name="pdf_ocr_error">텍스트 인식 오류: %1$s</string>
+    <string name="pdf_extract_images_subtitle">이미지를 저장할 PDF를 선택하세요</string>
+    <string name="pdf_extract_images_ready">이미지를 추출할 PDF 준비 완료</string>
+    <string name="pdf_extract_images_progress">이미지 추출 중…</string>
+    <string name="pdf_extract_images_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_extract_images_no_pages">처리할 페이지가 PDF에 없습니다</string>
+    <string name="pdf_extract_images_no_images">이 PDF에는 추출할 이미지가 없습니다</string>
+    <string name="pdf_extract_images_success">이미지 %1$d개 추출 완료</string>
+    <string name="pdf_extract_images_error">이미지 추출 오류: %1$s</string>
     <string name="pdf_tools_unexpected_error">예기치 않은 오류가 발생했습니다. 더 작은 파일로 다시 시도해 보세요.</string>
     <string name="pdf_tools_result_size_kb">%1$d KB</string>
     <string name="file_size_bytes">%1$d B</string>

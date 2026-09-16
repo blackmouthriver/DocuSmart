@@ -120,6 +120,13 @@ private val toolItems = listOf(
         titleRes = R.string.pdf_ocr,
         descriptionRes = R.string.pdf_ocr_desc,
         color = ColorOcr
+    ),
+    PdfToolItem(
+        tool = PdfTool.EXTRACT_IMAGES,
+        icon = Icons.Rounded.Image,
+        titleRes = R.string.pdf_extract_images,
+        descriptionRes = R.string.pdf_extract_images_desc,
+        color = ColorImage
     )
 )
 

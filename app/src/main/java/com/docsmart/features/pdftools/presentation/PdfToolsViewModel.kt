@@ -21,6 +21,8 @@ import com.docsmart.features.pdftools.domain.usecase.CropPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.DetectFormFieldsUseCase
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.ExtractImagesMessages
+import com.docsmart.features.pdftools.domain.usecase.ExtractImagesFromPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.FillFormMessages
 import com.docsmart.features.pdftools.domain.usecase.FillFormUseCase
 import com.docsmart.features.pdftools.domain.usecase.FormFieldInfo
@@ -58,7 +60,7 @@ import javax.inject.Inject
 
 enum class PdfTool {
     NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES,
-    COMPARE, REDACT, CROP, EDIT_TEXT, SIGN, FILL_FORM, OCR
+    COMPARE, REDACT, CROP, EDIT_TEXT, SIGN, FILL_FORM, OCR, EXTRACT_IMAGES
 }
 
 data class PdfToolMessages(
@@ -76,6 +78,7 @@ data class PdfToolMessages(
     val sign         : SignPdfMessages,
     val fillForm     : FillFormMessages,
     val ocr          : OcrPdfMessages,
+    val extractImages: ExtractImagesMessages,
     // Hallazgo real #23: mensaje de último recurso cuando algo escapa sin
     // atrapar de runTool() (OutOfMemoryError u otra excepción no prevista
     // por el use case individual) -- distinto del genericError de cada
@@ -135,6 +138,7 @@ class PdfToolsViewModel @Inject constructor(
     private val detectFormFields: DetectFormFieldsUseCase,
     private val fillForm: FillFormUseCase,
     private val ocrPdf: OcrPdfUseCase,
+    private val extractImagesFromPdf: ExtractImagesFromPdfUseCase,
     private val dailyLimitManager: DailyLimitManager,
     private val premiumManager: PremiumManager,
     val adManager: AdManager
@@ -424,7 +428,7 @@ class PdfToolsViewModel @Inject constructor(
 
             Timber.d("Resultado: $result")
 
-            if (result is PdfToolResult.Success) {
+            if (result is PdfToolResult.Success || result is PdfToolResult.MultiSuccess) {
                 dailyLimitManager.registerPdfTool(state.selectedTool.name)
             }
 
@@ -454,7 +458,8 @@ class PdfToolsViewModel @Inject constructor(
         messages: PdfToolMessages
     ): PdfToolResult? = when (state.selectedTool) {
         PdfTool.MERGE, PdfTool.SPLIT, PdfTool.COMPRESS, PdfTool.ROTATE,
-        PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES ->
+        PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES,
+        PdfTool.EXTRACT_IMAGES ->
             runBasicTool(state, customName, messages)
         PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN,
         PdfTool.FILL_FORM, PdfTool.OCR ->
@@ -508,6 +513,11 @@ class PdfToolsViewModel @Inject constructor(
             pageOrder = state.pageOrder,
             outputFileName = customName,
             messages = messages.reorderPages
+        )
+        PdfTool.EXTRACT_IMAGES -> extractImagesFromPdf(
+            pdfUri = state.selectedPdfs.first(),
+            outputFileName = customName,
+            messages = messages.extractImages
         )
         else -> null
     }
@@ -574,12 +584,19 @@ class PdfToolsViewModel @Inject constructor(
     }
 
     fun shareResult(context: Context, chooserTitle: String, errorMessage: String) {
-        val result = _uiState.value.result as? PdfToolResult.Success ?: return
+        when (val result = _uiState.value.result) {
+            is PdfToolResult.Success -> shareSingleFile(context, result.outputFile, chooserTitle, errorMessage)
+            is PdfToolResult.MultiSuccess -> shareMultipleFiles(context, result.outputFiles, chooserTitle, errorMessage)
+            else -> Unit
+        }
+    }
+
+    private fun shareSingleFile(context: Context, file: File, chooserTitle: String, errorMessage: String) {
         try {
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
-                result.outputFile
+                file
             )
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/pdf"
@@ -597,14 +614,48 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun saveToDownloads(context: Context, errorMessage: String) {
-        val result = _uiState.value.result as? PdfToolResult.Success ?: return
-        viewModelScope.launch {
-            val saved = DownloadsSaver.saveFile(context, result.outputFile, "application/pdf")
-            _uiState.update { state ->
-                if (saved) state.copy(savedToDownloads = true)
-                else state.copy(errorMessage = errorMessage)
+    private fun shareMultipleFiles(
+        context: Context, files: List<File>, chooserTitle: String, errorMessage: String
+    ) {
+        try {
+            val uris = ArrayList(files.map { file ->
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            })
+            val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = "image/*"
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
+            context.startActivity(
+                Intent.createChooser(intent, chooserTitle)
+            )
+        } catch (e: Exception) {
+            Timber.e("Error compartiendo varios archivos: ${e.message}")
+            _uiState.update {
+                it.copy(errorMessage = errorMessage)
+            }
+        }
+    }
+
+    fun saveToDownloads(context: Context, errorMessage: String) {
+        when (val result = _uiState.value.result) {
+            is PdfToolResult.Success -> viewModelScope.launch {
+                val saved = DownloadsSaver.saveFile(context, result.outputFile, "application/pdf")
+                _uiState.update { state ->
+                    if (saved) state.copy(savedToDownloads = true)
+                    else state.copy(errorMessage = errorMessage)
+                }
+            }
+            is PdfToolResult.MultiSuccess -> viewModelScope.launch {
+                val allSaved = result.outputFiles.map { file ->
+                    DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
+                }.all { it }
+                _uiState.update { state ->
+                    if (allSaved) state.copy(savedToDownloads = true)
+                    else state.copy(errorMessage = errorMessage)
+                }
+            }
+            else -> Unit
         }
     }
 

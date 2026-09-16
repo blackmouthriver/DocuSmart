@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -35,6 +36,7 @@ import com.docsmart.features.pdftools.domain.usecase.ComparePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CompressPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.CropPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.ExtractImagesMessages
 import com.docsmart.features.pdftools.domain.usecase.FillFormMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
@@ -49,6 +51,7 @@ import com.docsmart.features.pdftools.presentation.components.ComparePdfScreen
 import com.docsmart.features.pdftools.presentation.components.CompressPdfScreen
 import com.docsmart.features.pdftools.presentation.components.CropPdfScreen
 import com.docsmart.features.pdftools.presentation.components.EditTextPdfScreen
+import com.docsmart.features.pdftools.presentation.components.ExtractImagesPdfScreen
 import com.docsmart.features.pdftools.presentation.components.FillFormScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
@@ -178,6 +181,11 @@ fun PdfToolsScreen(
     val ocrGenerateError    = stringResource(R.string.pdf_ocr_generate_error)
     val ocrSuccess          = stringResource(R.string.pdf_ocr_success)
     val ocrGenericError     = stringResource(R.string.pdf_ocr_error)
+    val extractImagesReadError = stringResource(R.string.pdf_extract_images_read_error)
+    val extractImagesNoPages   = stringResource(R.string.pdf_extract_images_no_pages)
+    val extractImagesNoImages  = stringResource(R.string.pdf_extract_images_no_images)
+    val extractImagesSuccess   = stringResource(R.string.pdf_extract_images_success)
+    val extractImagesGenericError = stringResource(R.string.pdf_extract_images_error)
     val pdfToolsUnexpectedError = stringResource(R.string.pdf_tools_unexpected_error)
 
     val pdfToolMessages = remember {
@@ -298,6 +306,13 @@ fun PdfToolsScreen(
                 generateError  = ocrGenerateError,
                 success        = ocrSuccess,
                 genericError   = ocrGenericError
+            ),
+            extractImages = ExtractImagesMessages(
+                readError    = extractImagesReadError,
+                noPages      = extractImagesNoPages,
+                noImages     = extractImagesNoImages,
+                success      = extractImagesSuccess,
+                genericError = extractImagesGenericError
             ),
             genericError = pdfToolsUnexpectedError
         )
@@ -483,8 +498,22 @@ fun PdfToolsScreen(
                         )
                     }
                 }
+                if (result is PdfToolResult.MultiSuccess) {
+                    item {
+                        MultiToolSuccessCard(
+                            result = result,
+                            savedToDownloads = uiState.savedToDownloads,
+                            onShareClick = {
+                                viewModel.shareResult(context, shareChooserTitle, shareErrorMessage)
+                            },
+                            onSaveClick = { viewModel.saveToDownloads(context, saveErrorMessage) },
+                            onNewOperation = { viewModel.reset() },
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                    }
+                }
 
-                if (result !is PdfToolResult.Success) {
+                if (result !is PdfToolResult.Success && result !is PdfToolResult.MultiSuccess) {
                     item {
                         Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                             when (uiState.selectedTool) {
@@ -743,6 +772,18 @@ fun PdfToolsScreen(
                                     },
                                     onExecute = { viewModel.execute(pdfToolMessages) }
                                 )
+                                PdfTool.EXTRACT_IMAGES -> ExtractImagesPdfScreen(
+                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                    isProcessing = uiState.isProcessing,
+                                    fileName = uiState.outputFileName,
+                                    onFileNameChange = {
+                                        viewModel.onOutputFileNameChange(it)
+                                    },
+                                    onSelectPdf = {
+                                        showPdfSourceChooser = true
+                                    },
+                                    onExecute = { viewModel.execute(pdfToolMessages) }
+                                )
                                 else -> {}
                             }
                         }
@@ -753,7 +794,7 @@ fun PdfToolsScreen(
     }
 }
 
-// ── Card de resultado exitoso ─────────────────────────
+// ── Card de resultado exitoso (un archivo) ────────────
 @Composable
 private fun ToolSuccessCard(
     result: PdfToolResult.Success,
@@ -762,6 +803,118 @@ private fun ToolSuccessCard(
     onSaveClick: () -> Unit,
     onNewOperation: () -> Unit,
     modifier: Modifier = Modifier
+) {
+    ToolSuccessCardShell(
+        message = result.message,
+        savedToDownloads = savedToDownloads,
+        shareLabel = stringResource(R.string.pdf_tools_share),
+        onShareClick = onShareClick,
+        onSaveClick = onSaveClick,
+        onNewOperation = onNewOperation,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.PictureAsPdf,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = result.outputFile.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    // Hallazgo real de la revisión general
+                    // 2026-09-16 (#30): "KB" hardcodeado sin
+                    // stringResource, visible tras cualquiera de
+                    // las herramientas.
+                    text = stringResource(
+                        R.string.pdf_tools_result_size_kb, result.outputFile.length() / 1024
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+// ── Card de resultado exitoso con VARIOS archivos (HU-53, extraer
+// imágenes) ────────────────────────────────────────────────────
+@Composable
+private fun MultiToolSuccessCard(
+    result: PdfToolResult.MultiSuccess,
+    savedToDownloads: Boolean,
+    onShareClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    onNewOperation: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ToolSuccessCardShell(
+        message = result.message,
+        savedToDownloads = savedToDownloads,
+        shareLabel = stringResource(R.string.pdf_tools_share_images),
+        onShareClick = onShareClick,
+        onSaveClick = onSaveClick,
+        onNewOperation = onNewOperation,
+        modifier = modifier
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 200.dp),
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(result.outputFiles) { file ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Image,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = file.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Cáscara compartida entre ToolSuccessCard y MultiToolSuccessCard (HU-53):
+// icono+mensaje, indicador "guardado" y los 3 botones de acción son
+// idénticos entre ambas -- lo único que cambia es el contenido intermedio
+// (nombre+peso de un archivo vs. lista de N archivos), pasado como [content].
+@Composable
+private fun ToolSuccessCardShell(
+    message: String,
+    savedToDownloads: Boolean,
+    shareLabel: String,
+    onShareClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    onNewOperation: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
@@ -787,50 +940,16 @@ private fun ToolSuccessCard(
             )
 
             Text(
-                text = result.message,
+                text = message,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.PictureAsPdf,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = result.outputFile.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            // Hallazgo real de la revisión general
-                            // 2026-09-16 (#30): "KB" hardcodeado sin
-                            // stringResource, visible tras cualquiera de
-                            // las 14 herramientas.
-                            text = stringResource(
-                                R.string.pdf_tools_result_size_kb, result.outputFile.length() / 1024
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                content = content
+            )
 
             if (savedToDownloads) {
                 Row(
@@ -890,7 +1009,7 @@ private fun ToolSuccessCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.pdf_tools_share),
+                        text = shareLabel,
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

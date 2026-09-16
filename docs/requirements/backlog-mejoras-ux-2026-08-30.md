@@ -74,7 +74,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 50 | Notas — Vincular una nota a un documento específico de la Biblioteca | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
 | 51 | Notas — Exportar una nota a PDF/Word (reutilizando el Convertidor) | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
 | 52 | Notas — Recordatorio de repaso (notificación local) | Mejora | Baja | Media | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.4 |
-| 53 | Herramientas PDF — Extraer imágenes embebidas de un PDF | Mejora | Baja | Media | Bajo | 🆕 Propuesto 2026-09-10 — única novedad real de esta categoría, ver §34.5 |
+| 53 | Herramientas PDF — Extraer imágenes embebidas de un PDF | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.5 |
 | 54 | Monetización — Prueba gratuita de Premium (trial de 7 días) | Mejora | Alta | Media | Medio | 🆕 Propuesto 2026-09-10 — ver §34.6 |
 | 55 | Monetización — Plan anual con descuento | Mejora | Alta | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.6 |
 | 56 | Monetización — Programa de referidos (código de invitación) | Mejora | Media | Alta | Medio-Alto | 🆕 Propuesto 2026-09-10 — ver §34.6 |
