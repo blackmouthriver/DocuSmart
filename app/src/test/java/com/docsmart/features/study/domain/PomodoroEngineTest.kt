@@ -49,6 +49,43 @@ class PomodoroEngineTest {
     }
 
     @Test
+    fun `al completar el 4to pomodoro, el descanso es largo`() {
+        val current = PomodoroState(
+            minutes = 0, seconds = 0, isRunning = true, isBreak = false, pomodoroCount = 3
+        )
+
+        val next = tickPomodoro(current)
+
+        assertEquals(4, next.pomodoroCount)
+        assertTrue(next.isBreak)
+        assertEquals(POMODORO_LONG_BREAK_MINUTES, next.minutes)
+    }
+
+    @Test
+    fun `al completar el 8vo pomodoro (segundo múltiplo de 4), el descanso también es largo`() {
+        val current = PomodoroState(
+            minutes = 0, seconds = 0, isRunning = true, isBreak = false, pomodoroCount = 7
+        )
+
+        val next = tickPomodoro(current)
+
+        assertEquals(8, next.pomodoroCount)
+        assertEquals(POMODORO_LONG_BREAK_MINUTES, next.minutes)
+    }
+
+    @Test
+    fun `al completar un pomodoro que no es multiplo de 4, el descanso es el corto de siempre`() {
+        val current = PomodoroState(
+            minutes = 0, seconds = 0, isRunning = true, isBreak = false, pomodoroCount = 4
+        )
+
+        val next = tickPomodoro(current)
+
+        assertEquals(5, next.pomodoroCount)
+        assertEquals(POMODORO_BREAK_MINUTES, next.minutes)
+    }
+
+    @Test
     fun `al terminar un descanso, vuelve a estudio pausado sin sumar otro pomodoro`() {
         val current = PomodoroState(
             minutes = 0, seconds = 0, isRunning = true, isBreak = true, pomodoroCount = 3

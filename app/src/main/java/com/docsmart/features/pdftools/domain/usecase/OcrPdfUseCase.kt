@@ -135,65 +135,113 @@ class OcrPdfUseCase @Inject constructor(
         messages      : OcrPdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
+        // Declarado afuera del try (igual que cacheFile) para poder
+        // borrarlo también si PdfRenderer(fd) lanza (ej. PDF con
+        // contraseña de propietario, que PdfReader arriba sí puede abrir
+        // pero PdfRenderer no) -- mismo escenario que motiva el hallazgo
+        // #27, y sin esto quedaba huérfano por esa misma vía.
+        var outputFile: File? = null
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            val outputFile = createOutputFile(outputFileName ?: "OCR")
+            val output = createOutputFile(outputFileName ?: "OCR")
+            outputFile = output
             val font = PdfFontFactory.createFont(StandardFonts.HELVETICA)
             val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
             var processedPages = 0
             var totalWords = 0
 
-            PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
+            PdfDocument(PdfReader(cacheFile), PdfWriter(output)).use { pdf ->
                 if (pdf.numberOfPages == 0) {
+                    // Hallazgo real de la revisión general 2026-09-16 (#27):
+                    // outputFile ya existía en disco (PdfWriter lo abre al
+                    // construirse, arriba) -- este return salteaba el
+                    // delete() que sí se hace más abajo para
+                    // alreadyHasText/noTextFound, dejándolo huérfano.
+                    output.delete()
                     return@withContext PdfToolResult.Error(messages.noPages)
                 }
-
-                val fd = ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                val renderer = PdfRenderer(fd)
-                try {
-                    for (pageNumber in 1..pdf.numberOfPages) {
-                        val page = pdf.getPage(pageNumber)
-                        if (PdfTextExtractor.getTextFromPage(page).isNotBlank()) continue
-
-                        val bitmap = renderPageBitmap(renderer, pageNumber - 1, RENDER_SCALE)
-                        val recognized = recognizeText(recognizer, bitmap)
-                        totalWords += drawInvisibleTextLayer(page, pdf, recognized, font, RENDER_SCALE)
-                        bitmap.recycle()
-                        processedPages++
-                    }
-                } finally {
-                    renderer.close()
-                    fd.close()
-                }
+                val (pages, words) = ocrAllPages(pdf, cacheFile, recognizer, font)
+                processedPages = pages
+                totalWords = words
             }
 
-            if (outputFile.length() == 0L) {
+            if (output.length() == 0L) {
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
             if (processedPages == 0) {
-                outputFile.delete()
+                output.delete()
                 return@withContext PdfToolResult.Error(messages.alreadyHasText)
             }
             if (totalWords == 0) {
-                outputFile.delete()
+                output.delete()
                 return@withContext PdfToolResult.Error(messages.noTextFound)
             }
 
             Timber.d("$TAG: OCR exitoso — $processedPages páginas, $totalWords palabras")
 
             PdfToolResult.Success(
-                outputFile = outputFile,
+                outputFile = output,
                 message = String.format(messages.success, processedPages, totalWords)
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al aplicar OCR")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFile?.delete()
         }
+    }
+
+    // Extraído de invoke() -- además de mantener la complejidad ciclomática
+    // bajo el umbral de detekt, aísla el recorrido de páginas del hallazgo
+    // #27 (cierre de fd/renderer) del resto de la máquina de estados.
+    private fun ocrAllPages(
+        pdf: PdfDocument,
+        cacheFile: File,
+        recognizer: TextRecognizer,
+        font: PdfFont
+    ): Pair<Int, Int> {
+        var processedPages = 0
+        var totalWords = 0
+        // Hallazgo real #27: si PdfRenderer(fd) lanzaba (ej. un PDF con
+        // contraseña de propietario, que PdfRenderer no puede abrir aunque
+        // PdfReader arriba sí) el fd ya abierto nunca se cerraba -- el
+        // try/finally empezaba recién en la línea siguiente. .use{}
+        // anidado cierra el fd pase lo que pase, incluida una excepción
+        // del propio constructor de adentro.
+        ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            PdfRenderer(fd).use { renderer ->
+                for (pageNumber in 1..pdf.numberOfPages) {
+                    val words = ocrOnePage(pdf, renderer, pageNumber, recognizer, font) ?: continue
+                    totalWords += words
+                    processedPages++
+                }
+            }
+        }
+        return processedPages to totalWords
+    }
+
+    // Extraído de ocrAllPages() -- baja la profundidad de anidamiento bajo
+    // el umbral de detekt. Devuelve null si la página se saltea (ya tiene
+    // texto real extraíble), o la cantidad de palabras reconocidas.
+    private fun ocrOnePage(
+        pdf: PdfDocument,
+        renderer: PdfRenderer,
+        pageNumber: Int,
+        recognizer: TextRecognizer,
+        font: PdfFont
+    ): Int? {
+        val page = pdf.getPage(pageNumber)
+        if (PdfTextExtractor.getTextFromPage(page).isNotBlank()) return null
+
+        val bitmap = renderPageBitmap(renderer, pageNumber - 1, RENDER_SCALE)
+        val recognized = recognizeText(recognizer, bitmap)
+        val words = drawInvisibleTextLayer(page, pdf, recognized, font, RENDER_SCALE)
+        bitmap.recycle()
+        return words
     }
 
     private fun renderPageBitmap(renderer: PdfRenderer, index: Int, scale: Float): Bitmap {

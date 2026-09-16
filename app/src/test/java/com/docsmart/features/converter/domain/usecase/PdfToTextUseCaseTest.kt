@@ -97,12 +97,20 @@ class PdfToTextUseCaseTest {
         assertTrue((resultB as ConversionResult.Success).outputFile.readText().contains("Archivo B"))
     }
 
-    // NOTA: no se cubre "PDF sin texto extraíble → Error" -- el use case
-    // agrega un encabezado "=== Página N ===" a CADA página incondicionalmente
-    // antes de comprobar `text.isBlank()`, así que esa rama nunca es
-    // alcanzable en la práctica (siempre hay al menos el encabezado). Hallazgo
-    // real encontrado al escribir este test, fuera de alcance de RF-CONV-08 --
-    // reportado por separado.
+    @Test
+    fun `PDF sin texto extraible devuelve Error en vez de un txt vacio`() = runTest {
+        // Hallazgo real de la revisión general 2026-09-16 (#43), señalado
+        // acá mismo como nota pero sin corregir hasta ahora: el use case
+        // agregaba un encabezado "=== Página N ===" a CADA página antes de
+        // comprobar isBlank() sobre el string YA con encabezados -- esa
+        // rama nunca era alcanzable en la práctica. Corregido rastreando
+        // el texto real por separado de los encabezados.
+        stubResolver(createPdf(emptyList()))
+
+        val result = useCase(mockk<Uri>(), "salida")
+
+        assertTrue(result is ConversionResult.Error)
+    }
 
     @Test
     fun `archivo no legible devuelve Error`() = runTest {

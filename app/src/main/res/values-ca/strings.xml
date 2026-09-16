@@ -38,6 +38,12 @@
     <string name="library_subtitle">Tots els teus documents</string>
     <string name="library_search">Cerca a la biblioteca…</string>
     <string name="library_documents">documents</string>
+    <string name="library_document_count">%1$d documents</string>
+    <string name="library_search_results_count">%1$d resultats per a \"%2$s\"</string>
+    <string name="library_no_results_title">Sense resultats</string>
+    <string name="library_empty_category">No hi ha documents en aquesta categoria</string>
+    <string name="library_no_results_for_query">No hem trobat \"%1$s\"</string>
+    <string name="library_favorites_title">Preferits</string>
     <string name="library_tab_device">Dispositiu</string>
     <string name="library_tab_app_files">Els meus arxius</string>
     <string name="library_tab_file_count">%1$d arxius</string>
@@ -129,6 +135,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">Entès</string>
     <string name="settings_storage_conversions">Conversions</string>
+    <string name="settings_storage_viewer_share">Compartit amb anotacions</string>
+    <string name="settings_storage_study_exports">Exportat del Mode Estudi</string>
     <string name="settings_storage_total">Total</string>
     <string name="settings_storage_files_unit">arxius</string>
     <string name="settings_storage_clear_cache">Buidar la memòria cau</string>
@@ -198,13 +206,21 @@
     <string name="viewer_share_chooser_title">Comparteix %1$s</string>
     <string name="viewer_annotate_content_desc">Anotar</string>
     <string name="viewer_annotate_toolbar_label">Ressaltar:</string>
+    <string name="viewer_highlight_color_yellow">Groc</string>
+    <string name="viewer_highlight_color_green">Verd</string>
+    <string name="viewer_highlight_color_pink">Rosa</string>
+    <string name="viewer_highlight_color_blue">Blau cel</string>
     <string name="viewer_annotate_note_chip">Nota</string>
     <string name="viewer_annotate_done">Fet</string>
     <string name="viewer_annotate_note_dialog_title">Nota nova</string>
     <string name="viewer_annotate_note_dialog_placeholder">Escriu la teva nota aquí…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d caràcters</string>
     <string name="viewer_annotate_note_detail_title">Nota</string>
     <string name="viewer_annotate_highlight_detail_title">Ressaltat</string>
     <string name="viewer_annotate_highlight_detail_body">Vols eliminar aquest ressaltat?</string>
+    <string name="viewer_annotate_delete_confirm_title">Vols eliminar-ho de manera permanent?</string>
+    <string name="viewer_annotate_delete_confirm_note_body">Aquesta nota s\'eliminarà i no es pot desfer.</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">Aquest ressaltat s\'eliminarà i no es pot desfer.</string>
     <string name="viewer_share_choice_title">Comparteix document</string>
     <string name="viewer_share_choice_preparing">Preparant el document…</string>
     <string name="viewer_share_choice_body">Aquest document té anotacions. Com el vols compartir?</string>
@@ -280,6 +296,7 @@
     <string name="converter_daily_limit_label">conversions</string>
     <string name="scan_daily_save_limit_label">escanejos desats</string>
     <string name="converter_daily_limit_reached_error">S\'ha arribat al límit diari de conversions</string>
+    <string name="converter_daily_count_label">Conversions avui: %1$d / %2$d</string>
     <string name="converter_batch_save_error">No s\'han pogut desar tots els arxius a Baixades</string>
     <string name="converter_error_read_word">No s\'ha pogut llegir el fitxer Word</string>
 
@@ -293,6 +310,7 @@
 
     <string name="converter_error_empty_spreadsheet">El full de càlcul no conté dades</string>
     <string name="converter_error_empty_presentation">La presentació no conté text</string>
+    <string name="converter_error_legacy_format_unsupported">Aquest format antic (.xls/.ppt d\'abans de l\'Office 2007) encara no és compatible. Desa\'l com a .xlsx/.pptx i torna-ho a provar.</string>
     <string name="converter_error_empty_word_document">El document no conté text extraïble</string>
     <string name="converter_error_empty_pdf_text">El PDF no conté text extraïble</string>
     <string name="converter_error_empty_pdf_text_scanned">El PDF no conté text extraïble. Pot ser un PDF escanejat.</string>
@@ -389,6 +407,7 @@
     <string name="pdf_rotate_progress">Girant PDF %1$d°…</string>
     <string name="pdf_rotate_execute">Girar PDF %1$d°</string>
     <string name="pdf_rotate_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
+    <string name="pdf_rotate_no_pages">El PDF no conté cap pàgina.</string>
     <string name="pdf_rotate_generate_error">Error en generar el PDF girat.</string>
     <string name="pdf_rotate_success">PDF girat %1$d° correctament</string>
     <string name="pdf_rotate_error">Error en girar el PDF: %1$s</string>
@@ -562,6 +581,8 @@
     <string name="pdf_ocr_generate_error">Error en generar el PDF amb el text reconegut.</string>
     <string name="pdf_ocr_success">%1$d pàgines processades, %2$d paraules reconegudes</string>
     <string name="pdf_ocr_error">Error en reconèixer el text: %1$s</string>
+    <string name="pdf_tools_unexpected_error">S\'ha produït un error inesperat. Torna-ho a provar amb un fitxer més petit.</string>
+    <string name="pdf_tools_result_size_kb">%1$d KB</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 
@@ -576,6 +597,7 @@
     <string name="format_name_image">Imatge</string>
     <string name="converter_success_title">Conversió amb èxit!</string>
     <string name="converter_success_page_count_size">%1$d pàgina(es) · %2$d KB</string>
+    <string name="converter_success_extra_files">+%1$d arxiu(s) més generat(s) -- s\'inclouen en desar/compartir</string>
     <string name="converter_saved_to_downloads">Desat a Baixades</string>
     <string name="converter_share">Compartir arxiu</string>
     <string name="converter_convert_another">Convertir un altre arxiu</string>
@@ -720,6 +742,8 @@
     <string name="security_no_protected_files">No hi ha arxius protegits</string>
     <string name="security_no_protected_files_hint">Toca \"Protegir un arxiu nou\" per afegir arxius</string>
     <string name="security_restore">Restaurar</string>
+    <string name="security_preview">Vista prèvia</string>
+    <string name="security_preview_error">No s\'ha pogut obrir la vista prèvia</string>
     <string name="security_protect_file_dialog_title">Protegir arxiu</string>
     <string name="pdf_pw_screen_subtitle">Protegeix o desbloqueja els teus PDF</string>
     <string name="pdf_pw_mode_protect_title">Protegir PDF</string>
@@ -789,6 +813,8 @@
     <string name="qr_reader_subtitle">Apunta la càmera al codi QR</string>
     <string name="qr_camera_permission_needed">Cal accés a la càmera per escanejar codis QR</string>
     <string name="qr_allow_camera_access">Permetre accés a la càmera</string>
+    <string name="qr_camera_permission_denied_permanently">Vas denegar l\'accés a la càmera de manera permanent. Activa\'l des dels Ajustos del sistema.</string>
+    <string name="qr_open_app_settings">Obre els Ajustos</string>
     <string name="qr_center_in_frame">Centra el codi QR al requadre</string>
     <string name="qr_type_url_detected">URL detectada</string>
     <string name="qr_type_image_detected">Imatge detectada</string>
@@ -796,9 +822,15 @@
     <string name="qr_type_email_detected">Email detectat</string>
     <string name="qr_type_phone_detected">Telèfon detectat</string>
     <string name="qr_type_text_detected">Text detectat</string>
+    <string name="qr_type_wifi_detected">Wi-Fi detectada</string>
+    <string name="qr_type_contact_detected">Contacte detectat</string>
+    <string name="qr_type_event_detected">Esdeveniment detectat</string>
     <string name="qr_detected_title">Codi QR detectat!</string>
     <string name="qr_image_content_desc">Imatge del QR</string>
     <string name="qr_loading_image">Carregant imatge…</string>
+    <string name="qr_image_privacy_warning">Carregar aquesta imatge fa una connexió a internet i pot revelar la teva IP a qui controli aquesta URL.</string>
+    <string name="qr_load_image">Carrega la imatge</string>
+    <string name="qr_persist_permission_failed">No s\'ha pogut obtenir permís permanent per llegir aquest arxiu. Prova de triar-lo de nou.</string>
     <string name="qr_copied_clipboard">Copiat al porta-retalls</string>
     <string name="qr_open_browser">Obrir al navegador</string>
     <string name="qr_copy_url">Copiar URL</string>
@@ -811,6 +843,10 @@
     <string name="qr_call">Trucar</string>
     <string name="qr_copy_number">Copiar número</string>
     <string name="qr_copy_text">Copiar text</string>
+    <string name="qr_copy_wifi_password">Copia la contrasenya</string>
+    <string name="qr_copy_wifi_ssid">Copia el nom de la xarxa</string>
+    <string name="qr_add_contact">Afegeix als contactes</string>
+    <string name="qr_add_calendar_event">Afegeix al calendari</string>
     <string name="qr_scan_another">Escanejar un altre codi</string>
     <string name="qr_creator_title">Crear codi QR</string>
     <string name="qr_creator_subtitle">Genera QR per a URL, text, arxius i més</string>
@@ -844,6 +880,8 @@
     <string name="qr_image_selected">Imatge seleccionada ✓</string>
     <string name="qr_select_document">Seleccionar document</string>
     <string name="qr_document_selected">Document seleccionat ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">Aquest QR només funciona en aquest dispositiu: apunta a un arxiu local, no a una còpia compartida.</string>
     <string name="qr_label_url">URL del lloc web</string>
     <string name="qr_label_text">Text del missatge</string>
@@ -855,6 +893,14 @@
     <string name="qr_placeholder_phone">+34 600 00 00 00</string>
     <string name="qr_design_label">Personalitza el disseny</string>
     <string name="qr_design_contrast_warning">Aquest color té poc contrast sobre fons blanc — tria’n un de més fosc perquè la càmera el llegeixi bé</string>
+    <string name="qr_color_black">Negre</string>
+    <string name="qr_color_blue">Blau</string>
+    <string name="qr_color_purple">Porpra</string>
+    <string name="qr_color_green">Verd</string>
+    <string name="qr_color_red">Vermell</string>
+    <string name="qr_color_orange">Taronja</string>
+    <string name="qr_color_teal">Verd blavós</string>
+    <string name="qr_color_yellow">Groc</string>
     <string name="qr_design_add_logo">Afegeix un logo</string>
     <string name="qr_design_logo_added">Logo afegit</string>
     <string name="qr_design_remove_logo">Treu el logo</string>

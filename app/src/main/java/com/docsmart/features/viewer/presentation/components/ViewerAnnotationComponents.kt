@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -37,6 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.data.db.AnnotationEntity
@@ -79,8 +83,20 @@ fun ViewerAnnotationToolbar(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                highlightColors.forEach { colorArgb ->
+                // Hallazgo real de la revisión general 2026-09-16 (#15): los
+                // 4 círculos de color de resaltado no tenían
+                // contentDescription ni semántica de selección -- mismo
+                // criterio y mismo fix ya aplicado al selector de color del
+                // Creador de QR (hallazgo #7).
+                val highlightColorNames = listOf(
+                    stringResource(R.string.viewer_highlight_color_yellow),
+                    stringResource(R.string.viewer_highlight_color_green),
+                    stringResource(R.string.viewer_highlight_color_pink),
+                    stringResource(R.string.viewer_highlight_color_blue)
+                )
+                highlightColors.forEachIndexed { index, colorArgb ->
                     val isSelected = mode == AnnotationMode.HIGHLIGHT && colorArgb == selectedColor
+                    val colorName = highlightColorNames.getOrElse(index) { "" }
                     Box(
                         modifier = Modifier
                             .size(28.dp)
@@ -91,7 +107,12 @@ fun ViewerAnnotationToolbar(
                                 color = MaterialTheme.colorScheme.onSurface,
                                 shape = CircleShape
                             )
-                            .clickable { onColorSelected(colorArgb) }
+                            .selectable(
+                                selected = isSelected,
+                                role = Role.RadioButton,
+                                onClick = { onColorSelected(colorArgb) }
+                            )
+                            .semantics { contentDescription = colorName }
                     )
                 }
             }
@@ -126,10 +147,25 @@ fun ViewerNoteInputDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
         icon    = { Icon(Icons.Rounded.EditNote, contentDescription = null) },
         title   = { Text(stringResource(R.string.viewer_annotate_note_dialog_title)) },
         text    = {
+            val atLimit = text.length >= MAX_NOTE_LENGTH
             OutlinedTextField(
                 value         = text,
                 onValueChange = { if (it.length <= MAX_NOTE_LENGTH) text = it },
                 placeholder   = { Text(stringResource(R.string.viewer_annotate_note_dialog_placeholder)) },
+                // Hallazgo real de la revisión general 2026-09-16 (#18): al
+                // llegar al límite, onValueChange simplemente dejaba de
+                // aceptar más texto -- el teclado "no respondía" sin ningún
+                // aviso visible de por qué. El contador (siempre visible,
+                // no solo al límite) explica el tope de antemano, e isError
+                // resalta el campo cuando ya se alcanzó.
+                supportingText = {
+                    Text(
+                        stringResource(R.string.viewer_annotate_note_char_count, text.length, MAX_NOTE_LENGTH),
+                        color = if (atLimit) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                isError       = atLimit,
                 minLines      = 3,
                 modifier      = Modifier.fillMaxWidth()
             )
@@ -154,6 +190,38 @@ fun ViewerAnnotationDetailDialog(
     onDismiss : () -> Unit
 ) {
     val isNote = annotation.type == AnnotationType.NOTE
+    // Hallazgo real de la revisión general 2026-09-16 (#17): "Eliminar" acá
+    // borraba de una sola vez, a diferencia de eliminar el documento
+    // completo, que sí pide confirmación -- una nota o resaltado se pierde
+    // para siempre sin que un toque accidental tenga forma de deshacerse.
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            icon  = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text(stringResource(R.string.viewer_annotate_delete_confirm_title)) },
+            text  = {
+                Text(
+                    stringResource(
+                        if (isNote) R.string.viewer_annotate_delete_confirm_note_body
+                        else R.string.viewer_annotate_delete_confirm_highlight_body
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDelete) {
+                    Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(stringResource(R.string.general_cancel))
+                }
+            }
+        )
+        return
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon  = { Icon(if (isNote) Icons.Rounded.EditNote else Icons.Rounded.HighlightAlt, contentDescription = null) },
@@ -176,7 +244,7 @@ fun ViewerAnnotationDetailDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDelete) {
+            TextButton(onClick = { showDeleteConfirm = true }) {
                 Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                 Spacer(Modifier.width(4.dp))
                 Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error)

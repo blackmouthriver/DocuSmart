@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.WarningAmber
@@ -85,12 +89,29 @@ fun QrDesignSection(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
+        // Hallazgo real de la revisión general 2026-09-16 (#7): los 8
+        // círculos de color no tenían contentDescription ni semántica de
+        // selección -- para TalkBack sonaban todos igual ("botón", sin
+        // nombre ni estado). `selectable` (radio-like: un solo color activo
+        // a la vez) agrega el estado "seleccionado"/"no seleccionado" al
+        // árbol de accesibilidad automáticamente.
+        val colorNames = listOf(
+            stringResource(R.string.qr_color_black),
+            stringResource(R.string.qr_color_blue),
+            stringResource(R.string.qr_color_purple),
+            stringResource(R.string.qr_color_green),
+            stringResource(R.string.qr_color_red),
+            stringResource(R.string.qr_color_orange),
+            stringResource(R.string.qr_color_teal),
+            stringResource(R.string.qr_color_yellow)
+        )
         Row(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.horizontalScroll(rememberScrollState())
         ) {
-            QR_COLOR_PRESETS.forEach { colorInt ->
+            QR_COLOR_PRESETS.forEachIndexed { index, colorInt ->
                 val isSelected = colorInt == selectedColor
+                val colorName = colorNames.getOrElse(index) { "" }
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -105,7 +126,12 @@ fun QrDesignSection(
                             },
                             shape = CircleShape
                         )
-                        .clickable { onColorSelected(colorInt) }
+                        .selectable(
+                            selected = isSelected,
+                            role = Role.RadioButton,
+                            onClick = { onColorSelected(colorInt) }
+                        )
+                        .semantics { contentDescription = colorName }
                 )
             }
         }

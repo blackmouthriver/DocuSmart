@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
+import com.docsmart.core.ui.util.ReloadOnScreenResume
 import com.docsmart.features.home.presentation.component.HomeBanner
 import com.docsmart.features.home.presentation.component.QuickAccessGrid
 import com.docsmart.features.home.presentation.component.RecentDocuments
@@ -53,6 +54,14 @@ fun HomeScreen(
     Timber.d("HomeScreen: iniciando composición")
 
     LaunchedEffect(Unit) {
+        viewModel.loadRecentDocuments()
+    }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#52): "Recientes" en
+    // Home solo se cargaba una vez, al componer por primera vez. Un
+    // documento movido/borrado desde otra pantalla (Visor, Biblioteca,
+    // Carpeta Segura) seguía apareciendo como "fantasma" al volver a Home.
+    ReloadOnScreenResume {
         viewModel.loadRecentDocuments()
     }
 

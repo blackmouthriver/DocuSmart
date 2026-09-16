@@ -66,4 +66,32 @@ class QrContentTypeTest {
     fun `texto plano sin esquema reconocido se detecta como TEXT`() {
         assertEquals(QrContentType.TEXT, detectQrContentType("Hola, este es un QR de texto simple"))
     }
+
+    // ── Hallazgo real #5 (revisión general 2026-09-16): el Lector propio no
+    // reconocía los payloads que su propio Creador genera (HU-43).
+
+    @Test
+    fun `payload WIFI se detecta como WIFI sin importar mayusculas`() {
+        assertEquals(QrContentType.WIFI, detectQrContentType("WIFI:T:WPA;S:MiRed;P:clave;;"))
+        assertEquals(QrContentType.WIFI, detectQrContentType("wifi:T:WPA;S:MiRed;P:clave;;"))
+    }
+
+    @Test
+    fun `payload vCard se detecta como CONTACT`() {
+        assertEquals(
+            QrContentType.CONTACT,
+            detectQrContentType("BEGIN:VCARD\nVERSION:3.0\nFN:Ana\nEND:VCARD")
+        )
+    }
+
+    @Test
+    fun `payload VEVENT se detecta como EVENT`() {
+        assertEquals(
+            QrContentType.EVENT,
+            detectQrContentType(
+                "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Reunión\n" +
+                    "DTSTART:20260101T100000\nDTEND:20260101T110000\nEND:VEVENT\nEND:VCALENDAR"
+            )
+        )
+    }
 }

@@ -38,6 +38,12 @@
     <string name="library_subtitle">你的所有文档</string>
     <string name="library_search">在资料库中搜索…</string>
     <string name="library_documents">个文档</string>
+    <string name="library_document_count">%1$d 个文档</string>
+    <string name="library_search_results_count">找到 %1$d 个与\"%2$s\"匹配的结果</string>
+    <string name="library_no_results_title">无结果</string>
+    <string name="library_empty_category">此分类中没有文档</string>
+    <string name="library_no_results_for_query">未找到\"%1$s\"</string>
+    <string name="library_favorites_title">收藏夹</string>
     <string name="library_tab_device">设备</string>
     <string name="library_tab_app_files">我的文件</string>
     <string name="library_tab_file_count">%1$d 个文件</string>
@@ -118,6 +124,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">知道了</string>
     <string name="settings_storage_conversions">转换记录</string>
+    <string name="settings_storage_viewer_share">带注释分享</string>
+    <string name="settings_storage_study_exports">从学习模式导出</string>
     <string name="settings_storage_total">总计</string>
     <string name="settings_storage_files_unit">个文件</string>
     <string name="settings_storage_clear_cache">清除缓存</string>
@@ -185,13 +193,21 @@
     <string name="viewer_share_chooser_title">分享 %1$s</string>
     <string name="viewer_annotate_content_desc">批注</string>
     <string name="viewer_annotate_toolbar_label">高亮:</string>
+    <string name="viewer_highlight_color_yellow">黄色</string>
+    <string name="viewer_highlight_color_green">绿色</string>
+    <string name="viewer_highlight_color_pink">粉色</string>
+    <string name="viewer_highlight_color_blue">浅蓝色</string>
     <string name="viewer_annotate_note_chip">备注</string>
     <string name="viewer_annotate_done">完成</string>
     <string name="viewer_annotate_note_dialog_title">新建备注</string>
     <string name="viewer_annotate_note_dialog_placeholder">在此输入备注…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d 个字符</string>
     <string name="viewer_annotate_note_detail_title">备注</string>
     <string name="viewer_annotate_highlight_detail_title">高亮</string>
     <string name="viewer_annotate_highlight_detail_body">删除此高亮?</string>
+    <string name="viewer_annotate_delete_confirm_title">要永久删除吗？</string>
+    <string name="viewer_annotate_delete_confirm_note_body">此笔记将被删除且无法撤销。</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">此高亮将被删除且无法撤销。</string>
     <string name="viewer_share_choice_title">分享文档</string>
     <string name="viewer_share_choice_preparing">正在准备文档…</string>
     <string name="viewer_share_choice_body">此文档包含批注。您想如何分享?</string>
@@ -267,6 +283,7 @@
     <string name="converter_daily_limit_label">转换</string>
     <string name="scan_daily_save_limit_label">已保存的扫描</string>
     <string name="converter_daily_limit_reached_error">已达到每日转换次数上限</string>
+    <string name="converter_daily_count_label">今日转换次数：%1$d / %2$d</string>
     <string name="converter_batch_save_error">无法将所有文件保存到下载</string>
     <string name="converter_error_read_word">无法读取 Word 文件</string>
     <string name="converter_error_read_excel">无法读取 Excel 文件</string>
@@ -275,6 +292,7 @@
     <string name="converter_error_read_image">无法读取图片</string>
     <string name="converter_error_empty_spreadsheet">电子表格没有数据</string>
     <string name="converter_error_empty_presentation">演示文稿没有文字</string>
+    <string name="converter_error_legacy_format_unsupported">暂不支持此旧格式（Office 2007之前的.xls/.ppt）。请另存为.xlsx/.pptx后重试。</string>
     <string name="converter_error_empty_word_document">文档没有可提取的文字</string>
     <string name="converter_error_empty_pdf_text">PDF 没有可提取的文字</string>
     <string name="converter_error_empty_pdf_text_scanned">PDF 没有可提取的文字，可能是扫描版 PDF。</string>
@@ -367,6 +385,7 @@
     <string name="pdf_rotate_progress">正在旋转 PDF %1$d°…</string>
     <string name="pdf_rotate_execute">旋转 PDF %1$d°</string>
     <string name="pdf_rotate_read_error">无法读取该 PDF，请确认它是有效文件。</string>
+    <string name="pdf_rotate_no_pages">该PDF不包含任何页面。</string>
     <string name="pdf_rotate_generate_error">生成旋转后的 PDF 时出错。</string>
     <string name="pdf_rotate_success">PDF 已成功旋转 %1$d°</string>
     <string name="pdf_rotate_error">旋转 PDF 时出错：%1$s</string>
@@ -540,6 +559,8 @@
     <string name="pdf_ocr_generate_error">生成含识别文字的 PDF 时出错。</string>
     <string name="pdf_ocr_success">已处理 %1$d 页，识别出 %2$d 个词</string>
     <string name="pdf_ocr_error">识别文字时出错：%1$s</string>
+    <string name="pdf_tools_unexpected_error">发生了意外错误。请用更小的文件重试。</string>
+    <string name="pdf_tools_result_size_kb">%1$d KB</string>
 
     <!-- ── 首页空状态 ───────────────────────────────── -->
 
@@ -554,6 +575,7 @@
     <string name="format_name_image">图片</string>
     <string name="converter_success_title">转换成功！</string>
     <string name="converter_success_page_count_size">%1$d 页 · %2$d KB</string>
+    <string name="converter_success_extra_files">另生成了%1$d个文件——保存/分享时会一并包含</string>
     <string name="converter_saved_to_downloads">已保存到下载</string>
     <string name="converter_share">分享文件</string>
     <string name="converter_convert_another">转换其他文件</string>
@@ -692,6 +714,8 @@
     <string name="security_no_protected_files">没有受保护的文件</string>
     <string name="security_no_protected_files_hint">点击 \"保护新文件\" 来添加文件</string>
     <string name="security_restore">恢复</string>
+    <string name="security_preview">预览</string>
+    <string name="security_preview_error">无法打开预览</string>
     <string name="security_protect_file_dialog_title">保护文件</string>
     <string name="pdf_pw_screen_subtitle">保护或解锁你的 PDF</string>
     <string name="pdf_pw_mode_protect_title">保护 PDF</string>
@@ -761,6 +785,8 @@
     <string name="qr_reader_subtitle">将摄像头对准二维码</string>
     <string name="qr_camera_permission_needed">需要相机权限才能扫描二维码</string>
     <string name="qr_allow_camera_access">允许访问相机</string>
+    <string name="qr_camera_permission_denied_permanently">你已永久拒绝相机访问权限。请在系统设置中启用。</string>
+    <string name="qr_open_app_settings">打开设置</string>
     <string name="qr_center_in_frame">将二维码置于框内居中位置</string>
     <string name="qr_type_url_detected">检测到网址</string>
     <string name="qr_type_image_detected">检测到图片</string>
@@ -768,9 +794,15 @@
     <string name="qr_type_email_detected">检测到邮箱</string>
     <string name="qr_type_phone_detected">检测到电话</string>
     <string name="qr_type_text_detected">检测到文本</string>
+    <string name="qr_type_wifi_detected">检测到Wi-Fi</string>
+    <string name="qr_type_contact_detected">检测到联系人</string>
+    <string name="qr_type_event_detected">检测到日程</string>
     <string name="qr_detected_title">已检测到二维码！</string>
     <string name="qr_image_content_desc">二维码图片</string>
     <string name="qr_loading_image">正在加载图片…</string>
+    <string name="qr_image_privacy_warning">加载此图片会建立网络连接，可能会向控制该网址的人暴露你的IP地址。</string>
+    <string name="qr_load_image">加载图片</string>
+    <string name="qr_persist_permission_failed">无法获取读取该文件的永久权限，请重新选择该文件。</string>
     <string name="qr_copied_clipboard">已复制到剪贴板</string>
     <string name="qr_open_browser">在浏览器中打开</string>
     <string name="qr_copy_url">复制网址</string>
@@ -783,6 +815,10 @@
     <string name="qr_call">拨打电话</string>
     <string name="qr_copy_number">复制号码</string>
     <string name="qr_copy_text">复制文本</string>
+    <string name="qr_copy_wifi_password">复制密码</string>
+    <string name="qr_copy_wifi_ssid">复制网络名称</string>
+    <string name="qr_add_contact">添加到通讯录</string>
+    <string name="qr_add_calendar_event">添加到日历</string>
     <string name="qr_scan_another">扫描另一个二维码</string>
     <string name="qr_creator_title">生成二维码</string>
     <string name="qr_creator_subtitle">为网址、文本、文件等生成二维码</string>
@@ -816,6 +852,8 @@
     <string name="qr_image_selected">已选择图片 ✓</string>
     <string name="qr_select_document">选择文档</string>
     <string name="qr_document_selected">已选择文档 ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">此二维码仅在本设备上有效：它指向本地文件，而不是共享副本。</string>
     <string name="qr_label_url">网站网址</string>
     <string name="qr_label_text">消息文本</string>
@@ -827,6 +865,14 @@
     <string name="qr_placeholder_phone">+86 138 0013 8000</string>
     <string name="qr_design_label">自定义样式</string>
     <string name="qr_design_contrast_warning">这个颜色在白色背景上对比度较低——选择更深的颜色，方便摄像头识别</string>
+    <string name="qr_color_black">黑色</string>
+    <string name="qr_color_blue">蓝色</string>
+    <string name="qr_color_purple">紫色</string>
+    <string name="qr_color_green">绿色</string>
+    <string name="qr_color_red">红色</string>
+    <string name="qr_color_orange">橙色</string>
+    <string name="qr_color_teal">青色</string>
+    <string name="qr_color_yellow">黄色</string>
     <string name="qr_design_add_logo">添加标志</string>
     <string name="qr_design_logo_added">已添加标志</string>
     <string name="qr_design_remove_logo">移除标志</string>

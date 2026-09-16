@@ -130,4 +130,93 @@ class QrContentFormatTest {
     fun `escapeVCardField no toca los dos puntos`() {
         assertEquals("a\\\\b\\;c\\,d:e\\nf", escapeVCardField("a\\b;c,d:e\nf"))
     }
+
+    // Hallazgo real de la revisión de correctitud adversarial de este mismo
+    // lote (2026-09-16): un backslash literal seguido de "n" (ej. SSID
+    // "Test\network") se escapa a "Test\\network" (backslash duplicado) --
+    // la versión anterior de unescapeReservedField() (6 replace()
+    // independientes) confundía el segundo backslash del par + la "n"
+    // siguiente con el escape de salto de línea, corrompiendo el valor.
+    @Test
+    fun `parseWifiPayload hace roundtrip con un backslash literal seguido de n`() {
+        val original = QrWifiContent("Test\\network", "clave\\normal", QrWifiSecurity.WPA)
+
+        val parsed = parseWifiPayload(original.toQrPayload())
+
+        assertEquals(original, parsed)
+    }
+
+    // ── Parsers (hallazgo real #5, revisión general 2026-09-16) ──────────────
+    // El Lector propio de DocuSmart no reconocía sus propios payloads
+    // WIFI:/vCard/VEVENT -- estos tests cubren el roundtrip toQrPayload() ->
+    // parse*Payload() y algunos casos borde de formato no generado por la app.
+
+    @Test
+    fun `parseWifiPayload hace roundtrip con toQrPayload`() {
+        val original = QrWifiContent("Red;raro:nombre", "clave\"con,simbolos", QrWifiSecurity.WPA)
+        val parsed = parseWifiPayload(original.toQrPayload())
+
+        assertEquals(original, parsed)
+    }
+
+    @Test
+    fun `parseWifiPayload sin contrasena devuelve seguridad NONE y password vacio`() {
+        val parsed = parseWifiPayload(QrWifiContent("RedAbierta", "", QrWifiSecurity.NONE).toQrPayload())
+
+        assertEquals(QrWifiContent("RedAbierta", "", QrWifiSecurity.NONE), parsed)
+    }
+
+    @Test
+    fun `parseWifiPayload devuelve null si no empieza con WIFI`() {
+        assertEquals(null, parseWifiPayload("no es un payload de wifi"))
+    }
+
+    @Test
+    fun `parseVCardPayload hace roundtrip con toQrPayload`() {
+        val original = QrContactContent("Ana Pérez", "+573000000", "ana@ejemplo.com")
+        val parsed = parseVCardPayload(original.toQrPayload())
+
+        assertEquals(original, parsed)
+    }
+
+    @Test
+    fun `parseVCardPayload sin telefono ni email deja esos campos vacios`() {
+        val parsed = parseVCardPayload(QrContactContent("Solo Nombre", "", "").toQrPayload())
+
+        assertEquals(QrContactContent("Solo Nombre", "", ""), parsed)
+    }
+
+    @Test
+    fun `parseVCardPayload devuelve null si no contiene BEGIN VCARD`() {
+        assertEquals(null, parseVCardPayload("texto cualquiera"))
+    }
+
+    @Test
+    fun `parseVEventPayload hace roundtrip con toQrPayload`() {
+        val start = LocalDateTime.of(2026, 12, 25, 9, 0)
+        val end   = LocalDateTime.of(2026, 12, 25, 10, 30)
+        val original = QrEventContent("Reunión", "Oficina", start, end)
+
+        val parsed = parseVEventPayload(original.toQrPayload())
+
+        assertEquals(original, parsed)
+    }
+
+    @Test
+    fun `parseVEventPayload sin DTSTART devuelve null`() {
+        val payload = "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Sin fecha\nEND:VEVENT\nEND:VCALENDAR"
+
+        assertEquals(null, parseVEventPayload(payload))
+    }
+
+    @Test
+    fun `parseVEventPayload sin DTEND usa DTSTART como fin`() {
+        val payload = "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Puntual\n" +
+            "DTSTART:20260101T100000\nEND:VEVENT\nEND:VCALENDAR"
+
+        val parsed = parseVEventPayload(payload)
+
+        assertEquals(LocalDateTime.of(2026, 1, 1, 10, 0), parsed?.start)
+        assertEquals(LocalDateTime.of(2026, 1, 1, 10, 0), parsed?.end)
+    }
 }

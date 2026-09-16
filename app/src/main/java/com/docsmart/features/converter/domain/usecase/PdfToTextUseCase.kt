@@ -27,30 +27,52 @@ class PdfToTextUseCase @Inject constructor(
         pdfUri: Uri,
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
+        // Hallazgo real de la revisión general 2026-09-16 (#39): cacheFile
+        // nunca se borraba -- fuga de almacenamiento acumulativa (una copia
+        // sin cifrar del PDF del usuario por cada conversión a texto, para
+        // siempre) fuera del ciclo de vida normal de filesDir/converted.
+        var cacheFile: File? = null
         try {
             // ── Copiar al cache ───────────────────────
             // Nombre único por llamada (antes fijo: "temp_text.pdf") -- RF-CONV-08
             // puede invocar este use case varias veces en el mismo lote.
-            val cacheFile = File.createTempFile("temp_text", ".pdf", context.cacheDir)
+            cacheFile = File.createTempFile("temp_text", ".pdf", context.cacheDir)
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
                 cacheFile.outputStream().use { output -> input.copyTo(output) }
             } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
 
             // ── Extraer texto con iText7 ──────────────
             val sb = StringBuilder()
-            val pdfDoc = PdfDocument(PdfReader(cacheFile))
-
-            val pageCount = pdfDoc.numberOfPages
-            for (i in 1..pageCount) {
-                val pageText = PdfTextExtractor.getTextFromPage(pdfDoc.getPage(i))
-                sb.appendLine("=== Página $i ===")
-                sb.appendLine(pageText)
-                sb.appendLine()
+            var pageCount = 0
+            // Hallazgo real de la revisión general 2026-09-16 (#43): el
+            // chequeo de abajo comparaba sb.toString() COMPLETO, que ya
+            // incluye el encabezado "=== Página N ===" agregado para cada
+            // página -- esa rama nunca se alcanzaba (sb nunca queda en
+            // blanco si hay al menos 1 página), así que un PDF escaneado
+            // sin OCR "convertía" con éxito a un .txt sin ningún contenido
+            // real, sin avisar. Se rastrea el texto real por separado del
+            // string final con encabezados.
+            var hasRealText = false
+            // Hallazgo real de la revisión de correctitud adversarial de
+            // este mismo lote (2026-09-16): mismo patrón ya corregido acá
+            // como hallazgo #40 en PdfToHtmlUseCase/PdfToWordUseCase --
+            // pdfDoc.close() manual solo se alcanzaba si NINGUNA página
+            // lanzaba al extraer su texto; una página malformada a mitad
+            // del loop dejaba el PdfDocument/PdfReader sin cerrar. .use{}
+            // lo cierra pase lo que pase.
+            PdfDocument(PdfReader(cacheFile)).use { pdfDoc ->
+                pageCount = pdfDoc.numberOfPages
+                for (i in 1..pageCount) {
+                    val pageText = PdfTextExtractor.getTextFromPage(pdfDoc.getPage(i))
+                    if (pageText.isNotBlank()) hasRealText = true
+                    sb.appendLine("=== Página $i ===")
+                    sb.appendLine(pageText)
+                    sb.appendLine()
+                }
             }
-            pdfDoc.close()
 
             val text = sb.toString().trim()
-            if (text.isBlank()) {
+            if (!hasRealText) {
                 return@withContext ConversionResult.Error(
                     context.getString(R.string.converter_error_empty_pdf_text_scanned)
                 )
@@ -72,6 +94,8 @@ class PdfToTextUseCase @Inject constructor(
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )
+        } finally {
+            cacheFile?.delete()
         }
     }
 

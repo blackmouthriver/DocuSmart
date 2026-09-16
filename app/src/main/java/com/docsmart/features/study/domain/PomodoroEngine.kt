@@ -23,6 +23,12 @@ data class PomodoroState(
 
 internal const val POMODORO_STUDY_MINUTES = 25
 internal const val POMODORO_BREAK_MINUTES = 5
+// Hallazgo #56 (revisión general 2026-09-16): study_pomodoros_hint ya
+// prometía "Cada 4 pomodoros = descanso largo" desde el texto, pero esa
+// lógica nunca existió -- el descanso era siempre de 5 minutos. Valores de
+// la técnica Pomodoro clásica (Cirillo).
+internal const val POMODORO_LONG_BREAK_MINUTES = 15
+internal const val POMODORO_LONG_BREAK_INTERVAL = 4
 
 /**
  * Un tick del Pomodoro, sin ningún efecto secundario (sin `Context`, sin
@@ -37,13 +43,17 @@ internal const val POMODORO_BREAK_MINUTES = 5
 internal fun tickPomodoro(current: PomodoroState): PomodoroState = when {
     current.seconds > 0 -> current.copy(seconds = current.seconds - 1)
     current.minutes > 0 -> current.copy(minutes = current.minutes - 1, seconds = 59)
-    !current.isBreak -> current.copy(
-        isRunning = false,
-        pomodoroCount = current.pomodoroCount + 1,
-        isBreak = true,
-        minutes = POMODORO_BREAK_MINUTES,
-        seconds = 0
-    )
+    !current.isBreak -> {
+        val newCount = current.pomodoroCount + 1
+        val isLongBreak = newCount % POMODORO_LONG_BREAK_INTERVAL == 0
+        current.copy(
+            isRunning = false,
+            pomodoroCount = newCount,
+            isBreak = true,
+            minutes = if (isLongBreak) POMODORO_LONG_BREAK_MINUTES else POMODORO_BREAK_MINUTES,
+            seconds = 0
+        )
+    }
     else -> current.copy(
         isRunning = false,
         isBreak = false,
@@ -81,6 +91,16 @@ object PomodoroEngine {
     private val _state = MutableStateFlow(PomodoroState())
     val state: StateFlow<PomodoroState> = _state
 
+    // Hallazgo #58 (revisión general 2026-09-16), afinado tras la revisión
+    // de correctitud adversarial de este mismo lote: un chequeo basado en
+    // el VALOR del estado (minutes==25 && seconds==0) no distingue "recién
+    // empezado" de "pausado antes de que corriera el primer segundo" --
+    // pausar y reanudar dentro de ese primer segundo volvía a loguear el
+    // mismo bloque de estudio como si fuera nuevo. Se rastrea
+    // explícitamente si ESTE bloque de estudio ya logueó su inicio, en vez
+    // de inferirlo del valor exacto del cronómetro.
+    private var studySessionLogged = false
+
     fun toggle(context: Context) {
         if (_state.value.isRunning) pause(context) else start(context)
     }
@@ -98,12 +118,21 @@ object PomodoroEngine {
         tickerJob?.cancel()
         tickerJob = null
         _state.value = PomodoroState()
+        studySessionLogged = false
         stopService(context)
     }
 
     private fun start(context: Context) {
         if (_state.value.isRunning) return
-        if (!_state.value.isBreak) DocuSmartAnalytics.logStudySessionStarted()
+        // Hallazgo #58 (revisión general 2026-09-16): antes se disparaba en
+        // cada reanudación (pausar → reanudar un bloque de estudio ya
+        // empezado también entra por acá), no solo al iniciar sesión --
+        // solo cuenta como "inicio" la primera vez que arranca ESTE bloque
+        // de estudio, sin importar cuántas veces se pause/reanude después.
+        if (!_state.value.isBreak && !studySessionLogged) {
+            DocuSmartAnalytics.logStudySessionStarted()
+            studySessionLogged = true
+        }
         _state.value = _state.value.copy(isRunning = true)
         startService(context)
         // Cancela cualquier bucle viejo antes de lanzar uno nuevo -- ver
@@ -132,6 +161,10 @@ object PomodoroEngine {
             StudyStatsStorage.recordPomodoroCompletion(context)
             DocuSmartAnalytics.logPomodoroCompleted(next.pomodoroCount)
         }
+        // El descanso terminó y arrancó un bloque de estudio nuevo (pausado,
+        // esperando "Iniciar") -- ese bloque todavía no logueó su propio
+        // inicio.
+        if (current.isBreak && !next.isBreak) studySessionLogged = false
         _state.value = next
         if (!next.isRunning) stopService(context)
     }

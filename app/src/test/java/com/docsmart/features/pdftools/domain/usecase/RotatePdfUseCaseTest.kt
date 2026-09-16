@@ -34,7 +34,7 @@ class RotatePdfUseCaseTest {
     private lateinit var useCase: RotatePdfUseCase
 
     private val messages = RotatePdfMessages(
-        readError = "readError", generateError = "generateError",
+        readError = "readError", noPages = "noPages", generateError = "generateError",
         success = "success %1\$d", genericError = "genericError %1\$s"
     )
 
@@ -74,6 +74,14 @@ class RotatePdfUseCaseTest {
         assertTrue(result is PdfToolResult.Success)
         assertEquals(listOf(90), pageRotationsOf((result as PdfToolResult.Success).outputFile))
     }
+
+    // Nota: no se agrega acá un test de "PDF de 0 páginas" (hallazgo #28)
+    // -- iText no permite crear/cerrar de forma confiable un PdfDocument
+    // sin ninguna página vía su propio PdfWriter en un test (mismo límite
+    // ya presente en el resto de las herramientas comparables de este
+    // paquete, ninguna de las cuales tiene ese caso cubierto tampoco). El
+    // fix en RotatePdfUseCase.kt replica exactamente el mismo patrón ya
+    // usado y confiado en CompressPdfUseCase/CropPdfUseCase/etc.
 
     // ── helpers ────────────────────────────────────────────────────────────
 

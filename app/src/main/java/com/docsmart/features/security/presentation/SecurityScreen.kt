@@ -31,9 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
 import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
@@ -44,6 +41,23 @@ import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.theme.rememberAccentGradient
 import timber.log.Timber
 
+// Hallazgo real de la revisión de seguridad adversarial de este mismo lote
+// (2026-09-16): RF-SEC-08 (bloquear al pasar a segundo plano) y la limpieza
+// de secure_preview/ vivían acá como un DisposableEffect(Unit) atado a la
+// composición de SecurityScreen -- al navegar al Visor para la vista previa
+// del hallazgo #53, SecurityScreen se saca de la composición y ese observer
+// se desregistraba justo mientras el usuario tenía un archivo protegido
+// abierto. Se movió a SecurityViewModel (ver processLifecycleObserver ahí),
+// que sobrevive mientras exista su NavBackStackEntry, no solo mientras esta
+// Composable esté en pantalla. Acá solo queda escuchar la ruta de vista
+// previa para navegar al Visor.
+@Composable
+private fun SecurityBackgroundEffects(viewModel: SecurityViewModel, onPreviewFile: (String) -> Unit) {
+    LaunchedEffect(Unit) {
+        viewModel.previewRequest.collect { path -> onPreviewFile(path) }
+    }
+}
+
 @Composable
 fun SecurityScreen(
     onBack       : () -> Unit = {},
@@ -53,6 +67,10 @@ fun SecurityScreen(
     // se mueve automáticamente en cuanto el usuario desbloquea la Carpeta
     // Segura (PIN o biometría) -- ver el LaunchedEffect más abajo.
     pendingFileUri: String? = null,
+    // Hallazgo #53 (revisión general 2026-09-16): abre en el Visor la copia
+    // efímera de vista previa que emite viewModel.previewRequest (ver
+    // LaunchedEffect más abajo), sin restaurar el archivo de Carpeta Segura.
+    onPreviewFile: (String) -> Unit = {},
     viewModel    : SecurityViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.collectAsState().value
@@ -69,21 +87,7 @@ fun SecurityScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // RF-SEC-08: bloquear la Carpeta Segura cuando la app pasa a segundo
-    // plano. ProcessLifecycleOwner a propósito, no LocalLifecycleOwner --
-    // la Activity no declara android:configChanges, así que rotar la
-    // pantalla también dispara ON_STOP/ON_START de esa Activity;
-    // ProcessLifecycleOwner sí distingue eso de un backgrounding real (no
-    // despacha ON_STOP si una nueva Activity arranca enseguida por un
-    // cambio de configuración).
-    DisposableEffect(Unit) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) viewModel.lockIfUnlocked()
-        }
-        val processLifecycle = ProcessLifecycleOwner.get().lifecycle
-        processLifecycle.addObserver(observer)
-        onDispose { processLifecycle.removeObserver(observer) }
-    }
+    SecurityBackgroundEffects(viewModel = viewModel, onPreviewFile = onPreviewFile)
 
     val incorrectPinMessage    = stringResource(R.string.security_pin_incorrect)
     val lockedOutPinMessage    = stringResource(R.string.security_pin_locked_out)
@@ -96,6 +100,7 @@ fun SecurityScreen(
     val fileProtectedSuccess   = stringResource(R.string.security_file_protected_success)
     val fileProtectError       = stringResource(R.string.security_file_protect_error)
     val fileProtectedOriginalKept = stringResource(R.string.security_file_protected_original_kept)
+    val previewErrorMessage   = stringResource(R.string.security_preview_error)
 
     PendingSecureFolderImport(
         pendingFileUri  = pendingFileUri,
@@ -219,6 +224,7 @@ fun SecurityScreen(
                         onBack            = onBack,
                         onDeleteFile      = { file -> viewModel.deleteFile(file) },
                         onRestoreFile     = { file -> viewModel.restoreFile(file, context) },
+                        onPreviewFile     = { file -> viewModel.previewFile(file, previewErrorMessage) },
                         onChangePinClick  = { viewModel.goToSetupPin() },
                         onToggleBiometric = { viewModel.toggleBiometric() },
                         onImportFile      = { uri ->
@@ -642,6 +648,7 @@ private fun SecureFolderContent(
     onBack           : () -> Unit,
     onDeleteFile     : (java.io.File) -> Unit,
     onRestoreFile    : (java.io.File) -> Unit,
+    onPreviewFile    : (java.io.File) -> Unit,
     onChangePinClick : () -> Unit,
     onToggleBiometric: () -> Unit,
     onImportFile     : (Uri) -> Unit,
@@ -809,7 +816,8 @@ private fun SecureFolderContent(
                 SecureFileItem(
                     file      = file,
                     onDelete  = { onDeleteFile(file) },
-                    onRestore = { onRestoreFile(file) }
+                    onRestore = { onRestoreFile(file) },
+                    onPreview = { onPreviewFile(file) }
                 )
             }
         }
@@ -821,7 +829,8 @@ private fun SecureFolderContent(
 private fun SecureFileItem(
     file     : java.io.File,
     onDelete : () -> Unit,
-    onRestore: () -> Unit
+    onRestore: () -> Unit,
+    onPreview: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -866,6 +875,15 @@ private fun SecureFileItem(
                     expanded          = showMenu,
                     onDismissRequest  = { showMenu = false }
                 ) {
+                    // Hallazgo #53 (revisión general 2026-09-16): antes la
+                    // única forma de ver un archivo protegido era
+                    // restaurarlo primero (sacándolo de Carpeta Segura de
+                    // forma permanente).
+                    DropdownMenuItem(
+                        text         = { Text(stringResource(R.string.security_preview)) },
+                        leadingIcon  = { Icon(Icons.Rounded.Visibility, null) },
+                        onClick      = { showMenu = false; onPreview() }
+                    )
                     DropdownMenuItem(
                         text         = { Text(stringResource(R.string.security_restore)) },
                         leadingIcon  = { Icon(Icons.Rounded.DriveFileMove, null) },

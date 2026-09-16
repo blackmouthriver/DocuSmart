@@ -118,6 +118,10 @@ class TrashRepository @Inject constructor(
         if (outcome is DocumentRepository.DeleteOutcome.Deleted) {
             trashDao.remove(documentId)
             favoritesRepository.removeAlias(documentId)
+            // Hallazgo real #50: solo se limpiaba el alias, nunca la marca
+            // de favorito -- un archivo nuevo que reutilizara la misma
+            // ruta podía aparecer "favorito" sin que el usuario lo marcara.
+            favoritesRepository.removeFavorite(documentId)
             annotationDao.deleteByDocument(documentId)
         }
         outcome
@@ -128,6 +132,7 @@ class TrashRepository @Inject constructor(
     suspend fun finalizeDeleteForever(documentId: String) = withContext(Dispatchers.IO) {
         trashDao.remove(documentId)
         favoritesRepository.removeAlias(documentId)
+        favoritesRepository.removeFavorite(documentId)
         annotationDao.deleteByDocument(documentId)
     }
 
@@ -135,6 +140,7 @@ class TrashRepository @Inject constructor(
         documentIds.forEach {
             trashDao.remove(it)
             favoritesRepository.removeAlias(it)
+            favoritesRepository.removeFavorite(it)
             annotationDao.deleteByDocument(it)
         }
     }
@@ -162,6 +168,7 @@ class TrashRepository @Inject constructor(
             if (documentRepository.deleteDocument(id) is DocumentRepository.DeleteOutcome.Deleted) {
                 trashDao.remove(id)
                 favoritesRepository.removeAlias(id)
+                favoritesRepository.removeFavorite(id)
                 annotationDao.deleteByDocument(id)
             }
         }
@@ -180,6 +187,7 @@ class TrashRepository @Inject constructor(
                 is DocumentRepository.DeleteOutcome.Deleted -> {
                     trashDao.remove(id)
                     favoritesRepository.removeAlias(id)
+                    favoritesRepository.removeFavorite(id)
                     annotationDao.deleteByDocument(id)
                 }
                 is DocumentRepository.DeleteOutcome.NeedsPermission -> pendingPermission = true
@@ -210,6 +218,14 @@ class TrashRepository @Inject constructor(
                     is DocumentRepository.DeleteOutcome.Deleted
                 ) {
                     trashDao.remove(entry.documentId)
+                    // Hallazgo real #50: esta rama (purga automática a los
+                    // 30 días) no limpiaba ni el alias ni el favorito --
+                    // a diferencia de las otras 4 vías de borrado
+                    // definitivo de este archivo, que ya limpiaban el
+                    // alias (aunque tampoco el favorito, hasta este mismo
+                    // hallazgo).
+                    favoritesRepository.removeAlias(entry.documentId)
+                    favoritesRepository.removeFavorite(entry.documentId)
                     annotationDao.deleteByDocument(entry.documentId)
                 }
             }

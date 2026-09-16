@@ -234,29 +234,46 @@ class ConverterViewModel @Inject constructor(
         DocuSmartAnalytics.logConversion(type.name)
 
         viewModelScope.launch {
-            if (isBatch) {
-                val items = runBatchConversion(context, type, files)
-                if (items.any { it.result is ConversionResult.Success }) soundEffectPlayer.playConvert()
-                _uiState.update { it.copy(
-                    isConverting    = false,
-                    batchResults    = items,
-                    conversionCount = dailyLimitManager.getConversionCount(),
-                    conversionLimit = dailyLimitManager.getConversionLimit()
-                )}
-                return@launch
-            }
+            // Hallazgo real de la revisión general 2026-09-16 (#42): esta
+            // corrutina no tenía ninguna protección propia -- si algo
+            // escapaba sin atrapar de runBatchConversion()/
+            // runConversionForUri() (un OutOfMemoryError, o cualquier otra
+            // excepción no prevista por el use case individual), isConverting
+            // quedaba en true para siempre, mismo criterio que ya se corrigió
+            // en PdfToolsViewModel.runTool() (hallazgo #23).
+            try {
+                if (isBatch) {
+                    val items = runBatchConversion(context, type, files)
+                    if (items.any { it.result is ConversionResult.Success }) soundEffectPlayer.playConvert()
+                    _uiState.update { it.copy(
+                        isConverting    = false,
+                        batchResults    = items,
+                        conversionCount = dailyLimitManager.getConversionCount(),
+                        conversionLimit = dailyLimitManager.getConversionLimit()
+                    )}
+                    return@launch
+                }
 
-            val result = if (type == ConversionType.IMAGE_TO_PDF)
-                convertImageToPdf(imageUris = files, fileName = customName, highResolution = useHighRes)
-            else
-                runConversionForUri(type, files.first(), customName)
+                val result = if (type == ConversionType.IMAGE_TO_PDF)
+                    convertImageToPdf(imageUris = files, fileName = customName, highResolution = useHighRes)
+                else
+                    runConversionForUri(type, files.first(), customName)
 
-            Timber.d("ConverterViewModel: resultado $type → $result")
-            logConversionOutcome(type, result)
-            if (result is ConversionResult.Success) soundEffectPlayer.playConvert()
+                Timber.d("ConverterViewModel: resultado $type → $result")
+                logConversionOutcome(type, result)
+                if (result is ConversionResult.Success) soundEffectPlayer.playConvert()
 
-            _uiState.update { state ->
-                applySingleConversionResult(state, result)
+                _uiState.update { state ->
+                    applySingleConversionResult(state, result)
+                }
+            } catch (e: OutOfMemoryError) {
+                Timber.e(e, "ConverterViewModel: sin memoria convirtiendo $type")
+                val message = context.getString(R.string.converter_error_unknown)
+                _uiState.update { it.copy(isConverting = false, errorMessage = message) }
+            } catch (e: Exception) {
+                Timber.e(e, "ConverterViewModel: error inesperado convirtiendo $type")
+                val message = context.getString(R.string.general_error_format, e.message ?: "")
+                _uiState.update { it.copy(isConverting = false, errorMessage = message) }
             }
         }
     }
@@ -326,7 +343,16 @@ class ConverterViewModel @Inject constructor(
         val usedNames = mutableSetOf<String>()
         return files.map { uri ->
             val originalName = resolveDisplayName(context, uri)
-            val nameNoExt    = originalName.substringBeforeLast('.').ifBlank { generateDefaultName() }
+            // Hallazgo real de la revisión general 2026-09-16 (#35): el
+            // saneo de path traversal en ConverterViewModel solo cubría el
+            // nombre TIPEADO por el usuario en modo archivo único --
+            // originalName viene de un ContentProvider ajeno (DISPLAY_NAME)
+            // o de uri.lastPathSegment, ninguno de los dos confiable, y
+            // llegaba sin sanear a File(outputDir, "..._$baseName_...")
+            // en cada use case en modo lote.
+            val nameNoExt = com.docsmart.core.util.sanitizeOutputFileName(
+                originalName.substringBeforeLast('.')
+            ).ifBlank { generateDefaultName() }
             val baseName     = uniqueBaseName(nameNoExt, usedNames)
 
             // Bug real encontrado 2026-09-14: hardcodeado en español,
@@ -427,15 +453,22 @@ class ConverterViewModel @Inject constructor(
 
     fun saveToDownloads(context: Context) {
         val file = _uiState.value.outputFile ?: return
+        // Hallazgo real de la revisión general 2026-09-16 (#45): PDF→Imagen
+        // con varias páginas genera un extraFiles con el resto de las
+        // páginas (ver ConversionResult.Success) que nunca se guardaba --
+        // el usuario solo podía recuperar la primera. Se guardan todas.
+        val extraFiles = (_uiState.value.conversionResult as? ConversionResult.Success)?.extraFiles.orEmpty()
         viewModelScope.launch {
             try {
-                val saved = DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
+                val allSaved = (listOf(file) + extraFiles).all {
+                    DownloadsSaver.saveFile(context, it, DownloadsSaver.mimeTypeForExtension(it.extension))
+                }
                 // Bug real encontrado 2026-09-14: ambos mensajes estaban
                 // hardcodeados en español, saltándose el sistema de 12
                 // idiomas -- el primero reusa pdf_tools_save_error (mismo
                 // mensaje que Herramientas PDF para este mismo escenario).
                 _uiState.update { state ->
-                    if (saved) state.copy(savedToDownloads = true)
+                    if (allSaved) state.copy(savedToDownloads = true)
                     else state.copy(errorMessage = context.getString(R.string.pdf_tools_save_error))
                 }
             } catch (e: Exception) {

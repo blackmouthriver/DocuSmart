@@ -126,3 +126,110 @@ internal fun escapeVCardField(value: String): String =
         .replace(";", "\\;")
         .replace(",", "\\,")
         .replace("\n", "\\n")
+
+/**
+ * Reverso de escapeWifiField()/escapeVCardField(). Cubre la unión de ambos
+ * conjuntos de caracteres escapados (WIFI: agrega `"` sobre lo que ya
+ * escapa vCard/iCalendar) -- deshacer `\"` es un no-op inofensivo para
+ * payloads vCard/iCalendar, que nunca la generan.
+ *
+ * Hallazgo real de la revisión de correctitud adversarial de este mismo
+ * lote (2026-09-16): la versión anterior encadenaba 6 `replace()`
+ * independientes (uno por secuencia), deshaciendo `\\` recién al final "a
+ * propósito" -- pero un valor con un backslash literal seguido de la letra
+ * `n` (ej. SSID `Test\network`) se escapa a `Test\\network` (backslash
+ * duplicado), y esas pasadas independientes de `replace()` no ven esa
+ * secuencia como una unidad: el paso `"\\n" -> "\n"` (salto de línea) se
+ * ejecuta ANTES del paso `"\\\\" -> "\\"`, así que encuentra el segundo
+ * backslash del par + la `n` siguiente y los interpreta como el escape de
+ * salto de línea, corrompiendo el valor a `Test\` + salto de línea +
+ * `etwork`. Una sola pasada con regex (alternativas mutuamente excluyentes:
+ * el carácter después del backslash determina cuál aplica sin ambigüedad)
+ * evita el problema porque cada secuencia de 2 caracteres se consume una
+ * sola vez, en un solo recorrido, sin reinterpretar el resultado de un
+ * reemplazo en una pasada posterior.
+ */
+private val UNESCAPE_RESERVED_FIELD_PATTERN = Regex("\\\\\\\\|\\\\;|\\\\,|\\\\:|\\\\\"|\\\\n")
+
+internal fun unescapeReservedField(value: String): String =
+    UNESCAPE_RESERVED_FIELD_PATTERN.replace(value) { match ->
+        when (match.value) {
+            "\\\\" -> "\\"
+            "\\;"  -> ";"
+            "\\,"  -> ","
+            "\\:"  -> ":"
+            "\\\"" -> "\""
+            "\\n"  -> "\n"
+            else   -> match.value
+        }
+    }
+
+private fun extractWifiField(payload: String, key: String): String? =
+    Regex("$key:((?:\\\\.|[^;])*);").find(payload)?.groupValues?.get(1)?.let(::unescapeReservedField)
+
+/**
+ * Hallazgo real de la revisión general 2026-09-16 (#5): el Lector propio de
+ * DocuSmart no reconocía los payloads `WIFI:`/`BEGIN:VCARD`/`BEGIN:VEVENT`
+ * que su propio Creador genera (HU-43) -- caían en tipo TEXT y mostraban el
+ * string crudo. Estos tres parsers son el reverso exacto de los
+ * `toQrPayload()` de arriba, para que el Lector ofrezca una acción útil en
+ * vez del texto sin procesar.
+ */
+fun parseWifiPayload(payload: String): QrWifiContent? {
+    val ssid = extractWifiField(payload, "S")
+    if (!payload.trim().startsWith("WIFI:", ignoreCase = true) || ssid == null) return null
+    val password = extractWifiField(payload, "P") ?: ""
+    val security = when (extractWifiField(payload, "T")?.uppercase()) {
+        "WPA", "WPA2" -> QrWifiSecurity.WPA
+        "WEP"         -> QrWifiSecurity.WEP
+        else          -> QrWifiSecurity.NONE
+    }
+    return QrWifiContent(ssid, password, security)
+}
+
+fun parseVCardPayload(payload: String): QrContactContent? {
+    if (!payload.contains("BEGIN:VCARD", ignoreCase = true)) return null
+    var name = ""
+    var phone = ""
+    var email = ""
+    payload.lines().forEach { line ->
+        val idx = line.indexOf(':')
+        if (idx <= 0) return@forEach
+        val key = line.substring(0, idx).substringBefore(';').trim().uppercase()
+        val value = unescapeReservedField(line.substring(idx + 1).trim())
+        when (key) {
+            "FN"    -> name = value
+            "TEL"   -> if (phone.isBlank()) phone = value
+            "EMAIL" -> if (email.isBlank()) email = value
+        }
+    }
+    return if (name.isBlank() && phone.isBlank() && email.isBlank()) null
+    else QrContactContent(name, phone, email)
+}
+
+private fun parseIcalDateTime(value: String): LocalDateTime? = try {
+    LocalDateTime.parse(value.removeSuffix("Z"), ICAL_DATE_TIME_FORMAT)
+} catch (e: java.time.format.DateTimeParseException) {
+    null
+}
+
+fun parseVEventPayload(payload: String): QrEventContent? {
+    if (!payload.contains("BEGIN:VEVENT", ignoreCase = true)) return null
+    var title = ""
+    var location = ""
+    var start: LocalDateTime? = null
+    var end: LocalDateTime? = null
+    payload.lines().forEach { line ->
+        val idx = line.indexOf(':')
+        if (idx <= 0) return@forEach
+        val key = line.substring(0, idx).substringBefore(';').trim().uppercase()
+        val value = unescapeReservedField(line.substring(idx + 1).trim())
+        when (key) {
+            "SUMMARY"  -> title = value
+            "LOCATION" -> location = value
+            "DTSTART"  -> start = parseIcalDateTime(value)
+            "DTEND"    -> end = parseIcalDateTime(value)
+        }
+    }
+    return start?.let { s -> QrEventContent(title, location, s, end ?: s) }
+}

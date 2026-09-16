@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -111,9 +112,27 @@ fun QrReaderScreen(
         )
     }
 
+    // Hallazgo real de la revisión general 2026-09-16 (#8): si el usuario
+    // deniega el permiso marcando "no volver a preguntar", shouldShowRequestPermissionRationale()
+    // pasa a devolver false (mismo valor que ANTES de pedirlo la primera
+    // vez) -- sin distinguir ambos casos, el botón seguía diciendo
+    // "Permitir acceso" y relanzaba un diálogo que el sistema ya no
+    // muestra, un callejón sin salida real. Se distingue guardando si ya
+    // se pidió una vez.
+    var permissionRequestedOnce by rememberSaveable { mutableStateOf(false) }
+    var permissionPermanentlyDenied by rememberSaveable { mutableStateOf(false) }
+    val activity = context as? android.app.Activity
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> hasCameraPermission = granted }
+    ) { granted ->
+        hasCameraPermission = granted
+        if (!granted && permissionRequestedOnce && activity != null) {
+            permissionPermanentlyDenied = !androidx.core.app.ActivityCompat
+                .shouldShowRequestPermissionRationale(activity, android.Manifest.permission.CAMERA)
+        }
+        permissionRequestedOnce = true
+    }
 
     LaunchedEffect(Unit) {
         if (!hasCameraPermission) permissionLauncher.launch(android.Manifest.permission.CAMERA)
@@ -124,6 +143,12 @@ fun QrReaderScreen(
     var isScanning   by remember { mutableStateOf(true) }
     var copiedMsg    by remember { mutableStateOf(false) }
     var imageBitmap  by remember { mutableStateOf<Bitmap?>(null) }
+    // Hallazgo real de la revisión general 2026-09-16 (#2): antes se
+    // disparaba una petición HTTP automática apenas se detectaba un QR de
+    // Imagen, sin que el usuario lo pidiera -- expone su IP y el momento
+    // exacto del escaneo a quien controle esa URL, contradice "100% local".
+    // Ahora la carga solo arranca si el usuario toca "Cargar imagen".
+    var imageLoading by remember { mutableStateOf(false) }
 
     // ── QR protegido (HU-SEC-09/10) ───────────────────
     var pendingProtectedContent by remember { mutableStateOf<String?>(null) }
@@ -177,9 +202,6 @@ fun QrReaderScreen(
             pendingProtectedContent = null
             qrPassword = ""
             qrPasswordError = null
-            if (qrType == QrContentType.IMAGE) {
-                scope.launch { imageBitmap = loadBitmapFromUrl(decrypted) }
-            }
         } else {
             qrPasswordError = wrongQrPasswordMessage
         }
@@ -282,17 +304,39 @@ fun QrReaderScreen(
                             modifier = Modifier.size(64.dp))
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            stringResource(R.string.qr_camera_permission_needed),
+                            if (permissionPermanentlyDenied) {
+                                stringResource(R.string.qr_camera_permission_denied_permanently)
+                            } else {
+                                stringResource(R.string.qr_camera_permission_needed)
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(16.dp))
                         Button(
-                            onClick = { permissionLauncher.launch(android.Manifest.permission.CAMERA) },
+                            onClick = {
+                                if (permissionPermanentlyDenied) {
+                                    val intent = Intent(
+                                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.fromParts("package", context.packageName, null)
+                                    )
+                                    context.startActivity(intent)
+                                } else {
+                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                                }
+                            },
                             modifier = Modifier.accentBorder(MaterialTheme.shapes.medium),
                             shape = MaterialTheme.shapes.medium
-                        ) { Text(stringResource(R.string.qr_allow_camera_access)) }
+                        ) {
+                            Text(
+                                if (permissionPermanentlyDenied) {
+                                    stringResource(R.string.qr_open_app_settings)
+                                } else {
+                                    stringResource(R.string.qr_allow_camera_access)
+                                }
+                            )
+                        }
                     }
                 } else {
                     // ── Vista de cámara ───────────────────────────────────────
@@ -355,12 +399,6 @@ fun QrReaderScreen(
                                                             qrResult = value
                                                             qrType   = detectQrContentType(value)
                                                             DocuSmartAnalytics.logQrScanned(qrType.name)
-                                                            // Si es imagen URL, cargarla
-                                                            if (qrType == QrContentType.IMAGE) {
-                                                                scope.launch {
-                                                                    imageBitmap = loadBitmapFromUrl(value)
-                                                                }
-                                                            }
                                                         }
                                                     }
                                                 }
@@ -466,7 +504,7 @@ fun QrReaderScreen(
                                         .fillMaxWidth()
                                         .heightIn(max = 300.dp)
                                 )
-                            } else {
+                            } else if (imageLoading) {
                                 Box(
                                     modifier = Modifier.fillMaxWidth().height(120.dp),
                                     contentAlignment = Alignment.Center
@@ -480,6 +518,43 @@ fun QrReaderScreen(
                                         Text(stringResource(R.string.qr_loading_image),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            } else {
+                                // Hallazgo real #2: sin confirmación explícita acá,
+                                // la sola presencia de este QR en cámara ya disparaba
+                                // la petición HTTP -- ahora requiere este toque.
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Text(
+                                            stringResource(R.string.qr_image_privacy_warning),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Button(
+                                            onClick = {
+                                                val url = qrResult
+                                                if (url != null) {
+                                                    imageLoading = true
+                                                    scope.launch {
+                                                        imageBitmap = loadBitmapFromUrl(url)
+                                                        imageLoading = false
+                                                    }
+                                                }
+                                            },
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(stringResource(R.string.qr_load_image))
+                                        }
                                     }
                                 }
                             }
@@ -551,7 +626,10 @@ fun QrReaderScreen(
                     }
 
                     OutlinedButton(
-                        onClick = { qrResult = null; isScanning = true; copiedMsg = false; imageBitmap = null },
+                        onClick = {
+                            qrResult = null; isScanning = true; copiedMsg = false
+                            imageBitmap = null; imageLoading = false
+                        },
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                             .accentBorder(MaterialTheme.shapes.medium),
                         shape = MaterialTheme.shapes.medium
@@ -703,6 +781,7 @@ fun QrCreatorScreen(
 
     val defaultImageName    = stringResource(R.string.qr_chip_image)
     val defaultDocumentName = stringResource(R.string.pdf_pw_default_document_name)
+    val persistPermissionFailedMsg = stringResource(R.string.qr_persist_permission_failed)
 
     // Launchers para seleccionar imagen o documento.
     // Hallazgo real de la revisión general 2026-09-16: con GetContent() el
@@ -714,18 +793,26 @@ fun QrCreatorScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
+            // Hallazgo real de la revisión de seguridad 2026-09-16 (#60): si
+            // este permiso no se pudo persistir, el QR se generaba igual con
+            // una URI que después no se podía leer -- reproduce el bug
+            // original (#3) por un camino distinto. Se avisa y no se deja
+            // seleccionar el archivo, en vez de fallar en silencio más tarde.
             try {
                 context.contentResolver.takePersistableUriPermission(
                     it, Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
             } catch (e: SecurityException) {
                 Timber.w(e, "imageLauncher: no se pudo persistir el permiso de lectura")
+                errorMsg = persistPermissionFailedMsg
+                return@let
             }
             selectedUri  = it
             selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultImageName
             content      = it.toString()
             qrBitmap     = null
             savedMsg     = null
+            errorMsg     = null
         }
     }
 
@@ -739,12 +826,15 @@ fun QrCreatorScreen(
                 )
             } catch (e: SecurityException) {
                 Timber.w(e, "documentLauncher: no se pudo persistir el permiso de lectura")
+                errorMsg = persistPermissionFailedMsg
+                return@let
             }
             selectedUri  = it
             selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultDocumentName
             content      = it.toString()
             qrBitmap     = null
             savedMsg     = null
+            errorMsg     = null
         }
     }
 
@@ -913,7 +1003,7 @@ fun QrCreatorScreen(
                                 )
                                 Text(
                                     if (selectedUri != null) stringResource(R.string.qr_image_selected)
-                                    else "JPG, PNG, WebP",
+                                    else stringResource(R.string.qr_image_formats_hint),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -968,7 +1058,7 @@ fun QrCreatorScreen(
                                 )
                                 Text(
                                     if (selectedUri != null) stringResource(R.string.qr_document_selected)
-                                    else "PDF, Word, Excel, PPT, TXT",
+                                    else stringResource(R.string.qr_document_formats_hint),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1204,6 +1294,13 @@ fun QrCreatorScreen(
 
             Button(
                 onClick = {
+                    // Hallazgo real de la revisión general 2026-09-16 (#6):
+                    // sin este guard, dos toques rápidos alcanzaban a
+                    // arrancar dos corrutinas de generación antes de que la
+                    // primera pusiera isGenerating=true en la UI, duplicando
+                    // la entrada en el Historial. Mismo criterio que el
+                    // guard de re-entrada ya usado en ConverterViewModel.
+                    if (isGenerating) return@Button
                     if (!hasContent) {
                         errorMsg = when (selectedType) {
                             4    -> errorSelectImage
@@ -1289,7 +1386,7 @@ fun QrCreatorScreen(
                         )
                     }
                 },
-                enabled  = hasContent,
+                enabled  = hasContent && !isGenerating,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
                     .accentBorder(MaterialTheme.shapes.medium),
                 shape    = MaterialTheme.shapes.medium

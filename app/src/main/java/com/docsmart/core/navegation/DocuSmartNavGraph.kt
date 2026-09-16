@@ -186,7 +186,11 @@ fun DocuSmartNavGraph(
         ) { backStackEntry ->
             SecurityScreen(
                 onBack          = { navController.popBackStack() },
-                pendingFileUri  = backStackEntry.arguments?.getString("pendingFileUri")
+                pendingFileUri  = backStackEntry.arguments?.getString("pendingFileUri"),
+                // Hallazgo #53 (revisión general 2026-09-16): navega al Visor
+                // con la copia efímera de vista previa (ruta local en
+                // cacheDir), sin restaurar el archivo de Carpeta Segura.
+                onPreviewFile   = { path -> navController.navigate(NavRoutes.Viewer.createRoute(path)) }
             )
         }
 

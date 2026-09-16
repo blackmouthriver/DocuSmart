@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 
@@ -111,19 +112,30 @@ fun PdfSelectZone(
                     tint = if (selectedPdf != null) accentColor else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
-                Column {
+                // Hallazgo real de la revisión general 2026-09-16 (#24):
+                // sin maxLines/overflow, un nombre de archivo largo
+                // envolvía a una segunda línea dentro de esta caja de
+                // altura fija (72.dp) -- desbordaba visualmente el
+                // contenedor de bordes redondeados. MergePdfScreen (la
+                // única de las 14 que no usa este componente) ya lo hacía
+                // bien; se replica el mismo criterio acá.
+                Column(modifier = Modifier.weight(1f, fill = false)) {
                     Text(
                         text = if (selectedPdf != null) readyText
                                else stringResource(R.string.pdf_tools_select_pdf_prompt),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (selectedPdf != null) accentColor else MaterialTheme.colorScheme.primary
+                        color = if (selectedPdf != null) accentColor else MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     if (selectedPdf != null) {
                         Text(
                             text = selectedPdf.lastPathSegment
                                 ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

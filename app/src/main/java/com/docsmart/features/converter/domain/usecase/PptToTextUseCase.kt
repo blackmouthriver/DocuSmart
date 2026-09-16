@@ -23,6 +23,16 @@ class PptToTextUseCase @Inject constructor(
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
+            // Hallazgo real #38: ConversionType declara .ppt (OLE2, pre-
+            // Office 2007) como origen soportado, pero este parser solo
+            // entiende el ZIP interno de .pptx -- sin este chequeo, un
+            // .ppt real fallaba con "sin texto" en vez de avisar que el
+            // formato en sí no está soportado.
+            if (isLegacyOle2Uri(context, pptUri)) {
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_legacy_format_unsupported)
+                )
+            }
             val slideMap = extractSlideTexts(pptUri)
                 ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_ppt))
 
@@ -67,7 +77,7 @@ class PptToTextUseCase @Inject constructor(
     private fun addSlideTextIfMatch(zip: ZipInputStream, entryName: String, slideMap: MutableMap<Int, String>) {
         if (!isSlideXmlEntry(entryName)) return
         val num  = slideNumberFromEntryName(entryName)
-        val text = extractTextFromSlideXml(zip.readBytes().toString(Charsets.UTF_8))
+        val text = extractTextFromSlideXml(zip.readEntrySafely().toString(Charsets.UTF_8))
         if (text.isNotBlank()) slideMap[num] = text
     }
 

@@ -39,6 +39,16 @@ class PptToPdfUseCase @Inject constructor(
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
+            // Hallazgo real #38: ConversionType declara .ppt (OLE2, pre-
+            // Office 2007) como origen soportado, pero este parser solo
+            // entiende el ZIP interno de .pptx -- sin este chequeo, un
+            // .ppt real fallaba con "sin texto" en vez de avisar que el
+            // formato en sí no está soportado.
+            if (isLegacyOle2Uri(context, pptUri)) {
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_legacy_format_unsupported)
+                )
+            }
             val slideMap = extractSlideText(pptUri)
                 ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_ppt))
 
@@ -92,7 +102,11 @@ class PptToPdfUseCase @Inject constructor(
     // en un ByteArrayInputStream simple antes de pasarlo a ZipInputStream --
     // elimina cualquier dependencia del comportamiento del stream original.
     private fun extractSlideText(pptUri: Uri): Map<Int, String>? {
-        val bytes = context.contentResolver.openInputStream(pptUri)?.use { it.readBytes() }
+        // Hallazgo real de la revisión de seguridad adversarial 2026-09-16:
+        // readBytes() sin límite bufferea el .pptx completo -- ver
+        // readBoundedBytes() en ZipEntrySafety.kt, mismo criterio que
+        // readEntrySafely() pero aplicado acá, antes de llegar al ZIP.
+        val bytes = context.contentResolver.openInputStream(pptUri)?.use { it.readBoundedBytes() }
             ?: return null
         return java.io.ByteArrayInputStream(bytes).use { ZipInputStream(it).use(::readSlideTexts) }
     }
@@ -102,7 +116,7 @@ class PptToPdfUseCase @Inject constructor(
         generateSequence { zip.nextEntry }
             .filter { isSlideEntry(it.name) }
             .forEach { entry ->
-                val text = textOfSlideXml(zip.readBytes().toString(Charsets.UTF_8))
+                val text = textOfSlideXml(zip.readEntrySafely().toString(Charsets.UTF_8))
                 if (text.isNotBlank()) slideMap[slideNumberOf(entry.name)] = text
             }
         return slideMap

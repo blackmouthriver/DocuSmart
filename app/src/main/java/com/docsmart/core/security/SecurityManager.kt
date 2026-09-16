@@ -15,7 +15,17 @@ import javax.crypto.spec.PBEKeySpec
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class SecureMoveResult(val success: Boolean, val originalDeleted: Boolean)
+data class SecureMoveResult(
+    val success: Boolean,
+    val originalDeleted: Boolean,
+    // Hallazgo real de la revisión general 2026-09-16 (#61): antes el
+    // llamador recalculaba File(secureFolder, file.name) por su cuenta para
+    // migrar anotaciones -- si acá se eligió un nombre único distinto
+    // (colisión), esa migración terminaba apuntando al archivo equivocado.
+    // Se expone el destino real para que el llamador nunca tenga que
+    // adivinarlo.
+    val destFile: File? = null
+)
 
 @Singleton
 class SecurityManager @Inject constructor(
@@ -197,33 +207,59 @@ class SecurityManager @Inject constructor(
     // igual que ya hacía importFileToSecure() para Uris de SAF.
     fun moveToSecure(file: File): SecureMoveResult {
         return try {
-            val dest = File(secureFolder, file.name)
-            file.copyTo(dest, overwrite = true)
+            val dest = uniqueDestination(secureFolder, file.name)
+            file.copyTo(dest, overwrite = false)
             val originalDeleted = file.delete()
             if (originalDeleted) {
-                Timber.d("SecurityManager: archivo movido a carpeta segura: ${file.name}")
+                Timber.d("SecurityManager: archivo movido a carpeta segura: ${dest.name}")
             } else {
-                Timber.w("SecurityManager: archivo copiado pero no se pudo eliminar el original: ${file.name}")
+                Timber.w("SecurityManager: archivo copiado pero no se pudo eliminar el original: ${dest.name}")
             }
-            SecureMoveResult(success = true, originalDeleted = originalDeleted)
+            SecureMoveResult(success = true, originalDeleted = originalDeleted, destFile = dest)
         } catch (e: Exception) {
             Timber.e(e, "Error moviendo archivo a carpeta segura")
             SecureMoveResult(success = false, originalDeleted = false)
         }
     }
 
-    fun moveFromSecure(file: File, destDir: File): Boolean {
+    fun moveFromSecure(file: File, destDir: File): File? {
         return try {
-            val dest = File(destDir, file.name)
-            file.copyTo(dest, overwrite = true)
+            val dest = uniqueDestination(destDir, file.name)
+            file.copyTo(dest, overwrite = false)
             file.delete()
-            Timber.d("SecurityManager: archivo restaurado: ${file.name}")
-            true
+            Timber.d("SecurityManager: archivo restaurado: ${dest.name}")
+            dest
         } catch (e: Exception) {
             Timber.e(e, "Error restaurando archivo")
-            false
+            null
         }
     }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#61): moveToSecure()/
+    // moveFromSecure() usaban File(dir, file.name) con overwrite=true -- si
+    // dos documentos distintos comparten nombre (plausible: "Scan.pdf",
+    // "Documento.pdf") y ambos se mueven a/desde Carpeta Segura, el segundo
+    // sobrescribía en silencio el contenido del primero, sin avisar al
+    // usuario. Si el nombre ya existe en destino, agrega un sufijo numérico
+    // antes de la extensión hasta encontrar uno libre.
+    private fun uniqueDestination(dir: File, name: String): File {
+        var candidate = File(dir, name)
+        if (!candidate.exists()) return candidate
+        val dotIndex = name.lastIndexOf('.')
+        val base = if (dotIndex > 0) name.substring(0, dotIndex) else name
+        val ext  = if (dotIndex > 0) name.substring(dotIndex) else ""
+        var suffix = 1
+        while (candidate.exists()) {
+            candidate = File(dir, "$base ($suffix)$ext")
+            suffix++
+        }
+        return candidate
+    }
+
+    // Usado por importFileToSecure() (SecurityViewModel) -- ese camino copia
+    // directo desde un content:// de SAF, sin pasar por moveToSecure(), pero
+    // necesita el mismo criterio de nombre único que #61 corrigió acá.
+    fun uniqueSecureDestination(fileName: String): File = uniqueDestination(secureFolder, fileName)
 
     fun deleteSecureFile(file: File): Boolean {
         return try {
@@ -238,5 +274,33 @@ class SecurityManager @Inject constructor(
 
     fun getSecureFolderSize(): Long {
         return secureFolder.listFiles()?.sumOf { it.length() } ?: 0L
+    }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#53): antes la única
+    // forma de ver un archivo protegido era restaurarlo primero (sacándolo de
+    // Carpeta Segura de forma permanente). Se copia a una carpeta de caché
+    // aparte, EXCLUIDA a propósito de file_provider_paths.xml (hallazgo #59)
+    // -- el Visor interno la lee como archivo local, sin pasar por
+    // FileProvider, así que no hace falta declararla ahí. clearPreviewCache()
+    // se llama antes de crear una copia nueva y también al bloquear la
+    // Carpeta Segura (ver SecurityScreen.kt, RF-SEC-08), para que nunca quede
+    // una copia sin cifrar más tiempo del necesario para la vista previa.
+    private val previewCacheFolder: File
+        get() = File(context.cacheDir, "secure_preview").apply { mkdirs() }
+
+    fun clearPreviewCache() {
+        previewCacheFolder.listFiles()?.forEach { it.delete() }
+    }
+
+    fun copyForPreview(file: File): File? {
+        return try {
+            clearPreviewCache()
+            val dest = File(previewCacheFolder, file.name)
+            file.copyTo(dest, overwrite = true)
+            dest
+        } catch (e: Exception) {
+            Timber.e(e, "Error copiando archivo seguro para vista previa")
+            null
+        }
     }
 }

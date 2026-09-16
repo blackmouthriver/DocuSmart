@@ -8,6 +8,7 @@ import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.data.db.TrashEntry
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -46,6 +47,10 @@ class TrashRepositoryTest {
         trashDao = FakeTrashDao()
         favorites = mockk()
         coEvery { favorites.removeAlias(any()) } just Runs
+        // Hallazgo #50 (revisión general 2026-09-16): borrar definitivamente
+        // (individual, en lote o por vencimiento) también debe limpiar el
+        // flag de favorito, no solo el alias.
+        coEvery { favorites.removeFavorite(any()) } just Runs
         val mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
         val annotationDao = mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
         documentRepository = DocumentRepository(
@@ -110,6 +115,9 @@ class TrashRepositoryTest {
         assertTrue(deleted is DocumentRepository.DeleteOutcome.Deleted)
         assertFalse(file.exists())
         assertTrue(trashDao.getAll().isEmpty())
+        // Hallazgo #50 (revisión general 2026-09-16): un borrado definitivo
+        // también debe limpiar el flag de favorito, no solo el alias.
+        coVerify { favorites.removeFavorite(file.absolutePath) }
     }
 
     @Test
@@ -151,6 +159,11 @@ class TrashRepositoryTest {
         assertFalse(old.exists(), "la entrada vencida debe borrarse de verdad")
         assertTrue(recent.exists(), "la entrada reciente no debe tocarse")
         assertEquals(listOf(recent.absolutePath), trashDao.getAll().map { it.documentId })
+        // Hallazgo #50 (revisión general 2026-09-16): purgeExpiredTrash no
+        // limpiaba ni el alias ni el favorito de las entradas vencidas.
+        coVerify { favorites.removeAlias(old.absolutePath) }
+        coVerify { favorites.removeFavorite(old.absolutePath) }
+        coVerify(exactly = 0) { favorites.removeFavorite(recent.absolutePath) }
     }
 
     // `loadTrashedDocuments()` no está cubierto por un test directo: depende

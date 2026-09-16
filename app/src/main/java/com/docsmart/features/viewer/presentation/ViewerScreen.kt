@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -893,6 +894,16 @@ private data class PdfAnnotationCallbacks(
 // hacia la composición, para poder dibujar la vista previa en vivo); en
 // NOTE/NONE un tap decide entre "abrir anotación existente", "anclar nota
 // nueva" o "alternar controles" (comportamiento normal, sin regresión).
+// Hallazgo real de la revisión general 2026-09-16 (#14): pageAnnotations
+// era clave de este pointerInput -- cualquier emisión de Room durante un
+// arrastre en curso (ni siquiera tiene que ser de esta página: el Flow
+// observa TODAS las anotaciones del documento) reiniciaba la corrutina de
+// gestos, cancelando en silencio el resaltado que el usuario estaba
+// dibujando. Se saca pageAnnotations de las keys y se lee vía
+// rememberUpdatedState -- el detectTapGestures/detectDragGestures ya no se
+// reinicia por eso, pero el hit-test de notas sigue viendo la lista
+// vigente en cada tap (Modifier.composed{} es necesario para poder llamar
+// una función @Composable como rememberUpdatedState acá).
 private fun Modifier.pdfAnnotationGestures(
     annotationMode  : AnnotationMode,
     pageBitmap      : PdfPageBitmap,
@@ -901,42 +912,45 @@ private fun Modifier.pdfAnnotationGestures(
     noteHitRadiusPx : Float,
     onDragPreview   : (Offset?, Offset?) -> Unit,
     callbacks       : PdfAnnotationCallbacks
-): Modifier = pointerInput(annotationMode, pageAnnotations, pageBitmap) {
-    val displayScale = size.width / pageBitmap.pageWidthPts
-    if (annotationMode == AnnotationMode.HIGHLIGHT) {
-        var dragStart  : Offset? = null
-        var dragCurrent: Offset? = null
-        detectDragGestures(
-            onDragStart = { offset -> dragStart = offset; dragCurrent = offset; onDragPreview(offset, offset) },
-            onDrag      = { change, _ -> dragCurrent = change.position; onDragPreview(dragStart, dragCurrent) },
-            onDragEnd   = {
-                val start   = dragStart
-                val current = dragCurrent
-                if (start != null && current != null) {
-                    val rect = screenDragToPdfRect(
-                        start.x, start.y, current.x, current.y, displayScale, pageBitmap.pageHeightPts
-                    )
-                    if (isValidHighlightSize(rect)) callbacks.onHighlightDrawn(pageNumber, rect)
-                }
-                dragStart = null; dragCurrent = null
-                onDragPreview(null, null)
-            },
-            onDragCancel = { dragStart = null; dragCurrent = null; onDragPreview(null, null) }
-        )
-    } else {
-        detectTapGestures(onTap = { offset ->
-            val hit = hitTestAnnotation(
-                offset, pageAnnotations, displayScale, pageBitmap.pageHeightPts, noteHitRadiusPx
+): Modifier = composed {
+    val currentAnnotations by rememberUpdatedState(pageAnnotations)
+    pointerInput(annotationMode, pageBitmap) {
+        val displayScale = size.width / pageBitmap.pageWidthPts
+        if (annotationMode == AnnotationMode.HIGHLIGHT) {
+            var dragStart  : Offset? = null
+            var dragCurrent: Offset? = null
+            detectDragGestures(
+                onDragStart = { offset -> dragStart = offset; dragCurrent = offset; onDragPreview(offset, offset) },
+                onDrag      = { change, _ -> dragCurrent = change.position; onDragPreview(dragStart, dragCurrent) },
+                onDragEnd   = {
+                    val start   = dragStart
+                    val current = dragCurrent
+                    if (start != null && current != null) {
+                        val rect = screenDragToPdfRect(
+                            start.x, start.y, current.x, current.y, displayScale, pageBitmap.pageHeightPts
+                        )
+                        if (isValidHighlightSize(rect)) callbacks.onHighlightDrawn(pageNumber, rect)
+                    }
+                    dragStart = null; dragCurrent = null
+                    onDragPreview(null, null)
+                },
+                onDragCancel = { dragStart = null; dragCurrent = null; onDragPreview(null, null) }
             )
-            when {
-                hit != null -> callbacks.onAnnotationTap(hit)
-                annotationMode == AnnotationMode.NOTE -> callbacks.onNoteRequested(
-                    pageNumber,
-                    screenPointToPdfPoint(offset.x, offset.y, displayScale, pageBitmap.pageHeightPts)
+        } else {
+            detectTapGestures(onTap = { offset ->
+                val hit = hitTestAnnotation(
+                    offset, currentAnnotations, displayScale, pageBitmap.pageHeightPts, noteHitRadiusPx
                 )
-                else -> callbacks.onTap()
-            }
-        })
+                when {
+                    hit != null -> callbacks.onAnnotationTap(hit)
+                    annotationMode == AnnotationMode.NOTE -> callbacks.onNoteRequested(
+                        pageNumber,
+                        screenPointToPdfPoint(offset.x, offset.y, displayScale, pageBitmap.pageHeightPts)
+                    )
+                    else -> callbacks.onTap()
+                }
+            })
+        }
     }
 }
 
@@ -1360,9 +1374,31 @@ private fun ExcelViewerContent(
         sheetIndex = 0
     }
 
+    fun sheetMatches(sheet: ExcelSheetModel) =
+        sheet.rows.any { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#13): la búsqueda
+    // solo filtraba la hoja activa -- si la coincidencia estaba en otra
+    // hoja, el usuario veía "0 resultados" en silencio sin ninguna pista de
+    // que el dato sí existe en el archivo. Si la hoja activa no tiene
+    // coincidencias pero otra sí, se cambia automáticamente a la primera
+    // que las tenga (a diferencia de PDF/Word/PowerPoint, acá no hay una
+    // lista de bloques única para filtrar -- las hojas son grillas
+    // independientes con sus propias columnas).
+    LaunchedEffect(searchQuery, sheets) {
+        if (searchQuery.isBlank() || sheets.isEmpty()) return@LaunchedEffect
+        if (sheets.getOrNull(sheetIndex)?.let(::sheetMatches) != true) {
+            val firstMatch = sheets.indexOfFirst(::sheetMatches)
+            if (firstMatch >= 0) sheetIndex = firstMatch
+        }
+    }
+
     val rows = sheets.getOrNull(sheetIndex)?.rows.orEmpty()
     val displayRows = if (searchQuery.isBlank()) rows
     else rows.filter { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
+    val totalMatches = if (searchQuery.isBlank()) 0 else sheets.sumOf { sheet ->
+        sheet.rows.count { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
+    }
     val columnCount = rows.maxOfOrNull { it.cells.size } ?: 0
     val gridScrollState = rememberScrollState()
 
@@ -1401,8 +1437,12 @@ private fun ExcelViewerContent(
                 if (searchQuery.isNotBlank()) {
                     item {
                         Text(
+                            // totalMatches cuenta en TODO el libro, no solo la
+                            // hoja activa (#13) -- displayRows sigue acotado a
+                            // la hoja activa (ya auto-seleccionada arriba si
+                            // hacía falta) porque la grilla es por hoja.
                             text     = stringResource(
-                                R.string.viewer_search_results_count, displayRows.size, searchQuery
+                                R.string.viewer_search_results_count, totalMatches, searchQuery
                             ),
                             style    = MaterialTheme.typography.labelMedium,
                             color    = MaterialTheme.colorScheme.primary,

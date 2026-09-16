@@ -84,14 +84,21 @@ class PdfToWordUseCase @Inject constructor(
                 cacheFile.outputStream().use { input.copyTo(it) }
             } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
 
-            val pdfDoc = PdfDocument(PdfReader(cacheFile))
-            val totalPages = pdfDoc.numberOfPages
-            val pages = (1..totalPages).map { i ->
-                val listener = FormattedTextListener()
-                PdfCanvasProcessor(listener).processPageContent(pdfDoc.getPage(i))
-                listener.chunks
+            // Hallazgo real de la revisión general 2026-09-16 (#40):
+            // pdfDoc.close() manual solo se alcanzaba si NINGUNA página
+            // lanzaba al procesar su contenido -- una página malformada a
+            // mitad del loop dejaba el PdfDocument/PdfReader sin cerrar
+            // para siempre. .use{} lo cierra pase lo que pase.
+            var totalPages = 0
+            lateinit var pages: List<List<TextChunk>>
+            PdfDocument(PdfReader(cacheFile)).use { pdfDoc ->
+                totalPages = pdfDoc.numberOfPages
+                pages = (1..totalPages).map { i ->
+                    val listener = FormattedTextListener()
+                    PdfCanvasProcessor(listener).processPageContent(pdfDoc.getPage(i))
+                    listener.chunks
+                }
             }
-            pdfDoc.close()
 
             if (pages.all { page -> page.all { it.text.isBlank() } }) {
                 return@withContext ConversionResult.Error(

@@ -260,6 +260,25 @@ fun SettingsScreen(
                         files  = pdfToolsFiles,
                         sizeKb = pdfToolsSize
                     )
+                    // Hallazgo #55 (revisión general 2026-09-16): viewer_share/
+                    // y study_exports/ ya se sumaban al Total, pero sin fila
+                    // propia -- un usuario que solo compartió "con
+                    // anotaciones" o exportó notas de Estudio veía un Total
+                    // mayor a cero sin ninguna fila que lo explicara.
+                    if (viewerShareFiles > 0) {
+                        StorageRow(
+                            label  = stringResource(R.string.settings_storage_viewer_share),
+                            files  = viewerShareFiles,
+                            sizeKb = viewerShareSize
+                        )
+                    }
+                    if (studyExportsFiles > 0) {
+                        StorageRow(
+                            label  = stringResource(R.string.settings_storage_study_exports),
+                            files  = studyExportsFiles,
+                            sizeKb = studyExportsSize
+                        )
+                    }
                     HorizontalDivider()
                     Row(
                         modifier              = Modifier.fillMaxWidth(),

@@ -9,9 +9,21 @@
   unicas carpetas pensadas para compartirse; secure/ queda deliberadamente
   afuera, asi una URI armada a mano hacia files/secure/... falla en
   FileProvider (Failed to find configured root) en vez de servirse.
+
+  Hallazgo #59 (revision de seguridad del propio lote, mismo dia): cache-path
+  con path="." tenia el mismo problema para TODO cacheDir. Se confirmo antes
+  de acotarlo cuales de los ~25 sitios que escriben ahi realmente se
+  comparten via FileProvider.getUriForFile (busqueda real en el codigo, no
+  suposicion), solo tres subcarpetas lo hacen: qr/ (QrScreen.kt),
+  scanner/ (ScanResultScreen.kt) y scanner_edits/ (ScanImageEditor.kt). El
+  resto de los archivos temporales en la raiz de cacheDir (conversion de
+  Word/Excel/PPT, desbloqueo de PDF, etc.) nunca pasan por FileProvider, asi
+  que acotar la lista no les rompe nada.
 -->
 <paths>
-    <cache-path name="cache" path="." />
+    <cache-path name="qr" path="qr/" />
+    <cache-path name="scanner" path="scanner/" />
+    <cache-path name="scanner_edits" path="scanner_edits/" />
     <files-path name="converted" path="converted/" />
     <files-path name="pdftools" path="pdftools/" />
     <files-path name="viewer_share" path="viewer_share/" />

@@ -82,6 +82,7 @@ import com.docsmart.features.scanner.domain.QrCrypto
 import com.docsmart.features.scanner.domain.QrHistoryEntry
 import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
+import com.docsmart.features.scanner.domain.unescapeReservedField
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -303,13 +304,6 @@ private fun historyContentPreview(entry: QrHistoryEntry): String = when {
     )
     else        -> entry.content
 }
-
-private fun unescapeReservedField(value: String): String =
-    value
-        .replace("\\;", ";")
-        .replace("\\,", ",")
-        .replace("\\:", ":")
-        .replace("\\\\", "\\")
 
 private fun extractWifiSsid(content: String): String? =
     Regex("S:((?:\\\\.|[^;])*);").find(content)?.groupValues?.get(1)?.let(::unescapeReservedField)

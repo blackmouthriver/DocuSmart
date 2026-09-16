@@ -82,7 +82,19 @@ class SecurityScreenTest {
             // actualizó -- mismo bug de fondo que mediaDeletePermission
             // arriba, esta vez detectado por compileDebugAndroidTestKotlin
             // en CI (no corre localmente sin un dispositivo/emulador).
-            annotationDao = mockk(relaxed = true)
+            annotationDao = mockk(relaxed = true),
+            // Hallazgo real 2026-09-16: SecurityViewModel ganó
+            // favoritesRepository (migración de favoritos/alias al mover/
+            // restaurar de Carpeta Segura, hallazgo #50) -- mismo bug de
+            // fondo que annotationDao arriba.
+            favoritesRepository = mockk(relaxed = true),
+            // Hallazgo real de la revisión de seguridad adversarial de este
+            // mismo lote (2026-09-16): SecurityViewModel ganó
+            // appLifecycleTracker (envoltorio inyectable sobre
+            // ProcessLifecycleOwner, ver AppLifecycleTracker) -- se mockea
+            // también acá para no registrar un observer real en el
+            // singleton de proceso compartido entre tests instrumentados.
+            appLifecycleTracker = mockk(relaxed = true)
         )
     }
 

@@ -38,6 +38,12 @@
     <string name="library_subtitle">Все ваши документы</string>
     <string name="library_search">Поиск в библиотеке…</string>
     <string name="library_documents">документов</string>
+    <string name="library_document_count">%1$d документов</string>
+    <string name="library_search_results_count">Результатов: %1$d по запросу «%2$s»</string>
+    <string name="library_no_results_title">Нет результатов</string>
+    <string name="library_empty_category">В этой категории нет документов</string>
+    <string name="library_no_results_for_query">Мы не нашли «%1$s»</string>
+    <string name="library_favorites_title">Избранное</string>
     <string name="library_tab_device">Устройство</string>
     <string name="library_tab_app_files">Мои файлы</string>
     <string name="library_tab_file_count">Файлов: %1$d</string>
@@ -118,6 +124,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">Понятно</string>
     <string name="settings_storage_conversions">Конвертации</string>
+    <string name="settings_storage_viewer_share">Отправлено с аннотациями</string>
+    <string name="settings_storage_study_exports">Экспортировано из режима обучения</string>
     <string name="settings_storage_total">Итого</string>
     <string name="settings_storage_files_unit">файлов</string>
     <string name="settings_storage_clear_cache">Очистить кэш</string>
@@ -185,13 +193,21 @@
     <string name="viewer_share_chooser_title">Поделиться %1$s</string>
     <string name="viewer_annotate_content_desc">Аннотировать</string>
     <string name="viewer_annotate_toolbar_label">Выделить:</string>
+    <string name="viewer_highlight_color_yellow">Жёлтый</string>
+    <string name="viewer_highlight_color_green">Зелёный</string>
+    <string name="viewer_highlight_color_pink">Розовый</string>
+    <string name="viewer_highlight_color_blue">Голубой</string>
     <string name="viewer_annotate_note_chip">Заметка</string>
     <string name="viewer_annotate_done">Готово</string>
     <string name="viewer_annotate_note_dialog_title">Новая заметка</string>
     <string name="viewer_annotate_note_dialog_placeholder">Напишите свою заметку здесь…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d символов</string>
     <string name="viewer_annotate_note_detail_title">Заметка</string>
     <string name="viewer_annotate_highlight_detail_title">Выделение</string>
     <string name="viewer_annotate_highlight_detail_body">Удалить это выделение?</string>
+    <string name="viewer_annotate_delete_confirm_title">Удалить навсегда?</string>
+    <string name="viewer_annotate_delete_confirm_note_body">Эта заметка будет удалена без возможности восстановления.</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">Это выделение будет удалено без возможности восстановления.</string>
     <string name="viewer_share_choice_title">Поделиться документом</string>
     <string name="viewer_share_choice_preparing">Подготовка документа…</string>
     <string name="viewer_share_choice_body">В этом документе есть аннотации. Как вы хотите им поделиться?</string>
@@ -267,6 +283,7 @@
     <string name="converter_daily_limit_label">конвертаций</string>
     <string name="scan_daily_save_limit_label">сохранённых сканов</string>
     <string name="converter_daily_limit_reached_error">Достигнут дневной лимит конвертаций</string>
+    <string name="converter_daily_count_label">Конвертаций сегодня: %1$d / %2$d</string>
     <string name="converter_batch_save_error">Не удалось сохранить все файлы в Загрузки</string>
     <string name="converter_error_read_word">Не удалось прочитать файл Word</string>
     <string name="converter_error_read_excel">Не удалось прочитать файл Excel</string>
@@ -275,6 +292,7 @@
     <string name="converter_error_read_image">Не удалось прочитать изображение</string>
     <string name="converter_error_empty_spreadsheet">В таблице нет данных</string>
     <string name="converter_error_empty_presentation">В презентации нет текста</string>
+    <string name="converter_error_legacy_format_unsupported">Этот устаревший формат (.xls/.ppt до Office 2007) пока не поддерживается. Сохраните файл как .xlsx/.pptx и попробуйте снова.</string>
     <string name="converter_error_empty_word_document">В документе нет текста для извлечения</string>
     <string name="converter_error_empty_pdf_text">В PDF нет текста для извлечения</string>
     <string name="converter_error_empty_pdf_text_scanned">В PDF нет текста для извлечения. Возможно, это отсканированный PDF.</string>
@@ -367,6 +385,7 @@
     <string name="pdf_rotate_progress">Поворот PDF на %1$d°…</string>
     <string name="pdf_rotate_execute">Повернуть PDF на %1$d°</string>
     <string name="pdf_rotate_read_error">Не удалось прочитать PDF. Убедитесь, что это корректный файл.</string>
+    <string name="pdf_rotate_no_pages">PDF не содержит страниц.</string>
     <string name="pdf_rotate_generate_error">Ошибка при создании повёрнутого PDF.</string>
     <string name="pdf_rotate_success">PDF успешно повёрнут на %1$d°</string>
     <string name="pdf_rotate_error">Ошибка при повороте PDF: %1$s</string>
@@ -540,6 +559,8 @@
     <string name="pdf_ocr_generate_error">Ошибка при создании PDF с распознанным текстом.</string>
     <string name="pdf_ocr_success">Обработано страниц: %1$d, распознано слов: %2$d</string>
     <string name="pdf_ocr_error">Ошибка при распознавании текста: %1$s</string>
+    <string name="pdf_tools_unexpected_error">Произошла непредвиденная ошибка. Попробуйте ещё раз с файлом меньшего размера.</string>
+    <string name="pdf_tools_result_size_kb">%1$d КБ</string>
 
     <!-- ── Пустое состояние главной ───────────────────────────── -->
 
@@ -554,6 +575,7 @@
     <string name="format_name_image">Изображение</string>
     <string name="converter_success_title">Конвертация выполнена!</string>
     <string name="converter_success_page_count_size">Страниц: %1$d · %2$d КБ</string>
+    <string name="converter_success_extra_files">Ещё создано файлов: %1$d -- будут включены при сохранении/отправке</string>
     <string name="converter_saved_to_downloads">Сохранено в Загрузки</string>
     <string name="converter_share">Поделиться файлом</string>
     <string name="converter_convert_another">Конвертировать другой файл</string>
@@ -688,6 +710,8 @@
     <string name="security_no_protected_files">Нет защищённых файлов</string>
     <string name="security_no_protected_files_hint">Нажмите «Защитить новый файл», чтобы добавить файлы</string>
     <string name="security_restore">Восстановить</string>
+    <string name="security_preview">Просмотр</string>
+    <string name="security_preview_error">Не удалось открыть предварительный просмотр</string>
     <string name="security_protect_file_dialog_title">Защитить файл</string>
     <string name="pdf_pw_screen_subtitle">Защитите или разблокируйте свои PDF</string>
     <string name="pdf_pw_mode_protect_title">Защитить PDF</string>
@@ -757,6 +781,8 @@
     <string name="qr_reader_subtitle">Наведите камеру на QR-код</string>
     <string name="qr_camera_permission_needed">Для сканирования QR-кодов нужен доступ к камере</string>
     <string name="qr_allow_camera_access">Разрешить доступ к камере</string>
+    <string name="qr_camera_permission_denied_permanently">Вы навсегда запретили доступ к камере. Включите его в системных настройках.</string>
+    <string name="qr_open_app_settings">Открыть настройки</string>
     <string name="qr_center_in_frame">Расположите QR-код по центру рамки</string>
     <string name="qr_type_url_detected">Обнаружена ссылка</string>
     <string name="qr_type_image_detected">Обнаружено изображение</string>
@@ -764,9 +790,15 @@
     <string name="qr_type_email_detected">Обнаружен email</string>
     <string name="qr_type_phone_detected">Обнаружен номер телефона</string>
     <string name="qr_type_text_detected">Обнаружен текст</string>
+    <string name="qr_type_wifi_detected">Обнаружена Wi-Fi</string>
+    <string name="qr_type_contact_detected">Обнаружен контакт</string>
+    <string name="qr_type_event_detected">Обнаружено событие</string>
     <string name="qr_detected_title">QR-код обнаружен!</string>
     <string name="qr_image_content_desc">Изображение QR</string>
     <string name="qr_loading_image">Загрузка изображения…</string>
+    <string name="qr_image_privacy_warning">Загрузка этого изображения устанавливает интернет-соединение и может раскрыть ваш IP-адрес владельцу этого URL.</string>
+    <string name="qr_load_image">Загрузить изображение</string>
+    <string name="qr_persist_permission_failed">Не удалось получить постоянное разрешение на чтение этого файла. Попробуйте выбрать его ещё раз.</string>
     <string name="qr_copied_clipboard">Скопировано в буфер обмена</string>
     <string name="qr_open_browser">Открыть в браузере</string>
     <string name="qr_copy_url">Скопировать ссылку</string>
@@ -779,6 +811,10 @@
     <string name="qr_call">Позвонить</string>
     <string name="qr_copy_number">Скопировать номер</string>
     <string name="qr_copy_text">Скопировать текст</string>
+    <string name="qr_copy_wifi_password">Копировать пароль</string>
+    <string name="qr_copy_wifi_ssid">Копировать имя сети</string>
+    <string name="qr_add_contact">Добавить в контакты</string>
+    <string name="qr_add_calendar_event">Добавить в календарь</string>
     <string name="qr_scan_another">Сканировать другой код</string>
     <string name="qr_creator_title">Создать QR-код</string>
     <string name="qr_creator_subtitle">Создайте QR для ссылок, текста, файлов и другого</string>
@@ -812,6 +848,8 @@
     <string name="qr_image_selected">Изображение выбрано ✓</string>
     <string name="qr_select_document">Выбрать документ</string>
     <string name="qr_document_selected">Документ выбран ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">Этот QR-код работает только на этом устройстве: он указывает на локальный файл, а не на общую копию.</string>
     <string name="qr_label_url">URL сайта</string>
     <string name="qr_label_text">Текст сообщения</string>
@@ -823,6 +861,14 @@
     <string name="qr_placeholder_phone">+7 912 345-67-89</string>
     <string name="qr_design_label">Настроить дизайн</string>
     <string name="qr_design_contrast_warning">У этого цвета низкий контраст на белом фоне — выберите более тёмный, чтобы камера могла его считать</string>
+    <string name="qr_color_black">Чёрный</string>
+    <string name="qr_color_blue">Синий</string>
+    <string name="qr_color_purple">Фиолетовый</string>
+    <string name="qr_color_green">Зелёный</string>
+    <string name="qr_color_red">Красный</string>
+    <string name="qr_color_orange">Оранжевый</string>
+    <string name="qr_color_teal">Бирюзовый</string>
+    <string name="qr_color_yellow">Жёлтый</string>
     <string name="qr_design_add_logo">Добавить логотип</string>
     <string name="qr_design_logo_added">Логотип добавлен</string>
     <string name="qr_design_remove_logo">Убрать логотип</string>

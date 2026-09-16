@@ -8,6 +8,8 @@ import android.provider.MediaStore
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.data.db.AnnotationDao
@@ -76,7 +78,17 @@ class SecurityViewModel @Inject constructor(
     private val securityManager       : SecurityManager,
     private val pdfPasswordUseCase    : PdfPasswordUseCase,
     private val mediaDeletePermission : MediaDeletePermission,
-    private val annotationDao         : AnnotationDao
+    private val annotationDao         : AnnotationDao,
+    // Hallazgo real de la revisión general 2026-09-16 (#50): favoritos/
+    // alias quedaban huérfanos bajo el id viejo al mover/restaurar de
+    // Carpeta Segura, mismo criterio que ya se aplica a las anotaciones.
+    private val favoritesRepository   : com.docsmart.core.data.FavoritesRepository,
+    // Hallazgo real de la revisión de seguridad adversarial de este mismo
+    // lote (2026-09-16): envoltorio inyectable sobre ProcessLifecycleOwner
+    // (ver AppLifecycleTracker) -- llamar a ProcessLifecycleOwner.get()
+    // directo desde acá rompe cualquier test que construya este ViewModel
+    // (ese singleton de AndroidX no se inicializa en un test JVM plano).
+    private val appLifecycleTracker   : com.docsmart.core.util.AppLifecycleTracker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SecurityUiState())
@@ -85,7 +97,41 @@ class SecurityViewModel @Inject constructor(
     private val _pendingOriginalDelete = MutableSharedFlow<PendingOriginalDeleteRequest>(extraBufferCapacity = 1)
     val pendingOriginalDelete: SharedFlow<PendingOriginalDeleteRequest> = _pendingOriginalDelete.asSharedFlow()
 
-    init { loadInitialState() }
+    // Hallazgo #53 (revisión general 2026-09-16): ruta local de la copia
+    // efímera para previsualizar un archivo protegido sin restaurarlo.
+    private val _previewRequest = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val previewRequest: SharedFlow<String> = _previewRequest.asSharedFlow()
+
+    // Hallazgo real de la revisión de seguridad adversarial de este mismo
+    // lote (2026-09-16): antes este observer vivía en un DisposableEffect
+    // de SecurityScreen (RF-SEC-08 + limpieza de secure_preview/, ver
+    // clearPreviewCache más abajo) -- al agregar la navegación al Visor
+    // para la vista previa del hallazgo #53, SecurityScreen se saca de la
+    // composición en cuanto se navega, así que ese observer se
+    // desregistraba justo mientras el usuario tenía un archivo protegido
+    // abierto. Si en ese momento la app pasaba a segundo plano, ni se
+    // bloqueaba Carpeta Segura (al volver atrás seguía UNLOCKED sin pedir
+    // PIN de nuevo) ni se borraba la copia sin cifrar de la vista previa.
+    // Viviendo en el ViewModel (que sobrevive mientras exista su
+    // NavBackStackEntry, no solo mientras SecurityScreen esté compuesta)
+    // el observer sigue activo durante toda la navegación a/desde el
+    // Visor, y solo se remueve cuando el ViewModel realmente se destruye.
+    private val processLifecycleObserver = LifecycleEventObserver { _, event ->
+        if (event == Lifecycle.Event.ON_STOP) {
+            lockIfUnlocked()
+            securityManager.clearPreviewCache()
+        }
+    }
+
+    init {
+        loadInitialState()
+        appLifecycleTracker.addObserver(processLifecycleObserver)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        appLifecycleTracker.removeObserver(processLifecycleObserver)
+    }
 
     private fun loadInitialState() {
         _uiState.update {
@@ -205,9 +251,12 @@ class SecurityViewModel @Inject constructor(
                 // Hallazgo real de la revisión general 2026-09-16: las
                 // anotaciones del Visor (HU-46) quedaban huérfanas bajo el
                 // id viejo al mover un documento a Carpeta Segura -- se
-                // migran a la ruta nueva dentro de secure/.
-                val newId = File(securityManager.secureFolder, file.name).absolutePath
+                // migran a la ruta nueva dentro de secure/. Se usa
+                // result.destFile (no un recálculo propio) porque #61 puede
+                // haber elegido un nombre distinto por colisión.
+                val newId = result.destFile?.absolutePath ?: oldId
                 annotationDao.updateDocumentId(oldId, newId)
+                favoritesRepository.migrateId(oldId, newId)
                 val secureFiles = securityManager.getSecureFiles()
                 _uiState.update {
                     it.copy(
@@ -246,15 +295,37 @@ class SecurityViewModel @Inject constructor(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val fileName = resolveFileName(context, uri)
-                val destFile = File(securityManager.secureFolder, fileName)
+                // Hallazgo real de la revisión de seguridad adversarial de
+                // este mismo lote (2026-09-16): DISPLAY_NAME viene de un
+                // DocumentsProvider externo (SAF) -- cualquier app que
+                // registre uno (gestor de archivos, "nube" de terceros)
+                // puede devolver un nombre arbitrario, incluido algo como
+                // "../../shared_prefs/docusmart_security.xml". Sin sanear,
+                // File(secureFolder, nombre) resuelve fuera de files/secure/
+                // y puede sobrescribir un archivo privado de la app (mismo
+                // impacto que el path traversal ya corregido en
+                // sanitizeOutputFileName() para Herramientas PDF/Convertidor
+                // -- FileNameSanitizer.kt). moveToSecure()/moveFromSecure()
+                // no tienen este problema (operan sobre un File local ya
+                // existente, cuyo .name no puede contener "/"); solo este
+                // camino (import desde SAF) construye el nombre a partir de
+                // metadata que no es de confianza.
+                val fileName = com.docsmart.core.util.sanitizeOutputFileName(resolveFileName(context, uri))
+                    .ifBlank { "archivo_seguro_${System.currentTimeMillis()}" }
+                // Hallazgo real #61: mismo criterio de nombre único que
+                // moveToSecure() -- este camino (import desde SAF) copia
+                // directo, sin pasar por esa función, pero tiene la misma
+                // colisión posible si el nombre ya existe en Carpeta Segura.
+                val destFile = securityManager.uniqueSecureDestination(fileName)
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     destFile.outputStream().use { output -> input.copyTo(output) }
                 }
-                // Mismo criterio que importLocalFile(): migrar anotaciones
-                // existentes (documentId = el propio content:// del origen)
-                // a la ruta nueva dentro de Carpeta Segura.
+                // Mismo criterio que importLocalFile(): migrar anotaciones/
+                // favoritos/alias existentes (documentId = el propio
+                // content:// del origen) a la ruta nueva dentro de Carpeta
+                // Segura.
                 annotationDao.updateDocumentId(uri.toString(), destFile.absolutePath)
+                favoritesRepository.migrateId(uri.toString(), destFile.absolutePath)
 
                 val deleteResult = try {
                     val deleted = android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)
@@ -404,17 +475,42 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
+    // Hallazgo #53 (revisión general 2026-09-16): a diferencia de
+    // restoreFile(), esto NO mueve el archivo -- lo copia a una carpeta de
+    // caché efímera (ver SecurityManager.copyForPreview) y solo emite la
+    // ruta de esa copia para que la Screen navegue al Visor. El archivo
+    // protegido nunca sale de Carpeta Segura.
+    fun previewFile(file: File, errorMessage: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val previewFile = securityManager.copyForPreview(file)
+            if (previewFile != null) {
+                _previewRequest.emit(previewFile.absolutePath)
+            } else {
+                _uiState.update { it.copy(error = errorMessage) }
+            }
+        }
+    }
+
+    // RF-SEC-08 (bloqueo al pasar a segundo plano) también debe limpiar
+    // cualquier copia de vista previa sin cifrar que haya quedado en caché.
+    fun clearPreviewCache() {
+        securityManager.clearPreviewCache()
+    }
+
     fun restoreFile(file: File, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             val oldId  = file.absolutePath
             val destDir = File(context.filesDir, "converted")
-            val restored = securityManager.moveFromSecure(file, destDir)
-            if (restored) {
+            val restoredFile = securityManager.moveFromSecure(file, destDir)
+            if (restoredFile != null) {
                 // Hallazgo real de la revisión general 2026-09-16: mismo
                 // criterio que al mover a Carpeta Segura -- migrar las
-                // anotaciones a la ruta restaurada en vez de perderlas.
-                val newId = File(destDir, file.name).absolutePath
-                annotationDao.updateDocumentId(oldId, newId)
+                // anotaciones a la ruta restaurada en vez de perderlas. Se
+                // usa el File que devuelve moveFromSecure() (no un
+                // recálculo propio) porque #61 puede haber elegido un
+                // nombre distinto por colisión.
+                annotationDao.updateDocumentId(oldId, restoredFile.absolutePath)
+                favoritesRepository.migrateId(oldId, restoredFile.absolutePath)
             }
             val files = securityManager.getSecureFiles()
             _uiState.update { it.copy(secureFiles = files) }

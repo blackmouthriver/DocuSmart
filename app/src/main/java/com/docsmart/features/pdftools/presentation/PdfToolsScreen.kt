@@ -108,6 +108,7 @@ fun PdfToolsScreen(
     val compressSuccess          = stringResource(R.string.pdf_compress_success)
     val compressGenericError     = stringResource(R.string.pdf_compress_error)
     val rotateReadError      = stringResource(R.string.pdf_rotate_read_error)
+    val rotateNoPages        = stringResource(R.string.pdf_rotate_no_pages)
     val rotateGenerateError  = stringResource(R.string.pdf_rotate_generate_error)
     val rotateSuccess        = stringResource(R.string.pdf_rotate_success)
     val rotateGenericError   = stringResource(R.string.pdf_rotate_error)
@@ -177,6 +178,7 @@ fun PdfToolsScreen(
     val ocrGenerateError    = stringResource(R.string.pdf_ocr_generate_error)
     val ocrSuccess          = stringResource(R.string.pdf_ocr_success)
     val ocrGenericError     = stringResource(R.string.pdf_ocr_error)
+    val pdfToolsUnexpectedError = stringResource(R.string.pdf_tools_unexpected_error)
 
     val pdfToolMessages = remember {
         PdfToolMessages(
@@ -206,6 +208,7 @@ fun PdfToolsScreen(
             ),
             rotate = RotatePdfMessages(
                 readError     = rotateReadError,
+                noPages       = rotateNoPages,
                 generateError = rotateGenerateError,
                 success       = rotateSuccess,
                 genericError  = rotateGenericError
@@ -295,7 +298,8 @@ fun PdfToolsScreen(
                 generateError  = ocrGenerateError,
                 success        = ocrSuccess,
                 genericError   = ocrGenericError
-            )
+            ),
+            genericError = pdfToolsUnexpectedError
         )
     }
 
@@ -814,7 +818,13 @@ private fun ToolSuccessCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${result.outputFile.length() / 1024} KB",
+                            // Hallazgo real de la revisión general
+                            // 2026-09-16 (#30): "KB" hardcodeado sin
+                            // stringResource, visible tras cualquiera de
+                            // las 14 herramientas.
+                            text = stringResource(
+                                R.string.pdf_tools_result_size_kb, result.outputFile.length() / 1024
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -148,6 +148,7 @@ class DocumentRepositoryTest {
     fun `renameDocument renombra un archivo real de la app y devuelve la nueva ruta`() = runTest {
         val favorites = mockk<FavoritesRepository>()
         coEvery { favorites.removeAlias(any()) } just Runs
+        coEvery { favorites.migrateId(any(), any()) } just Runs
         val repo = DocumentRepository(
             context, favorites, historyDao, trashDao,
             mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
@@ -162,6 +163,10 @@ class DocumentRepositoryTest {
         assertTrue(File(dir, "nuevo.pdf").exists())
         assertFalse(file.exists())
         coVerify { favorites.removeAlias(file.absolutePath) }
+        // Hallazgo #50 (revisión general 2026-09-16): un rename físico
+        // también debe migrar el flag de favorito al nuevo id (la ruta
+        // absoluta del archivo renombrado).
+        coVerify { favorites.migrateId(file.absolutePath, File(dir, "nuevo.pdf").absolutePath) }
     }
 
     @Test

@@ -18,6 +18,11 @@ import javax.inject.Inject
 
 data class RotatePdfMessages(
     val readError    : String,
+    // Hallazgo real de la revisión general 2026-09-16 (#28): era la única
+    // de las 8 herramientas comparables sin validar 0 páginas -- un PDF
+    // vacío "rotaba con éxito" (el archivo de 0 páginas ya pesa > 0 bytes,
+    // el chequeo de abajo tampoco lo detectaba).
+    val noPages      : String,
     val generateError: String,
     val success       : String, // formato: %1$d grados
     val genericError  : String  // formato: %1$s mensaje de excepción
@@ -50,6 +55,10 @@ class RotatePdfUseCase @Inject constructor(
             val outputFile = createOutputFile(outputFileName ?: "Rotated_${degrees}deg")
 
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
+                if (pdf.numberOfPages == 0) {
+                    outputFile.delete()
+                    return@withContext PdfToolResult.Error(messages.noPages)
+                }
                 for (pageNumber in 1..pdf.numberOfPages) {
                     val page = pdf.getPage(pageNumber)
                     val newRotation = ((page.getRotation() + degrees) % FULL_TURN_DEGREES + FULL_TURN_DEGREES) %

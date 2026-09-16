@@ -125,6 +125,20 @@ fun ConversionSuccess(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    // Hallazgo real de la revisión general 2026-09-16
+                    // (#45): PDF→Imagen con varias páginas genera un
+                    // archivo por página (extraFiles), pero nunca se
+                    // mostraba que existían -- quedaban en disco sin forma
+                    // de verlas/guardarlas/compartirlas desde esta pantalla.
+                    if (result.extraFiles.isNotEmpty()) {
+                        Text(
+                            text = stringResource(
+                                R.string.converter_success_extra_files, result.extraFiles.size
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
@@ -228,7 +242,14 @@ private fun ConversionSuccessButtons(
         }
 
         OutlinedButton(
-            onClick = { shareFile(context, result.outputFile, shareLabel) },
+            onClick = {
+                // Hallazgo real #45: antes solo se compartía outputFile --
+                // si había extraFiles (PDF→Imagen con varias páginas), el
+                // resto quedaba sin ninguna forma de compartirse.
+                val allFiles = listOf(result.outputFile) + result.extraFiles
+                if (allFiles.size > 1) shareFiles(context, allFiles, shareLabel)
+                else shareFile(context, result.outputFile, shareLabel)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
@@ -319,5 +340,38 @@ internal fun shareFile(context: Context, file: File, shareLabel: String) {
         Timber.e(e, "shareFile: archivo fuera de rutas FileProvider — ${file.absolutePath}")
     } catch (e: Exception) {
         Timber.e(e, "shareFile: error inesperado — ${e.message}")
+    }
+}
+
+// Hallazgo real de la revisión general 2026-09-16 (#45): variante de
+// shareFile() para compartir outputFile + extraFiles juntos (PDF→Imagen
+// con varias páginas) en un solo Intent, en vez de perder el resto de las
+// páginas generadas.
+internal fun shareFiles(context: Context, files: List<File>, shareLabel: String) {
+    try {
+        val existing = files.filter { it.exists() }
+        if (existing.isEmpty()) {
+            Timber.e("shareFiles: ningún archivo encontrado de ${files.size}")
+            return
+        }
+
+        val uris = existing.map { file ->
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        }
+        val mimeType = MimeTypeMap.getSingleton()
+            .getMimeTypeFromExtension(existing.first().extension.lowercase()) ?: "*/*"
+
+        val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = mimeType
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        context.startActivity(Intent.createChooser(intent, shareLabel))
+        Timber.d("shareFiles: compartiendo ${existing.size} archivos")
+    } catch (e: IllegalArgumentException) {
+        Timber.e(e, "shareFiles: archivo fuera de rutas FileProvider")
+    } catch (e: Exception) {
+        Timber.e(e, "shareFiles: error inesperado — ${e.message}")
     }
 }

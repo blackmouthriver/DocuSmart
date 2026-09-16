@@ -38,6 +38,12 @@
     <string name="library_subtitle">Zure dokumentu guztiak</string>
     <string name="library_search">Bilatu liburutegian…</string>
     <string name="library_documents">dokumentu</string>
+    <string name="library_document_count">%1$d dokumentu</string>
+    <string name="library_search_results_count">\"%2$s\"(r)en %1$d emaitza</string>
+    <string name="library_no_results_title">Emaitzarik ez</string>
+    <string name="library_empty_category">Ez dago dokumenturik kategoria honetan</string>
+    <string name="library_no_results_for_query">Ez dugu aurkitu \"%1$s\"</string>
+    <string name="library_favorites_title">Gogokoak</string>
     <string name="library_tab_device">Gailua</string>
     <string name="library_tab_app_files">Nire fitxategiak</string>
     <string name="library_tab_file_count">%1$d fitxategi</string>
@@ -128,6 +134,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">Ulertuta</string>
     <string name="settings_storage_conversions">Bihurketak</string>
+    <string name="settings_storage_viewer_share">Oharrekin partekatua</string>
+    <string name="settings_storage_study_exports">Ikasketa moduatik esportatua</string>
     <string name="settings_storage_total">Guztira</string>
     <string name="settings_storage_files_unit">fitxategi</string>
     <string name="settings_storage_clear_cache">Garbitu cache-a</string>
@@ -193,15 +201,23 @@
     <string name="viewer_open_error_format">Ezin izan da PDFa ireki: %1$s</string>
     <string name="viewer_document_not_found">Dokumentua ez da aurkitu</string>
     <string name="viewer_share_chooser_title">%1$s partekatu</string>
-    <string name="viewer_annotate_content_desc">Oharra</string>
+    <string name="viewer_annotate_content_desc">Markaketa</string>
     <string name="viewer_annotate_toolbar_label">Nabarmendu:</string>
+    <string name="viewer_highlight_color_yellow">Horia</string>
+    <string name="viewer_highlight_color_green">Berdea</string>
+    <string name="viewer_highlight_color_pink">Arrosa</string>
+    <string name="viewer_highlight_color_blue">Urdin argia</string>
     <string name="viewer_annotate_note_chip">Oharra</string>
     <string name="viewer_annotate_done">Eginda</string>
     <string name="viewer_annotate_note_dialog_title">Ohar berria</string>
     <string name="viewer_annotate_note_dialog_placeholder">Idatzi zure oharra hemen…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d karaktere</string>
     <string name="viewer_annotate_note_detail_title">Oharra</string>
     <string name="viewer_annotate_highlight_detail_title">Nabarmendua</string>
     <string name="viewer_annotate_highlight_detail_body">Nabarmendu hau ezabatu?</string>
+    <string name="viewer_annotate_delete_confirm_title">Betiko ezabatu?</string>
+    <string name="viewer_annotate_delete_confirm_note_body">Ohar hau ezabatu egingo da eta ezin izango da desegin.</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">Nabarmentze hau ezabatu egingo da eta ezin izango da desegin.</string>
     <string name="viewer_share_choice_title">Dokumentua partekatu</string>
     <string name="viewer_share_choice_preparing">Dokumentua prestatzen…</string>
     <string name="viewer_share_choice_body">Dokumentu honek oharrak ditu. Nola partekatu nahi duzu?</string>
@@ -277,6 +293,7 @@
     <string name="converter_daily_limit_label">bihurketa</string>
     <string name="scan_daily_save_limit_label">gordetako eskaneatze</string>
     <string name="converter_daily_limit_reached_error">Eguneko bihurketa-muga bete da</string>
+    <string name="converter_daily_count_label">Gaurko bihurketak: %1$d / %2$d</string>
     <string name="converter_batch_save_error">Ezin izan dira fitxategi guztiak Deskarguak karpetan gorde</string>
     <string name="converter_error_read_word">Ezin izan da Word fitxategia irakurri</string>
     <string name="converter_error_read_excel">Ezin izan da Excel fitxategia irakurri</string>
@@ -285,6 +302,7 @@
     <string name="converter_error_read_image">Ezin izan da irudia irakurri</string>
     <string name="converter_error_empty_spreadsheet">Kalkulu-orriak ez du daturik</string>
     <string name="converter_error_empty_presentation">Aurkezpenak ez du testurik</string>
+    <string name="converter_error_legacy_format_unsupported">Formatu zahar hau (.xls/.ppt, Office 2007 baino lehenagokoa) ez da onartzen oraindik. Gorde .xlsx/.pptx gisa eta saiatu berriz.</string>
     <string name="converter_error_empty_word_document">Dokumentuak ez du atera daitekeen testurik</string>
     <string name="converter_error_empty_pdf_text">PDFak ez du atera daitekeen testurik</string>
     <string name="converter_error_empty_pdf_text_scanned">PDFak ez du atera daitekeen testurik. Eskaneatutako PDFa izan daiteke.</string>
@@ -377,6 +395,7 @@
     <string name="pdf_rotate_progress">PDFa %1$d° biratzen…</string>
     <string name="pdf_rotate_execute">Biratu PDFa %1$d°</string>
     <string name="pdf_rotate_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
+    <string name="pdf_rotate_no_pages">PDFak ez du orririk.</string>
     <string name="pdf_rotate_generate_error">Errorea PDF biratua sortzean.</string>
     <string name="pdf_rotate_success">PDFa %1$d° ongi biratu da</string>
     <string name="pdf_rotate_error">Errorea PDFa biratzean: %1$s</string>
@@ -550,6 +569,8 @@
     <string name="pdf_ocr_generate_error">Errorea ezagututako testua duen PDFa sortzean.</string>
     <string name="pdf_ocr_success">%1$d orrialde prozesatu dira, %2$d hitz ezagutu dira</string>
     <string name="pdf_ocr_error">Errorea testua ezagutzean: %1$s</string>
+    <string name="pdf_tools_unexpected_error">Ustekabeko errore bat gertatu da. Saiatu berriz fitxategi txikiago batekin.</string>
+    <string name="pdf_tools_result_size_kb">%1$d KB</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
 
@@ -564,6 +585,7 @@
     <string name="format_name_image">Irudia</string>
     <string name="converter_success_title">Bihurketa arrakastatsua!</string>
     <string name="converter_success_page_count_size">%1$d orrialde · %2$d KB</string>
+    <string name="converter_success_extra_files">+%1$d fitxategi gehiago sortu dira -- gorde/partekatzean sartzen dira</string>
     <string name="converter_saved_to_downloads">Deskargak karpetan gordeta</string>
     <string name="converter_share">Partekatu fitxategia</string>
     <string name="converter_convert_another">Bihurtu beste fitxategi bat</string>
@@ -708,6 +730,8 @@
     <string name="security_no_protected_files">Ez dago babestutako fitxategirik</string>
     <string name="security_no_protected_files_hint">Sakatu \"Babestu fitxategi berria\" fitxategiak gehitzeko</string>
     <string name="security_restore">Berreskuratu</string>
+    <string name="security_preview">Aurrebista</string>
+    <string name="security_preview_error">Ezin izan da aurrebista ireki</string>
     <string name="security_protect_file_dialog_title">Babestu fitxategia</string>
     <string name="pdf_pw_screen_subtitle">Babestu edo desblokeatu zure PDFak</string>
     <string name="pdf_pw_mode_protect_title">Babestu PDFa</string>
@@ -777,6 +801,8 @@
     <string name="qr_reader_subtitle">Zuzendu kamera QR kodera</string>
     <string name="qr_camera_permission_needed">Kamerarako sarbidea behar da QR kodeak eskaneatzeko</string>
     <string name="qr_allow_camera_access">Baimendu kamerarako sarbidea</string>
+    <string name="qr_camera_permission_denied_permanently">Kamerarako sarbidea betiko ukatu duzu. Gaitu sistemaren ezarpenetatik.</string>
+    <string name="qr_open_app_settings">Ireki ezarpenak</string>
     <string name="qr_center_in_frame">Zentratu QR kodea markoan</string>
     <string name="qr_type_url_detected">URLa detektatuta</string>
     <string name="qr_type_image_detected">Irudia detektatuta</string>
@@ -784,9 +810,15 @@
     <string name="qr_type_email_detected">Emaila detektatuta</string>
     <string name="qr_type_phone_detected">Telefonoa detektatuta</string>
     <string name="qr_type_text_detected">Testua detektatuta</string>
+    <string name="qr_type_wifi_detected">Wi-Fi detektatuta</string>
+    <string name="qr_type_contact_detected">Kontaktua detektatuta</string>
+    <string name="qr_type_event_detected">Ekitaldia detektatuta</string>
     <string name="qr_detected_title">QR kodea detektatu da!</string>
     <string name="qr_image_content_desc">QRaren irudia</string>
     <string name="qr_loading_image">Irudia kargatzen…</string>
+    <string name="qr_image_privacy_warning">Irudi hau kargatzeak interneteko konexio bat egiten du eta zure IPa erakuts diezaioke URL hori kontrolatzen duenari.</string>
+    <string name="qr_load_image">Kargatu irudia</string>
+    <string name="qr_persist_permission_failed">Ezin izan da fitxategi hori irakurtzeko baimen iraunkorra lortu. Saiatu berriz aukeratzen.</string>
     <string name="qr_copied_clipboard">Arbelean kopiatuta</string>
     <string name="qr_open_browser">Ireki nabigatzailean</string>
     <string name="qr_copy_url">Kopiatu URLa</string>
@@ -799,6 +831,10 @@
     <string name="qr_call">Deitu</string>
     <string name="qr_copy_number">Kopiatu zenbakia</string>
     <string name="qr_copy_text">Kopiatu testua</string>
+    <string name="qr_copy_wifi_password">Kopiatu pasahitza</string>
+    <string name="qr_copy_wifi_ssid">Kopiatu sarearen izena</string>
+    <string name="qr_add_contact">Gehitu kontaktuetara</string>
+    <string name="qr_add_calendar_event">Gehitu egutegira</string>
     <string name="qr_scan_another">Eskaneatu beste kode bat</string>
     <string name="qr_creator_title">Sortu QR kodea</string>
     <string name="qr_creator_subtitle">Sortu QRa URL, testu, fitxategi eta gehiagorentzat</string>
@@ -832,6 +868,8 @@
     <string name="qr_image_selected">Irudia hautatuta ✓</string>
     <string name="qr_select_document">Hautatu dokumentua</string>
     <string name="qr_document_selected">Dokumentua hautatuta ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">QR hau gailu honetan bakarrik funtzionatzen du: fitxategi lokal batera zuzentzen du, ez partekatutako kopia batera.</string>
     <string name="qr_label_url">Webgunearen URLa</string>
     <string name="qr_label_text">Mezuaren testua</string>
@@ -843,6 +881,14 @@
     <string name="qr_placeholder_phone">+34 600 00 00 00</string>
     <string name="qr_design_label">Pertsonalizatu diseinua</string>
     <string name="qr_design_contrast_warning">Kolore honek kontraste gutxi du atzeko plano zurian — aukeratu ilunago bat kamerak ondo irakur dezan</string>
+    <string name="qr_color_black">Beltza</string>
+    <string name="qr_color_blue">Urdina</string>
+    <string name="qr_color_purple">More</string>
+    <string name="qr_color_green">Berdea</string>
+    <string name="qr_color_red">Gorria</string>
+    <string name="qr_color_orange">Laranja</string>
+    <string name="qr_color_teal">Berde urdinxka</string>
+    <string name="qr_color_yellow">Horia</string>
     <string name="qr_design_add_logo">Gehitu logoa</string>
     <string name="qr_design_logo_added">Logoa gehituta</string>
     <string name="qr_design_remove_logo">Kendu logoa</string>

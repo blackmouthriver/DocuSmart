@@ -38,6 +38,12 @@
     <string name="library_subtitle">모든 문서</string>
     <string name="library_search">보관함에서 검색…</string>
     <string name="library_documents">문서</string>
+    <string name="library_document_count">문서 %1$d개</string>
+    <string name="library_search_results_count">\"%2$s\"에 대한 결과 %1$d개</string>
+    <string name="library_no_results_title">결과 없음</string>
+    <string name="library_empty_category">이 카테고리에 문서가 없습니다</string>
+    <string name="library_no_results_for_query">\"%1$s\"을(를) 찾을 수 없습니다</string>
+    <string name="library_favorites_title">즐겨찾기</string>
     <string name="library_tab_device">기기</string>
     <string name="library_tab_app_files">내 파일</string>
     <string name="library_tab_file_count">파일 %1$d개</string>
@@ -118,6 +124,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">확인</string>
     <string name="settings_storage_conversions">변환</string>
+    <string name="settings_storage_viewer_share">주석과 함께 공유됨</string>
+    <string name="settings_storage_study_exports">학습 모드에서 내보냄</string>
     <string name="settings_storage_total">전체</string>
     <string name="settings_storage_files_unit">파일</string>
     <string name="settings_storage_clear_cache">캐시 지우기</string>
@@ -185,13 +193,21 @@
     <string name="viewer_share_chooser_title">%1$s 공유</string>
     <string name="viewer_annotate_content_desc">주석</string>
     <string name="viewer_annotate_toolbar_label">강조 표시:</string>
+    <string name="viewer_highlight_color_yellow">노랑</string>
+    <string name="viewer_highlight_color_green">초록</string>
+    <string name="viewer_highlight_color_pink">분홍</string>
+    <string name="viewer_highlight_color_blue">하늘색</string>
     <string name="viewer_annotate_note_chip">메모</string>
     <string name="viewer_annotate_done">완료</string>
     <string name="viewer_annotate_note_dialog_title">새 메모</string>
     <string name="viewer_annotate_note_dialog_placeholder">여기에 메모를 입력하세요…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d자</string>
     <string name="viewer_annotate_note_detail_title">메모</string>
     <string name="viewer_annotate_highlight_detail_title">강조 표시</string>
     <string name="viewer_annotate_highlight_detail_body">이 강조 표시를 삭제하시겠습니까?</string>
+    <string name="viewer_annotate_delete_confirm_title">영구적으로 삭제할까요?</string>
+    <string name="viewer_annotate_delete_confirm_note_body">이 메모는 삭제되며 되돌릴 수 없습니다.</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">이 하이라이트는 삭제되며 되돌릴 수 없습니다.</string>
     <string name="viewer_share_choice_title">문서 공유</string>
     <string name="viewer_share_choice_preparing">문서 준비 중…</string>
     <string name="viewer_share_choice_body">이 문서에는 주석이 있습니다. 어떻게 공유하시겠습니까?</string>
@@ -267,6 +283,7 @@
     <string name="converter_daily_limit_label">변환</string>
     <string name="scan_daily_save_limit_label">저장한 스캔</string>
     <string name="converter_daily_limit_reached_error">일일 변환 한도에 도달했습니다</string>
+    <string name="converter_daily_count_label">오늘 변환 횟수: %1$d / %2$d</string>
     <string name="converter_batch_save_error">일부 파일을 다운로드에 저장하지 못했습니다</string>
     <string name="converter_error_read_word">Word 파일을 읽을 수 없습니다</string>
     <string name="converter_error_read_excel">Excel 파일을 읽을 수 없습니다</string>
@@ -275,6 +292,7 @@
     <string name="converter_error_read_image">이미지를 읽을 수 없습니다</string>
     <string name="converter_error_empty_spreadsheet">스프레드시트에 데이터가 없습니다</string>
     <string name="converter_error_empty_presentation">프리젠테이션에 텍스트가 없습니다</string>
+    <string name="converter_error_legacy_format_unsupported">이 이전 형식(Office 2007 이전의 .xls/.ppt)은 아직 지원되지 않습니다. .xlsx/.pptx로 저장한 후 다시 시도해 보세요.</string>
     <string name="converter_error_empty_word_document">문서에 추출 가능한 텍스트가 없습니다</string>
     <string name="converter_error_empty_pdf_text">PDF에 추출 가능한 텍스트가 없습니다</string>
     <string name="converter_error_empty_pdf_text_scanned">PDF에 추출 가능한 텍스트가 없습니다. 스캔된 PDF일 수 있습니다.</string>
@@ -367,6 +385,7 @@
     <string name="pdf_rotate_progress">PDF %1$d° 회전 중…</string>
     <string name="pdf_rotate_execute">PDF %1$d° 회전</string>
     <string name="pdf_rotate_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
+    <string name="pdf_rotate_no_pages">PDF에 페이지가 없습니다.</string>
     <string name="pdf_rotate_generate_error">회전된 PDF를 생성하는 중 오류가 발생했습니다.</string>
     <string name="pdf_rotate_success">PDF가 %1$d° 회전되었습니다</string>
     <string name="pdf_rotate_error">PDF 회전 오류: %1$s</string>
@@ -540,6 +559,8 @@
     <string name="pdf_ocr_generate_error">인식된 텍스트가 포함된 PDF를 생성하는 중 오류가 발생했습니다.</string>
     <string name="pdf_ocr_success">%1$d페이지 처리 완료, %2$d개 단어 인식됨</string>
     <string name="pdf_ocr_error">텍스트 인식 오류: %1$s</string>
+    <string name="pdf_tools_unexpected_error">예기치 않은 오류가 발생했습니다. 더 작은 파일로 다시 시도해 보세요.</string>
+    <string name="pdf_tools_result_size_kb">%1$d KB</string>
 
     <!-- ── 홈 빈 상태 ───────────────────────────── -->
 
@@ -554,6 +575,7 @@
     <string name="format_name_image">이미지</string>
     <string name="converter_success_title">변환 완료!</string>
     <string name="converter_success_page_count_size">%1$d페이지 · %2$d KB</string>
+    <string name="converter_success_extra_files">%1$d개의 파일이 추가로 생성됨 -- 저장/공유 시 포함됩니다</string>
     <string name="converter_saved_to_downloads">다운로드에 저장됨</string>
     <string name="converter_share">파일 공유</string>
     <string name="converter_convert_another">다른 파일 변환</string>
@@ -692,6 +714,8 @@
     <string name="security_no_protected_files">보호된 파일이 없습니다</string>
     <string name="security_no_protected_files_hint">\"새 파일 보호\"를 눌러 파일을 추가하세요</string>
     <string name="security_restore">복원</string>
+    <string name="security_preview">미리보기</string>
+    <string name="security_preview_error">미리보기를 열 수 없습니다</string>
     <string name="security_protect_file_dialog_title">파일 보호</string>
     <string name="pdf_pw_screen_subtitle">PDF를 보호하거나 잠금 해제하세요</string>
     <string name="pdf_pw_mode_protect_title">PDF 보호</string>
@@ -761,6 +785,8 @@
     <string name="qr_reader_subtitle">QR 코드에 카메라를 비추세요</string>
     <string name="qr_camera_permission_needed">QR 코드를 스캔하려면 카메라 접근 권한이 필요합니다</string>
     <string name="qr_allow_camera_access">카메라 접근 허용</string>
+    <string name="qr_camera_permission_denied_permanently">카메라 접근을 영구적으로 거부했습니다. 시스템 설정에서 활성화하세요.</string>
+    <string name="qr_open_app_settings">설정 열기</string>
     <string name="qr_center_in_frame">QR 코드를 프레임 중앙에 맞추세요</string>
     <string name="qr_type_url_detected">URL 감지됨</string>
     <string name="qr_type_image_detected">이미지 감지됨</string>
@@ -768,9 +794,15 @@
     <string name="qr_type_email_detected">이메일 감지됨</string>
     <string name="qr_type_phone_detected">전화번호 감지됨</string>
     <string name="qr_type_text_detected">텍스트 감지됨</string>
+    <string name="qr_type_wifi_detected">Wi-Fi 감지됨</string>
+    <string name="qr_type_contact_detected">연락처 감지됨</string>
+    <string name="qr_type_event_detected">일정 감지됨</string>
     <string name="qr_detected_title">QR 코드가 감지되었습니다!</string>
     <string name="qr_image_content_desc">QR 이미지</string>
     <string name="qr_loading_image">이미지 불러오는 중…</string>
+    <string name="qr_image_privacy_warning">이 이미지를 불러오면 인터넷에 연결되며, 해당 URL을 관리하는 사람에게 IP 주소가 노출될 수 있습니다.</string>
+    <string name="qr_load_image">이미지 불러오기</string>
+    <string name="qr_persist_permission_failed">해당 파일을 읽을 수 있는 영구 권한을 얻지 못했습니다. 다시 선택해 보세요.</string>
     <string name="qr_copied_clipboard">클립보드에 복사됨</string>
     <string name="qr_open_browser">브라우저에서 열기</string>
     <string name="qr_copy_url">URL 복사</string>
@@ -783,6 +815,10 @@
     <string name="qr_call">전화 걸기</string>
     <string name="qr_copy_number">번호 복사</string>
     <string name="qr_copy_text">텍스트 복사</string>
+    <string name="qr_copy_wifi_password">비밀번호 복사</string>
+    <string name="qr_copy_wifi_ssid">네트워크 이름 복사</string>
+    <string name="qr_add_contact">연락처에 추가</string>
+    <string name="qr_add_calendar_event">캘린더에 추가</string>
     <string name="qr_scan_another">다른 코드 스캔</string>
     <string name="qr_creator_title">QR 코드 만들기</string>
     <string name="qr_creator_subtitle">URL, 텍스트, 파일 등을 위한 QR을 생성하세요</string>
@@ -816,6 +852,8 @@
     <string name="qr_image_selected">이미지 선택됨 ✓</string>
     <string name="qr_select_document">문서 선택</string>
     <string name="qr_document_selected">문서 선택됨 ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">이 QR 코드는 이 기기에서만 작동합니다. 공유된 사본이 아니라 로컬 파일을 가리킵니다.</string>
     <string name="qr_label_url">웹사이트 URL</string>
     <string name="qr_label_text">메시지 텍스트</string>
@@ -827,6 +865,14 @@
     <string name="qr_placeholder_phone">+82 10-1234-5678</string>
     <string name="qr_design_label">디자인 커스터마이즈</string>
     <string name="qr_design_contrast_warning">이 색상은 흰색 배경과 대비가 약합니다 — 카메라가 잘 인식하도록 더 어두운 색을 선택하세요</string>
+    <string name="qr_color_black">검정</string>
+    <string name="qr_color_blue">파랑</string>
+    <string name="qr_color_purple">보라</string>
+    <string name="qr_color_green">초록</string>
+    <string name="qr_color_red">빨강</string>
+    <string name="qr_color_orange">주황</string>
+    <string name="qr_color_teal">청록</string>
+    <string name="qr_color_yellow">노랑</string>
     <string name="qr_design_add_logo">로고 추가</string>
     <string name="qr_design_logo_added">로고 추가됨</string>
     <string name="qr_design_remove_logo">로고 제거</string>

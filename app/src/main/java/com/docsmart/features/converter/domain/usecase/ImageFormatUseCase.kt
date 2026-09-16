@@ -58,6 +58,19 @@ class ImageFormatUseCase @Inject constructor(
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la revisión general 2026-09-16 (#41):
+            // BitmapFactory.decodeStream() sin ningún límite de resolución
+            // puede agotar la memoria con una imagen de entrada muy grande
+            // -- OutOfMemoryError no hereda de Exception, así que el catch
+            // de arriba nunca la atrapaba.
+            Timber.e(e, "ImageFormatUseCase: sin memoria decodificando la imagen")
+            ConversionResult.Error(
+                String.format(
+                    context.getString(R.string.converter_error_generic_format),
+                    context.getString(R.string.converter_error_unknown)
+                )
+            )
         }
     }
 

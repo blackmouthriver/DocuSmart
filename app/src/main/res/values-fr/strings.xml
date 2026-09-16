@@ -38,6 +38,12 @@
     <string name="library_subtitle">Tous tes documents</string>
     <string name="library_search">Rechercher dans la bibliothèque…</string>
     <string name="library_documents">documents</string>
+    <string name="library_document_count">%1$d documents</string>
+    <string name="library_search_results_count">%1$d résultats pour « %2$s »</string>
+    <string name="library_no_results_title">Aucun résultat</string>
+    <string name="library_empty_category">Il n’y a aucun document dans cette catégorie</string>
+    <string name="library_no_results_for_query">Nous n’avons pas trouvé « %1$s »</string>
+    <string name="library_favorites_title">Favoris</string>
     <string name="library_tab_device">Appareil</string>
     <string name="library_tab_app_files">Mes fichiers</string>
     <string name="library_tab_file_count">%1$d fichiers</string>
@@ -121,6 +127,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">Compris</string>
     <string name="settings_storage_conversions">Conversions</string>
+    <string name="settings_storage_viewer_share">Partagé avec annotations</string>
+    <string name="settings_storage_study_exports">Exporté du mode Étude</string>
     <string name="settings_storage_total">Total</string>
     <string name="settings_storage_files_unit">fichiers</string>
     <string name="settings_storage_clear_cache">Vider le cache</string>
@@ -189,13 +197,21 @@
     <string name="viewer_share_chooser_title">Partager %1$s</string>
     <string name="viewer_annotate_content_desc">Annoter</string>
     <string name="viewer_annotate_toolbar_label">Surligner :</string>
+    <string name="viewer_highlight_color_yellow">Jaune</string>
+    <string name="viewer_highlight_color_green">Vert</string>
+    <string name="viewer_highlight_color_pink">Rose</string>
+    <string name="viewer_highlight_color_blue">Bleu ciel</string>
     <string name="viewer_annotate_note_chip">Note</string>
     <string name="viewer_annotate_done">Terminé</string>
     <string name="viewer_annotate_note_dialog_title">Nouvelle note</string>
     <string name="viewer_annotate_note_dialog_placeholder">Écris ta note ici…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d caractères</string>
     <string name="viewer_annotate_note_detail_title">Note</string>
     <string name="viewer_annotate_highlight_detail_title">Surlignage</string>
     <string name="viewer_annotate_highlight_detail_body">Supprimer ce surlignage ?</string>
+    <string name="viewer_annotate_delete_confirm_title">Supprimer définitivement ?</string>
+    <string name="viewer_annotate_delete_confirm_note_body">Cette note sera supprimée et cette action est irréversible.</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">Ce surlignage sera supprimé et cette action est irréversible.</string>
     <string name="viewer_share_choice_title">Partager le document</string>
     <string name="viewer_share_choice_preparing">Préparation du document…</string>
     <string name="viewer_share_choice_body">Ce document contient des annotations. Comment veux-tu le partager ?</string>
@@ -271,6 +287,7 @@
     <string name="converter_daily_limit_label">conversions</string>
     <string name="scan_daily_save_limit_label">numérisations enregistrées</string>
     <string name="converter_daily_limit_reached_error">Limite quotidienne de conversions atteinte</string>
+    <string name="converter_daily_count_label">Conversions aujourd\'hui : %1$d / %2$d</string>
     <string name="converter_batch_save_error">Certains fichiers n\'ont pas pu être enregistrés dans Téléchargements</string>
     <string name="converter_error_read_word">Impossible de lire le fichier Word</string>
     <string name="converter_error_read_excel">Impossible de lire le fichier Excel</string>
@@ -280,6 +297,7 @@
 
     <string name="converter_error_empty_spreadsheet">La feuille de calcul ne contient aucune donnée</string>
     <string name="converter_error_empty_presentation">La présentation ne contient aucun texte</string>
+    <string name="converter_error_legacy_format_unsupported">Cet ancien format (.xls/.ppt antérieur à Office 2007) n\'est pas encore pris en charge. Enregistrez-le en .xlsx/.pptx et réessayez.</string>
     <string name="converter_error_empty_word_document">Le document ne contient aucun texte extractible</string>
     <string name="converter_error_empty_pdf_text">Le PDF ne contient aucun texte extractible</string>
     <string name="converter_error_empty_pdf_text_scanned">Le PDF ne contient aucun texte extractible. Il s\'agit peut-être d\'un PDF scanné.</string>
@@ -375,6 +393,7 @@
     <string name="pdf_rotate_progress">Rotation du PDF de %1$d°…</string>
     <string name="pdf_rotate_execute">Faire pivoter le PDF de %1$d°</string>
     <string name="pdf_rotate_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
+    <string name="pdf_rotate_no_pages">Le PDF ne contient aucune page.</string>
     <string name="pdf_rotate_generate_error">Erreur lors de la génération du PDF pivoté.</string>
     <string name="pdf_rotate_success">PDF pivoté de %1$d° avec succès</string>
     <string name="pdf_rotate_error">Erreur lors de la rotation du PDF : %1$s</string>
@@ -548,6 +567,8 @@
     <string name="pdf_ocr_generate_error">Erreur lors de la génération du PDF avec le texte reconnu.</string>
     <string name="pdf_ocr_success">%1$d pages traitées, %2$d mots reconnus</string>
     <string name="pdf_ocr_error">Erreur lors de la reconnaissance du texte : %1$s</string>
+    <string name="pdf_tools_unexpected_error">Une erreur inattendue s\'est produite. Réessayez avec un fichier plus petit.</string>
+    <string name="pdf_tools_result_size_kb">%1$d Ko</string>
 
     <!-- ── État vide de l'accueil ───────────────────────────── -->
 
@@ -562,6 +583,7 @@
     <string name="format_name_image">Image</string>
     <string name="converter_success_title">Conversion réussie !</string>
     <string name="converter_success_page_count_size">%1$d page(s) · %2$d Ko</string>
+    <string name="converter_success_extra_files">+%1$d fichier(s) supplémentaire(s) généré(s) -- inclus lors de l\'enregistrement/du partage</string>
     <string name="converter_saved_to_downloads">Enregistré dans Téléchargements</string>
     <string name="converter_share">Partager le fichier</string>
     <string name="converter_convert_another">Convertir un autre fichier</string>
@@ -700,6 +722,8 @@
     <string name="security_no_protected_files">Aucun fichier protégé</string>
     <string name="security_no_protected_files_hint">Appuie sur « Protéger un nouveau fichier » pour ajouter des fichiers</string>
     <string name="security_restore">Restaurer</string>
+    <string name="security_preview">Aperçu</string>
+    <string name="security_preview_error">Impossible d’ouvrir l’aperçu</string>
     <string name="security_protect_file_dialog_title">Protéger un fichier</string>
     <string name="pdf_pw_screen_subtitle">Protège ou déverrouille tes PDF</string>
     <string name="pdf_pw_mode_protect_title">Protéger un PDF</string>
@@ -769,6 +793,8 @@
     <string name="qr_reader_subtitle">Pointe la caméra vers le code QR</string>
     <string name="qr_camera_permission_needed">L\'accès à la caméra est nécessaire pour scanner des codes QR</string>
     <string name="qr_allow_camera_access">Autoriser l\'accès à la caméra</string>
+    <string name="qr_camera_permission_denied_permanently">Vous avez refusé définitivement l\'accès à la caméra. Activez-le depuis les paramètres système.</string>
+    <string name="qr_open_app_settings">Ouvrir les paramètres</string>
     <string name="qr_center_in_frame">Centre le code QR dans le cadre</string>
     <string name="qr_type_url_detected">URL détectée</string>
     <string name="qr_type_image_detected">Image détectée</string>
@@ -776,9 +802,15 @@
     <string name="qr_type_email_detected">E-mail détecté</string>
     <string name="qr_type_phone_detected">Téléphone détecté</string>
     <string name="qr_type_text_detected">Texte détecté</string>
+    <string name="qr_type_wifi_detected">Wi-Fi détecté</string>
+    <string name="qr_type_contact_detected">Contact détecté</string>
+    <string name="qr_type_event_detected">Événement détecté</string>
     <string name="qr_detected_title">Code QR détecté !</string>
     <string name="qr_image_content_desc">Image du QR</string>
     <string name="qr_loading_image">Chargement de l\'image…</string>
+    <string name="qr_image_privacy_warning">Charger cette image établit une connexion internet et peut révéler votre IP à qui contrôle cette URL.</string>
+    <string name="qr_load_image">Charger l\'image</string>
+    <string name="qr_persist_permission_failed">Impossible d\'obtenir une autorisation permanente pour lire ce fichier. Essayez de le sélectionner à nouveau.</string>
     <string name="qr_copied_clipboard">Copié dans le presse-papiers</string>
     <string name="qr_open_browser">Ouvrir dans le navigateur</string>
     <string name="qr_copy_url">Copier l\'URL</string>
@@ -791,6 +823,10 @@
     <string name="qr_call">Appeler</string>
     <string name="qr_copy_number">Copier le numéro</string>
     <string name="qr_copy_text">Copier le texte</string>
+    <string name="qr_copy_wifi_password">Copier le mot de passe</string>
+    <string name="qr_copy_wifi_ssid">Copier le nom du réseau</string>
+    <string name="qr_add_contact">Ajouter aux contacts</string>
+    <string name="qr_add_calendar_event">Ajouter au calendrier</string>
     <string name="qr_scan_another">Scanner un autre code</string>
     <string name="qr_creator_title">Créer un code QR</string>
     <string name="qr_creator_subtitle">Génère un QR pour URL, texte, fichiers et plus</string>
@@ -824,6 +860,8 @@
     <string name="qr_image_selected">Image sélectionnée ✓</string>
     <string name="qr_select_document">Sélectionner un document</string>
     <string name="qr_document_selected">Document sélectionné ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">Ce QR ne fonctionne que sur cet appareil : il pointe vers un fichier local, pas une copie partagée.</string>
     <string name="qr_label_url">URL du site web</string>
     <string name="qr_label_text">Texte du message</string>
@@ -835,6 +873,14 @@
     <string name="qr_placeholder_phone">+33 6 12 34 56 78</string>
     <string name="qr_design_label">Personnaliser le design</string>
     <string name="qr_design_contrast_warning">Cette couleur manque de contraste sur fond blanc — choisis-en une plus foncée pour que la caméra la lise bien</string>
+    <string name="qr_color_black">Noir</string>
+    <string name="qr_color_blue">Bleu</string>
+    <string name="qr_color_purple">Violet</string>
+    <string name="qr_color_green">Vert</string>
+    <string name="qr_color_red">Rouge</string>
+    <string name="qr_color_orange">Orange</string>
+    <string name="qr_color_teal">Sarcelle</string>
+    <string name="qr_color_yellow">Jaune</string>
     <string name="qr_design_add_logo">Ajouter un logo</string>
     <string name="qr_design_logo_added">Logo ajouté</string>
     <string name="qr_design_remove_logo">Retirer le logo</string>

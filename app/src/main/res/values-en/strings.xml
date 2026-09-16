@@ -38,6 +38,12 @@
     <string name="library_subtitle">All your documents</string>
     <string name="library_search">Search in library…</string>
     <string name="library_documents">documents</string>
+    <string name="library_document_count">%1$d documents</string>
+    <string name="library_search_results_count">%1$d results for \"%2$s\"</string>
+    <string name="library_no_results_title">No results</string>
+    <string name="library_empty_category">There are no documents in this category</string>
+    <string name="library_no_results_for_query">We could not find \"%1$s\"</string>
+    <string name="library_favorites_title">Favorites</string>
     <string name="library_tab_device">Device</string>
     <string name="library_tab_app_files">My files</string>
     <string name="library_tab_file_count">%1$d files</string>
@@ -118,6 +124,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">Got it</string>
     <string name="settings_storage_conversions">Conversions</string>
+    <string name="settings_storage_viewer_share">Shared with annotations</string>
+    <string name="settings_storage_study_exports">Exported from Study Mode</string>
     <string name="settings_storage_total">Total</string>
     <string name="settings_storage_files_unit">files</string>
     <string name="settings_storage_clear_cache">Clear cache</string>
@@ -187,13 +195,21 @@
     <string name="viewer_share_chooser_title">Share %1$s</string>
     <string name="viewer_annotate_content_desc">Annotate</string>
     <string name="viewer_annotate_toolbar_label">Highlight:</string>
+    <string name="viewer_highlight_color_yellow">Yellow</string>
+    <string name="viewer_highlight_color_green">Green</string>
+    <string name="viewer_highlight_color_pink">Pink</string>
+    <string name="viewer_highlight_color_blue">Light blue</string>
     <string name="viewer_annotate_note_chip">Note</string>
     <string name="viewer_annotate_done">Done</string>
     <string name="viewer_annotate_note_dialog_title">New note</string>
     <string name="viewer_annotate_note_dialog_placeholder">Write your note here…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d characters</string>
     <string name="viewer_annotate_note_detail_title">Note</string>
     <string name="viewer_annotate_highlight_detail_title">Highlight</string>
     <string name="viewer_annotate_highlight_detail_body">Delete this highlight?</string>
+    <string name="viewer_annotate_delete_confirm_title">Delete permanently?</string>
+    <string name="viewer_annotate_delete_confirm_note_body">This note will be deleted and can\'t be undone.</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">This highlight will be deleted and can\'t be undone.</string>
     <string name="viewer_share_choice_title">Share document</string>
     <string name="viewer_share_choice_preparing">Preparing the document…</string>
     <string name="viewer_share_choice_body">This document has annotations. How would you like to share it?</string>
@@ -269,6 +285,7 @@
     <string name="converter_daily_limit_label">conversions</string>
     <string name="scan_daily_save_limit_label">saved scans</string>
     <string name="converter_daily_limit_reached_error">Daily conversion limit reached</string>
+    <string name="converter_daily_count_label">Conversions today: %1$d / %2$d</string>
     <string name="converter_batch_save_error">Not all files could be saved to Downloads</string>
     <string name="converter_error_read_word">Couldn\'t read the Word file</string>
 
@@ -282,6 +299,7 @@
 
     <string name="converter_error_empty_spreadsheet">The spreadsheet has no data</string>
     <string name="converter_error_empty_presentation">The presentation has no text</string>
+    <string name="converter_error_legacy_format_unsupported">This legacy format (.xls/.ppt from before Office 2007) isn\'t supported yet. Save it as .xlsx/.pptx and try again.</string>
     <string name="converter_error_empty_word_document">The document has no extractable text</string>
     <string name="converter_error_empty_pdf_text">The PDF has no extractable text</string>
     <string name="converter_error_empty_pdf_text_scanned">The PDF has no extractable text. It might be a scanned PDF.</string>
@@ -377,6 +395,7 @@
     <string name="pdf_rotate_progress">Rotating PDF %1$d°…</string>
     <string name="pdf_rotate_execute">Rotate PDF %1$d°</string>
     <string name="pdf_rotate_read_error">Couldn\'t read the PDF. Make sure it\'s a valid file.</string>
+    <string name="pdf_rotate_no_pages">The PDF has no pages.</string>
     <string name="pdf_rotate_generate_error">Error generating the rotated PDF.</string>
     <string name="pdf_rotate_success">PDF rotated %1$d° successfully</string>
     <string name="pdf_rotate_error">Error rotating PDF: %1$s</string>
@@ -550,6 +569,8 @@
     <string name="pdf_ocr_generate_error">Error generating the PDF with the recognized text.</string>
     <string name="pdf_ocr_success">%1$d pages processed, %2$d words recognized</string>
     <string name="pdf_ocr_error">Error recognizing text: %1$s</string>
+    <string name="pdf_tools_unexpected_error">An unexpected error occurred. Try again with a smaller file.</string>
+    <string name="pdf_tools_result_size_kb">%1$d KB</string>
 
     <!-- ── Home empty state ───────────────────────────── -->
     <!-- ── Converter categories ──────────────────────── -->
@@ -563,6 +584,7 @@
     <string name="format_name_image">Image</string>
     <string name="converter_success_title">Conversion successful!</string>
     <string name="converter_success_page_count_size">%1$d page(s) · %2$d KB</string>
+    <string name="converter_success_extra_files">+%1$d more file(s) generated -- included when saving/sharing</string>
     <string name="converter_saved_to_downloads">Saved to Downloads</string>
     <string name="converter_share">Share file</string>
     <string name="converter_convert_another">Convert another file</string>
@@ -697,6 +719,8 @@
     <string name="security_no_protected_files">No protected files</string>
     <string name="security_no_protected_files_hint">Tap \"Protect new file\" to add files</string>
     <string name="security_restore">Restore</string>
+    <string name="security_preview">Preview</string>
+    <string name="security_preview_error">Could not open the preview</string>
     <string name="security_protect_file_dialog_title">Protect file</string>
     <string name="pdf_pw_screen_subtitle">Protect or unlock your PDFs</string>
     <string name="pdf_pw_mode_protect_title">Protect PDF</string>
@@ -766,6 +790,8 @@
     <string name="qr_reader_subtitle">Point the camera at the QR code</string>
     <string name="qr_camera_permission_needed">Camera access is needed to scan QR codes</string>
     <string name="qr_allow_camera_access">Allow camera access</string>
+    <string name="qr_camera_permission_denied_permanently">You permanently denied camera access. Enable it from system Settings.</string>
+    <string name="qr_open_app_settings">Open Settings</string>
     <string name="qr_center_in_frame">Center the QR code in the frame</string>
     <string name="qr_type_url_detected">URL detected</string>
     <string name="qr_type_image_detected">Image detected</string>
@@ -773,9 +799,15 @@
     <string name="qr_type_email_detected">Email detected</string>
     <string name="qr_type_phone_detected">Phone number detected</string>
     <string name="qr_type_text_detected">Text detected</string>
+    <string name="qr_type_wifi_detected">Wi-Fi detected</string>
+    <string name="qr_type_contact_detected">Contact detected</string>
+    <string name="qr_type_event_detected">Event detected</string>
     <string name="qr_detected_title">QR code detected!</string>
     <string name="qr_image_content_desc">QR image</string>
     <string name="qr_loading_image">Loading image…</string>
+    <string name="qr_image_privacy_warning">Loading this image makes an internet connection and may reveal your IP to whoever controls that URL.</string>
+    <string name="qr_load_image">Load image</string>
+    <string name="qr_persist_permission_failed">Couldn\'t get permanent permission to read that file. Try picking it again.</string>
     <string name="qr_copied_clipboard">Copied to clipboard</string>
     <string name="qr_open_browser">Open in browser</string>
     <string name="qr_copy_url">Copy URL</string>
@@ -788,6 +820,10 @@
     <string name="qr_call">Call</string>
     <string name="qr_copy_number">Copy number</string>
     <string name="qr_copy_text">Copy text</string>
+    <string name="qr_copy_wifi_password">Copy password</string>
+    <string name="qr_copy_wifi_ssid">Copy network name</string>
+    <string name="qr_add_contact">Add to contacts</string>
+    <string name="qr_add_calendar_event">Add to calendar</string>
     <string name="qr_scan_another">Scan another code</string>
     <string name="qr_creator_title">Create QR code</string>
     <string name="qr_creator_subtitle">Generate a QR for URLs, text, files and more</string>
@@ -821,6 +857,8 @@
     <string name="qr_image_selected">Image selected ✓</string>
     <string name="qr_select_document">Select document</string>
     <string name="qr_document_selected">Document selected ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">This QR only works on this device: it points to a local file, not a shared copy.</string>
     <string name="qr_label_url">Website URL</string>
     <string name="qr_label_text">Message text</string>
@@ -832,6 +870,14 @@
     <string name="qr_placeholder_phone">+1 555 123 4567</string>
     <string name="qr_design_label">Customize design</string>
     <string name="qr_design_contrast_warning">This color has low contrast on a white background — pick a darker one so the camera can read it well</string>
+    <string name="qr_color_black">Black</string>
+    <string name="qr_color_blue">Blue</string>
+    <string name="qr_color_purple">Purple</string>
+    <string name="qr_color_green">Green</string>
+    <string name="qr_color_red">Red</string>
+    <string name="qr_color_orange">Orange</string>
+    <string name="qr_color_teal">Teal</string>
+    <string name="qr_color_yellow">Yellow</string>
     <string name="qr_design_add_logo">Add logo</string>
     <string name="qr_design_logo_added">Logo added</string>
     <string name="qr_design_remove_logo">Remove logo</string>

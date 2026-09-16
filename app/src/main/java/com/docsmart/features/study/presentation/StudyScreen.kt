@@ -544,11 +544,16 @@ fun StudyScreen(
                         selectedContentColor   = MaterialTheme.colorScheme.primary,
                         unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         text = {
+                            // Hallazgo #57 (revisión general 2026-09-16):
+                            // maxLines=1 sin overflow=Ellipsis recortaba el
+                            // texto en seco con FontScale.EXTRA_LARGE en vez
+                            // de mostrar "...".
                             Text(
                                 text = title,
                                 fontWeight = if (selectedTab == index)
                                     FontWeight.Bold else FontWeight.Normal,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     )

@@ -9,6 +9,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -212,9 +213,32 @@ class SecurityManagerTest {
 
         val restored = securityManager.moveFromSecure(secureFile, destDir)
 
-        assertTrue(restored)
+        assertNotNull(restored)
         assertFalse(secureFile.exists())
         assertTrue(File(destDir, "restaurar.pdf").exists())
+    }
+
+    @Test
+    fun `moveToSecure y moveFromSecure no se pisan si dos archivos comparten nombre`() {
+        // Hallazgo real de la revisión general 2026-09-16 (#61): antes
+        // sobrescribían en silencio con overwrite=true si el nombre ya
+        // existía en destino.
+        val dirA = File(filesDir, "dirA").apply { mkdirs() }
+        val dirB = File(filesDir, "dirB").apply { mkdirs() }
+        val fileA = File(dirA, "mismo_nombre.pdf").apply { writeText("contenido A") }
+        val fileB = File(dirB, "mismo_nombre.pdf").apply { writeText("contenido B") }
+
+        val resultA = securityManager.moveToSecure(fileA)
+        val resultB = securityManager.moveToSecure(fileB)
+
+        assertTrue(resultA.success)
+        assertTrue(resultB.success)
+        assertNotNull(resultA.destFile)
+        assertNotNull(resultB.destFile)
+        assertTrue(resultA.destFile!!.absolutePath != resultB.destFile!!.absolutePath)
+        assertEquals("contenido A", resultA.destFile!!.readText())
+        assertEquals("contenido B", resultB.destFile!!.readText())
+        assertEquals(2, securityManager.getSecureFiles().size)
     }
 
     @Test

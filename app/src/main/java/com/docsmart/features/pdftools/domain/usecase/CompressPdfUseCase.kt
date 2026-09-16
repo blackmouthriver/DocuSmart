@@ -43,6 +43,15 @@ class CompressPdfUseCase @Inject constructor(
         messages      : CompressPdfMessages
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
+        // Hallazgo real de la revisión de correctitud adversarial de este
+        // mismo lote (2026-09-16): el fix original del #25 solo cubría el
+        // camino feliz de la rama keepOriginal (borrar outputFile ANTES de
+        // devolver originalOutput) -- si cacheFile!!.copyTo(originalOutput)
+        // lanzaba (ej. disco lleno) entre crear outputFile y ese borrado,
+        // el catch de abajo no tenía forma de referenciarlo y quedaba
+        // huérfano de nuevo, mismo bug que se corrigió en ComparePdfUseCase/
+        // OcrPdfUseCase con este mismo patrón (var afuera del try).
+        var outputFile: File? = null
         try {
             Timber.d("$TAG: iniciando compresión — calidad: $quality")
 
@@ -74,19 +83,19 @@ class CompressPdfUseCase @Inject constructor(
                 }
             }
 
-            val name       = outputFileName ?: "Compressed_q$quality"
-            val outputFile = createOutputFile(name)
+            val name = outputFileName ?: "Compressed_q$quality"
+            outputFile = createOutputFile(name)
 
-            FileOutputStream(outputFile).use { stream ->
+            FileOutputStream(outputFile!!).use { stream ->
                 pdfDocument.writeTo(stream)
                 stream.flush()
             }
             pdfDocument.close()
 
-            if (outputFile.length() == 0L)
+            if (outputFile!!.length() == 0L)
                 return@withContext PdfToolResult.Error(messages.generateError)
 
-            val newSize    = outputFile.length()
+            val newSize    = outputFile!!.length()
             val originalKb = originalSize / 1024
             val newKb      = newSize / 1024
             val reduction  = if (originalSize > 0)
@@ -100,9 +109,15 @@ class CompressPdfUseCase @Inject constructor(
                 Timber.d("$TAG: comprimido mayor que original — usando original")
                 val originalOutput = createOutputFile("${name}_optimizado")
                 cacheFile!!.copyTo(originalOutput, overwrite = true)
+                // Hallazgo real de la revisión general 2026-09-16 (#25):
+                // outputFile (la versión comprimida, más grande) quedaba
+                // huérfano en filesDir/pdftools/ para siempre -- nunca se
+                // referenciaba en el resultado ni se borraba, caso común
+                // con PDFs ya optimizados donde comprimir no reduce nada.
+                outputFile!!.delete()
                 originalOutput
             } else {
-                outputFile
+                outputFile!!
             }
 
             PdfToolResult.Success(
@@ -114,6 +129,7 @@ class CompressPdfUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al comprimir: ${e.message}")
+            outputFile?.delete()
             PdfToolResult.Error(
                 message = String.format(messages.genericError, e.message ?: ""),
                 cause   = e

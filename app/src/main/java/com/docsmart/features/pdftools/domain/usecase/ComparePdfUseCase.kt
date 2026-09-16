@@ -71,6 +71,14 @@ class ComparePdfUseCase @Inject constructor(
     ): PdfToolResult = withContext(Dispatchers.IO) {
         var cacheFileA: File? = null
         var cacheFileB: File? = null
+        // Hallazgo real de la revisión general 2026-09-16 (#26): si
+        // writeReport() lanzaba a mitad de camino (texto extraído con
+        // caracteres CJK/cirílico/emoji que la fuente Helvetica por
+        // defecto no puede codificar, plausible en una herramienta que
+        // compara el texto de CUALQUIER PDF), el catch de abajo devolvía
+        // el error pero nunca borraba el outputFile ya creado -- quedaba
+        // huérfano, vacío o a medio escribir, para siempre.
+        var outputFile: File? = null
         try {
             cacheFileA = copyUriToCache(pdfUriA, "compareA")
                 ?: return@withContext PdfToolResult.Error(messages.readErrorA)
@@ -102,10 +110,12 @@ class ComparePdfUseCase @Inject constructor(
             }
 
             val differingPages = pageResults.count { it.hasDifferences }
-            val outputFile = createOutputFile(outputFileName ?: "Comparacion")
-            writeReport(outputFile, pageResults, differingPages, totalPages, messages)
+            val output = createOutputFile(outputFileName ?: "Comparacion")
+            outputFile = output
+            writeReport(output, pageResults, differingPages, totalPages, messages)
 
-            if (outputFile.length() == 0L) {
+            if (output.length() == 0L) {
+                output.delete()
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
@@ -117,9 +127,10 @@ class ComparePdfUseCase @Inject constructor(
                 String.format(messages.differencesFound, differingPages, totalPages)
             }
 
-            PdfToolResult.Success(outputFile = outputFile, message = resultMessage)
+            PdfToolResult.Success(outputFile = output, message = resultMessage)
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al comparar PDFs")
+            outputFile?.delete()
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFileA?.delete()

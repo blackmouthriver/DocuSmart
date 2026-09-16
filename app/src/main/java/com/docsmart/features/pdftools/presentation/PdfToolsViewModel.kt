@@ -46,6 +46,7 @@ import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkPdfUseCase
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -74,7 +75,12 @@ data class PdfToolMessages(
     val editText     : EditTextPdfMessages,
     val sign         : SignPdfMessages,
     val fillForm     : FillFormMessages,
-    val ocr          : OcrPdfMessages
+    val ocr          : OcrPdfMessages,
+    // Hallazgo real #23: mensaje de último recurso cuando algo escapa sin
+    // atrapar de runTool() (OutOfMemoryError u otra excepción no prevista
+    // por el use case individual) -- distinto del genericError de cada
+    // herramienta, que sí espera un mensaje de excepción interpolado.
+    val genericError : String
 )
 
 data class PdfToolsUiState(
@@ -332,9 +338,18 @@ class PdfToolsViewModel @Inject constructor(
         _uiState.update { it.copy(signatureImageBytes = null) }
     }
 
+    // Hallazgo real de la revisión general 2026-09-16 (#21): sin cancelar
+    // el Job anterior, un resultado tardío de detección de un PDF ya
+    // reemplazado podía llegar DESPUÉS del resultado del PDF seleccionado
+    // después, sobrescribiendo sus campos en la UI con los del PDF
+    // equivocado. Cancelar el Job previo antes de lanzar uno nuevo cierra
+    // la carrera sin necesidad de etiquetar/comparar URIs a mano.
+    private var detectFormFieldsJob: Job? = null
+
     fun onDetectFormFields(uri: Uri) {
+        detectFormFieldsJob?.cancel()
         _uiState.update { it.copy(formFieldsDetected = false) }
-        viewModelScope.launch {
+        detectFormFieldsJob = viewModelScope.launch {
             val fields = detectFormFields(uri)
             _uiState.update {
                 it.copy(
@@ -379,7 +394,23 @@ class PdfToolsViewModel @Inject constructor(
                 )
             }
 
-            val result = runTool(state, customName, messages)
+            // Hallazgo real de la revisión general 2026-09-16 (#23):
+            // runTool() no tenía ninguna protección propia -- un
+            // OutOfMemoryError (páginas de alta resolución en Comprimir/
+            // Recortar/etc.) u otra excepción no atrapada por el use case
+            // individual colgaba la corrutina para siempre, con
+            // isProcessing=true sin resetear y sin ningún mensaje.
+            val result = try {
+                runTool(state, customName, messages)
+            } catch (e: OutOfMemoryError) {
+                Timber.e(e, "$TAG: sin memoria ejecutando ${state.selectedTool}")
+                _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
+                return@launch
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: error inesperado ejecutando ${state.selectedTool}")
+                _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
+                return@launch
+            }
             if (result == null) {
                 // Bug real encontrado 2026-09-14 (repaso general): antes se
                 // salía con return@launch sin resetear isProcessing, dejando

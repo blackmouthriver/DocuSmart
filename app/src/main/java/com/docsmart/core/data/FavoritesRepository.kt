@@ -52,6 +52,18 @@ class FavoritesRepository @Inject constructor(
             isNowFavorite
         }
 
+    // Hallazgo real de la revisión general 2026-09-16 (#50): a diferencia
+    // de toggleFavorite() (que alterna), esto quita el favorito sin
+    // importar el estado actual -- idempotente, para usar en limpieza tras
+    // borrado definitivo/purga automática, donde no importa si estaba
+    // marcado o no.
+    suspend fun removeFavorite(documentId: String) =
+        withContext(Dispatchers.IO) {
+            if (favoriteIds.remove(documentId)) {
+                prefsF.edit().putStringSet(KEY_FAVORITES, favoriteIds.toSet()).apply()
+            }
+        }
+
     // ── Aliases de nombres ────────────────────────────────────────────────────
 
     /** Retorna el nombre personalizado si existe, o null */
@@ -70,6 +82,26 @@ class FavoritesRepository @Inject constructor(
         withContext(Dispatchers.IO) {
             nameAliases.remove(documentId)
             prefsA.edit().remove(documentId).apply()
+        }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#50): mover a/desde
+    // Carpeta Segura o renombrar cambia el id (ruta) de un documento --
+    // sin esto, un favorito/alias existente quedaba huérfano bajo el id
+    // viejo (que ya no existe) en vez de seguir al documento a su id nuevo,
+    // mismo criterio que ya se aplica a las anotaciones del Visor
+    // (AnnotationDao.updateDocumentId, hallazgo #48).
+    suspend fun migrateId(oldId: String, newId: String): Unit =
+        withContext(Dispatchers.IO) {
+            if (oldId == newId) return@withContext
+            if (favoriteIds.remove(oldId)) {
+                favoriteIds.add(newId)
+                prefsF.edit().putStringSet(KEY_FAVORITES, favoriteIds.toSet()).apply()
+            }
+            val alias = nameAliases.remove(oldId)
+            if (alias != null) {
+                nameAliases[newId] = alias
+                prefsA.edit().remove(oldId).putString(newId, alias).apply()
+            }
         }
 
     companion object {

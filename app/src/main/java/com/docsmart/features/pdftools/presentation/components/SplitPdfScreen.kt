@@ -172,10 +172,16 @@ fun SplitPdfScreen(
                     }
 
                     val pageCount = (toPage - fromPage + 1).coerceAtLeast(0)
+                    // Hallazgo real de la revisión general 2026-09-16 (#22):
+                    // el color de error usaba ">=" -- un rango válido de una
+                    // sola página (fromPage == toPage) se pintaba en rojo
+                    // igual que un rango realmente inválido (fromPage >
+                    // toPage). Corregido a ">" estricto.
+                    val isInvalidRange = fromPage > toPage
                     Text(
                         text  = stringResource(R.string.pdf_split_summary, pageCount, fromPage, toPage),
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (fromPage >= toPage)
+                        color = if (isInvalidRange)
                             MaterialTheme.colorScheme.error
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -193,7 +199,10 @@ fun SplitPdfScreen(
         // ── Progreso o botón ──────────────────────────
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = selectedPdf != null,
+            // Hallazgo real #22: el botón quedaba habilitado con un rango
+            // inválido (Desde > Hasta) -- el use case lo corregía en
+            // silencio en vez de avisar. Ahora el botón mismo lo bloquea.
+            enabled = selectedPdf != null && fromPage <= toPage,
             progressText = stringResource(R.string.pdf_split_progress),
             buttonLabel = stringResource(R.string.pdf_split),
             buttonIcon = Icons.Rounded.CallSplit,

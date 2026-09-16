@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -382,7 +383,10 @@ private fun ConversionLimitIndicator(
                 Icon(Icons.Rounded.SwapHoriz, null,
                     tint = color, modifier = Modifier.size(16.dp))
                 Text(
-                    "Conversiones hoy: $count / $limit",
+                    // Hallazgo real de la revisión general 2026-09-16
+                    // (#44): hardcodeado en español sin stringResource,
+                    // visible para todo usuario free.
+                    stringResource(R.string.converter_daily_count_label, count, limit),
                     style = MaterialTheme.typography.labelMedium,
                     color = color
                 )
@@ -516,10 +520,17 @@ private fun ConversionGridCard(
                     fontWeight = FontWeight.Medium,
                     maxLines   = 1
                 )
+                // Hallazgo real de la revisión general 2026-09-16 (#46):
+                // título y subtítulo mostraban el mismo "Origen → Destino"
+                // dos veces -- se reemplaza por las extensiones de origen
+                // aceptadas (dato real y distinto, no un texto inventado),
+                // visible en ~17 tarjetas de la grilla.
                 Text(
-                    text  = type.localizedLabel(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text     = type.fromExtensions.joinToString(", ") { it.uppercase() },
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

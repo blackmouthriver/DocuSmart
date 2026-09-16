@@ -24,20 +24,41 @@ class ExcelToHtmlUseCase @Inject constructor(
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
             var sharedXml = ""
-            var sheet1Xml = ""
+            var workbookXml = ""
+            var relsXml = ""
+            val worksheetXmlByPath = mutableMapOf<String, String>()
+
+            // Hallazgo real #38: ConversionType declara .xls como origen
+            // soportado, pero este parser solo entiende el ZIP interno de
+            // .xlsx -- sin este chequeo, un .xls real fallaba con "hoja
+            // vacía" en vez de avisar que el formato en sí no está
+            // soportado.
+            if (isLegacyOle2Uri(context, excelUri)) {
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_legacy_format_unsupported)
+                )
+            }
 
             context.contentResolver.openInputStream(excelUri)?.use { input ->
                 val zip   = ZipInputStream(input)
                 var entry = zip.nextEntry
                 while (entry != null) {
-                    when (entry.name) {
-                        "xl/sharedStrings.xml"     -> sharedXml = zip.readBytes().toString(Charsets.UTF_8)
-                        "xl/worksheets/sheet1.xml" -> sheet1Xml = zip.readBytes().toString(Charsets.UTF_8)
+                    when {
+                        entry.name == "xl/sharedStrings.xml" ->
+                            sharedXml = zip.readEntrySafely().toString(Charsets.UTF_8)
+                        entry.name == "xl/workbook.xml" ->
+                            workbookXml = zip.readEntrySafely().toString(Charsets.UTF_8)
+                        entry.name == "xl/_rels/workbook.xml.rels" ->
+                            relsXml = zip.readEntrySafely().toString(Charsets.UTF_8)
+                        entry.name.startsWith("xl/worksheets/") && entry.name.endsWith(".xml") ->
+                            worksheetXmlByPath[entry.name] = zip.readEntrySafely().toString(Charsets.UTF_8)
                     }
                     entry = zip.nextEntry
                 }
                 zip.close()
             } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_excel))
+
+            val sheet1Xml = resolveFirstVisibleSheetXml(workbookXml, relsXml, worksheetXmlByPath)
 
             // Parsear shared strings
             val sharedStrings = mutableListOf<String>()
@@ -114,6 +135,54 @@ class ExcelToHtmlUseCase @Inject constructor(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )
         }
+    }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#37): "sheet1.xml"
+    // no está garantizado por la spec OOXML como la primera hoja visible en
+    // orden de pestañas -- ese orden real vive en <sheets> de workbook.xml,
+    // y el nombre de archivo físico se resuelve vía workbook.xml.rels (los
+    // r:id no son 1:1 con el número del archivo sheetN.xml, sobre todo
+    // después de reordenar/borrar hojas en Excel, que no renombra los
+    // archivos internos). Si algo de esto falla o falta, cae de vuelta a
+    // sheet1.xml y, en último caso, a cualquier hoja encontrada.
+    private fun resolveFirstVisibleSheetXml(
+        workbookXml: String,
+        relsXml: String,
+        worksheetXmlByPath: Map<String, String>
+    ): String {
+        val firstSheetRid = firstVisibleSheetRid(workbookXml)
+        val target = firstSheetRid?.let { rid -> relationshipTargetFor(relsXml, rid) }
+        val resolvedPath = target?.let { "xl/" + it.removePrefix("/xl/").removePrefix("xl/") }
+
+        return resolvedPath?.let(worksheetXmlByPath::get)
+            ?: worksheetXmlByPath["xl/worksheets/sheet1.xml"]
+            ?: worksheetXmlByPath.values.firstOrNull()
+            ?: ""
+    }
+
+    // Hallazgo real de la revisión de correctitud adversarial de este mismo
+    // lote (2026-09-16): resolveFirstVisibleSheetXml() tomaba el primer
+    // <sheet> del XML sin importar su atributo `state` -- un workbook con
+    // una hoja oculta (state="hidden"/"veryHidden") antes que la primera
+    // hoja visible (ej. una hoja "RawData" oculta seguida de "Reporte", la
+    // que el usuario ve como primera pestaña en Excel) convertía la hoja
+    // oculta en vez de la que el usuario realmente ve primero. La ausencia
+    // del atributo `state` significa visible (spec OOXML).
+    private fun firstVisibleSheetRid(workbookXml: String): String? =
+        Regex("<sheet\\s[^>]*>").findAll(workbookXml)
+            .firstOrNull { tag ->
+                !tag.value.contains("state=\"hidden\"") && !tag.value.contains("state=\"veryHidden\"")
+            }
+            ?.let { tag -> Regex("r:id=\"([^\"]+)\"").find(tag.value)?.groupValues?.get(1) }
+
+    // Id y Target pueden aparecer en cualquier orden dentro de <Relationship
+    // .../> -- se prueban ambos órdenes en vez de asumir uno solo.
+    private fun relationshipTargetFor(relsXml: String, rid: String): String? {
+        val ridPattern = Regex.escape(rid)
+        val idThenTarget = Regex("<Relationship\\s[^>]*Id=\"$ridPattern\"[^>]*Target=\"([^\"]+)\"")
+        val targetThenId = Regex("<Relationship\\s[^>]*Target=\"([^\"]+)\"[^>]*Id=\"$ridPattern\"")
+        return idThenTarget.find(relsXml)?.groupValues?.get(1)
+            ?: targetThenId.find(relsXml)?.groupValues?.get(1)
     }
 
     private fun generateTimestamp() =

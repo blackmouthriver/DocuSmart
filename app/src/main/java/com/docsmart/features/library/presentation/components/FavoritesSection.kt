@@ -87,7 +87,10 @@ fun FavoritesSection(
                 modifier           = Modifier.size(16.dp)
             )
             Text(
-                text  = "Favoritos",
+                // Hallazgo real de la revisión general 2026-09-16 (#51):
+                // hardcodeado en español, fuera de la limpieza de i18n del
+                // 2026-09-14.
+                text  = stringResource(R.string.library_favorites_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )

@@ -92,7 +92,14 @@ class SecurityViewModelTest {
     private fun buildViewModel() =
         SecurityViewModel(
             securityManager, pdfPasswordUseCase, mediaDeletePermission,
-            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true)
+            mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true),
+            mockk<com.docsmart.core.data.FavoritesRepository>(relaxed = true),
+            // Hallazgo real de la revisión de seguridad adversarial de este
+            // mismo lote (2026-09-16): ProcessLifecycleOwner real no se
+            // inicializa en un test JVM plano -- AppLifecycleTracker
+            // permite mockearlo en vez de romper la construcción del
+            // ViewModel.
+            mockk<com.docsmart.core.util.AppLifecycleTracker>(relaxed = true)
         )
 
     // Con UnconfinedTestDispatcher no hay garantía de cuántas emisiones

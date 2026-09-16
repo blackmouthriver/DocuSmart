@@ -38,6 +38,12 @@
     <string name="library_subtitle">すべてのドキュメント</string>
     <string name="library_search">ライブラリを検索…</string>
     <string name="library_documents">ドキュメント</string>
+    <string name="library_document_count">%1$d件のドキュメント</string>
+    <string name="library_search_results_count">\"%2$s\" の検索結果 %1$d 件</string>
+    <string name="library_no_results_title">結果なし</string>
+    <string name="library_empty_category">このカテゴリにはドキュメントがありません</string>
+    <string name="library_no_results_for_query">\"%1$s\" は見つかりませんでした</string>
+    <string name="library_favorites_title">お気に入り</string>
     <string name="library_tab_device">デバイス</string>
     <string name="library_tab_app_files">マイファイル</string>
     <string name="library_tab_file_count">%1$d件のファイル</string>
@@ -118,6 +124,8 @@
     <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
     <string name="settings_got_it">了解</string>
     <string name="settings_storage_conversions">変換</string>
+    <string name="settings_storage_viewer_share">注釈付きで共有</string>
+    <string name="settings_storage_study_exports">学習モードからのエクスポート</string>
     <string name="settings_storage_total">合計</string>
     <string name="settings_storage_files_unit">ファイル</string>
     <string name="settings_storage_clear_cache">キャッシュを削除</string>
@@ -185,13 +193,21 @@
     <string name="viewer_share_chooser_title">%1$s を共有</string>
     <string name="viewer_annotate_content_desc">注釈</string>
     <string name="viewer_annotate_toolbar_label">ハイライト:</string>
+    <string name="viewer_highlight_color_yellow">黄色</string>
+    <string name="viewer_highlight_color_green">緑</string>
+    <string name="viewer_highlight_color_pink">ピンク</string>
+    <string name="viewer_highlight_color_blue">水色</string>
     <string name="viewer_annotate_note_chip">メモ</string>
     <string name="viewer_annotate_done">完了</string>
     <string name="viewer_annotate_note_dialog_title">新しいメモ</string>
     <string name="viewer_annotate_note_dialog_placeholder">ここにメモを入力…</string>
+    <string name="viewer_annotate_note_char_count">%1$d/%2$d 文字</string>
     <string name="viewer_annotate_note_detail_title">メモ</string>
     <string name="viewer_annotate_highlight_detail_title">ハイライト</string>
     <string name="viewer_annotate_highlight_detail_body">このハイライトを削除しますか?</string>
+    <string name="viewer_annotate_delete_confirm_title">完全に削除しますか？</string>
+    <string name="viewer_annotate_delete_confirm_note_body">このメモは削除され、元に戻せません。</string>
+    <string name="viewer_annotate_delete_confirm_highlight_body">このハイライトは削除され、元に戻せません。</string>
     <string name="viewer_share_choice_title">ドキュメントを共有</string>
     <string name="viewer_share_choice_preparing">ドキュメントを準備中…</string>
     <string name="viewer_share_choice_body">このドキュメントには注釈があります。どのように共有しますか?</string>
@@ -267,6 +283,7 @@
     <string name="converter_daily_limit_label">変換回数</string>
     <string name="scan_daily_save_limit_label">保存したスキャン</string>
     <string name="converter_daily_limit_reached_error">1日の変換上限に達しました</string>
+    <string name="converter_daily_count_label">本日の変換数: %1$d / %2$d</string>
     <string name="converter_batch_save_error">すべてのファイルをダウンロードに保存できませんでした</string>
     <string name="converter_error_read_word">Wordファイルを読み込めませんでした</string>
     <string name="converter_error_read_excel">Excelファイルを読み込めませんでした</string>
@@ -275,6 +292,7 @@
     <string name="converter_error_read_image">画像を読み込めませんでした</string>
     <string name="converter_error_empty_spreadsheet">表計算シートにデータがありません</string>
     <string name="converter_error_empty_presentation">プレゼンテーションにテキストがありません</string>
+    <string name="converter_error_legacy_format_unsupported">この古い形式（Office 2007より前の.xls/.ppt）はまだ対応していません。.xlsx/.pptx形式で保存してから再度お試しください。</string>
     <string name="converter_error_empty_word_document">ドキュメントに抽出可能なテキストがありません</string>
     <string name="converter_error_empty_pdf_text">PDFに抽出可能なテキストがありません</string>
     <string name="converter_error_empty_pdf_text_scanned">PDFに抽出可能なテキストがありません。スキャンされたPDFの可能性があります。</string>
@@ -367,6 +385,7 @@
     <string name="pdf_rotate_progress">PDFを%1$d°回転中…</string>
     <string name="pdf_rotate_execute">PDFを%1$d°回転</string>
     <string name="pdf_rotate_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
+    <string name="pdf_rotate_no_pages">PDFにページがありません。</string>
     <string name="pdf_rotate_generate_error">回転したPDFの生成中にエラーが発生しました。</string>
     <string name="pdf_rotate_success">PDFを%1$d°回転しました</string>
     <string name="pdf_rotate_error">PDFの回転中にエラーが発生しました: %1$s</string>
@@ -540,6 +559,8 @@
     <string name="pdf_ocr_generate_error">テキスト認識済みPDFの生成中にエラーが発生しました。</string>
     <string name="pdf_ocr_success">%1$dページを処理、%2$d語を認識しました</string>
     <string name="pdf_ocr_error">テキストの認識中にエラーが発生しました: %1$s</string>
+    <string name="pdf_tools_unexpected_error">予期しないエラーが発生しました。もっと小さいファイルで再度お試しください。</string>
+    <string name="pdf_tools_result_size_kb">%1$d KB</string>
 
     <!-- ── ホームの空の状態 ───────────────────────────── -->
 
@@ -554,6 +575,7 @@
     <string name="format_name_image">画像</string>
     <string name="converter_success_title">変換が完了しました!</string>
     <string name="converter_success_page_count_size">%1$dページ · %2$d KB</string>
+    <string name="converter_success_extra_files">他に%1$d件のファイルを生成しました -- 保存/共有時に含まれます</string>
     <string name="converter_saved_to_downloads">ダウンロードに保存しました</string>
     <string name="converter_share">ファイルを共有</string>
     <string name="converter_convert_another">別のファイルを変換</string>
@@ -692,6 +714,8 @@
     <string name="security_no_protected_files">保護されたファイルはありません</string>
     <string name="security_no_protected_files_hint">「新しいファイルを保護」をタップしてファイルを追加してください</string>
     <string name="security_restore">復元</string>
+    <string name="security_preview">プレビュー</string>
+    <string name="security_preview_error">プレビューを開けませんでした</string>
     <string name="security_protect_file_dialog_title">ファイルを保護</string>
     <string name="pdf_pw_screen_subtitle">PDFを保護またはロック解除します</string>
     <string name="pdf_pw_mode_protect_title">PDFを保護</string>
@@ -761,6 +785,8 @@
     <string name="qr_reader_subtitle">カメラをQRコードに向けてください</string>
     <string name="qr_camera_permission_needed">QRコードをスキャンするにはカメラへのアクセスが必要です</string>
     <string name="qr_allow_camera_access">カメラへのアクセスを許可</string>
+    <string name="qr_camera_permission_denied_permanently">カメラへのアクセスが完全に拒否されています。システム設定から有効にしてください。</string>
+    <string name="qr_open_app_settings">設定を開く</string>
     <string name="qr_center_in_frame">QRコードを枠の中央に合わせてください</string>
     <string name="qr_type_url_detected">URLを検出しました</string>
     <string name="qr_type_image_detected">画像を検出しました</string>
@@ -768,9 +794,15 @@
     <string name="qr_type_email_detected">メールアドレスを検出しました</string>
     <string name="qr_type_phone_detected">電話番号を検出しました</string>
     <string name="qr_type_text_detected">テキストを検出しました</string>
+    <string name="qr_type_wifi_detected">Wi-Fiを検出</string>
+    <string name="qr_type_contact_detected">連絡先を検出</string>
+    <string name="qr_type_event_detected">予定を検出</string>
     <string name="qr_detected_title">QRコードを検出しました!</string>
     <string name="qr_image_content_desc">QRの画像</string>
     <string name="qr_loading_image">画像を読み込み中…</string>
+    <string name="qr_image_privacy_warning">この画像を読み込むとインターネット接続が発生し、そのURLを管理する相手にIPアドレスが知られる可能性があります。</string>
+    <string name="qr_load_image">画像を読み込む</string>
+    <string name="qr_persist_permission_failed">そのファイルを読み取るための永続的な権限を取得できませんでした。もう一度選択してください。</string>
     <string name="qr_copied_clipboard">クリップボードにコピーしました</string>
     <string name="qr_open_browser">ブラウザで開く</string>
     <string name="qr_copy_url">URLをコピー</string>
@@ -783,6 +815,10 @@
     <string name="qr_call">発信</string>
     <string name="qr_copy_number">番号をコピー</string>
     <string name="qr_copy_text">テキストをコピー</string>
+    <string name="qr_copy_wifi_password">パスワードをコピー</string>
+    <string name="qr_copy_wifi_ssid">ネットワーク名をコピー</string>
+    <string name="qr_add_contact">連絡先に追加</string>
+    <string name="qr_add_calendar_event">カレンダーに追加</string>
     <string name="qr_scan_another">別のコードをスキャン</string>
     <string name="qr_creator_title">QRコードを作成</string>
     <string name="qr_creator_subtitle">URL、テキスト、ファイルなどからQRを生成します</string>
@@ -816,6 +852,8 @@
     <string name="qr_image_selected">画像を選択しました ✓</string>
     <string name="qr_select_document">ドキュメントを選択</string>
     <string name="qr_document_selected">ドキュメントを選択しました ✓</string>
+    <string name="qr_image_formats_hint">JPG, PNG, WebP</string>
+    <string name="qr_document_formats_hint">PDF, Word, Excel, PPT, TXT</string>
     <string name="qr_local_only_hint">このQRコードはこの端末でのみ有効です。共有されたコピーではなくローカルファイルを指しています。</string>
     <string name="qr_label_url">ウェブサイトのURL</string>
     <string name="qr_label_text">メッセージのテキスト</string>
@@ -827,6 +865,14 @@
     <string name="qr_placeholder_phone">+81 90-1234-5678</string>
     <string name="qr_design_label">デザインをカスタマイズ</string>
     <string name="qr_design_contrast_warning">この色は白い背景とのコントラストが低いです — カメラで読み取りやすいよう、もっと濃い色を選んでください</string>
+    <string name="qr_color_black">黒</string>
+    <string name="qr_color_blue">青</string>
+    <string name="qr_color_purple">紫</string>
+    <string name="qr_color_green">緑</string>
+    <string name="qr_color_red">赤</string>
+    <string name="qr_color_orange">オレンジ</string>
+    <string name="qr_color_teal">ティール</string>
+    <string name="qr_color_yellow">黄色</string>
     <string name="qr_design_add_logo">ロゴを追加</string>
     <string name="qr_design_logo_added">ロゴを追加しました</string>
     <string name="qr_design_remove_logo">ロゴを削除</string>

@@ -32,53 +32,31 @@ class PdfToHtmlUseCase @Inject constructor(
             } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
 
             // Extraer todo el texto ANTES de cerrar
-            val pdfDoc     = PdfDocument(PdfReader(cacheFile))
-            val totalPages = pdfDoc.numberOfPages
+            var totalPages = 0
             val pageTexts  = mutableListOf<Pair<Int, String>>()
 
-            for (i in 1..totalPages) {
-                val text = PdfTextExtractor.getTextFromPage(pdfDoc.getPage(i)).trim()
-                if (text.isNotBlank()) pageTexts.add(Pair(i, text))
+            // Hallazgo real de la revisión general 2026-09-16 (#40):
+            // pdfDoc.close() manual solo se alcanzaba si NINGUNA página
+            // lanzaba al extraer su texto -- una página malformada a mitad
+            // del loop dejaba el PdfDocument/PdfReader sin cerrar para
+            // siempre. .use{} lo cierra pase lo que pase.
+            PdfDocument(PdfReader(cacheFile)).use { pdfDoc ->
+                totalPages = pdfDoc.numberOfPages
+                for (i in 1..totalPages) {
+                    val text = PdfTextExtractor.getTextFromPage(pdfDoc.getPage(i)).trim()
+                    if (text.isNotBlank()) pageTexts.add(Pair(i, text))
+                }
             }
-            pdfDoc.close() // ← cerrar DESPUÉS de extraer todo
 
             if (pageTexts.isEmpty())
                 return@withContext ConversionResult.Error(
                     context.getString(R.string.converter_error_empty_pdf_text)
                 )
 
-            // Generar HTML
-            val sb = StringBuilder()
-            sb.appendLine("""<!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Documento PDF</title>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #333; }
-  .page { border-bottom: 2px solid #e0e0e0; padding-bottom: 24px; margin-bottom: 24px; }
-  .page-num { color: #999; font-size: 12px; margin-bottom: 8px; }
-  p { margin: 8px 0; }
-</style>
-</head><body>""")
-
-            pageTexts.forEach { (pageNum, text) ->
-                sb.appendLine("<div class=\"page\">")
-                sb.appendLine("<div class=\"page-num\">Página $pageNum</div>")
-                text.split("\n").forEach { line ->
-                    val escaped = line.trim()
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                    if (escaped.isNotBlank()) sb.appendLine("<p>$escaped</p>")
-                }
-                sb.appendLine("</div>")
-            }
-            sb.appendLine("</body></html>")
-
             val outputDir  = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName   = fileName ?: generateTimestamp()
             val outputFile = File(outputDir, "$baseName.html")
-            outputFile.writeText(sb.toString())
+            outputFile.writeText(buildHtml(pageTexts))
 
             Timber.d("PdfToHtmlUseCase: html creado — ${outputFile.length() / 1024} KB")
 
@@ -95,6 +73,39 @@ class PdfToHtmlUseCase @Inject constructor(
         } finally {
             cacheFile?.delete()
         }
+    }
+
+    // Extraído de invoke() -- baja la complejidad ciclomática bajo el
+    // umbral de detekt (el hallazgo #40 sumó una rama más al agregar
+    // .use{}).
+    private fun buildHtml(pageTexts: List<Pair<Int, String>>): String {
+        val sb = StringBuilder()
+        sb.appendLine("""<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documento PDF</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #333; }
+  .page { border-bottom: 2px solid #e0e0e0; padding-bottom: 24px; margin-bottom: 24px; }
+  .page-num { color: #999; font-size: 12px; margin-bottom: 8px; }
+  p { margin: 8px 0; }
+</style>
+</head><body>""")
+
+        pageTexts.forEach { (pageNum, text) ->
+            sb.appendLine("<div class=\"page\">")
+            sb.appendLine("<div class=\"page-num\">Página $pageNum</div>")
+            text.split("\n").forEach { line ->
+                val escaped = line.trim()
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                if (escaped.isNotBlank()) sb.appendLine("<p>$escaped</p>")
+            }
+            sb.appendLine("</div>")
+        }
+        sb.appendLine("</body></html>")
+        return sb.toString()
     }
 
     private fun generateTimestamp() =

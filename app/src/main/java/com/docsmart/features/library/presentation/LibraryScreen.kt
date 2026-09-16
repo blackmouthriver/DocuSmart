@@ -43,6 +43,7 @@ import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.ui.util.ReloadOnScreenResume
 import com.docsmart.features.library.presentation.components.*
 import timber.log.Timber
 
@@ -103,6 +104,15 @@ fun LibraryScreen(
             viewModel.loadDocuments()
             viewModel.loadTrashCount()
         }
+    }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#52): esta pantalla
+    // solo cargaba la lista una vez (al obtener el permiso), así que un
+    // documento movido/borrado en otra pantalla (ej. Visor) seguía
+    // apareciendo como "fantasma" al volver atrás.
+    ReloadOnScreenResume(enabled = hasPermission) {
+        viewModel.loadDocuments()
+        viewModel.loadTrashCount()
     }
 
     LazyColumn(

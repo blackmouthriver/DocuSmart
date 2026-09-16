@@ -50,9 +50,14 @@ fun DocumentListSection(
     }
 
     Column(modifier = modifier) {
+        // Hallazgo real de la revisión general 2026-09-16 (#51): textos
+        // hardcodeados en español, fuera de la limpieza de i18n del
+        // 2026-09-14.
         Text(
-            text = if (searchQuery.isBlank()) "${documents.size} documentos"
-            else "${documents.size} resultados para \"$searchQuery\"",
+            text = if (searchQuery.isBlank())
+                stringResource(R.string.library_document_count, documents.size)
+            else
+                stringResource(R.string.library_search_results_count, documents.size, searchQuery),
             style    = MaterialTheme.typography.bodySmall,
             color    = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp)
@@ -63,9 +68,11 @@ fun DocumentListSection(
         if (documents.isEmpty()) {
             DocuSmartEmptyState(
                 icon        = Icons.Rounded.SearchOff,
-                title       = "Sin resultados",
-                description = if (searchQuery.isBlank()) "No hay documentos en esta categoría"
-                else "No encontramos \"$searchQuery\"",
+                title       = stringResource(R.string.library_no_results_title),
+                description = if (searchQuery.isBlank())
+                    stringResource(R.string.library_empty_category)
+                else
+                    stringResource(R.string.library_no_results_for_query, searchQuery),
                 modifier    = Modifier.padding(top = 32.dp)
             )
         } else {

@@ -274,7 +274,18 @@ class DocumentRepository @Inject constructor(
                 val safeName = com.docsmart.core.util.sanitizeOutputFileName(newName).ifBlank { file.name }
                 val newFile = File(file.parent, safeName)
                 if (file.renameTo(newFile)) {
+                    // El alias se descarta a propósito (no se migra): tras
+                    // un rename físico exitoso, el nombre de archivo YA
+                    // refleja el nombre elegido, así que un alias aparte ya
+                    // no hace falta -- mismo criterio que antes.
                     favoritesRepository.removeAlias(documentId)
+                    // Hallazgo real de la revisión general 2026-09-16 (#50):
+                    // a diferencia del alias, el estado de favorito SÍ debe
+                    // migrar -- sin esto, renombrar un documento favorito le
+                    // hacía perder la marca en silencio porque el id (ruta)
+                    // cambia. migrateId() no toca el alias de nuevo (ya se
+                    // limpió arriba).
+                    favoritesRepository.migrateId(documentId, newFile.absolutePath)
                     // Hallazgo real de la revisión general 2026-09-16: las
                     // anotaciones del Visor (HU-46) quedaban huérfanas bajo
                     // el id viejo -- se migran a la ruta nueva en vez de

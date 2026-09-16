@@ -69,7 +69,7 @@ class WordToHtmlUseCase @Inject constructor(
         var entry = zip.nextEntry
         while (entry != null) {
             if (entry.name == "word/document.xml") {
-                paragraphs.addAll(parseDocumentXml(zip.readBytes().toString(Charsets.UTF_8)))
+                paragraphs.addAll(parseDocumentXml(zip.readEntrySafely().toString(Charsets.UTF_8)))
                 break
             }
             entry = zip.nextEntry

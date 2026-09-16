@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.IndigoAccent
@@ -181,7 +182,12 @@ private fun FormatChip(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                maxLines = 1
+                // Hallazgo real de la revisión general 2026-09-16 (#29):
+                // maxLines=1 sin overflow recortaba el texto en seco --
+                // con traducciones más largas (de/fr/ru) se veía cortado a
+                // la mitad de una palabra en vez de terminar en "…".
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         },
         modifier = modifier,
