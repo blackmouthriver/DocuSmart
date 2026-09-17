@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.docsmart.core.data.db.DocuSmartDatabase
+import com.docsmart.features.study.domain.NoteReminderScheduler
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -58,7 +59,7 @@ class NoteRepositoryTest {
         context = mockk()
         every { context.getSharedPreferences(any(), any()) } returns prefs
 
-        repository = NoteRepository(context, db.noteDao())
+        repository = NoteRepository(context, db.noteDao(), mockk<NoteReminderScheduler>(relaxed = true))
     }
 
     @AfterEach

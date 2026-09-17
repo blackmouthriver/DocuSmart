@@ -1020,6 +1020,17 @@
     <string name="study_note_scan_image">Escaneja</string>
     <string name="study_note_remove_image">Treu la imatge</string>
     <string name="study_note_image_desc">Imatge adjunta</string>
+    <string name="study_note_reminder_label">Recorda\'m repassar això</string>
+    <string name="study_note_reminder_tomorrow">Demà</string>
+    <string name="study_note_reminder_3_days">D\'aquí 3 dies</string>
+    <string name="study_note_reminder_1_week">D\'aquí 1 setmana</string>
+    <string name="study_note_reminder_custom">Personalitzada</string>
+    <string name="study_note_reminder_scheduled_desc">Recordatori: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Activa les notificacions per poder recordar-te de repassar les teves notes.</string>
+    <string name="study_note_reminder_enable_notifications">Activar</string>
+    <string name="note_reminder_notification_channel">Recordatoris de notes</string>
+    <string name="note_reminder_notification_fallback_title">Recordatori de repàs</string>
+    <string name="note_reminder_notification_text">Tens una nota per repassar</string>
     <string name="study_no_saved_notes">Sense notes desades</string>
     <string name="study_saved_notes_count">Notes desades (%1$d)</string>
     <string name="study_delete_all">Eliminar-les totes</string>

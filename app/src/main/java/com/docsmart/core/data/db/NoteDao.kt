@@ -50,8 +50,9 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE id = :id")
     suspend fun getById(id: String): NoteEntity?
 
-    // Backlog UX #52 (recordatorio, próximo lote): la consulta para que
-    // WorkManager recupere los recordatorios vencidos se agrega junto con
-    // esa HU -- no antes, para no sumar una función más a esta interface
-    // sin un caller real todavía (detekt: TooManyFunctions).
+    // Backlog UX #52: recupera las notas con recordatorio pendiente para
+    // reprogramarlas tras un reinicio del dispositivo (AlarmManager pierde
+    // todas sus alarmas al apagarse) -- ver BootRescheduleReceiver.
+    @Query("SELECT * FROM notes WHERE reminderAt IS NOT NULL")
+    suspend fun getAllWithReminder(): List<NoteEntity>
 }

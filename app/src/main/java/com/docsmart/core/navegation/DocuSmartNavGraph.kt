@@ -208,14 +208,22 @@ fun DocuSmartNavGraph(
         // ── Study ─────────────────────────────────────────────────────────────
         composable(
             route = NavRoutes.Study.route,
-            arguments = listOf(navArgument("tab") {
-                type = NavType.IntType
-                defaultValue = 0
-            })
+            arguments = listOf(
+                navArgument("tab") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                },
+                navArgument("openNoteId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { backStackEntry ->
             StudyScreen(
                 onBack       = { navController.popBackStack() },
                 initialTab   = backStackEntry.arguments?.getInt("tab") ?: 0,
+                openNoteId   = backStackEntry.arguments?.getString("openNoteId"),
                 onOpenAgenda = { navController.navigate(NavRoutes.Agenda.createRoute()) }
             )
         }

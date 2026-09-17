@@ -73,7 +73,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 49 | Notas (Modo Estudio) — Adjuntar una imagen o recorte escaneado a una nota | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-17** — ver §34.4 |
 | 50 | Notas — Vincular una nota a un documento específico de la Biblioteca | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
 | 51 | Notas — Exportar una nota a PDF/Word (reutilizando el Convertidor) | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
-| 52 | Notas — Recordatorio de repaso (notificación local) | Mejora | Baja | Media | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.4 |
+| 52 | Notas — Recordatorio de repaso (notificación local) | Mejora | Baja | Media | Bajo-Medio | **✅ Implementado y verificado en dispositivo real 2026-09-17** — ver §34.4 |
 | 53 | Herramientas PDF — Extraer imágenes embebidas de un PDF | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.5 |
 | 54 | Monetización — Prueba gratuita de Premium (trial de 7 días) | Mejora | Alta | Media | Medio | 🆕 Propuesto 2026-09-10 — ver §34.6 |
 | 55 | Monetización — Plan anual con descuento | Mejora | Alta | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.6 |
@@ -3545,6 +3545,63 @@ notificación puntual).
   llega esa fecha, entonces recibo la notificación con el título de la
   nota.
 - **AC2** Tocar la notificación abre esa nota específica.
+
+**✅ Implementado y verificado en dispositivo real (Motorola Edge 30
+Neo) 2026-09-17.** Reutiliza el mismo mecanismo de `ReminderScheduler`
+de Agenda (HU-65) -- alarma EXACTA (`AlarmManager.
+setExactAndAllowWhileIdle`), con degradación a inexacta sin el permiso
+`SCHEDULE_EXACT_ALARM` -- pero con su propia clase
+(`NoteReminderScheduler`/`NoteReminderReceiver`, paquete
+`features/study/domain`) para no acoplar los dos dominios: cada uno
+programa su propio receiver/canal/notificación
+(`study_note_reminders`). `BootRescheduleReceiver` (HU-65) se extendió
+para reprogramar también los recordatorios de notas tras un reinicio,
+tal como ya estaba anotado en el backlog como infraestructura
+compartida.
+- **RF1**: en el editor de nota nueva, fila de `FilterChip` con scroll
+  horizontal -- "Sin recordatorio", "Mañana", "En 3 días", "En 1
+  semana" (todos a las 9:00, hora de estudio típica) y "Personalizada"
+  (abre un diálogo con `DatePicker`/`TimePicker` de Material3, mismo
+  patrón que `AgendaEventEditorDialog`/`QrEventForm`).
+- **RNF2**: si `POST_NOTIFICATIONS` no está concedido, la sección
+  queda deshabilitada con un texto explicativo y un botón "Activar" en
+  vez de dejar programar una alarma cuya notificación nunca podría
+  mostrarse.
+- **Alcance frente al backlog original**: el recordatorio solo se
+  puede fijar al **crear** una nota nueva (no hay pantalla de "editar
+  nota existente" en la app -- confirmado en la investigación de
+  HU-49). AC2 ("abre esa nota específica") se resuelve aterrizando en
+  la pestaña Notas con scroll automático hasta la nota y un resaltado
+  visual (fondo tintado), no con una pantalla de detalle dedicada
+  (tampoco existe).
+- **2 hallazgos reales encontrados por una revisión adversarial propia
+  y corregidos antes de fusionar**:
+  1. El `PendingIntent` de "abrir la app" de `AgendaReminderReceiver`
+     (HU-65) y el nuevo de `NoteReminderReceiver` apuntaban al mismo
+     componente (`MainActivity`) con `FLAG_IMMUTABLE` sin
+     `FLAG_UPDATE_CURRENT`, usando `id.hashCode()` como único
+     `requestCode` -- una colisión de hash entre un `eventId` y un
+     `noteId` podía reabrir el ítem equivocado (las extras no forman
+     parte de la igualdad de un `PendingIntent`), y lo mismo para el
+     id de la notificación en `manager.notify()`. Corregido en ambos
+     receivers con una Uri `data` única por dominio+id (sí forma parte
+     de la igualdad) y un `tag` propio en `notify()`.
+  2. El `LaunchedEffect` que hace scroll hasta la nota resaltada
+     estaba keyeado solo en `(openNoteId, savedNotes)`, no en
+     `highlights`/`documentText` -- si se tocaba la notificación
+     mientras el documento de Lectura todavía se estaba extrayendo en
+     segundo plano, los párrafos resaltados podían aparecer después y
+     correr el offset de la lista de notas sin que el scroll se
+     recalculara. Corregido agregando esas claves al efecto.
+- Verificado en vivo de punta a punta: guardé una nota con recordatorio
+  personalizado a ~2 minutos, confirmé con `dumpsys alarm` que la
+  alarma exacta quedó realmente programada
+  (`RTC_WAKEUP ... NoteReminderReceiver`), esperé a que disparara la
+  notificación real ("Tenés una nota para repasar"), la toqué, y
+  confirmé que abrió la app directo en la pestaña Notas con la nota
+  resaltada (fondo tintado, scroll automático). Tras eliminar la nota
+  de prueba, `dumpsys alarm` ya no muestra ninguna alarma pendiente
+  huérfana.
 
 ### §34.5 — Herramientas PDF
 

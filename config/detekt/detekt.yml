@@ -44,6 +44,10 @@ complexity:
                            # completo de documentos abiertos (collectLinkedFolderDocuments,
                            # loadDocumentsFromHistory, documentFromHistoryId/Uri/File) -- mismo
                            # criterio: funciones chicas de una sola responsabilidad.
+    thresholdInInterfaces: 12 # NoteDao llega a 11 consultas (backlog UX #49-#52: notas +
+                              # imágenes adjuntas + vínculo a documento + recordatorio) -- cada
+                              # una es una sola query de una sola responsabilidad, partir la
+                              # interface en dos DAOs para la misma tabla sería artificial.
   CyclomaticComplexMethod:
     ignoreAnnotated: ['Composable']
   LargeClass:

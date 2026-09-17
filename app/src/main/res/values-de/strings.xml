@@ -986,6 +986,17 @@
     <string name="study_note_scan_image">Scannen</string>
     <string name="study_note_remove_image">Bild entfernen</string>
     <string name="study_note_image_desc">Angehängtes Bild</string>
+    <string name="study_note_reminder_label">An diese Notiz erinnern</string>
+    <string name="study_note_reminder_tomorrow">Morgen</string>
+    <string name="study_note_reminder_3_days">In 3 Tagen</string>
+    <string name="study_note_reminder_1_week">In 1 Woche</string>
+    <string name="study_note_reminder_custom">Benutzerdefiniert</string>
+    <string name="study_note_reminder_scheduled_desc">Erinnerung: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Aktiviere Benachrichtigungen, um an deine Notizen erinnert zu werden.</string>
+    <string name="study_note_reminder_enable_notifications">Aktivieren</string>
+    <string name="note_reminder_notification_channel">Notiz-Erinnerungen</string>
+    <string name="note_reminder_notification_fallback_title">Wiederholungs-Erinnerung</string>
+    <string name="note_reminder_notification_text">Du hast eine Notiz zum Wiederholen</string>
     <string name="study_no_saved_notes">Keine gespeicherten Notizen</string>
     <string name="study_saved_notes_count">Gespeicherte Notizen (%1$d)</string>
     <string name="study_delete_all">Alle löschen</string>

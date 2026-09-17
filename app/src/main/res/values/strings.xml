@@ -1026,6 +1026,17 @@
     <string name="study_note_scan_image">Escanear</string>
     <string name="study_note_remove_image">Quitar imagen</string>
     <string name="study_note_image_desc">Imagen adjunta</string>
+    <string name="study_note_reminder_label">Recordarme repasar esto</string>
+    <string name="study_note_reminder_tomorrow">Mañana</string>
+    <string name="study_note_reminder_3_days">En 3 días</string>
+    <string name="study_note_reminder_1_week">En 1 semana</string>
+    <string name="study_note_reminder_custom">Personalizada</string>
+    <string name="study_note_reminder_scheduled_desc">Recordatorio: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Activá las notificaciones para poder recordar repasar tus notas.</string>
+    <string name="study_note_reminder_enable_notifications">Activar</string>
+    <string name="note_reminder_notification_channel">Recordatorios de notas</string>
+    <string name="note_reminder_notification_fallback_title">Recordatorio de repaso</string>
+    <string name="note_reminder_notification_text">Tenés una nota para repasar</string>
     <string name="study_no_saved_notes">Sin notas guardadas</string>
     <string name="study_saved_notes_count">Notas guardadas (%1$d)</string>
     <string name="study_delete_all">Eliminar todas</string>

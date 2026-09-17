@@ -998,6 +998,17 @@
     <string name="study_note_scan_image">Scanner</string>
     <string name="study_note_remove_image">Retirer l\'image</string>
     <string name="study_note_image_desc">Image jointe</string>
+    <string name="study_note_reminder_label">Me rappeler de revoir ça</string>
+    <string name="study_note_reminder_tomorrow">Demain</string>
+    <string name="study_note_reminder_3_days">Dans 3 jours</string>
+    <string name="study_note_reminder_1_week">Dans 1 semaine</string>
+    <string name="study_note_reminder_custom">Personnalisée</string>
+    <string name="study_note_reminder_scheduled_desc">Rappel : %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Active les notifications pour recevoir des rappels de révision de tes notes.</string>
+    <string name="study_note_reminder_enable_notifications">Activer</string>
+    <string name="note_reminder_notification_channel">Rappels de notes</string>
+    <string name="note_reminder_notification_fallback_title">Rappel de révision</string>
+    <string name="note_reminder_notification_text">Tu as une note à revoir</string>
     <string name="study_no_saved_notes">Aucune note enregistrée</string>
     <string name="study_saved_notes_count">Notes enregistrées (%1$d)</string>
     <string name="study_delete_all">Tout supprimer</string>

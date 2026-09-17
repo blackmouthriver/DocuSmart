@@ -6,6 +6,7 @@ import com.docsmart.core.data.db.NoteDao
 import com.docsmart.core.data.db.NoteEntity
 import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
+import com.docsmart.features.study.domain.NoteReminderScheduler
 import com.docsmart.features.study.domain.StudyNotesStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,8 @@ private const val KEY_MIGRATED_TO_ROOM = "migrated_to_room"
 @Singleton
 class NoteRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val noteDao: NoteDao
+    private val noteDao: NoteDao,
+    private val noteReminderScheduler: NoteReminderScheduler
 ) {
     // dd/MM/yyyy · HH:mm -- numérico, sin nombres de mes/día, así que
     // parsearlo no depende del idioma activo en el momento de la migración.
@@ -88,11 +90,15 @@ class NoteRepository @Inject constructor(
     // escáner de ML Kit (temporales, viven en el cache del proveedor) --
     // se copian a `filesDir/note_images/` antes de guardar la fila para que
     // la nota no dependa de un archivo ajeno que puede desaparecer.
+    // Backlog UX #52: `reminderAt` (epoch millis, null = sin recordatorio)
+    // programa la alarma recién con el id real ya generado -- no hace falta
+    // un segundo paso de "actualizar" como en linkDocument().
     suspend fun createNote(
         title: String,
         text: String,
         documentId: String? = null,
-        imageUris: List<Uri> = emptyList()
+        imageUris: List<Uri> = emptyList(),
+        reminderAt: Long? = null
     ): Unit = withContext(Dispatchers.IO) {
         val noteId = UUID.randomUUID().toString()
         noteDao.insert(
@@ -101,13 +107,15 @@ class NoteRepository @Inject constructor(
                 title      = title,
                 text       = text,
                 createdAt  = System.currentTimeMillis(),
-                documentId = documentId
+                documentId = documentId,
+                reminderAt = reminderAt
             )
         )
         imageUris.forEachIndexed { position, uri ->
             val filePath = copyImageToNoteStorage(noteId, position, uri) ?: return@forEachIndexed
             noteDao.insertImage(NoteImageEntity(noteId = noteId, filePath = filePath, position = position))
         }
+        if (reminderAt != null) noteReminderScheduler.schedule(noteId, title, reminderAt)
     }
 
     // Una imagen que falla al copiar (proveedor externo caído, formato raro)
@@ -134,14 +142,20 @@ class NoteRepository @Inject constructor(
 
     // Borra las copias de imagen en disco antes de la fila -- Room solo
     // limpia note_images vía CASCADE, no toca el sistema de archivos
-    // (backlog UX #49, AC2: "no deja archivos huérfanos").
+    // (backlog UX #49, AC2: "no deja archivos huérfanos"). Backlog UX #52:
+    // cancela también el recordatorio pendiente -- sin esto, la alarma ya
+    // programada seguiría sonando y abriría una nota que ya no existe.
     suspend fun deleteNote(note: NoteWithImages) = withContext(Dispatchers.IO) {
         note.images.forEach { File(it.filePath).delete() }
+        if (note.note.reminderAt != null) noteReminderScheduler.cancel(note.note.id)
         noteDao.delete(note.note.id)
     }
 
     suspend fun deleteAll(notes: List<NoteWithImages>) = withContext(Dispatchers.IO) {
-        notes.forEach { note -> note.images.forEach { File(it.filePath).delete() } }
+        notes.forEach { note ->
+            note.images.forEach { File(it.filePath).delete() }
+            if (note.note.reminderAt != null) noteReminderScheduler.cancel(note.note.id)
+        }
         noteDao.deleteAll()
     }
 }

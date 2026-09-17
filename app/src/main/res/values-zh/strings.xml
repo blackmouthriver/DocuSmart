@@ -990,6 +990,17 @@
     <string name="study_note_scan_image">扫描</string>
     <string name="study_note_remove_image">移除图片</string>
     <string name="study_note_image_desc">已附加图片</string>
+    <string name="study_note_reminder_label">提醒我复习</string>
+    <string name="study_note_reminder_tomorrow">明天</string>
+    <string name="study_note_reminder_3_days">3天后</string>
+    <string name="study_note_reminder_1_week">1周后</string>
+    <string name="study_note_reminder_custom">自定义</string>
+    <string name="study_note_reminder_scheduled_desc">提醒：%1$s</string>
+    <string name="study_note_reminder_notifications_disabled">开启通知以接收复习笔记的提醒。</string>
+    <string name="study_note_reminder_enable_notifications">开启</string>
+    <string name="note_reminder_notification_channel">笔记提醒</string>
+    <string name="note_reminder_notification_fallback_title">复习提醒</string>
+    <string name="note_reminder_notification_text">你有一条笔记需要复习</string>
     <string name="study_no_saved_notes">没有已保存的笔记</string>
     <string name="study_saved_notes_count">已保存笔记（%1$d）</string>
     <string name="study_delete_all">全部删除</string>

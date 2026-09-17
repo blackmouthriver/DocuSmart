@@ -990,6 +990,17 @@
     <string name="study_note_scan_image">스캔</string>
     <string name="study_note_remove_image">이미지 제거</string>
     <string name="study_note_image_desc">첨부된 이미지</string>
+    <string name="study_note_reminder_label">복습 알림 받기</string>
+    <string name="study_note_reminder_tomorrow">내일</string>
+    <string name="study_note_reminder_3_days">3일 후</string>
+    <string name="study_note_reminder_1_week">1주일 후</string>
+    <string name="study_note_reminder_custom">사용자 지정</string>
+    <string name="study_note_reminder_scheduled_desc">알림: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">메모 복습 알림을 받으려면 알림을 활성화하세요.</string>
+    <string name="study_note_reminder_enable_notifications">활성화</string>
+    <string name="note_reminder_notification_channel">메모 알림</string>
+    <string name="note_reminder_notification_fallback_title">복습 알림</string>
+    <string name="note_reminder_notification_text">복습할 메모가 있습니다</string>
     <string name="study_no_saved_notes">저장된 메모 없음</string>
     <string name="study_saved_notes_count">저장된 메모 (%1$d개)</string>
     <string name="study_delete_all">모두 삭제</string>

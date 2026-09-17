@@ -986,6 +986,17 @@
     <string name="study_note_scan_image">Сканировать</string>
     <string name="study_note_remove_image">Удалить изображение</string>
     <string name="study_note_image_desc">Прикреплённое изображение</string>
+    <string name="study_note_reminder_label">Напомнить повторить это</string>
+    <string name="study_note_reminder_tomorrow">Завтра</string>
+    <string name="study_note_reminder_3_days">Через 3 дня</string>
+    <string name="study_note_reminder_1_week">Через 1 неделю</string>
+    <string name="study_note_reminder_custom">Своё время</string>
+    <string name="study_note_reminder_scheduled_desc">Напоминание: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Включите уведомления, чтобы получать напоминания о повторении заметок.</string>
+    <string name="study_note_reminder_enable_notifications">Включить</string>
+    <string name="note_reminder_notification_channel">Напоминания о заметках</string>
+    <string name="note_reminder_notification_fallback_title">Напоминание о повторении</string>
+    <string name="note_reminder_notification_text">У Вас есть заметка для повторения</string>
     <string name="study_no_saved_notes">Нет сохранённых заметок</string>
     <string name="study_saved_notes_count">Сохранённые заметки (%1$d)</string>
     <string name="study_delete_all">Удалить все</string>

@@ -993,6 +993,17 @@
     <string name="study_note_scan_image">Scansiona</string>
     <string name="study_note_remove_image">Rimuovi immagine</string>
     <string name="study_note_image_desc">Immagine allegata</string>
+    <string name="study_note_reminder_label">Ricordami di ripassare questo</string>
+    <string name="study_note_reminder_tomorrow">Domani</string>
+    <string name="study_note_reminder_3_days">Tra 3 giorni</string>
+    <string name="study_note_reminder_1_week">Tra 1 settimana</string>
+    <string name="study_note_reminder_custom">Personalizzato</string>
+    <string name="study_note_reminder_scheduled_desc">Promemoria: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Attiva le notifiche per ricevere promemoria per ripassare le tue note.</string>
+    <string name="study_note_reminder_enable_notifications">Attiva</string>
+    <string name="note_reminder_notification_channel">Promemoria delle note</string>
+    <string name="note_reminder_notification_fallback_title">Promemoria di ripasso</string>
+    <string name="note_reminder_notification_text">Hai una nota da ripassare</string>
     <string name="study_no_saved_notes">Nessuna nota salvata</string>
     <string name="study_saved_notes_count">Note salvate (%1$d)</string>
     <string name="study_delete_all">Elimina tutte</string>

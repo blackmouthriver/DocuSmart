@@ -1008,6 +1008,17 @@
     <string name="study_note_scan_image">Eskaneatu</string>
     <string name="study_note_remove_image">Kendu irudia</string>
     <string name="study_note_image_desc">Erantsitako irudia</string>
+    <string name="study_note_reminder_label">Gogorarazi hau berrikustea</string>
+    <string name="study_note_reminder_tomorrow">Bihar</string>
+    <string name="study_note_reminder_3_days">3 egun barru</string>
+    <string name="study_note_reminder_1_week">Astebete barru</string>
+    <string name="study_note_reminder_custom">Pertsonalizatua</string>
+    <string name="study_note_reminder_scheduled_desc">Oroigarria: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Gaitu jakinarazpenak zure oharrak berrikusteko oroigarriak jasotzeko.</string>
+    <string name="study_note_reminder_enable_notifications">Gaitu</string>
+    <string name="note_reminder_notification_channel">Oharren oroigarriak</string>
+    <string name="note_reminder_notification_fallback_title">Berrikuspen-oroigarria</string>
+    <string name="note_reminder_notification_text">Berrikusteko ohar bat duzu</string>
     <string name="study_no_saved_notes">Ez dago gordetako oharrik</string>
     <string name="study_saved_notes_count">Gordetako oharrak (%1$d)</string>
     <string name="study_delete_all">Ezabatu guztiak</string>

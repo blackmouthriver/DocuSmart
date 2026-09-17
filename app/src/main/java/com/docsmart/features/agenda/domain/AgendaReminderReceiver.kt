@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.docsmart.MainActivity
@@ -26,10 +27,21 @@ class AgendaReminderReceiver : BroadcastReceiver() {
     }
 
     private fun showNotification(context: Context, eventId: String, title: String) {
+        // Hallazgo real (revisión HU-52): dos PendingIntent hacia el mismo
+        // componente (MainActivity), FLAG_IMMUTABLE sin FLAG_UPDATE_CURRENT,
+        // son "el mismo" para Android si comparten requestCode -- y las
+        // extras NO forman parte de esa igualdad. Con dos dominios de
+        // recordatorio (Agenda + Notas, #52) usando cada uno `id.hashCode()`
+        // como requestCode, una colisión entre un eventId y un noteId podía
+        // reabrir el ítem equivocado. `setData()` con una Uri única por
+        // dominio+id vuelve al Intent siempre distinto (data SÍ es parte de
+        // la igualdad de un PendingIntent), sin depender de que el
+        // requestCode nunca choque.
         val openAppIntent = PendingIntent.getActivity(
             context,
             eventId.hashCode(),
             Intent(context, MainActivity::class.java).apply {
+                data = Uri.parse("docusmart://agenda-reminder/$eventId")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 putExtra(MainActivity.EXTRA_OPEN_AGENDA_EVENT_ID, eventId)
             },
@@ -45,7 +57,10 @@ class AgendaReminderReceiver : BroadcastReceiver() {
             .setContentIntent(openAppIntent)
             .build()
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        manager.notify(eventId.hashCode(), notification)
+        // `tag` propio (no solo el id numérico): evita que una notificación
+        // de Agenda y una de Notas se pisen entre sí si sus hashCode
+        // coinciden, mismo criterio que el `data` de arriba.
+        manager.notify(NOTIFICATION_TAG, eventId.hashCode(), notification)
     }
 
     private fun createNotificationChannelIfNeeded(context: Context) {
@@ -64,5 +79,6 @@ class AgendaReminderReceiver : BroadcastReceiver() {
 
     companion object {
         private const val CHANNEL_ID = "agenda_reminders"
+        private const val NOTIFICATION_TAG = "agenda_reminder"
     }
 }

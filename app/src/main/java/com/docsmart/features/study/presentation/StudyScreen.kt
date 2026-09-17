@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -107,6 +108,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 
@@ -114,6 +121,7 @@ import java.util.Locale
 fun StudyScreen(
     onBack: () -> Unit = {},
     initialTab: Int = 0,
+    openNoteId: String? = null, // #52: fuerza la pestaña Notas si viene seteado
     onOpenAgenda: () -> Unit = {},
     viewModel: StudyViewModel = hiltViewModel()
 ) {
@@ -127,7 +135,7 @@ fun StudyScreen(
     // oculta. TextSummarizer y SummaryTab quedan intactos, solo sin punto
     // de entrada desde la UI; reactivar es agregar de nuevo el 4to string
     // en `tabs` y volver este coerceIn a (0, 3).
-    var selectedTab by remember { mutableIntStateOf(initialTab.coerceIn(0, 2)) }
+    var selectedTab by remember { mutableIntStateOf(if (openNoteId != null) 1 else initialTab.coerceIn(0, 2)) }
     // ── Resumen automático (2026-09-08, 100% local -- ver TextSummarizer) ──
     var summarySentences by remember { mutableStateOf<List<String>?>(null) }
     var isSummarizing by remember { mutableStateOf(false) }
@@ -829,7 +837,8 @@ fun StudyScreen(
                     notes = notes,
                     onNotesChange = { notes = it },
                     highlights = highlights,
-                    documentText = documentText
+                    documentText = documentText,
+                    openNoteId = openNoteId
                 )
 
                 // ── Tab Pomodoro ──────────────────────
@@ -1330,6 +1339,7 @@ private fun NotesTab(
     onNotesChange: (String) -> Unit,
     highlights   : Set<Int>,
     documentText : List<String>,
+    openNoteId   : String? = null,
     viewModel    : NotesViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -1344,6 +1354,27 @@ private fun NotesTab(
     // Backlog UX #49: imágenes elegidas para la nota que se está escribiendo
     // todavía, se limpia al guardar (o al descartar una con la X).
     var currentImageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    // Backlog UX #52: recordatorio de repaso de la nota que se está
+    // escribiendo -- `reminderChip` es solo para resaltar el FilterChip
+    // elegido (NONE si no hay ninguno), `reminderAt` es la fecha/hora real
+    // que se manda a guardar. Ambos se resetean juntos al guardar.
+    var reminderChip by remember { mutableStateOf(NoteReminderChip.NONE) }
+    var reminderAt   by remember { mutableStateOf<Long?>(null) }
+    // RNF2: si el usuario negó POST_NOTIFICATIONS, la sección de
+    // recordatorio queda deshabilitada -- sin esto se podría programar una
+    // alarma cuya notificación nunca va a poder mostrarse, en silencio.
+    var notificationsGranted by remember {
+        mutableStateOf(
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted -> notificationsGranted = granted }
+    val notesListState = rememberLazyListState()
 
     // ── Adjuntar imagen (galería o recorte escaneado) ────────────────────────
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -1423,13 +1454,33 @@ private fun NotesTab(
         )
     }
 
+    // Backlog UX #52, AC2: al llegar desde una notificación de recordatorio,
+    // hace scroll hasta la nota específica y la marca `isHighlighted` en
+    // NoteListItem -- se recalcula cada vez que cambia la lista (llega
+    // async desde Room) hasta encontrarla. El offset suma los ítems fijos
+    // de arriba (editor + cabecera de la lista) más los de la sección de
+    // párrafos resaltados, si está presente -- ver highlightedParagraphsSection().
+    // `highlights`/`documentText` también son claves: la extracción del
+    // documento sigue en curso en segundo plano (ver comentario de
+    // `extractionComplete` más arriba) y puede agregar párrafos resaltados
+    // DESPUÉS de este primer cálculo, corriendo el offset de la lista de
+    // notas -- sin esto, el scroll quedaba calculado con datos viejos.
+    LaunchedEffect(openNoteId, savedNotes, highlights, documentText) {
+        val targetId = openNoteId ?: return@LaunchedEffect
+        val noteIndex = savedNotes.indexOfFirst { it.note.id == targetId }
+        if (noteIndex < 0) return@LaunchedEffect
+        val highlightSectionCount = if (highlights.isEmpty() || documentText.isEmpty()) 0 else highlights.size + 2
+        val fixedItemsBeforeList = highlightSectionCount + 1 /* NoteEditorCard */ + 1 /* NotesListHeader */
+        notesListState.animateScrollToItem(fixedItemsBeforeList + noteIndex)
+    }
+
     // Bug real corregido 2026-09-08: todo esto antes vivía en un `Column`
     // fijo (sin scroll) con un `LazyColumn` aparte solo para la lista de
     // notas -- al agregar la tarjeta del editor, el contenido ya no cabía
     // en pantallas chicas y el estado "Sin notas guardadas" quedaba cortado
     // sin forma de hacer scroll para verlo. Ahora es una única `LazyColumn`
     // para toda la pestaña.
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(state = notesListState, modifier = Modifier.fillMaxSize()) {
 
         // ── Párrafos resaltados ───────────────────────────────────────────────
         // Extraída a highlightedParagraphsSection() (detekt: LongMethod).
@@ -1452,11 +1503,20 @@ private fun NotesTab(
                 onGalleryClick = { galleryLauncher.launch("image/*") },
                 onScanClick    = onScanImage,
                 onRemoveImage  = { uri -> currentImageUris = currentImageUris - uri },
+                reminderChip   = reminderChip,
+                reminderAt     = reminderAt,
+                onReminderChange = { chip, millis -> reminderChip = chip; reminderAt = millis },
+                notificationsGranted   = notificationsGranted,
+                onRequestNotifications = {
+                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                },
                 onSave = { title, text ->
-                    viewModel.createNote(title, text, currentImageUris)
+                    viewModel.createNote(title, text, currentImageUris, reminderAt)
                     currentNote      = ""
                     currentTitle     = ""
                     currentImageUris = emptyList()
+                    reminderChip     = NoteReminderChip.NONE
+                    reminderAt       = null
                     onNotesChange("")
                 }
             )
@@ -1478,6 +1538,7 @@ private fun NotesTab(
                 NoteListItem(
                     noteWithImages = noteWithImages,
                     dateFormatter  = dateFormatter,
+                    isHighlighted  = noteWithImages.note.id == openNoteId,
                     onLinkClick    = { viewModel.showLinkDialog(noteWithImages.note.id) },
                     onDeleteClick  = { viewModel.deleteNote(noteWithImages) }
                 )
@@ -1635,6 +1696,11 @@ private fun NoteEditorCard(
     onGalleryClick: () -> Unit,
     onScanClick   : () -> Unit,
     onRemoveImage : (Uri) -> Unit,
+    reminderChip  : NoteReminderChip,
+    reminderAt    : Long?,
+    onReminderChange      : (NoteReminderChip, Long?) -> Unit,
+    notificationsGranted  : Boolean,
+    onRequestNotifications: () -> Unit,
     onSave        : (title: String, text: String) -> Unit
 ) {
     val shape = MaterialTheme.shapes.large
@@ -1766,6 +1832,15 @@ private fun NoteEditorCard(
                 NoteImagesCarousel(uris = imageUris, onRemove = onRemoveImage)
             }
 
+            // Backlog UX #52: "Recordarme repasar esto".
+            NoteReminderSection(
+                reminderChip   = reminderChip,
+                reminderAt     = reminderAt,
+                onReminderChange       = onReminderChange,
+                notificationsGranted   = notificationsGranted,
+                onRequestNotifications = onRequestNotifications
+            )
+
             val untitledNoteLabel = stringResource(R.string.study_untitled_note)
 
             // Botón guardar
@@ -1829,12 +1904,242 @@ private fun NoteImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
     }
 }
 
+// Backlog UX #52: cuál de los presets de recordatorio está elegido (o
+// ninguno/personalizado) -- separado de `reminderAt` (la fecha/hora real en
+// millis) solo para saber qué FilterChip resaltar, ambos viven juntos en
+// NotesTab y se resetean a la vez al guardar la nota.
+private enum class NoteReminderChip { NONE, TOMORROW, DAYS_3, WEEK_1, CUSTOM }
+
+private const val NOTE_REMINDER_DEFAULT_HOUR = 9
+
+// Backlog UX #52: siempre en el futuro (hoy + N días), no hace falta
+// validar contra "ya pasó" como si sumaría a una fecha existente.
+private fun noteReminderPresetMillis(daysFromNow: Long): Long =
+    LocalDate.now()
+        .plusDays(daysFromNow)
+        .atTime(NOTE_REMINDER_DEFAULT_HOUR, 0)
+        .atZone(ZoneId.systemDefault())
+        .toInstant()
+        .toEpochMilli()
+
+private val NOTE_REMINDER_DATETIME_FORMAT: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm")
+
+private fun formatNoteReminderDateTime(millis: Long): String =
+    Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        .format(NOTE_REMINDER_DATETIME_FORMAT)
+
+// Backlog UX #52: "Recordarme repasar esto" -- presets absolutos (mañana/
+// 3 días/1 semana, siempre a las 9:00, hora de estudio típica) o fecha/hora
+// personalizada. RNF2: si el usuario negó POST_NOTIFICATIONS, la sección
+// queda deshabilitada con una explicación en vez de dejar programar una
+// alarma cuya notificación nunca va a poder mostrarse.
+@Composable
+private fun NoteReminderSection(
+    reminderChip: NoteReminderChip,
+    reminderAt  : Long?,
+    onReminderChange: (NoteReminderChip, Long?) -> Unit,
+    notificationsGranted  : Boolean,
+    onRequestNotifications: () -> Unit
+) {
+    var showCustomPicker by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector        = Icons.Rounded.NotificationsActive,
+                contentDescription = null,
+                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier           = Modifier.size(16.dp)
+            )
+            Text(
+                text  = stringResource(R.string.study_note_reminder_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        if (!notificationsGranted) {
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text     = stringResource(R.string.study_note_reminder_notifications_disabled),
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = onRequestNotifications) {
+                    Text(stringResource(R.string.study_note_reminder_enable_notifications))
+                }
+            }
+            return
+        }
+
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            FilterChip(
+                selected = reminderChip == NoteReminderChip.NONE,
+                onClick  = { onReminderChange(NoteReminderChip.NONE, null) },
+                label    = { Text(stringResource(R.string.agenda_reminder_none), maxLines = 1) }
+            )
+            FilterChip(
+                selected = reminderChip == NoteReminderChip.TOMORROW,
+                onClick  = { onReminderChange(NoteReminderChip.TOMORROW, noteReminderPresetMillis(1)) },
+                label    = { Text(stringResource(R.string.study_note_reminder_tomorrow), maxLines = 1) }
+            )
+            FilterChip(
+                selected = reminderChip == NoteReminderChip.DAYS_3,
+                onClick  = { onReminderChange(NoteReminderChip.DAYS_3, noteReminderPresetMillis(3)) },
+                label    = { Text(stringResource(R.string.study_note_reminder_3_days), maxLines = 1) }
+            )
+            FilterChip(
+                selected = reminderChip == NoteReminderChip.WEEK_1,
+                onClick  = { onReminderChange(NoteReminderChip.WEEK_1, noteReminderPresetMillis(7)) },
+                label    = { Text(stringResource(R.string.study_note_reminder_1_week), maxLines = 1) }
+            )
+            FilterChip(
+                selected = reminderChip == NoteReminderChip.CUSTOM,
+                onClick  = { showCustomPicker = true },
+                label    = { Text(stringResource(R.string.study_note_reminder_custom), maxLines = 1) }
+            )
+        }
+
+        if (reminderChip != NoteReminderChip.NONE && reminderAt != null) {
+            Text(
+                text  = stringResource(
+                    R.string.study_note_reminder_scheduled_desc, formatNoteReminderDateTime(reminderAt)
+                ),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+
+    if (showCustomPicker) {
+        NoteReminderDateTimeDialog(
+            initialMillis = reminderAt?.takeIf { reminderChip == NoteReminderChip.CUSTOM }
+                ?: System.currentTimeMillis(),
+            onConfirm = { millis ->
+                onReminderChange(NoteReminderChip.CUSTOM, millis)
+                showCustomPicker = false
+            },
+            onDismiss = { showCustomPicker = false }
+        )
+    }
+}
+
+// Backlog UX #52: mismo patrón Material3 DatePicker/TimePicker que
+// AgendaEventEditorDialog.AgendaDateTimeRow (HU-65)/QrDateTimeRow (HU-43),
+// envuelto acá en un Dialog propio con Aceptar/Cancelar en vez de una fila
+// persistente -- la nota no tiene un editor ya abierto sobre el que anclar
+// una fila fija.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NoteReminderDateTimeDialog(
+    initialMillis: Long,
+    onConfirm    : (Long) -> Unit,
+    onDismiss    : () -> Unit
+) {
+    var value by remember {
+        mutableStateOf(
+            Instant.ofEpochMilli(initialMillis).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        )
+    }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    val dateFormat = remember { DateTimeFormatter.ofPattern("d MMM yyyy") }
+    val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text  = stringResource(R.string.study_note_reminder_custom),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Rounded.CalendarMonth, null, modifier = Modifier.size(16.dp))
+                        Text(value.format(dateFormat), modifier = Modifier.padding(start = 6.dp))
+                    }
+                    OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Rounded.Schedule, null, modifier = Modifier.size(16.dp))
+                        Text(value.format(timeFormat), modifier = Modifier.padding(start = 6.dp))
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = {
+                        onConfirm(value.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+                    }) { Text(stringResource(R.string.general_accept)) }
+                }
+            }
+        }
+    }
+
+    if (showDatePicker) {
+        val initial = value.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        val state = rememberDatePickerState(initialSelectedDateMillis = initial)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { millis ->
+                        val newDate = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+                        value = LocalDateTime.of(newDate, value.toLocalTime())
+                    }
+                    showDatePicker = false
+                }) { Text(stringResource(R.string.general_accept)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.general_cancel)) }
+            }
+        ) { DatePicker(state = state) }
+    }
+
+    if (showTimePicker) {
+        val state = rememberTimePickerState(initialHour = value.hour, initialMinute = value.minute, is24Hour = true)
+        Dialog(onDismissRequest = { showTimePicker = false }) {
+            Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
+                Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    TimePicker(state = state)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showTimePicker = false }) {
+                            Text(stringResource(R.string.general_cancel))
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            value = value.withHour(state.hour).withMinute(state.minute)
+                            showTimePicker = false
+                        }) { Text(stringResource(R.string.general_accept)) }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Extraída de NotesTab() (detekt: LongMethod, disparado al sumar los
 // botones de vincular/exportar de #50/#51) -- una tarjeta de nota guardada.
 @Composable
 private fun NoteListItem(
     noteWithImages: NoteWithImages,
     dateFormatter : java.text.SimpleDateFormat,
+    // Backlog UX #52, AC2: true si esta es la nota a la que apuntaba la
+    // notificación de recordatorio recién tocada -- fondo tintado para que
+    // sea fácil de encontrar en la lista tras el scroll automático.
+    isHighlighted : Boolean = false,
     onLinkClick   : () -> Unit,
     onDeleteClick : () -> Unit
 ) {
@@ -1846,7 +2151,10 @@ private fun NoteListItem(
             .padding(horizontal = 16.dp, vertical = 5.dp)
             .accentShadow(shape = shape, elevation = 2.dp)
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
+            .background(
+                if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                else MaterialTheme.colorScheme.surface
+            )
             .accentBorder(shape = shape)
     ) {
         Column(

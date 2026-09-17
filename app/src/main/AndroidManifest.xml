@@ -51,17 +51,19 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
-    <!-- ── Agenda — recordatorios exactos (HU-65) ────── -->
+    <!-- ── Agenda + Notas — recordatorios exactos (HU-65, #52) ── -->
     <!-- Decisión de producto explícita del usuario (2026-09-16): alarma
          EXACTA en vez de WorkManager, para que el recordatorio suene justo
          a la hora del evento. En Android 12+ (API 31) este permiso no se
          concede solo — el usuario puede negarlo/revocarlo desde Ajustes
-         del sistema; ReminderScheduler.kt se degrada a una alarma inexacta
-         si no está concedido, en vez de no recordar nada. -->
+         del sistema; ReminderScheduler.kt/NoteReminderScheduler.kt se
+         degradan a una alarma inexacta si no está concedido, en vez de no
+         recordar nada. Un único permiso a nivel de manifest cubre ambos
+         schedulers — no hace falta declararlo dos veces. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <!-- Reprogramar los recordatorios pendientes tras un reinicio del
-         dispositivo (AlarmManager pierde todas sus alarmas al apagarse),
-         ver BootRescheduleReceiver.kt. -->
+    <!-- Reprogramar los recordatorios pendientes (Agenda y Notas) tras un
+         reinicio del dispositivo (AlarmManager pierde todas sus alarmas al
+         apagarse), ver BootRescheduleReceiver.kt. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
@@ -182,6 +184,13 @@
              PendingIntent, nunca un broadcast externo. -->
         <receiver
             android:name=".features.agenda.domain.AgendaReminderReceiver"
+            android:exported="false" />
+
+        <!-- Backlog UX #52: recibe la alarma exacta programada por
+             NoteReminderScheduler para el recordatorio de repaso de una
+             nota — mismo criterio que AgendaReminderReceiver de arriba. -->
+        <receiver
+            android:name=".features.study.domain.NoteReminderReceiver"
             android:exported="false" />
 
         <!-- HU-65, RNF2: reprograma los recordatorios pendientes tras un

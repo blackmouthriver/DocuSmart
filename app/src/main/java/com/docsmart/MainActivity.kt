@@ -63,6 +63,10 @@ class MainActivity : AppCompatActivity() {
     // `externalFileUri` de arriba (mutableStateOf, no un `var` plano, para
     // que onNewIntent() dispare recomposición con la Activity ya compuesta).
     private var pendingAgendaEventId by mutableStateOf<String?>(null)
+    // Backlog UX #52: id de la nota a abrir directo al tocar su
+    // notificación de recordatorio de repaso -- mismo patrón que
+    // `pendingAgendaEventId` de arriba.
+    private var pendingNoteId by mutableStateOf<String?>(null)
     private var adsInitialized  = false
 
     private val permissionLauncher = registerForActivityResult(
@@ -90,6 +94,7 @@ class MainActivity : AppCompatActivity() {
 
         externalFileUri = resolveExternalIntent(intent)
         pendingAgendaEventId = intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)
+        pendingNoteId = intent.getStringExtra(EXTRA_OPEN_NOTE_ID)
         requestStoragePermissions()
         // Bug real encontrado 2026-09-06 ("línea/franja blanca" reportada
         // por el usuario tapando botones en Convertir/Herramientas PDF):
@@ -183,6 +188,17 @@ class MainActivity : AppCompatActivity() {
                     pendingAgendaEventId = null
                 }
 
+                // Backlog UX #52: mismo mecanismo que arriba, para el tap de
+                // una notificación de recordatorio de repaso de una nota
+                // (AC2) -- aterriza en la pestaña Notas (tab=1) con esa nota
+                // específica resaltada.
+                LaunchedEffect(pendingNoteId, currentRoute) {
+                    val noteId = pendingNoteId ?: return@LaunchedEffect
+                    if (isStillOnSplashOrOnboarding(currentRoute)) return@LaunchedEffect
+                    navController.navigate(NavRoutes.Study.createRoute(tab = 1, openNoteId = noteId))
+                    pendingNoteId = null
+                }
+
                 // Fondo animado (backlog UX 2026-09-06): capa 0 detrás de toda
                 // la navegación, pintada una sola vez acá -- el Scaffold y los
                 // Scaffold anidados de cada pantalla usan containerColor
@@ -248,6 +264,10 @@ class MainActivity : AppCompatActivity() {
         intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)?.let { eventId ->
             Timber.d("onNewIntent: evento de Agenda $eventId")
             pendingAgendaEventId = eventId
+        }
+        intent.getStringExtra(EXTRA_OPEN_NOTE_ID)?.let { noteId ->
+            Timber.d("onNewIntent: recordatorio de nota $noteId")
+            pendingNoteId = noteId
         }
     }
 
@@ -401,5 +421,7 @@ class MainActivity : AppCompatActivity() {
         // HU-65: nombre de la extra que AgendaReminderReceiver pone en el
         // Intent de "abrir la app" de la notificación de recordatorio.
         const val EXTRA_OPEN_AGENDA_EVENT_ID = "open_agenda_event_id"
+        // Backlog UX #52: mismo mecanismo, para NoteReminderReceiver.
+        const val EXTRA_OPEN_NOTE_ID = "open_note_id"
     }
 }

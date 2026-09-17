@@ -990,6 +990,17 @@
     <string name="study_note_scan_image">スキャン</string>
     <string name="study_note_remove_image">画像を削除</string>
     <string name="study_note_image_desc">添付画像</string>
+    <string name="study_note_reminder_label">これを復習するようリマインドする</string>
+    <string name="study_note_reminder_tomorrow">明日</string>
+    <string name="study_note_reminder_3_days">3日後</string>
+    <string name="study_note_reminder_1_week">1週間後</string>
+    <string name="study_note_reminder_custom">カスタム</string>
+    <string name="study_note_reminder_scheduled_desc">リマインダー: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">メモの復習リマインダーを受け取るには通知を有効にしてください。</string>
+    <string name="study_note_reminder_enable_notifications">有効にする</string>
+    <string name="note_reminder_notification_channel">メモのリマインダー</string>
+    <string name="note_reminder_notification_fallback_title">復習リマインダー</string>
+    <string name="note_reminder_notification_text">復習するメモがあります</string>
     <string name="study_no_saved_notes">保存されたメモはありません</string>
     <string name="study_saved_notes_count">保存されたメモ(%1$d)</string>
     <string name="study_delete_all">すべて削除</string>

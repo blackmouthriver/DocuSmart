@@ -44,9 +44,14 @@ class NotesViewModel @Inject constructor(
         }
     }
 
-    fun createNote(title: String, text: String, imageUris: List<Uri> = emptyList()) {
+    fun createNote(
+        title: String,
+        text: String,
+        imageUris: List<Uri> = emptyList(),
+        reminderAt: Long? = null
+    ) {
         viewModelScope.launch {
-            noteRepository.createNote(title, text, imageUris = imageUris)
+            noteRepository.createNote(title, text, imageUris = imageUris, reminderAt = reminderAt)
             DocuSmartAnalytics.logNoteCreated()
         }
     }

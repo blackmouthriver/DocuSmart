@@ -62,11 +62,17 @@ sealed class NavRoutes(val route: String) {
     data object ScanResult  : NavRoutes("scan_result")
     data object Security    : NavRoutes("security")
     data object PdfPassword : NavRoutes("pdf_password")  // ← NUEVA
-    data object Study : NavRoutes("study?tab={tab}") {
+    data object Study : NavRoutes("study?tab={tab}&openNoteId={openNoteId}") {
         // Acceso rápido a una pestaña específica de Estudio (Lectura=0,
         // Notas=1, Pomodoro=2) desde Home -- antes solo había un punto de
         // entrada genérico que siempre abría en Lectura.
-        fun createRoute(tab: Int = 0): String = "study?tab=$tab"
+        // `openNoteId` (backlog UX #52): abre directo la nota específica al
+        // tocar su notificación de recordatorio de repaso, mismo mecanismo
+        // que `Agenda.createRoute(openEventId)` (HU-65).
+        fun createRoute(tab: Int = 0, openNoteId: String? = null): String {
+            val base = "study?tab=$tab"
+            return openNoteId?.let { "$base&openNoteId=${Uri.encode(it)}" } ?: base
+        }
     }
     data object Qr          : NavRoutes("qr")
     data object QrReader    : NavRoutes("qr_reader")

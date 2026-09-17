@@ -995,6 +995,17 @@
     <string name="study_note_scan_image">Scan</string>
     <string name="study_note_remove_image">Remove image</string>
     <string name="study_note_image_desc">Attached image</string>
+    <string name="study_note_reminder_label">Remind me to review this</string>
+    <string name="study_note_reminder_tomorrow">Tomorrow</string>
+    <string name="study_note_reminder_3_days">In 3 days</string>
+    <string name="study_note_reminder_1_week">In 1 week</string>
+    <string name="study_note_reminder_custom">Custom</string>
+    <string name="study_note_reminder_scheduled_desc">Reminder: %1$s</string>
+    <string name="study_note_reminder_notifications_disabled">Turn on notifications to get reminders to review your notes.</string>
+    <string name="study_note_reminder_enable_notifications">Enable</string>
+    <string name="note_reminder_notification_channel">Note reminders</string>
+    <string name="note_reminder_notification_fallback_title">Review reminder</string>
+    <string name="note_reminder_notification_text">You have a note to review</string>
     <string name="study_no_saved_notes">No saved notes</string>
     <string name="study_saved_notes_count">Saved notes (%1$d)</string>
     <string name="study_delete_all">Delete all</string>
