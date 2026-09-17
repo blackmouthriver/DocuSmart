@@ -918,6 +918,7 @@
     <string name="qr_design_remove_logo">Remover logo</string>
     <string name="qr_error_logo_load">Não foi possível carregar essa imagem como logo</string>
     <string name="qr_error_low_contrast">Escolha uma cor com mais contraste antes de gerar</string>
+    <string name="qr_error_generation_failed">O conteúdo é muito longo para gerar o código QR</string>
     <string name="qr_protect_password">Proteger com senha</string>
     <string name="qr_protect_password_desc">Só quem tiver a senha pode ver o conteúdo</string>
     <string name="qr_password_label">Senha</string>

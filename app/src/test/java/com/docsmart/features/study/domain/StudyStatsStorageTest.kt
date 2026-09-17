@@ -93,6 +93,34 @@ class StudyStatsStorageTest {
         assertTrue(pomodoroCountThisWeek(listOf(now, now, now), now) >= 3)
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (quinta pasada, E3):
+    // pomodoroCountToday reconstruye el contador de "descanso largo cada 4
+    // pomodoros" al arrancar un proceso nuevo -- antes vivía solo en
+    // memoria y se reiniciaba a 0 aunque el historial real ya tuviera
+    // pomodoros de hoy.
+    @Test
+    fun `pomodoroCountToday cuenta solo los timestamps del dia calendario actual`() {
+        val calendar = Calendar.getInstance()
+        calendar.set(2026, Calendar.SEPTEMBER, 17, 15, 0, 0)
+        val now = calendar.timeInMillis
+        val oneDay = 24 * 60 * 60 * 1000L
+
+        val today1 = now - 1000
+        val today2 = now - 2000
+        val yesterday = now - oneDay
+        val tomorrow = now + oneDay
+
+        assertEquals(2, pomodoroCountToday(listOf(today1, today2, yesterday, tomorrow), now))
+    }
+
+    @Test
+    fun `pomodoroCountToday devuelve 0 sin timestamps de hoy`() {
+        val now = System.currentTimeMillis()
+        val oneDay = 24 * 60 * 60 * 1000L
+
+        assertEquals(0, pomodoroCountToday(listOf(now - oneDay, now + oneDay), now))
+    }
+
     @Test
     fun `millisToHoursAndMinutes convierte sin decimales`() {
         assertEquals(1 to 5, millisToHoursAndMinutes(65 * 60_000L))

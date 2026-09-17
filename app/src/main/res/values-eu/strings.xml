@@ -938,6 +938,7 @@
     <string name="qr_design_remove_logo">Kendu logoa</string>
     <string name="qr_error_logo_load">Ezin izan da irudi hori logo gisa kargatu</string>
     <string name="qr_error_low_contrast">Aukeratu kontraste handiagoko kolore bat sortu aurretik</string>
+    <string name="qr_error_generation_failed">Edukia luzeegia da QR kodea sortzeko</string>
     <string name="qr_protect_password">Babestu pasahitzarekin</string>
     <string name="qr_protect_password_desc">Klabea duenak bakarrik ikus dezake edukia</string>
     <string name="qr_password_label">Pasahitza</string>

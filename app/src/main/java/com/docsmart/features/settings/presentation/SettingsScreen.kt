@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -605,7 +606,22 @@ fun SettingsScreen(
                         selected = currentFontScale == scale,
                         onClick  = { themeManager.setFontScale(scale) },
                         shape    = SegmentedButtonDefaults.itemShape(index, FontScale.entries.size),
-                        label    = { Text(fontScaleLabel(scale)) }
+                        label    = {
+                            // Hallazgo real de la auditoría general
+                            // 2026-09-17 (quinta pasada): la etiqueta usa
+                            // labelLarge, que se reescala globalmente en
+                            // cuanto se toca cualquier opción -- "Muy
+                            // grande" (la más larga en los 12 idiomas) se
+                            // envolvía/deformaba dentro de su propio
+                            // segmento de ancho fijo justo al elegirla.
+                            // maxLines=1 + ellipsis evita esa deformación
+                            // sin depender de un tamaño de fuente fijo.
+                            Text(
+                                text = fontScaleLabel(scale),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     )
                 }
             }

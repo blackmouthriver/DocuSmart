@@ -55,7 +55,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.docsmart.R
 import com.docsmart.core.navegation.NavRoutes
 import com.docsmart.core.ui.theme.rememberAccentGradient
@@ -341,7 +340,14 @@ private fun BottomNavAnimatedItem(
                 Text(
                     text = label,
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 11.sp,
+                    // Hallazgo real de la auditoría general 2026-09-17
+                    // (quinta pasada): fontSize hardcodeado en vez de
+                    // derivar del tema -- no escalaba con la preferencia
+                    // propia de "Tamaño de letra" (sí con la del sistema,
+                    // porque sp lo respeta, pero no con el multiplicador de
+                    // la app). labelSmall ya es 11sp en NORMAL (idéntico al
+                    // valor anterior) y sí aplica el multiplicador propio.
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
             }

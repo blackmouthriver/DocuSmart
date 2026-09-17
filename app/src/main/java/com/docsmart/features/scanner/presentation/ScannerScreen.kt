@@ -30,7 +30,8 @@ import timber.log.Timber
 fun ScannerScreen(
     onBack: () -> Unit,
     onScanComplete: (List<Uri>) -> Unit,
-    viewModel: ScannerViewModel = hiltViewModel()
+    viewModel: ScannerViewModel = hiltViewModel(),
+    scanSessionViewModel: ScanSessionViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -38,6 +39,18 @@ fun ScannerScreen(
 
     val scannerStartErrorTemplate = stringResource(R.string.scanner_start_error)
 
+    // Hallazgo real de la revisión adversarial de seguridad sobre el fix
+    // S1 de la auditoría general 2026-09-17 (quinta pasada): "Escanear
+    // otro" reutiliza esta misma pantalla haciendo `onBack()` desde
+    // ScanResultScreen -- eso saca a ScanResultScreen de la pila SIN
+    // limpiar la sesión (a propósito, para no perder lo ya escaneado). Si
+    // el usuario cancela ESTE nuevo intento de captura, `onBack()` de acá
+    // ya no vuelve a ScanResultScreen (quedó fuera de la pila) sino más
+    // atrás -- la sesión anterior queda huérfana en el singleton
+    // `ScanSessionManager`, sin ninguna pantalla que la muestre, lista
+    // para mezclarse con la próxima sesión real. Se limpia acá, mismo
+    // criterio que "Volver al inicio" en ScanResultScreen (no-op seguro
+    // si no había nada que limpiar).
     val scannerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
@@ -61,16 +74,19 @@ fun ScannerScreen(
                 viewModel.onScanComplete(pages, isPdf = false)
                 onScanComplete(pages)
             } else {
+                scanSessionViewModel.clearSession()
                 onBack()
             }
         } else {
             Timber.d("Escáner: cancelado")
+            scanSessionViewModel.clearSession()
             onBack()
         }
     }
 
     LaunchedEffect(Unit) {
         if (activity == null) {
+            scanSessionViewModel.clearSession()
             onBack()
             return@LaunchedEffect
         }

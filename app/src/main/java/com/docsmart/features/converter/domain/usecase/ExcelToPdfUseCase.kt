@@ -91,6 +91,19 @@ class ExcelToPdfUseCase @Inject constructor(
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada): OutOfMemoryError no hereda de Exception -- un .xlsx
+            // grande podía agotar la memoria a mitad de camino y dejar el
+            // .pdf parcial huérfano (PdfWriter ya lo había creado en disco).
+            Timber.e(e, "ExcelToPdfUseCase: sin memoria convirtiendo el documento")
+            outputFile?.delete()
+            ConversionResult.Error(
+                String.format(
+                    context.getString(R.string.converter_error_generic_format),
+                    context.getString(R.string.converter_error_unknown)
+                )
+            )
         }
     }
 

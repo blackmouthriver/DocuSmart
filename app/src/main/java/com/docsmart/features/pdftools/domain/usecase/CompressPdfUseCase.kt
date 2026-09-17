@@ -8,7 +8,9 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
@@ -18,6 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 data class CompressPdfMessages(
     val readError       : String,
@@ -127,6 +130,16 @@ class CompressPdfUseCase @Inject constructor(
                 )
             )
 
+        } catch (e: CancellationException) {
+            // Hallazgo real de la revisión adversarial de correctitud sobre
+            // el fix de cancelación cooperativa (ensureActive() en
+            // renderAndCompressPages()): CancellationException hereda de
+            // Exception, así que sin este catch específico antes del
+            // genérico de abajo, cada cancelación real (navegar hacia
+            // atrás) se registraba como un error de compresión -- ruido
+            // falso en cualquier reporte de fallos. Se relanza tal cual.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al comprimir: ${e.message}")
             outputFile?.delete()
@@ -157,7 +170,7 @@ class CompressPdfUseCase @Inject constructor(
         else
             String.format(messages.success, originalKb, finalKb, reduction)
 
-    private fun renderAndCompressPages(
+    private suspend fun renderAndCompressPages(
         renderer   : PdfRenderer,
         scaleFactor: Float,
         quality    : Int
@@ -165,6 +178,12 @@ class CompressPdfUseCase @Inject constructor(
         val pdfDocument = android.graphics.pdf.PdfDocument()
 
         for (i in 0 until renderer.pageCount) {
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada): sin ningún punto de suspensión en este bucle,
+            // cancelar la corrutina (ej. el usuario navega hacia atrás
+            // mientras comprime) nunca se notaba hasta que todas las
+            // páginas terminaban solas en segundo plano.
+            coroutineContext.ensureActive()
             val page   = renderer.openPage(i)
             val width  = (page.width  * scaleFactor).toInt().coerceAtLeast(1)
             val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)

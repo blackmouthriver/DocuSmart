@@ -101,6 +101,19 @@ object PomodoroEngine {
     // de inferirlo del valor exacto del cronómetro.
     private var studySessionLogged = false
 
+    // Hallazgo real de la auditoría general 2026-09-17 (quinta pasada):
+    // `pomodoroCount` vivía solo en este objeto en memoria, nunca se
+    // inicializaba desde StudyStatsStorage (que sí persiste el historial
+    // real) -- pausar y que el proceso muera (memoria baja o cierre
+    // manual) reiniciaba el contador a 0 en la próxima apertura, así que
+    // el "descanso largo cada 4 pomodoros" (ya prometido en
+    // study_pomodoros_hint) no se disparaba en el momento correcto pese a
+    // que el número mostrado en pantalla (pomodoroCountThisWeek) sí
+    // reflejaba los pomodoros reales de hoy. Se siembra una sola vez por
+    // proceso, en el primer start()/reset(), para no pisar un reset manual
+    // del usuario ni resembrar en cada toggle().
+    private var seededPomodoroCount = false
+
     fun toggle(context: Context) {
         if (_state.value.isRunning) pause(context) else start(context)
     }
@@ -119,11 +132,30 @@ object PomodoroEngine {
         tickerJob = null
         _state.value = PomodoroState()
         studySessionLogged = false
+        // Hallazgo real de la revisión adversarial de correctitud sobre
+        // este mismo fix: marcar `seededPomodoroCount = true` acá sin
+        // condición bloqueaba la siembra real si el usuario tocaba
+        // "Reiniciar" ANTES que "Iniciar" alguna vez en este proceso (el
+        // botón está siempre habilitado) -- el próximo start() ya no
+        // sembraba desde StudyStatsStorage, reintroduciendo el bug que E3
+        // corrige. No se toca la bandera acá: si ya estaba sembrada, sigue
+        // sembrada (reset manual real, sin reabrir la siembra); si nunca
+        // se sembró, el próximo start() lo hace desde datos reales.
         stopService(context)
     }
 
     private fun start(context: Context) {
         if (_state.value.isRunning) return
+        if (!seededPomodoroCount) {
+            seededPomodoroCount = true
+            val completedToday = pomodoroCountToday(
+                StudyStatsStorage.loadStats(context).pomodoroTimestamps,
+                System.currentTimeMillis()
+            )
+            if (completedToday > _state.value.pomodoroCount) {
+                _state.value = _state.value.copy(pomodoroCount = completedToday)
+            }
+        }
         // Hallazgo #58 (revisión general 2026-09-16): antes se disparaba en
         // cada reanudación (pausar → reanudar un bloque de estudio ya
         // empezado también entra por acá), no solo al iniciar sesión --

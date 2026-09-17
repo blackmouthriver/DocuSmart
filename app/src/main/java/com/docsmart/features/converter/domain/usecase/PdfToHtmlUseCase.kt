@@ -70,6 +70,17 @@ class PdfToHtmlUseCase @Inject constructor(
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada): OutOfMemoryError no hereda de Exception, así que el
+            // catch de arriba nunca la atrapaba con un PDF grande.
+            Timber.e(e, "PdfToHtmlUseCase: sin memoria convirtiendo el documento")
+            ConversionResult.Error(
+                String.format(
+                    context.getString(R.string.converter_error_generic_format),
+                    context.getString(R.string.converter_error_unknown)
+                )
+            )
         } finally {
             cacheFile?.delete()
         }

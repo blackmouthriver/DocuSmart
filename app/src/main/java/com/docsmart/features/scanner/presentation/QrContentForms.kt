@@ -124,6 +124,7 @@ fun QrWifiForm(
                     }
                 },
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true,
                 shape = MaterialTheme.shapes.large,
                 colors = qrOutlinedFieldColors()

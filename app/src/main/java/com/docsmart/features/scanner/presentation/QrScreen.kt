@@ -888,6 +888,20 @@ fun QrCreatorScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada, A5): el resto de la app (DocuSmartScreenHeader) pone
+            // el banner de anuncios ANTES del banner de título -- acá el
+            // orden estaba invertido. Se alinea el orden con el resto de
+            // pantallas sin tocar el layout de márgenes propio de esta
+            // pantalla (fuera de alcance de este fix puntual).
+            // ── AdMob — solo para usuarios free (backlog UX §8) ───────────────
+            if (!isPremium) {
+                DocuSmartBannerAd(
+                    adUnitId  = AdConstants.BANNER_QR_ID,
+                    adManager = viewModel.adManager
+                )
+            }
+
             // Banner azul con degradado de acento (2026-09-08, pedido
             // explícito del usuario) -- reemplaza el TopAppBar plano de
             // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
@@ -905,14 +919,6 @@ fun QrCreatorScreen(
                     }
                 }
             )
-
-            // ── AdMob — solo para usuarios free (backlog UX §8) ───────────────
-            if (!isPremium) {
-                DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_QR_ID,
-                    adManager = viewModel.adManager
-                )
-            }
 
             Spacer(Modifier.height(4.dp))
 
@@ -1286,6 +1292,7 @@ fun QrCreatorScreen(
             val errorEmptyContent     = stringResource(R.string.qr_error_empty_content)
             val errorPasswordShort    = stringResource(R.string.qr_error_password_short)
             val errorLowContrast      = stringResource(R.string.qr_error_low_contrast)
+            val errorGenerationFailed = stringResource(R.string.qr_error_generation_failed)
             val errorWifiIncomplete   = stringResource(R.string.qr_error_wifi_incomplete)
             val errorContactRequired  = stringResource(R.string.qr_error_contact_name_required)
             val errorEventTitle       = stringResource(R.string.qr_error_event_title_required)
@@ -1346,8 +1353,22 @@ fun QrCreatorScreen(
                         val finalContent = if (usePassword && password.isNotBlank())
                             "${QrCrypto.PREFIX}${QrCrypto.encrypt(rawContent, password)}"
                         else rawContent
-                        qrBitmap     = generateQrBitmap(finalContent, moduleColor = moduleColor, logo = logoBitmap)
+                        val generated = generateQrBitmap(finalContent, moduleColor = moduleColor, logo = logoBitmap)
                         isGenerating = false
+                        // Hallazgo real de la auditoría general 2026-09-17
+                        // (quinta pasada): antes no se comprobaba el `null`
+                        // que devuelve generateQrBitmap cuando el contenido
+                        // excede la capacidad del QR (frecuente con
+                        // logo+contraseña+texto largo, ya que el logo fuerza
+                        // el nivel de corrección H, de menor capacidad) --
+                        // el botón "Generar" no mostraba nada, sin error, y
+                        // aun así se guardaba una entrada fantasma en el
+                        // Historial sin bitmap real detrás.
+                        if (generated == null) {
+                            errorMsg = errorGenerationFailed
+                            return@launch
+                        }
+                        qrBitmap = generated
                         // HU-43: Wi-Fi/Contacto/Evento no están en el
                         // QrContentType del Lector (namespace distinto, ver
                         // QrContentType.kt) -- alcanza con un literal para
@@ -1569,10 +1590,16 @@ internal suspend fun generateQrBitmap(
     withContext(Dispatchers.IO) {
         try {
             val size = 512
-            val hints = if (logo != null) {
-                mapOf(EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.H)
-            } else {
-                emptyMap()
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada): sin CHARACTER_SET, ZXing codifica el modo byte en
+            // ISO-8859-1 por defecto, que sustituye en silencio cualquier
+            // carácter fuera de ese charset (emojis, cirílico, árabe,
+            // chino/japonés/coreano) por "?" -- causa raíz real de fallas
+            // reportadas por usuarios (ej. contraseñas Wi-Fi con emoji que
+            // quedan corruptas sin ningún error visible).
+            val hints = buildMap {
+                put(EncodeHintType.CHARACTER_SET, "UTF-8")
+                if (logo != null) put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
             }
             val bitMatrix = MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints)
             // ARGB_8888 (antes RGB_565, sin canal alfa) -- necesario para

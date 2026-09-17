@@ -922,6 +922,7 @@
     <string name="qr_design_remove_logo">ロゴを削除</string>
     <string name="qr_error_logo_load">この画像をロゴとして読み込めませんでした</string>
     <string name="qr_error_low_contrast">生成する前にコントラストの高い色を選んでください</string>
+    <string name="qr_error_generation_failed">内容が長すぎてQRコードを生成できません</string>
     <string name="qr_protect_password">パスワードで保護</string>
     <string name="qr_protect_password_desc">パスワードを知っている人だけが内容を見られます</string>
     <string name="qr_password_label">パスワード</string>

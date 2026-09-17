@@ -927,6 +927,7 @@
     <string name="qr_design_remove_logo">Remove logo</string>
     <string name="qr_error_logo_load">Couldn\'t load that image as a logo</string>
     <string name="qr_error_low_contrast">Pick a color with more contrast before generating</string>
+    <string name="qr_error_generation_failed">The content is too long to generate the QR code</string>
     <string name="qr_protect_password">Protect with password</string>
     <string name="qr_protect_password_desc">Only someone with the password can see the content</string>
     <string name="qr_password_label">Password</string>

@@ -36,6 +36,8 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,7 +65,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
-import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.pdf.PdfPageBitmap
 import com.docsmart.core.pdf.renderPdfPagesToBitmaps
@@ -148,19 +149,39 @@ fun StudyScreen(
     // propio de esta pantalla). `documentUri` es nuevo -- antes solo se
     // guardaba el texto ya extraído, pero ahora también hace falta el PDF
     // original para mostrarlo mientras la voz lee (ver StudyPdfViewer).
-    var documentUri by remember { mutableStateOf<Uri?>(null) }
+    // Hallazgo real de la auditoría general 2026-09-17 (quinta pasada):
+    // todo este bloque usaba `remember` -- una rotación real del
+    // dispositivo (MainActivity no fija orientación ni declara
+    // configChanges) recreaba la Activity y perdía el PDF cargado y todo
+    // el texto ya extraído, obligando a elegir el archivo de nuevo y
+    // esperar otra vez la extracción. Mismo patrón ya corregido como Alta
+    // en el Visor (backlog 2026-09-16, #10), replicado acá con
+    // `rememberSaveable`.
+    var documentUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    // Hallazgo real de la revisión adversarial de correctitud sobre este
+    // mismo fix: `documentText` es un String POR PÁRRAFO de todo el
+    // documento -- para el caso de uso real de esta pantalla (libros/
+    // apuntes largos) puede ser varios MB, y guardarlo en el Bundle de
+    // `onSaveInstanceState` arriesga `TransactionTooLargeException` justo
+    // en el escenario que este fix quiere proteger (rotar con un documento
+    // largo ya cargado). Se mantiene en `remember` -- `documentUri` sí
+    // persiste, y el LaunchedEffect de más abajo (junto a `docLauncher`)
+    // vuelve a extraerlo automáticamente si hace falta, sin obligar al
+    // usuario a elegir el archivo de nuevo.
     var documentText by remember { mutableStateOf<List<String>>(emptyList()) }
     // "Retomar lectura" (2026-09-08): límites de página del documento activo,
     // para poder mostrar "página X de Y" y guardar el progreso por página.
-    var pageBoundaries by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var pageBoundaries by rememberSaveable(
+        stateSaver = listSaver(save = { it }, restore = { it })
+    ) { mutableStateOf<List<Int>>(emptyList()) }
     // Pedido explícito del usuario 2026-09-08: en un dispositivo más lento la
     // extracción del PDF completo tardaba mucho más que en otro -- ahora
     // `documentText`/`pageBoundaries` se actualizan página por página en vez
     // de esperar a que termine todo el documento, y `extractionComplete`
     // indica si aún queda procesamiento en segundo plano.
-    var extractionComplete by remember { mutableStateOf(true) }
+    var extractionComplete by rememberSaveable { mutableStateOf(true) }
     val noDocumentLabel = stringResource(R.string.study_no_document)
-    var documentName by remember { mutableStateOf(noDocumentLabel) }
+    var documentName by rememberSaveable { mutableStateOf(noDocumentLabel) }
     // Pedido explícito del usuario 2026-09-08: además de "Continuar leyendo",
     // poder quitar un PDF de esa lista -- estado propio (no `remember` de una
     // sola vez) para que la tarjeta desaparezca al tocar "Quitar" sin
@@ -174,8 +195,13 @@ fun StudyScreen(
         genericErrorTemplate = stringResource(R.string.study_extract_generic_error),
         defaultDocumentName  = stringResource(R.string.study_default_document_name)
     )
-    var notes by remember { mutableStateOf("") }
-    var highlights by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    // Se preserva con `rememberSaveable` para no perder una nota a medio
+    // escribir (texto/resaltados) si el dispositivo rota mientras se
+    // escribe -- ver comentario de `documentUri` más arriba.
+    var notes by rememberSaveable { mutableStateOf("") }
+    var highlights by rememberSaveable(
+        stateSaver = listSaver(save = { it.toList() }, restore = { it.toSet() })
+    ) { mutableStateOf<Set<Int>>(emptySet()) }
     var isLoadingDoc by remember { mutableStateOf(false) }
 
     // ── TTS ───────────────────────────────────────────
@@ -412,6 +438,17 @@ fun StudyScreen(
             val saved = StudyReadingProgressStorage.findFor(context, uri.toString())
             loadDocument(uri, resumeFromParagraph = saved?.paragraphIndex)
         }
+    }
+
+    // Re-extrae automáticamente si `documentUri` sobrevivió una rotación
+    // (rememberSaveable) pero `documentText` no (ver comentario de más
+    // arriba) -- evita que el usuario tenga que volver a elegir el mismo
+    // archivo a mano solo por haber rotado el dispositivo.
+    LaunchedEffect(documentUri) {
+        val uri = documentUri ?: return@LaunchedEffect
+        if (documentText.isNotEmpty() || isLoadingDoc) return@LaunchedEffect
+        val saved = StudyReadingProgressStorage.findFor(context, uri.toString())
+        loadDocument(uri, resumeFromParagraph = saved?.paragraphIndex)
     }
 
     // HU-64: reproduce una frase corta con ESA voz puntual sin tocar
@@ -1125,8 +1162,9 @@ private fun ReadingTab(
 
                     // ── PDF real, la voz lee de fondo ─
                     StudyPdfViewer(
-                        uri      = documentUri,
-                        modifier = Modifier.fillMaxWidth().weight(1f)
+                        uri         = documentUri,
+                        currentPage = currentPage,
+                        modifier    = Modifier.fillMaxWidth().weight(1f)
                     )
                 }
             }
@@ -1291,7 +1329,7 @@ private fun ReadingHistoryCard(progress: ReadingProgress, onClick: () -> Unit, o
 // extraído a core/pdf/PdfPageRenderer.kt al necesitarse acá también) pero
 // sin la lógica de resaltado de búsqueda -- Estudio no la necesita.
 @Composable
-private fun StudyPdfViewer(uri: Uri, modifier: Modifier = Modifier) {
+private fun StudyPdfViewer(uri: Uri, currentPage: Int, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var pages by remember(uri) { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
     var loadError by remember(uri) { mutableStateOf(false) }
@@ -1299,6 +1337,17 @@ private fun StudyPdfViewer(uri: Uri, modifier: Modifier = Modifier) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    val listState = rememberLazyListState()
+
+    // Hallazgo real de la auditoría general 2026-09-17 (quinta pasada):
+    // `currentPage` solo alimentaba el texto "Página X de Y" -- la imagen
+    // visible se quedaba fija donde el usuario la había dejado mientras
+    // "Leer todo" avanzaba de página en segundo plano. `currentPage` es
+    // 1-based (ver `study_reading_page`).
+    LaunchedEffect(currentPage, pages) {
+        val index = (currentPage - 1).coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+        if (pages.isNotEmpty()) listState.animateScrollToItem(index)
+    }
 
     LaunchedEffect(uri) {
         pages = withContext(Dispatchers.IO) {
@@ -1324,7 +1373,7 @@ private fun StudyPdfViewer(uri: Uri, modifier: Modifier = Modifier) {
             LoadingIndicator(stringResource(R.string.study_loading_document))
         }
         else -> LazyColumn(
-            state = rememberLazyListState(),
+            state = listState,
             modifier = modifier
                 .onSizeChanged { containerSize = it }
                 .pointerInput(Unit) {
@@ -1346,7 +1395,7 @@ private fun StudyPdfViewer(uri: Uri, modifier: Modifier = Modifier) {
             contentPadding      = PaddingValues(top = 8.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(pages) { pageBitmap ->
+            itemsIndexed(pages) { index, pageBitmap ->
                 val shape = MaterialTheme.shapes.small
                 Box(
                     modifier = Modifier
@@ -1358,7 +1407,12 @@ private fun StudyPdfViewer(uri: Uri, modifier: Modifier = Modifier) {
                 ) {
                     Image(
                         bitmap             = pageBitmap.bitmap.asImageBitmap(),
-                        contentDescription = null,
+                        // Hallazgo real de la auditoría general 2026-09-17
+                        // (quinta pasada): sin contentDescription, TalkBack
+                        // no anuncia en qué página está durante "Leer todo"
+                        // -- justo una función pensada para accesibilidad.
+                        // Mismo string ya usado por el Visor principal.
+                        contentDescription = stringResource(R.string.viewer_page_content_desc, index + 1),
                         modifier           = Modifier.fillMaxWidth()
                     )
                 }

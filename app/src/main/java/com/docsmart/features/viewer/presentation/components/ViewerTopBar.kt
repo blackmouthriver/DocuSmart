@@ -200,29 +200,38 @@ private fun ViewerMoreOptionsMenu(
             // (backlog UX 2026-08-30, HU-UX-01/02, AC5) -- van antes de
             // Renombrar/Eliminar por ser acciones no destructivas, igual
             // que en DocumentContextMenu.
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.viewer_convert)) },
-                leadingIcon = { Icon(Icons.Rounded.SwapHoriz, contentDescription = null) },
-                onClick = { menuExpanded = false; actions.onConvert() }
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.viewer_create_qr)) },
-                leadingIcon = { Icon(Icons.Rounded.QrCode, contentDescription = null) },
-                onClick = { menuExpanded = false; actions.onCreateQr() }
-            )
-            // HU-42: "Hacer buscable"/"Firmar" solo tienen sentido para un
-            // PDF real -- mismo criterio que DocumentContextMenu.
-            if (isPdf) {
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada): estos 4 ítems (Convertir/Crear QR/Hacer buscable/
+            // Firmar) eran los únicos del menú que NO se ocultaban en
+            // isReadOnlyPreview -- durante una vista previa, `document.id`
+            // es la ruta efímera de `secure_preview/`, y los 4 la sacan
+            // hacia Convertidor/Herramientas PDF, que escriben su salida en
+            // almacenamiento normal fuera de Carpeta Segura, sin PIN.
+            if (!isReadOnlyPreview) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.doc_item_make_searchable)) },
-                    leadingIcon = { Icon(Icons.Rounded.FindInPage, contentDescription = null) },
-                    onClick = { menuExpanded = false; actions.onMakeSearchable() }
+                    text = { Text(stringResource(R.string.viewer_convert)) },
+                    leadingIcon = { Icon(Icons.Rounded.SwapHoriz, contentDescription = null) },
+                    onClick = { menuExpanded = false; actions.onConvert() }
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.doc_item_sign)) },
-                    leadingIcon = { Icon(Icons.Rounded.Draw, contentDescription = null) },
-                    onClick = { menuExpanded = false; actions.onSign() }
+                    text = { Text(stringResource(R.string.viewer_create_qr)) },
+                    leadingIcon = { Icon(Icons.Rounded.QrCode, contentDescription = null) },
+                    onClick = { menuExpanded = false; actions.onCreateQr() }
                 )
+                // HU-42: "Hacer buscable"/"Firmar" solo tienen sentido para
+                // un PDF real -- mismo criterio que DocumentContextMenu.
+                if (isPdf) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.doc_item_make_searchable)) },
+                        leadingIcon = { Icon(Icons.Rounded.FindInPage, contentDescription = null) },
+                        onClick = { menuExpanded = false; actions.onMakeSearchable() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.doc_item_sign)) },
+                        leadingIcon = { Icon(Icons.Rounded.Draw, contentDescription = null) },
+                        onClick = { menuExpanded = false; actions.onSign() }
+                    )
+                }
             }
             // Hallazgo real de la auditoría general 2026-09-17: este ítem
             // era el único que NO se ocultaba en isReadOnlyPreview (a

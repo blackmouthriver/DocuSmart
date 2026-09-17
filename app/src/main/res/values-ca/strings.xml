@@ -950,6 +950,7 @@
     <string name="qr_design_remove_logo">Treu el logo</string>
     <string name="qr_error_logo_load">No s’ha pogut carregar aquesta imatge com a logo</string>
     <string name="qr_error_low_contrast">Tria un color amb més contrast abans de generar</string>
+    <string name="qr_error_generation_failed">El contingut és massa llarg per generar el codi QR</string>
     <string name="qr_protect_password">Protegir amb contrasenya</string>
     <string name="qr_protect_password_desc">Només qui tingui la clau pot veure el contingut</string>
     <string name="qr_password_label">Contrasenya</string>

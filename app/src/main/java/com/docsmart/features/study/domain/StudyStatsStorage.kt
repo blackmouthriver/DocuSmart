@@ -102,6 +102,27 @@ internal fun pomodoroCountsByWeekday(timestamps: List<Long>, now: Long): IntArra
 internal fun pomodoroCountThisWeek(timestamps: List<Long>, now: Long): Int =
     pomodoroCountsByWeekday(timestamps, now).sum()
 
+/**
+ * Total de pomodoros completados en el día calendario de `now` -- usado
+ * para reconstruir el contador de "descanso largo cada 4 pomodoros" de
+ * [com.docsmart.features.study.domain.PomodoroEngine] al arrancar un
+ * proceso nuevo (hallazgo real de la auditoría general 2026-09-17, quinta
+ * pasada: ese contador vivía solo en memoria y se reiniciaba a 0 si el
+ * proceso moría entre bloques, aunque el historial real ya llevara varios
+ * pomodoros completados hoy).
+ */
+internal fun pomodoroCountToday(timestamps: List<Long>, now: Long): Int {
+    val calendar = Calendar.getInstance()
+    calendar.timeInMillis = now
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+    val startOfDay = calendar.timeInMillis
+    val endOfDay = startOfDay + 24L * 60 * 60 * 1000
+    return timestamps.count { it in startOfDay until endOfDay }
+}
+
 /** Milisegundos -> (horas, minutos), para mostrar "Xh Ymin" sin decimales. */
 internal fun millisToHoursAndMinutes(millis: Long): Pair<Int, Int> {
     val totalMinutes = millis / 60_000

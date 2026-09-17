@@ -92,7 +92,14 @@ class ScanImageEditor @Inject constructor(
             filtered.recycle()
             original.recycle()
 
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada): a diferencia de applyAdjustments(), este método no
+            // registraba su archivo en ownedCacheFiles -- deleteCachedFile()
+            // nunca podía encontrarlo, así que cada cambio de modo de color
+            // quedaba huérfano para siempre en cacheDir/scanner_edits/.
+            ownedCacheFiles[uri] = outputFile
+            uri
         } catch (e: Exception) {
             Timber.e(e, "Error aplicando modo de color a la imagen escaneada")
             null

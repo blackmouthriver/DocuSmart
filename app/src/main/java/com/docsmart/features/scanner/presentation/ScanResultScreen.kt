@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -156,6 +156,15 @@ fun ScanResultScreen(
     // Backlog UX #35: tras guardar/compartir, cierra la vista de "un solo
     // documento" y muestra la lista de la sesión -- ver ScanSessionManager.
     var sessionFinalized by remember { mutableStateOf(false) }
+    // Hallazgo real de la auditoría general 2026-09-17 (quinta pasada):
+    // "Escanear otro"/"Escanear de nuevo" navegan hacia atrás (onBack) para
+    // volver a ScannerScreen y capturar la página siguiente -- eso saca
+    // esta pantalla de composición y disparaba el mismo DisposableEffect
+    // que limpia la sesión al salir de verdad (ver ScanResultSideEffects),
+    // vaciando la lista acumulada justo cuando "Escanear otro" está pensado
+    // para hacerla crecer. Esta bandera distingue "sigo en la misma sesión"
+    // de una salida real.
+    var isContinuingSession by remember { mutableStateOf(false) }
 
     // RF-SCAN-06/07: lista editable -- empieza igual al resultado del
     // escáner, y cada página editada reemplaza su URI original por la del
@@ -212,6 +221,7 @@ fun ScanResultScreen(
     // límite de líneas de detekt en este Composable.
     val conversionResult = uiState.conversionResult
     ScanResultSideEffects(
+        isContinuingSession = isContinuingSession,
         editingIndex = editingIndex,
         editableUris = editableUris,
         pageColorModes = pageColorModes,
@@ -241,7 +251,11 @@ fun ScanResultScreen(
     val hasBatchResult = uiState.batchResults.isNotEmpty()
     val hasSingleResult = isPdf || conversionResult is ConversionResult.Success
     val hasAnyResult = hasSingleResult || hasBatchResult
-    val scanAgainAction: () -> Unit = { converterViewModel.clearAll(); onBack() }
+    val scanAgainAction: () -> Unit = {
+        isContinuingSession = true
+        converterViewModel.clearAll()
+        onBack()
+    }
     // Bug real reportado por el usuario 2026-09-06: "Volver al inicio" desde
     // el resultado de un solo documento (antes de guardarlo/compartirlo) no
     // limpiaba `ScanSessionManager` -- como es un `@Singleton`, no se
@@ -294,6 +308,13 @@ fun ScanResultScreen(
             hasBatchResult = hasBatchResult,
             items = uiState.batchResults,
             savedToDownloads = uiState.batchSavedToDownloads,
+            // Hallazgo real de la auditoría general 2026-09-17 (quinta
+            // pasada, S3): BatchConversionSuccess ya recibe este guard
+            // visual en el Convertidor (evita doble-toque real en
+            // "Guardar todas") pero acá nunca se pasaba, dejando el botón
+            // sin feedback de carga -- inconsistente con el mismo
+            // componente compartido.
+            isSaving = uiState.isSaving,
             onConvertAnother = scanAgainAction,
             onSaveAllToDownloads = {
                 if (scanSessionViewModel.requestScanSaveSlot()) {
@@ -432,6 +453,7 @@ private data class ScanResultEffectCallbacks(
 // diarios (conversiones y escaneos guardados).
 @Composable
 private fun ScanResultSideEffects(
+    isContinuingSession: Boolean,
     editingIndex: Int?,
     editableUris: List<Uri>,
     pageColorModes: List<ScanColorMode>,
@@ -471,8 +493,18 @@ private fun ScanResultSideEffects(
     // la siguiente sesión real. DisposableEffect cubre TODA salida real
     // (cualquier ruta de navegación) sin duplicar la lógica existente --
     // limpiar una sesión ya limpia es no-op.
+    // Hallazgo real de la auditoría general 2026-09-17 (quinta pasada):
+    // "Escanear otro" también navega por onBack() para volver a capturar
+    // la página siguiente, así que este mismo onDispose se disparaba y
+    // vaciaba la sesión que "Escanear otro" está pensado para hacer
+    // crecer. `rememberUpdatedState` para leer el valor vigente de la
+    // bandera en el momento real de la disposición, no el de la primera
+    // composición.
+    val continuingSession = rememberUpdatedState(isContinuingSession)
     DisposableEffect(Unit) {
-        onDispose { viewModels.scanSessionViewModel.clearSession() }
+        onDispose {
+            if (!continuingSession.value) viewModels.scanSessionViewModel.clearSession()
+        }
     }
 
     LaunchedEffect(uiState.conversionResult) {
@@ -712,6 +744,7 @@ private data class ScanBatchDisplayArgs(
     val hasBatchResult: Boolean,
     val items: List<BatchConversionItem>,
     val savedToDownloads: Boolean,
+    val isSaving: Boolean,
     val onConvertAnother: () -> Unit,
     val onSaveAllToDownloads: () -> Unit,
     val onDone: () -> Unit,
@@ -848,6 +881,7 @@ private fun LazyListScope.scanResultContent(
             BatchConversionSuccess(
                 items = batchArgs.items,
                 savedToDownloads = batchArgs.savedToDownloads,
+                isSaving = batchArgs.isSaving,
                 onConvertAnother = batchArgs.onConvertAnother,
                 onSaveAllToDownloads = batchArgs.onSaveAllToDownloads,
                 onOpenDocument = batchArgs.onOpenDocument
@@ -1933,12 +1967,9 @@ private suspend fun shareFileAwaitingSelection(
                     if (cont.isActive) cont.resume(true, onCancellation = null)
                 }
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(receiver, IntentFilter(action), Context.RECEIVER_NOT_EXPORTED)
-            } else {
-                @Suppress("UnspecifiedRegisterReceiverFlag")
-                context.registerReceiver(receiver, IntentFilter(action))
-            }
+            ContextCompat.registerReceiver(
+                context, receiver, IntentFilter(action), ContextCompat.RECEIVER_NOT_EXPORTED
+            )
             var sawFirstResume = false
             lifecycleObserver = LifecycleEventObserver { _, event ->
                 if (event != Lifecycle.Event.ON_RESUME) return@LifecycleEventObserver

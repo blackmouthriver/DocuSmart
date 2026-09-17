@@ -922,6 +922,7 @@
     <string name="qr_design_remove_logo">移除标志</string>
     <string name="qr_error_logo_load">无法将该图片加载为标志</string>
     <string name="qr_error_low_contrast">生成前请选择对比度更高的颜色</string>
+    <string name="qr_error_generation_failed">内容过长，无法生成二维码</string>
     <string name="qr_protect_password">用密码保护</string>
     <string name="qr_protect_password_desc">只有拥有密码的人才能查看内容</string>
     <string name="qr_password_label">密码</string>

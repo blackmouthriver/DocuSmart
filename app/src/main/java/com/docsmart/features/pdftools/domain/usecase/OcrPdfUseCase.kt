@@ -24,10 +24,13 @@ import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import kotlin.coroutines.coroutineContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -186,6 +189,18 @@ class OcrPdfUseCase @Inject constructor(
                 outputFile = output,
                 message = String.format(messages.success, processedPages, totalWords)
             )
+        } catch (e: CancellationException) {
+            // Hallazgo real de la revisión adversarial de correctitud sobre
+            // el fix de cancelación cooperativa (ensureActive() en
+            // ocrAllPages()): CancellationException hereda de Exception, así
+            // que sin este catch específico ANTES del genérico de abajo,
+            // cada cancelación real (navegar hacia atrás) se registraba
+            // como un error de OCR -- ruido falso en cualquier reporte de
+            // fallos. Se relanza tal cual para no romper la propagación de
+            // la cancelación (limpieza de outputFile/cacheFile igual vía
+            // finally).
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al aplicar OCR")
             outputFile?.delete()
@@ -198,7 +213,7 @@ class OcrPdfUseCase @Inject constructor(
     // Extraído de invoke() -- además de mantener la complejidad ciclomática
     // bajo el umbral de detekt, aísla el recorrido de páginas del hallazgo
     // #27 (cierre de fd/renderer) del resto de la máquina de estados.
-    private fun ocrAllPages(
+    private suspend fun ocrAllPages(
         pdf: PdfDocument,
         cacheFile: File,
         recognizer: TextRecognizer,
@@ -215,6 +230,14 @@ class OcrPdfUseCase @Inject constructor(
         ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
             PdfRenderer(fd).use { renderer ->
                 for (pageNumber in 1..pdf.numberOfPages) {
+                    // Hallazgo real de la auditoría general 2026-09-17
+                    // (quinta pasada): sin ningún punto de suspensión en
+                    // este bucle, cancelar la corrutina (ej. el usuario
+                    // navega hacia atrás mientras corre el OCR) nunca se
+                    // notaba hasta que las ~40 páginas terminaban solas en
+                    // segundo plano -- el .pdf resultante quedaba huérfano,
+                    // sin ninguna referencia en la UI.
+                    coroutineContext.ensureActive()
                     val words = ocrOnePage(pdf, renderer, pageNumber, recognizer, font) ?: continue
                     totalWords += words
                     processedPages++

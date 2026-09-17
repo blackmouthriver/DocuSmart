@@ -7,8 +7,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+
+// Hallazgo real de la auditoría general 2026-09-17 (quinta pasada, A2):
+// el multiplicador propio de "Tamaño de letra" (hasta 1.3x) se componía
+// multiplicativamente con el font-scale de accesibilidad del sistema
+// (hasta 1.3x-2x según OEM) sin ningún límite superior -- en un
+// dispositivo con accesibilidad alta + "Muy grande" el texto final podía
+// llegar a ~2.5x-3x el tamaño base, agravando cualquier layout ajustado
+// (ej. el propio selector de tamaño de letra, A1).
+private const val MAX_COMBINED_FONT_SCALE = 1.8f
 
 private val LightColorScheme = lightColorScheme(
     primary              = DocuBlue,
@@ -142,9 +152,32 @@ fun DocuSmartTheme(
         }
     }
 
+    // Se reduce el multiplicador propio (nunca por debajo de 1x, el
+    // tamaño "Normal") lo necesario para que el producto con el
+    // font-scale del sistema no supere el techo combinado. Deliberado: si
+    // el font-scale de accesibilidad del SISTEMA ya excede el techo por sí
+    // solo, no se lo reduce por debajo de 1x para compensar -- sería
+    // pisar una decisión de accesibilidad del usuario tomada fuera de la
+    // app. El techo real que se garantiza es "nuestro propio multiplicador
+    // no agrava una situación ya extrema", no un límite absoluto del
+    // producto en cualquier escenario del sistema.
+    // Hallazgo real de la revisión adversarial de correctitud sobre este
+    // mismo fix: `coerceIn(1f, fontScale)` asume `fontScale >= 1f` --
+    // válido hoy (FontScale solo tiene 1.0/1.15/1.3), pero si algún día se
+    // agrega una opción menor a 1x sin tocar esta fórmula, `coerceIn` con
+    // un rango inválido (mínimo > máximo) lanza `IllegalArgumentException`
+    // y tira abajo toda la app. `coerceAtMost`+`coerceAtLeast` encadenados
+    // dan el mismo resultado hoy sin ese riesgo latente.
+    val systemFontScale = LocalDensity.current.fontScale
+    val cappedFontScale = if (systemFontScale > 0f) {
+        (MAX_COMBINED_FONT_SCALE / systemFontScale).coerceAtMost(fontScale).coerceAtLeast(1f)
+    } else {
+        fontScale
+    }
+
     MaterialTheme(
         colorScheme = colorScheme,
-        typography  = DocuSmartTypography.scaledBy(fontScale),
+        typography  = DocuSmartTypography.scaledBy(cappedFontScale),
         shapes      = DocuSmartShapes,
         content     = content
     )

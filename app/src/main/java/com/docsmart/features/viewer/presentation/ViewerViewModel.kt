@@ -569,7 +569,25 @@ class ViewerViewModel @Inject constructor(
                             src.copyTo(cacheIn, overwrite = true)
                         }
                         else -> {
-                            context.contentResolver.openInputStream(uri)?.use { input ->
+                            val opened = context.contentResolver.openInputStream(uri)
+                            if (opened == null) {
+                                // Hallazgo real de la auditoría general
+                                // 2026-09-17 (quinta pasada): a diferencia de
+                                // las otras 2 ramas, esta no comprobaba si el
+                                // archivo era legible -- un permiso SAF
+                                // revocado o un proveedor caído hacía que
+                                // openInputStream() devolviera null, cacheIn
+                                // quedaba vacío/inexistente, y el intento de
+                                // PdfReader de más abajo fallaba con la misma
+                                // excepción que "contraseña incorrecta" --
+                                // el usuario reintentaba la contraseña
+                                // correcta sin poder resolver el problema
+                                // real.
+                                val readError = context.getString(R.string.pdf_pw_read_error)
+                                _uiState.update { it.copy(isLoading = false, passwordError = readError) }
+                                return@withContext
+                            }
+                            opened.use { input ->
                                 cacheIn.outputStream().use { output -> input.copyTo(output) }
                             }
                         }
@@ -854,6 +872,15 @@ class ViewerViewModel @Inject constructor(
     }
 
     fun toggleFavorite() {
+        // Hallazgo real de la revisión adversarial de seguridad sobre V1
+        // (auditoría general 2026-09-17, quinta pasada): a diferencia de
+        // renombrar/eliminar/anotar, este acceso nunca chequeaba
+        // isReadOnlyPreview -- durante la vista previa de Carpeta Segura,
+        // `document.id` es la ruta efímera de `secure_preview/`, que
+        // quedaría persistida como favorito en `FavoritesRepository` mucho
+        // después de que el archivo temporal se borre. Defensa en
+        // profundidad, mismo criterio que los demás accesos ya protegidos.
+        if (_uiState.value.isReadOnlyPreview) return
         val document = _uiState.value.document ?: return
         viewModelScope.launch {
             val isNowFavorite = favoritesRepository.toggleFavorite(document.id)
@@ -1030,6 +1057,14 @@ class ViewerViewModel @Inject constructor(
     // que siempre (AC2, sin diálogo de por medio) -- el diálogo "con
     // anotaciones/original" solo aparece si hay algo que aplanar.
     fun shareDocument(context: Context) {
+        // Hallazgo real de la revisión adversarial de seguridad sobre V1
+        // (auditoría general 2026-09-17, quinta pasada): "Compartir" no
+        // tenía el mismo guard que renombrar/eliminar/anotar. Hoy no es
+        // explotable (file_provider_paths.xml no declara `secure_preview/`,
+        // así que FileProvider rechaza la URI), pero esa protección vive
+        // en un XML no relacionado -- defensa en profundidad acá, igual
+        // que en toggleFavorite().
+        if (_uiState.value.isReadOnlyPreview) return
         val hasAnnotations = _uiState.value.annotations.values.any { it.isNotEmpty() }
         if (hasAnnotations) {
             _uiState.update { it.copy(showShareChoiceDialog = true) }
@@ -1045,6 +1080,10 @@ class ViewerViewModel @Inject constructor(
     fun shareOriginal(context: Context) {
         _uiState.update { it.copy(showShareChoiceDialog = false) }
         val state    = _uiState.value
+        // Se llama también directo desde el diálogo "Original/Con
+        // anotaciones" (ViewerScreen.kt), sin pasar por shareDocument() --
+        // mismo guard acá, ver el comentario de shareDocument().
+        if (state.isReadOnlyPreview) return
         val document = state.document ?: return
         try {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -1079,6 +1118,12 @@ class ViewerViewModel @Inject constructor(
     // toca ni se sobrescribe.
     fun shareWithAnnotations(context: Context) {
         val state       = _uiState.value
+        // Mismo guard que shareOriginal()/shareDocument() -- se llama
+        // directo desde el diálogo "Original/Con anotaciones".
+        if (state.isReadOnlyPreview) {
+            _uiState.update { it.copy(showShareChoiceDialog = false) }
+            return
+        }
         val document    = state.document
         val sourceUri   = state.fileUri
         if (document == null || sourceUri == null) {
