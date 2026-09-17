@@ -2,6 +2,7 @@ package com.docsmart.core.data
 
 import com.docsmart.core.data.db.AgendaEventDao
 import com.docsmart.core.data.db.AnnotationDao
+import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.LastViewedPageDao
 import com.docsmart.core.data.db.NoteDao
 import com.docsmart.core.data.db.PageBookmarkDao
@@ -32,7 +33,8 @@ class DocumentIdentityMaintenance @Inject constructor(
     private val pageBookmarkDao: PageBookmarkDao,
     private val lastViewedPageDao: LastViewedPageDao,
     private val noteDao: NoteDao,
-    private val agendaEventDao: AgendaEventDao
+    private val agendaEventDao: AgendaEventDao,
+    private val documentHistoryDao: DocumentHistoryDao
 ) {
     suspend fun onIdChanged(oldId: String, newId: String) {
         favoritesRepository.migrateId(oldId, newId)
@@ -41,6 +43,12 @@ class DocumentIdentityMaintenance @Inject constructor(
         lastViewedPageDao.updateDocumentId(oldId, newId)
         noteDao.updateDocumentId(oldId, newId)
         agendaEventDao.updateDocumentId(oldId, newId)
+        // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+        // Media -- B1): sin esto, la fila de "Recientes" quedaba
+        // apuntando al id viejo (huérfana), y el documento perdía su
+        // posición real en Home (caía al fallback por fecha de archivo
+        // en vez de por fecha de apertura real).
+        documentHistoryDao.updateDocumentId(oldId, newId)
     }
 
     suspend fun onPermanentlyDeleted(documentId: String) {

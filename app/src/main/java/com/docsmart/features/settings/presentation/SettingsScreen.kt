@@ -139,6 +139,10 @@ fun SettingsScreen(
         if (allFiles.isNotEmpty()) {
             viewModel.moveConvertedFilesToTrash(allFiles.map { it.absolutePath })
         }
+        // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+        // Media -- S3): a diferencia de los archivos de arriba, esta
+        // copia efímera NUNCA debe pasar por Papelera -- se borra directo.
+        viewModel.clearSecurePreviewCache()
     }
 
     // Rediseño de Ajustes 2026-09-14: Tema/Color de acento/Tamaño de letra

@@ -80,6 +80,12 @@ class AgendaViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), AgendaUiState())
 
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Alta): ver el comentario de AgendaRepository.rescheduleAllReminders().
+    fun rescheduleAllReminders() {
+        viewModelScope.launch { repository.rescheduleAllReminders() }
+    }
+
     fun setViewMode(mode: AgendaViewMode) {
         _viewMode.value = mode
     }
@@ -171,6 +177,17 @@ class AgendaViewModel @Inject constructor(
         val draft = _draft.value ?: return
         val title = draft.title.trim()
         if (title.isBlank()) return
+        // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+        // Media): `_draft.value = null` (que cierra el diálogo) recién se
+        // asignaba DESPUÉS de que repository.createEvent()/updateEvent()
+        // terminaran (I/O + AlarmManager) -- el botón "Guardar" no se
+        // deshabilitaba durante ese lapso, así que un doble-toque rápido
+        // pasaba la guarda de arriba las dos veces y creaba dos eventos
+        // idénticos (cada uno con su propia alarma). Se cierra el diálogo
+        // de inmediato: un segundo toque ve `_draft.value == null` y la
+        // guarda de arriba lo descarta, mismo criterio que el resto de la
+        // app usa para estos guards síncronos.
+        _draft.value = null
         viewModelScope.launch {
             val description = draft.description.trim().ifBlank { null }
             if (draft.id == null) {
@@ -194,7 +211,6 @@ class AgendaViewModel @Inject constructor(
                     )
                 )
             }
-            _draft.value = null
         }
     }
 

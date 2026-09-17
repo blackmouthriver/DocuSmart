@@ -112,7 +112,18 @@ fun AgendaScreen(
     // de Ajustes -- se refresca al volver de esa pantalla vía
     // ReloadOnScreenResume, mismo patrón que LibraryScreen para permisos.
     var canScheduleExactAlarms by remember { mutableStateOf(canScheduleExactAlarmsNow(context)) }
-    ReloadOnScreenResume { canScheduleExactAlarms = canScheduleExactAlarmsNow(context) }
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Alta): Android cancela automáticamente TODAS las alarmas exactas ya
+    // programadas al revocar este permiso -- antes solo se refrescaba el
+    // booleano para mostrar/ocultar el banner, sin reprogramar los
+    // recordatorios ya afectados. Al detectar la transición de
+    // concedido→revocado se reprograman todos (ReminderScheduler ya
+    // degrada con elegancia a alarma inexacta).
+    ReloadOnScreenResume {
+        val nowGranted = canScheduleExactAlarmsNow(context)
+        if (canScheduleExactAlarms && !nowGranted) viewModel.rescheduleAllReminders()
+        canScheduleExactAlarms = nowGranted
+    }
 
     Scaffold(
         floatingActionButton = {

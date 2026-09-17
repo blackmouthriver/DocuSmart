@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -80,6 +81,29 @@ fun AgendaEventEditorDialog(
     onDismiss: () -> Unit
 ) {
     val isEditing = draft.id != null
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Media-Alta): borrado directo y permanente (no hay papelera para
+    // eventos de Agenda) con un solo toque, en la misma fila que
+    // "Cancelar"/"Guardar" -- mismo patrón de confirmación ya usado en
+    // Carpeta Segura/Papelera de documentos.
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.agenda_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.agenda_delete_confirm_body, draft.title)) },
+            confirmButton = {
+                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                    Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(stringResource(R.string.general_cancel))
+                }
+            }
+        )
+    }
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.large,
@@ -194,7 +218,7 @@ fun AgendaEventEditorDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (isEditing) {
-                        TextButton(onClick = onDelete) {
+                        TextButton(onClick = { showDeleteConfirm = true }) {
                             Icon(
                                 imageVector = Icons.Rounded.Delete,
                                 contentDescription = null,

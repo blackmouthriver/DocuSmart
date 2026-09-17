@@ -197,7 +197,11 @@ class ConverterViewModel @Inject constructor(
             return
         }
 
-        _uiState.update { it.copy(isConverting = true, errorMessage = null) }
+        // batchResults se limpia acá (no solo al terminar) para que un
+        // lote nuevo no arranque mezclado con los restos incrementales de
+        // un intento anterior cancelado a mitad de camino (ver
+        // runBatchConversion()).
+        _uiState.update { it.copy(isConverting = true, errorMessage = null, batchResults = emptyList()) }
 
         // "Alta resolución" (backlog UX #33) es Premium -- se revalida acá,
         // no solo en la UI, para que el estado de la pantalla nunca pueda
@@ -323,6 +327,17 @@ class ConverterViewModel @Inject constructor(
         val usedNames = mutableSetOf<String>()
         return files.map { uri ->
             val originalName = resolveDisplayName(context, uri)
+            // Hallazgo real de la auditoría general 2026-09-17 (sexta
+            // ronda, Media-Alta): antes, `batchResults` solo se escribía
+            // en `_uiState` cuando la función completa retornaba -- si la
+            // corrutina se cancelaba a mitad del lote (ej. el usuario
+            // navega hacia atrás), los archivos de los ítems que ya
+            // habían terminado (con su cupo diario ya consumido vía
+            // `registerConversion()` más abajo) quedaban huérfanos en
+            // disco, sin ninguna referencia visible en la UI. Se acumula
+            // acá mismo, ítem por ítem, para que lo ya convertido quede
+            // siempre visible/recuperable sin importar cómo termine el
+            // resto del lote.
             // Hallazgo real de la revisión general 2026-09-16 (#35): el
             // saneo de path traversal en ConverterViewModel solo cubría el
             // nombre TIPEADO por el usuario en modo archivo único --
@@ -351,7 +366,9 @@ class ConverterViewModel @Inject constructor(
                     DocuSmartAnalytics.logConversionError(type.name, result.message)
                 else -> Unit
             }
-            BatchConversionItem(originalFileName = originalName, result = result)
+            BatchConversionItem(originalFileName = originalName, result = result).also { item ->
+                _uiState.update { it.copy(batchResults = it.batchResults + item) }
+            }
         }
     }
 
@@ -384,20 +401,48 @@ class ConverterViewModel @Inject constructor(
 
         _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
-            // Hallazgo real de la revisión general 2026-09-16 (cuarta
-            // pasada): Iterable.all{} corta en cortocircuito en el primer
-            // `false` -- si el primer archivo del lote fallaba al
-            // guardarse, el resto (que hubieran funcionado) ni se
-            // intentaba. .map{} sí procesa todos antes de evaluar el
-            // resultado.
-            val allSaved = successFiles.map {
-                DownloadsSaver.saveFile(context, it, DownloadsSaver.mimeTypeForExtension(it.extension))
-            }.all { it }
-            // Bug real encontrado 2026-09-14: hardcodeado en español,
-            // saltándose el sistema de 12 idiomas.
-            _uiState.update { state ->
-                if (allSaved) state.copy(batchSavedToDownloads = true, isSaving = false)
-                else state.copy(errorMessage = context.getString(R.string.converter_batch_save_error), isSaving = false)
+            // Hallazgo real de la auditoría general 2026-09-17 (sexta
+            // ronda, Media -- C2): a diferencia de su par saveToDownloads()
+            // (que sí tiene try/catch), este guardado por lote no atrapaba
+            // absolutamente nada -- un OutOfMemoryError copiando un
+            // archivo grande a MediaStore escapaba sin atrapar y
+            // crasheaba la app, justo el escenario con más presión de
+            // memoria de todo el Convertidor (varios archivos grandes en
+            // un solo lote).
+            try {
+                // Hallazgo real de la revisión general 2026-09-16 (cuarta
+                // pasada): Iterable.all{} corta en cortocircuito en el
+                // primer `false` -- si el primer archivo del lote fallaba
+                // al guardarse, el resto (que hubieran funcionado) ni se
+                // intentaba. .map{} sí procesa todos antes de evaluar el
+                // resultado.
+                val allSaved = successFiles.map {
+                    DownloadsSaver.saveFile(context, it, DownloadsSaver.mimeTypeForExtension(it.extension))
+                }.all { it }
+                // Bug real encontrado 2026-09-14: hardcodeado en español,
+                // saltándose el sistema de 12 idiomas.
+                _uiState.update { state ->
+                    if (allSaved) {
+                        state.copy(batchSavedToDownloads = true, isSaving = false)
+                    } else {
+                        state.copy(
+                            errorMessage = context.getString(R.string.converter_batch_save_error),
+                            isSaving = false
+                        )
+                    }
+                }
+            } catch (e: OutOfMemoryError) {
+                Timber.e(e, "ConverterViewModel: sin memoria guardando el lote en Descargas")
+                _uiState.update {
+                    it.copy(errorMessage = context.getString(R.string.converter_error_unknown), isSaving = false)
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = context.getString(R.string.general_error_format, e.message ?: ""),
+                        isSaving = false
+                    )
+                }
             }
         }
     }
@@ -466,6 +511,14 @@ class ConverterViewModel @Inject constructor(
                 _uiState.update { state ->
                     if (allSaved) state.copy(savedToDownloads = true, isSaving = false)
                     else state.copy(errorMessage = context.getString(R.string.pdf_tools_save_error), isSaving = false)
+                }
+            } catch (e: OutOfMemoryError) {
+                // Hallazgo real de la auditoría general 2026-09-17 (sexta
+                // ronda, Media -- C2): mismo hueco que su par
+                // saveAllToDownloads(), ver el comentario ahí.
+                Timber.e(e, "ConverterViewModel: sin memoria guardando en Descargas")
+                _uiState.update {
+                    it.copy(errorMessage = context.getString(R.string.converter_error_unknown), isSaving = false)
                 }
             } catch (e: Exception) {
                 _uiState.update {

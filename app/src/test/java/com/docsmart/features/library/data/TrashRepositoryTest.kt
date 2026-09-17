@@ -62,7 +62,8 @@ class TrashRepositoryTest {
             mockk<com.docsmart.core.data.db.PageBookmarkDao>(relaxed = true),
             mockk<com.docsmart.core.data.db.LastViewedPageDao>(relaxed = true),
             mockk<com.docsmart.core.data.db.NoteDao>(relaxed = true),
-            mockk<com.docsmart.core.data.db.AgendaEventDao>(relaxed = true)
+            mockk<com.docsmart.core.data.db.AgendaEventDao>(relaxed = true),
+            historyDao
         )
         documentRepository = DocumentRepository(
             context, favorites, historyDao, trashDao, mediaDeletePermission,
@@ -203,6 +204,10 @@ class TrashRepositoryTest {
 
         override suspend fun remove(documentId: String) {
             store.remove(documentId)
+        }
+
+        override suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String) {
+            store.remove(oldDocumentId)?.let { store[newDocumentId] = it }
         }
     }
 

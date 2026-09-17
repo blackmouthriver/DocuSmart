@@ -33,6 +33,15 @@ fun FavoritesSection(
     onFavoriteClick: ((String) -> Unit)? = null,
     onRenameClick  : ((String, String) -> Unit)? = null,
     onDeleteClick  : ((String) -> Unit)? = null,
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Baja-Media -- B2): faltaban acá, a diferencia del mismo menú en
+    // DocumentListSection/RecentDocuments -- un documento favorito perdía
+    // 5 de sus 8 acciones reales solo por verse en esta sección.
+    onConvertClick : ((DocumentUiModel) -> Unit)? = null,
+    onCreateQrClick: ((DocumentUiModel) -> Unit)? = null,
+    onMakeSearchableClick    : ((DocumentUiModel) -> Unit)? = null,
+    onSignClick              : ((DocumentUiModel) -> Unit)? = null,
+    onMoveToSecureFolderClick: ((DocumentUiModel) -> Unit)? = null,
     modifier       : Modifier = Modifier
 ) {
     if (favorites.isEmpty()) return
@@ -52,6 +61,11 @@ fun FavoritesSection(
             onRename   = if (onRenameClick != null) {
                 { menuDocument = null; renameDocument = doc }
             } else null,
+            onConvert  = onConvertClick?.let  { cb -> { menuDocument = null; cb(doc) } },
+            onCreateQr = onCreateQrClick?.let { cb -> { menuDocument = null; cb(doc) } },
+            onMakeSearchable     = onMakeSearchableClick?.let     { cb -> { menuDocument = null; cb(doc) } },
+            onSign               = onSignClick?.let               { cb -> { menuDocument = null; cb(doc) } },
+            onMoveToSecureFolder = onMoveToSecureFolderClick?.let { cb -> { menuDocument = null; cb(doc) } },
             onShare    = {
                 menuDocument = null
                 shareDocument(context, doc, shareLabel)

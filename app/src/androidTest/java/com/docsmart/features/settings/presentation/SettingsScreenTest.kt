@@ -136,12 +136,14 @@ class SettingsScreenTest {
         every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
 
         val trashRepository = mockk<TrashRepository>(relaxed = true)
+        val securityManager = mockk<com.docsmart.core.security.SecurityManager>(relaxed = true)
 
         return SettingsViewModel(
             adManager = adManager,
             soundEffectPlayer = soundEffectPlayer,
             downloadsAccessManager = downloadsAccessManager,
-            trashRepository = trashRepository
+            trashRepository = trashRepository,
+            securityManager = securityManager
         )
     }
 

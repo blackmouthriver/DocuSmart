@@ -269,6 +269,10 @@ class DocumentRepositoryTest {
         override suspend fun remove(documentId: String) {
             store.remove(documentId)
         }
+
+        override suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String) {
+            store.remove(oldDocumentId)?.let { store[newDocumentId] = it }
+        }
     }
 
     // ── fake de TrashDao respaldado por un mapa en memoria ────────────────────

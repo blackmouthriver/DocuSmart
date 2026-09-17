@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.media.SoundEffectPlayer
+import com.docsmart.core.security.SecurityManager
 import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +16,8 @@ class SettingsViewModel @Inject constructor(
     val adManager: AdManager,
     val soundEffectPlayer: SoundEffectPlayer,
     private val downloadsAccessManager: DownloadsAccessManager,
-    private val trashRepository: TrashRepository
+    private val trashRepository: TrashRepository,
+    private val securityManager: SecurityManager
 ) : ViewModel() {
 
     // Fila 22 del backlog UX: permite ver y desvincular, desde Ajustes, la
@@ -39,5 +41,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             documentIds.forEach { trashRepository.moveToTrash(it) }
         }
+    }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Media -- S3): a diferencia de los archivos de arriba, la copia
+    // efímera de vista previa de Carpeta Segura (cacheDir/secure_preview/)
+    // nunca pasa por Papelera -- es una copia sin cifrar que solo debe
+    // existir mientras dura la vista previa, así que "Limpiar caché" debe
+    // borrarla directo, igual que clearPreviewCache() ya hace al crear la
+    // siguiente copia o al bloquear Carpeta Segura.
+    fun clearSecurePreviewCache() {
+        securityManager.clearPreviewCache()
     }
 }

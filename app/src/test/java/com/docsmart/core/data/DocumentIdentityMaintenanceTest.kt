@@ -2,6 +2,7 @@ package com.docsmart.core.data
 
 import com.docsmart.core.data.db.AgendaEventDao
 import com.docsmart.core.data.db.AnnotationDao
+import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.LastViewedPageDao
 import com.docsmart.core.data.db.NoteDao
 import com.docsmart.core.data.db.PageBookmarkDao
@@ -29,18 +30,21 @@ class DocumentIdentityMaintenanceTest {
     private val lastViewedPageDao   = mockk<LastViewedPageDao>()
     private val noteDao             = mockk<NoteDao>()
     private val agendaEventDao      = mockk<AgendaEventDao>()
+    private val documentHistoryDao  = mockk<DocumentHistoryDao>()
     private val maintenance = DocumentIdentityMaintenance(
-        favoritesRepository, annotationDao, pageBookmarkDao, lastViewedPageDao, noteDao, agendaEventDao
+        favoritesRepository, annotationDao, pageBookmarkDao, lastViewedPageDao, noteDao, agendaEventDao,
+        documentHistoryDao
     )
 
     @Test
-    fun `onIdChanged migra favorito, anotaciones, marcadores, ultima pagina vista, notas y agenda`() = runTest {
+    fun `onIdChanged migra favorito, anotaciones, marcadores, notas, agenda e historial`() = runTest {
         coEvery { favoritesRepository.migrateId(any(), any()) } just Runs
         coEvery { annotationDao.updateDocumentId(any(), any()) } just Runs
         coEvery { pageBookmarkDao.updateDocumentId(any(), any()) } just Runs
         coEvery { lastViewedPageDao.updateDocumentId(any(), any()) } just Runs
         coEvery { noteDao.updateDocumentId(any(), any()) } just Runs
         coEvery { agendaEventDao.updateDocumentId(any(), any()) } just Runs
+        coEvery { documentHistoryDao.updateDocumentId(any(), any()) } just Runs
 
         maintenance.onIdChanged("viejo", "nuevo")
 
@@ -50,6 +54,7 @@ class DocumentIdentityMaintenanceTest {
         coVerify { lastViewedPageDao.updateDocumentId("viejo", "nuevo") }
         coVerify { noteDao.updateDocumentId("viejo", "nuevo") }
         coVerify { agendaEventDao.updateDocumentId("viejo", "nuevo") }
+        coVerify { documentHistoryDao.updateDocumentId("viejo", "nuevo") }
     }
 
     @Test

@@ -61,4 +61,19 @@ class AgendaRepository @Inject constructor(
         reminderScheduler.cancel(id)
         agendaEventDao.delete(id)
     }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Alta): Android cancela automáticamente TODAS las alarmas exactas ya
+    // programadas por la app en cuanto el usuario revoca el permiso
+    // "Alarmas y recordatorios" -- antes, la única rutina que volvía a
+    // programarlas era BootRescheduleReceiver, atada solo a un reinicio
+    // del dispositivo, así que esos recordatorios quedaban mudos para
+    // siempre hasta que el usuario editara cada evento a mano. Se
+    // reutiliza acá el mismo criterio (ReminderScheduler.schedule() ya
+    // degrada con elegancia a una alarma inexacta si el permiso sigue sin
+    // concederse) para poder invocarlo también cuando la Agenda detecta
+    // el permiso recién revocado, no solo tras un reinicio.
+    suspend fun rescheduleAllReminders() = withContext(Dispatchers.IO) {
+        agendaEventDao.getAllWithReminder().forEach { reminderScheduler.schedule(it) }
+    }
 }

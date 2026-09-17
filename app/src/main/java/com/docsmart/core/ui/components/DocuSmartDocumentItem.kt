@@ -136,7 +136,14 @@ fun DocuSmartDocumentItem(
             onOpen     = { showMenu = false; (onOpenClick ?: onClick)() },
             onFavorite = { showMenu = false; onFavoriteClick() },
             onRename   = onRenameClick?.let   { a -> { showMenu = false; a() } },
-            onConvert  = onConvertClick?.let  { a -> { showMenu = false; a() } },
+            // Hallazgo real de la auditoría general 2026-09-17 (sexta
+            // ronda, Baja-Media -- C1): no existe ningún ConversionType
+            // de origen Texto/ZIP -- mostrar "Convertir" para esos tipos
+            // llevaba a un selector vacío que descartaba el archivo
+            // elegido en silencio (initialFileCategory quedaba null).
+            onConvert  = onConvertClick?.takeIf {
+                document.type != DocumentType.TEXT && document.type != DocumentType.ZIP
+            }?.let { a -> { showMenu = false; a() } },
             onCreateQr = onCreateQrClick?.let { a -> { showMenu = false; a() } },
             onMakeSearchable    = onMakeSearchableClick?.let    { a -> { showMenu = false; a() } },
             onSign              = onSignClick?.let              { a -> { showMenu = false; a() } },

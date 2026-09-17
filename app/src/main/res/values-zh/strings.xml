@@ -1128,6 +1128,8 @@
     <string name="agenda_unlink_document">取消关联</string>
     <string name="agenda_editor_title_new">新建事件</string>
     <string name="agenda_editor_title_edit">编辑事件</string>
+    <string name="agenda_delete_confirm_title">删除此事件？</string>
+    <string name="agenda_delete_confirm_body">将删除"%1$s"及其提醒。此操作无法撤销。</string>
     <string name="agenda_field_title">标题</string>
     <string name="agenda_field_description">描述（可选）</string>
     <string name="agenda_field_datetime">日期和时间</string>

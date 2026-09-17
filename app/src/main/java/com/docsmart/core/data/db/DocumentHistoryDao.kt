@@ -34,4 +34,16 @@ interface DocumentHistoryDao {
 
     @Query("DELETE FROM document_history WHERE documentId = :documentId")
     suspend fun remove(documentId: String)
+
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Media -- B1): DocumentIdentityMaintenance.onIdChanged() migra
+    // favoritos/alias/anotaciones/marcadores/última página/notas/eventos
+    // de Agenda cuando el id de un documento cambia (renombrar, mover a/
+    // desde Carpeta Segura), pero esta tabla no tenía el mismo método --
+    // la fila quedaba apuntando al id viejo (huérfana), y el documento
+    // perdía su posición real en "Recientes" (caía al fallback por fecha
+    // de archivo). Mismo patrón que AnnotationDao/PageBookmarkDao/
+    // LastViewedPageDao.
+    @Query("UPDATE document_history SET documentId = :newDocumentId WHERE documentId = :oldDocumentId")
+    suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String)
 }

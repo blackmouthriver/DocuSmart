@@ -232,7 +232,12 @@ fun LibraryScreen(
                     onDocumentClick = { doc -> onDocumentClick(doc.id) },
                     onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
                     onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
-                    onDeleteClick   = { id -> viewModel.removeDocument(id) }
+                    onDeleteClick   = { id -> viewModel.removeDocument(id) },
+                    onConvertClick  = onConvertClick,
+                    onCreateQrClick = onCreateQrClick,
+                    onMakeSearchableClick     = onMakeSearchableClick,
+                    onSignClick               = onSignClick,
+                    onMoveToSecureFolderClick = onMoveToSecureFolderClick
                 )
             }
         }

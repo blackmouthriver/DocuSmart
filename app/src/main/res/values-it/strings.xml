@@ -1131,6 +1131,8 @@
     <string name="agenda_unlink_document">Rimuovi collegamento</string>
     <string name="agenda_editor_title_new">Nuovo evento</string>
     <string name="agenda_editor_title_edit">Modifica evento</string>
+    <string name="agenda_delete_confirm_title">Eliminare questo evento?</string>
+    <string name="agenda_delete_confirm_body">"%1$s" verrà eliminato insieme al suo promemoria. Questa azione non può essere annullata.</string>
     <string name="agenda_field_title">Titolo</string>
     <string name="agenda_field_description">Descrizione (facoltativa)</string>
     <string name="agenda_field_datetime">Data e ora</string>

@@ -35,6 +35,7 @@ import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
+import com.docsmart.core.ui.util.SecureScreenEffect
 import java.io.File
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
@@ -113,6 +114,14 @@ fun SecurityScreen(
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // seguridad -- S1): sin esto, el listado de "Archivos protegidos" ya
+    // desbloqueado quedaba capturable con captura de pantalla y visible
+    // en "Apps recientes" (la miniatura que toma Android al pasar a
+    // segundo plano) sin pedir PIN. Solo activo mientras el contenido
+    // real es visible (UNLOCKED) -- no mientras se pide el PIN.
+    SecureScreenEffect(enabled = uiState.screenState == SecurityScreenState.UNLOCKED)
 
     SecurityBackgroundEffects(viewModel = viewModel, onPreviewFile = onPreviewFile)
 

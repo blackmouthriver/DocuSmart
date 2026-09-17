@@ -1124,6 +1124,8 @@
     <string name="agenda_unlink_document">Verknüpfung entfernen</string>
     <string name="agenda_editor_title_new">Neuer Termin</string>
     <string name="agenda_editor_title_edit">Termin bearbeiten</string>
+    <string name="agenda_delete_confirm_title">Diesen Termin löschen?</string>
+    <string name="agenda_delete_confirm_body">„%1$s“ wird zusammen mit seiner Erinnerung gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="agenda_field_title">Titel</string>
     <string name="agenda_field_description">Beschreibung (optional)</string>
     <string name="agenda_field_datetime">Datum und Uhrzeit</string>

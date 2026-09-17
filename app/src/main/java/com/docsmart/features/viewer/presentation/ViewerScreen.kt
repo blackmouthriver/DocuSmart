@@ -67,6 +67,7 @@ import com.docsmart.core.pdf.renderPdfPagesToBitmaps
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.ui.util.SecureScreenEffect
 import com.docsmart.features.converter.domain.usecase.WordFileFormat
 import com.docsmart.features.converter.domain.usecase.detectWordFormat
 import com.docsmart.features.converter.domain.usecase.extractLegacyDocBlocks
@@ -122,6 +123,14 @@ fun ViewerScreen(
     val context       = LocalContext.current
     var showSearch    by remember { mutableStateOf(false) }
     var searchQuery   by remember { mutableStateOf("") }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // seguridad -- S1): la vista previa de solo lectura de Carpeta Segura
+    // mostraba el contenido real de un documento protegido, pero quedaba
+    // capturable con captura de pantalla y visible sin PIN en "Apps
+    // recientes" (la miniatura que Android toma al pasar a segundo
+    // plano). Mismo mecanismo ya aplicado a SecurityScreen.
+    SecureScreenEffect(enabled = uiState.isReadOnlyPreview)
 
     LaunchedEffect(documentId) {
         viewModel.loadDocument(documentId, context)

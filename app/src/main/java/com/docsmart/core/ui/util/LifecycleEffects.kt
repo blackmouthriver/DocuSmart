@@ -1,8 +1,13 @@
 package com.docsmart.core.ui.util
 
+import android.app.Activity
+import android.content.ContextWrapper
+import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -51,5 +56,53 @@ fun ReloadOnScreenResume(enabled: Boolean = true, onResume: () -> Unit) {
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+}
+
+/**
+ * Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+ * seguridad): ninguna pantalla de la app usaba `FLAG_SECURE` -- al mandar
+ * la app a segundo plano (Home, multitarea), Android toma una miniatura
+ * del último frame visible ANTES de que el auto-bloqueo interno de
+ * Carpeta Segura (`ProcessLifecycleOwner` en `SecurityViewModel`) tenga
+ * oportunidad de actuar. Esa miniatura -- contenido real de un documento
+ * protegido, o el listado de "Archivos protegidos" -- quedaba visible en
+ * "Apps recientes" sin pedir PIN, y la pantalla era capturable con
+ * captura/grabación de pantalla. Mismo patrón estándar que usan apps de
+ * banca/contraseñas para este problema.
+ *
+ * `enabled` controla el flag dinámicamente (no alcanza con ponerlo una
+ * sola vez al entrar a la pantalla): Carpeta Segura solo debe estar
+ * protegida mientras el contenido real es visible (`UNLOCKED`), no
+ * mientras se pide el PIN.
+ */
+@Composable
+fun SecureScreenEffect(enabled: Boolean) {
+    val context = LocalContext.current
+    // `context as? Activity` no siempre resuelve directo en este proyecto
+    // (ver el mismo desenvolvimiento manual en SecurityScreen.kt para
+    // FragmentActivity) -- se recorre la cadena de ContextWrapper por las
+    // dudas.
+    val activity = remember(context) {
+        var ctx = context
+        while (ctx is ContextWrapper) {
+            if (ctx is Activity) return@remember ctx
+            ctx = ctx.baseContext
+        }
+        ctx as? Activity
+    } ?: return
+    val currentEnabled = rememberUpdatedState(enabled)
+    DisposableEffect(activity) {
+        onDispose {
+            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+    DisposableEffect(currentEnabled.value) {
+        if (currentEnabled.value) {
+            activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose { }
     }
 }

@@ -1136,6 +1136,8 @@
     <string name="agenda_unlink_document">Retirer le lien</string>
     <string name="agenda_editor_title_new">Nouvel événement</string>
     <string name="agenda_editor_title_edit">Modifier l\'événement</string>
+    <string name="agenda_delete_confirm_title">Supprimer cet événement ?</string>
+    <string name="agenda_delete_confirm_body">« %1$s » sera supprimé avec son rappel. Cette action est irréversible.</string>
     <string name="agenda_field_title">Titre</string>
     <string name="agenda_field_description">Description (facultatif)</string>
     <string name="agenda_field_datetime">Date et heure</string>

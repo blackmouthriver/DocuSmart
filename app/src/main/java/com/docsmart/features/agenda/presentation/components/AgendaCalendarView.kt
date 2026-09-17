@@ -22,7 +22,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,11 +42,14 @@ import com.docsmart.R
 import com.docsmart.core.data.db.AgendaEventEntity
 import com.docsmart.features.agenda.domain.agendaEventLocalDate
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 // Backlog UX 2026-09-16 (seguimiento de HU-65), pedido explícito del
 // usuario: vista de calendario mensual (no semanal/por horas tipo Teams
@@ -182,7 +189,30 @@ private fun MonthGrid(
     val daysInMonth = month.lengthOfMonth()
     val totalCells = leadingBlanks + daysInMonth
     val rows = (totalCells + DAYS_IN_WEEK - 1) / DAYS_IN_WEEK
-    val today = remember { LocalDate.now() }
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Baja-Media -- A4): `remember { LocalDate.now() }` nunca se
+    // recalculaba mientras el composable siguiera vivo -- si el usuario
+    // dejaba la pestaña Calendario abierta cruzando la medianoche, el
+    // círculo de "hoy" seguía marcando el día anterior. Se reprograma
+    // solo hasta la medianoche siguiente en vez de sondear cada minuto.
+    var today by remember { mutableStateOf(LocalDate.now()) }
+    // Hallazgo real de la revisión adversarial de correctitud sobre este
+    // mismo fix: `LaunchedEffect(today)` solo se relanza cuando la CLAVE
+    // cambia de valor -- si el usuario atrasa el reloj del sistema
+    // mientras la pantalla está abierta, `LocalDate.now()` al despertar
+    // podía devolver la MISMA fecha que ya estaba vigente, la asignación
+    // no producía un cambio observable (LocalDate usa equals()) y el
+    // mecanismo de auto-actualización se detenía para siempre. Un
+    // `while(true)` dentro de un único `LaunchedEffect(Unit)` no depende
+    // de que el valor cambie para volver a programarse.
+    LaunchedEffect(Unit) {
+        while (true) {
+            val delayMs = Duration.between(LocalDateTime.now(), today.plusDays(1).atStartOfDay())
+                .toMillis().coerceAtLeast(1000L)
+            delay(delayMs)
+            today = LocalDate.now()
+        }
+    }
 
     Column {
         for (row in 0 until rows) {

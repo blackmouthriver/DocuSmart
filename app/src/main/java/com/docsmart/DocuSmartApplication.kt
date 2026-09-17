@@ -7,6 +7,7 @@ import com.docsmart.core.analytics.CrashlyticsTree
 import com.docsmart.core.media.PdfThumbnailFetcher
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.remoteconfig.RemoteConfigManager
+import com.docsmart.core.security.SecurityManager
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
@@ -24,8 +25,20 @@ class DocuSmartApplication : Application(), ImageLoaderFactory {
     // para loguear el estado Premium al arrancar.
     @Inject lateinit var premiumManager: PremiumManager
 
+    @Inject lateinit var securityManager: SecurityManager
+
     override fun onCreate() {
         super.onCreate()
+
+        // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+        // Media -- S3): clearPreviewCache() solo se llamaba al crear la
+        // siguiente copia de vista previa o al bloquear Carpeta Segura en
+        // ON_STOP -- si el proceso moría de forma abrupta (crash, OOM-kill
+        // del sistema) mientras existía una copia efímera sin cifrar en
+        // cacheDir/secure_preview/, esa copia quedaba en disco sin ninguna
+        // forma de purgarla desde la UI. Barrido defensivo en cada
+        // arranque en frío.
+        securityManager.clearPreviewCache()
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())

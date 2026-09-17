@@ -1124,6 +1124,8 @@
     <string name="agenda_unlink_document">Убрать связь</string>
     <string name="agenda_editor_title_new">Новое событие</string>
     <string name="agenda_editor_title_edit">Редактировать событие</string>
+    <string name="agenda_delete_confirm_title">Удалить это событие?</string>
+    <string name="agenda_delete_confirm_body">«%1$s» будет удалено вместе с напоминанием. Это действие нельзя отменить.</string>
     <string name="agenda_field_title">Название</string>
     <string name="agenda_field_description">Описание (необязательно)</string>
     <string name="agenda_field_datetime">Дата и время</string>

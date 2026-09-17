@@ -1,6 +1,7 @@
 package com.docsmart.core.security
 
 import android.content.Context
+import android.os.SystemClock
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.biometric.BiometricManager
@@ -85,11 +86,82 @@ class SecurityManager @Inject constructor(
     // Milisegundos restantes de bloqueo por intentos fallidos (0 si no hay
     // bloqueo activo). El llamador debe consultarlo antes de aceptar un
     // nuevo intento de PIN.
+    //
+    // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
+    // Media): calcular esto solo con System.currentTimeMillis() (reloj de
+    // pared, ajustable por el usuario) permitía evadir el bloqueo
+    // adelantando la fecha del dispositivo.
+    //
+    // Hallazgo real de la revisión adversarial de seguridad sobre el
+    // primer fix (combinar con SystemClock.elapsedRealtime() y tomar el
+    // máximo): un ataque de 2 pasos seguía funcionando -- adelantar el
+    // reloj (elapsedRealtime todavía protegía) y LUEGO reiniciar el
+    // dispositivo, lo que reinicia elapsedRealtime a un valor chico y
+    // descarta esa protección, cayendo de nuevo al reloj de pared ya
+    // manipulado (y que sigue así tras el reinicio, el RTC no se
+    // autocorrige). Se reemplaza por un "reloj de confianza" anclado:
+    // `trustedNowMillis()` reconstruye el tiempo real transcurrido desde
+    // el último punto de confianza usando SOLO elapsedRealtime (que el
+    // usuario no puede adelantar), y usa el MÍNIMO contra el reloj de
+    // pared actual -- así, adelantar el reloj de pared nunca puede hacer
+    // avanzar el tiempo "de confianza" más rápido que el tiempo real. Si
+    // se detecta un reinicio (elapsedRealtime retrocedió), el ancla se
+    // congela en su último valor de confianza en vez de saltar al reloj
+    // de pared ya manipulado -- vuelve a avanzar en tiempo real desde ahí
+    // con el elapsedRealtime del arranque nuevo. Costo aceptado: si el
+    // dispositivo se reinicia de verdad a mitad de un bloqueo legítimo
+    // (OS update, batería), el tiempo transcurrido durante ese hueco no
+    // cuenta -- en el peor caso se espera el bloqueo completo de nuevo,
+    // acotado por PIN_MAX_LOCKOUT_MS (unos minutos), un costo de UX menor
+    // aceptable para cerrar un bypass real de seguridad.
     fun pinLockoutRemainingMillis(): Long {
-        val lockUntil = prefs.getLong("pin_lockout_until", 0L)
-        val remaining = lockUntil - System.currentTimeMillis()
-        return if (remaining > 0) remaining else 0L
+        val lockUntilWall = prefs.getLong("pin_lockout_until", 0L)
+        return (lockUntilWall - trustedNowMillis()).coerceAtLeast(0L)
     }
+
+    // Ver el comentario de pinLockoutRemainingMillis(). El ancla nunca
+    // retrocede (persiste el máximo de confianza visto hasta ahora), y se
+    // reestablece en el punto de confianza anterior (no en el reloj de
+    // pared, potencialmente manipulado) apenas se detecta un reinicio.
+    private fun trustedNowMillis(): Long {
+        val anchorWall    = prefs.getLong("pin_trust_anchor_wall", 0L)
+        val anchorElapsed = prefs.getLong("pin_trust_anchor_elapsed", 0L)
+        val currentWall    = System.currentTimeMillis()
+        val currentElapsed = elapsedRealtimeMillis()
+
+        if (anchorWall == 0L) {
+            prefs.edit()
+                .putLong("pin_trust_anchor_wall", currentWall)
+                .putLong("pin_trust_anchor_elapsed", currentElapsed)
+                .apply()
+            return currentWall
+        }
+
+        val rebooted = currentElapsed < anchorElapsed
+        val reconstructedNow = if (rebooted) anchorWall else anchorWall + (currentElapsed - anchorElapsed)
+        val trustedNow = minOf(currentWall, reconstructedNow)
+
+        if (trustedNow > anchorWall || rebooted) {
+            prefs.edit()
+                .putLong("pin_trust_anchor_wall", trustedNow)
+                .putLong("pin_trust_anchor_elapsed", currentElapsed)
+                .apply()
+        }
+        return trustedNow
+    }
+
+    // SystemClock.elapsedRealtime() no está disponible sin Robolectric en
+    // los tests unitarios JVM de este proyecto (lanza RuntimeException,
+    // "not mocked") -- se degrada con gracia a currentTimeMillis() en ese
+    // caso. En un dispositivo real nunca lanza, así que esto no cambia el
+    // comportamiento en producción.
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
+    private fun elapsedRealtimeMillis(): Long =
+        try {
+            SystemClock.elapsedRealtime()
+        } catch (e: RuntimeException) {
+            System.currentTimeMillis()
+        }
 
     fun verifyPin(pin: String): Boolean {
         val storedHash = prefs.getString("pin_hash", null)
@@ -118,7 +190,9 @@ class SecurityManager @Inject constructor(
 
         if (canAttempt) {
             if (matches) {
-                prefs.edit().putInt("pin_fail_count", 0).remove("pin_lockout_until").apply()
+                prefs.edit().putInt("pin_fail_count", 0)
+                    .remove("pin_lockout_until")
+                    .apply()
             } else {
                 registerFailedPinAttempt()
             }
@@ -132,7 +206,9 @@ class SecurityManager @Inject constructor(
         if (failCount >= PIN_MAX_FREE_ATTEMPTS) {
             val extraFailures = (failCount - PIN_MAX_FREE_ATTEMPTS).coerceAtMost(10)
             val lockoutMs = (PIN_BASE_LOCKOUT_MS shl extraFailures).coerceAtMost(PIN_MAX_LOCKOUT_MS)
-            editor.putLong("pin_lockout_until", System.currentTimeMillis() + lockoutMs)
+            // trustedNowMillis(), no currentTimeMillis() -- ver el
+            // comentario de pinLockoutRemainingMillis().
+            editor.putLong("pin_lockout_until", trustedNowMillis() + lockoutMs)
             Timber.w("SecurityManager: PIN bloqueado ${lockoutMs}ms tras $failCount intentos fallidos")
         }
         editor.apply()

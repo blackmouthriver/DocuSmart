@@ -1146,6 +1146,8 @@
     <string name="agenda_unlink_document">Kendu esteka</string>
     <string name="agenda_editor_title_new">Gertaera berria</string>
     <string name="agenda_editor_title_edit">Editatu gertaera</string>
+    <string name="agenda_delete_confirm_title">Gertaera hau ezabatu?</string>
+    <string name="agenda_delete_confirm_body">«%1$s» ezabatuko da bere abisuarekin batera. Ekintza hau ezin da desegin.</string>
     <string name="agenda_field_title">Izenburua</string>
     <string name="agenda_field_description">Deskribapena (aukerakoa)</string>
     <string name="agenda_field_datetime">Data eta ordua</string>
