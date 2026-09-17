@@ -73,6 +73,26 @@ class WordToPdfUseCaseTest {
         assertTrue(extracted.contains("Celda A1"))
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (B4): antes se
+    // procesaban TODOS los párrafos y DESPUÉS todas las tablas (2 pasadas
+    // separadas) -- una tabla en medio de dos párrafos salía siempre al
+    // final, sin importar su posición real en el documento. `bodyElements`
+    // conserva el orden real.
+    @Test
+    fun `conserva el orden real de parrafo, tabla y parrafo del documento original`() = runTest {
+        stubResolver(createInterleavedDocx())
+
+        val result = useCase(mockk<Uri>(), "salida")
+
+        assertTrue(result is ConversionResult.Success)
+        val extracted = extractPdfText((result as ConversionResult.Success).outputFile)
+        val introIndex = extracted.indexOf("Intro")
+        val tableIndex = extracted.indexOf("CeldaTabla")
+        val conclusionIndex = extracted.indexOf("Conclusion")
+        assertTrue(introIndex in 0 until tableIndex, "Intro debe aparecer antes que la tabla")
+        assertTrue(tableIndex in 0 until conclusionIndex, "la tabla debe aparecer antes que Conclusion")
+    }
+
     @Test
     fun `archivo no legible devuelve Error`() = runTest {
         val uri = mockk<Uri>()
@@ -103,6 +123,19 @@ class WordToPdfUseCaseTest {
                     row.forEachIndexed { c, value -> table.getRow(r).getCell(c).text = value }
                 }
             }
+            doc.write(out)
+        }
+        return out.toByteArray()
+    }
+
+    /** Intro (párrafo) → tabla con "CeldaTabla" → Conclusion (párrafo), en ese orden real. */
+    private fun createInterleavedDocx(): ByteArray {
+        val out = ByteArrayOutputStream()
+        XWPFDocument().use { doc ->
+            doc.createParagraph().createRun().setText("Intro")
+            val table = doc.createTable(1, 1)
+            table.getRow(0).getCell(0).text = "CeldaTabla"
+            doc.createParagraph().createRun().setText("Conclusion")
             doc.write(out)
         }
         return out.toByteArray()

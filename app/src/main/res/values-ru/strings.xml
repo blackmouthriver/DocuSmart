@@ -993,6 +993,8 @@
     <string name="study_listening">Слушаю… говорите</string>
     <string name="study_save_note">Сохранить заметку</string>
     <string name="study_untitled_note">Заметка без названия</string>
+    <string name="study_edit_note">Редактировать заметку</string>
+    <string name="study_edit_note_desc">Редактировать эту заметку</string>
     <string name="study_note_attach_image">Прикрепить изображение</string>
     <string name="study_note_scan_image">Сканировать</string>
     <string name="study_note_remove_image">Удалить изображение</string>

@@ -69,6 +69,7 @@ import com.docsmart.core.pdf.PdfPageBitmap
 import com.docsmart.core.pdf.renderPdfPagesToBitmaps
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.core.data.db.NoteEntity
+import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
@@ -737,69 +738,87 @@ fun StudyScreen(
                             val startIndex = currentSpeakingIndex.intValue
                                 .takeIf { it in documentText.indices } ?: 0
                             val uriString = documentUri?.toString()
+                            // Hallazgo real de la auditoría general
+                            // 2026-09-17 (B19, resto): UtteranceProgressListener
+                            // corre en un hilo interno del motor TTS, no
+                            // garantizado por Android -- se despacha cada
+                            // callback al hilo principal (mismo mecanismo ya
+                            // aplicado a previewVoice() más arriba), sin
+                            // tocar la lógica interna de ninguno de los 3
+                            // (mismo orden relativo de ejecución, solo se
+                            // corre en el hilo principal en vez del hilo del
+                            // motor TTS). Esto además vuelve seguros los
+                            // `tts.speak()` reentrantes de onDone() -- antes
+                            // se llamaban de vuelta al motor TTS desde su
+                            // propio hilo de callback.
+                            val mainHandler = Handler(Looper.getMainLooper())
                             currentTts.setOnUtteranceProgressListener(
                                 object : UtteranceProgressListener() {
                                     override fun onStart(utteranceId: String?) {
-                                        val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
-                                        isSpeaking.value = true
-                                        if (index != null) {
-                                            currentSpeakingIndex.intValue = index
-                                            if (uriString != null) {
-                                                StudyReadingProgressStorage.save(
-                                                    context,
-                                                    ReadingProgress(
-                                                        uri              = uriString,
-                                                        documentName     = documentName,
-                                                        paragraphIndex   = index,
-                                                        totalParagraphs  = documentText.size,
-                                                        currentPage      = pageForParagraph(index, pageBoundaries),
-                                                        totalPages       = pageBoundaries.size,
-                                                        lastReadAtMillis = System.currentTimeMillis()
+                                        mainHandler.post {
+                                            val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
+                                            isSpeaking.value = true
+                                            if (index != null) {
+                                                currentSpeakingIndex.intValue = index
+                                                if (uriString != null) {
+                                                    StudyReadingProgressStorage.save(
+                                                        context,
+                                                        ReadingProgress(
+                                                            uri              = uriString,
+                                                            documentName     = documentName,
+                                                            paragraphIndex   = index,
+                                                            totalParagraphs  = documentText.size,
+                                                            currentPage      = pageForParagraph(index, pageBoundaries),
+                                                            totalPages       = pageBoundaries.size,
+                                                            lastReadAtMillis = System.currentTimeMillis()
+                                                        )
                                                     )
-                                                )
+                                                }
                                             }
                                         }
                                     }
                                     override fun onDone(utteranceId: String?) {
-                                        val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
-                                        if (index == null) return
-                                        // "Procesamiento incremental": `lastIndex`
-                                        // se calculó al tocar "Leer todo", pero
-                                        // si el PDF seguía extrayéndose de
-                                        // fondo puede que ya haya más párrafos
-                                        // ahora que cuando se armó la cola --
-                                        // se revisa el tamaño ACTUAL de
-                                        // `documentText`, no el de entonces.
-                                        val newLastIndex = documentText.lastIndex
-                                        when {
-                                            index < newLastIndex -> {
-                                                ttsRef.value?.let { tts ->
-                                                    for (nextIndex in index + 1..newLastIndex) {
-                                                        tts.speak(
-                                                            documentText[nextIndex],
-                                                            TextToSpeech.QUEUE_ADD,
-                                                            null,
-                                                            "study_all_$nextIndex"
-                                                        )
+                                        mainHandler.post {
+                                            val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
+                                            if (index == null) return@post
+                                            // "Procesamiento incremental": `lastIndex`
+                                            // se calculó al tocar "Leer todo", pero
+                                            // si el PDF seguía extrayéndose de
+                                            // fondo puede que ya haya más párrafos
+                                            // ahora que cuando se armó la cola --
+                                            // se revisa el tamaño ACTUAL de
+                                            // `documentText`, no el de entonces.
+                                            val newLastIndex = documentText.lastIndex
+                                            when {
+                                                index < newLastIndex -> {
+                                                    ttsRef.value?.let { tts ->
+                                                        for (nextIndex in index + 1..newLastIndex) {
+                                                            tts.speak(
+                                                                documentText[nextIndex],
+                                                                TextToSpeech.QUEUE_ADD,
+                                                                null,
+                                                                "study_all_$nextIndex"
+                                                            )
+                                                        }
                                                     }
                                                 }
-                                            }
-                                            !extractionComplete -> {
-                                                // No hay más texto disponible
-                                                // TODAVÍA, pero el PDF sigue
-                                                // procesándose -- esperar en
-                                                // vez de dar la lectura por
-                                                // terminada (ver LaunchedEffect
-                                                // que retoma cuando llegue más).
-                                                waitingForMoreText.value = true
-                                            }
-                                            else -> {
-                                                // Terminó todo el documento --
-                                                // ya no hay nada que retomar.
-                                                isSpeaking.value = false
-                                                currentSpeakingIndex.intValue = -1
-                                                if (uriString != null) {
-                                                    StudyReadingProgressStorage.remove(context, uriString)
+                                                !extractionComplete -> {
+                                                    // No hay más texto disponible
+                                                    // TODAVÍA, pero el PDF sigue
+                                                    // procesándose -- esperar en
+                                                    // vez de dar la lectura por
+                                                    // terminada (ver LaunchedEffect
+                                                    // que retoma cuando llegue más).
+                                                    waitingForMoreText.value = true
+                                                }
+                                                else -> {
+                                                    // Terminó todo el documento --
+                                                    // ya no hay nada que retomar.
+                                                    isSpeaking.value = false
+                                                    currentSpeakingIndex.intValue = -1
+                                                    if (uriString != null) {
+                                                        StudyReadingProgressStorage.remove(context, uriString)
+                                                    }
                                                 }
                                             }
                                         }
@@ -809,7 +828,7 @@ fun StudyScreen(
                                         // a mitad de un documento largo, "Leer
                                         // todo" debe poder reintentar desde
                                         // ahí, no desde el principio.
-                                        isSpeaking.value = false
+                                        mainHandler.post { isSpeaking.value = false }
                                     }
                                 }
                             )
@@ -1569,6 +1588,7 @@ private fun NotesTab(
                     dateFormatter  = dateFormatter,
                     isHighlighted  = noteWithImages.note.id == openNoteId,
                     onLinkClick    = { viewModel.showLinkDialog(noteWithImages.note.id) },
+                    onEditClick    = { viewModel.startEditingNote(noteWithImages.note.id) },
                     onDeleteClick  = { viewModel.deleteNote(noteWithImages) }
                 )
             }
@@ -1576,6 +1596,28 @@ private fun NotesTab(
         }
     }
 
+    NotesTabDialogs(
+        uiState = uiState,
+        savedNotes = savedNotes,
+        viewModel = viewModel,
+        notificationsGranted = notificationsGranted,
+        onRequestNotifications = {
+            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    )
+}
+
+// Extraída de NotesTab() (detekt: LongMethod) -- diálogos de vincular
+// documento (backlog UX #50) y de editar una nota ya guardada (B22,
+// auditoría general 2026-09-17).
+@Composable
+private fun NotesTabDialogs(
+    uiState: NotesUiState,
+    savedNotes: List<NoteWithImages>,
+    viewModel: NotesViewModel,
+    notificationsGranted: Boolean,
+    onRequestNotifications: () -> Unit
+) {
     uiState.linkDocumentDialogForNoteId?.let { noteId ->
         val currentDocumentId = savedNotes.firstOrNull { it.note.id == noteId }?.note?.documentId
         NoteLinkDocumentDialog(
@@ -1583,6 +1625,19 @@ private fun NotesTab(
             onDismiss = { viewModel.dismissLinkDialog() },
             onSelect  = { doc -> viewModel.linkDocument(noteId, doc.id) },
             onUnlink  = { viewModel.linkDocument(noteId, null) }
+        )
+    }
+
+    uiState.editingNoteId?.let { noteId ->
+        val noteWithImages = savedNotes.firstOrNull { it.note.id == noteId } ?: return@let
+        NoteEditDialog(
+            noteWithImages = noteWithImages,
+            notificationsGranted = notificationsGranted,
+            onRequestNotifications = onRequestNotifications,
+            onDismiss = { viewModel.cancelEditingNote() },
+            onSave = { title, text, reminderAt, keptImages, removedImages, newImageUris ->
+                viewModel.updateNote(noteId, title, text, reminderAt, keptImages, removedImages, newImageUris)
+            }
         )
     }
 }
@@ -2193,6 +2248,7 @@ private fun NoteListItem(
     // sea fácil de encontrar en la lista tras el scroll automático.
     isHighlighted : Boolean = false,
     onLinkClick   : () -> Unit,
+    onEditClick   : () -> Unit,
     onDeleteClick : () -> Unit
 ) {
     val note = noteWithImages.note
@@ -2260,6 +2316,18 @@ private fun NoteListItem(
                 // distinto del botón de la cabecera de la lista, que
                 // exporta TODAS juntas.
                 StudyExportSingleNoteButton(note = noteWithImages)
+                // B22 (auditoría general 2026-09-17): editar título/texto/
+                // imágenes/recordatorio de una nota ya guardada -- antes no
+                // existía, asimetría frente a Agenda (que sí permite editar
+                // un evento).
+                IconButton(onClick = onEditClick, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        imageVector        = Icons.Rounded.Edit,
+                        contentDescription = stringResource(R.string.study_edit_note_desc),
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(16.dp)
+                    )
+                }
                 // Subido de 28dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                 IconButton(onClick = onDeleteClick, modifier = Modifier.size(48.dp)) {
                     Icon(
@@ -2292,9 +2360,9 @@ private fun NoteListItem(
             )
 
             // Backlog UX #49: imágenes/recortes ya adjuntos a la nota
-            // guardada -- de solo lectura acá (adjuntar más solo se puede
-            // al crear la nota, no hay edición de una nota existente
-            // todavía). Tocar una miniatura la abre en grande.
+            // guardada -- de solo lectura acá (agregar/quitar imágenes se
+            // hace desde "Editar", ver NoteEditDialog). Tocar una miniatura
+            // la abre en grande.
             if (noteWithImages.images.isNotEmpty()) {
                 var expandedImagePath by remember { mutableStateOf<String?>(null) }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -2322,6 +2390,158 @@ private fun NoteListItem(
                                 .clickable { expandedImagePath = null }
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+// B22 (auditoría general 2026-09-17): editor de una nota ya guardada
+// (título/texto/imágenes/recordatorio) -- antes solo existía el editor de
+// nota NUEVA (NoteEditorCard). Se implementa como un Dialog aparte (no se
+// reutiliza NoteEditorCard, que solo trabaja con List<Uri> del selector/
+// escáner) para no tocar el flujo de creación ya establecido y probado.
+// Cada imagen ya guardada se expone como su propia `Uri.fromFile(...)`
+// (Coil la carga igual que cualquier otro Uri) para poder reutilizar
+// NoteImagesCarousel/NoteReminderSection tal cual, sin duplicar esa UI.
+@Composable
+private fun NoteEditDialog(
+    noteWithImages         : NoteWithImages,
+    notificationsGranted   : Boolean,
+    onRequestNotifications : () -> Unit,
+    onDismiss              : () -> Unit,
+    onSave: (
+        title: String,
+        text: String,
+        reminderAt: Long?,
+        keptImages: List<NoteImageEntity>,
+        removedImages: List<NoteImageEntity>,
+        newImageUris: List<Uri>
+    ) -> Unit
+) {
+    val note = noteWithImages.note
+    var title by remember(note.id) { mutableStateOf(note.title) }
+    var text  by remember(note.id) { mutableStateOf(note.text) }
+    val originalImagesByUri = remember(note.id) {
+        noteWithImages.images.associateBy { Uri.fromFile(File(it.filePath)) }
+    }
+    var imageUris by remember(note.id) { mutableStateOf(originalImagesByUri.keys.toList()) }
+    // Cualquier reminderAt existente se muestra como "Personalizada" -- no
+    // hay forma de saber si el valor guardado vino de un preset (mañana/
+    // 3 días/1 semana) o de una fecha elegida a mano, y los presets se
+    // recalculan relativos a "ahora" cada vez.
+    var reminderChip by remember(note.id) {
+        mutableStateOf(if (note.reminderAt != null) NoteReminderChip.CUSTOM else NoteReminderChip.NONE)
+    }
+    var reminderAt by remember(note.id) { mutableStateOf(note.reminderAt) }
+
+    val context = LocalContext.current
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris -> if (uris.isNotEmpty()) imageUris = imageUris + uris }
+    val onScanImage = rememberDocumentScannerAction(
+        activity       = context.findActivity(),
+        mode           = ScannerMode.PHOTO,
+        pageLimit      = 1,
+        onPagesScanned = { pages -> imageUris = imageUris + pages },
+        onScanError    = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
+    )
+    val untitledNoteLabel = stringResource(R.string.study_untitled_note)
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .heightIn(max = 560.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector        = Icons.Rounded.EditNote,
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text       = stringResource(R.string.study_edit_note),
+                        style      = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color      = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                OutlinedTextField(
+                    value         = title,
+                    onValueChange = { title = it },
+                    modifier      = Modifier.fillMaxWidth(),
+                    label         = { Text(stringResource(R.string.study_note_title_label)) },
+                    singleLine    = true,
+                    shape         = MaterialTheme.shapes.large
+                )
+                OutlinedTextField(
+                    value         = text,
+                    onValueChange = { text = it },
+                    modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
+                    placeholder   = { Text(stringResource(R.string.study_note_content_placeholder)) },
+                    shape         = MaterialTheme.shapes.large
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { galleryLauncher.launch("image/*") }) {
+                        Icon(Icons.Rounded.Image, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            stringResource(R.string.study_note_attach_image),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                    TextButton(onClick = onScanImage) {
+                        Icon(Icons.Rounded.DocumentScanner, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            stringResource(R.string.study_note_scan_image),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
+                if (imageUris.isNotEmpty()) {
+                    NoteImagesCarousel(uris = imageUris, onRemove = { uri -> imageUris = imageUris - uri })
+                }
+
+                NoteReminderSection(
+                    reminderChip            = reminderChip,
+                    reminderAt              = reminderAt,
+                    onReminderChange        = { chip, millis -> reminderChip = chip; reminderAt = millis },
+                    notificationsGranted    = notificationsGranted,
+                    onRequestNotifications  = onRequestNotifications
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        enabled = text.trim().isNotBlank(),
+                        onClick = {
+                            val trimmedText = text.trim()
+                            if (trimmedText.isBlank()) return@Button
+                            val keptImages = imageUris.mapNotNull { originalImagesByUri[it] }
+                            val removedImages = originalImagesByUri.values.filterNot { it in keptImages }
+                            val newImageUris = imageUris.filterNot { originalImagesByUri.containsKey(it) }
+                            onSave(
+                                title.trim().ifBlank { untitledNoteLabel },
+                                trimmedText,
+                                reminderAt,
+                                keptImages,
+                                removedImages,
+                                newImageUris
+                            )
+                        }
+                    ) { Text(stringResource(R.string.general_save)) }
                 }
             }
         }

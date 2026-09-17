@@ -1015,6 +1015,8 @@
     <string name="study_listening">Entzuten… hitz egin orain</string>
     <string name="study_save_note">Gorde oharra</string>
     <string name="study_untitled_note">Izenbururik gabeko oharra</string>
+    <string name="study_edit_note">Editatu oharra</string>
+    <string name="study_edit_note_desc">Editatu ohar hau</string>
     <string name="study_note_attach_image">Erantsi irudia</string>
     <string name="study_note_scan_image">Eskaneatu</string>
     <string name="study_note_remove_image">Kendu irudia</string>

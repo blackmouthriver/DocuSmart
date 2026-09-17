@@ -1027,6 +1027,8 @@
     <string name="study_listening">Escoltant… parla ara</string>
     <string name="study_save_note">Desar nota</string>
     <string name="study_untitled_note">Nota sense títol</string>
+    <string name="study_edit_note">Edita la nota</string>
+    <string name="study_edit_note_desc">Edita aquesta nota</string>
     <string name="study_note_attach_image">Adjunta imatge</string>
     <string name="study_note_scan_image">Escaneja</string>
     <string name="study_note_remove_image">Treu la imatge</string>

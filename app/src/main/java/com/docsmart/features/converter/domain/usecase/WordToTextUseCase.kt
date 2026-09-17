@@ -8,6 +8,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFTable
 import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
@@ -76,18 +78,30 @@ class WordToTextUseCase @Inject constructor(
         return sb.toString().trim() to pageCount
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (B4): mismo problema
+    // que WordToPdfUseCase -- ver el comentario ahí. `bodyElements` conserva
+    // el orden real de párrafos+tablas del documento.
     private fun appendXwpfText(sb: StringBuilder, wordDoc: XWPFDocument): Int {
-        wordDoc.paragraphs.forEach { para ->
-            if (para.text.isNotBlank()) sb.appendLine(para.text)
-        }
-        wordDoc.tables.forEach { table ->
-            sb.appendLine()
-            table.rows.forEach { row ->
-                val rowText = row.tableCells.joinToString(" | ") { it.text }
-                if (rowText.isNotBlank()) sb.appendLine(rowText)
+        wordDoc.bodyElements.forEach { element ->
+            when (element) {
+                is XWPFParagraph -> appendXwpfParagraph(sb, element)
+                is XWPFTable -> appendXwpfTable(sb, element)
+                else -> Unit
             }
         }
         return wordDoc.paragraphs.size
+    }
+
+    private fun appendXwpfParagraph(sb: StringBuilder, paragraph: XWPFParagraph) {
+        if (paragraph.text.isNotBlank()) sb.appendLine(paragraph.text)
+    }
+
+    private fun appendXwpfTable(sb: StringBuilder, table: XWPFTable) {
+        sb.appendLine()
+        table.rows.forEach { row ->
+            val rowText = row.tableCells.joinToString(" | ") { it.text }
+            if (rowText.isNotBlank()) sb.appendLine(rowText)
+        }
     }
 
     private fun generateTimestamp() =

@@ -12,6 +12,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFTable
 import timber.log.Timber
 import java.io.File
 import java.io.InputStream
@@ -87,24 +89,33 @@ class WordToPdfUseCase @Inject constructor(
         }
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (B4): párrafos y
+    // tablas se procesaban en 2 pasadas separadas (`wordDoc.paragraphs`
+    // completo, después `wordDoc.tables` completo) -- un documento con una
+    // tabla en medio de dos párrafos ("Intro" → tabla → "Conclusión")
+    // salía como "Intro / Conclusión / [tabla]", con la tabla siempre al
+    // final sin importar dónde estuviera en el original. `bodyElements`
+    // de Apache POI ya devuelve párrafos y tablas intercalados en el orden
+    // real del documento.
     private fun writeXwpfContent(document: Document, wordDoc: XWPFDocument) {
-        // ── Extraer párrafos y escribir en PDF ─
-        wordDoc.paragraphs.forEach { para ->
-            val text = para.text
-            if (text.isNotBlank()) {
-                document.add(Paragraph(text))
+        wordDoc.bodyElements.forEach { element ->
+            when (element) {
+                is XWPFParagraph -> writeXwpfParagraph(document, element)
+                is XWPFTable -> writeXwpfTable(document, element)
+                else -> Unit
             }
         }
+    }
 
-        // ── Extraer tablas ────────────────────
-        wordDoc.tables.forEach { table ->
-            document.add(Paragraph(""))
-            table.rows.forEach { row ->
-                val rowText = row.tableCells.joinToString(" | ") { it.text }
-                if (rowText.isNotBlank()) {
-                    document.add(Paragraph(rowText))
-                }
-            }
+    private fun writeXwpfParagraph(document: Document, paragraph: XWPFParagraph) {
+        if (paragraph.text.isNotBlank()) document.add(Paragraph(paragraph.text))
+    }
+
+    private fun writeXwpfTable(document: Document, table: XWPFTable) {
+        document.add(Paragraph(""))
+        table.rows.forEach { row ->
+            val rowText = row.tableCells.joinToString(" | ") { it.text }
+            if (rowText.isNotBlank()) document.add(Paragraph(rowText))
         }
     }
 

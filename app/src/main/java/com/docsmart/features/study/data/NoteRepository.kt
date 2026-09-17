@@ -135,9 +135,52 @@ class NoteRepository @Inject constructor(
         }
     }
 
+    // B22 (auditoría general 2026-09-17): no existía forma de editar una
+    // nota ya guardada -- asimetría frente a Agenda, que sí permite editar
+    // un evento. `keptImages`/`removedImages` vienen ya separadas por el
+    // llamador (que tiene el `NoteWithImages` original completo desde la
+    // lista) en vez de que este método tenga que recalcular la diferencia
+    // -- evita una consulta extra a la base y dos fuentes de verdad sobre
+    // "qué imágenes tenía la nota antes de editar".
+    suspend fun updateNote(
+        noteId       : String,
+        title        : String,
+        text         : String,
+        reminderAt   : Long?,
+        keptImages   : List<NoteImageEntity>,
+        removedImages: List<NoteImageEntity>,
+        newImageUris : List<Uri>
+    ): Unit = withContext(Dispatchers.IO) {
+        val existing = noteDao.getById(noteId) ?: return@withContext
+        noteDao.update(existing.copy(title = title, text = text, reminderAt = reminderAt))
+
+        removedImages.forEach { image ->
+            File(image.filePath).delete()
+            noteDao.deleteImage(image.id)
+        }
+        val nextPosition = (keptImages.maxOfOrNull { it.position } ?: -1) + 1
+        newImageUris.forEachIndexed { offset, uri ->
+            val position = nextPosition + offset
+            val filePath = copyImageToNoteStorage(noteId, position, uri) ?: return@forEachIndexed
+            noteDao.insertImage(NoteImageEntity(noteId = noteId, filePath = filePath, position = position))
+        }
+
+        // Mismo criterio que createNote(): reprograma/cancela el
+        // recordatorio real en vez de dejar la alarma vieja viva apuntando
+        // a un título desactualizado, o una nueva sin cancelar la anterior.
+        if (existing.reminderAt != null) noteReminderScheduler.cancel(noteId)
+        if (reminderAt != null) noteReminderScheduler.schedule(noteId, title, reminderAt)
+    }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (B22, descubierto de
+    // paso al arreglar updateNote()): usaba noteDao.insert() (REPLACE) igual
+    // que el bug ya corregido en updateNote() -- vincular/desvincular un
+    // documento a una nota que YA tenía imágenes adjuntas borraba esas filas
+    // de note_images por el CASCADE de SQLite (el archivo en disco quedaba
+    // huérfano, la nota se veía sin sus imágenes al volver a abrirla).
     suspend fun linkDocument(noteId: String, documentId: String?) = withContext(Dispatchers.IO) {
         val note = noteDao.getById(noteId) ?: return@withContext
-        noteDao.insert(note.copy(documentId = documentId))
+        noteDao.update(note.copy(documentId = documentId))
     }
 
     // Borra las copias de imagen en disco antes de la fila -- Room solo

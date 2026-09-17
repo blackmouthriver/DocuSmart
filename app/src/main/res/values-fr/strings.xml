@@ -1005,6 +1005,8 @@
     <string name="study_listening">Écoute en cours… parle maintenant</string>
     <string name="study_save_note">Enregistrer la note</string>
     <string name="study_untitled_note">Note sans titre</string>
+    <string name="study_edit_note">Modifier la note</string>
+    <string name="study_edit_note_desc">Modifier cette note</string>
     <string name="study_note_attach_image">Joindre une image</string>
     <string name="study_note_scan_image">Scanner</string>
     <string name="study_note_remove_image">Retirer l\'image</string>

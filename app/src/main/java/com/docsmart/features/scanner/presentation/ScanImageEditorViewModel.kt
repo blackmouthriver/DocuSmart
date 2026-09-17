@@ -10,10 +10,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * RF-SCAN-06/RF-SCAN-07: envuelve [ScanImageEditor] (una clase de dominio
- * simple, sin estado) en un ViewModel solo para poder obtenerlo con
- * `hiltViewModel()` desde `ScanResultScreen` -- mismo patrón que el resto
- * de la app usa para inyectar dependencias en Composables.
+ * RF-SCAN-06/RF-SCAN-07: envuelve [ScanImageEditor] en un ViewModel solo
+ * para poder obtenerlo con `hiltViewModel()` desde `ScanResultScreen` --
+ * mismo patrón que el resto de la app usa para inyectar dependencias en
+ * Composables. [ScanImageEditor] guarda internamente (B9, auditoría
+ * general 2026-09-17) qué archivos de caché creó él mismo, para poder
+ * limpiarlos con seguridad -- ver [deleteCachedFile].
  */
 @HiltViewModel
 class ScanImageEditorViewModel @Inject constructor(
@@ -38,4 +40,6 @@ class ScanImageEditorViewModel @Inject constructor(
     // desde el onClick no-suspend del botón "Aplicar" del editor).
     suspend fun applyColorMode(uri: Uri, mode: ScanColorMode): Uri? =
         editor.applyColorMode(uri, mode)
+
+    fun deleteCachedFile(uri: Uri) = editor.deleteCachedFile(uri)
 }

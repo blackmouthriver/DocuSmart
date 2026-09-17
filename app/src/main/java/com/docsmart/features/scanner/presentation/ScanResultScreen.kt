@@ -449,6 +449,12 @@ private fun ScanResultSideEffects(
         editorViewModel = viewModels.editorViewModel,
         onDismiss = { callbacks.onEditingIndexChange(null) },
         onApplied = { index, result ->
+            // B9 (auditoría general 2026-09-17): el edit anterior de ESTA
+            // página queda reemplazado por `result` -- si era un archivo
+            // de scanner_edits/ que el propio editor creó (no la URI
+            // original del escaneo), se borra; deleteCachedFile() es
+            // no-op seguro en cualquier otro caso.
+            viewModels.editorViewModel.deleteCachedFile(editableUris[index])
             callbacks.onEditableUrisChange(
                 editableUris.toMutableList().apply { set(index, result) }
             )
@@ -1410,17 +1416,40 @@ private fun ScanResultActions(
                                     // Convertidor/Renombrar.
                                     val name = com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
                                         .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
+                                    // Hallazgo real de la auditoría general
+                                    // 2026-09-17 (B10): esta rama es
+                                    // inalcanzable hoy (ML Kit ya no
+                                    // devuelve resultados PDF), pero el
+                                    // bug era real -- DownloadsSaver.
+                                    // saveUri() guarda directo desde el
+                                    // content:// original sin producir
+                                    // ningún File local, así que
+                                    // onFinalized() nunca se llamaba acá
+                                    // (a diferencia de la rama
+                                    // savedFile != null) y el escaneo
+                                    // jamás se agregaba a la sesión ni
+                                    // contaba para el límite diario.
+                                    // Se copia primero a un File real en
+                                    // filesDir/converted (mismo directorio
+                                    // que ya usan las conversiones imagen→
+                                    // PDF) para poder tratarlo igual que
+                                    // savedFile.
+                                    val pdfFile = if (state.savedFile == null && state.isPdf) {
+                                        copyUriToConvertedDir(context, state.scannedUris.first(), name)
+                                    } else {
+                                        null
+                                    }
                                     val success = when {
                                         state.savedFile != null -> DownloadsSaver.saveFile(
                                             context, state.savedFile, mimeTypeForExtension(state.savedFile.extension)
                                         )
-                                        state.isPdf -> DownloadsSaver.saveUri(
-                                            context, state.scannedUris.first(), MIME_PDF, "$name.pdf"
-                                        )
+                                        pdfFile != null -> DownloadsSaver.saveFile(context, pdfFile, MIME_PDF)
                                         else -> false
                                     }
+                                    if (pdfFile != null && !success) pdfFile.delete()
                                     onSavedToDownloadsChange(success)
-                                    if (success && state.savedFile != null) onFinalized(state.savedFile)
+                                    val finalizedFile = state.savedFile ?: pdfFile
+                                    if (success && finalizedFile != null) onFinalized(finalizedFile)
                                 } finally {
                                     isSaving = false
                                 }
@@ -1805,6 +1834,31 @@ private suspend fun copyUriToCache(
         if (cacheFile.exists() && cacheFile.length() > 0) cacheFile else null
     } catch (e: Exception) {
         Timber.e(e, "Error copiando URI al cache: ${e.message}")
+        null
+    }
+}
+
+// B10: mismo copiado que copyUriToCache(), pero a filesDir/converted (no
+// cacheDir) -- el resultado se agrega a la sesión de escaneo vía
+// onFinalized() y necesita persistir igual que cualquier otro archivo
+// "convertido" de la app, no ser reclamable en cualquier momento por el
+// sistema como el resto de cacheDir.
+private suspend fun copyUriToConvertedDir(
+    context: Context,
+    uri: Uri,
+    fileName: String
+): File? = withContext(Dispatchers.IO) {
+    try {
+        val convertedDir = File(context.filesDir, "converted").apply { mkdirs() }
+        val outputFile = File(convertedDir, "$fileName.pdf")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            outputFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        if (outputFile.exists() && outputFile.length() > 0) outputFile else null
+    } catch (e: Exception) {
+        Timber.e(e, "Error copiando URI a converted/: ${e.message}")
         null
     }
 }

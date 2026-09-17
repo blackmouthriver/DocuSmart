@@ -59,18 +59,30 @@ class PptToTextUseCase @Inject constructor(
         }
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (B5): envolvía
+    // directamente el InputStream del content resolver en ZipInputStream --
+    // mismo bug real ya diagnosticado y corregido en PptToPdfUseCase
+    // (testers 2026-09-11, "La presentación no contiene texto" con .pptx
+    // que sí tenían texto real: ciertas URIs de Storage Access Framework
+    // entregan un stream que ZipInputStream no puede leer directo, aunque
+    // el mismo archivo desde disco sí funciona). Se lee el archivo completo
+    // a memoria primero (ya con el límite de readBoundedBytes(), revisión
+    // de seguridad 2026-09-16) y se envuelve en un ByteArrayInputStream
+    // simple antes de pasarlo a ZipInputStream.
     /** Lee el .pptx como ZIP y extrae el texto de cada `ppt/slides/slideN.xml`. */
     private fun extractSlideTexts(pptUri: Uri): Map<Int, String>? {
+        val bytes = context.contentResolver.openInputStream(pptUri)?.use { it.readBoundedBytes() }
+            ?: return null
         val slideMap = mutableMapOf<Int, String>()
-        context.contentResolver.openInputStream(pptUri)?.use { input ->
-            val zip   = ZipInputStream(input)
-            var entry = zip.nextEntry
-            while (entry != null) {
-                addSlideTextIfMatch(zip, entry.name, slideMap)
-                entry = zip.nextEntry
+        java.io.ByteArrayInputStream(bytes).use { byteStream ->
+            ZipInputStream(byteStream).use { zip ->
+                var entry = zip.nextEntry
+                while (entry != null) {
+                    addSlideTextIfMatch(zip, entry.name, slideMap)
+                    entry = zip.nextEntry
+                }
             }
-            zip.close()
-        } ?: return null
+        }
         return slideMap
     }
 

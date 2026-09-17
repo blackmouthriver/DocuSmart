@@ -342,12 +342,19 @@ duplicar velocidad ni quedar en estado inconsistente.
 
 ## Prioridad Baja / i18n (23 hallazgos)
 
-Corregidos 2026-09-17: 13 de 23. Los 10 restantes quedan ⚠️ evaluados y no
-corregidos a propósito -- son refactors/decisiones de alcance mayor
-(reescribir un extractor completo, tocar una carrera de callbacks de TTS ya
-delicada, agregar una función nueva de "editar nota") donde el riesgo de
-regresión supera el beneficio de un hallazgo Baja, o directamente código
-inalcanzable hoy que no se puede verificar sin reactivarlo antes.
+**Primera pasada (2026-09-17):** 13 de 23 corregidos; 10 quedaron ⚠️
+evaluados y no corregidos por riesgo de regresión o alcance mayor.
+
+**Segunda pasada, mismo día:** el usuario pidió explícitamente seguir con
+los 10 evaluados ("dale, seguí con los bajos que quedaron evaluados"). Tras
+reinvestigar cada uno a fondo: **9 de 10 se corrigieron igual** (B4, B5, B9,
+B10, B12, B19, B22 -- ver el detalle de cada uno abajo, con una corrección
+adicional real encontrada en B12 por la revisión adversarial, y un bug real
+preexistente encontrado y corregido de paso en B22). **Solo B13 se mantuvo
+sin corregir** tras confirmar con una investigación más profunda que las 4
+pantallas del Visor divergieron en comportamiento real (no son duplicados
+limpios) -- ver el detalle en B13. En total: **22 de 23 hallazgos Baja/i18n
+corregidos**, 1 evaluado y documentado con la razón concreta.
 
 ### B1 — Saneo de nombre ad hoc en vez de `sanitizeOutputFileName()`
 **Estado:** ✅ Corregido -- `PdfPasswordUseCase.protect()`/`removePassword()`
@@ -367,11 +374,16 @@ este campo (rechazar extraer 1 sola página) ya se corrigió el 2026-09-08 y
 dejó el campo sin ningún lector.
 
 ### B4/B5 — Word/PPT: orden de párrafos+tablas / falta workaround SAF
-**Estado:** ⚠️ Evaluado, no corregido -- ambas funciones están ocultas tras
-`HIDDEN_FROM_UI` (no hay usuario real expuesto hoy); una corrección real
-implica reescribir el extractor Word con recorrido por `bodyElements` en
-orden real de documento, un refactor de alcance mayor sin beneficio visible
-para el hallazgo Baja que representa hoy.
+**Estado:** ✅ Corregido 2026-09-17 (segunda pasada, a pedido explícito del
+usuario de seguir con los evaluados) -- `WordToPdfUseCase`/`WordToTextUseCase`
+recorren `wordDoc.bodyElements` (párrafos+tablas en el orden real del
+documento) en vez de dos pasadas separadas. `PptToTextUseCase.extractSlideTexts()`
+ahora usa el mismo workaround SAF de `PptToPdfUseCase` (leer a
+`ByteArrayInputStream` vía `readBoundedBytes()` antes de `ZipInputStream`).
+Tests nuevos: caso de orden real (intro→tabla→conclusión) en
+`WordToPdfUseCaseTest`/`WordToTextUseCaseTest` (fallan sin el fix, confirmado
+al escribirlos), y `PptToTextUseCaseTest.kt` creado (la clase no tenía
+cobertura previa).
 
 ### B6 — `PdfDocument.close()` fuera de `.use{}` en `ConvertImageToPdfUseCase`
 **Estado:** ✅ Corregido -- todo el cuerpo relevante (incluidos los
@@ -392,44 +404,66 @@ Confirmado con una búsqueda amplia en todo el proyecto que no quedan
 referencias.
 
 ### B9 — `scanner_edits/` acumula archivos sin borrar los anteriores
-**Estado:** ⚠️ Evaluado, no corregido -- una limpieza correcta exige
-rastrear, por página, qué archivo de `cacheDir` reemplaza a cuál (el estado
-de edición por página vive en `ScanResultScreen.kt`, no en
-`ScanImageEditor`) -- borrar "todo lo demás" en el directorio arriesgaba
-borrar el archivo de OTRA página todavía en uso. `cacheDir` además es
-reclamable por el propio Android bajo presión de almacenamiento, así que no
-es una fuga real de datos del usuario, solo una oportunidad de limpieza
-proactiva perdida.
+**Estado:** ✅ Corregido 2026-09-17 (segunda pasada) -- `ScanImageEditor`
+ahora registra en un mapa privado (`ownedCacheFiles`) cada archivo que ella
+misma escribió en `applyAdjustments()`; nuevo `deleteCachedFile(uri)` solo
+borra si reconoce el URI como propio (no-op seguro para el URI original del
+escaneo o el de otra página). `ScanResultScreen.kt` lo llama en
+`onApplied()` con el URI que ESE edit reemplaza, antes de aplicar el nuevo.
+Alcance acotado a `applyAdjustments()` (brillo/contraste/escala, "sin
+vuelta atrás") -- `applyColorMode()` sigue sin limpiar (mantiene
+deliberadamente todas las variantes en caché para poder alternar sin
+reprocesar, HU-41).
 
 ### B10 — Rama `isPdf=true` inalcanzable con bug latente
-**Estado:** ⚠️ Evaluado, no corregido -- confirmado el bug real
-(`onFinalized(File)` nunca se invoca en el camino de éxito de esta rama
-porque `DownloadsSaver.saveUri()` no produce un `File` local, a diferencia
-del otro camino), pero ML Kit ya no devuelve resultados PDF hoy -- no hay
-forma de verificar en vivo una corrección de este código, y una corrección
-mal probada podría introducir un bug nuevo en código que nadie ejerce.
-Documentado acá para quien reactive este camino en el futuro.
+**Estado:** ✅ Corregido 2026-09-17 (segunda pasada) -- nuevo
+`copyUriToConvertedDir()` copia el PDF escaneado a un `File` real en
+`filesDir/converted` (mismo directorio que usan las conversiones imagen→PDF)
+antes de guardarlo vía `DownloadsSaver.saveFile()`, para poder tratarlo
+igual que `state.savedFile` y sí llamar a `onFinalized()`. Si el copiado
+falla, `pdfFile` queda `null` (sin huérfano); si el copiado tiene éxito pero
+`DownloadsSaver.saveFile()` falla, se borra el archivo recién copiado. Sigue
+sin ser verificable en vivo (ML Kit no devuelve resultados PDF hoy) --
+confirmado por revisión de código propia y por la revisión adversarial de
+este lote.
 
 ### B11 — Prefijo `https://` sensible a mayúsculas
 **Estado:** ✅ Corregido -- `QrScreen.kt` usa
 `startsWith("http", ignoreCase = true)`.
 
 ### B12 — Contraseña de PDF en `rememberSaveable`
-**Estado:** ⚠️ Evaluado, no corregido -- `rememberSaveable` en
-`PdfPasswordDialog` es un fix deliberado de la revisión general 2026-09-16
-para un bug real (la contraseña se perdía al rotar el dispositivo, `MainActivity`
-no declara `configChanges`). Revertir a `remember` reintroduciría ese bug;
-una solución que evite ambos problemas (estado en un ViewModel scopeado en
-vez del Bundle de Activity) es un cambio de arquitectura mayor no
-justificado para este hallazgo Baja.
+**Estado:** ✅ Corregido 2026-09-17 (segunda pasada) -- nuevo
+`PdfPasswordDialogViewModel` (`@HiltViewModel`, sin dependencias) reemplaza
+`rememberSaveable`: sobrevive la rotación por el mecanismo propio de
+retención de ViewModel (`NonConfigurationInstance`), sin tocar nunca el
+Bundle de `onSaveInstanceState()`, así que no reintroduce el bug de
+rotación que motivó el `rememberSaveable` original. Corrección tras la
+revisión adversarial de este mismo lote: la primera versión solo limpiaba
+la contraseña al cancelar, no en el camino de éxito (el desbloqueo pone
+`requiresPassword = false` directo en `ViewerViewModel`, sin pasar por
+`onDismiss`) -- se agregó un `DisposableEffect` que limpia en cualquier
+salida real de la composición, éxito o cancelación.
 
 ### B13 — Duplicación de `*ViewerContent` (Word/Excel/PPT/Texto)
 **Estado:** ⚠️ Evaluado, no corregido (extracción completa) / ✅ Corregido
-(la inconsistencia concreta) -- unificar las 4 pantallas en un genérico es
-un refactor de alcance mayor sobre el área más compleja de la app. Se
-corrigió la única inconsistencia real y acotada que el hallazgo señalaba:
-`PptViewerContent` ahora tiene su propio `hasError`, igual que
-Word/Excel/Texto.
+(la inconsistencia concreta) -- se corrigió la única inconsistencia real y
+acotada que el hallazgo señalaba: `PptViewerContent` ahora tiene su propio
+`hasError`, igual que Word/Excel/Texto. Reinvestigado a fondo tras el
+pedido explícito de seguir con los evaluados (2026-09-17, mismo día): las
+4 pantallas NO son duplicados limpios -- divergieron en comportamiento
+real, no solo en estilo. `TextViewerContent` no tiene rama de error en
+absoluto (trata "falló la lectura" igual que "archivo vacío", mostrando
+`viewer_empty_file`); `ExcelViewerContent` tiene un segundo
+`LaunchedEffect` dependiente que cambia de hoja automáticamente si la
+búsqueda no matchea en la hoja activa (RF propio, sin equivalente en las
+otras 3); los estilos de "error de lectura" difieren (Word usa una
+`Column` con `spacedBy(12.dp)`, Excel/PPT un `Text` centrado con
+`padding(32.dp)`). Una extracción genérica real tendría que decidir si
+normaliza estas diferencias (cambio de comportamiento no pedido) o las
+parametriza todas (una abstracción con tantos parámetros que deja de
+ahorrar código de verdad). Se mantiene sin corregir -- no por evitar el
+riesgo sin más, sino porque la investigación confirma que no hay una
+refactorización mecánica de bajo riesgo posible acá.
 
 ### B14 — "KB" hardcodeado en Almacenamiento
 **Estado:** ✅ Corregido -- `StorageRow` y el Total del diálogo de
@@ -463,18 +497,15 @@ febrero 2027 (28 días) -- quedó correctamente recortado a "28", con el
 detalle de abajo sincronizado en cada paso ("Domingo 28 de febrero").
 
 ### B19 — Callbacks de TextToSpeech mutan State sin garantía de hilo
-**Estado:** ✅ Corregido (parcial, acotado a lo verificable) / ⚠️ Evaluado
-el resto -- `previewVoice()` (autoescucha de una voz en Ajustes de
-lectura) ahora despacha sus callbacks `onDone`/`onError` a
-`Handler(Looper.getMainLooper())` antes de volver a tocar `tts.voice`. El
-handler mucho más grande de "Leer todo" (múltiples `tts.speak()` en bucle,
-guardado de progreso, lógica de extracción incremental ya afinada en
-varias rondas previas) se dejó sin tocar -- envolverlo en el mismo patrón
-arriesgaba cambiar el orden de ejecución de una máquina de estados ya
-delicada, para un hallazgo de robustez teórica (el snapshot system de
-Compose ya soporta escrituras de estado desde cualquier hilo; el riesgo
-real es la reentrada al motor TTS, no perceptible sin un motor OEM
-específico que falle).
+**Estado:** ✅ Corregido 2026-09-17 (completo, segunda pasada) --
+`previewVoice()` ya despachaba `onDone`/`onError` a
+`Handler(Looper.getMainLooper())`. El handler grande de "Leer todo"
+(`onStart`/`onDone`/`onError` de la cola completa del documento) se envolvió
+con el mismo `mainHandler.post {}` SIN tocar la lógica interna de ninguno --
+mismo orden relativo de ejecución, solo corre en el hilo principal en vez
+del hilo del motor TTS. Esto además hace seguros los `tts.speak()`
+reentrantes de `onDone()` (antes se llamaban de vuelta al motor TTS desde
+su propio hilo de callback).
 
 ### B20 — Notas no refresca `POST_NOTIFICATIONS` al volver de Ajustes
 **Estado:** ✅ Corregido -- `StudyScreen.kt` agrega `ReloadOnScreenResume`
@@ -488,8 +519,43 @@ Extraído `core/ui/components/LinkDocumentDialog.kt` parametrizado por esos
 misma firma pública de antes (ningún call site cambió).
 
 ### B22 — No existe edición de una nota ya guardada
-**Estado:** ⚠️ Evaluado, no corregido -- es una funcionalidad nueva (no un
-bug), fuera del alcance de una auditoría de corrección de bugs.
+**Estado:** ✅ Implementado 2026-09-17 (segunda pasada) -- pedido
+explícitamente por el usuario pese a ser una funcionalidad nueva (no un
+bug). Nuevo botón "Editar" (ícono lápiz) en cada nota de la lista, abre
+`NoteEditDialog` (Dialog aparte, no reutiliza `NoteEditorCard` para no
+tocar el flujo de creación ya probado) pre-cargado con título/texto/
+imágenes/recordatorio actuales. Cada imagen ya guardada se expone como su
+propia `Uri.fromFile(...)` para reutilizar `NoteImagesCarousel`/
+`NoteReminderSection` tal cual. `NoteRepository.updateNote()` (nuevo)
+reconcilia imágenes conservadas/removidas/nuevas y reprograma/cancela el
+recordatorio real.
+
+**Bug real preexistente encontrado y corregido de paso** (no introducido en
+este lote, ya estaba en producción): `NoteDao.insert()` usa
+`@Insert(onConflict = OnConflictStrategy.REPLACE)` -- como `note_images`
+tiene FK a `notes.id` con `onDelete = CASCADE`, SQLite borra-e-inserta
+internamente la fila al hacer REPLACE sobre un id existente, así que
+CUALQUIER actualización de una nota ya guardada (incluido el ya existente
+`linkDocument()`, no solo el nuevo `updateNote()`) arrastraba por CASCADE
+todas las imágenes adjuntas de la base (el archivo en disco quedaba
+huérfano, la nota se veía sin sus imágenes al reabrirla). Corregido
+agregando un método `@Update` real a `NoteDao` y migrando tanto
+`updateNote()` como `linkDocument()` a usarlo. Encontrado por el propio test
+nuevo de `updateNote()` (fallaba con "1 conservada + 1 nueva" pero
+`result.images.size == 1"), no por inspección manual.
+
+Tests nuevos en `NoteRepositoryTest.kt`: título/texto/recordatorio,
+reconciliación de imágenes (conservada+removida+nueva, con verificación de
+que el archivo de la removida se borra de disco), reprogramación/cancelación
+del recordatorio en las 2 combinaciones relevantes, y un test dedicado para
+el bug de `linkDocument()`. **Verificado en vivo** en el Motorola Edge 30
+Neo, de punta a punta: creé una nota real ("PruebaB22"), la edité (título →
+"PruebaB22Editada", agregué recordatorio "Mañana"), confirmé con
+`dumpsys alarm` que se programó una alarma `RTC_WAKEUP` real
+(`NoteReminderReceiver`, 2026-09-18 09:00:00) -- no solo un cambio en la
+base --, reabrí el editor y confirmé que el título y el recordatorio
+persistieron ("Recordatorio: 18 sept 2026, 09:00"), borré la nota y
+confirmé con `dumpsys alarm` que la alarma quedó "alarm_cancelled".
 
 ### B23 — `CalendarDayCell` sin `contentDescription`
 **Estado:** ✅ Corregido -- cada celda expone ahora una descripción de
@@ -502,12 +568,12 @@ suelto.
 ## Huecos de cobertura de tests más importantes (por área)
 
 - **Home/Biblioteca/Seguridad:** `HomeViewModel`, `LibraryViewModel`, `TrashViewModel`, `FavoritesRepository` sin ningún test propio. Ningún test de `SecurityManagerTest`/`SecurityViewModelTest` cubre la rama `File.delete() == false` sin excepción (habría detectado A1).
-- **Convertidor:** `ConvertImageToPdfUseCase` y `PdfToHtmlUseCase` (tipos activos) sin tests. `ConverterViewModel` solo testeado en modo lote, nunca archivo único (guard de doble-toque, recuperación tras OOM). Ningún test verifica orden párrafo/tabla en Word (habría detectado B4).
+- **Convertidor:** `ConvertImageToPdfUseCase` y `PdfToHtmlUseCase` (tipos activos) sin tests. `ConverterViewModel` solo testeado en modo lote, nunca archivo único (guard de doble-toque, recuperación tras OOM). ~~Ningún test verifica orden párrafo/tabla en Word~~ cubierto 2026-09-17 al corregir B4 (`WordToPdfUseCaseTest`/`WordToTextUseCaseTest`).
 - **Herramientas PDF:** no existe `PdfToolsViewModelTest` (habría detectado A2). Ningún test de herramienta fuerza una excepción a mitad de procesamiento para verificar limpieza de archivo huérfano. `MergePdfUseCaseTest` sin caso de "una URI falla" (habría detectado M5).
 - **Escáner/QR:** `historyContentPreview`/`extractWifiSsid` sin test (habría detectado A3 con un caso `"wifi:"` minúscula). `ScanSessionManager` con cobertura cero en su lógica de estado real (dedup, rename, delete).
 - **Visor:** `ViewerViewModel` (1248 líneas) con cero tests unitarios -- ni desbloqueo de PDF, ni `isReadOnlyPreview` (habría detectado A5), ni debounce de última página, ni `shareDocument`. `extractExcelSheets`/`extractPptSlides` sin test (habría detectado M8). `renderPdfPagesToBitmaps` sin test (habría detectado A6).
 - **Ajustes/Premium:** `PremiumViewModel` sin tests (habría detectado M11/M12 por simetría con `purchase()`). `ThemeManagerTest` no cubre `fontScale`/`animatedBackgroundEnabled`. `DailyLimitManagerTest` no ejercita una clave de herramienta no mapeada (habría detectado A7 -- ya detectó el mismo bug 2 veces antes).
-- **Estudio/Agenda:** `NoteReminderScheduler`/`ReminderScheduler` sin tests (difícil por construir su propio `AlarmManager`, valdría un `Context` fake). `NoteRepositoryTest` no verifica que `createNote`/`deleteNote` llamen a `schedule()`/`cancel()` (a diferencia de `AgendaRepositoryTest`, que sí lo hace -- asimetría real). `PomodoroEngine` (el objeto real, no solo `tickPomodoro`) sin cobertura -- habría detectado M13. Sin tests de `AgendaViewModel`, `NotesViewModel`, `BootRescheduleReceiver`.
+- **Estudio/Agenda:** `NoteReminderScheduler`/`ReminderScheduler` sin tests (difícil por construir su propio `AlarmManager`, valdría un `Context` fake). `NoteRepositoryTest` verifica `schedule()`/`cancel()` para `updateNote()` (agregado 2026-09-17 al corregir B22) pero todavía no para `createNote()`/`deleteNote()`. `PomodoroEngine` (el objeto real, no solo `tickPomodoro`) sin cobertura -- habría detectado M13. `AgendaViewModelTest` existe desde 2026-09-17 (B18) pero solo cubre navegación de mes; sin tests de `NotesViewModel`, `BootRescheduleReceiver`.
 
 ---
 
@@ -528,13 +594,21 @@ suelto.
    condiciones de fallo no prácticas en un dispositivo real; M8/M9/M10 no
    verificables en vivo por falta de un archivo Excel/PPT de prueba --
    cubiertos por gauntlet + revisión de código). Fusionado (commit `cca7aa8`).
-3. ✅ Evaluar los 23 de **Prioridad Baja/i18n** -- hecho 2026-09-17: 13
-   corregidos (B1, B2, B3, B6, B7, B8, B11, B14, B15, B16, B17, B18, B20,
-   B21, B23 -- ver el detalle de cada uno arriba, incluye 1 fix acotado
-   dentro de B13 y de B19), 10 documentados "⚠️ Evaluado, no corregido" por
-   requerir una decisión de alcance mayor o ser código inalcanzable hoy (B4,
-   B5, B9, B10, B12, el resto de B13, el resto de B19, B22). Gauntlet
-   completo + revisión adversarial (sin hallazgos nuevos) + verificación en
-   vivo de B18 (el fix de mayor riesgo del lote, incluyendo el caso de
-   recorte de día exacto). Pendiente de aprobación para fusionar.
+3. ✅ Evaluar los 23 de **Prioridad Baja/i18n** -- hecho 2026-09-17 en dos
+   pasadas. Primera: 13 corregidos (B1, B2, B3, B6, B7, B8, B11, B14, B15,
+   B16, B17, B18, B20, B21, B23) + 10 evaluados y no corregidos por riesgo/
+   alcance. El usuario pidió explícitamente seguir con esos 10 igual;
+   segunda pasada: 9 más corregidos (B4, B5, B9, B10, B12, B19 completo,
+   B22 -- funcionalidad nueva de editar nota, pedida explícitamente pese a
+   no ser un bug), 1 se mantuvo sin corregir tras reinvestigar a fondo
+   (B13, único caso donde la investigación confirmó que no hay
+   refactorización mecánica de bajo riesgo posible). **Total: 22 de 23
+   corregidos.** Gauntlet completo + revisión adversarial en ambas pasadas
+   (sin hallazgos nuevos en la primera; en la segunda encontró y se corrigió
+   un hallazgo real en B12 -- la contraseña no se limpiaba en el camino de
+   éxito -- y se encontró de paso un bug real preexistente en `linkDocument()`,
+   ver B22). Verificado en vivo en el Motorola Edge 30 Neo: B18 (primera
+   pasada, caso de recorte de día exacto) y B22 completo (segunda pasada,
+   crear→editar→recordatorio real con `dumpsys alarm`→eliminar→cancelación
+   confirmada). Pendiente de aprobación para fusionar.
 4. Sumar tests de regresión para los huecos de cobertura que hubieran detectado cada hallazgo Alta/Media, como parte de su propio fix (no como tarea aparte).

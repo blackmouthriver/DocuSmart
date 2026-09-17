@@ -25,6 +25,19 @@ import javax.inject.Inject
 class ScanImageEditor @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    // Hallazgo real de la auditoría general 2026-09-17 (B9): cada ajuste
+    // de brillo/contraste/escala escribía un archivo nuevo en
+    // cacheDir/scanner_edits/ sin borrar el anterior, acumulando para
+    // siempre durante la sesión. Se registran acá (no en el Composable,
+    // que no tiene forma segura de mapear un content:// de vuelta a un
+    // File) los URIs que ESTA instancia creó -- el llamador solo puede
+    // borrar un URI si pasó por acá, así que nunca se arriesga a borrar el
+    // URI original del escaneo (dueño de ML Kit) ni el de otra página.
+    // `ScanImageEditor` vive tanto como `ScanImageEditorViewModel`
+    // (@HiltViewModel, una instancia por visita a ScanResultScreen), así
+    // que el mapa cubre exactamente la sesión de edición del usuario.
+    private val ownedCacheFiles = mutableMapOf<Uri, File>()
+
     @Suppress("TooGenericExceptionCaught")
     suspend fun applyAdjustments(
         sourceUri: Uri,
@@ -43,11 +56,22 @@ class ScanImageEditor @Inject constructor(
             if (scaled !== original) scaled.recycle()
             original.recycle()
 
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
+            ownedCacheFiles[uri] = outputFile
+            uri
         } catch (e: Exception) {
             Timber.e(e, "Error aplicando ajustes a la imagen escaneada")
             null
         }
+    }
+
+    // B9: el llamador pasa el URI que este edit está reemplazando -- si
+    // esta instancia lo reconoce como propio (lo creó ella misma vía
+    // writeToCache), borra el archivo de respaldo, ya inalcanzable para
+    // cualquier otra página o el URI original del escaneo. No-op seguro si
+    // el URI no es reconocido.
+    fun deleteCachedFile(uri: Uri) {
+        ownedCacheFiles.remove(uri)?.delete()
     }
 
     /**

@@ -997,6 +997,8 @@
     <string name="study_listening">聞き取り中… 話してください</string>
     <string name="study_save_note">メモを保存</string>
     <string name="study_untitled_note">無題のメモ</string>
+    <string name="study_edit_note">メモを編集</string>
+    <string name="study_edit_note_desc">このメモを編集</string>
     <string name="study_note_attach_image">画像を添付</string>
     <string name="study_note_scan_image">スキャン</string>
     <string name="study_note_remove_image">画像を削除</string>

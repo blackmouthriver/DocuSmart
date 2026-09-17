@@ -1,5 +1,9 @@
 package com.docsmart.features.scanner.domain
 
+import android.content.Context
+import android.net.Uri
+import io.mockk.mockk
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -79,5 +83,20 @@ class ScanImageEditorTest {
 
         assertEquals(1, width)
         assertEquals(1, height)
+    }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (B9): deleteCachedFile()
+    // solo debe borrar un archivo si ESTA instancia lo creó vía
+    // applyAdjustments() -- un URI que nunca pasó por acá (la URI original
+    // del escaneo, o la de otra página) debe ser un no-op seguro, nunca un
+    // error. `applyAdjustments()` en sí no se puede probar en un test JVM
+    // puro (usa Bitmap/Canvas reales, ver la nota de la clase), pero este
+    // contrato de "nunca tocar lo que no reconoce" sí es puro.
+    @Test
+    fun `deleteCachedFile no lanza para un URI que nunca creo esta instancia`() {
+        val editor = ScanImageEditor(mockk<Context>(relaxed = true))
+        val uriDesconocida = mockk<Uri>()
+
+        assertDoesNotThrow { editor.deleteCachedFile(uriDesconocida) }
     }
 }

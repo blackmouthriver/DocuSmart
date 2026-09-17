@@ -1033,6 +1033,8 @@
     <string name="study_listening">Escuchando… habla ahora</string>
     <string name="study_save_note">Guardar nota</string>
     <string name="study_untitled_note">Nota sin título</string>
+    <string name="study_edit_note">Editar nota</string>
+    <string name="study_edit_note_desc">Editar esta nota</string>
     <string name="study_note_attach_image">Adjuntar imagen</string>
     <string name="study_note_scan_image">Escanear</string>
     <string name="study_note_remove_image">Quitar imagen</string>

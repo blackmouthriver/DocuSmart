@@ -997,6 +997,8 @@
     <string name="study_listening">듣고 있어요… 지금 말씀하세요</string>
     <string name="study_save_note">메모 저장</string>
     <string name="study_untitled_note">제목 없는 메모</string>
+    <string name="study_edit_note">메모 수정</string>
+    <string name="study_edit_note_desc">이 메모 수정</string>
     <string name="study_note_attach_image">이미지 첨부</string>
     <string name="study_note_scan_image">스캔</string>
     <string name="study_note_remove_image">이미지 제거</string>

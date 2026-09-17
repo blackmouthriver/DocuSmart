@@ -1958,20 +1958,34 @@ private fun TextViewerSearchResults(text: String, searchQuery: String) {
 // ── Dialog de contraseña PDF ──────────────────────────────────────────────────
 @Composable
 private fun PdfPasswordDialog(
-    fileName     : String,
-    passwordError: String?,
-    isLoading    : Boolean,
-    onConfirm    : (String) -> Unit,
-    onDismiss    : () -> Unit
+    fileName        : String,
+    passwordError   : String?,
+    isLoading       : Boolean,
+    onConfirm       : (String) -> Unit,
+    onDismiss       : () -> Unit,
+    dialogViewModel : PdfPasswordDialogViewModel = hiltViewModel()
 ) {
-    // Hallazgo real de la revisión general 2026-09-16: `remember` simple
-    // perdía la contraseña tecleada al rotar el dispositivo -- mismo fix
-    // que en ViewerNoteInputDialog/ViewerRenameDialog.
-    var password    by rememberSaveable { mutableStateOf("") }
-    var showPassword by rememberSaveable { mutableStateOf(false) }
+    // Hallazgo real de la auditoría general 2026-09-17 (B12): la contraseña
+    // ya no vive en `rememberSaveable` (Bundle de `onSaveInstanceState`) --
+    // ver el comentario completo en PdfPasswordDialogViewModel.kt. Sigue
+    // sobreviviendo la rotación (RNF de UX ya corregido antes), ahora por
+    // el mecanismo propio de retención de ViewModel, sin tocar el Bundle.
+    val password = dialogViewModel.password
+    val showPassword = dialogViewModel.showPassword
+
+    // Corrección tras la revisión adversarial de este mismo lote: el
+    // desbloqueo exitoso pone `uiState.requiresPassword = false` directo en
+    // ViewerViewModel (no pasa por onDismiss) -- este Composable sale de la
+    // composición sin que `dialogViewModel.clear()` se llamara nunca, y la
+    // contraseña seguía viva en memoria mientras el usuario ve el documento
+    // ya desbloqueado. DisposableEffect cubre TODA salida real (éxito o
+    // cancelación) sin duplicar la lógica en cada callback.
+    DisposableEffect(Unit) {
+        onDispose { dialogViewModel.clear() }
+    }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { dialogViewModel.clear(); onDismiss() },
         shape            = MaterialTheme.shapes.extraLarge,
         icon             = {
             Icon(
@@ -1991,9 +2005,9 @@ private fun PdfPasswordDialog(
             PdfPasswordDialogBody(
                 fileName      = fileName,
                 password      = password,
-                onPasswordChange = { password = it },
+                onPasswordChange = dialogViewModel::onPasswordChange,
                 showPassword  = showPassword,
-                onToggleShowPassword = { showPassword = !showPassword },
+                onToggleShowPassword = dialogViewModel::onToggleShowPassword,
                 passwordError = passwordError
             )
         },
@@ -2008,7 +2022,9 @@ private fun PdfPasswordDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
+            TextButton(onClick = { dialogViewModel.clear(); onDismiss() }) {
+                Text(stringResource(R.string.general_cancel))
+            }
         }
     )
 }

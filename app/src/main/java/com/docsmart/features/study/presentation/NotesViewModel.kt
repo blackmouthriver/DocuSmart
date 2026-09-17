@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.analytics.DocuSmartAnalytics
+import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.features.study.data.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +19,11 @@ data class NotesUiState(
     val notes: List<NoteWithImages> = emptyList(),
     // Backlog UX #50: id de la nota que está eligiendo documento a vincular
     // -- null cuando el diálogo está cerrado.
-    val linkDocumentDialogForNoteId: String? = null
+    val linkDocumentDialogForNoteId: String? = null,
+    // B22 (auditoría general 2026-09-17): id de la nota que se está editando
+    // -- null cuando el editor está cerrado. Mismo criterio que
+    // linkDocumentDialogForNoteId.
+    val editingNoteId: String? = null
 )
 
 /**
@@ -76,6 +81,31 @@ class NotesViewModel @Inject constructor(
         viewModelScope.launch {
             noteRepository.linkDocument(noteId, documentId)
             _uiState.update { it.copy(linkDocumentDialogForNoteId = null) }
+        }
+    }
+
+    // B22 (auditoría general 2026-09-17): editar título/texto/imágenes/
+    // recordatorio de una nota ya guardada -- antes no existía.
+    fun startEditingNote(noteId: String) {
+        _uiState.update { it.copy(editingNoteId = noteId) }
+    }
+
+    fun cancelEditingNote() {
+        _uiState.update { it.copy(editingNoteId = null) }
+    }
+
+    fun updateNote(
+        noteId: String,
+        title: String,
+        text: String,
+        reminderAt: Long?,
+        keptImages: List<NoteImageEntity>,
+        removedImages: List<NoteImageEntity>,
+        newImageUris: List<Uri>
+    ) {
+        viewModelScope.launch {
+            noteRepository.updateNote(noteId, title, text, reminderAt, keptImages, removedImages, newImageUris)
+            _uiState.update { it.copy(editingNoteId = null) }
         }
     }
 }

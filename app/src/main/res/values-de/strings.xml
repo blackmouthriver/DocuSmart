@@ -993,6 +993,8 @@
     <string name="study_listening">Ich höre zu … sprich jetzt</string>
     <string name="study_save_note">Notiz speichern</string>
     <string name="study_untitled_note">Notiz ohne Titel</string>
+    <string name="study_edit_note">Notiz bearbeiten</string>
+    <string name="study_edit_note_desc">Diese Notiz bearbeiten</string>
     <string name="study_note_attach_image">Bild anhängen</string>
     <string name="study_note_scan_image">Scannen</string>
     <string name="study_note_remove_image">Bild entfernen</string>

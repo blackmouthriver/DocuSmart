@@ -1000,6 +1000,8 @@
     <string name="study_listening">In ascolto… parla ora</string>
     <string name="study_save_note">Salva nota</string>
     <string name="study_untitled_note">Nota senza titolo</string>
+    <string name="study_edit_note">Modifica nota</string>
+    <string name="study_edit_note_desc">Modifica questa nota</string>
     <string name="study_note_attach_image">Allega immagine</string>
     <string name="study_note_scan_image">Scansiona</string>
     <string name="study_note_remove_image">Rimuovi immagine</string>
