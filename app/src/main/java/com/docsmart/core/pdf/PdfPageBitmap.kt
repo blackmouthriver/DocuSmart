@@ -25,9 +25,20 @@ fun renderPdfPagesToBitmaps(uri: Uri, context: Context, cachePrefix: String = "p
     val cacheFile = File(context.cacheDir, "${cachePrefix}_${System.currentTimeMillis()}.pdf")
     if (!copyPdfUriToCache(uri, context, cacheFile)) {
         Timber.e("PdfPageRenderer: no se pudo copiar el PDF al caché")
+        cacheFile.delete()
         return emptyList()
     }
-    return renderCachedPdfPages(cacheFile)
+    // Hallazgo real de la auditoría general 2026-09-17: cacheFile solo
+    // hace falta durante el render (PdfRenderer exige un FileDescriptor
+    // real, no puede leer un Uri/stream directo) -- antes nunca se
+    // borraba, ni en éxito ni en error, acumulando una copia completa de
+    // cada PDF abierto (Visor y Modo Estudio) en cacheDir para siempre,
+    // fuera del alcance de "Limpiar caché" (que solo barre filesDir).
+    return try {
+        renderCachedPdfPages(cacheFile)
+    } finally {
+        cacheFile.delete()
+    }
 }
 
 private fun copyPdfUriToCache(uri: Uri, context: Context, cacheFile: File): Boolean =
@@ -56,23 +67,40 @@ private fun copyContentUriToCache(uri: Uri, context: Context, cacheFile: File): 
     false
 }
 
+// Hallazgo real de la auditoría general 2026-09-17: si render()/openPage()
+// lanzaba a mitad del bucle (PDF corrupto, página de tamaño extremo →
+// OutOfMemoryError), pdfRenderer.close()/fileDescriptor.close() nunca se
+// alcanzaban -- fuga del objeto nativo PdfRenderer y del descriptor de
+// archivo en cada intento fallido. Cada recurso se cierra ahora en su
+// propio finally, de adentro hacia afuera.
 private fun renderCachedPdfPages(cacheFile: File): List<PdfPageBitmap> {
     val fileDescriptor = ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY)
-    val pdfRenderer = PdfRenderer(fileDescriptor)
-    val pages = mutableListOf<PdfPageBitmap>()
+    return try {
+        val pdfRenderer = PdfRenderer(fileDescriptor)
+        try {
+            renderAllPages(pdfRenderer)
+        } finally {
+            pdfRenderer.close()
+        }
+    } finally {
+        fileDescriptor.close()
+    }
+}
 
+private fun renderAllPages(pdfRenderer: PdfRenderer): List<PdfPageBitmap> {
+    val pages = mutableListOf<PdfPageBitmap>()
     for (i in 0 until pdfRenderer.pageCount) {
         val page = pdfRenderer.openPage(i)
-        val bitmap = Bitmap.createBitmap(
-            page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888
-        )
-        bitmap.eraseColor(android.graphics.Color.WHITE)
-        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        pages.add(PdfPageBitmap(bitmap, page.width.toFloat(), page.height.toFloat()))
-        page.close()
+        try {
+            val bitmap = Bitmap.createBitmap(
+                page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888
+            )
+            bitmap.eraseColor(android.graphics.Color.WHITE)
+            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            pages.add(PdfPageBitmap(bitmap, page.width.toFloat(), page.height.toFloat()))
+        } finally {
+            page.close()
+        }
     }
-
-    pdfRenderer.close()
-    fileDescriptor.close()
     return pages
 }

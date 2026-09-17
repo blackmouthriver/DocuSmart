@@ -781,6 +781,8 @@
     <string name="security_restore">Restaurar</string>
     <string name="security_preview">Vista previa</string>
     <string name="security_preview_error">No se pudo abrir la vista previa</string>
+    <string name="security_delete_confirm_title">¿Eliminar archivo protegido?</string>
+    <string name="security_delete_confirm_body">"%1$s" se eliminará de forma permanente, sin pasar por la Papelera. Esta acción no se puede deshacer.</string>
     <string name="security_protect_file_dialog_title">Proteger archivo</string>
     <string name="pdf_pw_screen_subtitle">Protege o desbloquea tus PDFs</string>
     <string name="pdf_pw_mode_protect_title">Proteger PDF</string>
@@ -1032,6 +1034,7 @@
     <string name="study_note_reminder_1_week">En 1 semana</string>
     <string name="study_note_reminder_custom">Personalizada</string>
     <string name="study_note_reminder_scheduled_desc">Recordatorio: %1$s</string>
+    <string name="study_note_reminder_already_past">Con esta fecha y hora, el recordatorio ya quedó en el pasado y no va a sonar.</string>
     <string name="study_note_reminder_notifications_disabled">Activá las notificaciones para poder recordar repasar tus notas.</string>
     <string name="study_note_reminder_enable_notifications">Activar</string>
     <string name="note_reminder_notification_channel">Recordatorios de notas</string>
@@ -1156,6 +1159,7 @@
     <string name="agenda_reminder_15_min">15 min antes</string>
     <string name="agenda_reminder_1_hour">1 hora antes</string>
     <string name="agenda_reminder_1_day">1 día antes</string>
+    <string name="agenda_reminder_already_past">Con esta fecha y antelación, el recordatorio ya quedó en el pasado y no va a sonar.</string>
     <string name="agenda_reminder_notification_channel">Recordatorios de Agenda</string>
     <string name="agenda_reminder_notification_fallback_title">Recordatorio</string>
     <string name="agenda_reminder_notification_text">Tenés un evento programado</string>

@@ -743,6 +743,8 @@
     <string name="security_restore">Wiederherstellen</string>
     <string name="security_preview">Vorschau</string>
     <string name="security_preview_error">Die Vorschau konnte nicht geöffnet werden</string>
+    <string name="security_delete_confirm_title">Geschützte Datei löschen?</string>
+    <string name="security_delete_confirm_body">"%1$s" wird dauerhaft gelöscht, ohne über den Papierkorb zu gehen. Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="security_protect_file_dialog_title">Datei schützen</string>
     <string name="pdf_pw_screen_subtitle">Schütze oder entsperre deine PDFs</string>
     <string name="pdf_pw_mode_protect_title">PDF schützen</string>
@@ -992,6 +994,7 @@
     <string name="study_note_reminder_1_week">In 1 Woche</string>
     <string name="study_note_reminder_custom">Benutzerdefiniert</string>
     <string name="study_note_reminder_scheduled_desc">Erinnerung: %1$s</string>
+    <string name="study_note_reminder_already_past">Mit diesem Datum und dieser Uhrzeit liegt die Erinnerung bereits in der Vergangenheit und wird nicht ausgelöst.</string>
     <string name="study_note_reminder_notifications_disabled">Aktiviere Benachrichtigungen, um an deine Notizen erinnert zu werden.</string>
     <string name="study_note_reminder_enable_notifications">Aktivieren</string>
     <string name="note_reminder_notification_channel">Notiz-Erinnerungen</string>
@@ -1114,6 +1117,7 @@
     <string name="agenda_reminder_15_min">15 Min. vorher</string>
     <string name="agenda_reminder_1_hour">1 Stunde vorher</string>
     <string name="agenda_reminder_1_day">1 Tag vorher</string>
+    <string name="agenda_reminder_already_past">Mit diesem Datum und Vorlauf liegt die Erinnerung bereits in der Vergangenheit und wird nicht ausgelöst.</string>
     <string name="agenda_reminder_notification_channel">Agenda-Erinnerungen</string>
     <string name="agenda_reminder_notification_fallback_title">Erinnerung</string>
     <string name="agenda_reminder_notification_text">Du hast einen geplanten Termin</string>

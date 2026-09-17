@@ -743,6 +743,8 @@
     <string name="security_restore">Восстановить</string>
     <string name="security_preview">Просмотр</string>
     <string name="security_preview_error">Не удалось открыть предварительный просмотр</string>
+    <string name="security_delete_confirm_title">Удалить защищённый файл?</string>
+    <string name="security_delete_confirm_body">«%1$s» будет удалён навсегда, минуя Корзину. Это действие нельзя отменить.</string>
     <string name="security_protect_file_dialog_title">Защитить файл</string>
     <string name="pdf_pw_screen_subtitle">Защитите или разблокируйте свои PDF</string>
     <string name="pdf_pw_mode_protect_title">Защитить PDF</string>
@@ -992,6 +994,7 @@
     <string name="study_note_reminder_1_week">Через 1 неделю</string>
     <string name="study_note_reminder_custom">Своё время</string>
     <string name="study_note_reminder_scheduled_desc">Напоминание: %1$s</string>
+    <string name="study_note_reminder_already_past">С этой датой и временем напоминание уже в прошлом и не прозвучит.</string>
     <string name="study_note_reminder_notifications_disabled">Включите уведомления, чтобы получать напоминания о повторении заметок.</string>
     <string name="study_note_reminder_enable_notifications">Включить</string>
     <string name="note_reminder_notification_channel">Напоминания о заметках</string>
@@ -1114,6 +1117,7 @@
     <string name="agenda_reminder_15_min">За 15 минут</string>
     <string name="agenda_reminder_1_hour">За 1 час</string>
     <string name="agenda_reminder_1_day">За 1 день</string>
+    <string name="agenda_reminder_already_past">С этой датой и временем напоминания оно уже в прошлом и не прозвучит.</string>
     <string name="agenda_reminder_notification_channel">Напоминания календаря</string>
     <string name="agenda_reminder_notification_fallback_title">Напоминание</string>
     <string name="agenda_reminder_notification_text">У Вас запланировано событие</string>

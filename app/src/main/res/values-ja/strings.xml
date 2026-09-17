@@ -747,6 +747,8 @@
     <string name="security_restore">復元</string>
     <string name="security_preview">プレビュー</string>
     <string name="security_preview_error">プレビューを開けませんでした</string>
+    <string name="security_delete_confirm_title">保護されたファイルを削除しますか？</string>
+    <string name="security_delete_confirm_body">「%1$s」はごみ箱を経由せずに完全に削除されます。この操作は元に戻せません。</string>
     <string name="security_protect_file_dialog_title">ファイルを保護</string>
     <string name="pdf_pw_screen_subtitle">PDFを保護またはロック解除します</string>
     <string name="pdf_pw_mode_protect_title">PDFを保護</string>
@@ -996,6 +998,7 @@
     <string name="study_note_reminder_1_week">1週間後</string>
     <string name="study_note_reminder_custom">カスタム</string>
     <string name="study_note_reminder_scheduled_desc">リマインダー: %1$s</string>
+    <string name="study_note_reminder_already_past">この日時では、リマインダーはすでに過去の時刻になっているため鳴りません。</string>
     <string name="study_note_reminder_notifications_disabled">メモの復習リマインダーを受け取るには通知を有効にしてください。</string>
     <string name="study_note_reminder_enable_notifications">有効にする</string>
     <string name="note_reminder_notification_channel">メモのリマインダー</string>
@@ -1118,6 +1121,7 @@
     <string name="agenda_reminder_15_min">15分前</string>
     <string name="agenda_reminder_1_hour">1時間前</string>
     <string name="agenda_reminder_1_day">1日前</string>
+    <string name="agenda_reminder_already_past">この日時と通知タイミングでは、リマインダーはすでに過去の時刻になっているため鳴りません。</string>
     <string name="agenda_reminder_notification_channel">予定表のリマインダー</string>
     <string name="agenda_reminder_notification_fallback_title">リマインダー</string>
     <string name="agenda_reminder_notification_text">スケジュールされた予定があります</string>

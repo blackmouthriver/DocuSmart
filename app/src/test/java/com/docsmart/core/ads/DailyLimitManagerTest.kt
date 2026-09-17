@@ -237,6 +237,24 @@ class DailyLimitManagerTest {
         assertEquals(0, manager.getConversionCount())
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17: EXTRACT_IMAGES
+    // (RF-PDF-16) se agregó al enum PdfTool y a la UI, pero nunca a
+    // PDF_TOOL_KEYS -- getPdfToolKey() caía al ?: KEY_CONVERSIONS, así que
+    // consumía y revisaba el contador de Conversiones del Convertidor en
+    // vez del propio de Herramientas PDF, exactamente el mismo tipo de
+    // bug que NUMBER_PAGES/WATERMARK ya habían destapado antes. Mismo
+    // procedimiento preventivo que el resto de este archivo.
+    @Test
+    fun `EXTRACT_IMAGES tiene su propio contador, independiente de conversiones y otras herramientas`() {
+        repeat(DailyLimitManager.LIMIT_PDF_TOOLS) { manager.registerPdfTool("EXTRACT_IMAGES") }
+
+        assertFalse(manager.canUsePdfTool("EXTRACT_IMAGES"))
+        assertTrue(manager.canUsePdfTool("MERGE"))
+        assertTrue(manager.canUsePdfTool("OCR"))
+        assertTrue(manager.canConvert())
+        assertEquals(0, manager.getConversionCount())
+    }
+
     // ── helper: SharedPreferences respaldado por un mapa real ────────────────
 
     private fun fakeSharedPreferences(): SharedPreferences {

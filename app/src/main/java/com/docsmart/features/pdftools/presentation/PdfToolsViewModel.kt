@@ -376,7 +376,15 @@ class PdfToolsViewModel @Inject constructor(
         } else {
             state.selectedPdfs.isNotEmpty()
         }
-        if (!hasSelection || state.selectedTool == PdfTool.NONE) return
+        // Hallazgo real de la auditoría general 2026-09-17 (state.isProcessing):
+        // la única protección contra doble-toque era que PdfProcessingFooter
+        // reemplaza el botón por una barra de progreso -- eso depende de que
+        // la recomposición de Compose llegue antes del segundo toque, no es
+        // sincrónico. Sin este guard, dos ejecuciones concurrentes podían
+        // saltarse el límite diario en 1 uso y generar el mismo nombre de
+        // archivo (createOutputFile() tiene granularidad de 1s), pisándose
+        // entre sí a mitad de escritura.
+        if (state.isProcessing || !hasSelection || state.selectedTool == PdfTool.NONE) return
 
         if (!premiumManager.canPerform { dailyLimitManager.canUsePdfTool(state.selectedTool.name) }) {
             _uiState.update { it.copy(showLimitDialog = true) }

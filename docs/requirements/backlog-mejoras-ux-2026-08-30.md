@@ -31,9 +31,9 @@ priorización para decidir qué se aborda y en qué orden.
 | 8 | Imagen dentro del título "Estudio" en Pomodoro | Bug | Baja | Baja | Bajo | **✅ Reproducido y corregido en dispositivo real 2026-09-03** — ver §10 |
 | 9 | Visores (PDF/Word/Excel/Texto/PPT): Convertir/QR desde el visor | Mejora | Media-Alta | Media | Bajo-Medio | **✅ Implementado y verificado 2026-08-31** — mismo mecanismo que #1 (ver §3, AC5) |
 | 10 | Compose UI Testing en toda la app | Mejora (épica) | Mixta por flujo | Mixta por flujo | Bajo | Ya catalogado en [`compose-ui-testing.md`](compose-ui-testing.md) — no duplicar, ver §11 |
-| 11 | Auditoría UX/UI experta + plan de mejoras | Entregable | — | — | — | Nuevo — ver §12 (findings + HUs propias) |
-| 12 | Hallazgos de seguridad diferidos de SonarCloud (external storage x5, biometric CryptoObject, dependency verification) | Bug/Deuda técnica | Media | Media-Alta | Medio | Ya listado en `deployment.md` §7 |
-| 13 | Umbral de cobertura `new_coverage` 0% en SonarCloud | Decisión de config | — | — | — | Ya listado en `deployment.md` §7 y `compose-ui-testing.md` §4 |
+| 11 | Auditoría UX/UI experta + plan de mejoras | Entregable | — | — | — | **✅ Cumplido** — el propio §12 de este documento ya contiene los 5 hallazgos (H1-H5) con heurística citada, corrección y verificación en dispositivo |
+| 12 | Hallazgos de seguridad diferidos de SonarCloud (external storage x5, biometric CryptoObject, dependency verification) | Bug/Deuda técnica | Media | Media-Alta | Medio | **✅ Revisados y documentados 2026-09-08** (commit `77f6ece`) — external storage consolidado en `DownloadsSaver.kt` con `// NOSONAR` justificado, biometric `CryptoObject` con `// NOSONAR` en `SecurityViewModel.kt` (Carpeta Segura no cifra archivos, solo usa biometría como puerta de PIN). Queda sin abordar el único sub-ítem menor: verificación de dependencias (`verification-metadata.xml`) |
+| 13 | Umbral de cobertura `new_coverage` 0% en SonarCloud | Decisión de config | — | — | — | ⬜ **Pendiente, con hallazgo nuevo (2026-09-17)**: confirmado en vivo contra la API de SonarCloud que `coverage`/`new_coverage` siguen en 0,0% pese a que `compose-ui-testing.md` §4 documenta la fusión de `connectedDebugAndroidTest`+`testDebugUnitTest` en `jacocoTestReport` (2026-09-01, 42,5% verificado localmente) — el reporte combinado no se está reflejando en CI real, causa raíz sin investigar todavía |
 | 14 | i18n: agregar ja/ko/zh/it/fr | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado 2026-09-04** — ver §21 |
 | 15 | Selector de archivo desde biblioteca de la app (no solo dispositivo) en Seguridad/PDF Tools | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-03** — ver §15 |
 | 16 | Encriptar/quitar contraseña de archivo individual en Seguridad | Mejora | Baja | Media | Bajo | Ya listado en `CONTEXT.md` §5 |
@@ -49,7 +49,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 26 | Fondo animado en toda la app, con el color de acento, y opción de apagarlo | Mejora | Media | Alta | Medio | **✅ Implementado y verificado en dispositivo real 2026-09-06** — ver §25 |
 | 27 | Sombra de tarjetas/listas con el color de acento (Material3 `Card` no permite tintar la sombra directamente) | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-06, acotado a Inicio/Biblioteca/Recientes/Favoritos (pedido explícito del usuario, no las ~30 tarjetas restantes de la app)** — ver §27 |
 | 28 | Border con color de acento en las mismas tarjetas/listas, mismo criterio que la barra de navegación | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-06, mismo alcance que el ítem 27** — ver §27 |
-| 29 | Extender sombra + border con color de acento (ítems 27/28) al resto de `Card` de la app (~30 sitios: Convertidor, Herramientas PDF, Seguridad, Escáner/QR, Estudio, Ajustes, Visor) | Mejora | Baja | Media-Alta (son ~30 sitios) | Medio (tocar tantos archivos a la vez sube el riesgo de regresión visual) | **⬜ Pendiente** — alcance descartado a propósito por el usuario en la pasada de los ítems 27/28, queda catalogado para una futura sesión — ver §27 |
+| 29 | Extender sombra + border con color de acento (ítems 27/28) al resto de `Card` de la app (~30 sitios: Convertidor, Herramientas PDF, Seguridad, Escáner/QR, Estudio, Ajustes, Visor) | Mejora | Baja | Media-Alta (son ~30 sitios) | Medio (tocar tantos archivos a la vez sube el riesgo de regresión visual) | **✅ Ya estaba implementado, hallazgo de auditoría 2026-09-17** — ver §27 |
 | 30 | "Limpiar caché" y "Restablecer configuración" borraban documentos convertidos/procesados de forma permanente, sin pasar por la Papelera y contradiciendo el propio texto del diálogo ("Los documentos no se eliminarán") | Bug (pérdida de datos) | Alta | Baja | Bajo | **✅ Corregido y verificado en dispositivo real 2026-09-06** — ver CONTEXT.md §8, "Bug real: Restablecer configuración y Limpiar caché..." |
 | 31 | Miniatura de PDF nunca funcionaba de verdad para archivos generados por la app (Coil mapea `file://` a `File` antes del Fetcher) | Bug | Media | Baja | Bajo | **✅ Corregido y verificado en dispositivo real 2026-09-06** — ver CONTEXT.md §8, "Bug real: la miniatura de PDF nunca funcionó..." |
 | 32 | Texto de "Vincular carpeta" en Biblioteca poco claro/con errores de redacción sobre lo que realmente hace | Bug (UX/i18n) | Baja | Baja | Bajo | **✅ Corregido en los 10 idiomas soportados y verificado en dispositivo real 2026-09-06** — ver CONTEXT.md §8, "Texto de Vincular carpeta poco claro" |
@@ -2713,6 +2713,20 @@ Recientes y de la lista completa de Biblioteca. Gauntlet en verde:
 `Card` de la app (~30 sitios en Convertidor/Herramientas PDF/
 Seguridad/Escáner/Estudio/Ajustes/Visor) -- no implementado, alcance
 descartado a propósito por el usuario en esta pasada.
+
+**✅ Hallazgo de auditoría del backlog, 2026-09-17**: al revisar esta
+fila para actualizar el documento, se encontró que el trabajo de
+extender `accentShadow()`/`accentBorder()` al resto de la app **ya se
+había hecho** en alguna sesión posterior (no quedó documentado en su
+momento, ni en este archivo ni con un commit dedicado identificable) --
+`grep` de `CardDefaults.cardElevation` en todo `app/src/main/java`
+devuelve solo 9 resultados totales (contra los ~34 originales), y de
+esos, los únicos 2 sin `accentShadow` cerca (`OcrPdfScreen.kt`,
+`PremiumScreen.kt`) usan `elevation = CardDefaults.cardElevation(0.dp)`
+-- fuera del criterio original ("elevación > 0.dp"), así que no quedan
+sitios pendientes reales. Verificado también visualmente en dispositivo
+real: Convertidor, Herramientas PDF y Ajustes muestran el borde/sombra
+tintados con el color de acento activo (Rojo) en sus tarjetas.
 
 ### Ítem 28: border con color de acento en las mismas tarjetas/listas
 

@@ -755,6 +755,8 @@
     <string name="security_restore">Restaurer</string>
     <string name="security_preview">Aperçu</string>
     <string name="security_preview_error">Impossible d’ouvrir l’aperçu</string>
+    <string name="security_delete_confirm_title">Supprimer le fichier protégé ?</string>
+    <string name="security_delete_confirm_body">"%1$s" sera supprimé définitivement, sans passer par la Corbeille. Cette action est irréversible.</string>
     <string name="security_protect_file_dialog_title">Protéger un fichier</string>
     <string name="pdf_pw_screen_subtitle">Protège ou déverrouille tes PDF</string>
     <string name="pdf_pw_mode_protect_title">Protéger un PDF</string>
@@ -1004,6 +1006,7 @@
     <string name="study_note_reminder_1_week">Dans 1 semaine</string>
     <string name="study_note_reminder_custom">Personnalisée</string>
     <string name="study_note_reminder_scheduled_desc">Rappel : %1$s</string>
+    <string name="study_note_reminder_already_past">Avec cette date et cette heure, le rappel est déjà dans le passé et ne se déclenchera pas.</string>
     <string name="study_note_reminder_notifications_disabled">Active les notifications pour recevoir des rappels de révision de tes notes.</string>
     <string name="study_note_reminder_enable_notifications">Activer</string>
     <string name="note_reminder_notification_channel">Rappels de notes</string>
@@ -1126,6 +1129,7 @@
     <string name="agenda_reminder_15_min">15 min avant</string>
     <string name="agenda_reminder_1_hour">1 heure avant</string>
     <string name="agenda_reminder_1_day">1 jour avant</string>
+    <string name="agenda_reminder_already_past">Avec cette date et ce délai, le rappel est déjà dans le passé et ne se déclenchera pas.</string>
     <string name="agenda_reminder_notification_channel">Rappels d\'agenda</string>
     <string name="agenda_reminder_notification_fallback_title">Rappel</string>
     <string name="agenda_reminder_notification_text">Tu as un événement programmé</string>

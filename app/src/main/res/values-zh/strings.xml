@@ -747,6 +747,8 @@
     <string name="security_restore">恢复</string>
     <string name="security_preview">预览</string>
     <string name="security_preview_error">无法打开预览</string>
+    <string name="security_delete_confirm_title">删除受保护的文件？</string>
+    <string name="security_delete_confirm_body">"%1$s" 将被永久删除，不会经过回收站。此操作无法撤销。</string>
     <string name="security_protect_file_dialog_title">保护文件</string>
     <string name="pdf_pw_screen_subtitle">保护或解锁你的 PDF</string>
     <string name="pdf_pw_mode_protect_title">保护 PDF</string>
@@ -996,6 +998,7 @@
     <string name="study_note_reminder_1_week">1周后</string>
     <string name="study_note_reminder_custom">自定义</string>
     <string name="study_note_reminder_scheduled_desc">提醒：%1$s</string>
+    <string name="study_note_reminder_already_past">按照这个日期和时间，提醒时间已经过去，不会触发。</string>
     <string name="study_note_reminder_notifications_disabled">开启通知以接收复习笔记的提醒。</string>
     <string name="study_note_reminder_enable_notifications">开启</string>
     <string name="note_reminder_notification_channel">笔记提醒</string>
@@ -1118,6 +1121,7 @@
     <string name="agenda_reminder_15_min">提前15分钟</string>
     <string name="agenda_reminder_1_hour">提前1小时</string>
     <string name="agenda_reminder_1_day">提前1天</string>
+    <string name="agenda_reminder_already_past">按照这个日期和提前时间，提醒时间已经过去，不会触发。</string>
     <string name="agenda_reminder_notification_channel">日程提醒</string>
     <string name="agenda_reminder_notification_fallback_title">提醒</string>
     <string name="agenda_reminder_notification_text">你有一个已安排的事件</string>

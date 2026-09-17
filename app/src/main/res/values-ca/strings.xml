@@ -775,6 +775,8 @@
     <string name="security_restore">Restaurar</string>
     <string name="security_preview">Vista prèvia</string>
     <string name="security_preview_error">No s\'ha pogut obrir la vista prèvia</string>
+    <string name="security_delete_confirm_title">Vols eliminar l\'arxiu protegit?</string>
+    <string name="security_delete_confirm_body">"%1$s" s\'eliminarà de forma permanent, sense passar per la Paperera. Aquesta acció no es pot desfer.</string>
     <string name="security_protect_file_dialog_title">Protegir arxiu</string>
     <string name="pdf_pw_screen_subtitle">Protegeix o desbloqueja els teus PDF</string>
     <string name="pdf_pw_mode_protect_title">Protegir PDF</string>
@@ -1026,6 +1028,7 @@
     <string name="study_note_reminder_1_week">D\'aquí 1 setmana</string>
     <string name="study_note_reminder_custom">Personalitzada</string>
     <string name="study_note_reminder_scheduled_desc">Recordatori: %1$s</string>
+    <string name="study_note_reminder_already_past">Amb aquesta data i hora, el recordatori ja ha quedat en el passat i no sonarà.</string>
     <string name="study_note_reminder_notifications_disabled">Activa les notificacions per poder recordar-te de repassar les teves notes.</string>
     <string name="study_note_reminder_enable_notifications">Activar</string>
     <string name="note_reminder_notification_channel">Recordatoris de notes</string>
@@ -1148,6 +1151,7 @@
     <string name="agenda_reminder_15_min">15 min abans</string>
     <string name="agenda_reminder_1_hour">1 hora abans</string>
     <string name="agenda_reminder_1_day">1 dia abans</string>
+    <string name="agenda_reminder_already_past">Amb aquesta data i antelació, el recordatori ja ha quedat en el passat i no sonarà.</string>
     <string name="agenda_reminder_notification_channel">Recordatoris de l\'Agenda</string>
     <string name="agenda_reminder_notification_fallback_title">Recordatori</string>
     <string name="agenda_reminder_notification_text">Tens un esdeveniment programat</string>

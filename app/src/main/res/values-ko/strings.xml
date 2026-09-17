@@ -747,6 +747,8 @@
     <string name="security_restore">복원</string>
     <string name="security_preview">미리보기</string>
     <string name="security_preview_error">미리보기를 열 수 없습니다</string>
+    <string name="security_delete_confirm_title">보호된 파일을 삭제하시겠습니까?</string>
+    <string name="security_delete_confirm_body">"%1$s"은(는) 휴지통을 거치지 않고 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
     <string name="security_protect_file_dialog_title">파일 보호</string>
     <string name="pdf_pw_screen_subtitle">PDF를 보호하거나 잠금 해제하세요</string>
     <string name="pdf_pw_mode_protect_title">PDF 보호</string>
@@ -996,6 +998,7 @@
     <string name="study_note_reminder_1_week">1주일 후</string>
     <string name="study_note_reminder_custom">사용자 지정</string>
     <string name="study_note_reminder_scheduled_desc">알림: %1$s</string>
+    <string name="study_note_reminder_already_past">이 날짜와 시간으로는 이미 지난 시간이라 알림이 울리지 않습니다.</string>
     <string name="study_note_reminder_notifications_disabled">메모 복습 알림을 받으려면 알림을 활성화하세요.</string>
     <string name="study_note_reminder_enable_notifications">활성화</string>
     <string name="note_reminder_notification_channel">메모 알림</string>
@@ -1118,6 +1121,7 @@
     <string name="agenda_reminder_15_min">15분 전</string>
     <string name="agenda_reminder_1_hour">1시간 전</string>
     <string name="agenda_reminder_1_day">1일 전</string>
+    <string name="agenda_reminder_already_past">이 날짜와 알림 시점으로는 이미 지난 시간이라 알림이 울리지 않습니다.</string>
     <string name="agenda_reminder_notification_channel">일정 알림</string>
     <string name="agenda_reminder_notification_fallback_title">알림</string>
     <string name="agenda_reminder_notification_text">예정된 일정이 있습니다</string>

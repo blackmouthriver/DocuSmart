@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -47,7 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.docsmart.R
 import com.docsmart.core.ui.theme.ErrorRed
+import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.features.agenda.domain.ReminderPreset
+import com.docsmart.features.agenda.domain.reminderTriggerMillis
 import com.docsmart.features.agenda.presentation.AgendaEventDraft
 import java.time.Instant
 import java.time.LocalDateTime
@@ -139,6 +142,10 @@ fun AgendaEventEditorDialog(
                             )
                         }
                     }
+                    // Hallazgo real 2026-09-17: schedule() descarta en
+                    // silencio un disparo ya pasado -- se avisa acá antes
+                    // de guardar (ej. evento "en 3h" + "1 día antes").
+                    ReminderPastWarning(draft.dateTimeMillis, draft.reminderMinutesBefore)
                 }
 
                 Row(
@@ -209,6 +216,33 @@ fun AgendaEventEditorDialog(
                 }
             }
         }
+    }
+}
+
+// Hallazgo real de la auditoría general 2026-09-17: ReminderScheduler.
+// schedule() descarta en silencio cualquier disparo ya pasado (defensa
+// correcta), pero ninguna UI avisaba antes de guardar -- la fila quedaba
+// en Room con reminderMinutesBefore seteado y el usuario creía tener un
+// recordatorio que en realidad nunca se programó en AlarmManager.
+// Alcanzable con cualquier combinación fecha+antelación cuyo resultado ya
+// pasó (ej. evento "en 3 horas" + "1 día antes").
+@Composable
+private fun ReminderPastWarning(dateTimeMillis: Long, reminderMinutesBefore: Int?) {
+    if (reminderMinutesBefore == null ||
+        reminderTriggerMillis(dateTimeMillis, reminderMinutesBefore) > System.currentTimeMillis()
+    ) return
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Rounded.WarningAmber,
+            contentDescription = null,
+            tint = WarningAmber,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = stringResource(R.string.agenda_reminder_already_past),
+            style = MaterialTheme.typography.bodySmall,
+            color = WarningAmber
+        )
     }
 }
 

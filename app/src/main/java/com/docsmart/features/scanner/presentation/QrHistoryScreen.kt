@@ -291,14 +291,21 @@ private fun historyTypeIcon(typeName: String): ImageVector = when (typeName) {
 // de typeName, para cubrir ambos orígenes por igual. Tampoco se recurre más
 // a `?: entry.content` como fallback: si el SSID/nombre no se puede extraer,
 // se muestra un texto genérico -- nunca el payload crudo sin enmascarar.
+// Hallazgo real de la auditoría general 2026-09-17: acá se comparaba
+// sensible a mayúsculas ("WIFI:"/"BEGIN:VCARD"), mientras que la
+// clasificación real (QrContentType.detectQrContentType()) usa el
+// contenido en minúsculas -- un QR de Wi-Fi con esquema "wifi:" (válido,
+// algunos generadores lo emiten así) se clasificaba bien como WIFI pero
+// llegaba acá sin enmascarar, mostrando la contraseña en texto plano.
+// `ignoreCase = true` sincroniza ambos lados.
 @Composable
 private fun historyContentPreview(entry: QrHistoryEntry): String = when {
     entry.typeName == "PROTECTED"        -> stringResource(R.string.qr_history_protected_content)
-    entry.content.startsWith("WIFI:")    -> stringResource(
+    entry.content.startsWith("WIFI:", ignoreCase = true)    -> stringResource(
         R.string.qr_history_wifi_preview,
         extractWifiSsid(entry.content) ?: stringResource(R.string.qr_history_wifi_unknown_ssid)
     )
-    entry.content.startsWith("BEGIN:VCARD") -> stringResource(
+    entry.content.startsWith("BEGIN:VCARD", ignoreCase = true) -> stringResource(
         R.string.qr_history_contact_preview,
         extractContactName(entry.content) ?: stringResource(R.string.qr_history_contact_unknown_name)
     )

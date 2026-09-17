@@ -275,11 +275,21 @@ class SecurityManager @Inject constructor(
     // necesita el mismo criterio de nombre único que #61 corrigió acá.
     fun uniqueSecureDestination(fileName: String): File = uniqueDestination(secureFolder, fileName)
 
+    // Hallazgo real de la auditoría general 2026-09-17: igual que
+    // moveToSecure()/moveFromSecure(), File.delete() puede fallar sin
+    // lanzar excepción (devuelve false) -- antes se ignoraba el resultado
+    // y siempre se reportaba éxito, aunque el archivo protegido hubiera
+    // quedado intacto en disco mientras su metadata (favorito/alias/
+    // anotaciones) ya se había limpiado en SecurityViewModel.deleteFile().
     fun deleteSecureFile(file: File): Boolean {
         return try {
-            file.delete()
-            Timber.d("SecurityManager: archivo eliminado: ${file.name}")
-            true
+            val deleted = file.delete()
+            if (deleted) {
+                Timber.d("SecurityManager: archivo eliminado: ${file.name}")
+            } else {
+                Timber.w("SecurityManager: no se pudo eliminar el archivo seguro: ${file.name}")
+            }
+            deleted
         } catch (e: Exception) {
             Timber.e(redactedForLog(e), "Error eliminando archivo seguro")
             false

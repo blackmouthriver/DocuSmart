@@ -750,6 +750,8 @@
     <string name="security_restore">Ripristina</string>
     <string name="security_preview">Anteprima</string>
     <string name="security_preview_error">Impossibile aprire l\'anteprima</string>
+    <string name="security_delete_confirm_title">Eliminare il file protetto?</string>
+    <string name="security_delete_confirm_body">"%1$s" verrà eliminato definitivamente, senza passare dal Cestino. Questa azione non può essere annullata.</string>
     <string name="security_protect_file_dialog_title">Proteggi file</string>
     <string name="pdf_pw_screen_subtitle">Proteggi o sblocca i tuoi PDF</string>
     <string name="pdf_pw_mode_protect_title">Proteggi PDF</string>
@@ -999,6 +1001,7 @@
     <string name="study_note_reminder_1_week">Tra 1 settimana</string>
     <string name="study_note_reminder_custom">Personalizzato</string>
     <string name="study_note_reminder_scheduled_desc">Promemoria: %1$s</string>
+    <string name="study_note_reminder_already_past">Con questa data e ora, il promemoria è già nel passato e non suonerà.</string>
     <string name="study_note_reminder_notifications_disabled">Attiva le notifiche per ricevere promemoria per ripassare le tue note.</string>
     <string name="study_note_reminder_enable_notifications">Attiva</string>
     <string name="note_reminder_notification_channel">Promemoria delle note</string>
@@ -1121,6 +1124,7 @@
     <string name="agenda_reminder_15_min">15 min prima</string>
     <string name="agenda_reminder_1_hour">1 ora prima</string>
     <string name="agenda_reminder_1_day">1 giorno prima</string>
+    <string name="agenda_reminder_already_past">Con questa data e anticipo, il promemoria è già nel passato e non suonerà.</string>
     <string name="agenda_reminder_notification_channel">Promemoria Agenda</string>
     <string name="agenda_reminder_notification_fallback_title">Promemoria</string>
     <string name="agenda_reminder_notification_text">Hai un evento programmato</string>

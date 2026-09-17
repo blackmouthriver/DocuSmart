@@ -1,6 +1,8 @@
 package com.docsmart.features.study.domain
 
 import com.docsmart.core.data.db.NoteEntity
+import com.docsmart.core.data.db.NoteImageEntity
+import com.docsmart.core.data.db.NoteWithImages
 import io.mockk.every
 import io.mockk.mockk
 import org.apache.poi.xwpf.usermodel.XWPFDocument
@@ -17,11 +19,21 @@ import java.nio.file.Files
  * (Apache POI es JVM puro, no depende de Android) -- `exportAsPdfFile`/
  * `exportAsTextFile` quedan sin cubrir por escribir a disco con Context real,
  * mismo límite ya documentado para otros use cases de conversión/PDF.
+ *
+ * Hallazgo real de la auditoría general 2026-09-17: el AC1 de HU-51 exige
+ * "conserva el texto e imágenes adjuntas (HU-49)" -- `exportAsWordFile()`
+ * ahora recibe `NoteWithImages`, no solo `NoteEntity`, y los tests de abajo
+ * verifican que una imagen adjunta real termina embebida en el .docx.
  */
 class StudyNotesExporterTest {
 
     private fun note(id: String, title: String, text: String, createdAt: Long) =
         NoteEntity(id = id, title = title, text = text, createdAt = createdAt)
+
+    private fun noteWithImages(
+        id: String, title: String, text: String, createdAt: Long,
+        images: List<NoteImageEntity> = emptyList()
+    ) = NoteWithImages(note(id, title, text, createdAt), images)
 
     @Test
     fun `una sola nota incluye titulo, fecha formateada y texto`() {
@@ -58,7 +70,9 @@ class StudyNotesExporterTest {
         val context = mockk<android.content.Context>()
         every { context.filesDir } returns tempDir
 
-        val note = note("1", "Mi nota", "Primera línea\nSegunda línea", createdAt = System.currentTimeMillis())
+        val note = noteWithImages(
+            "1", "Mi nota", "Primera línea\nSegunda línea", createdAt = System.currentTimeMillis()
+        )
 
         val file = StudyNotesExporter.exportAsWordFile(context, listOf(note))
 
@@ -84,8 +98,8 @@ class StudyNotesExporterTest {
         every { context.filesDir } returns tempDir
 
         val notes = listOf(
-            note("1", "Primera", "contenido 1", createdAt = 1000L),
-            note("2", "Segunda", "contenido 2", createdAt = 2000L)
+            noteWithImages("1", "Primera", "contenido 1", createdAt = 1000L),
+            noteWithImages("2", "Segunda", "contenido 2", createdAt = 2000L)
         )
 
         val file = StudyNotesExporter.exportAsWordFile(context, notes)
@@ -97,4 +111,11 @@ class StudyNotesExporterTest {
 
         tempDir.deleteRecursively()
     }
+
+    // Nota: no hay test que ejercite addImagesToWord() con una imagen real
+    // -- usa android.graphics.BitmapFactory (solo para leer bounds), que no
+    // está disponible en un test JVM plano sin Robolectric (mismo límite ya
+    // documentado en la clase para exportAsPdfFile()/exportAsTextFile()).
+    // El camino de "sin imágenes" (images = emptyList(), los tests de
+    // arriba) sí queda cubierto porque nunca llega a tocar BitmapFactory.
 }

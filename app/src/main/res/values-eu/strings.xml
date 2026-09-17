@@ -763,6 +763,8 @@
     <string name="security_restore">Berreskuratu</string>
     <string name="security_preview">Aurrebista</string>
     <string name="security_preview_error">Ezin izan da aurrebista ireki</string>
+    <string name="security_delete_confirm_title">Babestutako fitxategia ezabatu?</string>
+    <string name="security_delete_confirm_body">"%1$s" behin betiko ezabatuko da, Zakarrontzitik igaro gabe. Ekintza hau ezin da desegin.</string>
     <string name="security_protect_file_dialog_title">Babestu fitxategia</string>
     <string name="pdf_pw_screen_subtitle">Babestu edo desblokeatu zure PDFak</string>
     <string name="pdf_pw_mode_protect_title">Babestu PDFa</string>
@@ -1014,6 +1016,7 @@
     <string name="study_note_reminder_1_week">Astebete barru</string>
     <string name="study_note_reminder_custom">Pertsonalizatua</string>
     <string name="study_note_reminder_scheduled_desc">Oroigarria: %1$s</string>
+    <string name="study_note_reminder_already_past">Data eta ordu honekin, oroigarria jada iraganean geratu da eta ez da joko.</string>
     <string name="study_note_reminder_notifications_disabled">Gaitu jakinarazpenak zure oharrak berrikusteko oroigarriak jasotzeko.</string>
     <string name="study_note_reminder_enable_notifications">Gaitu</string>
     <string name="note_reminder_notification_channel">Oharren oroigarriak</string>
@@ -1136,6 +1139,7 @@
     <string name="agenda_reminder_15_min">15 min lehenago</string>
     <string name="agenda_reminder_1_hour">Ordu 1 lehenago</string>
     <string name="agenda_reminder_1_day">Egun 1 lehenago</string>
+    <string name="agenda_reminder_already_past">Data eta aurrerapen honekin, oroigarria jada iraganean geratu da eta ez da joko.</string>
     <string name="agenda_reminder_notification_channel">Agendako oroigarriak</string>
     <string name="agenda_reminder_notification_fallback_title">Oroigarria</string>
     <string name="agenda_reminder_notification_text">Programatutako gertaera bat duzu</string>

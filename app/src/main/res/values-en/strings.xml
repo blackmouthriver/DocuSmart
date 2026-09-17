@@ -752,6 +752,8 @@
     <string name="security_restore">Restore</string>
     <string name="security_preview">Preview</string>
     <string name="security_preview_error">Could not open the preview</string>
+    <string name="security_delete_confirm_title">Delete protected file?</string>
+    <string name="security_delete_confirm_body">"%1$s" will be permanently deleted, without going through Trash. This action cannot be undone.</string>
     <string name="security_protect_file_dialog_title">Protect file</string>
     <string name="pdf_pw_screen_subtitle">Protect or unlock your PDFs</string>
     <string name="pdf_pw_mode_protect_title">Protect PDF</string>
@@ -1001,6 +1003,7 @@
     <string name="study_note_reminder_1_week">In 1 week</string>
     <string name="study_note_reminder_custom">Custom</string>
     <string name="study_note_reminder_scheduled_desc">Reminder: %1$s</string>
+    <string name="study_note_reminder_already_past">With this date and time, the reminder is already in the past and won\'t go off.</string>
     <string name="study_note_reminder_notifications_disabled">Turn on notifications to get reminders to review your notes.</string>
     <string name="study_note_reminder_enable_notifications">Enable</string>
     <string name="note_reminder_notification_channel">Note reminders</string>
@@ -1123,6 +1126,7 @@
     <string name="agenda_reminder_15_min">15 minutes before</string>
     <string name="agenda_reminder_1_hour">1 hour before</string>
     <string name="agenda_reminder_1_day">1 day before</string>
+    <string name="agenda_reminder_already_past">With this date and lead time, the reminder is already in the past and won\'t go off.</string>
     <string name="agenda_reminder_notification_channel">Agenda reminders</string>
     <string name="agenda_reminder_notification_fallback_title">Reminder</string>
     <string name="agenda_reminder_notification_text">You have a scheduled event</string>

@@ -1633,7 +1633,7 @@ private fun NotesListHeader(notes: List<NoteWithImages>, onDeleteAllClick: () ->
         }
         if (notes.isNotEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StudyExportNotesButton(notes = notes.map { it.note })
+                StudyExportNotesButton(notes = notes)
                 TextButton(onClick = onDeleteAllClick) {
                     Text(
                         text  = stringResource(R.string.study_delete_all),
@@ -2019,6 +2019,29 @@ private fun NoteReminderSection(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary
             )
+            // Hallazgo real de la auditoría general 2026-09-17: mismo
+            // problema que en Agenda -- NoteReminderScheduler.schedule()
+            // descarta en silencio una fecha ya pasada, alcanzable acá si
+            // se elige "Personalizada" y no se cambia la fecha/hora
+            // precargada (o se elige una anterior a "ahora" por error).
+            if (reminderAt <= System.currentTimeMillis()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.WarningAmber,
+                        contentDescription = null,
+                        tint = WarningAmber,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.study_note_reminder_already_past),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = WarningAmber
+                    )
+                }
+            }
         }
     }
 
@@ -2207,7 +2230,7 @@ private fun NoteListItem(
                 // Backlog UX #51: exportar esta nota sola a PDF/Word --
                 // distinto del botón de la cabecera de la lista, que
                 // exporta TODAS juntas.
-                StudyExportSingleNoteButton(note = note)
+                StudyExportSingleNoteButton(note = noteWithImages)
                 // Subido de 28dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                 IconButton(onClick = onDeleteClick, modifier = Modifier.size(48.dp)) {
                     Icon(
@@ -2280,7 +2303,7 @@ private fun NoteListItem(
 private enum class StudyExportFormat { TEXT, PDF, WORD }
 
 @Composable
-private fun StudyExportNotesButton(notes: List<NoteEntity>) {
+private fun StudyExportNotesButton(notes: List<NoteWithImages>) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.study_export_share_title)
@@ -2324,7 +2347,7 @@ private fun StudyExportNotesButton(notes: List<NoteEntity>) {
 // arriba, que exporta todas juntas) -- solo PDF/Word, según lo pedido
 // (RF1: "con opción PDF o Word").
 @Composable
-private fun StudyExportSingleNoteButton(note: NoteEntity) {
+private fun StudyExportSingleNoteButton(note: NoteWithImages) {
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.study_export_share_title)
@@ -2358,7 +2381,9 @@ private fun StudyExportSingleNoteButton(note: NoteEntity) {
 }
 
 @Suppress("TooGenericExceptionCaught")
-private fun shareStudyNotes(context: Context, notes: List<NoteEntity>, format: StudyExportFormat, shareTitle: String) {
+private fun shareStudyNotes(
+    context: Context, notes: List<NoteWithImages>, format: StudyExportFormat, shareTitle: String
+) {
     try {
         val (file, mimeType) = when (format) {
             StudyExportFormat.TEXT -> StudyNotesExporter.exportAsTextFile(context, notes) to "text/plain"

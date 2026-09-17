@@ -743,6 +743,8 @@
     <string name="security_restore">Restaurar</string>
     <string name="security_preview">Pré-visualização</string>
     <string name="security_preview_error">Não foi possível abrir a pré-visualização</string>
+    <string name="security_delete_confirm_title">Excluir arquivo protegido?</string>
+    <string name="security_delete_confirm_body">"%1$s" será excluído permanentemente, sem passar pela Lixeira. Esta ação não pode ser desfeita.</string>
     <string name="security_protect_file_dialog_title">Proteger arquivo</string>
     <string name="pdf_pw_screen_subtitle">Proteja ou desbloqueie seus PDFs</string>
     <string name="pdf_pw_mode_protect_title">Proteger PDF</string>
@@ -992,6 +994,7 @@
     <string name="study_note_reminder_1_week">Em 1 semana</string>
     <string name="study_note_reminder_custom">Personalizado</string>
     <string name="study_note_reminder_scheduled_desc">Lembrete: %1$s</string>
+    <string name="study_note_reminder_already_past">Com essa data e hora, o lembrete já ficou no passado e não vai soar.</string>
     <string name="study_note_reminder_notifications_disabled">Ative as notificações para receber lembretes de revisão das suas notas.</string>
     <string name="study_note_reminder_enable_notifications">Ativar</string>
     <string name="note_reminder_notification_channel">Lembretes de notas</string>
@@ -1114,6 +1117,7 @@
     <string name="agenda_reminder_15_min">15 min antes</string>
     <string name="agenda_reminder_1_hour">1 hora antes</string>
     <string name="agenda_reminder_1_day">1 dia antes</string>
+    <string name="agenda_reminder_already_past">Com essa data e antecedência, o lembrete já ficou no passado e não vai soar.</string>
     <string name="agenda_reminder_notification_channel">Lembretes da Agenda</string>
     <string name="agenda_reminder_notification_fallback_title">Lembrete</string>
     <string name="agenda_reminder_notification_text">Você tem um evento agendado</string>

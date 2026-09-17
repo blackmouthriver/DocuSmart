@@ -10,6 +10,7 @@ import com.docsmart.features.security.domain.PdfPasswordMessages
 import com.docsmart.features.security.domain.PdfPasswordResult
 import com.docsmart.features.security.domain.PdfPasswordUseCase
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -57,6 +58,7 @@ class SecurityViewModelTest {
     private lateinit var securityManager: SecurityManager
     private lateinit var pdfPasswordUseCase: PdfPasswordUseCase
     private lateinit var mediaDeletePermission: MediaDeletePermission
+    private lateinit var documentIdentityMaintenance: com.docsmart.core.data.DocumentIdentityMaintenance
     private lateinit var secureFolder: File
 
     private val testMessages = PdfPasswordMessages(
@@ -81,6 +83,7 @@ class SecurityViewModelTest {
 
         pdfPasswordUseCase = mockk(relaxed = true)
         mediaDeletePermission = mockk(relaxed = true)
+        documentIdentityMaintenance = mockk(relaxed = true)
     }
 
     @AfterEach
@@ -92,7 +95,7 @@ class SecurityViewModelTest {
     private fun buildViewModel() =
         SecurityViewModel(
             securityManager, pdfPasswordUseCase, mediaDeletePermission,
-            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true),
+            documentIdentityMaintenance,
             // Hallazgo real de la revisión de seguridad adversarial de este
             // mismo lote (2026-09-16): ProcessLifecycleOwner real no se
             // inicializa en un test JVM plano -- AppLifecycleTracker
@@ -448,14 +451,34 @@ class SecurityViewModelTest {
     fun `deleteFile llama a SecurityManager y recarga secureFiles`() = runTest {
         val file = File(secureFolder, "a.pdf")
         every { securityManager.getSecureFiles() } returns listOf(file)
+        every { securityManager.deleteSecureFile(file) } returns true
 
         val viewModel = buildViewModel()
         viewModel.uiState.test {
             awaitItem()
-            viewModel.deleteFile(file)
+            viewModel.deleteFile(file, "no se pudo eliminar")
             assertEquals(listOf(file), awaitItem().secureFiles)
         }
         verify { securityManager.deleteSecureFile(file) }
+    }
+
+    // Hallazgo real de la auditoría general 2026-09-17: deleteSecureFile()
+    // puede devolver false sin lanzar excepción (File.delete() falla) --
+    // antes se ignoraba el resultado y la metadata (favorito/alias/
+    // anotaciones) se limpiaba igual aunque el archivo siguiera en disco.
+    @Test
+    fun `deleteFile no limpia metadata ni notifica exito si el borrado real falla`() = runTest {
+        val file = File(secureFolder, "a.pdf")
+        every { securityManager.getSecureFiles() } returns listOf(file)
+        every { securityManager.deleteSecureFile(file) } returns false
+
+        val viewModel = buildViewModel()
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.deleteFile(file, "no se pudo eliminar")
+            assertEquals("no se pudo eliminar", awaitItem().error)
+        }
+        coVerify(exactly = 0) { documentIdentityMaintenance.onPermanentlyDeleted(any()) }
     }
 
     @Test

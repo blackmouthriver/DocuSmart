@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.docsmart.R
@@ -1336,6 +1340,7 @@ private fun ScanResultActions(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
     // Bug real encontrado 2026-09-14 (repaso general): el botón "Guardar"
     // no tenía protección contra doble toque -- a diferencia de "Compartir"
     // (que ya se apoya en `state.isPreparingShare`), dos toques rápidos
@@ -1443,7 +1448,7 @@ private fun ScanResultActions(
                                     // un broadcast SOLO cuando el usuario de
                                     // verdad elige una app -- si cancela, el
                                     // broadcast nunca llega y no se finaliza.
-                                    val chosen = shareScanResult(context, state)
+                                    val chosen = shareScanResult(context, lifecycleOwner, state)
                                     if (chosen && state.savedFile != null) onFinalized(state.savedFile)
                                 } finally {
                                     onPreparingShareChange(false)
@@ -1504,10 +1509,12 @@ private fun ScanResultActions(
 // Devuelve true solo si el usuario de verdad eligió una app en el
 // selector del sistema (ver shareFileAwaitingSelection) -- el llamador la
 // usa para decidir si corresponde finalizar la sesión de escaneo.
-private suspend fun shareScanResult(context: Context, state: ScanResultActionsState): Boolean =
+private suspend fun shareScanResult(
+    context: Context, lifecycleOwner: LifecycleOwner, state: ScanResultActionsState
+): Boolean =
     when {
         state.savedFile != null ->
-            shareFileAwaitingSelection(context, state.savedFile, state.shareChooserTitle)
+            shareFileAwaitingSelection(context, lifecycleOwner, state.savedFile, state.shareChooserTitle)
         state.isPdf -> {
             val cacheFile = copyUriToCache(
                 context,
@@ -1516,7 +1523,7 @@ private suspend fun shareScanResult(context: Context, state: ScanResultActionsSt
                     .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
             )
             if (cacheFile != null) {
-                shareFileAwaitingSelection(context, cacheFile, state.shareChooserTitle)
+                shareFileAwaitingSelection(context, lifecycleOwner, cacheFile, state.shareChooserTitle)
             } else {
                 Timber.e("No se pudo copiar PDF al cache")
                 false
@@ -1825,20 +1832,39 @@ private fun shareFile(context: Context, file: File, chooserTitle: String) {
 // Acotado a este único call site (no se toca shareFile(), que sigue
 // fire-and-forget para sus otros 2 llamadores, donde no hace falta saber
 // si el usuario terminó de compartir).
+//
+// Hallazgo real de la auditoría general 2026-09-17: el broadcast del
+// IntentSender solo llega si el usuario de verdad elige una app -- si
+// cancela el selector (atrás/tocar fuera), Android nunca lo dispara y la
+// corrutina quedaba colgada para siempre (isPreparingShare=true sin
+// resetear). Se agrega una segunda señal: cancelar el selector devuelve
+// el foco a esta Activity de inmediato (a diferencia de compartir de
+// verdad, que la deja en pausa mientras el usuario está en la otra app),
+// así que el primer ON_RESUME tras abrir el chooser, si el broadcast
+// todavía no llegó, se toma como cancelación.
 private suspend fun shareFileAwaitingSelection(
-    context: Context, file: File, chooserTitle: String
+    context: Context, lifecycleOwner: LifecycleOwner, file: File, chooserTitle: String
 ): Boolean {
     val intent = buildShareIntentOrNull(context, file) ?: return false
     return try {
         suspendCancellableCoroutine { cont ->
             val action = "com.docsmart.action.SCAN_SHARE_CHOSEN.${System.nanoTime()}"
-            val receiver = object : BroadcastReceiver() {
+            // `invokeOnCancellation` de CancellableContinuation solo corre si
+            // la corrutina se cancela -- NO en una resolución normal vía
+            // cont.resume(). Se centraliza la limpieza acá y se llama desde
+            // los 3 caminos posibles (broadcast, resume-sin-broadcast,
+            // cancelación) para no dejar el receiver ni el observer vivos.
+            lateinit var receiver: BroadcastReceiver
+            lateinit var lifecycleObserver: LifecycleEventObserver
+            fun cleanup() {
+                try { context.unregisterReceiver(receiver) } catch (e: IllegalArgumentException) {
+                    Timber.v(e, "shareFileAwaitingSelection: receiver ya estaba desregistrado")
+                }
+                lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
+            }
+            receiver = object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context, received: Intent) {
-                    // Benigno: puede llegar a dispararse después de que
-                    // invokeOnCancellation ya lo haya desregistrado.
-                    try { context.unregisterReceiver(this) } catch (e: IllegalArgumentException) {
-                        Timber.v(e, "shareFileAwaitingSelection: receiver ya estaba desregistrado")
-                    }
+                    cleanup()
                     if (cont.isActive) cont.resume(true, onCancellation = null)
                 }
             }
@@ -1848,13 +1874,21 @@ private suspend fun shareFileAwaitingSelection(
                 @Suppress("UnspecifiedRegisterReceiverFlag")
                 context.registerReceiver(receiver, IntentFilter(action))
             }
-            cont.invokeOnCancellation {
-                // Benigno: puede llegar a dispararse después de que
-                // onReceive ya lo haya desregistrado.
-                try { context.unregisterReceiver(receiver) } catch (e: IllegalArgumentException) {
-                    Timber.v(e, "shareFileAwaitingSelection: receiver ya estaba desregistrado")
+            var sawFirstResume = false
+            lifecycleObserver = LifecycleEventObserver { _, event ->
+                if (event != Lifecycle.Event.ON_RESUME) return@LifecycleEventObserver
+                // El primer ON_RESUME es el de esta misma pantalla al
+                // componer el observer -- se ignora, el que importa es el
+                // siguiente (tras volver del chooser del sistema).
+                if (!sawFirstResume) {
+                    sawFirstResume = true
+                    return@LifecycleEventObserver
                 }
+                cleanup()
+                if (cont.isActive) cont.resume(false, onCancellation = null)
             }
+            lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+            cont.invokeOnCancellation { cleanup() }
             val pendingIntent = PendingIntent.getBroadcast(
                 context, System.nanoTime().toInt(),
                 Intent(action).setPackage(context.packageName),

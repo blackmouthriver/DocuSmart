@@ -101,6 +101,7 @@ fun SecurityScreen(
     val fileProtectError       = stringResource(R.string.security_file_protect_error)
     val fileProtectedOriginalKept = stringResource(R.string.security_file_protected_original_kept)
     val previewErrorMessage   = stringResource(R.string.security_preview_error)
+    val deleteErrorMessage    = stringResource(R.string.general_delete_error)
 
     PendingSecureFolderImport(
         pendingFileUri  = pendingFileUri,
@@ -222,7 +223,7 @@ fun SecurityScreen(
                     SecureFolderContent(
                         uiState           = uiState,
                         onBack            = onBack,
-                        onDeleteFile      = { file -> viewModel.deleteFile(file) },
+                        onDeleteFile      = { file -> viewModel.deleteFile(file, deleteErrorMessage) },
                         onRestoreFile     = { file -> viewModel.restoreFile(file, context) },
                         onPreviewFile     = { file -> viewModel.previewFile(file, previewErrorMessage) },
                         onChangePinClick  = { viewModel.goToSetupPin() },
@@ -833,6 +834,11 @@ private fun SecureFileItem(
     onPreview: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    // Hallazgo real de la auditoría general 2026-09-17: "Eliminar" era el
+    // único ítem del menú "⋮" sin confirmación (a diferencia de la
+    // Papelera o "Restablecer PIN") -- un archivo protegido se borra acá
+    // de forma permanente, sin pasar por la Papelera.
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val shape = MaterialTheme.shapes.large
     Box(
@@ -895,10 +901,26 @@ private fun SecureFileItem(
                             Icon(Icons.Rounded.Delete, null,
                                 tint = MaterialTheme.colorScheme.error)
                         },
-                        onClick = { showMenu = false; onDelete() }
+                        onClick = { showMenu = false; showDeleteConfirm = true }
                     )
                 }
             }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.security_delete_confirm_title)) },
+            text  = { Text(stringResource(R.string.security_delete_confirm_body, file.name)) },
+            confirmButton = {
+                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                    Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.general_cancel)) }
+            }
+        )
     }
 }

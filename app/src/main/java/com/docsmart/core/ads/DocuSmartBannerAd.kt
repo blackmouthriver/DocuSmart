@@ -50,7 +50,15 @@ fun DocuSmartBannerAd(
                 Timber.e(e, "BannerAd ERROR: ${e.message}")
                 android.view.View(context)
             }
-        }
+        },
+        // Hallazgo real de la auditoría general 2026-09-17: sin onRelease,
+        // AdView.destroy() nunca se llamaba al salir de composición --
+        // Google documenta esto como fuga real de recursos nativos
+        // (incluida la WebView interna del banner). Este mismo Composable
+        // se reutiliza en Ajustes/Convertidor/Escáner/Visor/Seguridad/QR,
+        // así que cada navegación entre esas pantallas acumulaba un AdView
+        // sin liberar.
+        onRelease = { view -> (view as? AdView)?.destroy() }
     )
 }
 

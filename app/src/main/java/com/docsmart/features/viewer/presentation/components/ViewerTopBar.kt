@@ -224,11 +224,20 @@ private fun ViewerMoreOptionsMenu(
                     onClick = { menuExpanded = false; actions.onSign() }
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.doc_item_move_to_secure_folder)) },
-                leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
-                onClick = { menuExpanded = false; actions.onMoveToSecureFolder() }
-            )
+            // Hallazgo real de la auditoría general 2026-09-17: este ítem
+            // era el único que NO se ocultaba en isReadOnlyPreview (a
+            // diferencia de Renombrar/Eliminar más abajo) -- durante una
+            // vista previa, `document.id` es la ruta efímera de
+            // `secure_preview/`, así que "Mover a Carpeta Segura" copiaba
+            // esa copia temporal como si fuera un documento nuevo Y borraba
+            // el archivo que el Visor está mostrando en ese momento.
+            if (!isReadOnlyPreview) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.doc_item_move_to_secure_folder)) },
+                    leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
+                    onClick = { menuExpanded = false; actions.onMoveToSecureFolder() }
+                )
+            }
             // Backlog UX #50, AC1: indicador de que este documento tiene
             // notas de Modo Estudio vinculadas -- solo aparece si hay al
             // menos una.

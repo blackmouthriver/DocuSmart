@@ -35,6 +35,7 @@ class DailyLimitManager @Inject constructor(
         private const val KEY_SIGN           = "count_sign"
         private const val KEY_FILL_FORM       = "count_fill_form"
         private const val KEY_OCR             = "count_ocr"
+        private const val KEY_EXTRACT_IMAGES  = "count_extract_images"
         private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
         private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
         // Backlog UX (pedido explícito del usuario 2026-09-06): "escaneos
@@ -68,7 +69,13 @@ class DailyLimitManager @Inject constructor(
             "EDIT_TEXT"     to KEY_EDIT_TEXT,
             "SIGN"          to KEY_SIGN,
             "FILL_FORM"     to KEY_FILL_FORM,
-            "OCR"           to KEY_OCR
+            "OCR"           to KEY_OCR,
+            // Hallazgo real de la auditoría general 2026-09-17: faltaba acá
+            // -- getPdfToolKey() caía al ?: KEY_CONVERSIONS para cualquier
+            // clave no mapeada, así que "Extraer imágenes" consumía y
+            // revisaba el contador del Convertidor en vez del propio, mismo
+            // bug ya corregido dos veces antes para NUMBER_PAGES/WATERMARK.
+            "EXTRACT_IMAGES" to KEY_EXTRACT_IMAGES
         )
     }
 

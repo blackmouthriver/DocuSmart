@@ -465,7 +465,7 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    fun deleteFile(file: File) {
+    fun deleteFile(file: File, deleteErrorMessage: String) {
         // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
         // a diferencia de TODAS las demás vías de borrado definitivo del
         // proyecto (TrashRepository, hallazgo #50), esto no limpiaba
@@ -473,12 +473,25 @@ class SecurityViewModel @Inject constructor(
         // documento distinto luego se protege y su nombre saneado
         // colisiona con el del primero, hereda en silencio el favorito/las
         // notas del ya borrado.
+        //
+        // Hallazgo real de la auditoría general 2026-09-17: la limpieza de
+        // metadata corría siempre, sin importar si deleteSecureFile()
+        // realmente logró borrar el archivo -- si File.delete() fallaba
+        // (bloqueo de FS, carrera con una vista previa/restauración en
+        // curso), el archivo seguía en disco pero perdía igual su
+        // favorito/alias/anotaciones. Ahora la limpieza solo corre si el
+        // borrado fue real, y el fallo se expone en el estado para que la
+        // UI avise en vez de fallar en silencio.
         val documentId = file.absolutePath
         viewModelScope.launch(Dispatchers.IO) {
-            securityManager.deleteSecureFile(file)
-            documentIdentityMaintenance.onPermanentlyDeleted(documentId)
+            val deleted = securityManager.deleteSecureFile(file)
+            if (deleted) {
+                documentIdentityMaintenance.onPermanentlyDeleted(documentId)
+            }
             val files = securityManager.getSecureFiles()
-            _uiState.update { it.copy(secureFiles = files) }
+            _uiState.update {
+                it.copy(secureFiles = files, error = if (deleted) null else deleteErrorMessage)
+            }
         }
     }
 
