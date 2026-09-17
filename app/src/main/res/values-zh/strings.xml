@@ -116,11 +116,14 @@
     <string name="settings_ads_privacy_options_subtitle">更改你的广告隐私偏好设置</string>
     <string name="settings_share_app">分享 DocuSmart</string>
     <string name="settings_share_app_subtitle">向你的联系人推荐这款应用</string>
+    <string name="settings_share_app_message">向你推荐 DocuSmart！最好用的文档查看和转换工具。</string>
     <string name="settings_rate">在 Play 商店评分</string>
     <string name="settings_rate_subtitle">喜欢 DocuSmart 吗？给我们留个评价吧！</string>
     <string name="settings_section_help_community">帮助与社区</string>
     <string name="settings_help">帮助</string>
     <string name="settings_help_subtitle">常见问题</string>
+    <string name="settings_support_email_subject">DocuSmart 支持</string>
+    <string name="settings_support_email_body">你好，我在使用 DocuSmart 时需要帮助。\n\n设备：%1$s\nAndroid：%2$s\n应用版本：%3$s\n\n问题描述：\n</string>
     <string name="settings_section_system">系统</string>
     <string name="settings_reset">重置设置</string>
     <string name="settings_reset_subtitle">恢复为默认值</string>
@@ -365,7 +368,6 @@
     <string name="pdf_split_progress">正在拆分 PDF…</string>
     <string name="pdf_split_read_error">无法读取该 PDF，请确认它是有效文件。</string>
     <string name="pdf_split_no_pages">该 PDF 没有页面。</string>
-    <string name="pdf_split_range_too_small">范围至少应包含 2 页。该 PDF 共有 %1$d 页。</string>
     <string name="pdf_split_generate_error">生成拆分后的 PDF 时出错。</string>
     <string name="pdf_split_success">PDF 拆分完成：已提取 %1$d 页 · %2$d KB</string>
     <string name="pdf_split_error">拆分时出错：%1$s</string>
@@ -711,6 +713,8 @@
     <string name="security_file_protected_success">文件保护成功</string>
     <string name="security_file_protect_error">无法保护该文件</string>
     <string name="security_restore_error">无法还原该文件</string>
+    <string name="password_show">显示密码</string>
+    <string name="password_hide">隐藏密码</string>
     <string name="security_save_downloads_success">已保存到下载：%1$s</string>
     <string name="security_save_downloads_error">无法保存到下载</string>
     <string name="pdf_pw_read_error">无法读取文件</string>
@@ -1105,6 +1109,8 @@
     <string name="agenda_calendar_no_events_day">这一天没有事件</string>
     <string name="agenda_calendar_previous_month">上个月</string>
     <string name="agenda_calendar_next_month">下个月</string>
+    <string name="agenda_calendar_day_today">，今天</string>
+    <string name="agenda_calendar_day_has_events">，有日程</string>
     <string name="agenda_exact_alarm_banner_title">启用精确闹钟</string>
     <string name="agenda_exact_alarm_banner_body">没有此权限,提醒可能会延迟几分钟响起。请在系统设置中启用它,以便按时响起。</string>
     <string name="agenda_exact_alarm_banner_action">启用</string>

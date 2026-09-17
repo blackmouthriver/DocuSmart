@@ -29,6 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -89,6 +91,7 @@ fun AgendaCalendarView(
             month = month,
             selectedDate = selectedDate,
             eventDatesInMonth = eventDatesInMonth,
+            dayDetailFormat = dayDetailFormat,
             onSelectDate = onSelectDate
         )
         Spacer(Modifier.height(16.dp))
@@ -171,6 +174,7 @@ private fun MonthGrid(
     month: YearMonth,
     selectedDate: LocalDate,
     eventDatesInMonth: Set<LocalDate>,
+    dayDetailFormat: DateTimeFormatter,
     onSelectDate: (LocalDate) -> Unit
 ) {
     val firstDayOfMonth = month.atDay(1)
@@ -190,6 +194,7 @@ private fun MonthGrid(
                         val date = month.atDay(dayNumber)
                         CalendarDayCell(
                             day = dayNumber,
+                            dateLabel = date.format(dayDetailFormat),
                             isToday = date == today,
                             isSelected = date == selectedDate,
                             hasEvents = date in eventDatesInMonth,
@@ -205,9 +210,13 @@ private fun MonthGrid(
     }
 }
 
+// Hallazgo real de la auditoría general 2026-09-17 (B23): celda de día sin
+// contentDescription -- TalkBack solo leía el número suelto ("15"), sin mes
+// ni año ni indicar si es hoy/está seleccionado/tiene eventos.
 @Composable
 private fun CalendarDayCell(
     day: Int,
+    dateLabel: String,
     isToday: Boolean,
     isSelected: Boolean,
     hasEvents: Boolean,
@@ -220,6 +229,11 @@ private fun CalendarDayCell(
         else -> Color.Transparent
     }
     val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val accessibleLabel = buildString {
+        append(dateLabel)
+        if (isToday) append(stringResource(R.string.agenda_calendar_day_today))
+        if (hasEvents) append(stringResource(R.string.agenda_calendar_day_has_events))
+    }
 
     Column(
         modifier = modifier
@@ -227,6 +241,7 @@ private fun CalendarDayCell(
             .padding(2.dp)
             .clip(CircleShape)
             .background(backgroundColor)
+            .semantics { contentDescription = accessibleLabel }
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

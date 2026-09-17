@@ -74,7 +74,6 @@ sealed class NavRoutes(val route: String) {
             return openNoteId?.let { "$base&openNoteId=${Uri.encode(it)}" } ?: base
         }
     }
-    data object Qr          : NavRoutes("qr")
     data object QrReader    : NavRoutes("qr_reader")
     data object QrHistory   : NavRoutes("qr_history") // HU-44
     data object QrCreator : NavRoutes(

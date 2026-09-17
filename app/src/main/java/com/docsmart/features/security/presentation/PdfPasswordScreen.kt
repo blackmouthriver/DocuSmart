@@ -373,7 +373,10 @@ private fun ProtectPdfForm(
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(
                         if (showPassword) Icons.Rounded.VisibilityOff
-                        else Icons.Rounded.Visibility, null
+                        else Icons.Rounded.Visibility,
+                        contentDescription = stringResource(
+                            if (showPassword) R.string.password_hide else R.string.password_show
+                        )
                     )
                 }
             },
@@ -632,7 +635,10 @@ private fun RemovePdfPasswordForm(
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(
                         if (showPassword) Icons.Rounded.VisibilityOff
-                        else Icons.Rounded.Visibility, null
+                        else Icons.Rounded.Visibility,
+                        contentDescription = stringResource(
+                            if (showPassword) R.string.password_hide else R.string.password_show
+                        )
                     )
                 }
             },

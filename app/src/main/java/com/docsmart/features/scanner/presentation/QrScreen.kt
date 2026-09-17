@@ -1331,7 +1331,11 @@ fun QrCreatorScreen(
                     scope.launch {
                         val rawContent = when (selectedType) {
                             4, 5 -> selectedUri.toString()
-                            0    -> if (!content.startsWith("http")) "https://$content" else content
+                            // Hallazgo real de la auditoría general 2026-09-17
+                            // (B11): startsWith("http") sensible a mayúsculas
+                            // -- "HTTP://ejemplo.com" no matcheaba y quedaba
+                            // "https://HTTP://ejemplo.com", una URL rota.
+                            0    -> if (!content.startsWith("http", ignoreCase = true)) "https://$content" else content
                             2    -> "mailto:$content"
                             3    -> "tel:$content"
                             6    -> QrWifiContent(wifiSsid, wifiPassword, wifiSecurity).toQrPayload()

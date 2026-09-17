@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
@@ -70,6 +72,7 @@ import com.docsmart.core.data.db.NoteEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.util.ReloadOnScreenResume
 import com.docsmart.core.ui.util.findActivity
 import com.docsmart.features.scanner.presentation.ScannerMode
 import com.docsmart.features.scanner.presentation.rememberDocumentScannerAction
@@ -427,18 +430,31 @@ fun StudyScreen(
         val voiceToRestore = selectedVoice.value
         previewingVoiceName = voice.name
         tts.voice = voice
+        // Hallazgo real de la auditoría general 2026-09-17 (B19):
+        // UtteranceProgressListener corre en un hilo interno del motor TTS
+        // (no garantizado por Android, varía según fabricante) -- mutar
+        // State de Compose ahí es seguro (el snapshot system de Compose
+        // soporta escrituras desde cualquier hilo), pero volver a llamar a
+        // `tts.voice = ...` reentrante desde ese mismo hilo de callback no
+        // está garantizado como seguro en todos los motores OEM. Se
+        // despacha al hilo principal para eliminar esa duda.
+        val mainHandler = Handler(Looper.getMainLooper())
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {
                 Timber.d("Reproduciendo muestra de voz: ${voice.name}")
             }
             override fun onDone(utteranceId: String?) {
-                if (voiceToRestore != null) tts.voice = voiceToRestore
-                previewingVoiceName = null
+                mainHandler.post {
+                    if (voiceToRestore != null) tts.voice = voiceToRestore
+                    previewingVoiceName = null
+                }
             }
             @Deprecated("Deprecated in Java")
             override fun onError(utteranceId: String?) {
-                if (voiceToRestore != null) tts.voice = voiceToRestore
-                previewingVoiceName = null
+                mainHandler.post {
+                    if (voiceToRestore != null) tts.voice = voiceToRestore
+                    previewingVoiceName = null
+                }
             }
         })
         tts.speak(sampleText, TextToSpeech.QUEUE_FLUSH, null, "study_voice_preview")
@@ -1374,6 +1390,19 @@ private fun NotesTab(
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted -> notificationsGranted = granted }
+    // Hallazgo real de la auditoría general 2026-09-17 (B20): a diferencia
+    // de Agenda (canScheduleExactAlarms, ver AgendaScreen.kt), acá
+    // notificationsGranted solo se actualizaba desde el diálogo del sistema
+    // -- si el usuario lo negaba y después activaba el permiso a mano desde
+    // Ajustes del sistema, la sección de recordatorio de Notas seguía
+    // deshabilitada indefinidamente al volver, sin que la app se enterara.
+    ReloadOnScreenResume {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationsGranted = ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
     val notesListState = rememberLazyListState()
 
     // ── Adjuntar imagen (galería o recorte escaneado) ────────────────────────

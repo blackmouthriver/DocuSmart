@@ -116,11 +116,14 @@
     <string name="settings_ads_privacy_options_subtitle">Change your privacy preferences for ads</string>
     <string name="settings_share_app">Share DocuSmart</string>
     <string name="settings_share_app_subtitle">Recommend the app to your contacts</string>
+    <string name="settings_share_app_message">I recommend DocuSmart! The best document viewer and converter.</string>
     <string name="settings_rate">Rate on Play Store</string>
     <string name="settings_rate_subtitle">Like DocuSmart? Leave us a review!</string>
     <string name="settings_section_help_community">Help &amp; Community</string>
     <string name="settings_help">Help</string>
     <string name="settings_help_subtitle">Frequently asked questions</string>
+    <string name="settings_support_email_subject">DocuSmart Support</string>
+    <string name="settings_support_email_body">Hello, I need help with DocuSmart.\n\nDevice: %1$s\nAndroid: %2$s\nApp: %3$s\n\nProblem description:\n</string>
     <string name="settings_section_system">System</string>
     <string name="settings_reset">Reset settings</string>
     <string name="settings_reset_subtitle">Return to default values</string>
@@ -375,7 +378,6 @@
     <string name="pdf_split_progress">Splitting PDF…</string>
     <string name="pdf_split_read_error">Couldn\'t read the PDF. Make sure it\'s a valid file.</string>
     <string name="pdf_split_no_pages">The PDF has no pages.</string>
-    <string name="pdf_split_range_too_small">The range must include at least 2 pages. The PDF has %1$d pages.</string>
     <string name="pdf_split_generate_error">Error generating the split PDF.</string>
     <string name="pdf_split_success">PDF split: %1$d page(s) extracted · %2$d KB</string>
     <string name="pdf_split_error">Error splitting: %1$s</string>
@@ -716,6 +718,8 @@
     <string name="security_file_protected_success">File protected successfully</string>
     <string name="security_file_protect_error">Couldn\'t protect the file</string>
     <string name="security_restore_error">Couldn\'t restore the file</string>
+    <string name="password_show">Show password</string>
+    <string name="password_hide">Hide password</string>
     <string name="security_save_downloads_success">Saved to Downloads: %1$s</string>
     <string name="security_save_downloads_error">Couldn\'t save to Downloads</string>
     <string name="pdf_pw_read_error">Couldn\'t read the file</string>
@@ -1110,6 +1114,8 @@
     <string name="agenda_calendar_no_events_day">No events on this day</string>
     <string name="agenda_calendar_previous_month">Previous month</string>
     <string name="agenda_calendar_next_month">Next month</string>
+    <string name="agenda_calendar_day_today">, today</string>
+    <string name="agenda_calendar_day_has_events">, has events</string>
     <string name="agenda_exact_alarm_banner_title">Enable exact alarms</string>
     <string name="agenda_exact_alarm_banner_body">Without this permission, your reminders may go off a few minutes late. Enable it in system Settings so they ring right on time.</string>
     <string name="agenda_exact_alarm_banner_action">Enable</string>

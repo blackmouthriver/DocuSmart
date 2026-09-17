@@ -900,7 +900,7 @@ private fun SecureFileItem(
             }
             Box {
                 IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Rounded.MoreVert, null,
+                    Icon(Icons.Rounded.MoreVert, stringResource(R.string.viewer_more_options),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 DropdownMenu(

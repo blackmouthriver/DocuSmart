@@ -116,11 +116,14 @@
     <string name="settings_ads_privacy_options_subtitle">広告に関するプライバシー設定を変更</string>
     <string name="settings_share_app">DocuSmartを共有</string>
     <string name="settings_share_app_subtitle">友達にアプリをおすすめしよう</string>
+    <string name="settings_share_app_message">DocuSmartがおすすめです！最高のドキュメントビューア&amp;コンバーターです。</string>
     <string name="settings_rate">Playストアで評価する</string>
     <string name="settings_rate_subtitle">DocuSmartを気に入っていただけましたか?レビューをお願いします!</string>
     <string name="settings_section_help_community">ヘルプとコミュニティ</string>
     <string name="settings_help">ヘルプ</string>
     <string name="settings_help_subtitle">よくある質問</string>
+    <string name="settings_support_email_subject">DocuSmart サポート</string>
+    <string name="settings_support_email_body">こんにちは、DocuSmartについてサポートが必要です。\n\n端末: %1$s\nAndroid: %2$s\nアプリ: %3$s\n\n問題の説明:\n</string>
     <string name="settings_section_system">システム</string>
     <string name="settings_reset">設定をリセット</string>
     <string name="settings_reset_subtitle">デフォルト設定に戻す</string>
@@ -365,7 +368,6 @@
     <string name="pdf_split_progress">PDFを分割中…</string>
     <string name="pdf_split_read_error">PDFを読み取れませんでした。有効なファイルか確認してください。</string>
     <string name="pdf_split_no_pages">このPDFにはページがありません。</string>
-    <string name="pdf_split_range_too_small">範囲には少なくとも2ページ含める必要があります。このPDFには%1$dページあります。</string>
     <string name="pdf_split_generate_error">分割したPDFの生成中にエラーが発生しました。</string>
     <string name="pdf_split_success">PDFを分割しました: %1$dページを抽出 · %2$d KB</string>
     <string name="pdf_split_error">分割中にエラーが発生しました: %1$s</string>
@@ -711,6 +713,8 @@
     <string name="security_file_protected_success">ファイルを保護しました</string>
     <string name="security_file_protect_error">ファイルを保護できませんでした</string>
     <string name="security_restore_error">ファイルを復元できませんでした</string>
+    <string name="password_show">パスワードを表示</string>
+    <string name="password_hide">パスワードを非表示</string>
     <string name="security_save_downloads_success">ダウンロードに保存しました: %1$s</string>
     <string name="security_save_downloads_error">ダウンロードに保存できませんでした</string>
     <string name="pdf_pw_read_error">ファイルを読み取れませんでした</string>
@@ -1105,6 +1109,8 @@
     <string name="agenda_calendar_no_events_day">この日の予定はありません</string>
     <string name="agenda_calendar_previous_month">前の月</string>
     <string name="agenda_calendar_next_month">次の月</string>
+    <string name="agenda_calendar_day_today">、今日</string>
+    <string name="agenda_calendar_day_has_events">、予定あり</string>
     <string name="agenda_exact_alarm_banner_title">正確なアラームを有効にする</string>
     <string name="agenda_exact_alarm_banner_body">この権限がないと、リマインダーが数分遅れて鳴ることがあります。時間どおりに鳴るよう、システム設定で有効にしてください。</string>
     <string name="agenda_exact_alarm_banner_action">有効にする</string>

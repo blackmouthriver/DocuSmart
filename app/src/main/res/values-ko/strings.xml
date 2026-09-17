@@ -116,11 +116,14 @@
     <string name="settings_ads_privacy_options_subtitle">광고 개인정보 보호 설정 변경</string>
     <string name="settings_share_app">DocuSmart 공유</string>
     <string name="settings_share_app_subtitle">지인에게 앱을 추천해 보세요</string>
+    <string name="settings_share_app_message">DocuSmart를 추천합니다! 최고의 문서 뷰어 및 변환기예요.</string>
     <string name="settings_rate">스토어에서 평가하기</string>
     <string name="settings_rate_subtitle">DocuSmart가 마음에 드시나요? 리뷰를 남겨주세요!</string>
     <string name="settings_section_help_community">도움말 및 커뮤니티</string>
     <string name="settings_help">도움말</string>
     <string name="settings_help_subtitle">자주 묻는 질문</string>
+    <string name="settings_support_email_subject">DocuSmart 고객지원</string>
+    <string name="settings_support_email_body">안녕하세요, DocuSmart 사용 중 도움이 필요합니다.\n\n기기: %1$s\nAndroid: %2$s\n앱: %3$s\n\n문제 설명:\n</string>
     <string name="settings_section_system">시스템</string>
     <string name="settings_reset">설정 초기화</string>
     <string name="settings_reset_subtitle">기본값으로 되돌리기</string>
@@ -365,7 +368,6 @@
     <string name="pdf_split_progress">PDF 분할 중…</string>
     <string name="pdf_split_read_error">PDF를 읽을 수 없습니다. 올바른 파일인지 확인하세요.</string>
     <string name="pdf_split_no_pages">PDF에 페이지가 없습니다.</string>
-    <string name="pdf_split_range_too_small">범위는 최소 2페이지를 포함해야 합니다. PDF에는 %1$d페이지가 있습니다.</string>
     <string name="pdf_split_generate_error">분할된 PDF를 생성하는 중 오류가 발생했습니다.</string>
     <string name="pdf_split_success">PDF 분할 완료: 페이지 %1$d개 추출됨 · %2$d KB</string>
     <string name="pdf_split_error">분할 오류: %1$s</string>
@@ -711,6 +713,8 @@
     <string name="security_file_protected_success">파일이 성공적으로 보호되었습니다</string>
     <string name="security_file_protect_error">파일을 보호할 수 없습니다</string>
     <string name="security_restore_error">파일을 복원할 수 없습니다</string>
+    <string name="password_show">비밀번호 표시</string>
+    <string name="password_hide">비밀번호 숨기기</string>
     <string name="security_save_downloads_success">다운로드에 저장됨: %1$s</string>
     <string name="security_save_downloads_error">다운로드에 저장할 수 없습니다</string>
     <string name="pdf_pw_read_error">파일을 읽을 수 없습니다</string>
@@ -1105,6 +1109,8 @@
     <string name="agenda_calendar_no_events_day">이 날에는 일정이 없습니다</string>
     <string name="agenda_calendar_previous_month">이전 달</string>
     <string name="agenda_calendar_next_month">다음 달</string>
+    <string name="agenda_calendar_day_today">, 오늘</string>
+    <string name="agenda_calendar_day_has_events">, 일정 있음</string>
     <string name="agenda_exact_alarm_banner_title">정확한 알람 활성화</string>
     <string name="agenda_exact_alarm_banner_body">이 권한이 없으면 알림이 몇 분 늦게 울릴 수 있습니다. 정확한 시간에 울리도록 시스템 설정에서 활성화하세요.</string>
     <string name="agenda_exact_alarm_banner_action">활성화</string>

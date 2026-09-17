@@ -70,63 +70,71 @@ class ConvertImageToPdfUseCase @Inject constructor(
             Timber.d("Convirtiendo ${imageUris.size} imágenes a PDF (highResolution=$highResolution)")
 
             val pdfDocument = PdfDocument()
-            val paint = Paint().apply {
-                isAntiAlias    = true
-                isFilterBitmap = true
-            }
-
-            // Bug real encontrado 2026-09-14 (repaso general): antes se
-            // reportaba pageCount = imageUris.size (el original) sin
-            // importar cuántas páginas se generaron de verdad -- si TODAS
-            // las imágenes fallaban al decodificar, el resultado igual
-            // llegaba como Success con 0 páginas reales (el header/xref de
-            // un PdfDocument vacío ya pesa > 0 bytes, así que el chequeo de
-            // abajo tampoco lo detectaba).
-            var pageCount = 0
-            imageUris.forEachIndexed { index, uri ->
-                val bitmap = loadBitmapFromUri(uri)
-                if (bitmap == null) {
-                    Timber.w("No se pudo cargar imagen $index: $uri")
-                    return@forEachIndexed
+            // Hallazgo real de la auditoría general 2026-09-17 (B6):
+            // pdfDocument.close() solo se llamaba en los 2 caminos felices
+            // (0 páginas / éxito) -- si algo lanzaba entre medio (ej.
+            // FileOutputStream falla por disco lleno), el catch de abajo no
+            // lo cerraba, mismo patrón de fuga ya corregido en el resto de
+            // Herramientas PDF/Convertidor.
+            try {
+                val paint = Paint().apply {
+                    isAntiAlias    = true
+                    isFilterBitmap = true
                 }
 
-                if (drawImagePage(pdfDocument, paint, bitmap, pageCount + 1, highResolution, index)) {
-                    pageCount++
-                    Timber.d("Página $pageCount generada")
-                }
-            }
+                // Bug real encontrado 2026-09-14 (repaso general): antes se
+                // reportaba pageCount = imageUris.size (el original) sin
+                // importar cuántas páginas se generaron de verdad -- si TODAS
+                // las imágenes fallaban al decodificar, el resultado igual
+                // llegaba como Success con 0 páginas reales (el header/xref de
+                // un PdfDocument vacío ya pesa > 0 bytes, así que el chequeo de
+                // abajo tampoco lo detectaba).
+                var pageCount = 0
+                imageUris.forEachIndexed { index, uri ->
+                    val bitmap = loadBitmapFromUri(uri)
+                    if (bitmap == null) {
+                        Timber.w("No se pudo cargar imagen $index: $uri")
+                        return@forEachIndexed
+                    }
 
-            if (pageCount == 0) {
+                    if (drawImagePage(pdfDocument, paint, bitmap, pageCount + 1, highResolution, index)) {
+                        pageCount++
+                        Timber.d("Página $pageCount generada")
+                    }
+                }
+
+                if (pageCount == 0) {
+                    return@withContext ConversionResult.Error(
+                        context.getString(R.string.converter_error_no_images_loaded)
+                    )
+                }
+
+                val outputDir = File(context.filesDir, "converted").apply {
+                    if (!exists()) mkdirs()
+                }
+                val outputFile = File(outputDir, "$fileName.pdf")
+
+                FileOutputStream(outputFile).use { stream ->
+                    pdfDocument.writeTo(stream)
+                    stream.flush()
+                }
+
+                Timber.d("PDF guardado: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
+
+                if (outputFile.length() == 0L) {
+                    return@withContext ConversionResult.Error(
+                        context.getString(R.string.converter_error_generate_pdf_failed)
+                    )
+                }
+
+                ConversionResult.Success(
+                    outputFile = outputFile,
+                    pageCount  = pageCount,
+                    fileSizeKb = (outputFile.length() / 1024).toInt()
+                )
+            } finally {
                 pdfDocument.close()
-                return@withContext ConversionResult.Error(
-                    context.getString(R.string.converter_error_no_images_loaded)
-                )
             }
-
-            val outputDir = File(context.filesDir, "converted").apply {
-                if (!exists()) mkdirs()
-            }
-            val outputFile = File(outputDir, "$fileName.pdf")
-
-            FileOutputStream(outputFile).use { stream ->
-                pdfDocument.writeTo(stream)
-                stream.flush()
-            }
-            pdfDocument.close()
-
-            Timber.d("PDF guardado: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
-
-            if (outputFile.length() == 0L) {
-                return@withContext ConversionResult.Error(
-                    context.getString(R.string.converter_error_generate_pdf_failed)
-                )
-            }
-
-            ConversionResult.Success(
-                outputFile = outputFile,
-                pageCount  = pageCount,
-                fileSizeKb = (outputFile.length() / 1024).toInt()
-            )
 
         } catch (e: Exception) {
             Timber.e(e, "Error en conversión: ${e.message}")

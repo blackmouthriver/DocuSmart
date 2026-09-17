@@ -116,11 +116,14 @@
     <string name="settings_ads_privacy_options_subtitle">Modifica le tue preferenze sulla privacy per gli annunci</string>
     <string name="settings_share_app">Condividi DocuSmart</string>
     <string name="settings_share_app_subtitle">Consiglia l\'app ai tuoi contatti</string>
+    <string name="settings_share_app_message">Ti consiglio DocuSmart! Il miglior visualizzatore e convertitore di documenti.</string>
     <string name="settings_rate">Valuta su Play Store</string>
     <string name="settings_rate_subtitle">Ti piace DocuSmart? Lascia una recensione!</string>
     <string name="settings_section_help_community">Assistenza e comunità</string>
     <string name="settings_help">Aiuto</string>
     <string name="settings_help_subtitle">Domande frequenti</string>
+    <string name="settings_support_email_subject">Supporto DocuSmart</string>
+    <string name="settings_support_email_body">Ciao, ho bisogno di aiuto con DocuSmart.\n\nDispositivo: %1$s\nAndroid: %2$s\nApp: %3$s\n\nDescrizione del problema:\n</string>
     <string name="settings_section_system">Sistema</string>
     <string name="settings_reset">Ripristina configurazione</string>
     <string name="settings_reset_subtitle">Torna ai valori predefiniti</string>
@@ -367,7 +370,6 @@
     <string name="pdf_split_progress">Divisione del PDF…</string>
     <string name="pdf_split_read_error">Impossibile leggere il PDF. Verifica che sia un file valido.</string>
     <string name="pdf_split_no_pages">Il PDF non contiene pagine.</string>
-    <string name="pdf_split_range_too_small">L\'intervallo deve includere almeno 2 pagine. Il PDF ha %1$d pagine.</string>
     <string name="pdf_split_generate_error">Errore durante la generazione del PDF diviso.</string>
     <string name="pdf_split_success">PDF diviso: %1$d pagina/e estratte · %2$d KB</string>
     <string name="pdf_split_error">Errore durante la divisione: %1$s</string>
@@ -714,6 +716,8 @@
     <string name="security_file_protected_success">File protetto correttamente</string>
     <string name="security_file_protect_error">Impossibile proteggere il file</string>
     <string name="security_restore_error">Impossibile ripristinare il file</string>
+    <string name="password_show">Mostra password</string>
+    <string name="password_hide">Nascondi password</string>
     <string name="security_save_downloads_success">Salvato in Download: %1$s</string>
     <string name="security_save_downloads_error">Impossibile salvare in Download</string>
     <string name="pdf_pw_read_error">Impossibile leggere il file</string>
@@ -1108,6 +1112,8 @@
     <string name="agenda_calendar_no_events_day">Nessun evento in questo giorno</string>
     <string name="agenda_calendar_previous_month">Mese precedente</string>
     <string name="agenda_calendar_next_month">Mese successivo</string>
+    <string name="agenda_calendar_day_today">, oggi</string>
+    <string name="agenda_calendar_day_has_events">, con eventi</string>
     <string name="agenda_exact_alarm_banner_title">Attiva gli allarmi esatti</string>
     <string name="agenda_exact_alarm_banner_body">Senza questo permesso, i tuoi promemoria potrebbero suonare con qualche minuto di ritardo. Attivalo nelle Impostazioni di sistema perché suonino puntuali.</string>
     <string name="agenda_exact_alarm_banner_action">Attiva</string>

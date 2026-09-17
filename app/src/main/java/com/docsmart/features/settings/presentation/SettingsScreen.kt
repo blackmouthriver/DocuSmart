@@ -71,6 +71,14 @@ fun SettingsScreen(
     val soundEffectsEnabled by viewModel.soundEffectPlayer.enabled.collectAsState()
     val currentLanguage    by languageManager.currentLanguage.collectAsState()
     val isPremium          by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    // B15: mensaje/título del chooser de "Compartir app", resueltos acá
+    // porque shareApp() no es @Composable.
+    val shareAppMessage      = stringResource(R.string.settings_share_app_message)
+    val shareAppChooserTitle = stringResource(R.string.settings_share_app)
+    // B16: idem, mensaje/asunto de "Contactar soporte", ya sin distinguir
+    // solo es/no-es a mano.
+    val supportEmailSubject = stringResource(R.string.settings_support_email_subject)
+    val supportEmailBody    = stringResource(R.string.settings_support_email_body)
     // HU-54, AC1: revisando Ajustes, sin entrar a PremiumScreen, ya se ve
     // que Premium está activo y cuándo empezaría a cobrarse.
     val trialEndsAtMillis  by viewModel.adManager.trialEndsAtMillis.collectAsStateWithLifecycle()
@@ -254,7 +262,9 @@ fun SettingsScreen(
                         Text(stringResource(R.string.settings_storage_total),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface)
-                        Text("$totalFiles ${stringResource(R.string.settings_storage_files_unit)} · $totalSize KB",
+                        Text(
+                            "$totalFiles ${stringResource(R.string.settings_storage_files_unit)} · " +
+                                stringResource(R.string.file_size_kb, totalSize),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary)
                     }
@@ -392,7 +402,7 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = {
                     showHelpDialog = false
-                    sendSupportEmail(context, isEs = currentLanguage.code == "es")
+                    sendSupportEmail(context, supportEmailSubject, supportEmailBody)
                 }) {
                     Text(stringResource(R.string.settings_contact_support))
                 }
@@ -879,7 +889,7 @@ fun SettingsScreen(
                 icon     = Icons.Rounded.Share,
                 title    = stringResource(R.string.settings_share_app),
                 subtitle = stringResource(R.string.settings_share_app_subtitle),
-                onClick  = { shareApp(context) }
+                onClick  = { shareApp(context, shareAppMessage, shareAppChooserTitle) }
             )
         }
         item {
@@ -963,6 +973,9 @@ private fun SettingsItem(
     }
 }
 
+// Hallazgo real de la auditoría general 2026-09-17 (B14): "KB" hardcodeado
+// sin stringResource, mismo patrón ya corregido en M2 para Papelera/
+// Biblioteca/Carpeta Segura.
 @Composable
 private fun StorageRow(label: String, files: Int, sizeKb: Long) {
     Row(
@@ -973,7 +986,7 @@ private fun StorageRow(label: String, files: Int, sizeKb: Long) {
         Text(label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface)
-        Text("$files · $sizeKb KB",
+        Text("$files · ${stringResource(R.string.file_size_kb, sizeKb)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -1006,17 +1019,21 @@ private fun openAppSettings(context: Context) {
     } catch (e: Exception) { e.printStackTrace() }
 }
 
-private fun shareApp(context: Context) {
+// Hallazgo real de la auditoría general 2026-09-17 (B15): texto hardcodeado
+// en español (mensaje + título del chooser), sin pasar por i18n pese a que
+// esta pantalla ya soporta 12 idiomas -- shareApp() no es @Composable, así
+// que los strings se resuelven en el llamador y se pasan ya traducidos,
+// mismo patrón que el resto de mensajes de UseCase de la app.
+private fun shareApp(context: Context, message: String, chooserTitle: String) {
     try {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "DocuSmart")
             putExtra(Intent.EXTRA_TEXT,
-                "¡Te recomiendo DocuSmart! El mejor visor y convertidor de documentos.\n" +
-                        "https://play.google.com/store/apps/details?id=${context.packageName}")
+                "$message\nhttps://play.google.com/store/apps/details?id=${context.packageName}")
         }
-        context.startActivity(Intent.createChooser(intent, "Compartir DocuSmart"))
-    } catch (e: Exception) { e.printStackTrace() }
+        context.startActivity(Intent.createChooser(intent, chooserTitle))
+    } catch (e: Exception) { Timber.e(e, "shareApp: error") }
 }
 
 private fun openPlayStore(context: Context) {
@@ -1029,16 +1046,25 @@ private fun openPlayStore(context: Context) {
     }
 }
 
-private fun sendSupportEmail(context: Context, isEs: Boolean) {
+// Hallazgo real de la auditoría general 2026-09-17 (B16): antes solo
+// distinguía es/no-es (no los 12 idiomas soportados) y "App: 1.0.0" estaba
+// hardcodeado en vez de BuildConfig.VERSION_NAME -- quedaba desactualizado
+// en cada release sin que nadie lo notara.
+private fun sendSupportEmail(context: Context, subject: String, bodyTemplate: String) {
     try {
         val intent = Intent(Intent.ACTION_SENDTO).apply {
             data = Uri.parse("mailto:soporte@docusmart.app")
-            putExtra(Intent.EXTRA_SUBJECT,
-                if (isEs) "Soporte DocuSmart" else "DocuSmart Support")
-            putExtra(Intent.EXTRA_TEXT,
-                if (isEs) "Hola, necesito ayuda con DocuSmart.\n\nDispositivo: ${android.os.Build.MODEL}\nAndroid: ${android.os.Build.VERSION.RELEASE}\nApp: 1.0.0\n\nDescripción del problema:\n"
-                else "Hello, I need help with DocuSmart.\n\nDevice: ${android.os.Build.MODEL}\nAndroid: ${android.os.Build.VERSION.RELEASE}\nApp: 1.0.0\n\nProblem description:\n")
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(
+                Intent.EXTRA_TEXT,
+                String.format(
+                    bodyTemplate,
+                    android.os.Build.MODEL,
+                    android.os.Build.VERSION.RELEASE,
+                    com.docsmart.BuildConfig.VERSION_NAME
+                )
+            )
         }
         context.startActivity(intent)
-    } catch (e: Exception) { e.printStackTrace() }
+    } catch (e: Exception) { Timber.e(e, "sendSupportEmail: error") }
 }

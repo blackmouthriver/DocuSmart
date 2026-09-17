@@ -119,11 +119,14 @@
     <string name="settings_ads_privacy_options_subtitle">Modifie tes préférences de confidentialité pour les publicités</string>
     <string name="settings_share_app">Partager DocuSmart</string>
     <string name="settings_share_app_subtitle">Recommande l\'application à tes contacts</string>
+    <string name="settings_share_app_message">Je te recommande DocuSmart ! Le meilleur visualiseur et convertisseur de documents.</string>
     <string name="settings_rate">Noter sur le Play Store</string>
     <string name="settings_rate_subtitle">Tu aimes DocuSmart ? Laisse-nous un avis !</string>
     <string name="settings_section_help_community">Aide et communauté</string>
     <string name="settings_help">Aide</string>
     <string name="settings_help_subtitle">Questions fréquentes</string>
+    <string name="settings_support_email_subject">Support DocuSmart</string>
+    <string name="settings_support_email_body">Bonjour, j\'ai besoin d\'aide avec DocuSmart.\n\nAppareil : %1$s\nAndroid : %2$s\nApp : %3$s\n\nDescription du problème :\n</string>
     <string name="settings_section_system">Système</string>
     <string name="settings_reset">Réinitialiser la configuration</string>
     <string name="settings_reset_subtitle">Revenir aux valeurs par défaut</string>
@@ -373,7 +376,6 @@
     <string name="pdf_split_progress">Division du PDF…</string>
     <string name="pdf_split_read_error">Impossible de lire le PDF. Vérifie qu\'il s\'agit d\'un fichier valide.</string>
     <string name="pdf_split_no_pages">Le PDF ne contient aucune page.</string>
-    <string name="pdf_split_range_too_small">La plage doit inclure au moins 2 pages. Le PDF contient %1$d pages.</string>
     <string name="pdf_split_generate_error">Erreur lors de la génération du PDF divisé.</string>
     <string name="pdf_split_success">PDF divisé : %1$d page(s) extraites · %2$d Ko</string>
     <string name="pdf_split_error">Erreur lors de la division : %1$s</string>
@@ -719,6 +721,8 @@
     <string name="security_file_protected_success">Fichier protégé avec succès</string>
     <string name="security_file_protect_error">Impossible de protéger le fichier</string>
     <string name="security_restore_error">Impossible de restaurer le fichier</string>
+    <string name="password_show">Afficher le mot de passe</string>
+    <string name="password_hide">Masquer le mot de passe</string>
     <string name="security_save_downloads_success">Enregistré dans Téléchargements : %1$s</string>
     <string name="security_save_downloads_error">Impossible d\'enregistrer dans Téléchargements</string>
     <string name="pdf_pw_read_error">Impossible de lire le fichier</string>
@@ -1113,6 +1117,8 @@
     <string name="agenda_calendar_no_events_day">Aucun événement ce jour-là</string>
     <string name="agenda_calendar_previous_month">Mois précédent</string>
     <string name="agenda_calendar_next_month">Mois suivant</string>
+    <string name="agenda_calendar_day_today">, aujourd\'hui</string>
+    <string name="agenda_calendar_day_has_events">, avec des événements</string>
     <string name="agenda_exact_alarm_banner_title">Active les alarmes exactes</string>
     <string name="agenda_exact_alarm_banner_body">Sans cette autorisation, tes rappels peuvent sonner quelques minutes en retard. Active-la dans les paramètres système pour qu\'ils sonnent pile à l\'heure.</string>
     <string name="agenda_exact_alarm_banner_action">Activer</string>

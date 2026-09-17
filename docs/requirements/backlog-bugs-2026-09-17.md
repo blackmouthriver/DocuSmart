@@ -340,33 +340,162 @@ rápidos pausar/reanudar/pausar/reanudar -- quedó "en progreso" con el
 tiempo avanzando a velocidad normal (24:59→24:48 en 11s reales), sin
 duplicar velocidad ni quedar en estado inconsistente.
 
-## Prioridad Baja / i18n (17 hallazgos)
+## Prioridad Baja / i18n (23 hallazgos)
 
-| # | Área | Archivo:línea | Descripción |
-|---|---|---|---|
-| B1 | Home/Lib/Seg | `PdfPasswordUseCase.kt:59,144` | Saneo de nombre ad hoc en vez de `sanitizeOutputFileName()` centralizada (no explotable hoy, pero inconsistente). |
-| B2 | Home/Lib/Seg | `SecurityScreen.kt:870-873`, `PdfPasswordScreen.kt:372-378,631-638` | `contentDescription = null` en íconos de menú "⋮" y mostrar/ocultar contraseña. |
-| B3 | Herramientas PDF | `SplitPdfUseCase.kt:22` | Campo `rangeTooSmall` muerto (resto de un fix anterior, nunca leído). |
-| B4 | Convertidor | `WordToPdfUseCase.kt:90-108`, `WordToTextUseCase.kt:79-91` | Párrafos y tablas se procesan en 2 pasadas separadas -- no preservan el orden real del documento (oculto tras `HIDDEN_FROM_UI` hoy). |
-| B5 | Convertidor | `PptToTextUseCase.kt:63-75` | No tiene el workaround de stream SAF que sí tiene `PptToPdfUseCase` para el mismo bug ya documentado (oculto tras `HIDDEN_FROM_UI` hoy). |
-| B6 | Convertidor | `ConvertImageToPdfUseCase.kt:72-150` | `PdfDocument.close()` fuera de `.use{}` -- fuga si falla la escritura final. |
-| B7 | Convertidor | `DailyLimitManager.kt:79` | `SimpleDateFormat` compartido sin sincronización entre Convertidor/Herramientas PDF (no thread-safe). |
-| B8 | Convertidor | `ConverterViewModel.kt:34,36,91-92,108-129` | `onCategorySelected()` y campos asociados son código muerto -- 3 mapeos independientes `ConversionType`→categoría sin una sola fuente de verdad. |
-| B9 | Escáner/QR | `ScanImageEditor.kt:104-111` | Cada ajuste de brillo/color escribe un archivo nuevo en `cacheDir/scanner_edits/` sin borrar el anterior; fuera del alcance de "Limpiar caché". |
-| B10 | Escáner/QR | `DocuSmartNavGraph.kt:648-649`, `ScanResultScreen.kt:1397-1407` | Rama `isPdf=true` inalcanzable hoy (ML Kit ya no devuelve PDF) con un bug latente si se reactivara. |
-| B11 | Escáner/QR | `QrScreen.kt:1333` | Prefijo `https://` para URL sensible a mayúsculas (`HTTP://` no matchea). |
-| B12 | Visor | `ViewerScreen.kt:1946` (`PdfPasswordDialog`) | Contraseña de PDF en `rememberSaveable` -- puede persistir en el Bundle de la Activity. |
-| B13 | Visor | 4x `*ViewerContent` (Word/Excel/PPT/Texto) | Duplicación de patrón `LaunchedEffect`+carga; ya causó inconsistencia real (`PptViewerContent` sin `hasError`). |
-| B14 | Ajustes/Premium | `SettingsScreen.kt:243,962` | Total de Almacenamiento y `StorageRow` con `"KB"` hardcodeado sin `stringResource`. |
-| B15 | Ajustes/Premium | `SettingsScreen.kt:995-1006` (`shareApp`) | Texto de "Compartir app" hardcodeado en español, sin pasar por i18n. |
-| B16 | Ajustes/Premium | `SettingsScreen.kt:381,1018-1029` (`sendSupportEmail`) | Solo distingue es/no-es (no los 12 idiomas); `"App: 1.0.0"` hardcodeado en vez de `BuildConfig.VERSION_NAME`. |
-| B17 | Ajustes/Premium | `NavRoutes.kt:77`, `DocuSmartNavGraph.kt:45,56` | `NavRoutes.Qr` es ruta muerta; import duplicado de `PdfPasswordScreen`. |
-| B18 | Estudio/Agenda | `AgendaCalendarView.kt:73-76,190-198`, `AgendaViewModel.kt:87-93` | Cambiar de mes no limpia `selectedDate` -- el detalle del día sigue mostrando eventos de una fecha invisible del mes anterior. |
-| B19 | Estudio/Agenda | `StudyScreen.kt:430-443,724-799` | Callbacks de `TextToSpeech` mutan `State` de Compose sin garantía de hilo principal (depende del motor TTS del fabricante). |
-| B20 | Estudio/Agenda | `StudyScreen.kt:1366-1376` vs. `AgendaScreen.kt:114-115` | Notas no usa `ReloadOnScreenResume` para refrescar `POST_NOTIFICATIONS` al volver de Ajustes del sistema (Agenda sí lo hace para alarma exacta). |
-| B21 | Estudio/Agenda | `NoteLinkDocumentDialog.kt` vs. `AgendaLinkDocumentDialog.kt` | Duplicación casi textual, deuda introducida hoy en vez de un componente genérico. |
-| B22 | Estudio/Agenda | `StudyScreen.kt:2242-2246` | No existe edición de una nota ya guardada (ni título/texto/imágenes/recordatorio) -- asimetría frente a Agenda, que sí permite editar un evento. |
-| B23 | Estudio/Agenda | `AgendaCalendarView.kt:208-254` (`CalendarDayCell`) | Celda de día sin `contentDescription`/semántica de accesibilidad. |
+Corregidos 2026-09-17: 13 de 23. Los 10 restantes quedan ⚠️ evaluados y no
+corregidos a propósito -- son refactors/decisiones de alcance mayor
+(reescribir un extractor completo, tocar una carrera de callbacks de TTS ya
+delicada, agregar una función nueva de "editar nota") donde el riesgo de
+regresión supera el beneficio de un hallazgo Baja, o directamente código
+inalcanzable hoy que no se puede verificar sin reactivarlo antes.
+
+### B1 — Saneo de nombre ad hoc en vez de `sanitizeOutputFileName()`
+**Estado:** ✅ Corregido -- `PdfPasswordUseCase.protect()`/`removePassword()`
+usan ahora la función centralizada (mismo patrón que ~27 sitios más).
+
+### B2 — `contentDescription = null` en íconos de menú/contraseña
+**Estado:** ✅ Corregido -- ícono "⋮" de `SecurityScreen.kt` reutiliza
+`viewer_more_options`; mostrar/ocultar contraseña de `PdfPasswordScreen.kt`
+(2 sitios) usa nuevos `password_show`/`password_hide` (12 idiomas),
+invertidos correctamente según el ícono mostrado.
+
+### B3 — Campo `rangeTooSmall` muerto en `SplitPdfUseCase`
+**Estado:** ✅ Corregido -- eliminado el campo, su string
+(`pdf_split_range_too_small`, 12 idiomas) y el call site en
+`PdfToolsScreen.kt`. Confirmado con el propio código: el bug que motivó
+este campo (rechazar extraer 1 sola página) ya se corrigió el 2026-09-08 y
+dejó el campo sin ningún lector.
+
+### B4/B5 — Word/PPT: orden de párrafos+tablas / falta workaround SAF
+**Estado:** ⚠️ Evaluado, no corregido -- ambas funciones están ocultas tras
+`HIDDEN_FROM_UI` (no hay usuario real expuesto hoy); una corrección real
+implica reescribir el extractor Word con recorrido por `bodyElements` en
+orden real de documento, un refactor de alcance mayor sin beneficio visible
+para el hallazgo Baja que representa hoy.
+
+### B6 — `PdfDocument.close()` fuera de `.use{}` en `ConvertImageToPdfUseCase`
+**Estado:** ✅ Corregido -- todo el cuerpo relevante (incluidos los
+`return@withContext` de error) queda dentro de un `try/finally` con
+`pdfDocument.close()` único.
+
+### B7 — `SimpleDateFormat` compartido sin sincronización
+**Estado:** ✅ Corregido -- `DailyLimitManager.checkAndResetIfNewDay()` crea
+una instancia local por llamada en vez de un campo de clase compartido
+(mismo patrón ya usado en el resto de la app para timestamps).
+
+### B8 — Código muerto: `onCategorySelected`/`getCategoryLabel`
+**Estado:** ✅ Corregido -- eliminados `ConverterViewModel.onCategorySelected()`,
+`ConverterUiState.selectedCategory`/`filteredTypes` y
+`ConversionType.getCategoryLabel()` (duplicado byte a byte de
+`ConverterScreen.getCategoryForUi()`, que es el mapeo real que usa la UI).
+Confirmado con una búsqueda amplia en todo el proyecto que no quedan
+referencias.
+
+### B9 — `scanner_edits/` acumula archivos sin borrar los anteriores
+**Estado:** ⚠️ Evaluado, no corregido -- una limpieza correcta exige
+rastrear, por página, qué archivo de `cacheDir` reemplaza a cuál (el estado
+de edición por página vive en `ScanResultScreen.kt`, no en
+`ScanImageEditor`) -- borrar "todo lo demás" en el directorio arriesgaba
+borrar el archivo de OTRA página todavía en uso. `cacheDir` además es
+reclamable por el propio Android bajo presión de almacenamiento, así que no
+es una fuga real de datos del usuario, solo una oportunidad de limpieza
+proactiva perdida.
+
+### B10 — Rama `isPdf=true` inalcanzable con bug latente
+**Estado:** ⚠️ Evaluado, no corregido -- confirmado el bug real
+(`onFinalized(File)` nunca se invoca en el camino de éxito de esta rama
+porque `DownloadsSaver.saveUri()` no produce un `File` local, a diferencia
+del otro camino), pero ML Kit ya no devuelve resultados PDF hoy -- no hay
+forma de verificar en vivo una corrección de este código, y una corrección
+mal probada podría introducir un bug nuevo en código que nadie ejerce.
+Documentado acá para quien reactive este camino en el futuro.
+
+### B11 — Prefijo `https://` sensible a mayúsculas
+**Estado:** ✅ Corregido -- `QrScreen.kt` usa
+`startsWith("http", ignoreCase = true)`.
+
+### B12 — Contraseña de PDF en `rememberSaveable`
+**Estado:** ⚠️ Evaluado, no corregido -- `rememberSaveable` en
+`PdfPasswordDialog` es un fix deliberado de la revisión general 2026-09-16
+para un bug real (la contraseña se perdía al rotar el dispositivo, `MainActivity`
+no declara `configChanges`). Revertir a `remember` reintroduciría ese bug;
+una solución que evite ambos problemas (estado en un ViewModel scopeado en
+vez del Bundle de Activity) es un cambio de arquitectura mayor no
+justificado para este hallazgo Baja.
+
+### B13 — Duplicación de `*ViewerContent` (Word/Excel/PPT/Texto)
+**Estado:** ⚠️ Evaluado, no corregido (extracción completa) / ✅ Corregido
+(la inconsistencia concreta) -- unificar las 4 pantallas en un genérico es
+un refactor de alcance mayor sobre el área más compleja de la app. Se
+corrigió la única inconsistencia real y acotada que el hallazgo señalaba:
+`PptViewerContent` ahora tiene su propio `hasError`, igual que
+Word/Excel/Texto.
+
+### B14 — "KB" hardcodeado en Almacenamiento
+**Estado:** ✅ Corregido -- `StorageRow` y el Total del diálogo de
+Almacenamiento usan `stringResource(R.string.file_size_kb, ...)`.
+Verificado en vivo en un lote anterior que ese mismo patrón (M2) muestra
+correctamente decimales/separadores por idioma.
+
+### B15 — `shareApp()` hardcodeado en español
+**Estado:** ✅ Corregido -- mensaje y título del chooser resueltos vía
+`stringResource` (`settings_share_app_message`, 12 idiomas; el título
+reutiliza `settings_share_app`).
+
+### B16 — `sendSupportEmail()` solo es/no-es + versión hardcodeada
+**Estado:** ✅ Corregido -- asunto/cuerpo del email ahora en los 12 idiomas
+(`settings_support_email_subject`/`_body`), y `"App: 1.0.0"` reemplazado por
+`BuildConfig.VERSION_NAME` (queda correcto en cada release sin editar a
+mano).
+
+### B17 — Ruta muerta `NavRoutes.Qr` + import duplicado
+**Estado:** ✅ Corregido -- ambos eliminados, sin referencias huérfanas.
+
+### B18 — Cambiar de mes no actualiza `selectedDate`
+**Estado:** ✅ Corregido -- `AgendaViewModel.goToPreviousMonth()`/
+`goToNextMonth()` ahora conservan el mismo día-del-mes si existe en el mes
+nuevo, recortado al último día si no (`YearMonth.lengthOfMonth()`). 3 tests
+nuevos en `AgendaViewModelTest.kt` (archivo creado, la clase no tenía
+cobertura previa). **Verificado en vivo** en el Motorola Edge 30 Neo,
+incluyendo el caso de recorte exacto: seleccioné el 30 de septiembre,
+avancé a octubre (31 días, se conserva "30") y seguí avanzando hasta
+febrero 2027 (28 días) -- quedó correctamente recortado a "28", con el
+detalle de abajo sincronizado en cada paso ("Domingo 28 de febrero").
+
+### B19 — Callbacks de TextToSpeech mutan State sin garantía de hilo
+**Estado:** ✅ Corregido (parcial, acotado a lo verificable) / ⚠️ Evaluado
+el resto -- `previewVoice()` (autoescucha de una voz en Ajustes de
+lectura) ahora despacha sus callbacks `onDone`/`onError` a
+`Handler(Looper.getMainLooper())` antes de volver a tocar `tts.voice`. El
+handler mucho más grande de "Leer todo" (múltiples `tts.speak()` en bucle,
+guardado de progreso, lógica de extracción incremental ya afinada en
+varias rondas previas) se dejó sin tocar -- envolverlo en el mismo patrón
+arriesgaba cambiar el orden de ejecución de una máquina de estados ya
+delicada, para un hallazgo de robustez teórica (el snapshot system de
+Compose ya soporta escrituras de estado desde cualquier hilo; el riesgo
+real es la reentrada al motor TTS, no perceptible sin un motor OEM
+específico que falle).
+
+### B20 — Notas no refresca `POST_NOTIFICATIONS` al volver de Ajustes
+**Estado:** ✅ Corregido -- `StudyScreen.kt` agrega `ReloadOnScreenResume`
+para releer el permiso real al volver a la pantalla (mismo patrón ya usado
+en `AgendaScreen.kt` para `SCHEDULE_EXACT_ALARM`).
+
+### B21 — Duplicación `NoteLinkDocumentDialog`/`AgendaLinkDocumentDialog`
+**Estado:** ✅ Corregido -- eran duplicados byte a byte salvo 3 strings.
+Extraído `core/ui/components/LinkDocumentDialog.kt` parametrizado por esos
+3 textos; ambos archivos originales quedan como wrappers delgados con la
+misma firma pública de antes (ningún call site cambió).
+
+### B22 — No existe edición de una nota ya guardada
+**Estado:** ⚠️ Evaluado, no corregido -- es una funcionalidad nueva (no un
+bug), fuera del alcance de una auditoría de corrección de bugs.
+
+### B23 — `CalendarDayCell` sin `contentDescription`
+**Estado:** ✅ Corregido -- cada celda expone ahora una descripción de
+accesibilidad con fecha completa + "hoy"/"con eventos" cuando corresponde
+(`agenda_calendar_day_today`/`_has_events`, 12 idiomas), en vez del número
+suelto.
 
 ---
 
@@ -398,7 +527,14 @@ duplicar velocidad ni quedar en estado inconsistente.
    M2/M11/M13 (M1 no verificable sin el PIN real; M6/M7/M3 requieren forzar
    condiciones de fallo no prácticas en un dispositivo real; M8/M9/M10 no
    verificables en vivo por falta de un archivo Excel/PPT de prueba --
-   cubiertos por gauntlet + revisión de código). Pendiente de aprobación
-   para fusionar.
-3. Evaluar los 23 de **Prioridad Baja/i18n** -- corregir los de esfuerzo bajo, documentar como "evaluado, no corregido" los que requieran una decisión de alcance mayor (ej. B4/B5 en tipos ocultos, B22 edición de nota).
+   cubiertos por gauntlet + revisión de código). Fusionado (commit `cca7aa8`).
+3. ✅ Evaluar los 23 de **Prioridad Baja/i18n** -- hecho 2026-09-17: 13
+   corregidos (B1, B2, B3, B6, B7, B8, B11, B14, B15, B16, B17, B18, B20,
+   B21, B23 -- ver el detalle de cada uno arriba, incluye 1 fix acotado
+   dentro de B13 y de B19), 10 documentados "⚠️ Evaluado, no corregido" por
+   requerir una decisión de alcance mayor o ser código inalcanzable hoy (B4,
+   B5, B9, B10, B12, el resto de B13, el resto de B19, B22). Gauntlet
+   completo + revisión adversarial (sin hallazgos nuevos) + verificación en
+   vivo de B18 (el fix de mayor riesgo del lote, incluyendo el caso de
+   recorte de día exacto). Pendiente de aprobación para fusionar.
 4. Sumar tests de regresión para los huecos de cobertura que hubieran detectado cada hallazgo Alta/Media, como parte de su propio fix (no como tarea aparte).

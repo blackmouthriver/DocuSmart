@@ -53,7 +53,6 @@ import java.io.File
 import com.docsmart.features.library.presentation.TrashScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
 import com.docsmart.features.security.presentation.SecurityMenuScreen
-import com.docsmart.features.security.presentation.PdfPasswordScreen
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import timber.log.Timber
 

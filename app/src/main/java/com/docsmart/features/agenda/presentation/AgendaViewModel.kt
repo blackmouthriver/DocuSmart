@@ -84,12 +84,24 @@ class AgendaViewModel @Inject constructor(
         _viewMode.value = mode
     }
 
-    fun goToPreviousMonth() {
-        _calendarSelection.update { it.copy(month = it.month.minusMonths(1)) }
-    }
+    // Hallazgo real de la auditoría general 2026-09-17 (B18): antes solo se
+    // cambiaba `month`, dejando `selectedDate` intacto -- el detalle del día
+    // seguía mostrando los eventos de una fecha que ya no es visible en la
+    // grilla del mes nuevo (ningún día quedaba resaltado como seleccionado,
+    // pero el detalle de abajo no reflejaba eso). Se conserva el mismo
+    // día-del-mes si existe en el mes nuevo (mismo criterio que la mayoría
+    // de apps de calendario), recortado al último día si el mes nuevo tiene
+    // menos días (ej. 31 de enero -> febrero).
+    fun goToPreviousMonth() = navigateMonth { it.minusMonths(1) }
 
-    fun goToNextMonth() {
-        _calendarSelection.update { it.copy(month = it.month.plusMonths(1)) }
+    fun goToNextMonth() = navigateMonth { it.plusMonths(1) }
+
+    private fun navigateMonth(step: (YearMonth) -> YearMonth) {
+        _calendarSelection.update { current ->
+            val newMonth = step(current.month)
+            val newDay = current.selectedDate.dayOfMonth.coerceAtMost(newMonth.lengthOfMonth())
+            current.copy(month = newMonth, selectedDate = newMonth.atDay(newDay))
+        }
     }
 
     fun selectDate(date: LocalDate) {

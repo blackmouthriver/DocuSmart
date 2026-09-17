@@ -14,7 +14,6 @@ import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.converter.domain.model.BatchConversionItem
 import com.docsmart.features.converter.domain.model.ConversionResult
 import com.docsmart.features.converter.domain.model.ConversionType
-import com.docsmart.features.converter.domain.model.getCategoryLabel
 import com.docsmart.features.converter.domain.usecase.*
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,9 +30,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 data class ConverterUiState(
-    val selectedCategory  : String?          = null,
     val selectedType      : ConversionType?  = null,
-    val filteredTypes     : List<ConversionType> = emptyList(),
     val selectedFiles     : List<Uri>        = emptyList(),
     val selectedImages    : List<Uri>        = emptyList(),
     val fileName          : String           = "",
@@ -103,29 +100,6 @@ class ConverterViewModel @Inject constructor(
             conversionCount = dailyLimitManager.getConversionCount(),
             conversionLimit = dailyLimitManager.getConversionLimit()
         )}
-    }
-
-    fun onCategorySelected(category: String) {
-        val types = ConversionType.entries.filter { type ->
-            val catLabel = type.getCategoryLabel()
-            catLabel == category || when (catLabel) {
-                "Imagen"      -> category == "Image" || category == "Imagen"
-                "PDF"         -> category == "PDF"
-                "Word"        -> category == "Word"
-                "Excel"       -> category == "Excel"
-                "PowerPoint"  -> category == "PowerPoint"
-                else          -> false
-            }
-        }
-        _uiState.update { state ->
-            val isDeselecting = state.selectedCategory == category
-            state.copy(
-                selectedCategory = if (isDeselecting) null else category,
-                filteredTypes    = if (isDeselecting) emptyList() else types,
-                selectedType     = null,
-                selectedFiles    = emptyList()
-            )
-        }
     }
 
     fun onTypeSelected(type: ConversionType) {

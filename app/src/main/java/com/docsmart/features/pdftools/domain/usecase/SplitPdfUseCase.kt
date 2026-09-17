@@ -19,7 +19,6 @@ import javax.inject.Inject
 data class SplitPdfMessages(
     val readError    : String,
     val noPages      : String,
-    val rangeTooSmall: String, // formato: %1$d total de páginas
     val generateError: String,
     val success       : String, // formato: %1$d páginas, %2$d KB
     val genericError  : String  // formato: %1$s mensaje de excepción

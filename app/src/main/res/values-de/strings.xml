@@ -116,11 +116,14 @@
     <string name="settings_ads_privacy_options_subtitle">Ändern Sie Ihre Datenschutzeinstellungen für Werbung</string>
     <string name="settings_share_app">DocuSmart teilen</string>
     <string name="settings_share_app_subtitle">Empfiehl die App deinen Kontakten</string>
+    <string name="settings_share_app_message">Ich empfehle dir DocuSmart! Der beste Dokumentenbetrachter und -konverter.</string>
     <string name="settings_rate">Im Play Store bewerten</string>
     <string name="settings_rate_subtitle">Gefällt dir DocuSmart? Hinterlasse uns eine Bewertung!</string>
     <string name="settings_section_help_community">Hilfe und Community</string>
     <string name="settings_help">Hilfe</string>
     <string name="settings_help_subtitle">Häufig gestellte Fragen</string>
+    <string name="settings_support_email_subject">DocuSmart Support</string>
+    <string name="settings_support_email_body">Hallo, ich brauche Hilfe mit DocuSmart.\n\nGerät: %1$s\nAndroid: %2$s\nApp: %3$s\n\nProblembeschreibung:\n</string>
     <string name="settings_section_system">System</string>
     <string name="settings_reset">Einstellungen zurücksetzen</string>
     <string name="settings_reset_subtitle">Auf Standardwerte zurücksetzen</string>
@@ -365,7 +368,6 @@
     <string name="pdf_split_progress">PDF wird geteilt…</string>
     <string name="pdf_split_read_error">Das PDF konnte nicht gelesen werden. Stelle sicher, dass es eine gültige Datei ist.</string>
     <string name="pdf_split_no_pages">Das PDF hat keine Seiten.</string>
-    <string name="pdf_split_range_too_small">Der Bereich muss mindestens 2 Seiten umfassen. Das PDF hat %1$d Seiten.</string>
     <string name="pdf_split_generate_error">Fehler beim Erstellen des geteilten PDFs.</string>
     <string name="pdf_split_success">PDF geteilt: %1$d Seite(n) extrahiert · %2$d KB</string>
     <string name="pdf_split_error">Fehler beim Teilen: %1$s</string>
@@ -707,6 +709,8 @@
     <string name="security_file_protected_success">Datei erfolgreich geschützt</string>
     <string name="security_file_protect_error">Datei konnte nicht geschützt werden</string>
     <string name="security_restore_error">Datei konnte nicht wiederhergestellt werden</string>
+    <string name="password_show">Passwort anzeigen</string>
+    <string name="password_hide">Passwort ausblenden</string>
     <string name="security_save_downloads_success">In Downloads gespeichert: %1$s</string>
     <string name="security_save_downloads_error">Konnte nicht in Downloads gespeichert werden</string>
     <string name="pdf_pw_read_error">Datei konnte nicht gelesen werden</string>
@@ -1101,6 +1105,8 @@
     <string name="agenda_calendar_no_events_day">Keine Termine an diesem Tag</string>
     <string name="agenda_calendar_previous_month">Vorheriger Monat</string>
     <string name="agenda_calendar_next_month">Nächster Monat</string>
+    <string name="agenda_calendar_day_today">, heute</string>
+    <string name="agenda_calendar_day_has_events">, mit Terminen</string>
     <string name="agenda_exact_alarm_banner_title">Aktiviere exakte Alarme</string>
     <string name="agenda_exact_alarm_banner_body">Ohne diese Berechtigung können deine Erinnerungen ein paar Minuten zu spät ausgelöst werden. Aktiviere sie in den Systemeinstellungen, damit sie pünktlich erscheinen.</string>
     <string name="agenda_exact_alarm_banner_action">Aktivieren</string>

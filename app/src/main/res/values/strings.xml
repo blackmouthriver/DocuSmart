@@ -123,6 +123,7 @@
     <string name="settings_ads_privacy_options_subtitle">Cambia tus preferencias de privacidad para anuncios</string>
     <string name="settings_share_app">Compartir DocuSmart</string>
     <string name="settings_share_app_subtitle">Recomienda la app a tus contactos</string>
+    <string name="settings_share_app_message">¡Te recomiendo DocuSmart! El mejor visor y convertidor de documentos.</string>
     <string name="settings_rate">Valorar en Play Store</string>
     <string name="settings_rate_subtitle">¿Te gusta DocuSmart? ¡Déjanos una reseña!</string>
     <!-- Ayuda y comunidad reemplaza a "Soporte", ahora también incluye
@@ -131,6 +132,8 @@
     <string name="settings_section_help_community">Ayuda y comunidad</string>
     <string name="settings_help">Ayuda</string>
     <string name="settings_help_subtitle">Preguntas frecuentes</string>
+    <string name="settings_support_email_subject">Soporte DocuSmart</string>
+    <string name="settings_support_email_body">Hola, necesito ayuda con DocuSmart.\n\nDispositivo: %1$s\nAndroid: %2$s\nApp: %3$s\n\nDescripción del problema:\n</string>
     <string name="settings_section_system">Sistema</string>
     <string name="settings_reset">Restablecer configuración</string>
     <string name="settings_reset_subtitle">Volver a los valores predeterminados</string>
@@ -393,7 +396,6 @@
     <string name="pdf_split_progress">Dividiendo PDF…</string>
     <string name="pdf_split_read_error">No se pudo leer el PDF. Verifica que sea un archivo válido.</string>
     <string name="pdf_split_no_pages">El PDF no tiene páginas.</string>
-    <string name="pdf_split_range_too_small">El rango debe incluir al menos 2 páginas. El PDF tiene %1$d páginas.</string>
     <string name="pdf_split_generate_error">Error al generar el PDF dividido.</string>
     <string name="pdf_split_success">PDF dividido: %1$d página(s) extraídas · %2$d KB</string>
     <string name="pdf_split_error">Error al dividir: %1$s</string>
@@ -745,6 +747,8 @@
     <string name="security_file_protected_success">Archivo protegido correctamente</string>
     <string name="security_file_protect_error">No se pudo proteger el archivo</string>
     <string name="security_restore_error">No se pudo restaurar el archivo</string>
+    <string name="password_show">Mostrar contraseña</string>
+    <string name="password_hide">Ocultar contraseña</string>
     <string name="security_save_downloads_success">Guardado en Descargas: %1$s</string>
     <string name="security_save_downloads_error">No se pudo guardar en Descargas</string>
     <string name="pdf_pw_read_error">No se pudo leer el archivo</string>
@@ -1143,6 +1147,8 @@
     <string name="agenda_calendar_no_events_day">No hay eventos este día</string>
     <string name="agenda_calendar_previous_month">Mes anterior</string>
     <string name="agenda_calendar_next_month">Mes siguiente</string>
+    <string name="agenda_calendar_day_today">, hoy</string>
+    <string name="agenda_calendar_day_has_events">, con eventos</string>
     <string name="agenda_exact_alarm_banner_title">Activa las alarmas exactas</string>
     <string name="agenda_exact_alarm_banner_body">Sin este permiso, tus recordatorios pueden sonar unos minutos tarde. Actívalo en Ajustes del sistema para que suenen justo a tiempo.</string>
     <string name="agenda_exact_alarm_banner_action">Activar</string>

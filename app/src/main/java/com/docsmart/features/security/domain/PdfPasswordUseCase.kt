@@ -8,6 +8,7 @@ import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.kernel.pdf.ReaderProperties
 import com.itextpdf.kernel.pdf.WriterProperties
+import com.docsmart.core.util.sanitizeOutputFileName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -56,7 +57,11 @@ class PdfPasswordUseCase @Inject constructor() {
 
             // ── Paso 2: preparar output ───────────────────────────────────────
             val outputDir  = File(context.filesDir, "pdftools").also { it.mkdirs() }
-            val safeName   = fileName.replace(" ", "_").replace("/", "_")
+            // Hallazgo real de la auditoría general 2026-09-17 (B1): saneo ad
+            // hoc (solo espacio y "/") en vez de sanitizeOutputFileName(), que
+            // ya centraliza el fix de path traversal de la revisión de
+            // seguridad 2026-09-16 (ej. no cubría "\" ni "..").
+            val safeName   = sanitizeOutputFileName(fileName)
             val outputFile = File(outputDir, "${safeName}_protegido.pdf")
 
             // Eliminar si existe previamente
@@ -141,7 +146,9 @@ class PdfPasswordUseCase @Inject constructor() {
 
             // ── Paso 2: preparar output ───────────────────────────────────────
             val outputDir  = File(context.filesDir, "pdftools").also { it.mkdirs() }
-            val safeName   = fileName.replace(" ", "_").replace("/", "_")
+            // Hallazgo real de la auditoría general 2026-09-17 (B1): mismo
+            // saneo ad hoc que protect(), ver el comentario ahí.
+            val safeName   = sanitizeOutputFileName(fileName)
             val outputFile = File(outputDir, "${safeName}_sin_contrasena.pdf")
 
             if (outputFile.exists()) outputFile.delete()

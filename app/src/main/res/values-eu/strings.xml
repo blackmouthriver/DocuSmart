@@ -123,6 +123,7 @@
     <string name="settings_ads_privacy_options_subtitle">Aldatu iragarkietarako pribatutasun-hobespenak</string>
     <string name="settings_share_app">Partekatu DocuSmart</string>
     <string name="settings_share_app_subtitle">Gomendatu aplikazioa zure kontaktuei</string>
+    <string name="settings_share_app_message">DocuSmart gomendatzen dizut! Dokumentuak ikusteko eta bihurtzeko aplikaziorik onena.</string>
     <string name="settings_rate">Baloratu Play Storen</string>
     <string name="settings_rate_subtitle">DocuSmart gustatzen zaizu? Utzi iritzi bat!</string>
     <!-- Ayuda y comunidad reemplaza a "Soporte", ahora también incluye
@@ -131,6 +132,8 @@
     <string name="settings_section_help_community">Laguntza eta komunitatea</string>
     <string name="settings_help">Laguntza</string>
     <string name="settings_help_subtitle">Galdera maiztuak</string>
+    <string name="settings_support_email_subject">DocuSmart Laguntza</string>
+    <string name="settings_support_email_body">Kaixo, DocuSmart-ekin laguntza behar dut.\n\nGailua: %1$s\nAndroid: %2$s\nApp: %3$s\n\nArazoaren deskribapena:\n</string>
     <string name="settings_section_system">Sistema</string>
     <string name="settings_reset">Berrezarri konfigurazioa</string>
     <string name="settings_reset_subtitle">Itzuli balio lehenetsietara</string>
@@ -375,7 +378,6 @@
     <string name="pdf_split_progress">PDFa zatitzen…</string>
     <string name="pdf_split_read_error">Ezin izan da PDFa irakurri. Egiaztatu fitxategi baliozkoa dela.</string>
     <string name="pdf_split_no_pages">PDFak ez du orrialderik.</string>
-    <string name="pdf_split_range_too_small">Tarteak gutxienez 2 orrialde izan behar ditu. PDFak %1$d orrialde ditu.</string>
     <string name="pdf_split_generate_error">Errorea PDF zatitua sortzean.</string>
     <string name="pdf_split_success">PDFa zatituta: %1$d orrialde atera dira · %2$d KB</string>
     <string name="pdf_split_error">Errorea zatitzean: %1$s</string>
@@ -727,6 +729,8 @@
     <string name="security_file_protected_success">Fitxategia ongi babestu da</string>
     <string name="security_file_protect_error">Ezin izan da fitxategia babestu</string>
     <string name="security_restore_error">Ezin izan da fitxategia berrezarri</string>
+    <string name="password_show">Erakutsi pasahitza</string>
+    <string name="password_hide">Ezkutatu pasahitza</string>
     <string name="security_save_downloads_success">Deskargak karpetan gordeta: %1$s</string>
     <string name="security_save_downloads_error">Ezin izan da Deskargak karpetan gorde</string>
     <string name="pdf_pw_read_error">Ezin izan da fitxategia irakurri</string>
@@ -1123,6 +1127,8 @@
     <string name="agenda_calendar_no_events_day">Egun honetan ez dago ekitaldirik</string>
     <string name="agenda_calendar_previous_month">Aurreko hilabetea</string>
     <string name="agenda_calendar_next_month">Hurrengo hilabetea</string>
+    <string name="agenda_calendar_day_today">, gaur</string>
+    <string name="agenda_calendar_day_has_events">, ekitaldiekin</string>
     <string name="agenda_exact_alarm_banner_title">Aktibatu alarma zehatzak</string>
     <string name="agenda_exact_alarm_banner_body">Baimen hori gabe, zure gogorarazpenak minutu batzuk berandu jo dezakete. Aktibatu Sistemaren Ezarpenetan garaiz jo dezaten.</string>
     <string name="agenda_exact_alarm_banner_action">Aktibatu</string>

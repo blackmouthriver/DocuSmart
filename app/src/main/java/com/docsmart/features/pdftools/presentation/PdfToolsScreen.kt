@@ -100,7 +100,6 @@ fun PdfToolsScreen(
     val mergeGenericError    = stringResource(R.string.pdf_merge_error)
     val splitReadError       = stringResource(R.string.pdf_split_read_error)
     val splitNoPages         = stringResource(R.string.pdf_split_no_pages)
-    val splitRangeTooSmall   = stringResource(R.string.pdf_split_range_too_small)
     val splitGenerateError   = stringResource(R.string.pdf_split_generate_error)
     val splitSuccess         = stringResource(R.string.pdf_split_success)
     val splitGenericError    = stringResource(R.string.pdf_split_error)
@@ -202,7 +201,6 @@ fun PdfToolsScreen(
             split = SplitPdfMessages(
                 readError     = splitReadError,
                 noPages       = splitNoPages,
-                rangeTooSmall = splitRangeTooSmall,
                 generateError = splitGenerateError,
                 success       = splitSuccess,
                 genericError  = splitGenericError

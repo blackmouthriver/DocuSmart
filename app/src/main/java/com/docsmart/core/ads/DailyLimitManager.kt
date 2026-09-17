@@ -83,11 +83,17 @@ class DailyLimitManager @Inject constructor(
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
     // ── Verificar y resetear si cambió el día ─────────────────────────────────
     private fun checkAndResetIfNewDay() {
-        val today     = dateFormat.format(Date())
+        // Hallazgo real de la auditoría general 2026-09-17 (B7): antes era
+        // una instancia compartida a nivel de clase -- `SimpleDateFormat` no
+        // es thread-safe (estado mutable interno), y este Singleton se
+        // inyecta en varios ViewModels que pueden revisar el límite diario
+        // en corrutinas concurrentes (Escáner/Convertidor/Herramientas PDF a
+        // la vez). Una instancia nueva por llamada es igual de barata que el
+        // resto de timestamps de la app (ver createOutputFile() en cada
+        // UseCase) y elimina el problema de raíz.
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val savedDate = prefs.getString(KEY_DATE, "")
         if (savedDate != today) {
             Timber.d("DailyLimitManager: nuevo día — reseteando contadores")

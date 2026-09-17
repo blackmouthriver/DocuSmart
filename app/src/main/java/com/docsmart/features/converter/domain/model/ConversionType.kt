@@ -146,27 +146,3 @@ val HIDDEN_FROM_UI: Set<ConversionType> = setOf(
     ConversionType.PPT_TO_PDF,
     ConversionType.PPT_TO_TXT
 )
-
-fun ConversionType.getCategoryLabel(): String = when (this) {
-    ConversionType.IMAGE_TO_PDF,
-    ConversionType.IMAGE_TO_JPG,
-    ConversionType.IMAGE_TO_PNG,
-    ConversionType.IMAGE_TO_WEBP,
-    ConversionType.IMAGE_TO_BMP   -> "Imagen"
-
-    ConversionType.PDF_TO_IMAGE,
-    ConversionType.PDF_TO_TXT,
-    ConversionType.PDF_TO_WORD,
-    ConversionType.PDF_TO_HTML    -> "PDF"
-
-    ConversionType.WORD_TO_PDF,
-    ConversionType.WORD_TO_TXT,
-    ConversionType.WORD_TO_HTML   -> "Word"
-
-    ConversionType.EXCEL_TO_PDF,
-    ConversionType.EXCEL_TO_CSV,
-    ConversionType.EXCEL_TO_HTML  -> "Excel"
-
-    ConversionType.PPT_TO_PDF,
-    ConversionType.PPT_TO_TXT     -> "PowerPoint"
-}

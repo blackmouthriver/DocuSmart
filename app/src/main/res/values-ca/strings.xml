@@ -124,6 +124,7 @@
     <string name="settings_ads_privacy_options_subtitle">Canvia les teves preferències de privadesa per a anuncis</string>
     <string name="settings_share_app">Compartir DocuSmart</string>
     <string name="settings_share_app_subtitle">Recomana l\'aplicació als teus contactes</string>
+    <string name="settings_share_app_message">Et recomano DocuSmart! El millor visor i conversor de documents.</string>
     <string name="settings_rate">Valorar a Play Store</string>
     <string name="settings_rate_subtitle">T\'agrada DocuSmart? Deixa\'ns una ressenya!</string>
     <!-- Ayuda y comunidad reemplaza a "Soporte", ahora también incluye
@@ -132,6 +133,8 @@
     <string name="settings_section_help_community">Ajuda i comunitat</string>
     <string name="settings_help">Ajuda</string>
     <string name="settings_help_subtitle">Preguntes freqüents</string>
+    <string name="settings_support_email_subject">Suport DocuSmart</string>
+    <string name="settings_support_email_body">Hola, necessito ajuda amb DocuSmart.\n\nDispositiu: %1$s\nAndroid: %2$s\nApp: %3$s\n\nDescripció del problema:\n</string>
     <string name="settings_section_system">Sistema</string>
     <string name="settings_reset">Restablir configuració</string>
     <string name="settings_reset_subtitle">Tornar als valors predeterminats</string>
@@ -387,7 +390,6 @@
     <string name="pdf_split_progress">Dividint PDF…</string>
     <string name="pdf_split_read_error">No s\'ha pogut llegir el PDF. Comprova que sigui un arxiu vàlid.</string>
     <string name="pdf_split_no_pages">El PDF no té pàgines.</string>
-    <string name="pdf_split_range_too_small">El rang ha d\'incloure almenys 2 pàgines. El PDF té %1$d pàgines.</string>
     <string name="pdf_split_generate_error">Error en generar el PDF dividit.</string>
     <string name="pdf_split_success">PDF dividit: %1$d pàgina(es) extretes · %2$d KB</string>
     <string name="pdf_split_error">Error en dividir: %1$s</string>
@@ -739,6 +741,8 @@
     <string name="security_file_protected_success">Arxiu protegit correctament</string>
     <string name="security_file_protect_error">No s\'ha pogut protegir l\'arxiu</string>
     <string name="security_restore_error">No s\'ha pogut restaurar l\'arxiu</string>
+    <string name="password_show">Mostra la contrasenya</string>
+    <string name="password_hide">Amaga la contrasenya</string>
     <string name="security_save_downloads_success">Desat a Baixades: %1$s</string>
     <string name="security_save_downloads_error">No s\'ha pogut desar a Baixades</string>
     <string name="pdf_pw_read_error">No s\'ha pogut llegir l\'arxiu</string>
@@ -1135,6 +1139,8 @@
     <string name="agenda_calendar_no_events_day">No hi ha esdeveniments aquest dia</string>
     <string name="agenda_calendar_previous_month">Mes anterior</string>
     <string name="agenda_calendar_next_month">Mes següent</string>
+    <string name="agenda_calendar_day_today">, avui</string>
+    <string name="agenda_calendar_day_has_events">, amb esdeveniments</string>
     <string name="agenda_exact_alarm_banner_title">Activa les alarmes exactes</string>
     <string name="agenda_exact_alarm_banner_body">Sense aquest permís, els teus recordatoris poden sonar uns minuts tard. Activa\'l als Ajustos del sistema perquè sonin just a temps.</string>
     <string name="agenda_exact_alarm_banner_action">Activa</string>

@@ -35,7 +35,7 @@ class SplitPdfUseCaseTest {
 
     private val messages = SplitPdfMessages(
         readError = "readError", noPages = "noPages",
-        rangeTooSmall = "rangeTooSmall %1\$d", generateError = "generateError",
+        generateError = "generateError",
         success = "success %1\$d %2\$d", genericError = "genericError %1\$s"
     )
 

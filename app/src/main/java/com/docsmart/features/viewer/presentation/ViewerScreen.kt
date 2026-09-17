@@ -1712,6 +1712,11 @@ private fun PptViewerContent(
 
     var slides    by remember { mutableStateOf<List<PptSlideModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    // Hallazgo real de la auditoría general 2026-09-17 (B13): a diferencia
+    // de Word/Excel/Texto, esta pantalla no distinguía "PPT sin
+    // diapositivas de verdad" de "falló la lectura" -- ambos casos caían en
+    // slides.isEmpty() sin ningún hasError propio.
+    var hasError  by remember { mutableStateOf(false) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
@@ -1722,6 +1727,7 @@ private fun PptViewerContent(
                 } ?: emptyList()
             } catch (e: Exception) {
                 Timber.e(e, "Error leyendo PPT")
+                hasError = true
                 emptyList()
             } finally {
                 isLoading = false
@@ -1747,7 +1753,7 @@ private fun PptViewerContent(
                 modifier = Modifier.align(Alignment.Center),
                 color    = MaterialTheme.colorScheme.primary
             )
-            slides.isEmpty() -> Text(
+            hasError || slides.isEmpty() -> Text(
                 text      = stringResource(R.string.viewer_ppt_read_error),
                 modifier  = Modifier.align(Alignment.Center).padding(32.dp),
                 color     = MaterialTheme.colorScheme.onSurfaceVariant,

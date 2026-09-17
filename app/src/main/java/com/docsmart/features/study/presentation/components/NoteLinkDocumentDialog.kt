@@ -1,42 +1,21 @@
 package com.docsmart.features.study.presentation.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.InsertDriveFile
-import androidx.compose.material.icons.rounded.LinkOff
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ui.components.AppLibraryPickerViewModel
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.core.ui.components.LinkDocumentDialog
 
 // Backlog UX #50: elegir un documento YA indexado por la app (no "desde el
 // dispositivo" -- vincular una nota exige que el documento ya exista en
 // Biblioteca) -- reutiliza el mismo inventario que ya carga
 // `AppLibraryPickerViewModel` para el selector de Seguridad/Herramientas
 // PDF (item #15), sin la rama de "elegir del dispositivo" que ese diálogo
-// sí ofrece.
+// sí ofrece. Wrapper delgado sobre el componente compartido (B21,
+// auditoría general 2026-09-17) -- solo resuelve los 3 strings propios de
+// Notas.
 @Composable
 fun NoteLinkDocumentDialog(
     currentDocumentId: String?,
@@ -45,68 +24,14 @@ fun NoteLinkDocumentDialog(
     onUnlink         : () -> Unit,
     viewModel        : AppLibraryPickerViewModel = hiltViewModel()
 ) {
-    val documents by viewModel.documents.collectAsStateWithLifecycle()
-    val isLoading  by viewModel.isLoading.collectAsStateWithLifecycle()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape            = MaterialTheme.shapes.large,
-        title            = { Text(stringResource(R.string.note_link_document_title)) },
-        text = {
-            if (isLoading) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) { CircularProgressIndicator(modifier = Modifier.size(28.dp)) }
-            } else if (documents.isEmpty()) {
-                Text(
-                    text  = stringResource(R.string.note_link_document_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
-                    items(documents, key = { it.id }) { doc ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSelect(doc) }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment     = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.InsertDriveFile,
-                                contentDescription = null,
-                                tint = if (doc.id == currentDocumentId) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text     = doc.name,
-                                style    = MaterialTheme.typography.bodyMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.general_cancel))
-            }
-        },
-        dismissButton = {
-            if (currentDocumentId != null) {
-                TextButton(onClick = onUnlink) {
-                    Icon(Icons.Rounded.LinkOff, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(
-                        stringResource(R.string.note_unlink_document),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-        }
+    LinkDocumentDialog(
+        currentDocumentId = currentDocumentId,
+        title             = stringResource(R.string.note_link_document_title),
+        emptyMessage      = stringResource(R.string.note_link_document_empty),
+        unlinkLabel       = stringResource(R.string.note_unlink_document),
+        onDismiss         = onDismiss,
+        onSelect          = onSelect,
+        onUnlink          = onUnlink,
+        viewModel         = viewModel
     )
 }
