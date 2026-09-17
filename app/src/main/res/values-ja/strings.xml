@@ -1069,4 +1069,40 @@
     <string name="settings_unlink_downloads_title">フォルダの連携を解除しますか?</string>
     <string name="settings_unlink_downloads_body">ライブラリの「デバイス」タブでダウンロードのファイルが表示されなくなります。いつでも再度連携できます。</string>
     <string name="settings_unlink_downloads_confirm">連携を解除</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">予定表とカレンダー</string>
+    <string name="agenda_subtitle">予定とリマインダーを管理</string>
+    <string name="agenda_new_event">新しい予定</string>
+    <string name="agenda_empty_state">保存された予定はまだありません</string>
+    <string name="agenda_view_list">リスト</string>
+    <string name="agenda_view_calendar">カレンダー</string>
+    <string name="agenda_calendar_no_events_day">この日の予定はありません</string>
+    <string name="agenda_calendar_previous_month">前の月</string>
+    <string name="agenda_calendar_next_month">次の月</string>
+    <string name="agenda_exact_alarm_banner_title">正確なアラームを有効にする</string>
+    <string name="agenda_exact_alarm_banner_body">この権限がないと、リマインダーが数分遅れて鳴ることがあります。時間どおりに鳴るよう、システム設定で有効にしてください。</string>
+    <string name="agenda_exact_alarm_banner_action">有効にする</string>
+    <string name="agenda_status_overdue">期限切れ</string>
+    <string name="agenda_status_today">今日</string>
+    <string name="agenda_status_upcoming">今後</string>
+    <string name="agenda_document_linked">リンク済みのドキュメント</string>
+    <string name="agenda_document_not_linked">リンクされたドキュメントなし</string>
+    <string name="agenda_link_document_title">ドキュメントをリンク</string>
+    <string name="agenda_link_document_empty">ライブラリにまだドキュメントがありません</string>
+    <string name="agenda_unlink_document">リンクを解除</string>
+    <string name="agenda_editor_title_new">新しい予定</string>
+    <string name="agenda_editor_title_edit">予定を編集</string>
+    <string name="agenda_field_title">タイトル</string>
+    <string name="agenda_field_description">説明（任意）</string>
+    <string name="agenda_field_datetime">日時</string>
+    <string name="agenda_field_reminder">リマインダー</string>
+    <string name="agenda_reminder_none">リマインダーなし</string>
+    <string name="agenda_reminder_at_time">予定時刻に</string>
+    <string name="agenda_reminder_15_min">15分前</string>
+    <string name="agenda_reminder_1_hour">1時間前</string>
+    <string name="agenda_reminder_1_day">1日前</string>
+    <string name="agenda_reminder_notification_channel">予定表のリマインダー</string>
+    <string name="agenda_reminder_notification_fallback_title">リマインダー</string>
+    <string name="agenda_reminder_notification_text">スケジュールされた予定があります</string>
 </resources>

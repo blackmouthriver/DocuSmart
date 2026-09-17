@@ -1,5 +1,6 @@
 package com.docsmart.core.data
 
+import com.docsmart.core.data.db.AgendaEventDao
 import com.docsmart.core.data.db.AnnotationDao
 import com.docsmart.core.data.db.LastViewedPageDao
 import com.docsmart.core.data.db.NoteDao
@@ -10,9 +11,10 @@ import javax.inject.Singleton
 /**
  * Consolida el mantenimiento de las tablas "por documento" (favorito/alias,
  * anotaciones, marcadores de página, última página vista, notas vinculadas
- * de Modo Estudio) que deben migrar juntas cuando el id de un documento
- * cambia (renombrar, mover a/desde Carpeta Segura, restaurar) o limpiarse
- * juntas cuando un documento se borra de forma definitiva.
+ * de Modo Estudio, eventos de Agenda) que deben migrar juntas cuando el id
+ * de un documento cambia (renombrar, mover a/desde Carpeta Segura,
+ * restaurar) o limpiarse juntas cuando un documento se borra de forma
+ * definitiva.
  *
  * Extraída al agregar la 3ra y 4ta tabla de este tipo (backlog UX #47/#48,
  * marcadores de página + última página vista): antes de esto, el mismo
@@ -29,7 +31,8 @@ class DocumentIdentityMaintenance @Inject constructor(
     private val annotationDao: AnnotationDao,
     private val pageBookmarkDao: PageBookmarkDao,
     private val lastViewedPageDao: LastViewedPageDao,
-    private val noteDao: NoteDao
+    private val noteDao: NoteDao,
+    private val agendaEventDao: AgendaEventDao
 ) {
     suspend fun onIdChanged(oldId: String, newId: String) {
         favoritesRepository.migrateId(oldId, newId)
@@ -37,6 +40,7 @@ class DocumentIdentityMaintenance @Inject constructor(
         pageBookmarkDao.updateDocumentId(oldId, newId)
         lastViewedPageDao.updateDocumentId(oldId, newId)
         noteDao.updateDocumentId(oldId, newId)
+        agendaEventDao.updateDocumentId(oldId, newId)
     }
 
     suspend fun onPermanentlyDeleted(documentId: String) {
@@ -50,5 +54,8 @@ class DocumentIdentityMaintenance @Inject constructor(
         // se limpia el vínculo (documentId a null), el contenido escrito
         // queda intacto.
         noteDao.unlinkDocument(documentId)
+        // HU-65, AC6: mismo criterio que las notas -- borrar el documento
+        // vinculado desvincula el evento de Agenda, no lo borra.
+        agendaEventDao.unlinkDocument(documentId)
     }
 }

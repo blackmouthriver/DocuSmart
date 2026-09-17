@@ -48,6 +48,7 @@ import com.docsmart.features.settings.presentation.SettingsScreen
 import com.docsmart.features.splash.presentation.SplashDocuSmartScreen
 import com.docsmart.features.splash.presentation.SplashMouthBlackScreen
 import com.docsmart.features.study.presentation.StudyScreen
+import com.docsmart.features.agenda.presentation.AgendaScreen
 import java.io.File
 import com.docsmart.features.library.presentation.TrashScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
@@ -213,8 +214,24 @@ fun DocuSmartNavGraph(
             })
         ) { backStackEntry ->
             StudyScreen(
-                onBack     = { navController.popBackStack() },
-                initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
+                onBack       = { navController.popBackStack() },
+                initialTab   = backStackEntry.arguments?.getInt("tab") ?: 0,
+                onOpenAgenda = { navController.navigate(NavRoutes.Agenda.createRoute()) }
+            )
+        }
+
+        // ── Agenda (HU-65) ────────────────────────────────────────────────────
+        composable(
+            route = NavRoutes.Agenda.route,
+            arguments = listOf(navArgument("openEventId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            AgendaScreen(
+                onBack      = { navController.popBackStack() },
+                openEventId = backStackEntry.arguments?.getString("openEventId")
             )
         }
 

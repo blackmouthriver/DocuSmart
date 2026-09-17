@@ -1065,4 +1065,40 @@
     <string name="settings_unlink_downloads_title">Desvincular pasta?</string>
     <string name="settings_unlink_downloads_body">Você deixará de ver os arquivos de Downloads na aba Dispositivo da Biblioteca. Pode vincular novamente quando quiser.</string>
     <string name="settings_unlink_downloads_confirm">Desvincular</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">Agenda e calendário</string>
+    <string name="agenda_subtitle">Organize seus eventos e lembretes</string>
+    <string name="agenda_new_event">Novo evento</string>
+    <string name="agenda_empty_state">Você ainda não tem eventos salvos</string>
+    <string name="agenda_view_list">Lista</string>
+    <string name="agenda_view_calendar">Calendário</string>
+    <string name="agenda_calendar_no_events_day">Não há eventos neste dia</string>
+    <string name="agenda_calendar_previous_month">Mês anterior</string>
+    <string name="agenda_calendar_next_month">Próximo mês</string>
+    <string name="agenda_exact_alarm_banner_title">Ative os alarmes exatos</string>
+    <string name="agenda_exact_alarm_banner_body">Sem essa permissão, seus lembretes podem tocar alguns minutos atrasados. Ative-a nas Configurações do sistema para que toquem na hora certa.</string>
+    <string name="agenda_exact_alarm_banner_action">Ativar</string>
+    <string name="agenda_status_overdue">Atrasado</string>
+    <string name="agenda_status_today">Hoje</string>
+    <string name="agenda_status_upcoming">Próximo</string>
+    <string name="agenda_document_linked">Documento vinculado</string>
+    <string name="agenda_document_not_linked">Nenhum documento vinculado</string>
+    <string name="agenda_link_document_title">Vincular documento</string>
+    <string name="agenda_link_document_empty">Ainda não há documentos na Biblioteca</string>
+    <string name="agenda_unlink_document">Remover vínculo</string>
+    <string name="agenda_editor_title_new">Novo evento</string>
+    <string name="agenda_editor_title_edit">Editar evento</string>
+    <string name="agenda_field_title">Título</string>
+    <string name="agenda_field_description">Descrição (opcional)</string>
+    <string name="agenda_field_datetime">Data e hora</string>
+    <string name="agenda_field_reminder">Lembrete</string>
+    <string name="agenda_reminder_none">Sem lembrete</string>
+    <string name="agenda_reminder_at_time">Na hora do evento</string>
+    <string name="agenda_reminder_15_min">15 min antes</string>
+    <string name="agenda_reminder_1_hour">1 hora antes</string>
+    <string name="agenda_reminder_1_day">1 dia antes</string>
+    <string name="agenda_reminder_notification_channel">Lembretes da Agenda</string>
+    <string name="agenda_reminder_notification_fallback_title">Lembrete</string>
+    <string name="agenda_reminder_notification_text">Você tem um evento agendado</string>
 </resources>

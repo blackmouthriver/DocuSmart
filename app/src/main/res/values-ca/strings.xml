@@ -1099,4 +1099,40 @@
     <string name="settings_unlink_downloads_title">Vols desvincular la carpeta?</string>
     <string name="settings_unlink_downloads_body">Deixaràs de veure els arxius de Baixades a la pestanya Dispositiu de Biblioteca. Pots tornar a vincular-la quan vulguis.</string>
     <string name="settings_unlink_downloads_confirm">Desvincular</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">Agenda i calendari</string>
+    <string name="agenda_subtitle">Organitza els teus esdeveniments i recordatoris</string>
+    <string name="agenda_new_event">Esdeveniment nou</string>
+    <string name="agenda_empty_state">Encara no tens cap esdeveniment desat</string>
+    <string name="agenda_view_list">Llista</string>
+    <string name="agenda_view_calendar">Calendari</string>
+    <string name="agenda_calendar_no_events_day">No hi ha esdeveniments aquest dia</string>
+    <string name="agenda_calendar_previous_month">Mes anterior</string>
+    <string name="agenda_calendar_next_month">Mes següent</string>
+    <string name="agenda_exact_alarm_banner_title">Activa les alarmes exactes</string>
+    <string name="agenda_exact_alarm_banner_body">Sense aquest permís, els teus recordatoris poden sonar uns minuts tard. Activa\'l als Ajustos del sistema perquè sonin just a temps.</string>
+    <string name="agenda_exact_alarm_banner_action">Activa</string>
+    <string name="agenda_status_overdue">Vençut</string>
+    <string name="agenda_status_today">Avui</string>
+    <string name="agenda_status_upcoming">Pròxim</string>
+    <string name="agenda_document_linked">Document vinculat</string>
+    <string name="agenda_document_not_linked">Sense document vinculat</string>
+    <string name="agenda_link_document_title">Vincula un document</string>
+    <string name="agenda_link_document_empty">Encara no hi ha documents a la Biblioteca</string>
+    <string name="agenda_unlink_document">Treu el vincle</string>
+    <string name="agenda_editor_title_new">Esdeveniment nou</string>
+    <string name="agenda_editor_title_edit">Edita l\'esdeveniment</string>
+    <string name="agenda_field_title">Títol</string>
+    <string name="agenda_field_description">Descripció (opcional)</string>
+    <string name="agenda_field_datetime">Data i hora</string>
+    <string name="agenda_field_reminder">Recordatori</string>
+    <string name="agenda_reminder_none">Sense recordatori</string>
+    <string name="agenda_reminder_at_time">A l\'hora</string>
+    <string name="agenda_reminder_15_min">15 min abans</string>
+    <string name="agenda_reminder_1_hour">1 hora abans</string>
+    <string name="agenda_reminder_1_day">1 dia abans</string>
+    <string name="agenda_reminder_notification_channel">Recordatoris de l\'Agenda</string>
+    <string name="agenda_reminder_notification_fallback_title">Recordatori</string>
+    <string name="agenda_reminder_notification_text">Tens un esdeveniment programat</string>
 </resources>

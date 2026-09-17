@@ -1107,4 +1107,40 @@
     <string name="settings_unlink_downloads_title">¿Desvincular carpeta?</string>
     <string name="settings_unlink_downloads_body">Dejarás de ver los archivos de Descargas en la pestaña Dispositivo de Biblioteca. Puedes volver a vincularla cuando quieras.</string>
     <string name="settings_unlink_downloads_confirm">Desvincular</string>
+
+    <!-- ── Agenda (HU-65, backlog UX 2026-09-16, feedback real de testers de la prueba cerrada) ── -->
+    <string name="agenda_title">Agenda y calendario</string>
+    <string name="agenda_subtitle">Organiza tus eventos y recordatorios</string>
+    <string name="agenda_new_event">Nuevo evento</string>
+    <string name="agenda_empty_state">No tenés eventos guardados todavía</string>
+    <string name="agenda_view_list">Lista</string>
+    <string name="agenda_view_calendar">Calendario</string>
+    <string name="agenda_calendar_no_events_day">No hay eventos este día</string>
+    <string name="agenda_calendar_previous_month">Mes anterior</string>
+    <string name="agenda_calendar_next_month">Mes siguiente</string>
+    <string name="agenda_exact_alarm_banner_title">Activa las alarmas exactas</string>
+    <string name="agenda_exact_alarm_banner_body">Sin este permiso, tus recordatorios pueden sonar unos minutos tarde. Actívalo en Ajustes del sistema para que suenen justo a tiempo.</string>
+    <string name="agenda_exact_alarm_banner_action">Activar</string>
+    <string name="agenda_status_overdue">Vencido</string>
+    <string name="agenda_status_today">Hoy</string>
+    <string name="agenda_status_upcoming">Próximo</string>
+    <string name="agenda_document_linked">Documento vinculado</string>
+    <string name="agenda_document_not_linked">Sin documento vinculado</string>
+    <string name="agenda_link_document_title">Vincular documento</string>
+    <string name="agenda_link_document_empty">No hay documentos en tu biblioteca todavía</string>
+    <string name="agenda_unlink_document">Quitar vínculo</string>
+    <string name="agenda_editor_title_new">Nuevo evento</string>
+    <string name="agenda_editor_title_edit">Editar evento</string>
+    <string name="agenda_field_title">Título</string>
+    <string name="agenda_field_description">Descripción (opcional)</string>
+    <string name="agenda_field_datetime">Fecha y hora</string>
+    <string name="agenda_field_reminder">Recordatorio</string>
+    <string name="agenda_reminder_none">Sin recordatorio</string>
+    <string name="agenda_reminder_at_time">A la hora</string>
+    <string name="agenda_reminder_15_min">15 min antes</string>
+    <string name="agenda_reminder_1_hour">1 hora antes</string>
+    <string name="agenda_reminder_1_day">1 día antes</string>
+    <string name="agenda_reminder_notification_channel">Recordatorios de Agenda</string>
+    <string name="agenda_reminder_notification_fallback_title">Recordatorio</string>
+    <string name="agenda_reminder_notification_text">Tenés un evento programado</string>
 </resources>

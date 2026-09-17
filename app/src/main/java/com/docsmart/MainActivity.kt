@@ -58,6 +58,11 @@ class MainActivity : AppCompatActivity() {
     // la Activity ya compuesta -- necesita disparar recomposición, no solo
     // quedar disponible para la próxima vez que se lea.
     private var externalFileUri by mutableStateOf<Uri?>(null)
+    // HU-65: id del evento de Agenda a abrir directo al tocar su
+    // notificación de recordatorio (AC3) -- mismo patrón que
+    // `externalFileUri` de arriba (mutableStateOf, no un `var` plano, para
+    // que onNewIntent() dispare recomposición con la Activity ya compuesta).
+    private var pendingAgendaEventId by mutableStateOf<String?>(null)
     private var adsInitialized  = false
 
     private val permissionLauncher = registerForActivityResult(
@@ -84,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         externalFileUri = resolveExternalIntent(intent)
+        pendingAgendaEventId = intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)
         requestStoragePermissions()
         // Bug real encontrado 2026-09-06 ("línea/franja blanca" reportada
         // por el usuario tapando botones en Convertir/Herramientas PDF):
@@ -163,13 +169,18 @@ class MainActivity : AppCompatActivity() {
                     // antes de redirigir -- en caliente (singleTask +
                     // onNewIntent) currentRoute ya es Home/Library/etc. y esto
                     // navega de inmediato.
-                    val stillWaiting = currentRoute == null ||
-                        currentRoute == NavRoutes.SplashMouthBlack.route ||
-                        currentRoute == NavRoutes.SplashDocuSmart.route ||
-                        currentRoute == NavRoutes.Onboarding.route
-                    if (stillWaiting) return@LaunchedEffect
+                    if (isStillOnSplashOrOnboarding(currentRoute)) return@LaunchedEffect
                     navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
                     externalFileUri = null
+                }
+
+                // HU-65: mismo mecanismo que arriba, para el tap de una
+                // notificación de recordatorio de Agenda (AC3).
+                LaunchedEffect(pendingAgendaEventId, currentRoute) {
+                    val eventId = pendingAgendaEventId ?: return@LaunchedEffect
+                    if (isStillOnSplashOrOnboarding(currentRoute)) return@LaunchedEffect
+                    navController.navigate(NavRoutes.Agenda.createRoute(openEventId = eventId))
+                    pendingAgendaEventId = null
                 }
 
                 // Fondo animado (backlog UX 2026-09-06): capa 0 detrás de toda
@@ -233,6 +244,10 @@ class MainActivity : AppCompatActivity() {
         if (uri != null) {
             Timber.d("onNewIntent: URI externa = $uri")
             externalFileUri = uri
+        }
+        intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)?.let { eventId ->
+            Timber.d("onNewIntent: evento de Agenda $eventId")
+            pendingAgendaEventId = eventId
         }
     }
 
@@ -371,5 +386,20 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             adManager.initialize()
         }
+    }
+
+    // Extraída para no duplicar esta misma condición en los 2 LaunchedEffect
+    // de arranque en frío (URI externa + notificación de Agenda) -- de paso
+    // baja la complejidad ciclomática de onCreate() al sacar la rama de acá.
+    private fun isStillOnSplashOrOnboarding(route: String?): Boolean =
+        route == null ||
+            route == NavRoutes.SplashMouthBlack.route ||
+            route == NavRoutes.SplashDocuSmart.route ||
+            route == NavRoutes.Onboarding.route
+
+    companion object {
+        // HU-65: nombre de la extra que AgendaReminderReceiver pone en el
+        // Intent de "abrir la app" de la notificación de recordatorio.
+        const val EXTRA_OPEN_AGENDA_EVENT_ID = "open_agenda_event_id"
     }
 }

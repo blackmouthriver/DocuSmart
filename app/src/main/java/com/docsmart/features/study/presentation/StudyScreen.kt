@@ -106,6 +106,7 @@ import java.util.Locale
 fun StudyScreen(
     onBack: () -> Unit = {},
     initialTab: Int = 0,
+    onOpenAgenda: () -> Unit = {},
     viewModel: StudyViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -560,6 +561,24 @@ fun StudyScreen(
                                 Icon(
                                     imageVector        = Icons.Rounded.QueryStats,
                                     contentDescription = stringResource(R.string.study_stats_icon_desc),
+                                    tint               = MaterialTheme.colorScheme.primary,
+                                    modifier           = Modifier.size(18.dp)
+                                )
+                            }
+                            // ── Agenda (HU-65, feedback real de testers de
+                            // la prueba cerrada 2026-09-16): pantalla propia,
+                            // no una pestaña más -- decisión explícita del
+                            // usuario, entrada visible desde acá.
+                            IconButton(
+                                onClick = onOpenAgenda,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector        = Icons.Rounded.CalendarMonth,
+                                    contentDescription = stringResource(R.string.agenda_title),
                                     tint               = MaterialTheme.colorScheme.primary,
                                     modifier           = Modifier.size(18.dp)
                                 )

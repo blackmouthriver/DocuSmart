@@ -7,19 +7,17 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 // exportSchema = false: sin historial de migraciones que verificar todavía.
-// version=5 agrega `notes`/`note_images` (backlog UX #49-#52, reemplazan
-// SavedNote/StudyNotesStorage -- SharedPreferences con toda la lista como
-// un único JSON, sin documentId indexado ni borrado en cascada posible)
-// vía MIGRATION_4_5, mismo criterio que los saltos anteriores:
-// dropAllTables=true en DatabaseModule borraría datos reales de usuarios
-// si no hay una ruta de migración real registrada para cada versión nueva.
+// version=6 agrega `agenda_events` (HU-65, backlog UX 2026-09-16) vía
+// MIGRATION_5_6, mismo criterio que los saltos anteriores: dropAllTables=true
+// en DatabaseModule borraría datos reales de usuarios si no hay una ruta de
+// migración real registrada para cada versión nueva.
 @Database(
     entities = [
         DocumentHistoryEntry::class, TrashEntry::class, AnnotationEntity::class,
         PageBookmarkEntity::class, LastViewedPageEntity::class,
-        NoteEntity::class, NoteImageEntity::class
+        NoteEntity::class, NoteImageEntity::class, AgendaEventEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(AnnotationTypeConverter::class)
@@ -30,6 +28,7 @@ abstract class DocuSmartDatabase : RoomDatabase() {
     abstract fun pageBookmarkDao(): PageBookmarkDao
     abstract fun lastViewedPageDao(): LastViewedPageDao
     abstract fun noteDao(): NoteDao
+    abstract fun agendaEventDao(): AgendaEventDao
 }
 
 val MIGRATION_2_3 = object : Migration(2, 3) {
@@ -107,5 +106,24 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
             """.trimIndent()
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS index_note_images_noteId ON note_images(noteId)")
+    }
+}
+
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS agenda_events (
+                id TEXT NOT NULL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT,
+                dateTimeMillis INTEGER NOT NULL,
+                documentId TEXT,
+                reminderMinutesBefore INTEGER,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_agenda_events_documentId ON agenda_events(documentId)")
     }
 }

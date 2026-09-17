@@ -106,6 +106,14 @@ sealed class NavRoutes(val route: String) {
             pendingFileUri?.let { "secure_folder?pendingFileUri=${Uri.encode(it)}" } ?: "secure_folder"
     }
     data object Trash        : NavRoutes("trash") // RF-VIS-07
+    data object Agenda : NavRoutes("agenda?openEventId={openEventId}") {
+        // HU-65: `openEventId` permite abrir directo el editor de un evento
+        // puntual al tocar su notificación de recordatorio (AC3), en vez de
+        // caer siempre en la lista genérica -- mismo mecanismo que
+        // `Study.createRoute(tab)`.
+        fun createRoute(openEventId: String? = null): String =
+            openEventId?.let { "agenda?openEventId=${Uri.encode(it)}" } ?: "agenda"
+    }
     data object Viewer : NavRoutes("viewer/{documentId}") {
         fun createRoute(documentId: String): String {
             return "viewer/${Uri.encode(documentId)}"

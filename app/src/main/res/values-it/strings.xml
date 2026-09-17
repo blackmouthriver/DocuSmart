@@ -1072,4 +1072,40 @@
     <string name="settings_unlink_downloads_title">Scollegare la cartella?</string>
     <string name="settings_unlink_downloads_body">Non vedrai più i file di Download nella scheda Dispositivo della Libreria. Puoi ricollegarla quando vuoi.</string>
     <string name="settings_unlink_downloads_confirm">Scollega</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">Agenda e calendario</string>
+    <string name="agenda_subtitle">Organizza i tuoi eventi e promemoria</string>
+    <string name="agenda_new_event">Nuovo evento</string>
+    <string name="agenda_empty_state">Non hai ancora eventi salvati</string>
+    <string name="agenda_view_list">Elenco</string>
+    <string name="agenda_view_calendar">Calendario</string>
+    <string name="agenda_calendar_no_events_day">Nessun evento in questo giorno</string>
+    <string name="agenda_calendar_previous_month">Mese precedente</string>
+    <string name="agenda_calendar_next_month">Mese successivo</string>
+    <string name="agenda_exact_alarm_banner_title">Attiva gli allarmi esatti</string>
+    <string name="agenda_exact_alarm_banner_body">Senza questo permesso, i tuoi promemoria potrebbero suonare con qualche minuto di ritardo. Attivalo nelle Impostazioni di sistema perché suonino puntuali.</string>
+    <string name="agenda_exact_alarm_banner_action">Attiva</string>
+    <string name="agenda_status_overdue">Scaduto</string>
+    <string name="agenda_status_today">Oggi</string>
+    <string name="agenda_status_upcoming">Prossimo</string>
+    <string name="agenda_document_linked">Documento collegato</string>
+    <string name="agenda_document_not_linked">Nessun documento collegato</string>
+    <string name="agenda_link_document_title">Collega documento</string>
+    <string name="agenda_link_document_empty">Nessun documento nella Libreria ancora</string>
+    <string name="agenda_unlink_document">Rimuovi collegamento</string>
+    <string name="agenda_editor_title_new">Nuovo evento</string>
+    <string name="agenda_editor_title_edit">Modifica evento</string>
+    <string name="agenda_field_title">Titolo</string>
+    <string name="agenda_field_description">Descrizione (facoltativa)</string>
+    <string name="agenda_field_datetime">Data e ora</string>
+    <string name="agenda_field_reminder">Promemoria</string>
+    <string name="agenda_reminder_none">Nessun promemoria</string>
+    <string name="agenda_reminder_at_time">All\'ora dell\'evento</string>
+    <string name="agenda_reminder_15_min">15 min prima</string>
+    <string name="agenda_reminder_1_hour">1 ora prima</string>
+    <string name="agenda_reminder_1_day">1 giorno prima</string>
+    <string name="agenda_reminder_notification_channel">Promemoria Agenda</string>
+    <string name="agenda_reminder_notification_fallback_title">Promemoria</string>
+    <string name="agenda_reminder_notification_text">Hai un evento programmato</string>
 </resources>

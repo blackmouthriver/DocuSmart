@@ -1065,4 +1065,40 @@
     <string name="settings_unlink_downloads_title">Отвязать папку?</string>
     <string name="settings_unlink_downloads_body">Вы перестанете видеть файлы из Загрузок на вкладке Устройство в Библиотеке. Вы можете привязать её снова в любое время.</string>
     <string name="settings_unlink_downloads_confirm">Отвязать</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">Календарь и события</string>
+    <string name="agenda_subtitle">Организуйте свои события и напоминания</string>
+    <string name="agenda_new_event">Новое событие</string>
+    <string name="agenda_empty_state">У Вас пока нет сохранённых событий</string>
+    <string name="agenda_view_list">Список</string>
+    <string name="agenda_view_calendar">Календарь</string>
+    <string name="agenda_calendar_no_events_day">В этот день нет событий</string>
+    <string name="agenda_calendar_previous_month">Предыдущий месяц</string>
+    <string name="agenda_calendar_next_month">Следующий месяц</string>
+    <string name="agenda_exact_alarm_banner_title">Включите точные будильники</string>
+    <string name="agenda_exact_alarm_banner_body">Без этого разрешения напоминания могут срабатывать на несколько минут позже. Включите его в настройках системы, чтобы они звучали точно вовремя.</string>
+    <string name="agenda_exact_alarm_banner_action">Включить</string>
+    <string name="agenda_status_overdue">Просрочено</string>
+    <string name="agenda_status_today">Сегодня</string>
+    <string name="agenda_status_upcoming">Предстоящее</string>
+    <string name="agenda_document_linked">Документ связан</string>
+    <string name="agenda_document_not_linked">Документ не связан</string>
+    <string name="agenda_link_document_title">Связать документ</string>
+    <string name="agenda_link_document_empty">В библиотеке пока нет документов</string>
+    <string name="agenda_unlink_document">Убрать связь</string>
+    <string name="agenda_editor_title_new">Новое событие</string>
+    <string name="agenda_editor_title_edit">Редактировать событие</string>
+    <string name="agenda_field_title">Название</string>
+    <string name="agenda_field_description">Описание (необязательно)</string>
+    <string name="agenda_field_datetime">Дата и время</string>
+    <string name="agenda_field_reminder">Напоминание</string>
+    <string name="agenda_reminder_none">Без напоминания</string>
+    <string name="agenda_reminder_at_time">Во время события</string>
+    <string name="agenda_reminder_15_min">За 15 минут</string>
+    <string name="agenda_reminder_1_hour">За 1 час</string>
+    <string name="agenda_reminder_1_day">За 1 день</string>
+    <string name="agenda_reminder_notification_channel">Напоминания календаря</string>
+    <string name="agenda_reminder_notification_fallback_title">Напоминание</string>
+    <string name="agenda_reminder_notification_text">У Вас запланировано событие</string>
 </resources>

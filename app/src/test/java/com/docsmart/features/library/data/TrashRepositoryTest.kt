@@ -61,7 +61,8 @@ class TrashRepositoryTest {
             mockk<com.docsmart.core.data.db.AnnotationDao>(relaxed = true),
             mockk<com.docsmart.core.data.db.PageBookmarkDao>(relaxed = true),
             mockk<com.docsmart.core.data.db.LastViewedPageDao>(relaxed = true),
-            mockk<com.docsmart.core.data.db.NoteDao>(relaxed = true)
+            mockk<com.docsmart.core.data.db.NoteDao>(relaxed = true),
+            mockk<com.docsmart.core.data.db.AgendaEventDao>(relaxed = true)
         )
         documentRepository = DocumentRepository(
             context, favorites, historyDao, trashDao, mediaDeletePermission,

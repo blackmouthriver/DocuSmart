@@ -86,7 +86,9 @@ priorización para decidir qué se aborda y en qué orden.
 | 62 | IA en la nube — Extracción estructurada de datos de recibos/facturas | Mejora | Media | Alta | Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio previa (privacidad + costo), ver §34.7 |
 | 63 | Fondo animado — más movimiento perceptible (refinamiento del ítem 26) | Mejora | Media-Alta | Baja | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §36 |
 | 64 | Modo Estudio — Selector de voz con avatar, nombre y muestra de audio (refinamiento de la lectura por voz) | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §37 |
-| 65 | Agenda/Calendario — Guardar eventos, reuniones y entregas con recordatorio | Mejora (épica) | Media-Alta | Alta | Medio | 🆕 Propuesto 2026-09-16, feedback real de testers de la prueba cerrada — decisiones de producto ya resueltas (alarma exacta, pantalla propia desde Modo Estudio, con vínculo a documentos en v1), ver §38 |
+| 65 | Agenda/Calendario — Guardar eventos, reuniones y entregas con recordatorio (+ vista de calendario, banners y permiso de alarma exacta) | Mejora (épica) | Media-Alta | Alta | Medio | **✅ Implementado y verificado en dispositivo real (Motorola Edge 30 Neo) 2026-09-17 — AC1-AC6, incluye 2 bugs reales encontrados y corregidos (permiso de notificaciones, permiso de alarma exacta)** — ver §38 |
+| 66 | Modal de "Idioma" (Ajustes) — rediseño con tarjetas degradadas por idioma, color de acento, hover y transiciones (referencia visual entregada por el usuario) | Mejora (visual) | Media | Media | Bajo | 🆕 Propuesto 2026-09-16 — ver §39 |
+| 67 | Modo Estudio — Selector de voz: reemplazar el círculo de color por un personaje/avatar ilustrado por voz (femenino/masculino), referencia visual entregada por el usuario | Mejora (visual) | Media | Media-Alta | Bajo | 🆕 Propuesto 2026-09-16 — pendiente definir origen de los assets (ver §40) — ver §40 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -4253,3 +4255,156 @@ evaluar si conviene implementarla junto con HU-52 (que necesita la
 misma base de recordatorios) en vez de por separado, ya que ambas
 comparten el mismo mecanismo de alarma exacta + notificación +
 reprogramación tras reinicio.
+
+### Implementado y verificado en emulador (2026-09-17) — falta confirmar en dispositivo real
+
+RF1-RF5 y RNF1-RNF3 completos: pantalla propia "Agenda" (entrada desde
+Modo Estudio), CRUD de eventos con Room (`MIGRATION_5_6`), vínculo a
+documento (RF2, reutiliza `AppLibraryPickerViewModel` como Notas),
+recordatorio con `AlarmManager.setExactAndAllowWhileIdle()` (con
+degradación a alarma inexacta si falta el permiso), reprogramación tras
+reinicio (`BootRescheduleReceiver`) y permiso `POST_NOTIFICATIONS`
+propio de la pantalla (ver bug real corregido abajo).
+
+Verificado en el emulador `DocuSmart_Test` con evidencia directa de
+`dumpsys alarm`/`dumpsys notification` (no solo inspección visual):
+
+- **AC1**: evento creado aparece en la lista, ordenado por fecha.
+- **AC2**: la alarma programada (`dumpsys alarm`, `origWhen` exacto)
+  disparó la notificación real a la hora programada.
+- **AC3**: al tocar la notificación, la app abre directo el diálogo de
+  edición del evento correcto (mismo id).
+- **AC4**: editar el recordatorio cancela la alarma vieja y programa
+  exactamente una nueva (sin duplicados); eliminar el evento cancela su
+  alarma (`Reason=alarm_cancelled`).
+- **AC5**: tras un `adb reboot` del emulador, la alarma se reprogramó
+  correctamente (mismo horario). El primer intento de
+  `BootRescheduleReceiver` fue matado por Android ("bg anr") porque el
+  emulador (2GB RAM) tardó demasiado en levantar el proceso durante el
+  arranque masivo de apps tras el reinicio — el propio sistema
+  reintregó el broadcast en un arranque posterior que sí completó a
+  tiempo. Artefacto conocido de esta máquina de pruebas con poca RAM,
+  no un bug de la app — igual queda pendiente confirmarlo en el
+  dispositivo real, que no tiene esa restricción de memoria.
+- **AC6**: cubierto por `DocumentIdentityMaintenanceTest.kt` (unitario;
+  mismo mecanismo ya probado por Notas/HU-50).
+
+**Bug real encontrado y corregido antes de dar esto por cerrado**: el
+pedido de permiso `POST_NOTIFICATIONS` (RNF3) solo existía dentro de la
+pestaña Pomodoro de Modo Estudio (`StudyScreen.kt`). Un usuario que
+entra a Agenda sin haber abierto nunca Pomodoro nunca veía ese diálogo
+en Android 13+, y sus recordatorios se programaban pero la notificación
+jamás se mostraba (`NotificationManager.notify()` no falla, solo no
+hace nada sin el permiso). Se agregó el mismo pedido, con el mismo
+patrón, al entrar a `AgendaScreen.kt`.
+
+**Pendiente**: confirmación final en el Motorola Edge 30 Neo real (el
+usuario difirió esta prueba explícitamente mientras el equipo no estaba
+disponible) antes de considerar la HU-65 cerrada de forma definitiva.
+
+**Seguimiento mismo día (2026-09-17)**: pedido explícito del usuario --
+mientras esperaba la prueba en dispositivo real, pidió agregar dentro de
+Agenda una vista de calendario (mensual, con puntos en los días con
+eventos, decisión confirmada por el usuario entre 3 opciones), cambiar el
+título a "Agenda y calendario", y aplicar el banner de anuncios + banner
+azul con título (mismo criterio que el resto de las pantallas de la app,
+ver `DocuSmartScreenHeader`/`DocuSmartTopBanner`) -- alternable con la
+lista existente vía `TabRow` (Lista/Calendario). Se implementa como parte
+de la misma HU-65 (no como HU nueva) ya que es un ajuste sobre una
+pantalla que todavía no se fusionó a `main`.
+
+Verificado en dispositivo real (Motorola Edge 30 Neo): título/subtítulo,
+tabs Lista/Calendario, grilla mensual (offset de días de la semana
+correcto, "hoy" resaltado, punto en días con evento, selección actualiza
+el detalle del día con el mismo `AgendaEventCard` reutilizado de la
+lista), navegación entre meses.
+
+**Segundo bug real encontrado en la misma prueba de dispositivo**: al
+crear el evento de prueba en el Motorola, `dumpsys alarm`/`appops`
+confirmó que el permiso especial `SCHEDULE_EXACT_ALARM` estaba denegado
+(`Uid mode: SCHEDULE_EXACT_ALARM` no estaba en `allow`) -- el recordatorio
+igual sonó porque `ReminderScheduler` ya degradaba con elegancia a una
+alarma inexacta (RF5), pero sonó ~4-5 minutos tarde y la app nunca le
+avisaba al usuario que podía corregirlo. Se agregó un banner en
+`AgendaScreen.kt` (mismo patrón que Card/Surface del resto de la app,
+visible solo si `AlarmManager.canScheduleExactAlarms()` es `false` en
+API 31+) con un botón que abre directamente
+`Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM`, y se refresca el estado
+al volver a la pantalla vía `ReloadOnScreenResume` (mismo mecanismo que
+`LibraryScreen` para permisos). Verificado en el propio Motorola: el
+botón abre la pantalla del sistema correcta, y el banner desaparece al
+volver una vez concedido el permiso.
+
+Corregido además un lint real encontrado en esta misma pasada
+(`NonObservableLocale`): `AgendaCalendarView.kt` usaba
+`Locale.getDefault()` directamente dentro de composables para los
+nombres de mes/día de la semana -- no es observable por Compose, así que
+un cambio de idioma del sistema sin recrear la Activity dejaría el
+calendario en el idioma viejo. Se resolvió con
+`LocalConfiguration.current.locales[0]` (mismo fix ya usado en
+`PremiumScreen.kt`/`SettingsScreen.kt` para el mismo lint).
+
+## 39. Ajustes — Rediseño del modal de "Idioma" (tarjetas degradadas + color de acento)
+
+Pedido explícito del usuario 2026-09-16 (mientras se esperaba la prueba
+de HU-65 en dispositivo real), con una imagen de referencia adjunta: el
+modal de selección de idioma (`SettingsScreen.kt`) hoy usa tarjetas con
+fondo semitransparente/degradado tenue por idioma (bandera estilizada) y
+un check simple. El usuario quiere que se vea más parecido a la
+referencia -- tarjetas con degradado más marcado por idioma, aplicando
+además el **color de acento** configurable de la app (no solo colores de
+bandera fijos), estados de **hover** (o su equivalente táctil en Android,
+ej. `indication`/estado "pressed" visible) y **transiciones** animadas al
+seleccionar/cambiar de idioma.
+
+**Pendiente de definir antes de implementar** (no bloquea catalogar el
+ítem, sí bloquea empezar a escribir código):
+- ¿El degradado por idioma sigue siendo fijo por bandera (como hoy), o
+  pasa a derivarse del color de acento elegido por el usuario en Ajustes
+  (lo que uniformaría todas las tarjetas al mismo tono, perdiendo la
+  identificación visual por bandera)? La imagen de referencia muestra
+  colores distintos por idioma (rojo/amarillo España, celeste Francia,
+  verde Portugal, gris Alemania...), lo cual sugiere mantener el criterio
+  por bandera y usar el acento solo para el check/borde de selección, no
+  para el degradado completo -- a confirmar con el usuario.
+- "Hover" no es un concepto táctil nativo de Android/Compose -- el
+  equivalente real sería un estado "pressed" (ripple/scale al tocar) más
+  quizás un estado sutil "seleccionado" permanente (ya existe hoy, el
+  check). Aclarar con el usuario si con "hover" se refiere a esto o a
+  algún otro efecto visual de la referencia.
+
+## 40. Modo Estudio — Personajes/avatares ilustrados para las voces (reemplazo del círculo de color)
+
+Pedido explícito del usuario 2026-09-16 (mismo momento que el ítem
+anterior), con dos imágenes de referencia adjuntas (mosaico de rostros
+femeninos y masculinos con un ícono de "onda de audio" superpuesto).
+Refina la HU-64 ya implementada y verificada (`VoicePersona.kt`,
+`VoiceSelectorDialog.kt`): hoy cada voz muestra un círculo de color +
+inicial/ícono genérico; el usuario quiere un **personaje ilustrado**
+distinto por voz (uno por cada una de las 10 personas de
+`VOICE_PERSONAS`, coherente con su género), en vez del círculo de color
+plano. El usuario dejó la ubicación exacta a criterio de quien
+implemente ("coloca el personaje donde consideres que es adecuado") --
+el reemplazo natural es el avatar circular que hoy ocupa
+`VoiceSelectorDialog.kt` (lista de voces) y, si alcanza el espacio, el
+mismo avatar en miniatura junto al nombre de la voz activa en el header
+de Lectura.
+
+**Bloqueante real antes de implementar (no es una decisión de producto,
+es una restricción práctica)**: las imágenes de referencia que compartió
+el usuario son fotografías realistas de personas (estilo stock
+fotográfico/IA fotorrealista) -- no se puede confirmar que el usuario
+tenga licencia de uso comercial sobre esas fotos concretas para
+distribuirlas dentro de una app publicada en Play Store, y usar rostros
+fotorrealistas de personas que no existen (o que sí existen, si son
+fotos de banco de imágenes) trae su propio riesgo de derechos de imagen.
+**Antes de generar/incluir los assets finales hay que confirmar con el
+usuario** si: (a) tiene licencia comercial verificable de esas imágenes
+concretas para usarlas tal cual, o (b) prefiere que se generen
+ilustraciones propias (vectoriales/flat, estilo consistente con el resto
+del ícono set de Material Rounded que ya usa toda la app) inspiradas en
+la composición de la referencia (rostro + onda de audio) pero sin
+reutilizar las fotos entregadas -- la opción (b) es la recomendada por
+ser la única sin riesgo de derechos y además consistente con el resto
+del lenguaje visual vectorial de DocuSmart (íconos Material, no fotos,
+en toda la app).

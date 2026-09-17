@@ -1074,4 +1074,40 @@
     <string name="settings_unlink_downloads_title">Unlink folder?</string>
     <string name="settings_unlink_downloads_body">You\'ll stop seeing Downloads files in Library\'s Device tab. You can link it again anytime.</string>
     <string name="settings_unlink_downloads_confirm">Unlink</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">Agenda and calendar</string>
+    <string name="agenda_subtitle">Organize your events and reminders</string>
+    <string name="agenda_new_event">New event</string>
+    <string name="agenda_empty_state">You don\'t have any saved events yet</string>
+    <string name="agenda_view_list">List</string>
+    <string name="agenda_view_calendar">Calendar</string>
+    <string name="agenda_calendar_no_events_day">No events on this day</string>
+    <string name="agenda_calendar_previous_month">Previous month</string>
+    <string name="agenda_calendar_next_month">Next month</string>
+    <string name="agenda_exact_alarm_banner_title">Enable exact alarms</string>
+    <string name="agenda_exact_alarm_banner_body">Without this permission, your reminders may go off a few minutes late. Enable it in system Settings so they ring right on time.</string>
+    <string name="agenda_exact_alarm_banner_action">Enable</string>
+    <string name="agenda_status_overdue">Overdue</string>
+    <string name="agenda_status_today">Today</string>
+    <string name="agenda_status_upcoming">Upcoming</string>
+    <string name="agenda_document_linked">Document linked</string>
+    <string name="agenda_document_not_linked">No document linked</string>
+    <string name="agenda_link_document_title">Link document</string>
+    <string name="agenda_link_document_empty">No documents in your Library yet</string>
+    <string name="agenda_unlink_document">Remove link</string>
+    <string name="agenda_editor_title_new">New event</string>
+    <string name="agenda_editor_title_edit">Edit event</string>
+    <string name="agenda_field_title">Title</string>
+    <string name="agenda_field_description">Description (optional)</string>
+    <string name="agenda_field_datetime">Date and time</string>
+    <string name="agenda_field_reminder">Reminder</string>
+    <string name="agenda_reminder_none">No reminder</string>
+    <string name="agenda_reminder_at_time">At time of event</string>
+    <string name="agenda_reminder_15_min">15 minutes before</string>
+    <string name="agenda_reminder_1_hour">1 hour before</string>
+    <string name="agenda_reminder_1_day">1 day before</string>
+    <string name="agenda_reminder_notification_channel">Agenda reminders</string>
+    <string name="agenda_reminder_notification_fallback_title">Reminder</string>
+    <string name="agenda_reminder_notification_text">You have a scheduled event</string>
 </resources>

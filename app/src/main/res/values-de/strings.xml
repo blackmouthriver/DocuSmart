@@ -1065,4 +1065,40 @@
     <string name="settings_unlink_downloads_title">Ordner trennen?</string>
     <string name="settings_unlink_downloads_body">Du siehst die Downloads-Dateien dann nicht mehr im Geräte-Tab der Bibliothek. Du kannst den Ordner jederzeit erneut verknüpfen.</string>
     <string name="settings_unlink_downloads_confirm">Trennen</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">Agenda und Kalender</string>
+    <string name="agenda_subtitle">Organisiere deine Termine und Erinnerungen</string>
+    <string name="agenda_new_event">Neuer Termin</string>
+    <string name="agenda_empty_state">Du hast noch keine gespeicherten Termine</string>
+    <string name="agenda_view_list">Liste</string>
+    <string name="agenda_view_calendar">Kalender</string>
+    <string name="agenda_calendar_no_events_day">Keine Termine an diesem Tag</string>
+    <string name="agenda_calendar_previous_month">Vorheriger Monat</string>
+    <string name="agenda_calendar_next_month">Nächster Monat</string>
+    <string name="agenda_exact_alarm_banner_title">Aktiviere exakte Alarme</string>
+    <string name="agenda_exact_alarm_banner_body">Ohne diese Berechtigung können deine Erinnerungen ein paar Minuten zu spät ausgelöst werden. Aktiviere sie in den Systemeinstellungen, damit sie pünktlich erscheinen.</string>
+    <string name="agenda_exact_alarm_banner_action">Aktivieren</string>
+    <string name="agenda_status_overdue">Überfällig</string>
+    <string name="agenda_status_today">Heute</string>
+    <string name="agenda_status_upcoming">Bevorstehend</string>
+    <string name="agenda_document_linked">Dokument verknüpft</string>
+    <string name="agenda_document_not_linked">Kein Dokument verknüpft</string>
+    <string name="agenda_link_document_title">Dokument verknüpfen</string>
+    <string name="agenda_link_document_empty">Noch keine Dokumente in deiner Bibliothek</string>
+    <string name="agenda_unlink_document">Verknüpfung entfernen</string>
+    <string name="agenda_editor_title_new">Neuer Termin</string>
+    <string name="agenda_editor_title_edit">Termin bearbeiten</string>
+    <string name="agenda_field_title">Titel</string>
+    <string name="agenda_field_description">Beschreibung (optional)</string>
+    <string name="agenda_field_datetime">Datum und Uhrzeit</string>
+    <string name="agenda_field_reminder">Erinnerung</string>
+    <string name="agenda_reminder_none">Keine Erinnerung</string>
+    <string name="agenda_reminder_at_time">Zum Zeitpunkt</string>
+    <string name="agenda_reminder_15_min">15 Min. vorher</string>
+    <string name="agenda_reminder_1_hour">1 Stunde vorher</string>
+    <string name="agenda_reminder_1_day">1 Tag vorher</string>
+    <string name="agenda_reminder_notification_channel">Agenda-Erinnerungen</string>
+    <string name="agenda_reminder_notification_fallback_title">Erinnerung</string>
+    <string name="agenda_reminder_notification_text">Du hast einen geplanten Termin</string>
 </resources>

@@ -1087,4 +1087,40 @@
     <string name="settings_unlink_downloads_title">Karpeta desestekatu?</string>
     <string name="settings_unlink_downloads_body">Ez dituzu Deskargetako fitxategiak ikusiko gehiago Liburutegiko Gailua fitxan. Nahi duzunean berriro lotu dezakezu.</string>
     <string name="settings_unlink_downloads_confirm">Desestekatu</string>
+
+    <!-- ── Agenda (HU-65) ── -->
+    <string name="agenda_title">Agenda eta egutegia</string>
+    <string name="agenda_subtitle">Antolatu zure ekitaldiak eta gogorarazpenak</string>
+    <string name="agenda_new_event">Gertaera berria</string>
+    <string name="agenda_empty_state">Oraindik ez duzu gorde gertaerarik</string>
+    <string name="agenda_view_list">Zerrenda</string>
+    <string name="agenda_view_calendar">Egutegia</string>
+    <string name="agenda_calendar_no_events_day">Egun honetan ez dago ekitaldirik</string>
+    <string name="agenda_calendar_previous_month">Aurreko hilabetea</string>
+    <string name="agenda_calendar_next_month">Hurrengo hilabetea</string>
+    <string name="agenda_exact_alarm_banner_title">Aktibatu alarma zehatzak</string>
+    <string name="agenda_exact_alarm_banner_body">Baimen hori gabe, zure gogorarazpenak minutu batzuk berandu jo dezakete. Aktibatu Sistemaren Ezarpenetan garaiz jo dezaten.</string>
+    <string name="agenda_exact_alarm_banner_action">Aktibatu</string>
+    <string name="agenda_status_overdue">Atzeratuta</string>
+    <string name="agenda_status_today">Gaur</string>
+    <string name="agenda_status_upcoming">Hurrengoa</string>
+    <string name="agenda_document_linked">Dokumentua estekatuta</string>
+    <string name="agenda_document_not_linked">Ez dago dokumenturik estekatuta</string>
+    <string name="agenda_link_document_title">Estekatu dokumentua</string>
+    <string name="agenda_link_document_empty">Oraindik ez dago dokumenturik Liburutegian</string>
+    <string name="agenda_unlink_document">Kendu esteka</string>
+    <string name="agenda_editor_title_new">Gertaera berria</string>
+    <string name="agenda_editor_title_edit">Editatu gertaera</string>
+    <string name="agenda_field_title">Izenburua</string>
+    <string name="agenda_field_description">Deskribapena (aukerakoa)</string>
+    <string name="agenda_field_datetime">Data eta ordua</string>
+    <string name="agenda_field_reminder">Oroigarria</string>
+    <string name="agenda_reminder_none">Oroigarririk gabe</string>
+    <string name="agenda_reminder_at_time">Orduan bertan</string>
+    <string name="agenda_reminder_15_min">15 min lehenago</string>
+    <string name="agenda_reminder_1_hour">Ordu 1 lehenago</string>
+    <string name="agenda_reminder_1_day">Egun 1 lehenago</string>
+    <string name="agenda_reminder_notification_channel">Agendako oroigarriak</string>
+    <string name="agenda_reminder_notification_fallback_title">Oroigarria</string>
+    <string name="agenda_reminder_notification_text">Programatutako gertaera bat duzu</string>
 </resources>
