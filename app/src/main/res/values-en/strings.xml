@@ -991,6 +991,10 @@
     <string name="study_listening">Listening… speak now</string>
     <string name="study_save_note">Save note</string>
     <string name="study_untitled_note">Untitled note</string>
+    <string name="study_note_attach_image">Attach image</string>
+    <string name="study_note_scan_image">Scan</string>
+    <string name="study_note_remove_image">Remove image</string>
+    <string name="study_note_image_desc">Attached image</string>
     <string name="study_no_saved_notes">No saved notes</string>
     <string name="study_saved_notes_count">Saved notes (%1$d)</string>
     <string name="study_delete_all">Delete all</string>

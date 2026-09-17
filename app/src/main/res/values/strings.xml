@@ -1022,6 +1022,10 @@
     <string name="study_listening">Escuchando… habla ahora</string>
     <string name="study_save_note">Guardar nota</string>
     <string name="study_untitled_note">Nota sin título</string>
+    <string name="study_note_attach_image">Adjuntar imagen</string>
+    <string name="study_note_scan_image">Escanear</string>
+    <string name="study_note_remove_image">Quitar imagen</string>
+    <string name="study_note_image_desc">Imagen adjunta</string>
     <string name="study_no_saved_notes">Sin notas guardadas</string>
     <string name="study_saved_notes_count">Notas guardadas (%1$d)</string>
     <string name="study_delete_all">Eliminar todas</string>

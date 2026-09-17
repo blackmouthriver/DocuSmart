@@ -1016,6 +1016,10 @@
     <string name="study_listening">Escoltant… parla ara</string>
     <string name="study_save_note">Desar nota</string>
     <string name="study_untitled_note">Nota sense títol</string>
+    <string name="study_note_attach_image">Adjunta imatge</string>
+    <string name="study_note_scan_image">Escaneja</string>
+    <string name="study_note_remove_image">Treu la imatge</string>
+    <string name="study_note_image_desc">Imatge adjunta</string>
     <string name="study_no_saved_notes">Sense notes desades</string>
     <string name="study_saved_notes_count">Notes desades (%1$d)</string>
     <string name="study_delete_all">Eliminar-les totes</string>

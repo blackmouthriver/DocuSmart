@@ -7,6 +7,7 @@ import android.os.Build
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -18,6 +19,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,9 +53,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
@@ -65,6 +69,9 @@ import com.docsmart.core.data.db.NoteEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.util.findActivity
+import com.docsmart.features.scanner.presentation.ScannerMode
+import com.docsmart.features.scanner.presentation.rememberDocumentScannerAction
 import com.docsmart.features.study.domain.PomodoroEngine
 import com.docsmart.features.study.domain.StudyNotesExporter
 import com.docsmart.features.study.domain.ReadingProgress
@@ -1334,6 +1341,26 @@ private fun NotesTab(
     var currentNote   by remember { mutableStateOf(notes) }
     var showDeleteAll by remember { mutableStateOf(false) }
     var isListening   by remember { mutableStateOf(false) }
+    // Backlog UX #49: imágenes elegidas para la nota que se está escribiendo
+    // todavía, se limpia al guardar (o al descartar una con la X).
+    var currentImageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+
+    // ── Adjuntar imagen (galería o recorte escaneado) ────────────────────────
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris -> if (uris.isNotEmpty()) currentImageUris = currentImageUris + uris }
+
+    // "Recorte escaneado" del pedido original (#49) -- mismo escáner de ML
+    // Kit que ya usa Convertir/Escáner, en modo PHOTO (más liviano que
+    // DOCUMENT, sin el flujo multi-página de escanear un documento entero)
+    // y con pageLimit=1 porque acá se adjunta de a una imagen por vez.
+    val onScanImage = rememberDocumentScannerAction(
+        activity       = context.findActivity(),
+        mode           = ScannerMode.PHOTO,
+        pageLimit      = 1,
+        onPagesScanned = { pages -> currentImageUris = currentImageUris + pages },
+        onScanError    = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
+    )
 
     val dateFormatter = remember {
         java.text.SimpleDateFormat("dd/MM/yyyy · HH:mm", java.util.Locale.getDefault())
@@ -1415,16 +1442,21 @@ private fun NotesTab(
         // Extraído a NoteEditorCard() (detekt: LongMethod).
         item {
             NoteEditorCard(
-                currentTitle  = currentTitle,
-                onTitleChange = { currentTitle = it },
-                currentNote   = currentNote,
-                onNoteChange  = { currentNote = it; onNotesChange(it) },
-                isListening   = isListening,
-                onVoiceClick  = { startVoiceInput() },
+                currentTitle   = currentTitle,
+                onTitleChange  = { currentTitle = it },
+                currentNote    = currentNote,
+                onNoteChange   = { currentNote = it; onNotesChange(it) },
+                isListening    = isListening,
+                onVoiceClick   = { startVoiceInput() },
+                imageUris      = currentImageUris,
+                onGalleryClick = { galleryLauncher.launch("image/*") },
+                onScanClick    = onScanImage,
+                onRemoveImage  = { uri -> currentImageUris = currentImageUris - uri },
                 onSave = { title, text ->
-                    viewModel.createNote(title, text)
-                    currentNote  = ""
-                    currentTitle = ""
+                    viewModel.createNote(title, text, currentImageUris)
+                    currentNote      = ""
+                    currentTitle     = ""
+                    currentImageUris = emptyList()
                     onNotesChange("")
                 }
             )
@@ -1593,13 +1625,17 @@ private fun NotesEmptyState() {
 // llamarse en un @Composable) antes de invocar onSave().
 @Composable
 private fun NoteEditorCard(
-    currentTitle : String,
-    onTitleChange: (String) -> Unit,
-    currentNote  : String,
-    onNoteChange : (String) -> Unit,
-    isListening  : Boolean,
-    onVoiceClick : () -> Unit,
-    onSave       : (title: String, text: String) -> Unit
+    currentTitle  : String,
+    onTitleChange : (String) -> Unit,
+    currentNote   : String,
+    onNoteChange  : (String) -> Unit,
+    isListening   : Boolean,
+    onVoiceClick  : () -> Unit,
+    imageUris     : List<Uri>,
+    onGalleryClick: () -> Unit,
+    onScanClick   : () -> Unit,
+    onRemoveImage : (Uri) -> Unit,
+    onSave        : (title: String, text: String) -> Unit
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
@@ -1703,6 +1739,33 @@ private fun NoteEditorCard(
                 }
             }
 
+            // Backlog UX #49: adjuntar imagen (galería) o recorte escaneado
+            // (mismo escáner de ML Kit que Convertir/Escáner) a la nota que
+            // se está escribiendo.
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onGalleryClick) {
+                    Icon(
+                        imageVector        = Icons.Rounded.Image,
+                        contentDescription = null,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.study_note_attach_image), style = MaterialTheme.typography.labelMedium)
+                }
+                TextButton(onClick = onScanClick) {
+                    Icon(
+                        imageVector        = Icons.Rounded.DocumentScanner,
+                        contentDescription = null,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.study_note_scan_image), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            if (imageUris.isNotEmpty()) {
+                NoteImagesCarousel(uris = imageUris, onRemove = onRemoveImage)
+            }
+
             val untitledNoteLabel = stringResource(R.string.study_untitled_note)
 
             // Botón guardar
@@ -1718,6 +1781,49 @@ private fun NoteEditorCard(
                 Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.study_save_note), style = MaterialTheme.typography.labelLarge)
+            }
+        }
+    }
+}
+
+// Backlog UX #49: miniaturas de las imágenes elegidas para la nota que
+// todavía no se guardó -- mismo patrón que
+// ConverterScreen.SelectedImagesCarousel (URIs temporales del selector/
+// escáner, no archivos ya copiados a filesDir todavía).
+@Composable
+private fun NoteImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(uris, key = { it.toString() }) { uri ->
+            Box(modifier = Modifier.size(72.dp)) {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = stringResource(R.string.study_note_image_desc),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.medium)
+                )
+                IconButton(
+                    onClick = { onRemove(uri) },
+                    modifier = Modifier.size(36.dp).align(Alignment.TopEnd)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                shape = MaterialTheme.shapes.extraSmall
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = stringResource(R.string.study_note_remove_image),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -1824,6 +1930,40 @@ private fun NoteListItem(
                 color      = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 22.sp
             )
+
+            // Backlog UX #49: imágenes/recortes ya adjuntos a la nota
+            // guardada -- de solo lectura acá (adjuntar más solo se puede
+            // al crear la nota, no hay edición de una nota existente
+            // todavía). Tocar una miniatura la abre en grande.
+            if (noteWithImages.images.isNotEmpty()) {
+                var expandedImagePath by remember { mutableStateOf<String?>(null) }
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(noteWithImages.images, key = { it.id }) { image ->
+                        AsyncImage(
+                            model = File(image.filePath),
+                            contentDescription = stringResource(R.string.study_note_image_desc),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable { expandedImagePath = image.filePath }
+                        )
+                    }
+                }
+                expandedImagePath?.let { path ->
+                    Dialog(onDismissRequest = { expandedImagePath = null }) {
+                        AsyncImage(
+                            model = File(path),
+                            contentDescription = stringResource(R.string.study_note_image_desc),
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.large)
+                                .clickable { expandedImagePath = null }
+                        )
+                    }
+                }
+            }
         }
     }
 }

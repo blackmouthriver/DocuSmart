@@ -994,6 +994,10 @@
     <string name="study_listening">Écoute en cours… parle maintenant</string>
     <string name="study_save_note">Enregistrer la note</string>
     <string name="study_untitled_note">Note sans titre</string>
+    <string name="study_note_attach_image">Joindre une image</string>
+    <string name="study_note_scan_image">Scanner</string>
+    <string name="study_note_remove_image">Retirer l\'image</string>
+    <string name="study_note_image_desc">Image jointe</string>
     <string name="study_no_saved_notes">Aucune note enregistrée</string>
     <string name="study_saved_notes_count">Notes enregistrées (%1$d)</string>
     <string name="study_delete_all">Tout supprimer</string>

@@ -1004,6 +1004,10 @@
     <string name="study_listening">Entzuten… hitz egin orain</string>
     <string name="study_save_note">Gorde oharra</string>
     <string name="study_untitled_note">Izenbururik gabeko oharra</string>
+    <string name="study_note_attach_image">Erantsi irudia</string>
+    <string name="study_note_scan_image">Eskaneatu</string>
+    <string name="study_note_remove_image">Kendu irudia</string>
+    <string name="study_note_image_desc">Erantsitako irudia</string>
     <string name="study_no_saved_notes">Ez dago gordetako oharrik</string>
     <string name="study_saved_notes_count">Gordetako oharrak (%1$d)</string>
     <string name="study_delete_all">Ezabatu guztiak</string>

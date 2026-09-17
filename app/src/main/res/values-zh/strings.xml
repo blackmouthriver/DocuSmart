@@ -986,6 +986,10 @@
     <string name="study_listening">正在聆听…请开始说话</string>
     <string name="study_save_note">保存笔记</string>
     <string name="study_untitled_note">无标题笔记</string>
+    <string name="study_note_attach_image">附加图片</string>
+    <string name="study_note_scan_image">扫描</string>
+    <string name="study_note_remove_image">移除图片</string>
+    <string name="study_note_image_desc">已附加图片</string>
     <string name="study_no_saved_notes">没有已保存的笔记</string>
     <string name="study_saved_notes_count">已保存笔记（%1$d）</string>
     <string name="study_delete_all">全部删除</string>

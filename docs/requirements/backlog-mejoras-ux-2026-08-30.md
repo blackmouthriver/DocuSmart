@@ -70,7 +70,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 46 | Visor — Anotaciones (resaltar texto, notas adhesivas) sobre el PDF | Mejora (épica) | Alta | Alta | Medio-Alto | **✅ Implementado y verificado en dispositivo real 2026-09-15/16** (commit `0c85c0d`) — ver §34.3 |
 | 47 | Visor — Marcadores de página | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.3 |
 | 48 | Visor — Recordar la última página vista por documento (distinto de "Retomar lectura" en audio, ya existente en Modo Estudio §33) | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.3 |
-| 49 | Notas (Modo Estudio) — Adjuntar una imagen o recorte escaneado a una nota | Mejora | Media | Media | Bajo | 🟡 Solo esquema de datos (`NoteImageEntity`, CASCADE) migrado 2026-09-16, falta el picker de cámara/galería — ver §34.4 |
+| 49 | Notas (Modo Estudio) — Adjuntar una imagen o recorte escaneado a una nota | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-17** — ver §34.4 |
 | 50 | Notas — Vincular una nota a un documento específico de la Biblioteca | Mejora | Baja | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
 | 51 | Notas — Exportar una nota a PDF/Word (reutilizando el Convertidor) | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.4 |
 | 52 | Notas — Recordatorio de repaso (notificación local) | Mejora | Baja | Media | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.4 |
@@ -3454,6 +3454,29 @@ como imagen (un diagrama, una fórmula).
   reabro, entonces la imagen sigue visible en el mismo lugar.
 - **AC2** Borrar la nota borra también la copia de la imagen asociada
   (no deja archivos huérfanos).
+
+**✅ Implementado y verificado en dispositivo real (Motorola Edge 30
+Neo) 2026-09-17.** `NoteEditorCard` agrega botones "Adjuntar imagen"
+(`GetMultipleContents`, selector del sistema) y "Escanear" (mismo
+escáner ML Kit que Convertidor, vía la nueva función pública
+`rememberDocumentScannerAction` extraída de `ConverterScreen.kt` a
+`DocumentScannerLauncher.kt` para reutilizarla sin duplicar código).
+`NoteRepository.createNote()` copia cada imagen a
+`filesDir/note_images/<noteId>_<posición>.jpg` antes de insertar la
+fila `NoteImageEntity` (RNF1: no depende de la URI temporal del
+proveedor externo). Diferencia con RF2: en vez de insertar la imagen
+en línea dentro del texto en el punto exacto de inserción, se muestra
+en un carrusel horizontal (`NoteImagesCarousel`, mismo patrón visual
+que `SelectedImagesCarousel` del Convertidor) debajo del campo de
+texto — más simple de implementar y de usar, y AC1 se cumple igual
+(la imagen persiste y se ve al reabrir). `NoteListItem` agrega un
+carrusel de miniaturas de solo lectura por nota, con un visor de
+imagen a pantalla completa (`Dialog`) al tocar una miniatura. AC2 ya
+estaba cubierto por `NoteRepository.deleteNote()` (borra los archivos
+de imagen del disco antes de la fila). Verificado en dispositivo real:
+adjuntar 2 imágenes desde la galería, guardar, ver las miniaturas en
+la lista, abrir y cerrar el visor de pantalla completa, y eliminar la
+nota (borra la fila y, por código, los archivos asociados).
 
 #### HU-50 — Vincular una nota a un documento de la Biblioteca
 

@@ -1,5 +1,6 @@
 package com.docsmart.features.study.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.analytics.DocuSmartAnalytics
@@ -43,9 +44,9 @@ class NotesViewModel @Inject constructor(
         }
     }
 
-    fun createNote(title: String, text: String) {
+    fun createNote(title: String, text: String, imageUris: List<Uri> = emptyList()) {
         viewModelScope.launch {
-            noteRepository.createNote(title, text)
+            noteRepository.createNote(title, text, imageUris = imageUris)
             DocuSmartAnalytics.logNoteCreated()
         }
     }

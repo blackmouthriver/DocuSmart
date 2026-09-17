@@ -982,6 +982,10 @@
     <string name="study_listening">Ich höre zu … sprich jetzt</string>
     <string name="study_save_note">Notiz speichern</string>
     <string name="study_untitled_note">Notiz ohne Titel</string>
+    <string name="study_note_attach_image">Bild anhängen</string>
+    <string name="study_note_scan_image">Scannen</string>
+    <string name="study_note_remove_image">Bild entfernen</string>
+    <string name="study_note_image_desc">Angehängtes Bild</string>
     <string name="study_no_saved_notes">Keine gespeicherten Notizen</string>
     <string name="study_saved_notes_count">Gespeicherte Notizen (%1$d)</string>
     <string name="study_delete_all">Alle löschen</string>

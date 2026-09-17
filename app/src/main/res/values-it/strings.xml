@@ -989,6 +989,10 @@
     <string name="study_listening">In ascolto… parla ora</string>
     <string name="study_save_note">Salva nota</string>
     <string name="study_untitled_note">Nota senza titolo</string>
+    <string name="study_note_attach_image">Allega immagine</string>
+    <string name="study_note_scan_image">Scansiona</string>
+    <string name="study_note_remove_image">Rimuovi immagine</string>
+    <string name="study_note_image_desc">Immagine allegata</string>
     <string name="study_no_saved_notes">Nessuna nota salvata</string>
     <string name="study_saved_notes_count">Note salvate (%1$d)</string>
     <string name="study_delete_all">Elimina tutte</string>

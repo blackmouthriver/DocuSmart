@@ -3,7 +3,6 @@ package com.docsmart.features.converter.presentation
 import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,9 +42,7 @@ import com.docsmart.features.converter.domain.model.HIDDEN_FROM_UI
 import com.docsmart.features.converter.presentation.components.BatchConversionSuccess
 import com.docsmart.features.converter.presentation.components.ConversionProgress
 import com.docsmart.features.converter.presentation.components.ConversionSuccess
-import com.docsmart.features.scanner.presentation.ScannerMode
-import com.docsmart.features.scanner.presentation.launchDocumentScanner
-import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import com.docsmart.features.scanner.presentation.rememberDocumentScannerAction
 
 // Extraído de ConverterScreen (detekt: LongMethod) -- las 5 secciones por
 // categoría (Imagen/PDF/Word/Excel/PowerPoint) eran código casi idéntico
@@ -113,10 +110,10 @@ fun ConverterScreen(
     // reutiliza el mismo escáner de ML Kit ya probado en la pantalla
     // Escáner (siempre devuelve páginas como imagen, nunca PDF directo).
     // Cancelar (RESULT_CANCELED) no hace nada, deja el selector como estaba.
-    val onCaptureWithCamera = rememberCaptureWithCameraAction(
-        activity        = activity,
-        onFilesSelected = viewModel::onFilesSelected,
-        onScanError     = viewModel::onScanError
+    val onCaptureWithCamera = rememberDocumentScannerAction(
+        activity       = activity,
+        onPagesScanned = viewModel::onFilesSelected,
+        onScanError    = viewModel::onScanError
     )
 
     ConverterScreenSideEffects(
@@ -273,43 +270,6 @@ fun ConverterScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-// Extraído de ConverterScreen (detekt: LongMethod) -- launcher del atajo
-// "Capturar con cámara" (backlog UX 2026-08-30, HU-UX-03), reutiliza el
-// mismo escáner de ML Kit que ya usa la pantalla Escáner (siempre devuelve
-// páginas como imagen, nunca PDF directo).
-@Composable
-private fun rememberCaptureWithCameraAction(
-    activity: Activity?,
-    onFilesSelected: (List<Uri>) -> Unit,
-    onScanError: (String) -> Unit
-): () -> Unit {
-    val scannerStartErrorTemplate = stringResource(R.string.scanner_start_error)
-    val documentScanLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val pages = GmsDocumentScanningResult
-                .fromActivityResultIntent(result.data)
-                ?.pages?.mapNotNull { it.imageUri } ?: emptyList()
-            if (pages.isNotEmpty()) onFilesSelected(pages)
-        }
-    }
-    return {
-        activity?.let { act ->
-            launchDocumentScanner(
-                activity   = act,
-                mode       = ScannerMode.DOCUMENT,
-                onLaunched = { intentSender ->
-                    documentScanLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
-                },
-                onError    = { message ->
-                    onScanError(String.format(scannerStartErrorTemplate, message))
-                }
-            )
         }
     }
 }

@@ -986,6 +986,10 @@
     <string name="study_listening">듣고 있어요… 지금 말씀하세요</string>
     <string name="study_save_note">메모 저장</string>
     <string name="study_untitled_note">제목 없는 메모</string>
+    <string name="study_note_attach_image">이미지 첨부</string>
+    <string name="study_note_scan_image">스캔</string>
+    <string name="study_note_remove_image">이미지 제거</string>
+    <string name="study_note_image_desc">첨부된 이미지</string>
     <string name="study_no_saved_notes">저장된 메모 없음</string>
     <string name="study_saved_notes_count">저장된 메모 (%1$d개)</string>
     <string name="study_delete_all">모두 삭제</string>

@@ -2,8 +2,16 @@ package com.docsmart.features.scanner.presentation
 
 import android.app.Activity
 import android.content.IntentSender
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.docsmart.R
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import timber.log.Timber
 
 // Backlog UX (pedido explícito del usuario 2026-09-06): tope de páginas
@@ -43,4 +51,46 @@ fun launchDocumentScanner(
             Timber.e(e, "Error obteniendo intent del escáner")
             onError(e.message ?: "")
         }
+}
+
+// Extraído de ConverterScreen (backlog UX 2026-08-30, HU-UX-03) y
+// promovido acá (backlog UX #49, 2026-09-17) para que Notas de Modo
+// Estudio reutilice el mismo launcher en vez de duplicarlo -- envuelve
+// launchDocumentScanner() con el registro de
+// ActivityResultContracts.StartIntentSenderForResult() que necesita
+// Compose para recibir el resultado del escáner de ML Kit.
+@Composable
+fun rememberDocumentScannerAction(
+    activity: Activity?,
+    mode: ScannerMode = ScannerMode.DOCUMENT,
+    pageLimit: Int = SCAN_DEFAULT_PAGE_LIMIT,
+    onPagesScanned: (List<Uri>) -> Unit,
+    onScanError: (String) -> Unit
+): () -> Unit {
+    val scannerStartErrorTemplate = stringResource(R.string.scanner_start_error)
+    val documentScanLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val pages = GmsDocumentScanningResult
+                .fromActivityResultIntent(result.data)
+                ?.pages?.mapNotNull { it.imageUri } ?: emptyList()
+            if (pages.isNotEmpty()) onPagesScanned(pages)
+        }
+    }
+    return {
+        activity?.let { act ->
+            launchDocumentScanner(
+                activity = act,
+                mode = mode,
+                pageLimit = pageLimit,
+                onLaunched = { intentSender ->
+                    documentScanLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                },
+                onError = { message ->
+                    onScanError(String.format(scannerStartErrorTemplate, message))
+                }
+            )
+        }
+    }
 }

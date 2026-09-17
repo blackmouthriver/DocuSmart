@@ -1,6 +1,7 @@
 package com.docsmart.features.study.data
 
 import android.content.Context
+import android.net.Uri
 import com.docsmart.core.data.db.NoteDao
 import com.docsmart.core.data.db.NoteEntity
 import com.docsmart.core.data.db.NoteImageEntity
@@ -17,6 +18,8 @@ import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val NOTE_IMAGES_DIR = "note_images"
 
 private const val LEGACY_PREFS_NAME = "study_notes"
 private const val KEY_MIGRATED_TO_ROOM = "migrated_to_room"
@@ -81,18 +84,48 @@ class NoteRepository @Inject constructor(
 
     fun observeLinkedCount(documentId: String): Flow<Int> = noteDao.observeLinkedCount(documentId)
 
-    suspend fun createNote(title: String, text: String, documentId: String? = null): Unit =
-        withContext(Dispatchers.IO) {
-            noteDao.insert(
-                NoteEntity(
-                    id         = UUID.randomUUID().toString(),
-                    title      = title,
-                    text       = text,
-                    createdAt  = System.currentTimeMillis(),
-                    documentId = documentId
-                )
+    // Backlog UX #49: `imageUris` son URIs del selector del sistema o del
+    // escáner de ML Kit (temporales, viven en el cache del proveedor) --
+    // se copian a `filesDir/note_images/` antes de guardar la fila para que
+    // la nota no dependa de un archivo ajeno que puede desaparecer.
+    suspend fun createNote(
+        title: String,
+        text: String,
+        documentId: String? = null,
+        imageUris: List<Uri> = emptyList()
+    ): Unit = withContext(Dispatchers.IO) {
+        val noteId = UUID.randomUUID().toString()
+        noteDao.insert(
+            NoteEntity(
+                id         = noteId,
+                title      = title,
+                text       = text,
+                createdAt  = System.currentTimeMillis(),
+                documentId = documentId
             )
+        )
+        imageUris.forEachIndexed { position, uri ->
+            val filePath = copyImageToNoteStorage(noteId, position, uri) ?: return@forEachIndexed
+            noteDao.insertImage(NoteImageEntity(noteId = noteId, filePath = filePath, position = position))
         }
+    }
+
+    // Una imagen que falla al copiar (proveedor externo caído, formato raro)
+    // no debe frenar la creación de la nota entera ni de las demás imágenes
+    // -- se salta esa sola, el resto sigue su curso normal.
+    @Suppress("TooGenericExceptionCaught")
+    private fun copyImageToNoteStorage(noteId: String, position: Int, uri: Uri): String? {
+        return try {
+            val dir = File(context.filesDir, NOTE_IMAGES_DIR).apply { mkdirs() }
+            val outFile = File(dir, "${noteId}_$position.jpg")
+            val input = context.contentResolver.openInputStream(uri) ?: return null
+            input.use { stream -> outFile.outputStream().use { output -> stream.copyTo(output) } }
+            outFile.absolutePath
+        } catch (e: Exception) {
+            Timber.e(e, "Error copiando imagen adjunta a la nota $noteId")
+            null
+        }
+    }
 
     suspend fun linkDocument(noteId: String, documentId: String?) = withContext(Dispatchers.IO) {
         val note = noteDao.getById(noteId) ?: return@withContext
