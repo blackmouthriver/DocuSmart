@@ -88,7 +88,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 64 | Modo Estudio — Selector de voz con avatar, nombre y muestra de audio (refinamiento de la lectura por voz) | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §37 |
 | 65 | Agenda/Calendario — Guardar eventos, reuniones y entregas con recordatorio (+ vista de calendario, banners y permiso de alarma exacta) | Mejora (épica) | Media-Alta | Alta | Medio | **✅ Implementado y verificado en dispositivo real (Motorola Edge 30 Neo) 2026-09-17 — AC1-AC6, incluye 2 bugs reales encontrados y corregidos (permiso de notificaciones, permiso de alarma exacta)** — ver §38 |
 | 66 | Modal de "Idioma" (Ajustes) — rediseño con tarjetas degradadas por idioma, color de acento, hover y transiciones (referencia visual entregada por el usuario) | Mejora (visual) | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-17** — ver §39 |
-| 67 | Modo Estudio — Selector de voz: reemplazar el círculo de color por un personaje/avatar ilustrado por voz (femenino/masculino), referencia visual entregada por el usuario | Mejora (visual) | Media | Media-Alta | Bajo | 🆕 Propuesto 2026-09-16 — pendiente definir origen de los assets (ver §40) — ver §40 |
+| 67 | Modo Estudio — Selector de voz: reemplazar el círculo de color por un personaje/avatar ilustrado por voz (femenino/masculino), referencia visual entregada por el usuario | Mejora (visual) | Media | Media-Alta | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-17** — ver §40 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -4453,3 +4453,37 @@ reutilizar las fotos entregadas -- la opción (b) es la recomendada por
 ser la única sin riesgo de derechos y además consistente con el resto
 del lenguaje visual vectorial de DocuSmart (íconos Material, no fotos,
 en toda la app).
+
+**✅ Implementado y verificado en dispositivo real (Motorola Edge 30
+Neo) 2026-09-17.** El bloqueante de arriba se resolvió: las imágenes de
+referencia no eran fotos de bancos de imágenes ni de personas reales --
+**el usuario las generó él mismo con Gemini** (IA generativa), así que
+no hay riesgo real de derechos de imagen de terceros. El usuario recortó
+manualmente 12 imágenes individuales (6 femeninas + 6 masculinas,
+formato avatar circular con fondo decorativo e ícono de onda de audio
+ya incluido) y las dejó en `Descargas/personajes/` -- se usaron las
+primeras 5 de cada set (las 2 restantes quedaron sin usar, de sobra).
+
+- Se agregó `avatarDrawableRes: Int` a `VoicePersona`
+  (`VoicePersona.kt`), uno por persona, manteniendo `avatarColor` como
+  anillo de color alrededor del avatar (mismo criterio de identidad por
+  color que ya tenía cada personaje, en vez de reemplazarlo del todo).
+- En `VoiceSelectorDialog` (`StudyScreen.kt`) el `Box` con
+  `Icon(Face)` + fondo de color se reemplazó por un `Image` circular
+  (`ContentScale.Crop` + `Modifier.clip(CircleShape)` +
+  `Modifier.border(persona.avatarColor)`).
+- **Las 10 imágenes se convirtieron a WebP** (pedido explícito del
+  usuario, "formato más liviano sin perder calidad") -- de ~537 KB
+  total en PNG a **~80 KB total** (calidad 90, ~85% más liviano,
+  sin pérdida perceptible). Viven en `res/drawable-nodpi/` (mismo
+  directorio que ya usaban otros assets de imagen fija de la app --
+  `onboarding_bg_*.jpg`, `premium_trial_bg.jpg` -- no se generan
+  variantes por densidad porque son imágenes ya rasterizadas a un
+  tamaño fijo, igual criterio que esos otros assets).
+- Gauntlet completo (`compileDebugKotlin`+`detekt`+`lintDebug`+
+  `testDebugUnitTest`) en verde.
+- Verificado en vivo en el Motorola Edge 30 Neo: las 10 personas
+  muestran su avatar real con el anillo de color correspondiente en el
+  selector de voz, sin regresión en el resto del diálogo (reproducir
+  muestra, seleccionar voz).
+- **Todavía sin fusionar** -- pendiente de "¿Fusiono y hago push?".

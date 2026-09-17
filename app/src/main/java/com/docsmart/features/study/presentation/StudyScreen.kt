@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -2026,20 +2027,15 @@ private fun VoiceSelectorDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Box(
+                        Image(
+                            painter = painterResource(persona.avatarDrawableRes),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(persona.avatarColor.copy(alpha = 0.16f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Face,
-                                contentDescription = null,
-                                tint = persona.avatarColor,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
+                                .border(1.5.dp, persona.avatarColor, CircleShape)
+                        )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = persona.name,

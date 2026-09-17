@@ -1,6 +1,8 @@
 package com.docsmart.features.study.domain
 
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color
+import com.docsmart.R
 import com.docsmart.core.ui.theme.ColorOcr
 import com.docsmart.core.ui.theme.ColorPowerPoint
 import com.docsmart.core.ui.theme.ColorZip
@@ -15,7 +17,14 @@ import com.docsmart.core.ui.theme.SuccessGreen
 data class VoicePersona(
     val name: String,
     val isFeminine: Boolean,
-    val avatarColor: Color
+    val avatarColor: Color,
+    // Backlog UX 2026-09-16/17 (seguimiento #40): reemplaza el círculo de
+    // color + ícono genérico por un personaje ilustrado propio -- imágenes
+    // generadas por el usuario (Gemini), no fotos de bancos de imágenes ni
+    // de personas reales. avatarColor se conserva como anillo de color
+    // alrededor del avatar, mismo criterio de identidad por color que ya
+    // tenía cada persona.
+    @DrawableRes val avatarDrawableRes: Int
 )
 
 // HU-64 (backlog UX 2026-09-16, feedback real de testers de la prueba
@@ -26,16 +35,46 @@ data class VoicePersona(
 // propósito (son identidades de personaje, no texto de interfaz -- mismo
 // criterio que un nombre de asistente de voz, no se traduce).
 private val VOICE_PERSONAS = listOf(
-    VoicePersona("Sofía", isFeminine = true, avatarColor = DocuBlue),
-    VoicePersona("Mateo", isFeminine = false, avatarColor = SuccessGreen),
-    VoicePersona("Valentina", isFeminine = true, avatarColor = ColorPowerPoint),
-    VoicePersona("Diego", isFeminine = false, avatarColor = IndigoAccent),
-    VoicePersona("Camila", isFeminine = true, avatarColor = ErrorRed),
-    VoicePersona("Sebastián", isFeminine = false, avatarColor = ColorOcr),
-    VoicePersona("Isabella", isFeminine = true, avatarColor = PremiumGold),
-    VoicePersona("Emilio", isFeminine = false, avatarColor = SmartBlue),
-    VoicePersona("Lucía", isFeminine = true, avatarColor = ColorZip),
-    VoicePersona("Nicolás", isFeminine = false, avatarColor = SlateGray)
+    VoicePersona(
+        "Sofía", isFeminine = true,
+        avatarColor = DocuBlue, avatarDrawableRes = R.drawable.voice_avatar_sofia
+    ),
+    VoicePersona(
+        "Mateo", isFeminine = false,
+        avatarColor = SuccessGreen, avatarDrawableRes = R.drawable.voice_avatar_mateo
+    ),
+    VoicePersona(
+        "Valentina", isFeminine = true,
+        avatarColor = ColorPowerPoint, avatarDrawableRes = R.drawable.voice_avatar_valentina
+    ),
+    VoicePersona(
+        "Diego", isFeminine = false,
+        avatarColor = IndigoAccent, avatarDrawableRes = R.drawable.voice_avatar_diego
+    ),
+    VoicePersona(
+        "Camila", isFeminine = true,
+        avatarColor = ErrorRed, avatarDrawableRes = R.drawable.voice_avatar_camila
+    ),
+    VoicePersona(
+        "Sebastián", isFeminine = false,
+        avatarColor = ColorOcr, avatarDrawableRes = R.drawable.voice_avatar_sebastian
+    ),
+    VoicePersona(
+        "Isabella", isFeminine = true,
+        avatarColor = PremiumGold, avatarDrawableRes = R.drawable.voice_avatar_isabella
+    ),
+    VoicePersona(
+        "Emilio", isFeminine = false,
+        avatarColor = SmartBlue, avatarDrawableRes = R.drawable.voice_avatar_emilio
+    ),
+    VoicePersona(
+        "Lucía", isFeminine = true,
+        avatarColor = ColorZip, avatarDrawableRes = R.drawable.voice_avatar_lucia
+    ),
+    VoicePersona(
+        "Nicolás", isFeminine = false,
+        avatarColor = SlateGray, avatarDrawableRes = R.drawable.voice_avatar_nicolas
+    )
 )
 
 // Determinístico por String.hashCode() (algoritmo estable, documentado
