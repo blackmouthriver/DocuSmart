@@ -236,6 +236,7 @@
     <string name="viewer_word_read_error">Ezin izan da Word fitxategiaren edukia irakurri</string>
     <string name="viewer_excel_read_error">Ezin izan da Excel fitxategiaren edukia irakurri</string>
     <string name="viewer_ppt_read_error">Ezin izan da aurkezpenaren edukia irakurri</string>
+    <string name="viewer_text_read_error">Ezin izan da testu-fitxategiaren edukia irakurri</string>
     <string name="viewer_search_results_count">\"%2$s\"(r)en %1$d emaitza</string>
     <string name="viewer_slide_number">%1$d diapositiba</string>
     <string name="viewer_empty_file">Fitxategia hutsik dago</string>

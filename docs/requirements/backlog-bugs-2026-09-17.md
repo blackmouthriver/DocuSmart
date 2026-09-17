@@ -445,25 +445,39 @@ la contraseña al cancelar, no en el camino de éxito (el desbloqueo pone
 salida real de la composición, éxito o cancelación.
 
 ### B13 — Duplicación de `*ViewerContent` (Word/Excel/PPT/Texto)
-**Estado:** ⚠️ Evaluado, no corregido (extracción completa) / ✅ Corregido
-(la inconsistencia concreta) -- se corrigió la única inconsistencia real y
-acotada que el hallazgo señalaba: `PptViewerContent` ahora tiene su propio
-`hasError`, igual que Word/Excel/Texto. Reinvestigado a fondo tras el
-pedido explícito de seguir con los evaluados (2026-09-17, mismo día): las
-4 pantallas NO son duplicados limpios -- divergieron en comportamiento
-real, no solo en estilo. `TextViewerContent` no tiene rama de error en
-absoluto (trata "falló la lectura" igual que "archivo vacío", mostrando
-`viewer_empty_file`); `ExcelViewerContent` tiene un segundo
-`LaunchedEffect` dependiente que cambia de hoja automáticamente si la
-búsqueda no matchea en la hoja activa (RF propio, sin equivalente en las
-otras 3); los estilos de "error de lectura" difieren (Word usa una
-`Column` con `spacedBy(12.dp)`, Excel/PPT un `Text` centrado con
-`padding(32.dp)`). Una extracción genérica real tendría que decidir si
-normaliza estas diferencias (cambio de comportamiento no pedido) o las
-parametriza todas (una abstracción con tantos parámetros que deja de
-ahorrar código de verdad). Se mantiene sin corregir -- no por evitar el
-riesgo sin más, sino porque la investigación confirma que no hay una
-refactorización mecánica de bajo riesgo posible acá.
+**Estado:** ✅ Corregido -- extracción compartida completa. Reinvestigado a
+fondo tras el pedido explícito de seguir con los evaluados (2026-09-17,
+mismo día): la primera evaluación había identificado divergencias reales
+entre las 4 pantallas (`TextViewerContent` sin rama de error propia,
+`ExcelViewerContent` con su `LaunchedEffect` de cambio de hoja, estilos de
+error aparentemente distintos), pero al revisar el renderizado real se
+confirmó que la diferencia de estilo entre Word y Excel/PPT era visualmente
+idéntica (ambas usan `bodyMedium`), no una divergencia de comportamiento.
+Esto permitió una extracción segura sin normalizar nada no pedido: se
+agregaron `DocumentLoadState<T>`, `rememberDocumentLoad<T>()` y
+`DocumentContentBox()` compartidos en `ViewerScreen.kt`, y las 4 pantallas
+(`WordViewerContent`, `ExcelViewerContent`, `PptViewerContent`,
+`TextViewerContent`) se refactorizaron para usarlos, preservando sus
+diferencias reales de comportamiento (el `LaunchedEffect` propio de Excel
+para hojas, y que `TextViewerContent` sigue usando solo `hasError` -- no
+vacío -- como condición de error, ahora con su propio string
+`viewer_text_read_error` en los 12 idiomas en vez de reusar
+`viewer_empty_file`).
+Hallazgo real de la revisión adversarial de este mismo cambio: el `Text`
+de error compartido no tenía `style` explícito, lo que regresionaba
+silenciosamente el texto de error de Word de `bodyMedium` (14sp, su estilo
+original) al `bodyLarge` (16sp) ambiental -- Excel/PPT no se veían
+afectados porque nunca tuvieron un estilo explícito. Corregido agregando
+`style = MaterialTheme.typography.bodyMedium` al `Text` de error
+compartido, restaurando el original de Word exactamente y normalizando
+Excel/PPT/Texto al mismo estilo.
+Verificación en dispositivo: no se pudo completar -- no existen archivos
+`.docx`/`.xlsx`/`.pptx`/`.txt` en el dispositivo de prueba, y ni la
+búsqueda de Biblioteca (la carpeta Descargas no está vinculada vía SAF) ni
+un intent VIEW directo lograron abrir el archivo de prueba en el Visor
+(misma limitación ya documentada para M8/M9/M10). Verificado en su lugar
+con el gauntlet completo en verde (incluyendo
+`compileDebugAndroidTestKotlin`) y la revisión adversarial de código.
 
 ### B14 — "KB" hardcodeado en Almacenamiento
 **Estado:** ✅ Corregido -- `StorageRow` y el Total del diálogo de
@@ -594,21 +608,25 @@ suelto.
    condiciones de fallo no prácticas en un dispositivo real; M8/M9/M10 no
    verificables en vivo por falta de un archivo Excel/PPT de prueba --
    cubiertos por gauntlet + revisión de código). Fusionado (commit `cca7aa8`).
-3. ✅ Evaluar los 23 de **Prioridad Baja/i18n** -- hecho 2026-09-17 en dos
+3. ✅ Evaluar los 23 de **Prioridad Baja/i18n** -- hecho 2026-09-17 en tres
    pasadas. Primera: 13 corregidos (B1, B2, B3, B6, B7, B8, B11, B14, B15,
    B16, B17, B18, B20, B21, B23) + 10 evaluados y no corregidos por riesgo/
-   alcance. El usuario pidió explícitamente seguir con esos 10 igual;
+   alcance. Gauntlet completo + revisión adversarial (sin hallazgos nuevos)
+   + verificación en vivo de B18 (recorte de día exacto). Fusionado (commit
+   `ef35315`). El usuario pidió explícitamente seguir con esos 10 igual;
    segunda pasada: 9 más corregidos (B4, B5, B9, B10, B12, B19 completo,
    B22 -- funcionalidad nueva de editar nota, pedida explícitamente pese a
-   no ser un bug), 1 se mantuvo sin corregir tras reinvestigar a fondo
-   (B13, único caso donde la investigación confirmó que no hay
-   refactorización mecánica de bajo riesgo posible). **Total: 22 de 23
-   corregidos.** Gauntlet completo + revisión adversarial en ambas pasadas
-   (sin hallazgos nuevos en la primera; en la segunda encontró y se corrigió
-   un hallazgo real en B12 -- la contraseña no se limpiaba en el camino de
-   éxito -- y se encontró de paso un bug real preexistente en `linkDocument()`,
-   ver B22). Verificado en vivo en el Motorola Edge 30 Neo: B18 (primera
-   pasada, caso de recorte de día exacto) y B22 completo (segunda pasada,
-   crear→editar→recordatorio real con `dumpsys alarm`→eliminar→cancelación
-   confirmada). Pendiente de aprobación para fusionar.
+   no ser un bug), 1 (B13) quedó evaluado sin corregir en esta pasada.
+   Gauntlet completo + revisión adversarial (encontró y corrigió un
+   hallazgo real en B12 -- la contraseña no se limpiaba en el camino de
+   éxito -- y de paso un bug real preexistente en `linkDocument()`, ver
+   B22) + verificación en vivo de B22 completo (crear→editar→recordatorio
+   real con `dumpsys alarm`→eliminar→cancelación confirmada). Fusionado
+   (commit `e4f4427`). Tercera pasada, a pedido explícito de seguir también
+   con B13: reinvestigado a fondo, la extracción compartida resultó viable
+   sin cambiar comportamiento real (ver detalle en B13). Gauntlet completo
+   + revisión adversarial (encontró y corrigió una regresión real de estilo
+   en el texto de error de Word). No verificable en vivo por falta de
+   archivos de prueba en el dispositivo (misma limitación que M8/M9/M10).
+   **Total: 23 de 23 corregidos.** Pendiente de aprobación para fusionar.
 4. Sumar tests de regresión para los huecos de cobertura que hubieran detectado cada hallazgo Alta/Media, como parte de su propio fix (no como tarea aparte).

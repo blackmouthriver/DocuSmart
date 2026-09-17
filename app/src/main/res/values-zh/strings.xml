@@ -226,6 +226,7 @@
     <string name="viewer_word_read_error">无法读取 Word 文件内容</string>
     <string name="viewer_excel_read_error">无法读取 Excel 文件内容</string>
     <string name="viewer_ppt_read_error">无法读取演示文稿内容</string>
+    <string name="viewer_text_read_error">无法读取文本文件内容</string>
     <string name="viewer_search_results_count">找到 %1$d 个与\"%2$s\"匹配的结果</string>
     <string name="viewer_slide_number">幻灯片 %1$d</string>
     <string name="viewer_empty_file">文件为空</string>

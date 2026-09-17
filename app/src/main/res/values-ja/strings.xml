@@ -226,6 +226,7 @@
     <string name="viewer_word_read_error">Wordファイルの内容を読み込めませんでした</string>
     <string name="viewer_excel_read_error">Excelファイルの内容を読み込めませんでした</string>
     <string name="viewer_ppt_read_error">プレゼンテーションの内容を読み込めませんでした</string>
+    <string name="viewer_text_read_error">テキストファイルの内容を読み込めませんでした</string>
     <string name="viewer_search_results_count">\"%2$s\" の検索結果 %1$d 件</string>
     <string name="viewer_slide_number">スライド %1$d</string>
     <string name="viewer_empty_file">ファイルが空です</string>

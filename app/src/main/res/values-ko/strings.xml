@@ -226,6 +226,7 @@
     <string name="viewer_word_read_error">Word 파일의 내용을 읽을 수 없습니다</string>
     <string name="viewer_excel_read_error">Excel 파일의 내용을 읽을 수 없습니다</string>
     <string name="viewer_ppt_read_error">프레젠테이션의 내용을 읽을 수 없습니다</string>
+    <string name="viewer_text_read_error">텍스트 파일의 내용을 읽을 수 없습니다</string>
     <string name="viewer_search_results_count">\"%2$s\"에 대한 결과 %1$d개</string>
     <string name="viewer_slide_number">슬라이드 %1$d</string>
     <string name="viewer_empty_file">파일이 비어 있습니다</string>

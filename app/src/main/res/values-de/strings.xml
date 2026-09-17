@@ -226,6 +226,7 @@
     <string name="viewer_word_read_error">Der Inhalt der Word-Datei konnte nicht gelesen werden</string>
     <string name="viewer_excel_read_error">Der Inhalt der Excel-Datei konnte nicht gelesen werden</string>
     <string name="viewer_ppt_read_error">Der Inhalt der Präsentation konnte nicht gelesen werden</string>
+    <string name="viewer_text_read_error">Der Inhalt der Textdatei konnte nicht gelesen werden</string>
     <string name="viewer_search_results_count">%1$d Ergebnis(se) für \"%2$s\"</string>
     <string name="viewer_slide_number">Folie %1$d</string>
     <string name="viewer_empty_file">Die Datei ist leer</string>

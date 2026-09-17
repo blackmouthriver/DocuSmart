@@ -226,6 +226,7 @@
     <string name="viewer_word_read_error">Не удалось прочитать содержимое файла Word</string>
     <string name="viewer_excel_read_error">Не удалось прочитать содержимое файла Excel</string>
     <string name="viewer_ppt_read_error">Не удалось прочитать содержимое презентации</string>
+    <string name="viewer_text_read_error">Не удалось прочитать содержимое текстового файла</string>
     <string name="viewer_search_results_count">Результатов: %1$d по запросу «%2$s»</string>
     <string name="viewer_slide_number">Слайд %1$d</string>
     <string name="viewer_empty_file">Файл пуст</string>

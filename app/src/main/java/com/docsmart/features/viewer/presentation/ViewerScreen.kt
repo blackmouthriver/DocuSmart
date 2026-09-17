@@ -1094,6 +1094,102 @@ private fun hitTestAnnotation(
     return null
 }
 
+// ── Carga y estado compartido de las 4 pantallas Word/Excel/PPT/Texto ─────────
+// Hallazgo real de la auditoría general 2026-09-17 (B13, segunda pasada):
+// las 4 pantallas *ViewerContent repetían el mismo mecanismo de carga
+// (LaunchedEffect + contentResolver.openInputStream + try/catch/finally) y
+// el mismo esqueleto visual (Box + when{isLoading -> spinner; error -> texto
+// centrado; si no, el contenido}). Se comparte SOLO esa mecánica -- cada
+// pantalla conserva su propio tipo de dato, su propio mensaje de error y su
+// propia decisión de qué cuenta como "error" (ver el comentario de
+// TextViewerContent sobre por qué un archivo de texto vacío NO es un error,
+// a diferencia de Word/Excel/PPT con 0 bloques/hojas/diapositivas
+// extraídas). Una primera investigación de este hallazgo (misma sesión,
+// antes) había concluido que las 4 pantallas divergían demasiado para
+// compartir código de forma segura -- una segunda mirada, a pedido
+// explícito del usuario de seguir con este hallazgo igual, encontró que la
+// diferencia de estilo del estado de error (una `Column` de un solo hijo en
+// Word contra un `Text` suelto en Excel/PPT) es visualmente idéntica, no un
+// comportamiento real distinto -- eso fue lo que hizo posible esta
+// extracción sin cambiar nada que el usuario vea.
+private data class DocumentLoadState<T>(val data: T, val isLoading: Boolean, val hasError: Boolean)
+
+@Composable
+private fun <T> rememberDocumentLoad(
+    uri: Uri?,
+    initial: T,
+    errorLogTag: String,
+    extract: suspend (java.io.InputStream) -> T
+): DocumentLoadState<T> {
+    val context = LocalContext.current
+    // Antes cada pantalla usaba `remember { }` sin `key(uri)` para
+    // `isLoading`/`hasError` (solo el dato en sí se reasignaba dentro del
+    // propio LaunchedEffect(uri)) -- si esta composable llegara a reusarse
+    // para un URI nuevo sin recomponerse desde cero, un error ya resuelto de
+    // la carga anterior seguía marcado, mostrando el mensaje de error
+    // encima del spinner del documento nuevo. `remember(uri)` reinicia
+    // ambos estados en cuanto cambia el documento.
+    var data by remember(uri) { mutableStateOf(initial) }
+    var isLoading by remember(uri) { mutableStateOf(true) }
+    var hasError by remember(uri) { mutableStateOf(false) }
+
+    LaunchedEffect(uri) {
+        if (uri == null) return@LaunchedEffect
+        data = withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { extract(it) } ?: initial
+            } catch (e: Exception) {
+                Timber.e(e, "Error leyendo $errorLogTag")
+                hasError = true
+                initial
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+    return DocumentLoadState(data, isLoading, hasError)
+}
+
+@Composable
+private fun DocumentContentBox(
+    isLoading: Boolean,
+    isErrorState: Boolean,
+    errorMessage: String,
+    onTap: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .clickable { onTap() }
+    ) {
+        when {
+            isLoading -> CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color    = MaterialTheme.colorScheme.primary
+            )
+            // Corrección tras la revisión adversarial de este mismo lote:
+            // el `Text` de error de Word tenía `style = bodyMedium`
+            // explícito (dentro de una `Column` que ahora se simplificó,
+            // visualmente idéntica) -- Excel/PPT no lo tenían y heredaban
+            // el estilo ambiente por defecto (`bodyLarge`, más grande).
+            // Sin este `style` acá, Word perdía su tamaño de texto original
+            // al compartir esta caja. Se deja explícito para las 4
+            // pantallas, restaurando el de Word exacto y normalizando
+            // Excel/PPT/Texto al mismo.
+            isErrorState -> Text(
+                text      = errorMessage,
+                modifier  = Modifier.align(Alignment.Center).padding(32.dp),
+                style     = MaterialTheme.typography.bodyMedium,
+                color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            else -> content()
+        }
+    }
+}
+
 // ── Visor de Word ─────────────────────────────────────────────────────────────
 // Reescrito con Apache POI (RF pedido por el usuario 2026-09-03, mismo
 // enfoque ya aplicado a PowerPoint) en vez de expresiones regulares sobre el
@@ -1181,28 +1277,8 @@ private fun WordViewerContent(
     searchQuery: String = "",
     onTap      : () -> Unit
 ) {
-    val context = LocalContext.current
-
-    var blocks    by remember { mutableStateOf<List<WordBlock>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError  by remember { mutableStateOf(false) }
-
-    LaunchedEffect(uri) {
-        if (uri == null) return@LaunchedEffect
-        blocks = withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    extractWordBlocks(input)
-                } ?: emptyList()
-            } catch (e: Exception) {
-                Timber.e(e, "Error leyendo Word")
-                hasError = true
-                emptyList()
-            } finally {
-                isLoading = false
-            }
-        }
-    }
+    val load = rememberDocumentLoad(uri, emptyList<WordBlock>(), "Word") { extractWordBlocks(it) }
+    val blocks = load.data
 
     fun blockPlainText(block: WordBlock): String = when (block) {
         is WordParagraphBlock -> block.paragraph.runs.joinToString("") { it.text }
@@ -1212,90 +1288,72 @@ private fun WordViewerContent(
     val displayBlocks = if (searchQuery.isBlank()) blocks
     else blocks.filter { blockPlainText(it).contains(searchQuery, ignoreCase = true) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .clickable { onTap() }
+    DocumentContentBox(
+        isLoading    = load.isLoading,
+        isErrorState = load.hasError || blocks.isEmpty(),
+        errorMessage = stringResource(R.string.viewer_word_read_error),
+        onTap        = onTap
     ) {
-        when {
-            isLoading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color    = MaterialTheme.colorScheme.primary
-            )
-            hasError || blocks.isEmpty() -> Column(
-                modifier            = Modifier.align(Alignment.Center).padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text      = stringResource(R.string.viewer_word_read_error),
-                    style     = MaterialTheme.typography.bodyMedium,
-                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-            else -> LazyColumn(
-                modifier            = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                if (searchQuery.isNotBlank()) {
-                    item {
-                        Text(
-                            text     = stringResource(
-                                R.string.viewer_search_results_count, displayBlocks.size, searchQuery
-                            ),
-                            style    = MaterialTheme.typography.labelMedium,
-                            color    = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
+        LazyColumn(
+            modifier            = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            if (searchQuery.isNotBlank()) {
+                item {
+                    Text(
+                        text     = stringResource(
+                            R.string.viewer_search_results_count, displayBlocks.size, searchQuery
+                        ),
+                        style    = MaterialTheme.typography.labelMedium,
+                        color    = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                 }
-                itemsIndexed(displayBlocks) { _, block ->
-                    val bgColor = if (searchQuery.isNotBlank())
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    else
-                        MaterialTheme.colorScheme.background
+            }
+            itemsIndexed(displayBlocks) { _, block ->
+                val bgColor = if (searchQuery.isNotBlank())
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                else
+                    MaterialTheme.colorScheme.background
 
-                    when (block) {
-                        is WordTableBlock -> WordTableView(block, modifier = Modifier.padding(vertical = 8.dp))
-                        is WordParagraphBlock -> {
-                            val para = block.paragraph
-                            if (para.isHeading) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(bgColor, RoundedCornerShape(8.dp))
-                                ) {
-                                    Spacer(Modifier.height(16.dp))
-                                    Text(
-                                        text       = wordParagraphAnnotatedString(para, baseSizeSp = 18.sp),
-                                        style      = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color      = MaterialTheme.colorScheme.primary,
-                                        lineHeight = 26.sp
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    HorizontalDivider(
-                                        color     = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        thickness = 1.dp
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                }
-                            } else {
+                when (block) {
+                    is WordTableBlock -> WordTableView(block, modifier = Modifier.padding(vertical = 8.dp))
+                    is WordParagraphBlock -> {
+                        val para = block.paragraph
+                        if (para.isHeading) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(bgColor, RoundedCornerShape(8.dp))
+                            ) {
+                                Spacer(Modifier.height(16.dp))
                                 Text(
-                                    text       = wordParagraphAnnotatedString(para, baseSizeSp = 14.sp),
-                                    style      = MaterialTheme.typography.bodyMedium,
-                                    color      = MaterialTheme.colorScheme.onSurface,
-                                    lineHeight = 24.sp,
-                                    modifier   = Modifier
-                                        .padding(vertical = 3.dp)
-                                        .fillMaxWidth()
-                                        .background(bgColor, RoundedCornerShape(4.dp))
-                                        .padding(horizontal = if (searchQuery.isNotBlank()) 8.dp else 0.dp)
+                                    text       = wordParagraphAnnotatedString(para, baseSizeSp = 18.sp),
+                                    style      = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color      = MaterialTheme.colorScheme.primary,
+                                    lineHeight = 26.sp
                                 )
+                                Spacer(Modifier.height(4.dp))
+                                HorizontalDivider(
+                                    color     = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    thickness = 1.dp
+                                )
+                                Spacer(Modifier.height(8.dp))
                             }
+                        } else {
+                            Text(
+                                text       = wordParagraphAnnotatedString(para, baseSizeSp = 14.sp),
+                                style      = MaterialTheme.typography.bodyMedium,
+                                color      = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 24.sp,
+                                modifier   = Modifier
+                                    .padding(vertical = 3.dp)
+                                    .fillMaxWidth()
+                                    .background(bgColor, RoundedCornerShape(4.dp))
+                                    .padding(horizontal = if (searchQuery.isNotBlank()) 8.dp else 0.dp)
+                            )
                         }
                     }
                 }
@@ -1411,30 +1469,14 @@ private fun ExcelViewerContent(
     searchQuery: String = "",
     onTap      : () -> Unit
 ) {
-    val context = LocalContext.current
-
-    var sheets    by remember { mutableStateOf<List<ExcelSheetModel>>(emptyList()) }
+    val load = rememberDocumentLoad(uri, emptyList<ExcelSheetModel>(), "Excel") { extractExcelSheets(it) }
+    val sheets = load.data
     var sheetIndex by remember { mutableIntStateOf(0) }
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError  by remember { mutableStateOf(false) }
-
-    LaunchedEffect(uri) {
-        if (uri == null) return@LaunchedEffect
-        sheets = withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    extractExcelSheets(input)
-                } ?: emptyList()
-            } catch (e: Exception) {
-                Timber.e(e, "Error leyendo Excel")
-                hasError = true
-                emptyList()
-            } finally {
-                isLoading = false
-            }
-        }
-        sheetIndex = 0
-    }
+    // Vuelve a la primera hoja cada vez que cambia el documento -- antes
+    // vivía dentro del propio LaunchedEffect(uri) de carga, ahora ese efecto
+    // lo comparte rememberDocumentLoad(), así que se separa en uno propio
+    // con la misma clave.
+    LaunchedEffect(uri) { sheetIndex = 0 }
 
     fun sheetMatches(sheet: ExcelSheetModel) =
         sheet.rows.any { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
@@ -1464,83 +1506,71 @@ private fun ExcelViewerContent(
     val columnCount = rows.maxOfOrNull { it.cells.size } ?: 0
     val gridScrollState = rememberScrollState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .clickable { onTap() }
+    DocumentContentBox(
+        isLoading    = load.isLoading,
+        isErrorState = load.hasError || sheets.isEmpty(),
+        errorMessage = stringResource(R.string.viewer_excel_read_error),
+        onTap        = onTap
     ) {
-        when {
-            isLoading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color    = MaterialTheme.colorScheme.primary
-            )
-            hasError || sheets.isEmpty() -> Text(
-                text      = stringResource(R.string.viewer_excel_read_error),
-                modifier  = Modifier.align(Alignment.Center).padding(32.dp),
-                color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            else -> Column(modifier = Modifier.fillMaxSize()) {
-                Spacer(Modifier.height(100.dp))
-                // Pestañas de hojas -- solo si hay más de una, para no meter
-                // ruido visual en el caso más común de un solo Excel simple.
-                if (sheets.size > 1) {
-                    ExcelSheetTabs(
-                        sheetNames   = sheets.map { it.name },
-                        selectedIndex = sheetIndex,
-                        onSelect     = { sheetIndex = it }
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(Modifier.height(100.dp))
+            // Pestañas de hojas -- solo si hay más de una, para no meter
+            // ruido visual en el caso más común de un solo Excel simple.
+            if (sheets.size > 1) {
+                ExcelSheetTabs(
+                    sheetNames   = sheets.map { it.name },
+                    selectedIndex = sheetIndex,
+                    onSelect     = { sheetIndex = it }
+                )
+            }
+            LazyColumn(
+                modifier       = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
+            if (searchQuery.isNotBlank()) {
+                item {
+                    Text(
+                        // totalMatches cuenta en TODO el libro, no solo la
+                        // hoja activa (#13) -- displayRows sigue acotado a
+                        // la hoja activa (ya auto-seleccionada arriba si
+                        // hacía falta) porque la grilla es por hoja.
+                        text     = stringResource(
+                            R.string.viewer_search_results_count, totalMatches, searchQuery
+                        ),
+                        style    = MaterialTheme.typography.labelMedium,
+                        color    = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
-                LazyColumn(
-                    modifier       = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 100.dp)
-                ) {
-                if (searchQuery.isNotBlank()) {
-                    item {
-                        Text(
-                            // totalMatches cuenta en TODO el libro, no solo la
-                            // hoja activa (#13) -- displayRows sigue acotado a
-                            // la hoja activa (ya auto-seleccionada arriba si
-                            // hacía falta) porque la grilla es por hoja.
-                            text     = stringResource(
-                                R.string.viewer_search_results_count, totalMatches, searchQuery
-                            ),
-                            style    = MaterialTheme.typography.labelMedium,
-                            color    = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                    }
-                }
+            }
 
-                val header = if (searchQuery.isBlank()) displayRows.firstOrNull() else null
-                val data   = if (searchQuery.isBlank() && displayRows.size > 1)
-                    displayRows.drop(1) else displayRows
+            val header = if (searchQuery.isBlank()) displayRows.firstOrNull() else null
+            val data   = if (searchQuery.isBlank() && displayRows.size > 1)
+                displayRows.drop(1) else displayRows
 
-                if (header != null) {
-                    item {
-                        ExcelGridRow(
-                            cells       = header.cells,
-                            columnCount = columnCount,
-                            scrollState = gridScrollState,
-                            isHeader    = true,
-                            highlighted = false,
-                            zebra       = false
-                        )
-                    }
-                }
-
-                itemsIndexed(data) { index, row ->
+            if (header != null) {
+                item {
                     ExcelGridRow(
-                        cells       = row.cells,
+                        cells       = header.cells,
                         columnCount = columnCount,
                         scrollState = gridScrollState,
-                        isHeader    = false,
-                        highlighted = searchQuery.isNotBlank(),
-                        zebra       = index % 2 == 0
+                        isHeader    = true,
+                        highlighted = false,
+                        zebra       = false
                     )
                 }
-                }
+            }
+
+            itemsIndexed(data) { index, row ->
+                ExcelGridRow(
+                    cells       = row.cells,
+                    columnCount = columnCount,
+                    scrollState = gridScrollState,
+                    isHeader    = false,
+                    highlighted = searchQuery.isNotBlank(),
+                    zebra       = index % 2 == 0
+                )
+            }
             }
         }
     }
@@ -1708,32 +1738,8 @@ private fun PptViewerContent(
     searchQuery: String = "",
     onTap      : () -> Unit
 ) {
-    val context = LocalContext.current
-
-    var slides    by remember { mutableStateOf<List<PptSlideModel>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    // Hallazgo real de la auditoría general 2026-09-17 (B13): a diferencia
-    // de Word/Excel/Texto, esta pantalla no distinguía "PPT sin
-    // diapositivas de verdad" de "falló la lectura" -- ambos casos caían en
-    // slides.isEmpty() sin ningún hasError propio.
-    var hasError  by remember { mutableStateOf(false) }
-
-    LaunchedEffect(uri) {
-        if (uri == null) return@LaunchedEffect
-        slides = withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    extractPptSlides(input)
-                } ?: emptyList()
-            } catch (e: Exception) {
-                Timber.e(e, "Error leyendo PPT")
-                hasError = true
-                emptyList()
-            } finally {
-                isLoading = false
-            }
-        }
-    }
+    val load = rememberDocumentLoad(uri, emptyList<PptSlideModel>(), "PPT") { extractPptSlides(it) }
+    val slides = load.data
 
     fun slideText(slide: PptSlideModel) = slide.shapes.joinToString(" ") { shape ->
         shape.runs.joinToString(" ") { it.text }
@@ -1742,69 +1748,57 @@ private fun PptViewerContent(
     val displaySlides = if (searchQuery.isBlank()) slides
     else slides.filter { slideText(it).contains(searchQuery, ignoreCase = true) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .clickable { onTap() }
+    DocumentContentBox(
+        isLoading    = load.isLoading,
+        isErrorState = load.hasError || slides.isEmpty(),
+        errorMessage = stringResource(R.string.viewer_ppt_read_error),
+        onTap        = onTap
     ) {
-        when {
-            isLoading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color    = MaterialTheme.colorScheme.primary
-            )
-            hasError || slides.isEmpty() -> Text(
-                text      = stringResource(R.string.viewer_ppt_read_error),
-                modifier  = Modifier.align(Alignment.Center).padding(32.dp),
-                color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            else -> LazyColumn(
-                modifier            = Modifier.fillMaxSize(),
-                contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 16.dp, end = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (searchQuery.isNotBlank()) {
-                    item {
-                        Text(
-                            text     = stringResource(
-                                R.string.viewer_search_results_count, displaySlides.size, searchQuery
-                            ),
-                            style    = MaterialTheme.typography.labelMedium,
-                            color    = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
+        LazyColumn(
+            modifier            = Modifier.fillMaxSize(),
+            contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 16.dp, end = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (searchQuery.isNotBlank()) {
+                item {
+                    Text(
+                        text     = stringResource(
+                            R.string.viewer_search_results_count, displaySlides.size, searchQuery
+                        ),
+                        style    = MaterialTheme.typography.labelMedium,
+                        color    = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
                 }
-                // RF: cada diapositiva se muestra como un lienzo de proporción
-                // 16:9 (como una diapositiva real), no como una tarjeta de lista
-                // genérica -- el número de diapositiva queda como leyenda FUERA
-                // del lienzo, igual que un editor de presentaciones muestra sus
-                // miniaturas.
-                itemsIndexed(displaySlides) { _, slide ->
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text     = stringResource(R.string.viewer_slide_number, slide.number),
-                            style    = MaterialTheme.typography.labelSmall,
-                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-                        val shape = MaterialTheme.shapes.large
-                        val containerColor = if (searchQuery.isNotBlank())
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                        else
-                            Color.White
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(16f / 9f)
-                                .accentShadow(shape = shape, elevation = 3.dp)
-                                .clip(shape)
-                                .background(containerColor)
-                                .accentBorder(shape = shape)
-                        ) {
-                            PptSlideCanvas(slide)
-                        }
+            }
+            // RF: cada diapositiva se muestra como un lienzo de proporción
+            // 16:9 (como una diapositiva real), no como una tarjeta de lista
+            // genérica -- el número de diapositiva queda como leyenda FUERA
+            // del lienzo, igual que un editor de presentaciones muestra sus
+            // miniaturas.
+            itemsIndexed(displaySlides) { _, slide ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text     = stringResource(R.string.viewer_slide_number, slide.number),
+                        style    = MaterialTheme.typography.labelSmall,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    val shape = MaterialTheme.shapes.large
+                    val containerColor = if (searchQuery.isNotBlank())
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                    else
+                        Color.White
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f)
+                            .accentShadow(shape = shape, elevation = 3.dp)
+                            .clip(shape)
+                            .background(containerColor)
+                            .accentBorder(shape = shape)
+                    ) {
+                        PptSlideCanvas(slide)
                     }
                 }
             }
@@ -1862,38 +1856,23 @@ private fun TextViewerContent(
     searchQuery: String = "",
     onTap      : () -> Unit
 ) {
-    val context   = LocalContext.current
-    var text      by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
+    val load = rememberDocumentLoad(uri, "", "TXT") { it.bufferedReader().readText() }
 
-    LaunchedEffect(uri) {
-        if (uri == null) return@LaunchedEffect
-        text = withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(uri)?.use {
-                    it.bufferedReader().readText()
-                } ?: ""
-            } catch (e: Exception) {
-                Timber.e("Error leyendo TXT: ${e.message}")
-                ""
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable { onTap() }
+    DocumentContentBox(
+        isLoading    = load.isLoading,
+        // A diferencia de Word/Excel/PPT, un texto vacío es un estado
+        // válido (archivo realmente vacío, ver TextViewerBody más abajo),
+        // no un indicio de que algo falló al extraer -- solo `hasError`
+        // cuenta como error real acá. Hallazgo real de la auditoría
+        // general 2026-09-17 (B13): antes ni siquiera trackeaba
+        // `hasError`, así que una lectura que fallaba de verdad mostraba
+        // el mismo "el archivo está vacío" que un archivo genuinamente
+        // vacío, en vez de avisar que la lectura falló.
+        isErrorState = load.hasError,
+        errorMessage = stringResource(R.string.viewer_text_read_error),
+        onTap        = onTap
     ) {
-        when {
-            isLoading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color    = MaterialTheme.colorScheme.primary
-            )
-            else -> TextViewerBody(text, searchQuery)
-        }
+        TextViewerBody(load.data, searchQuery)
     }
 }
 
