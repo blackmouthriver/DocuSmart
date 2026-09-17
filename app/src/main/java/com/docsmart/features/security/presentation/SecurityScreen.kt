@@ -58,6 +58,33 @@ private fun SecurityBackgroundEffects(viewModel: SecurityViewModel, onPreviewFil
     }
 }
 
+// Extraído de SecurityScreen (LongMethod de detekt) -- diálogo bloqueante
+// para el aviso de "original no eliminado" (en vez de un Snackbar): los
+// testers reportaban que Carpeta Segura "no tiene sentido" porque el
+// archivo original seguía visible -- el aviso ya existía, pero como
+// Snackbar pasaba desapercibido.
+@Composable
+private fun OriginalNotDeletedWarningDialog(warning: String?, viewModel: SecurityViewModel) {
+    if (warning == null) return
+    AlertDialog(
+        onDismissRequest = { viewModel.dismissOriginalNotDeletedWarning() },
+        icon = {
+            Icon(
+                imageVector = Icons.Rounded.WarningAmber,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error
+            )
+        },
+        title = { Text(stringResource(R.string.security_original_kept_dialog_title)) },
+        text = { Text(warning) },
+        confirmButton = {
+            TextButton(onClick = { viewModel.dismissOriginalNotDeletedWarning() }) {
+                Text(stringResource(R.string.security_original_kept_dialog_confirm))
+            }
+        }
+    )
+}
+
 @Composable
 fun SecurityScreen(
     onBack       : () -> Unit = {},
@@ -102,6 +129,8 @@ fun SecurityScreen(
     val fileProtectedOriginalKept = stringResource(R.string.security_file_protected_original_kept)
     val previewErrorMessage   = stringResource(R.string.security_preview_error)
     val deleteErrorMessage    = stringResource(R.string.general_delete_error)
+    val restoreOriginalKept   = stringResource(R.string.security_file_restored_original_kept)
+    val restoreErrorMessage   = stringResource(R.string.security_restore_error)
 
     PendingSecureFolderImport(
         pendingFileUri  = pendingFileUri,
@@ -146,29 +175,7 @@ fun SecurityScreen(
         }
     }
 
-    // Diálogo bloqueante para el aviso de "original no eliminado" (en vez de
-    // un Snackbar): los testers reportaban que Carpeta Segura "no tiene
-    // sentido" porque el archivo original seguía visible -- el aviso ya
-    // existía, pero como Snackbar pasaba desapercibido.
-    uiState.originalNotDeletedWarning?.let { warning ->
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissOriginalNotDeletedWarning() },
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.WarningAmber,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            },
-            title = { Text(stringResource(R.string.security_original_kept_dialog_title)) },
-            text = { Text(warning) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.dismissOriginalNotDeletedWarning() }) {
-                    Text(stringResource(R.string.security_original_kept_dialog_confirm))
-                }
-            }
-        )
-    }
+    OriginalNotDeletedWarningDialog(uiState.originalNotDeletedWarning, viewModel)
 
     Scaffold(
         snackbarHost   = { SnackbarHost(snackbarHostState) },
@@ -224,7 +231,9 @@ fun SecurityScreen(
                         uiState           = uiState,
                         onBack            = onBack,
                         onDeleteFile      = { file -> viewModel.deleteFile(file, deleteErrorMessage) },
-                        onRestoreFile     = { file -> viewModel.restoreFile(file, context) },
+                        onRestoreFile     = { file ->
+                            viewModel.restoreFile(file, context, restoreErrorMessage, restoreOriginalKept)
+                        },
                         onPreviewFile     = { file -> viewModel.previewFile(file, previewErrorMessage) },
                         onChangePinClick  = { viewModel.goToSetupPin() },
                         onToggleBiometric = { viewModel.toggleBiometric() },
@@ -825,6 +834,23 @@ private fun SecureFolderContent(
     }
 }
 
+// Hallazgo real de la auditoría general 2026-09-17 (M2): "KB" hardcodeado
+// sin stringResource (fuera de los 12 idiomas), más división entera que
+// mostraba "0 KB" para cualquier archivo protegido menor a 1024 bytes --
+// mismo patrón ya corregido en DocumentRepository/ScanSessionManager.
+@Composable
+private fun formatSecureFileSize(bytes: Long): String = when {
+    bytes < 1024        -> stringResource(R.string.file_size_bytes, bytes)
+    bytes < 1024 * 1024 -> stringResource(R.string.file_size_kb, bytes / 1024)
+    else -> {
+        // NonObservableLocale de lint: Locale.getDefault() no es estado
+        // observable por Compose -- LocalLocale.current sí, así la UI se
+        // actualiza si el usuario cambia el idioma del sistema en caliente.
+        val locale = androidx.compose.ui.platform.LocalLocale.current.platformLocale
+        stringResource(R.string.file_size_mb, String.format(locale, "%.1f", bytes / (1024.0 * 1024.0)))
+    }
+}
+
 // ── Item de archivo seguro ────────────────────────────────────────────────────
 @Composable
 private fun SecureFileItem(
@@ -868,7 +894,7 @@ private fun SecureFileItem(
                     style    = MaterialTheme.typography.titleSmall,
                     color    = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1)
-                Text("${file.length() / 1024} KB",
+                Text(formatSecureFileSize(file.length()),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

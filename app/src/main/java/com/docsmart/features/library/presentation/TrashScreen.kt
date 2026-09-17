@@ -51,7 +51,6 @@ import com.docsmart.R
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
-import java.util.Locale
 
 /**
  * RF-VIS-07: papelera de reciclaje -- documentos "eliminados" desde
@@ -354,8 +353,19 @@ private fun TrashDeleteForeverDialog(
 // DocumentRepository.formatSize(), duplicado acá a propósito -- es
 // privado en DocumentRepository y esta pantalla solo necesita el total,
 // no vale la pena exponer la función solo para reusar 4 líneas.
+//
+// Hallazgo real de la auditoría general 2026-09-17 (M2): unidades "B"/
+// "KB"/"MB" hardcodeadas sin stringResource, fuera del sistema de 12
+// idiomas -- mismo patrón ya corregido en DocumentRepository/
+// ScanSessionManager, nunca extendido acá.
+@Composable
 private fun formatTrashSize(bytes: Long): String = when {
-    bytes < 1024        -> "$bytes B"
-    bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-    else                -> String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
+    bytes < 1024        -> stringResource(R.string.file_size_bytes, bytes)
+    bytes < 1024 * 1024 -> stringResource(R.string.file_size_kb, bytes / 1024)
+    else -> {
+        // NonObservableLocale de lint: Locale.getDefault() no es estado
+        // observable por Compose -- LocalLocale.current sí.
+        val locale = androidx.compose.ui.platform.LocalLocale.current.platformLocale
+        stringResource(R.string.file_size_mb, String.format(locale, "%.1f", bytes / (1024.0 * 1024.0)))
+    }
 }

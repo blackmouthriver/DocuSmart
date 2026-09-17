@@ -517,12 +517,31 @@ class SecurityViewModel @Inject constructor(
         securityManager.clearPreviewCache()
     }
 
-    fun restoreFile(file: File, context: Context) {
+    // Hallazgo real de la auditoría general 2026-09-17 (M1): si
+    // moveFromSecure() no logra borrar la copia en Carpeta Segura (el
+    // archivo restaurado sí existe, pero también sigue protegido), ahora
+    // se avisa con el mismo mecanismo (originalNotDeletedWarning) que ya
+    // usa el flujo de proteger un archivo, en vez de fallar en silencio.
+    //
+    // Corrección tras la revisión adversarial de este mismo lote: la
+    // primera versión solo miraba `result.originalDeleted`, no
+    // `result.success` -- si moveFromSecure() fallaba por completo (copyTo
+    // lanza, disco lleno, permiso revocado), `destFile` es null y
+    // `originalDeleted` queda en `false` por defecto, así que igual se
+    // mostraba "Archivo restaurado, no se pudo borrar la copia" mintiéndole
+    // al usuario sobre un duplicado que no existe -- el archivo sigue
+    // solamente en Carpeta Segura. Mismo criterio de 3 caminos que ya usa
+    // importLocalFile() para el sentido contrario (proteger).
+    fun restoreFile(file: File, context: Context, restoreErrorMessage: String, originalNotDeletedMessage: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val oldId  = file.absolutePath
             val destDir = File(context.filesDir, "converted")
-            val restoredFile = securityManager.moveFromSecure(file, destDir)
-            if (restoredFile != null) {
+            val result = securityManager.moveFromSecure(file, destDir)
+            if (!result.success) {
+                _uiState.update { it.copy(error = restoreErrorMessage) }
+                return@launch
+            }
+            result.destFile?.let { restoredFile ->
                 // Hallazgo real de la revisión general 2026-09-16: mismo
                 // criterio que al mover a Carpeta Segura -- migrar las
                 // anotaciones a la ruta restaurada en vez de perderlas. Se
@@ -532,7 +551,12 @@ class SecurityViewModel @Inject constructor(
                 documentIdentityMaintenance.onIdChanged(oldId, restoredFile.absolutePath)
             }
             val files = securityManager.getSecureFiles()
-            _uiState.update { it.copy(secureFiles = files) }
+            _uiState.update {
+                it.copy(
+                    secureFiles = files,
+                    originalNotDeletedWarning = if (result.originalDeleted) null else originalNotDeletedMessage
+                )
+            }
         }
     }
 

@@ -210,21 +210,135 @@ quedó en el pasado, se guarda sin aviso, el recordatorio nunca suena.
 
 ## Prioridad Media (13 hallazgos)
 
-| # | Área | Archivo:línea | Descripción |
-|---|---|---|---|
-| M1 | Home/Lib/Seg | `SecurityManager.kt:225-236` (`moveFromSecure`) | No comprueba si `file.delete()` del original en `secure/` falla tras "Restaurar" -- puede quedar duplicado (protegido + sin proteger) sin aviso. |
-| M2 | Home/Lib/Seg | `DocumentRepository.kt:636-640`, `TrashScreen.kt:357-361`, `SecurityScreen.kt:865` | Unidades de tamaño ("B"/"KB"/"MB") hardcodeadas sin `stringResource` pese a que las claves ya existen; además división entera muestra "0 KB" para archivos &lt;1024 bytes. |
-| M3 | Home/Lib/Seg | `DownloadsAccessManager.kt:48-59` (`onFolderPicked`) | `SecurityException` de `takePersistableUriPermission()` solo se loguea, sin avisar al usuario -- "Vincular carpeta" no hace nada visible si falla. |
-| M4 | Herramientas PDF | `PdfToolsViewModel.kt:640-660`, `PdfToolsScreen.kt:978-996` | Botón "Guardar en Descargas" sin guard de re-entrada (mismo patrón ya corregido en Convertidor, no extendido acá) -- doble-toque duplica el archivo guardado. |
-| M5 | Herramientas PDF | `MergePdfUseCase.kt:53-58,100-114` | Si una URI falla al copiarse, la unión sigue con las demás y reporta `Success` sin avisar cuál se saltó. |
-| M6 | Escáner/QR | `QrResultDisplay.kt:290-327`, `QrScreen.kt:1537-1547,1670-1673` | Acciones de abrir URL/documento/contacto/evento desde un QR leído tragan la excepción en silencio -- sin app que maneje el Intent, no pasa nada visible. |
-| M7 | Escáner/QR | `ScanResultScreen.kt:572-589,596-612` vs. `:1078` | 2 de 3 diálogos de límite diario (conversiones, escaneos guardados) tienen "Obtener Premium" sin cablear (`onGetPremium = { }`); solo el de límite de páginas sí funciona. |
-| M8 | Visor | `ViewerScreen.kt:1362-1392,1633-1641` (`extractExcelSheets`/`extractPptSlides`) | `Workbook`/`XMLSlideShow` de Apache POI se cierran fuera de `try/finally` -- una excepción a mitad de extracción deja el objeto sin cerrar. |
-| M9 | Visor | `FlattenAnnotationsPdfUseCase.kt:64,68-79,86-88` | `outputFile` se crea dentro del `try`, invisible al `catch` -- mismo patrón de archivo huérfano ya corregido en Herramientas PDF, no aplicado acá. |
-| M10 | Visor | `ViewerScreen.kt:259` | `android.util.Log.d(...)` directo (no Timber) loguea `fileUri` completo también en `release` -- incluye rutas de vista previa de Carpeta Segura. |
-| M11 | Ajustes/Premium | `PremiumViewModel.kt:184-207` (`restorePurchases`) | Sin el mismo guard de re-entrada que `purchase()` -- doble-toque en "Restaurar compras" lanza 2 consultas a Play Billing concurrentes. |
-| M12 | Ajustes/Premium | `PremiumViewModel.kt:55-58,135-158,184-207`, `BillingManager.kt:218,241` | `restorePurchases()` nunca setea `purchaseErrorMessage` localizado -- un fallo de consulta (offline, al arrancar la app) muestra `debugMessage` crudo en inglés. |
-| M13 | Estudio/Agenda | `PomodoroEngine.kt:104-123,150-170` | Carrera read-modify-write entre `tick()` (Default) y `pause()`/`reset()`/`start()` (main) sobre el mismo `MutableStateFlow`, sin exclusión mutua -- distinta del bug de doble-velocidad ya corregido. |
+Corregidos y fusionados en lote 2026-09-17. Cada fix pasó el gauntlet
+completo (`compileDebugKotlin`+`detekt`+`lintDebug`+`testDebugUnitTest`+
+`compileDebugAndroidTestKotlin`) y una revisión adversarial dedicada (agente
+aparte, sin contexto de la implementación) que encontró y motivó 3
+correcciones adicionales no listadas en el hallazgo original: M1 no
+distinguía `success=false` de `originalDeleted=false` en `restoreFile()`
+(mensaje engañoso si `moveFromSecure()` fallaba por completo); M3 solo se
+había propagado a Biblioteca, faltaba en Ajustes y Onboarding (los otros 2
+call sites reales de "Vincular carpeta"); M12 reutilizaba el string de
+error de "compra" para un fallo de "restaurar", mensaje incorrecto aunque
+ya localizado.
+
+### M1 — Carpeta Segura: "Restaurar" no verifica el borrado ni distingue error total
+**Área:** Home/Biblioteca/Seguridad · **Archivo:** `SecurityManager.kt:225-236` (`moveFromSecure`), `SecurityViewModel.kt:525-556`
+**Estado:** ✅ Corregido 2026-09-17 -- `moveFromSecure()` ahora devuelve
+`SecureMoveResult` (mismo shape que `moveToSecure()`), propagando si
+`file.delete()` del original en `secure/` falló. `restoreFile()` gana un
+param `restoreErrorMessage`; corrección tras revisión adversarial: la
+primera versión solo miraba `originalDeleted`, no `success` -- si
+`moveFromSecure()` fallaba por completo (`copyTo` lanza), igual mostraba
+"Archivo restaurado, no se pudo borrar la copia" mintiendo sobre un
+duplicado inexistente. Ahora usa el mismo criterio de 3 caminos que
+`importLocalFile()`. Tests nuevos en `SecurityManagerTest.kt`/
+`SecurityViewModelTest.kt` (incluye el caso de fallo total). No verificado
+en vivo -- exige el PIN real de Carpeta Segura.
+
+### M2 — Tamaños de archivo hardcodeados y división entera ("0 KB")
+**Área:** Home/Biblioteca/Seguridad · **Archivo:** `DocumentRepository.kt`, `TrashScreen.kt`, `SecurityScreen.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- las 3 ubicaciones usan ahora
+`stringResource(R.string.file_size_*)` (claves ya existentes, mismo patrón
+que `ScanSessionManager`), corrigiendo también el bug de "0 KB" para
+archivos &lt;1024 bytes. Ajuste post-implementación: el path de MB usaba
+`String.format(Locale.getDefault(), ...)` dentro de un `@Composable`, lo
+que dispara `NonObservableLocale` de Android Lint -- se cambió a
+`LocalLocale.current.platformLocale`. Verificado en vivo en Papelera: "11,5
+MB en la papelera" y tamaños individuales con coma decimal correcta.
+
+### M3 — "Vincular carpeta" falla en silencio si falla el permiso SAF
+**Área:** Home/Biblioteca/Seguridad · **Archivo:** `DownloadsAccessManager.kt:55-68`, `LibraryViewModel.kt`, `SettingsScreen.kt`, `OnboardingScreen.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- `onFolderPicked()` devuelve `Boolean`;
+Biblioteca ya avisaba con un Toast. Corrección tras revisión adversarial:
+el fix original no llegaba a los otros 2 call sites reales de "Vincular
+carpeta" (`SettingsScreen.kt`/Ajustes y `OnboardingScreen.kt`/onboarding),
+que seguían descartando el resultado -- se les agregó el mismo Toast
+reutilizando `library_link_folder_error`.
+
+### M4 — "Guardar en Descargas" de Herramientas PDF sin guard de re-entrada
+**Área:** Herramientas PDF · **Archivo:** `PdfToolsViewModel.kt`, `PdfToolsScreen.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- `PdfToolsUiState.isSaving` +
+guard síncrono en `saveToDownloads()` (mismo patrón ya usado en
+Convertidor); `enabled = !isSaving` en el botón.
+
+### M5 — Merge de PDFs: URI fallida se saltea sin avisar
+**Área:** Herramientas PDF · **Archivo:** `MergePdfUseCase.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- `skippedCount` + aviso agregado al
+mensaje de éxito (`pdf_merge_partial_warning`, 12 idiomas). Extraído
+`buildSuccessMessage()` tras superar el límite de `CyclomaticComplexMethod`
+de detekt. Test nuevo verificando merge parcial en `MergePdfUseCaseTest.kt`.
+
+### M6 — Acciones desde un QR leído tragan la excepción en silencio
+**Área:** Escáner/QR · **Archivo:** `QrResultDisplay.kt`, `QrScreen.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- Toast (`qr_action_no_app`, 12
+idiomas) agregado a los 4 catches (`addContact`/`addCalendarEvent`/
+`openDocumentExternally`/`openUrl`), además del `Timber.e` ya existente.
+
+### M7 — Diálogos de límite diario del Escáner sin "Obtener Premium" cableado
+**Área:** Escáner/QR · **Archivo:** `ScanResultScreen.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- `onPremiumClick` (ya recibido por
+`ScanResultScreen`) se enhebra a través de `ScanResultSideEffects` hasta
+`ScanDailyLimitDialog`/`ScanSaveLimitDialogHost`/`ScanSaveLimitDialog`.
+
+### M8 — Apache POI: recursos cerrados fuera de try/finally en el Visor
+**Área:** Visor · **Archivo:** `ViewerScreen.kt` (`extractExcelSheets`/`extractPptSlides`)
+**Estado:** ✅ Corregido 2026-09-17 -- `workbook.close()`/`slideShow.close()`
+movidos a un bloque `finally`. No se encontró un archivo Excel/PPT en el
+dispositivo de prueba para verificar en vivo; confirmado por revisión de
+código + gauntlet.
+
+### M9 — `FlattenAnnotationsPdfUseCase`: archivo huérfano si falla a mitad de camino
+**Área:** Visor · **Archivo:** `FlattenAnnotationsPdfUseCase.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- `outputFile` pasó de `val` local al
+`try` a `var` visible también en el `catch`, que ahora lo borra si la
+excepción ocurre después de crear el archivo físico (mismo patrón ya usado
+para `cacheFile`).
+
+### M10 — `Log.d` directo filtra `fileUri` también en release
+**Área:** Visor · **Archivo:** `ViewerScreen.kt:259`
+**Estado:** ✅ Corregido 2026-09-17 -- cambiado a `Timber.d`. Verificado
+por código: `CrashlyticsTree.isLoggable()` filtra `priority < Log.INFO`, así
+que en release (sin `DebugTree`) este log no llega ni a Logcat ni a
+Crashlytics -- a diferencia de `Log.d` directo, que sí imprimía siempre.
+
+### M11 — `restorePurchases()` sin guard de re-entrada
+**Área:** Ajustes/Premium · **Archivo:** `PremiumViewModel.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- mismo guard `isPurchasing` que ya
+tiene `purchase()`. Verificado en vivo: 3 toques rápidos en "Restaurar
+compras" produjeron un solo Snackbar ("No se encontraron compras
+anteriores"), sin crash ni duplicados.
+
+### M12 — `restorePurchases()` no localiza el mensaje de error
+**Área:** Ajustes/Premium · **Archivo:** `PremiumViewModel.kt`, `PremiumScreen.kt`, `BillingManager.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- `restorePurchases()` gana un param
+`restoreErrorMessage` que fija `purchaseErrorMessage` antes de consultar
+Play Billing, evitando el `debugMessage` crudo en inglés en
+`PurchaseResult.Error`. Corrección tras revisión adversarial: la primera
+versión reutilizaba `premium_purchase_error` ("No se pudo completar la
+compra") también para un fallo de RESTAURAR -- mensaje localizado pero
+incorrecto. Se agregó `premium_restore_error` dedicado (12 idiomas). Tests
+nuevos en `PremiumViewModelTest.kt` (archivo creado en este lote, la clase
+no tenía cobertura previa), incluyendo uno que reproduce el orden real de
+ejecución (`emitResult()` despacha en una corrutina aparte del propio
+`BillingManager`, no del llamador).
+
+### M13 — Carrera read-modify-write en `PomodoroEngine.tick()`
+**Área:** Estudio/Agenda · **Archivo:** `PomodoroEngine.kt`
+**Estado:** ✅ Corregido 2026-09-17 -- `tick()` (corre en
+`Dispatchers.Default`) usaba lectura+escritura no atómica sobre
+`_state.value`, distinto del bug de doble-velocidad ya corregido antes: un
+`pause()`/`reset()` desde el hilo principal, concurrente con un tick ya en
+curso (más allá de su único punto de suspensión, donde `cancel()` ya no
+tiene efecto), podía perderse -- el tick terminaba escribiendo `next`
+(derivado de un `current` obsoleto) encima del `isRunning=false` recién
+puesto, resucitando el cronómetro. Se cambió a
+`_state.compareAndSet(current, next)`: si el estado cambió mientras tanto,
+el tick se descarta entero sin duplicar sus side effects. Verificado en
+vivo con un stress test real: iniciar, y con el timer corriendo, 4 toques
+rápidos pausar/reanudar/pausar/reanudar -- quedó "en progreso" con el
+tiempo avanzando a velocidad normal (24:59→24:48 en 11s reales), sin
+duplicar velocidad ni quedar en estado inconsistente.
 
 ## Prioridad Baja / i18n (17 hallazgos)
 
@@ -275,7 +389,16 @@ quedó en el pasado, se guarda sin aviso, el recordatorio nunca suena.
    corrigió un hallazgo adicional real en A9, tipo de imagen mal detectado
    en Word) + verificación en dispositivo real para A8/A9/A10 (A1/A5 no
    verificables en vivo sin el PIN real del usuario, quedan cubiertos por
-   gauntlet + revisión de código). Pendiente de aprobación para fusionar.
-2. Corregir los 13 de **Prioridad Media** en un segundo lote.
+   gauntlet + revisión de código). Fusionado (commit `c217396`).
+2. ✅ Corregir los 13 hallazgos de **Prioridad Media** (M1-M13) -- hecho
+   2026-09-17, con gauntlet completo + revisión adversarial (que encontró y
+   corrigió 3 hallazgos adicionales reales: M1 no distinguía error total de
+   "original no borrado", M3 no llegaba a Ajustes/Onboarding, M12 reutilizaba
+   el mensaje de error equivocado) + verificación en dispositivo real para
+   M2/M11/M13 (M1 no verificable sin el PIN real; M6/M7/M3 requieren forzar
+   condiciones de fallo no prácticas en un dispositivo real; M8/M9/M10 no
+   verificables en vivo por falta de un archivo Excel/PPT de prueba --
+   cubiertos por gauntlet + revisión de código). Pendiente de aprobación
+   para fusionar.
 3. Evaluar los 23 de **Prioridad Baja/i18n** -- corregir los de esfuerzo bajo, documentar como "evaluado, no corregido" los que requieran una decisión de alcance mayor (ej. B4/B5 en tipos ocultos, B22 edición de nota).
-4. Sumar tests de regresión para los huecos de cobertura que hubieran detectado cada hallazgo Alta, como parte de su propio fix (no como tarea aparte).
+4. Sumar tests de regresión para los huecos de cobertura que hubieran detectado cada hallazgo Alta/Media, como parte de su propio fix (no como tarea aparte).

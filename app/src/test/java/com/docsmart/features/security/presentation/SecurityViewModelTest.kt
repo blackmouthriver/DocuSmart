@@ -486,15 +486,43 @@ class SecurityViewModelTest {
         val context = mockk<Context>(relaxed = true)
         every { context.filesDir } returns secureFolder.parentFile
         val file = File(secureFolder, "a.pdf")
+        val destFile = File(secureFolder.parentFile, "converted/a.pdf")
+        every { securityManager.moveFromSecure(file, any()) } returns
+            SecureMoveResult(success = true, originalDeleted = true, destFile = destFile)
         every { securityManager.getSecureFiles() } returns listOf(file)
 
         val viewModel = buildViewModel()
         viewModel.uiState.test {
             awaitItem()
-            viewModel.restoreFile(file, context)
+            viewModel.restoreFile(file, context, "no se pudo restaurar", "no se pudo eliminar la copia")
             assertEquals(listOf(file), awaitItem().secureFiles)
         }
         verify { securityManager.moveFromSecure(file, File(secureFolder.parentFile, "converted")) }
+    }
+
+    // Hallazgo real de la revisión adversarial de este mismo lote (M1): la
+    // primera versión de restoreFile() solo miraba `originalDeleted`, no
+    // `success` -- si moveFromSecure() fallaba por completo (destFile=null),
+    // igual mostraba "Archivo restaurado, no se pudo borrar la copia" en vez
+    // de un error real, mintiendo sobre un duplicado que nunca existió.
+    @Test
+    fun `restoreFile muestra un error y no toca secureFiles si moveFromSecure falla por completo`() = runTest {
+        val context = mockk<Context>(relaxed = true)
+        every { context.filesDir } returns secureFolder.parentFile
+        val file = File(secureFolder, "a.pdf")
+        every { securityManager.moveFromSecure(file, any()) } returns
+            SecureMoveResult(success = false, originalDeleted = false, destFile = null)
+
+        val viewModel = buildViewModel()
+        viewModel.uiState.test {
+            awaitItem()
+            viewModel.restoreFile(file, context, "no se pudo restaurar", "no se pudo eliminar la copia")
+            val afterFailure = awaitItem()
+            assertEquals("no se pudo restaurar", afterFailure.error)
+            assertNull(afterFailure.originalNotDeletedWarning)
+            assertTrue(afterFailure.secureFiles.isEmpty(), "no debe tocar secureFiles si la restauración falló")
+        }
+        coVerify(exactly = 0) { documentIdentityMaintenance.onIdChanged(any(), any()) }
     }
 
     @Test

@@ -222,16 +222,26 @@ class SecurityManager @Inject constructor(
         }
     }
 
-    fun moveFromSecure(file: File, destDir: File): File? {
+    // Hallazgo real de la auditoría general 2026-09-17 (M1): mismo problema
+    // que moveToSecure() antes de RNF-SEC-01 -- file.delete() puede fallar
+    // sin lanzar excepción, y el resultado se ignoraba. Si falla, el
+    // archivo queda duplicado (restaurado en `destDir` Y todavía protegido
+    // en `secure/`), sin ningún aviso. Reutiliza SecureMoveResult (mismo
+    // shape que ya usa moveToSecure) para que el llamador pueda avisar.
+    fun moveFromSecure(file: File, destDir: File): SecureMoveResult {
         return try {
             val dest = uniqueDestination(destDir, file.name)
             file.copyTo(dest, overwrite = false)
-            file.delete()
-            Timber.d("SecurityManager: archivo restaurado: ${dest.name}")
-            dest
+            val originalDeleted = file.delete()
+            if (originalDeleted) {
+                Timber.d("SecurityManager: archivo restaurado: ${dest.name}")
+            } else {
+                Timber.w("SecurityManager: archivo restaurado pero no se pudo eliminar de Carpeta Segura: ${dest.name}")
+            }
+            SecureMoveResult(success = true, originalDeleted = originalDeleted, destFile = dest)
         } catch (e: Exception) {
             Timber.e(redactedForLog(e), "Error restaurando archivo")
-            null
+            SecureMoveResult(success = false, originalDeleted = false)
         }
     }
 

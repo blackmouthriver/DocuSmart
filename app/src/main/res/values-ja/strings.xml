@@ -352,6 +352,7 @@
     <string name="pdf_merge_read_error">選択したPDFのページを読み取れませんでした。</string>
     <string name="pdf_merge_generate_error">結合したPDFの生成中にエラーが発生しました。</string>
     <string name="pdf_merge_success">PDFの結合が完了しました — %1$d個のファイル、%2$dページ</string>
+    <string name="pdf_merge_partial_warning">（%1$d件のファイルを含められませんでした）</string>
     <string name="pdf_merge_error">PDFの結合中にエラーが発生しました: %1$s</string>
 
     <!-- ── PDFを分割 ── -->
@@ -682,6 +683,7 @@
     <string name="premium_choose_plan">プランを選択</string>
     <string name="premium_recommended">おすすめ</string>
     <string name="premium_purchase_error">購入を完了できませんでした。もう一度お試しください。</string>
+    <string name="premium_restore_error">購入を復元できませんでした。もう一度お試しください。</string>
     <string name="premium_no_purchases_found">過去の購入は見つかりませんでした</string>
     <string name="premium_purchase_pending">ご購入は確認待ちです(例: 現金でのお支払いなど)。完了すると自動的に有効化されます。</string>
     <string name="premium_restore_success">購入を復元しました — Premiumが有効です</string>
@@ -708,6 +710,7 @@
     <string name="security_biometric_use_pin">PINを使用</string>
     <string name="security_file_protected_success">ファイルを保護しました</string>
     <string name="security_file_protect_error">ファイルを保護できませんでした</string>
+    <string name="security_restore_error">ファイルを復元できませんでした</string>
     <string name="security_save_downloads_success">ダウンロードに保存しました: %1$s</string>
     <string name="security_save_downloads_error">ダウンロードに保存できませんでした</string>
     <string name="pdf_pw_read_error">ファイルを読み取れませんでした</string>
@@ -807,6 +810,7 @@
     <string name="scan_page_limit_title">ページ数の上限に達しました</string>
     <string name="scan_page_limit_body">このドキュメントはすでに%2$dページ中%1$dページあります。動画を見てページを追加するか、Premiumで上限をなくしましょう。</string>
     <string name="security_file_protected_original_kept">ファイルを保護しました。元のファイルをその場所から削除できませんでした — 完全に削除したい場合は手動で削除してください。</string>
+    <string name="security_file_restored_original_kept">ファイルを復元しました。安全フォルダ内のコピーを削除できませんでした — 完全に削除したい場合は安全フォルダから手動で削除してください。</string>
     <string name="security_original_kept_dialog_title">元のファイルはまだ残っています</string>
     <string name="security_original_kept_dialog_confirm">わかりました</string>
     <string name="qr_protected_title">保護されたQRコード</string>
@@ -852,6 +856,7 @@
     <string name="qr_copy_wifi_ssid">ネットワーク名をコピー</string>
     <string name="qr_add_contact">連絡先に追加</string>
     <string name="qr_add_calendar_event">カレンダーに追加</string>
+    <string name="qr_action_no_app">この操作を行えるアプリが見つかりませんでした</string>
     <string name="qr_scan_another">別のコードをスキャン</string>
     <string name="qr_creator_title">QRコードを作成</string>
     <string name="qr_creator_subtitle">URL、テキスト、ファイルなどからQRを生成します</string>
@@ -1075,6 +1080,7 @@
     <string name="library_link_downloads_title">もっとドキュメントを見る</string>
     <string name="library_link_downloads_body">端末内のフォルダを選ぶと、そこにあるドキュメントもライブラリに表示されます</string>
     <string name="library_link_downloads_button">フォルダを連携</string>
+    <string name="library_link_folder_error">フォルダを連携できませんでした。もう一度お試しください。</string>
 
     <!-- ── 連携済みフォルダへのショートカット(デバイス/マイファイル/ゴミ箱の隣) ── -->
     <string name="library_folder_shortcut_label">連携済みフォルダ</string>

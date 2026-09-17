@@ -362,6 +362,7 @@
     <string name="pdf_merge_read_error">Ezin izan da hautatutako PDFen orrialderik irakurri.</string>
     <string name="pdf_merge_generate_error">Errorea PDF batua sortzean.</string>
     <string name="pdf_merge_success">PDFak ongi batu dira — %1$d fitxategi, %2$d orrialde</string>
+    <string name="pdf_merge_partial_warning">(ezin izan da %1$d fitxategi sartu)</string>
     <string name="pdf_merge_error">Errorea PDFak batzean: %1$s</string>
 
     <!-- ── Dividir PDF ── -->
@@ -698,6 +699,7 @@
     <string name="premium_choose_plan">Aukeratu zure plana</string>
     <string name="premium_recommended">Gomendatua</string>
     <string name="premium_purchase_error">Ezin izan da erosketa osatu. Saiatu berriro.</string>
+    <string name="premium_restore_error">Ezin izan dira zure erosketak berrezarri. Saiatu berriro.</string>
     <string name="premium_no_purchases_found">Ez da aurreko erosketarik aurkitu</string>
     <string name="premium_purchase_pending">Zure erosketa baieztapenaren zain dago (adibidez, eskudiruzko ordainketa). Automatikoki aktibatuko da osatzean.</string>
     <string name="premium_restore_success">Erosketa berrezarri da — jada Premium duzu</string>
@@ -724,6 +726,7 @@
     <string name="security_biometric_use_pin">Erabili PIN</string>
     <string name="security_file_protected_success">Fitxategia ongi babestu da</string>
     <string name="security_file_protect_error">Ezin izan da fitxategia babestu</string>
+    <string name="security_restore_error">Ezin izan da fitxategia berrezarri</string>
     <string name="security_save_downloads_success">Deskargak karpetan gordeta: %1$s</string>
     <string name="security_save_downloads_error">Ezin izan da Deskargak karpetan gorde</string>
     <string name="pdf_pw_read_error">Ezin izan da fitxategia irakurri</string>
@@ -823,6 +826,7 @@
     <string name="scan_page_limit_title">Orrialde-muga bete da</string>
     <string name="scan_page_limit_body">Dokumentu honek jada %2$d(e)tik %1$d orrialde ditu. Ikusi bideo bat orrialde bat gehiago gehitzeko, edo pasa Premiumera mugarik ez izateko.</string>
     <string name="security_file_protected_original_kept">Fitxategia babestuta. Ezin izan da jatorrizkoa bere kokapenetik ezabatu — ezabatu eskuz erabat kentu nahi baduzu.</string>
+    <string name="security_file_restored_original_kept">Fitxategia leheneratuta. Ezin izan da Karpeta Seguruko kopia ezabatu — ezabatu eskuz Karpeta Segurutik erabat kendu nahi baduzu.</string>
     <string name="security_original_kept_dialog_title">Jatorrizko fitxategia bere lekuan jarraitzen du</string>
     <string name="security_original_kept_dialog_confirm">Ulertuta</string>
     <string name="qr_protected_title">Babestutako QR kodea</string>
@@ -868,6 +872,7 @@
     <string name="qr_copy_wifi_ssid">Kopiatu sarearen izena</string>
     <string name="qr_add_contact">Gehitu kontaktuetara</string>
     <string name="qr_add_calendar_event">Gehitu egutegira</string>
+    <string name="qr_action_no_app">Ez da aurkitu ekintza hau burutzeko aplikaziorik</string>
     <string name="qr_scan_another">Eskaneatu beste kode bat</string>
     <string name="qr_creator_title">Sortu QR kodea</string>
     <string name="qr_creator_subtitle">Sortu QRa URL, testu, fitxategi eta gehiagorentzat</string>
@@ -1093,6 +1098,7 @@
     <string name="library_link_downloads_title">Ikusi dokumentu gehiago hemen</string>
     <string name="library_link_downloads_body">Aukeratu zure gailuko karpeta bat, Liburutegiak bertan dituzun dokumentuak ere erakuts ditzan</string>
     <string name="library_link_downloads_button">Lotu karpeta</string>
+    <string name="library_link_folder_error">Ezin izan da karpeta lotu. Saiatu berriro.</string>
 
     <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
     <string name="library_folder_shortcut_label">Lotutako karpeta</string>

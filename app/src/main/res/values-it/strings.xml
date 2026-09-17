@@ -354,6 +354,7 @@
     <string name="pdf_merge_read_error">Impossibile leggere qualsiasi pagina dei PDF selezionati.</string>
     <string name="pdf_merge_generate_error">Errore durante la generazione del PDF unito.</string>
     <string name="pdf_merge_success">PDF uniti correttamente — %1$d file, %2$d pagine</string>
+    <string name="pdf_merge_partial_warning">(%1$d file non è stato possibile includerli)</string>
     <string name="pdf_merge_error">Errore durante l\'unione dei PDF: %1$s</string>
 
     <!-- ── Dividi PDF ── -->
@@ -685,6 +686,7 @@
     <string name="premium_choose_plan">Scegli il tuo piano</string>
     <string name="premium_recommended">Consigliato</string>
     <string name="premium_purchase_error">Impossibile completare l\'acquisto. Riprova.</string>
+    <string name="premium_restore_error">Impossibile ripristinare i tuoi acquisti. Riprova.</string>
     <string name="premium_no_purchases_found">Non sono stati trovati acquisti precedenti</string>
     <string name="premium_purchase_pending">Il tuo acquisto è in attesa di conferma (ad esempio, pagamento in contanti). Verrà attivato automaticamente al completamento.</string>
     <string name="premium_restore_success">Acquisto ripristinato — ora hai Premium</string>
@@ -711,6 +713,7 @@
     <string name="security_biometric_use_pin">Usa PIN</string>
     <string name="security_file_protected_success">File protetto correttamente</string>
     <string name="security_file_protect_error">Impossibile proteggere il file</string>
+    <string name="security_restore_error">Impossibile ripristinare il file</string>
     <string name="security_save_downloads_success">Salvato in Download: %1$s</string>
     <string name="security_save_downloads_error">Impossibile salvare in Download</string>
     <string name="pdf_pw_read_error">Impossibile leggere il file</string>
@@ -810,6 +813,7 @@
     <string name="scan_page_limit_title">Limite di pagine raggiunto</string>
     <string name="scan_page_limit_body">Questo documento ha già %1$d di %2$d pagine. Guarda un video per aggiungere un\'altra pagina, oppure passa a Premium per nessun limite.</string>
     <string name="security_file_protected_original_kept">File protetto. Non è stato possibile eliminare l\'originale dalla sua posizione — eliminalo manualmente se vuoi rimuoverlo completamente.</string>
+    <string name="security_file_restored_original_kept">File ripristinato. Non è stato possibile eliminare la copia dalla Cartella Sicura — eliminala manualmente dalla Cartella Sicura se vuoi rimuoverla completamente.</string>
     <string name="security_original_kept_dialog_title">Il file originale è ancora presente</string>
     <string name="security_original_kept_dialog_confirm">Capito</string>
     <string name="qr_protected_title">Codice QR protetto</string>
@@ -855,6 +859,7 @@
     <string name="qr_copy_wifi_ssid">Copia nome rete</string>
     <string name="qr_add_contact">Aggiungi ai contatti</string>
     <string name="qr_add_calendar_event">Aggiungi al calendario</string>
+    <string name="qr_action_no_app">Non è stata trovata un\'app per completare questa azione</string>
     <string name="qr_scan_another">Scansiona un altro codice</string>
     <string name="qr_creator_title">Crea codice QR</string>
     <string name="qr_creator_subtitle">Genera QR per URL, testo, file e altro</string>
@@ -1078,6 +1083,7 @@
     <string name="library_link_downloads_title">Vedi altri documenti qui</string>
     <string name="library_link_downloads_body">Scegli una cartella del tuo dispositivo per far sì che la Libreria mostri anche i documenti già presenti lì</string>
     <string name="library_link_downloads_button">Collega cartella</string>
+    <string name="library_link_folder_error">Impossibile collegare la cartella. Riprova.</string>
 
     <!-- ── Scorciatoia alla cartella collegata, accanto a Dispositivo/I miei file/Cestino ── -->
     <string name="library_folder_shortcut_label">Cartella collegata</string>

@@ -7,6 +7,7 @@ import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.documentfile.provider.DocumentFile
+import com.docsmart.R
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.canonicalMediaUri
 import com.docsmart.core.data.db.DocumentHistoryDao
@@ -633,10 +634,17 @@ class DocumentRepository @Inject constructor(
         else                                 -> DocumentType.PDF
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (M2): unidades "B"/
+    // "KB"/"MB" hardcodeadas sin stringResource, fuera del sistema de 12
+    // idiomas -- mismo patrón ya corregido antes para
+    // PdfToolsScreen/ScanSessionManager, nunca extendido acá.
     private fun formatSize(bytes: Long): String = when {
-        bytes < 1024         -> "$bytes B"
-        bytes < 1024 * 1024  -> "${bytes / 1024} KB"
-        else                 -> String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
+        bytes < 1024         -> context.getString(R.string.file_size_bytes, bytes)
+        bytes < 1024 * 1024  -> context.getString(R.string.file_size_kb, bytes / 1024)
+        else                 -> context.getString(
+            R.string.file_size_mb,
+            String.format(Locale.getDefault(), "%.1f", bytes / (1024.0 * 1024.0))
+        )
     }
 
     private fun formatDate(ms: Long): String =

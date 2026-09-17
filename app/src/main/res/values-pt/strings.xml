@@ -352,6 +352,7 @@
     <string name="pdf_merge_read_error">Não foi possível ler nenhuma página dos PDFs selecionados.</string>
     <string name="pdf_merge_generate_error">Erro ao gerar o PDF combinado.</string>
     <string name="pdf_merge_success">PDFs unidos com sucesso — %1$d arquivos, %2$d páginas</string>
+    <string name="pdf_merge_partial_warning">(%1$d arquivo(s) não pôde(puderam) ser incluído(s))</string>
     <string name="pdf_merge_error">Erro ao unir PDFs: %1$s</string>
 
     <!-- ── Dividir PDF ── -->
@@ -678,6 +679,7 @@
     <string name="premium_choose_plan">Escolha seu plano</string>
     <string name="premium_recommended">Recomendado</string>
     <string name="premium_purchase_error">Não foi possível concluir a compra. Tente novamente.</string>
+    <string name="premium_restore_error">Não foi possível restaurar suas compras. Tente novamente.</string>
     <string name="premium_no_purchases_found">Nenhuma compra anterior encontrada</string>
     <string name="premium_purchase_pending">Sua compra está pendente de confirmação (por exemplo, pagamento em dinheiro). Será ativada automaticamente quando for concluída.</string>
     <string name="premium_restore_success">Compra restaurada — você já tem o Premium</string>
@@ -704,6 +706,7 @@
     <string name="security_biometric_use_pin">Usar PIN</string>
     <string name="security_file_protected_success">Arquivo protegido com sucesso</string>
     <string name="security_file_protect_error">Não foi possível proteger o arquivo</string>
+    <string name="security_restore_error">Não foi possível restaurar o arquivo</string>
     <string name="security_save_downloads_success">Salvo em Downloads: %1$s</string>
     <string name="security_save_downloads_error">Não foi possível salvar em Downloads</string>
     <string name="pdf_pw_read_error">Não foi possível ler o arquivo</string>
@@ -803,6 +806,7 @@
     <string name="scan_page_limit_title">Limite de páginas atingido</string>
     <string name="scan_page_limit_body">Este documento já tem %1$d de %2$d páginas. Assista a um vídeo para adicionar mais uma página, ou torne-se Premium para não ter limite.</string>
     <string name="security_file_protected_original_kept">Arquivo protegido. Não foi possível excluir o original do seu local — exclua-o manualmente se quiser removê-lo por completo.</string>
+    <string name="security_file_restored_original_kept">Arquivo restaurado. Não foi possível excluir a cópia da Pasta Segura — exclua-a manualmente pela Pasta Segura se quiser removê-la por completo.</string>
     <string name="security_original_kept_dialog_title">O arquivo original ainda está lá</string>
     <string name="security_original_kept_dialog_confirm">Entendi</string>
     <string name="qr_protected_title">Código QR protegido</string>
@@ -848,6 +852,7 @@
     <string name="qr_copy_wifi_ssid">Copiar nome da rede</string>
     <string name="qr_add_contact">Adicionar aos contatos</string>
     <string name="qr_add_calendar_event">Adicionar ao calendário</string>
+    <string name="qr_action_no_app">Não foi encontrado um app para concluir esta ação</string>
     <string name="qr_scan_another">Escanear outro código</string>
     <string name="qr_creator_title">Criar código QR</string>
     <string name="qr_creator_subtitle">Gere um QR para URLs, texto, arquivos e mais</string>
@@ -1071,6 +1076,7 @@
     <string name="library_link_downloads_title">Veja mais documentos aqui</string>
     <string name="library_link_downloads_body">Escolha uma pasta do seu dispositivo para que a Biblioteca também mostre os documentos que você já tem lá</string>
     <string name="library_link_downloads_button">Vincular pasta</string>
+    <string name="library_link_folder_error">Não foi possível vincular a pasta. Tente novamente.</string>
 
     <!-- ── Atalho para a pasta vinculada, ao lado de Dispositivo/Meus arquivos/Lixeira ── -->
     <string name="library_folder_shortcut_label">Pasta vinculada</string>

@@ -118,7 +118,11 @@ data class PdfToolsUiState(
     // ── Límite diario ──────────────────────────────────
     val showLimitDialog: Boolean = false,
     val toolUseCount: Int = 0,
-    val toolUseLimit: Int = DailyLimitManager.LIMIT_PDF_TOOLS
+    val toolUseLimit: Int = DailyLimitManager.LIMIT_PDF_TOOLS,
+    // Hallazgo real de la auditoría general 2026-09-17 (M4): "Guardar en
+    // Descargas" no tenía guard de re-entrada, a diferencia del botón
+    // equivalente del Convertidor -- mismo criterio acá.
+    val isSaving: Boolean = false
 )
 
 @HiltViewModel
@@ -646,21 +650,24 @@ class PdfToolsViewModel @Inject constructor(
     }
 
     fun saveToDownloads(context: Context, errorMessage: String) {
+        if (_uiState.value.isSaving) return
         when (val result = _uiState.value.result) {
             is PdfToolResult.Success -> viewModelScope.launch {
+                _uiState.update { it.copy(isSaving = true) }
                 val saved = DownloadsSaver.saveFile(context, result.outputFile, "application/pdf")
                 _uiState.update { state ->
-                    if (saved) state.copy(savedToDownloads = true)
-                    else state.copy(errorMessage = errorMessage)
+                    if (saved) state.copy(savedToDownloads = true, isSaving = false)
+                    else state.copy(errorMessage = errorMessage, isSaving = false)
                 }
             }
             is PdfToolResult.MultiSuccess -> viewModelScope.launch {
+                _uiState.update { it.copy(isSaving = true) }
                 val allSaved = result.outputFiles.map { file ->
                     DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
                 }.all { it }
                 _uiState.update { state ->
-                    if (allSaved) state.copy(savedToDownloads = true)
-                    else state.copy(errorMessage = errorMessage)
+                    if (allSaved) state.copy(savedToDownloads = true, isSaving = false)
+                    else state.copy(errorMessage = errorMessage, isSaving = false)
                 }
             }
             else -> Unit

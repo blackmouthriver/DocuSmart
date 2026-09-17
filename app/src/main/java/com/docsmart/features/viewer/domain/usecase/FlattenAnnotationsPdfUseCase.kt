@@ -59,9 +59,15 @@ class FlattenAnnotationsPdfUseCase @Inject constructor(
         withContext(Dispatchers.IO) {
             if (annotations.isEmpty()) return@withContext null
             var cacheFile: File? = null
+            // Hallazgo real de la auditoría general 2026-09-17 (M9): antes
+            // `outputFile` era un `val` local al `try`, invisible para el
+            // `catch` -- si `PdfDocument(...).use {}` fallaba a mitad de
+            // camino (tras crear el archivo físico en filesDir/viewer_share),
+            // ese PDF parcial quedaba huérfano en disco para siempre.
+            var outputFile: File? = null
             try {
                 cacheFile = copyUriToCache(sourceUri) ?: return@withContext null
-                val outputFile = createOutputFile()
+                outputFile = createOutputFile()
                 val byPage = annotations.groupBy { it.page }
                 val gState = PdfExtGState().setFillOpacity(HIGHLIGHT_OPACITY)
 
@@ -85,6 +91,7 @@ class FlattenAnnotationsPdfUseCase @Inject constructor(
                 outputFile
             } catch (e: Exception) {
                 Timber.e(e, "$TAG: error aplanando anotaciones")
+                outputFile?.delete()
                 null
             } finally {
                 cacheFile?.delete()

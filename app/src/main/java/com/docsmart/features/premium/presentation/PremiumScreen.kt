@@ -222,6 +222,12 @@ private fun PurchaseActionsSection(
         val purchasePendingMessage = stringResource(R.string.premium_purchase_pending)
         val noPurchasesFoundMessage = stringResource(R.string.premium_no_purchases_found)
         val restoreSuccessMessage = stringResource(R.string.premium_restore_success)
+        // Hallazgo real de la revisión adversarial de este mismo lote (M12):
+        // la primera versión reutilizaba purchaseErrorMessage ("No se pudo
+        // completar la compra") también para un fallo de RESTAURAR compras
+        // -- un usuario sin conexión que toca "Restaurar compras" vería un
+        // mensaje sobre una compra que nunca intentó.
+        val restoreErrorMessage = stringResource(R.string.premium_restore_error)
 
         Button(
             onClick = onPurchaseClick(activity, viewModel, purchaseErrorMessage, purchasePendingMessage),
@@ -246,7 +252,9 @@ private fun PurchaseActionsSection(
         }
 
         TextButton(
-            onClick = { viewModel.restorePurchases(noPurchasesFoundMessage, restoreSuccessMessage) },
+            onClick = {
+                viewModel.restorePurchases(noPurchasesFoundMessage, restoreSuccessMessage, restoreErrorMessage)
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(

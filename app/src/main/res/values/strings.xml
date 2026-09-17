@@ -380,6 +380,7 @@
     <string name="pdf_merge_read_error">No se pudo leer ninguna página de los PDFs seleccionados.</string>
     <string name="pdf_merge_generate_error">Error al generar el PDF combinado.</string>
     <string name="pdf_merge_success">PDFs unidos correctamente — %1$d archivos, %2$d páginas</string>
+    <string name="pdf_merge_partial_warning">(%1$d archivo(s) no se pudo incluir)</string>
     <string name="pdf_merge_error">Error al unir PDFs: %1$s</string>
 
     <!-- ── Dividir PDF ── -->
@@ -716,6 +717,7 @@
     <string name="premium_choose_plan">Elige tu plan</string>
     <string name="premium_recommended">Recomendado</string>
     <string name="premium_purchase_error">No se pudo completar la compra. Intenta de nuevo.</string>
+    <string name="premium_restore_error">No se pudo restaurar tus compras. Intenta de nuevo.</string>
     <string name="premium_no_purchases_found">No se encontraron compras anteriores</string>
     <string name="premium_purchase_pending">Tu compra está pendiente de confirmación (por ejemplo, pago en efectivo). Se activará automáticamente cuando se complete.</string>
     <string name="premium_restore_success">Compra restaurada — ya tienes Premium</string>
@@ -742,6 +744,7 @@
     <string name="security_biometric_use_pin">Usar PIN</string>
     <string name="security_file_protected_success">Archivo protegido correctamente</string>
     <string name="security_file_protect_error">No se pudo proteger el archivo</string>
+    <string name="security_restore_error">No se pudo restaurar el archivo</string>
     <string name="security_save_downloads_success">Guardado en Descargas: %1$s</string>
     <string name="security_save_downloads_error">No se pudo guardar en Descargas</string>
     <string name="pdf_pw_read_error">No se pudo leer el archivo</string>
@@ -841,6 +844,7 @@
     <string name="scan_page_limit_title">Límite de páginas alcanzado</string>
     <string name="scan_page_limit_body">Este documento ya tiene %1$d de %2$d páginas. Mira un video para agregar una página más, o pasa a Premium para no tener límite.</string>
     <string name="security_file_protected_original_kept">Archivo protegido. No se pudo eliminar el original de su ubicación — bórralo manualmente si quieres quitarlo por completo.</string>
+    <string name="security_file_restored_original_kept">Archivo restaurado. No se pudo eliminar la copia de Carpeta Segura — bórrala manualmente desde Carpeta Segura si quieres quitarla por completo.</string>
     <string name="security_original_kept_dialog_title">El archivo original sigue en su lugar</string>
     <string name="security_original_kept_dialog_confirm">Entendido</string>
     <string name="qr_protected_title">Código QR protegido</string>
@@ -886,6 +890,7 @@
     <string name="qr_copy_wifi_ssid">Copiar nombre de red</string>
     <string name="qr_add_contact">Agregar a contactos</string>
     <string name="qr_add_calendar_event">Agregar al calendario</string>
+    <string name="qr_action_no_app">No se encontró una app instalada para completar esta acción</string>
     <string name="qr_scan_another">Escanear otro código</string>
     <string name="qr_creator_title">Crear código QR</string>
     <string name="qr_creator_subtitle">Genera QR para URL, texto, archivos y más</string>
@@ -1113,6 +1118,7 @@
     <string name="library_link_downloads_title">Ver más documentos aquí</string>
     <string name="library_link_downloads_body">Elige una carpeta de tu dispositivo para que Biblioteca también muestre los documentos que ya tienes ahí</string>
     <string name="library_link_downloads_button">Vincular carpeta</string>
+    <string name="library_link_folder_error">No se pudo vincular la carpeta. Probá de nuevo.</string>
 
     <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
     <string name="library_folder_shortcut_label">Carpeta vinculada</string>

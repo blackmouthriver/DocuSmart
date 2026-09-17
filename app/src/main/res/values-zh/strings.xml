@@ -352,6 +352,7 @@
     <string name="pdf_merge_read_error">无法读取所选 PDF 中的任何页面。</string>
     <string name="pdf_merge_generate_error">生成合并后的 PDF 时出错。</string>
     <string name="pdf_merge_success">PDF 合并成功 — %1$d 个文件，共 %2$d 页</string>
+    <string name="pdf_merge_partial_warning">（%1$d 个文件未能包含在内）</string>
     <string name="pdf_merge_error">合并 PDF 时出错：%1$s</string>
 
     <!-- ── 拆分 PDF ── -->
@@ -682,6 +683,7 @@
     <string name="premium_choose_plan">选择你的套餐</string>
     <string name="premium_recommended">推荐</string>
     <string name="premium_purchase_error">无法完成购买，请重试。</string>
+    <string name="premium_restore_error">无法恢复您的购买，请重试。</string>
     <string name="premium_no_purchases_found">未找到以往的购买记录</string>
     <string name="premium_purchase_pending">你的购买正在等待确认（例如现金支付）。完成后将自动激活。</string>
     <string name="premium_restore_success">购买已恢复 — 你现在已是高级版用户</string>
@@ -708,6 +710,7 @@
     <string name="security_biometric_use_pin">使用 PIN</string>
     <string name="security_file_protected_success">文件保护成功</string>
     <string name="security_file_protect_error">无法保护该文件</string>
+    <string name="security_restore_error">无法还原该文件</string>
     <string name="security_save_downloads_success">已保存到下载：%1$s</string>
     <string name="security_save_downloads_error">无法保存到下载</string>
     <string name="pdf_pw_read_error">无法读取文件</string>
@@ -807,6 +810,7 @@
     <string name="scan_page_limit_title">已达到页数上限</string>
     <string name="scan_page_limit_body">此文档已有 %1$d/%2$d 页。观看视频以添加一页，或升级到高级版以取消限制。</string>
     <string name="security_file_protected_original_kept">文件已受保护。无法从原位置删除原文件 — 如需彻底移除，请手动删除。</string>
+    <string name="security_file_restored_original_kept">文件已恢复。无法删除安全文件夹中的副本 — 如需彻底移除，请从安全文件夹手动删除。</string>
     <string name="security_original_kept_dialog_title">原文件仍在原位置</string>
     <string name="security_original_kept_dialog_confirm">知道了</string>
     <string name="qr_protected_title">受保护的二维码</string>
@@ -852,6 +856,7 @@
     <string name="qr_copy_wifi_ssid">复制网络名称</string>
     <string name="qr_add_contact">添加到通讯录</string>
     <string name="qr_add_calendar_event">添加到日历</string>
+    <string name="qr_action_no_app">未找到可以完成此操作的应用</string>
     <string name="qr_scan_another">扫描另一个二维码</string>
     <string name="qr_creator_title">生成二维码</string>
     <string name="qr_creator_subtitle">为网址、文本、文件等生成二维码</string>
@@ -1075,6 +1080,7 @@
     <string name="library_link_downloads_title">在这里查看更多文档</string>
     <string name="library_link_downloads_body">选择设备中的一个文件夹，让资料库也显示你已经存放在那里的文档</string>
     <string name="library_link_downloads_button">关联文件夹</string>
+    <string name="library_link_folder_error">无法关联文件夹，请重试。</string>
 
     <!-- ── 已关联文件夹的快捷方式，位于设备/我的文件/回收站旁 ── -->
     <string name="library_folder_shortcut_label">已关联的文件夹</string>

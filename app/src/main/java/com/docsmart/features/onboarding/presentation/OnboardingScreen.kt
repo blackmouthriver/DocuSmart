@@ -2,6 +2,7 @@ package com.docsmart.features.onboarding.presentation
 
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
@@ -139,9 +140,19 @@ fun OnboardingScreen(
     val linkedFolderName = remember(linkedFolderUri) {
         linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
     }
+    // Hallazgo real de la auditoría general 2026-09-17 (M3), no propagado a
+    // este call site en el fix original -- ver el mismo aviso ya agregado en
+    // SettingsScreen.kt.
+    val linkFolderErrorMessage = stringResource(R.string.library_link_folder_error)
     val linkFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
+    ) { uri ->
+        uri?.let {
+            if (!viewModel.onDownloadsFolderPicked(it)) {
+                Toast.makeText(context, linkFolderErrorMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 

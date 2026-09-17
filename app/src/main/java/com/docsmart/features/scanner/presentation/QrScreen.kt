@@ -8,6 +8,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.net.Uri
 import android.util.Size
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
@@ -1534,6 +1535,8 @@ private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
         }
     }
 
+// Hallazgo real de la auditoría general 2026-09-17 (M6): sin ninguna app
+// que maneje el Intent, antes no pasaba absolutamente nada visible.
 internal fun openDocumentExternally(context: Context, uriString: String, chooserTitle: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -1543,6 +1546,7 @@ internal fun openDocumentExternally(context: Context, uriString: String, chooser
         context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) {
         Timber.e(e, "openDocumentExternally: error")
+        Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -1667,7 +1671,12 @@ internal fun copyToClipboard(context: Context, text: String) {
     cb.setPrimaryClip(android.content.ClipData.newPlainText("QR", text))
 }
 
+// Hallazgo real de la auditoría general 2026-09-17 (M6): sin ninguna app
+// que maneje el Intent, antes no pasaba absolutamente nada visible.
 internal fun openUrl(context: Context, url: String) {
     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-    catch (e: Exception) { Timber.e(e, "openUrl") }
+    catch (e: Exception) {
+        Timber.e(e, "openUrl")
+        Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
+    }
 }

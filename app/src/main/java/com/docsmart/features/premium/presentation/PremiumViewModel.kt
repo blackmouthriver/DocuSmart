@@ -181,9 +181,22 @@ class PremiumViewModel @Inject constructor(
         // Si se lanzó, isPurchasing se resuelve cuando llegue purchaseResult.
     }
 
-    fun restorePurchases(noPurchasesFoundMessage: String, restoreSuccessMessage: String) {
+    fun restorePurchases(
+        noPurchasesFoundMessage: String,
+        restoreSuccessMessage: String,
+        restoreErrorMessage: String
+    ) {
+        // Hallazgos reales de la auditoría general 2026-09-17 (M11/M12):
+        // faltaba el mismo guard de re-entrada que purchase() (doble-toque en
+        // "Restaurar compras" podía lanzar dos consultas superpuestas), y
+        // purchaseErrorMessage nunca se fijaba acá -- si la consulta a Play
+        // Billing fallaba, observePurchaseResult() caía directo al
+        // result.debugMessage crudo (en inglés) en vez de un mensaje
+        // localizado.
+        if (_uiState.value.isPurchasing) return
         this.noPurchasesFoundMessage = noPurchasesFoundMessage
         this.restoreSuccessMessage = restoreSuccessMessage
+        this.purchaseErrorMessage = restoreErrorMessage
         _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
         viewModelScope.launch {
             billingManager.restorePurchases()

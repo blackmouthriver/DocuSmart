@@ -352,6 +352,7 @@
     <string name="pdf_merge_read_error">선택한 PDF에서 페이지를 하나도 읽을 수 없습니다.</string>
     <string name="pdf_merge_generate_error">병합된 PDF를 생성하는 중 오류가 발생했습니다.</string>
     <string name="pdf_merge_success">PDF 병합 완료 — 파일 %1$d개, 페이지 %2$d개</string>
+    <string name="pdf_merge_partial_warning">(%1$d개 파일을 포함할 수 없었습니다)</string>
     <string name="pdf_merge_error">PDF 병합 오류: %1$s</string>
 
     <!-- ── PDF 분할 ── -->
@@ -682,6 +683,7 @@
     <string name="premium_choose_plan">요금제를 선택하세요</string>
     <string name="premium_recommended">추천</string>
     <string name="premium_purchase_error">구매를 완료할 수 없습니다. 다시 시도해 주세요.</string>
+    <string name="premium_restore_error">구매를 복원할 수 없습니다. 다시 시도해 주세요.</string>
     <string name="premium_no_purchases_found">이전 구매 내역을 찾을 수 없습니다</string>
     <string name="premium_purchase_pending">구매가 확인 대기 중입니다 (예: 현금 결제). 완료되면 자동으로 활성화됩니다.</string>
     <string name="premium_restore_success">구매가 복원되었습니다 — 이제 프리미엄을 이용할 수 있습니다</string>
@@ -708,6 +710,7 @@
     <string name="security_biometric_use_pin">PIN 사용</string>
     <string name="security_file_protected_success">파일이 성공적으로 보호되었습니다</string>
     <string name="security_file_protect_error">파일을 보호할 수 없습니다</string>
+    <string name="security_restore_error">파일을 복원할 수 없습니다</string>
     <string name="security_save_downloads_success">다운로드에 저장됨: %1$s</string>
     <string name="security_save_downloads_error">다운로드에 저장할 수 없습니다</string>
     <string name="pdf_pw_read_error">파일을 읽을 수 없습니다</string>
@@ -807,6 +810,7 @@
     <string name="scan_page_limit_title">페이지 한도 도달</string>
     <string name="scan_page_limit_body">이 문서에는 이미 %2$d페이지 중 %1$d페이지가 있습니다. 동영상을 보고 페이지를 추가하거나 프리미엄으로 한도 없이 이용하세요.</string>
     <string name="security_file_protected_original_kept">파일이 보호되었습니다. 원본 파일을 원래 위치에서 삭제할 수 없었습니다 — 완전히 제거하려면 직접 삭제하세요.</string>
+    <string name="security_file_restored_original_kept">파일이 복원되었습니다. 보안 폴더의 사본을 삭제할 수 없었습니다 — 완전히 제거하려면 보안 폴더에서 직접 삭제하세요.</string>
     <string name="security_original_kept_dialog_title">원본 파일이 아직 남아 있어요</string>
     <string name="security_original_kept_dialog_confirm">확인</string>
     <string name="qr_protected_title">보호된 QR 코드</string>
@@ -852,6 +856,7 @@
     <string name="qr_copy_wifi_ssid">네트워크 이름 복사</string>
     <string name="qr_add_contact">연락처에 추가</string>
     <string name="qr_add_calendar_event">캘린더에 추가</string>
+    <string name="qr_action_no_app">이 작업을 수행할 앱을 찾을 수 없습니다</string>
     <string name="qr_scan_another">다른 코드 스캔</string>
     <string name="qr_creator_title">QR 코드 만들기</string>
     <string name="qr_creator_subtitle">URL, 텍스트, 파일 등을 위한 QR을 생성하세요</string>
@@ -1075,6 +1080,7 @@
     <string name="library_link_downloads_title">여기에서 더 많은 문서 보기</string>
     <string name="library_link_downloads_body">기기의 폴더를 선택하면 그 안에 있는 문서도 보관함에 표시됩니다</string>
     <string name="library_link_downloads_button">폴더 연결</string>
+    <string name="library_link_folder_error">폴더를 연결할 수 없습니다. 다시 시도하세요.</string>
 
     <!-- ── 연결된 폴더 바로가기 (기기/내 파일/휴지통 옆) ── -->
     <string name="library_folder_shortcut_label">연결된 폴더</string>

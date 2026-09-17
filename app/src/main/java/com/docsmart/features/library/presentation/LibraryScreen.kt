@@ -74,6 +74,14 @@ fun LibraryScreen(
         }
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (M3).
+    LaunchedEffect(uiState.linkFolderError) {
+        uiState.linkFolderError?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.dismissLinkFolderError()
+        }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->

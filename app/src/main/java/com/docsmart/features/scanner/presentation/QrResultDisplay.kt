@@ -1,6 +1,7 @@
 package com.docsmart.features.scanner.presentation
 
 import android.content.Context
+import android.widget.Toast
 import android.content.Intent
 import android.provider.CalendarContract
 import android.provider.ContactsContract
@@ -288,6 +289,10 @@ private fun EventActionButtons(context: Context, content: String, onCopied: () -
     }
 }
 
+// Hallazgo real de la auditoría general 2026-09-17 (M6): sin ninguna app
+// que maneje el Intent (sin cliente de contactos/calendario configurado en
+// el dispositivo), antes no pasaba absolutamente nada visible -- el
+// usuario no tenía forma de saber si funcionó o falló.
 @Suppress("TooGenericExceptionCaught")
 private fun addContact(context: Context, name: String, phone: String, email: String) {
     try {
@@ -300,6 +305,7 @@ private fun addContact(context: Context, name: String, phone: String, email: Str
         context.startActivity(intent)
     } catch (e: Exception) {
         Timber.e(e, "addContact")
+        Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -323,5 +329,6 @@ private fun addCalendarEvent(
         context.startActivity(intent)
     } catch (e: Exception) {
         Timber.e(e, "addCalendarEvent")
+        Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }
 }

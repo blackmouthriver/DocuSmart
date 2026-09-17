@@ -21,7 +21,13 @@ data class MergePdfMessages(
     val readError    : String,
     val generateError: String,
     val success       : String, // formato: %1$d archivos, %2$d páginas
-    val genericError  : String  // formato: %1$s mensaje de excepción
+    val genericError  : String, // formato: %1$s mensaje de excepción
+    // Hallazgo real de la auditoría general 2026-09-17 (M5): si una URI
+    // falla al copiarse (permiso revocado, archivo movido/borrado entre
+    // la selección y la ejecución), la unión seguía con el resto y
+    // reportaba "Success" sin avisar cuál se saltó -- formato: %1$d
+    // archivo(s) omitido(s).
+    val partialWarning: String
 )
 
 class MergePdfUseCase @Inject constructor(
@@ -45,6 +51,7 @@ class MergePdfUseCase @Inject constructor(
         }
 
         val cacheFiles = mutableListOf<File>()
+        var skippedCount = 0
         val outputFile = createOutputFile(outputFileName ?: "Merged")
         try {
             var totalPages = 0
@@ -53,6 +60,7 @@ class MergePdfUseCase @Inject constructor(
                 pdfUris.forEach { uri ->
                     val file = copyUriToCache(uri) ?: run {
                         Timber.w("$TAG: no se pudo copiar URI al cache: $uri")
+                        skippedCount++
                         return@forEach
                     }
                     cacheFiles.add(file)
@@ -80,7 +88,7 @@ class MergePdfUseCase @Inject constructor(
 
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message = String.format(messages.success, cacheFiles.size, totalPages)
+                message = buildSuccessMessage(messages, cacheFiles.size, totalPages, skippedCount)
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al unir PDFs")
@@ -94,6 +102,25 @@ class MergePdfUseCase @Inject constructor(
             PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
         } finally {
             cacheFiles.forEach { it.delete() }
+        }
+    }
+
+    // Extraído de invoke() -- CyclomaticComplexMethod de detekt tras M5.
+    // Hallazgo real M5: si se salteó al menos un archivo, se avisa en el
+    // mismo mensaje de éxito en vez de reportar "Success" liso, para que el
+    // usuario sepa que el PDF resultante tiene menos archivos de los que
+    // eligió.
+    private fun buildSuccessMessage(
+        messages: MergePdfMessages,
+        mergedCount: Int,
+        totalPages: Int,
+        skippedCount: Int
+    ): String {
+        val successMessage = String.format(messages.success, mergedCount, totalPages)
+        return if (skippedCount > 0) {
+            "$successMessage ${String.format(messages.partialWarning, skippedCount)}"
+        } else {
+            successMessage
         }
     }
 

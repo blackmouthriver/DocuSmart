@@ -352,6 +352,7 @@
     <string name="pdf_merge_read_error">Не удалось прочитать ни одной страницы из выбранных PDF.</string>
     <string name="pdf_merge_generate_error">Ошибка при создании объединённого PDF.</string>
     <string name="pdf_merge_success">PDF успешно объединены — %1$d файлов, %2$d страниц</string>
+    <string name="pdf_merge_partial_warning">(не удалось включить %1$d файл(ов))</string>
     <string name="pdf_merge_error">Ошибка при объединении PDF: %1$s</string>
 
     <!-- ── Разделение PDF ── -->
@@ -678,6 +679,7 @@
     <string name="premium_choose_plan">Выберите план</string>
     <string name="premium_recommended">Рекомендуется</string>
     <string name="premium_purchase_error">Не удалось завершить покупку. Попробуйте снова.</string>
+    <string name="premium_restore_error">Не удалось восстановить ваши покупки. Попробуйте снова.</string>
     <string name="premium_no_purchases_found">Предыдущие покупки не найдены</string>
     <string name="premium_purchase_pending">Ваша покупка ожидает подтверждения (например, оплата наличными). Она активируется автоматически после завершения.</string>
     <string name="premium_restore_success">Покупка восстановлена — теперь у вас есть Premium</string>
@@ -704,6 +706,7 @@
     <string name="security_biometric_use_pin">Использовать PIN</string>
     <string name="security_file_protected_success">Файл успешно защищён</string>
     <string name="security_file_protect_error">Не удалось защитить файл</string>
+    <string name="security_restore_error">Не удалось восстановить файл</string>
     <string name="security_save_downloads_success">Сохранено в Загрузки: %1$s</string>
     <string name="security_save_downloads_error">Не удалось сохранить в Загрузки</string>
     <string name="pdf_pw_read_error">Не удалось прочитать файл</string>
@@ -803,6 +806,7 @@
     <string name="scan_page_limit_title">Достигнут лимит страниц</string>
     <string name="scan_page_limit_body">В этом документе уже %1$d из %2$d страниц. Посмотрите видео, чтобы добавить ещё одну страницу, или перейдите на Premium — без ограничений.</string>
     <string name="security_file_protected_original_kept">Файл защищён. Не удалось удалить оригинал из исходного места — удалите его вручную, если хотите убрать его полностью.</string>
+    <string name="security_file_restored_original_kept">Файл восстановлен. Не удалось удалить копию из Защищённой папки — удалите её вручную из Защищённой папки, если хотите убрать её полностью.</string>
     <string name="security_original_kept_dialog_title">Исходный файл всё ещё на месте</string>
     <string name="security_original_kept_dialog_confirm">Понятно</string>
     <string name="qr_protected_title">Защищённый QR-код</string>
@@ -848,6 +852,7 @@
     <string name="qr_copy_wifi_ssid">Копировать имя сети</string>
     <string name="qr_add_contact">Добавить в контакты</string>
     <string name="qr_add_calendar_event">Добавить в календарь</string>
+    <string name="qr_action_no_app">Не найдено приложение для выполнения этого действия</string>
     <string name="qr_scan_another">Сканировать другой код</string>
     <string name="qr_creator_title">Создать QR-код</string>
     <string name="qr_creator_subtitle">Создайте QR для ссылок, текста, файлов и другого</string>
@@ -1071,6 +1076,7 @@
     <string name="library_link_downloads_title">Смотрите больше документов здесь</string>
     <string name="library_link_downloads_body">Выберите папку на устройстве, чтобы Библиотека также показывала документы, которые уже есть там</string>
     <string name="library_link_downloads_button">Привязать папку</string>
+    <string name="library_link_folder_error">Не удалось привязать папку. Попробуйте ещё раз.</string>
 
     <!-- ── Быстрый доступ к привязанной папке, рядом с Устройство/Мои файлы/Корзина ── -->
     <string name="library_folder_shortcut_label">Привязанная папка</string>

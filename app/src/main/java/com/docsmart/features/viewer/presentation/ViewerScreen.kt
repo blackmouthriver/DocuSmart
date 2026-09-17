@@ -256,7 +256,15 @@ fun ViewerScreen(
                 val fileUri  = uiState.fileUri
                 val mime     = (uiState.mimeType ?: "").lowercase()
                 val fileName = (uiState.document?.name ?: "").lowercase()
-                android.util.Log.d("ViewerScreen", "document!=null fileUri=$fileUri mime=$mime fileName=$fileName requiresPassword=${uiState.requiresPassword} error=${uiState.error}")
+                // Hallazgo real de la auditoría general 2026-09-17 (M10):
+                // android.util.Log.d ignora el árbol de Timber -- a
+                // diferencia del resto del logging de la app, esto seguía
+                // imprimiendo fileUri (dato potencialmente sensible) también
+                // en builds de release.
+                Timber.d(
+                    "document!=null fileUri=$fileUri mime=$mime fileName=$fileName " +
+                        "requiresPassword=${uiState.requiresPassword} error=${uiState.error}"
+                )
 
                 when {
                     mime.contains("image") ||
@@ -1359,36 +1367,42 @@ private val EXCEL_COLUMN_WIDTH = 120.dp
 private data class ExcelRow(val cells: List<String>)
 private data class ExcelSheetModel(val name: String, val rows: List<ExcelRow>)
 
+// Hallazgo real de la auditoría general 2026-09-17 (M8): si algo lanzaba
+// una excepción mientras se recorrían las hojas/celdas, `workbook.close()`
+// nunca se ejecutaba y el recurso (y el InputStream que envuelve) quedaba
+// abierto.
 private fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel> {
     val workbook = WorkbookFactory.create(input)
-    val formatter = DataFormatter()
-    val evaluator = try {
-        workbook.creationHelper.createFormulaEvaluator()
-    } catch (e: Exception) {
-        Timber.w(e, "extractExcelSheets: no se pudo crear el evaluador de fórmulas")
-        null
-    }
-    val sheets = (0 until workbook.numberOfSheets).mapNotNull { sheetIndex ->
-        val sheet = workbook.getSheetAt(sheetIndex)
-        val rows = sheet.mapNotNull { row ->
-            val lastCell = row.lastCellNum.toInt()
-            if (lastCell < 0) return@mapNotNull null
-            val cells = (0 until lastCell).map { col ->
-                val cell = row.getCell(col) ?: return@map ""
-                try {
-                    if (evaluator != null) formatter.formatCellValue(cell, evaluator)
-                    else formatter.formatCellValue(cell)
-                } catch (e: Exception) {
-                    Timber.w(e, "extractExcelSheets: no se pudo formatear una celda")
-                    ""
-                }
-            }
-            if (cells.any { it.isNotBlank() }) ExcelRow(cells) else null
+    try {
+        val formatter = DataFormatter()
+        val evaluator = try {
+            workbook.creationHelper.createFormulaEvaluator()
+        } catch (e: Exception) {
+            Timber.w(e, "extractExcelSheets: no se pudo crear el evaluador de fórmulas")
+            null
         }
-        if (rows.isEmpty()) null else ExcelSheetModel(sheet.sheetName, rows)
+        return (0 until workbook.numberOfSheets).mapNotNull { sheetIndex ->
+            val sheet = workbook.getSheetAt(sheetIndex)
+            val rows = sheet.mapNotNull { row ->
+                val lastCell = row.lastCellNum.toInt()
+                if (lastCell < 0) return@mapNotNull null
+                val cells = (0 until lastCell).map { col ->
+                    val cell = row.getCell(col) ?: return@map ""
+                    try {
+                        if (evaluator != null) formatter.formatCellValue(cell, evaluator)
+                        else formatter.formatCellValue(cell)
+                    } catch (e: Exception) {
+                        Timber.w(e, "extractExcelSheets: no se pudo formatear una celda")
+                        ""
+                    }
+                }
+                if (cells.any { it.isNotBlank() }) ExcelRow(cells) else null
+            }
+            if (rows.isEmpty()) null else ExcelSheetModel(sheet.sheetName, rows)
+        }
+    } finally {
+        workbook.close()
     }
-    workbook.close()
-    return sheets
 }
 
 @Composable
@@ -1630,14 +1644,18 @@ internal data class PptShapeContent(
 )
 internal data class PptSlideModel(val number: Int, val shapes: List<PptShapeContent>)
 
+// Hallazgo real de la auditoría general 2026-09-17 (M8): mismo problema que
+// extractExcelSheets -- close() fuera de un finally.
 private fun extractPptSlides(input: InputStream): List<PptSlideModel> {
     val slideShow = XMLSlideShow(input)
-    val slides = slideShow.slides.mapIndexed { index, slide ->
-        val shapes = slide.shapes.mapNotNull { shape -> extractPptShapeContent(shape) }
-        PptSlideModel(index + 1, shapes)
+    try {
+        return slideShow.slides.mapIndexed { index, slide ->
+            val shapes = slide.shapes.mapNotNull { shape -> extractPptShapeContent(shape) }
+            PptSlideModel(index + 1, shapes)
+        }
+    } finally {
+        slideShow.close()
     }
-    slideShow.close()
-    return slides
 }
 
 private fun extractPptShapeContent(shape: XSLFShape): PptShapeContent? {

@@ -154,9 +154,25 @@ object PomodoroEngine {
         stopService(context)
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (M13): tick() corre en
+    // el bucle de start() sobre Dispatchers.Default, mientras que
+    // pause()/reset()/start() se llaman desde el hilo principal.
+    // tickerJob.cancel() es cooperativo -- si un tick ya pasó su único punto
+    // de suspensión (el delay(1000) de arriba) y está ejecutando este cuerpo
+    // síncrono, cancelar el Job no lo detiene a mitad de camino. Antes, un
+    // pause()/reset() concurrente en ese instante podía perderse: este tick
+    // terminaba escribiendo `next` (derivado de un `current` ya obsoleto,
+    // capturado ANTES del pause/reset) encima del isRunning=false recién
+    // puesto, resucitando el cronómetro. compareAndSet solo aplica el
+    // resultado si `_state` sigue siendo exactamente el `current` que este
+    // tick leyó -- si cambió mientras tanto (pause/reset ganó la carrera),
+    // este tick se descarta entero, sin duplicar tampoco sus side effects
+    // (StudyStatsStorage/DocuSmartAnalytics/stopService).
     private fun tick(context: Context) {
         val current = _state.value
+        if (!current.isRunning) return
         val next = tickPomodoro(current)
+        if (!_state.compareAndSet(current, next)) return
         if (tickCompletesStudyBlock(current)) {
             StudyStatsStorage.recordPomodoroCompletion(context)
             DocuSmartAnalytics.logPomodoroCompleted(next.pomodoroCount)
@@ -165,7 +181,6 @@ object PomodoroEngine {
         // esperando "Iniciar") -- ese bloque todavía no logueó su propio
         // inicio.
         if (current.isBreak && !next.isBreak) studySessionLogged = false
-        _state.value = next
         if (!next.isRunning) stopService(context)
     }
 

@@ -211,11 +211,29 @@ class SecurityManagerTest {
         val secureFile = File(securityManager.secureFolder, "restaurar.pdf")
         val destDir = File(filesDir, "converted").apply { mkdirs() }
 
-        val restored = securityManager.moveFromSecure(secureFile, destDir)
+        val result = securityManager.moveFromSecure(secureFile, destDir)
 
-        assertNotNull(restored)
+        assertTrue(result.success)
+        assertTrue(result.originalDeleted)
+        assertNotNull(result.destFile)
         assertFalse(secureFile.exists())
         assertTrue(File(destDir, "restaurar.pdf").exists())
+    }
+
+    @Test
+    fun `moveFromSecure falla limpiamente si el archivo protegido no existe`() {
+        // Mismo límite ya documentado para moveToSecure() arriba: no se
+        // puede forzar de forma confiable y multiplataforma que
+        // File#delete() falle tras una copia exitosa -- este test cubre
+        // la otra vía real de fallo (M1: el resultado ahora se propaga en
+        // vez de ignorarse, igual que ya hacía moveToSecure()).
+        val inexistente = File(securityManager.secureFolder, "no_existe.pdf")
+        val destDir = File(filesDir, "converted").apply { mkdirs() }
+
+        val result = securityManager.moveFromSecure(inexistente, destDir)
+
+        assertFalse(result.success)
+        assertFalse(result.originalDeleted)
     }
 
     @Test

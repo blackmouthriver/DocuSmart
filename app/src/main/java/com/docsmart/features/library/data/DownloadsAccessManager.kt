@@ -45,16 +45,25 @@ class DownloadsAccessManager @Inject constructor(
         "primary:Download"
     )
 
-    fun onFolderPicked(uri: Uri) {
-        try {
+    // Hallazgo real de la auditoría general 2026-09-17 (M3): si
+    // takePersistableUriPermission() lanza (proveedor SAF que no lo
+    // soporta, revocación concurrente), antes solo se logueaba -- el
+    // usuario tocaba "Vincular carpeta", elegía una carpeta, y no pasaba
+    // nada visible, sin ningún aviso de que falló. Ahora se propaga el
+    // resultado para que el llamador pueda avisar, mismo criterio que el
+    // resto de operaciones de Carpeta Segura (moveToSecure/moveFromSecure).
+    fun onFolderPicked(uri: Uri): Boolean {
+        return try {
             context.contentResolver.takePersistableUriPermission(
                 uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
             prefs.edit().putString(KEY_URI, uri.toString()).apply()
             _linkedFolderUri.value = uri
             Timber.d("DownloadsAccessManager: carpeta vinculada -> $uri")
+            true
         } catch (e: SecurityException) {
             Timber.e(e, "DownloadsAccessManager: no se pudo persistir el permiso de $uri")
+            false
         }
     }
 

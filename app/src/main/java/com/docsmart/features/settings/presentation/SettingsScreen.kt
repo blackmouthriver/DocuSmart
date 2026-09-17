@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -147,9 +148,22 @@ fun SettingsScreen(
     // Fila 22 del backlog UX: estado de la carpeta de Descargas vinculada por
     // SAF (ver DownloadsAccessManager / LibraryScreen).
     val linkedDownloadsFolderUri by viewModel.linkedDownloadsFolderUri.collectAsStateWithLifecycle()
+    // Hallazgo real de la auditoría general 2026-09-17 (M3), no propagado a
+    // este call site en el fix original: onDownloadsFolderPicked() devuelve
+    // Boolean desde que DownloadsAccessManager.onFolderPicked() puede fallar
+    // (takePersistableUriPermission() lanza) -- sin este aviso, "Vincular
+    // carpeta" no hacía nada visible si fallaba, mismo bug que ya se había
+    // corregido para Biblioteca pero no para Ajustes.
+    val linkFolderErrorMessage = stringResource(R.string.library_link_folder_error)
     val linkDownloadsFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
+    ) { uri ->
+        uri?.let {
+            if (!viewModel.onDownloadsFolderPicked(it)) {
+                Toast.makeText(context, linkFolderErrorMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // ── UMP: solo mostrar la entrada de consentimiento de anuncios si Google
     // determinó que hace falta un punto de acceso (usuarios en UE/Reino

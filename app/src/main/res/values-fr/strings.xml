@@ -360,6 +360,7 @@
     <string name="pdf_merge_read_error">Impossible de lire une seule page des PDF sélectionnés.</string>
     <string name="pdf_merge_generate_error">Erreur lors de la génération du PDF combiné.</string>
     <string name="pdf_merge_success">PDF fusionnés avec succès — %1$d fichiers, %2$d pages</string>
+    <string name="pdf_merge_partial_warning">(%1$d fichier(s) n\'a/n\'ont pas pu être inclus)</string>
     <string name="pdf_merge_error">Erreur lors de la fusion des PDF : %1$s</string>
 
     <!-- ── Diviser un PDF ── -->
@@ -690,6 +691,7 @@
     <string name="premium_choose_plan">Choisis ta formule</string>
     <string name="premium_recommended">Recommandé</string>
     <string name="premium_purchase_error">Impossible de finaliser l\'achat. Réessaie.</string>
+    <string name="premium_restore_error">Impossible de restaurer tes achats. Réessaie.</string>
     <string name="premium_no_purchases_found">Aucun achat antérieur trouvé</string>
     <string name="premium_purchase_pending">Ton achat est en attente de confirmation (par exemple, paiement en espèces). Il s\'activera automatiquement une fois terminé.</string>
     <string name="premium_restore_success">Achat restauré — tu as maintenant Premium</string>
@@ -716,6 +718,7 @@
     <string name="security_biometric_use_pin">Utiliser le code PIN</string>
     <string name="security_file_protected_success">Fichier protégé avec succès</string>
     <string name="security_file_protect_error">Impossible de protéger le fichier</string>
+    <string name="security_restore_error">Impossible de restaurer le fichier</string>
     <string name="security_save_downloads_success">Enregistré dans Téléchargements : %1$s</string>
     <string name="security_save_downloads_error">Impossible d\'enregistrer dans Téléchargements</string>
     <string name="pdf_pw_read_error">Impossible de lire le fichier</string>
@@ -815,6 +818,7 @@
     <string name="scan_page_limit_title">Limite de pages atteinte</string>
     <string name="scan_page_limit_body">Ce document compte déjà %1$d pages sur %2$d. Regardez une vidéo pour ajouter une page de plus, ou passez à Premium pour ne plus avoir de limite.</string>
     <string name="security_file_protected_original_kept">Fichier protégé. Impossible de supprimer l\'original de son emplacement — supprime-le manuellement si tu veux le retirer complètement.</string>
+    <string name="security_file_restored_original_kept">Fichier restauré. Impossible de supprimer la copie du Dossier sécurisé — supprime-la manuellement depuis le Dossier sécurisé si tu veux la retirer complètement.</string>
     <string name="security_original_kept_dialog_title">Le fichier original est toujours là</string>
     <string name="security_original_kept_dialog_confirm">Compris</string>
     <string name="qr_protected_title">Code QR protégé</string>
@@ -860,6 +864,7 @@
     <string name="qr_copy_wifi_ssid">Copier le nom du réseau</string>
     <string name="qr_add_contact">Ajouter aux contacts</string>
     <string name="qr_add_calendar_event">Ajouter au calendrier</string>
+    <string name="qr_action_no_app">Aucune application n\'a été trouvée pour effectuer cette action</string>
     <string name="qr_scan_another">Scanner un autre code</string>
     <string name="qr_creator_title">Créer un code QR</string>
     <string name="qr_creator_subtitle">Génère un QR pour URL, texte, fichiers et plus</string>
@@ -1083,6 +1088,7 @@
     <string name="library_link_downloads_title">Voir plus de documents ici</string>
     <string name="library_link_downloads_body">Choisis un dossier de ton appareil pour que la Bibliothèque affiche aussi les documents qui s\'y trouvent déjà</string>
     <string name="library_link_downloads_button">Associer un dossier</string>
+    <string name="library_link_folder_error">Impossible d\'associer le dossier. Réessaie.</string>
 
     <!-- ── Raccourci vers le dossier associé, à côté de Appareil/Mes fichiers/Corbeille ── -->
     <string name="library_folder_shortcut_label">Dossier associé</string>

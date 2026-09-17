@@ -218,6 +218,7 @@ fun ScanResultScreen(
         uiState = uiState,
         isRewardedReady = isRewardedReady,
         activity = activity,
+        onPremiumClick = onPremiumClick,
         viewModels = ScanResultViewModels(editorViewModel, converterViewModel, scanSessionViewModel),
         callbacks = ScanResultEffectCallbacks(
             onEditingIndexChange = { editingIndex = it },
@@ -437,6 +438,7 @@ private fun ScanResultSideEffects(
     uiState: ConverterUiState,
     isRewardedReady: Boolean,
     activity: Activity?,
+    onPremiumClick: () -> Unit,
     viewModels: ScanResultViewModels,
     callbacks: ScanResultEffectCallbacks
 ) {
@@ -496,14 +498,19 @@ private fun ScanResultSideEffects(
         uiState = uiState,
         isRewardedReady = isRewardedReady,
         onWatchAd = { activity?.let { viewModels.converterViewModel.watchAdForConversion(it) } },
-        onDismiss = { viewModels.converterViewModel.dismissLimitDialog() }
+        onDismiss = { viewModels.converterViewModel.dismissLimitDialog() },
+        onGetPremium = onPremiumClick
     )
 
     // Backlog UX (pedido explícito del usuario 2026-09-06): límite diario
     // propio de "escaneos guardados" (8/día), independiente del de
     // conversiones de arriba -- se consulta al tocar "Guardar"/"Compartir"
     // (ver `onRequestSaveSlot` en ScanResultActionsCallbacks).
-    ScanSaveLimitDialogHost(scanSessionViewModel = viewModels.scanSessionViewModel, activity = activity)
+    ScanSaveLimitDialogHost(
+        scanSessionViewModel = viewModels.scanSessionViewModel,
+        activity = activity,
+        onPremiumClick = onPremiumClick
+    )
 }
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- diálogo de edición
@@ -578,7 +585,8 @@ private fun ScanDailyLimitDialog(
     uiState: ConverterUiState,
     isRewardedReady: Boolean,
     onWatchAd: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onGetPremium: () -> Unit
 ) {
     if (!uiState.showLimitDialog) return
     DailyLimitDialog(
@@ -588,7 +596,7 @@ private fun ScanDailyLimitDialog(
         isRewardedReady = isRewardedReady,
         onWatchAd = onWatchAd,
         onDismiss = onDismiss,
-        onGetPremium = { }
+        onGetPremium = onGetPremium
     )
 }
 
@@ -601,7 +609,8 @@ private fun ScanSaveLimitDialog(
     state: ScanSaveLimitUiState,
     isRewardedReady: Boolean,
     onWatchAd: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onGetPremium: () -> Unit
 ) {
     if (!state.showLimitDialog) return
     DailyLimitDialog(
@@ -611,7 +620,7 @@ private fun ScanSaveLimitDialog(
         isRewardedReady = isRewardedReady,
         onWatchAd = onWatchAd,
         onDismiss = onDismiss,
-        onGetPremium = { }
+        onGetPremium = onGetPremium
     )
 }
 
@@ -620,7 +629,8 @@ private fun ScanSaveLimitDialog(
 @Composable
 private fun ScanSaveLimitDialogHost(
     scanSessionViewModel: ScanSessionViewModel,
-    activity: Activity?
+    activity: Activity?,
+    onPremiumClick: () -> Unit
 ) {
     val state by scanSessionViewModel.saveLimitState.collectAsStateWithLifecycle()
     val isRewardedReady by scanSessionViewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
@@ -628,7 +638,8 @@ private fun ScanSaveLimitDialogHost(
         state = state,
         isRewardedReady = isRewardedReady,
         onWatchAd = { activity?.let { scanSessionViewModel.watchAdForScanSave(it) } },
-        onDismiss = { scanSessionViewModel.dismissScanLimitDialog() }
+        onDismiss = { scanSessionViewModel.dismissScanLimitDialog() },
+        onGetPremium = onPremiumClick
     )
 }
 

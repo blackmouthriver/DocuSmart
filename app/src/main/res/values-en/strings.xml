@@ -362,6 +362,7 @@
     <string name="pdf_merge_read_error">Couldn\'t read any page from the selected PDFs.</string>
     <string name="pdf_merge_generate_error">Error generating the merged PDF.</string>
     <string name="pdf_merge_success">PDFs merged successfully — %1$d files, %2$d pages</string>
+    <string name="pdf_merge_partial_warning">(%1$d file(s) couldn\'t be included)</string>
     <string name="pdf_merge_error">Error merging PDFs: %1$s</string>
 
     <!-- ── Split PDF ── -->
@@ -687,6 +688,7 @@
     <string name="premium_choose_plan">Choose your plan</string>
     <string name="premium_recommended">Recommended</string>
     <string name="premium_purchase_error">Couldn\'t complete the purchase. Please try again.</string>
+    <string name="premium_restore_error">Couldn\'t restore your purchases. Please try again.</string>
     <string name="premium_no_purchases_found">No previous purchases found</string>
     <string name="premium_purchase_pending">Your purchase is pending confirmation (e.g. cash payment). It will activate automatically once completed.</string>
     <string name="premium_restore_success">Purchase restored — you now have Premium</string>
@@ -713,6 +715,7 @@
     <string name="security_biometric_use_pin">Use PIN</string>
     <string name="security_file_protected_success">File protected successfully</string>
     <string name="security_file_protect_error">Couldn\'t protect the file</string>
+    <string name="security_restore_error">Couldn\'t restore the file</string>
     <string name="security_save_downloads_success">Saved to Downloads: %1$s</string>
     <string name="security_save_downloads_error">Couldn\'t save to Downloads</string>
     <string name="pdf_pw_read_error">Couldn\'t read the file</string>
@@ -812,6 +815,7 @@
     <string name="scan_page_limit_title">Page limit reached</string>
     <string name="scan_page_limit_body">This document already has %1$d of %2$d pages. Watch a video to add one more page, or go Premium for no limit.</string>
     <string name="security_file_protected_original_kept">File protected. Couldn\'t delete the original from its location — delete it manually if you want it fully removed.</string>
+    <string name="security_file_restored_original_kept">File restored. Couldn\'t delete the copy from the Secure Folder — delete it manually from the Secure Folder if you want it fully removed.</string>
     <string name="security_original_kept_dialog_title">The original file is still there</string>
     <string name="security_original_kept_dialog_confirm">Got it</string>
     <string name="qr_protected_title">Protected QR code</string>
@@ -857,6 +861,7 @@
     <string name="qr_copy_wifi_ssid">Copy network name</string>
     <string name="qr_add_contact">Add to contacts</string>
     <string name="qr_add_calendar_event">Add to calendar</string>
+    <string name="qr_action_no_app">No app was found to complete this action</string>
     <string name="qr_scan_another">Scan another code</string>
     <string name="qr_creator_title">Create QR code</string>
     <string name="qr_creator_subtitle">Generate a QR for URLs, text, files and more</string>
@@ -1080,6 +1085,7 @@
     <string name="library_link_downloads_title">See more documents here</string>
     <string name="library_link_downloads_body">Choose a folder on your device so Library also shows the documents you already have there</string>
     <string name="library_link_downloads_button">Link folder</string>
+    <string name="library_link_folder_error">Couldn\'t link the folder. Try again.</string>
 
     <!-- ── Shortcut to the linked folder, next to Device/My files/Trash ── -->
     <string name="library_folder_shortcut_label">Linked folder</string>

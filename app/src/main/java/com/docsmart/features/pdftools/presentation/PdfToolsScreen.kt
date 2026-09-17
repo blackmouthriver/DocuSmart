@@ -96,6 +96,7 @@ fun PdfToolsScreen(
     val mergeReadError       = stringResource(R.string.pdf_merge_read_error)
     val mergeGenerateError   = stringResource(R.string.pdf_merge_generate_error)
     val mergeSuccess         = stringResource(R.string.pdf_merge_success)
+    val mergePartialWarning = stringResource(R.string.pdf_merge_partial_warning)
     val mergeGenericError    = stringResource(R.string.pdf_merge_error)
     val splitReadError       = stringResource(R.string.pdf_split_read_error)
     val splitNoPages         = stringResource(R.string.pdf_split_no_pages)
@@ -195,7 +196,8 @@ fun PdfToolsScreen(
                 readError     = mergeReadError,
                 generateError = mergeGenerateError,
                 success       = mergeSuccess,
-                genericError  = mergeGenericError
+                genericError  = mergeGenericError,
+                partialWarning = mergePartialWarning
             ),
             split = SplitPdfMessages(
                 readError     = splitReadError,
@@ -489,6 +491,7 @@ fun PdfToolsScreen(
                         ToolSuccessCard(
                             result = result,
                             savedToDownloads = uiState.savedToDownloads,
+                            isSaving = uiState.isSaving,
                             onShareClick = {
                                 viewModel.shareResult(context, shareChooserTitle, shareErrorMessage)
                             },
@@ -503,6 +506,7 @@ fun PdfToolsScreen(
                         MultiToolSuccessCard(
                             result = result,
                             savedToDownloads = uiState.savedToDownloads,
+                            isSaving = uiState.isSaving,
                             onShareClick = {
                                 viewModel.shareResult(context, shareChooserTitle, shareErrorMessage)
                             },
@@ -799,6 +803,7 @@ fun PdfToolsScreen(
 private fun ToolSuccessCard(
     result: PdfToolResult.Success,
     savedToDownloads: Boolean,
+    isSaving: Boolean,
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit,
     onNewOperation: () -> Unit,
@@ -807,6 +812,7 @@ private fun ToolSuccessCard(
     ToolSuccessCardShell(
         message = result.message,
         savedToDownloads = savedToDownloads,
+        isSaving = isSaving,
         shareLabel = stringResource(R.string.pdf_tools_share),
         onShareClick = onShareClick,
         onSaveClick = onSaveClick,
@@ -856,6 +862,7 @@ private fun ToolSuccessCard(
 private fun MultiToolSuccessCard(
     result: PdfToolResult.MultiSuccess,
     savedToDownloads: Boolean,
+    isSaving: Boolean,
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit,
     onNewOperation: () -> Unit,
@@ -864,6 +871,7 @@ private fun MultiToolSuccessCard(
     ToolSuccessCardShell(
         message = result.message,
         savedToDownloads = savedToDownloads,
+        isSaving = isSaving,
         shareLabel = stringResource(R.string.pdf_tools_share_images),
         onShareClick = onShareClick,
         onSaveClick = onSaveClick,
@@ -909,6 +917,11 @@ private fun MultiToolSuccessCard(
 private fun ToolSuccessCardShell(
     message: String,
     savedToDownloads: Boolean,
+    // Hallazgo real de la auditoría general 2026-09-17 (M4): sin guard de
+    // re-entrada, un doble-toque en "Guardar en Descargas" duplicaba el
+    // archivo/las imágenes guardadas -- mismo patrón ya corregido en el
+    // botón equivalente del Convertidor.
+    isSaving: Boolean,
     shareLabel: String,
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit,
@@ -977,6 +990,7 @@ private fun ToolSuccessCardShell(
                 if (!savedToDownloads) {
                     Button(
                         onClick = onSaveClick,
+                        enabled = !isSaving,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),

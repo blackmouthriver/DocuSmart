@@ -374,6 +374,7 @@
     <string name="pdf_merge_read_error">No s\'ha pogut llegir cap pàgina dels PDF seleccionats.</string>
     <string name="pdf_merge_generate_error">Error en generar el PDF combinat.</string>
     <string name="pdf_merge_success">PDF units correctament — %1$d arxius, %2$d pàgines</string>
+    <string name="pdf_merge_partial_warning">(no s\'ha pogut incloure %1$d arxiu(s))</string>
     <string name="pdf_merge_error">Error en unir PDF: %1$s</string>
 
     <!-- ── Dividir PDF ── -->
@@ -710,6 +711,7 @@
     <string name="premium_choose_plan">Tria el teu pla</string>
     <string name="premium_recommended">Recomanat</string>
     <string name="premium_purchase_error">No s\'ha pogut completar la compra. Torna-ho a provar.</string>
+    <string name="premium_restore_error">No s\'han pogut restaurar les teves compres. Torna-ho a provar.</string>
     <string name="premium_no_purchases_found">No s\'han trobat compres anteriors</string>
     <string name="premium_purchase_pending">La teva compra està pendent de confirmació (per exemple, pagament en efectiu). S\'activarà automàticament quan es completi.</string>
     <string name="premium_restore_success">Compra restaurada — ja tens Premium</string>
@@ -736,6 +738,7 @@
     <string name="security_biometric_use_pin">Fer servir PIN</string>
     <string name="security_file_protected_success">Arxiu protegit correctament</string>
     <string name="security_file_protect_error">No s\'ha pogut protegir l\'arxiu</string>
+    <string name="security_restore_error">No s\'ha pogut restaurar l\'arxiu</string>
     <string name="security_save_downloads_success">Desat a Baixades: %1$s</string>
     <string name="security_save_downloads_error">No s\'ha pogut desar a Baixades</string>
     <string name="pdf_pw_read_error">No s\'ha pogut llegir l\'arxiu</string>
@@ -835,6 +838,7 @@
     <string name="scan_page_limit_title">Límit de pàgines assolit</string>
     <string name="scan_page_limit_body">Aquest document ja té %1$d de %2$d pàgines. Mira un vídeo per afegir una pàgina més, o passa a Premium per no tenir límit.</string>
     <string name="security_file_protected_original_kept">Arxiu protegit. No s\'ha pogut eliminar l\'original de la seva ubicació — esborra\'l manualment si vols treure\'l del tot.</string>
+    <string name="security_file_restored_original_kept">Arxiu restaurat. No s\'ha pogut eliminar la còpia de la Carpeta Segura — esborra-la manualment des de la Carpeta Segura si vols treure-la del tot.</string>
     <string name="security_original_kept_dialog_title">L\'arxiu original continua al seu lloc</string>
     <string name="security_original_kept_dialog_confirm">Entès</string>
     <string name="qr_protected_title">Codi QR protegit</string>
@@ -880,6 +884,7 @@
     <string name="qr_copy_wifi_ssid">Copia el nom de la xarxa</string>
     <string name="qr_add_contact">Afegeix als contactes</string>
     <string name="qr_add_calendar_event">Afegeix al calendari</string>
+    <string name="qr_action_no_app">No s\'ha trobat cap aplicació per completar aquesta acció</string>
     <string name="qr_scan_another">Escanejar un altre codi</string>
     <string name="qr_creator_title">Crear codi QR</string>
     <string name="qr_creator_subtitle">Genera QR per a URL, text, arxius i més</string>
@@ -1105,6 +1110,7 @@
     <string name="library_link_downloads_title">Veure més documents aquí</string>
     <string name="library_link_downloads_body">Tria una carpeta del teu dispositiu perquè Biblioteca també mostri els documents que ja hi tens</string>
     <string name="library_link_downloads_button">Vincular carpeta</string>
+    <string name="library_link_folder_error">No s\'ha pogut vincular la carpeta. Torna-ho a provar.</string>
 
     <!-- ── Atajo a la carpeta vinculada, junto a Dispositivo/Mis archivos/Papelera ── -->
     <string name="library_folder_shortcut_label">Carpeta vinculada</string>

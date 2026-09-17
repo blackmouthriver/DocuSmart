@@ -37,7 +37,7 @@ class MergePdfUseCaseTest {
     private val messages = MergePdfMessages(
         minPdfsError = "minPdfsError", readError = "readError",
         generateError = "generateError", success = "success %1\$d %2\$d",
-        genericError = "genericError %1\$s"
+        genericError = "genericError %1\$s", partialWarning = "partial %1\$d"
     )
 
     @BeforeEach
@@ -76,6 +76,31 @@ class MergePdfUseCaseTest {
         val result = useCase(listOf(mockk<Uri>()), messages = messages)
 
         assertTrue(result is PdfToolResult.Error)
+    }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (M5): si una URI
+    // falla al copiarse (openInputStream devuelve null -- permiso
+    // revocado, archivo movido/borrado entre la selección y la ejecución),
+    // antes la unión seguía con las demás y reportaba éxito sin avisar
+    // cuál se saltó.
+    @Test
+    fun `merge avisa si una URI no se pudo copiar, pero sigue con las demas`() = runTest {
+        val uriA = mockk<Uri>()
+        val uriFallida = mockk<Uri>()
+        val uriB = mockk<Uri>()
+        val resolver = mockk<ContentResolver>()
+        every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
+        every { resolver.openInputStream(uriFallida) } returns null
+        every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
+        every { context.contentResolver } returns resolver
+
+        val result = useCase(listOf(uriA, uriFallida, uriB), messages = messages)
+
+        assertTrue(result is PdfToolResult.Success)
+        val success = result as PdfToolResult.Success
+        assertEquals(5, pageCountOf(success.outputFile))
+        // 2 archivos realmente unidos (no 3) + aviso de 1 archivo omitido.
+        assertEquals("success 2 5 partial 1", success.message)
     }
 
     // ── helpers ────────────────────────────────────────────────────────────

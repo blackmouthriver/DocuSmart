@@ -37,6 +37,7 @@ data class LibraryUiState(
     val selectedTab       : LibraryTab            = LibraryTab.DEVICE, // ← NUEVO
     val isLoading         : Boolean               = false,
     val deleteError       : String?               = null,
+    val linkFolderError   : String?               = null,
     val trashCount        : Int                   = 0 // RF-VIS-07
 )
 
@@ -66,8 +67,15 @@ class LibraryViewModel @Inject constructor(
     fun linkedFolderDisplayName(uri: Uri): String? = downloadsAccessManager.folderDisplayName(uri)
 
     fun onDownloadsFolderPicked(uri: Uri) {
-        downloadsAccessManager.onFolderPicked(uri)
+        val linked = downloadsAccessManager.onFolderPicked(uri)
+        if (!linked) {
+            _uiState.update { it.copy(linkFolderError = context.getString(R.string.library_link_folder_error)) }
+        }
         loadDocuments()
+    }
+
+    fun dismissLinkFolderError() {
+        _uiState.update { it.copy(linkFolderError = null) }
     }
 
     fun unlinkDownloadsFolder() {
