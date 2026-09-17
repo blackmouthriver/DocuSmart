@@ -87,7 +87,7 @@ priorización para decidir qué se aborda y en qué orden.
 | 63 | Fondo animado — más movimiento perceptible (refinamiento del ítem 26) | Mejora | Media-Alta | Baja | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §36 |
 | 64 | Modo Estudio — Selector de voz con avatar, nombre y muestra de audio (refinamiento de la lectura por voz) | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §37 |
 | 65 | Agenda/Calendario — Guardar eventos, reuniones y entregas con recordatorio (+ vista de calendario, banners y permiso de alarma exacta) | Mejora (épica) | Media-Alta | Alta | Medio | **✅ Implementado y verificado en dispositivo real (Motorola Edge 30 Neo) 2026-09-17 — AC1-AC6, incluye 2 bugs reales encontrados y corregidos (permiso de notificaciones, permiso de alarma exacta)** — ver §38 |
-| 66 | Modal de "Idioma" (Ajustes) — rediseño con tarjetas degradadas por idioma, color de acento, hover y transiciones (referencia visual entregada por el usuario) | Mejora (visual) | Media | Media | Bajo | 🆕 Propuesto 2026-09-16 — ver §39 |
+| 66 | Modal de "Idioma" (Ajustes) — rediseño con tarjetas degradadas por idioma, color de acento, hover y transiciones (referencia visual entregada por el usuario) | Mejora (visual) | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-17** — ver §39 |
 | 67 | Modo Estudio — Selector de voz: reemplazar el círculo de color por un personaje/avatar ilustrado por voz (femenino/masculino), referencia visual entregada por el usuario | Mejora (visual) | Media | Media-Alta | Bajo | 🆕 Propuesto 2026-09-16 — pendiente definir origen de los assets (ver §40) — ver §40 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
@@ -4347,31 +4347,76 @@ calendario en el idioma viejo. Se resolvió con
 ## 39. Ajustes — Rediseño del modal de "Idioma" (tarjetas degradadas + color de acento)
 
 Pedido explícito del usuario 2026-09-16 (mientras se esperaba la prueba
-de HU-65 en dispositivo real), con una imagen de referencia adjunta: el
-modal de selección de idioma (`SettingsScreen.kt`) hoy usa tarjetas con
-fondo semitransparente/degradado tenue por idioma (bandera estilizada) y
-un check simple. El usuario quiere que se vea más parecido a la
-referencia -- tarjetas con degradado más marcado por idioma, aplicando
-además el **color de acento** configurable de la app (no solo colores de
-bandera fijos), estados de **hover** (o su equivalente táctil en Android,
-ej. `indication`/estado "pressed" visible) y **transiciones** animadas al
-seleccionar/cambiar de idioma.
+de HU-65 en dispositivo real), con una imagen de referencia adjunta.
 
-**Pendiente de definir antes de implementar** (no bloquea catalogar el
-ítem, sí bloquea empezar a escribir código):
-- ¿El degradado por idioma sigue siendo fijo por bandera (como hoy), o
-  pasa a derivarse del color de acento elegido por el usuario en Ajustes
-  (lo que uniformaría todas las tarjetas al mismo tono, perdiendo la
-  identificación visual por bandera)? La imagen de referencia muestra
-  colores distintos por idioma (rojo/amarillo España, celeste Francia,
-  verde Portugal, gris Alemania...), lo cual sugiere mantener el criterio
-  por bandera y usar el acento solo para el check/borde de selección, no
-  para el degradado completo -- a confirmar con el usuario.
-- "Hover" no es un concepto táctil nativo de Android/Compose -- el
-  equivalente real sería un estado "pressed" (ripple/scale al tocar) más
-  quizás un estado sutil "seleccionado" permanente (ya existe hoy, el
-  check). Aclarar con el usuario si con "hover" se refiere a esto o a
-  algún otro efecto visual de la referencia.
+**Corrección sobre lo escrito originalmente acá**: al leer el código
+real (no de memoria) resultó que el modal actual NO tenía tarjetas
+degradadas -- era una lista simple de filas (emoji de bandera + nombre +
+check al final, fondo plano/transparente). La descripción inicial de
+este ítem estaba mal.
+
+**✅ Implementado y verificado en dispositivo real (Motorola Edge 30
+Neo) 2026-09-17**, tras varias idas y vueltas de diseño con el usuario
+(quedan documentadas porque cada una descartó un enfoque razonable pero
+no era lo que el usuario tenía en mente -- útil si se vuelve a tocar
+este componente):
+
+1. Primer intento: grilla de 2 columnas (confirmado por el usuario) con
+   degradado derivado 100% del Color de acento, sin bandera visible.
+   Rechazado: *"no pero el degradado es también con la bandera del
+   idioma"*.
+2. Segundo intento: degradado diagonal de 3 colores propios de cada
+   idioma (inspirados en su bandera, codificados a mano en
+   `flagGradientColors()`), sin usar el acento. El usuario compartió de
+   nuevo la imagen de referencia y pidió seguirla al pie de la letra.
+3. Tercer intento: bandera (emoji real de `AppLanguage.flagEmoji`) a
+   sangre de fondo con una máscara de desvanecimiento
+   (`BlendMode.DstIn`) hacia el texto, calcado del código Kotlin
+   completo que compartió el usuario (`LanguageGridSheet`/
+   `LanguageTile`) -- incluye pasar de `Dialog` a `ModalBottomSheet`.
+   El usuario confirmó que se veía bien pero pidió un ajuste de layout:
+   *"coloca el texto en fila junto a la bandera con una separación"*.
+4. Cuarto intento: bandera + texto en una sola fila (con
+   `Arrangement.spacedBy`), pero al quitar la máscara de desvanecimiento
+   se perdió el degradado -- el usuario pidió recuperarlo: *"no es
+   aplicando un degradado lineal combinado con la propiedad de fondo o
+   usar una máscara de desvanecimiento"*.
+5. **Diseño final**: bandera (emoji) y texto en una fila con separación
+   (`Row` + `Arrangement.spacedBy(10.dp)`), sobre una tarjeta cuyo
+   **fondo** es un `Brush.linearGradient` -- tenue
+   (`surfaceVariant` → `surfaceVariant` con alpha) para las no
+   seleccionadas, marcado (`primaryContainer` → `primary` con alpha)
+   para la seleccionada, ambos extremos animados con
+   `animateColorAsState` al cambiar la selección. Badge circular de
+   check (relleno + borde animados, `AnimatedVisibility` con
+   scale+fade para el ícono), borde de la tarjeta tintado con el acento
+   solo cuando está seleccionada, y escala sutil al presionar
+   (`collectIsPressedAsState` + `animateFloatAsState`) como equivalente
+   táctil de "hover". La hoja pasó de `Dialog` a `ModalBottomSheet`
+   (esquinas superiores redondeadas), con un botón "Cerrar" a todo el
+   ancho al final, siguiendo el código de referencia del usuario.
+- Se agregó `regionLabel` a `AppLanguage` (`LanguageManager.kt`): nombre
+  del país/región en el propio idioma (mismo criterio que `nativeLabel`
+  ya usado), mostrado como subtítulo de cada tarjeta -- ej. "Español /
+  España", "Català / Espanya", "日本語 / 日本". Con `maxLines=1` +
+  `TextOverflow.Ellipsis` en ambas líneas para nombres largos ("United
+  Kingdom" trunca a "United Kingdo…" en vez de partir la palabra a la
+  mitad, bug real encontrado en la propia revisión visual).
+- **Nota para el futuro**: el proyecto no tiene assets de banderas
+  propios (imágenes/vectores) -- se usa el emoji Unicode de
+  `flagEmoji`, que en este dispositivo (Motorola, fuente de emojis de
+  Android) se renderiza como una bandera ondeante con buena calidad
+  visual. Si en otro dispositivo/fuente de emoji se ve peor, la mejora
+  sería agregar 12 drawables de bandera propios.
+- Verificado en vivo en el Motorola Edge 30 Neo: las 12 tarjetas se ven
+  y traducen correctamente (probado cambiando a 中文 y a Português, con
+  el modal reabriéndose completamente traducido y el check en la
+  tarjeta correcta), scroll dentro de la grilla funciona, degradado de
+  fondo visible en ambos estados, y el cambio de idioma se aplica
+  correctamente en ambas direcciones.
+- Gauntlet completo (`compileDebugKotlin`+`detekt`+`lintDebug`+
+  `testDebugUnitTest`) en verde.
+- **Todavía sin fusionar** -- pendiente de "¿Fusiono y hago push?".
 
 ## 40. Modo Estudio — Personajes/avatares ilustrados para las voces (reemplazo del círculo de color)
 

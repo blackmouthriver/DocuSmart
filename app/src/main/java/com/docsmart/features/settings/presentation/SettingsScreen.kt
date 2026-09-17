@@ -40,6 +40,7 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.AppLanguage
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.LanguagePickerDialog
 import com.docsmart.core.ui.theme.AccentColor
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.FontScale
@@ -162,65 +163,17 @@ fun SettingsScreen(
     }
 
     // ── Diálogo: Idioma ───────────────────────────────────────────────────────
+    // Rediseño (backlog UX 2026-09-16/17, seguimiento #66): grilla de
+    // tarjetas degradadas en vez de lista de filas -- ver
+    // LanguagePickerDialog.kt para el detalle y las decisiones de producto.
     if (showLanguageDialog) {
-        AlertDialog(
-            onDismissRequest = { showLanguageDialog = false },
-            shape = MaterialTheme.shapes.large,
-            title = { Text(stringResource(R.string.settings_select_language),
-                style = MaterialTheme.typography.titleLarge) },
-            text = {
-                // Bug real corregido 2026-09-04: sin scroll, agregar los 5
-                // idiomas nuevos (10 en total) hizo que la lista excediera el
-                // alto del diálogo -- la última entrada (Francés) quedaba con
-                // altura cero, invisible pese a que el RadioButton sí se
-                // dibujaba. Con más idiomas a futuro el problema solo crece.
-                // Pedido explícito del usuario 2026-09-14: nada de check/radio
-                // para elegir -- toda la fila es la acción, con la bandera del
-                // idioma a la izquierda; el único indicador de selección es un
-                // check al final, solo informativo (no es lo que se toca para
-                // elegir).
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    AppLanguage.entries.forEach { language ->
-                        val selected = currentLanguage == language
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.medium)
-                                .clickable {
-                                    languageManager.setLanguage(language)
-                                    showLanguageDialog = false
-                                }
-                                .background(
-                                    if (selected) MaterialTheme.colorScheme.primaryContainer
-                                    else androidx.compose.ui.graphics.Color.Transparent
-                                )
-                                .padding(vertical = 12.dp, horizontal = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment     = Alignment.CenterVertically
-                        ) {
-                            Text(language.flagEmoji, style = MaterialTheme.typography.headlineSmall)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(language.nativeLabel,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface)
-                                Text(language.code.uppercase(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            if (selected) {
-                                Icon(Icons.Rounded.Check, null,
-                                    tint     = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp))
-                            }
-                        }
-                    }
-                }
+        LanguagePickerDialog(
+            currentLanguage = currentLanguage,
+            onSelect = { language ->
+                languageManager.setLanguage(language)
+                showLanguageDialog = false
             },
-            confirmButton = {
-                TextButton(onClick = { showLanguageDialog = false }) {
-                    Text(stringResource(R.string.settings_close))
-                }
-            }
+            onDismiss = { showLanguageDialog = false }
         )
     }
 

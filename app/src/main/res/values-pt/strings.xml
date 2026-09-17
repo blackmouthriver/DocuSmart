@@ -102,6 +102,7 @@
     <string name="settings_about">Sobre</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Selecionar idioma</string>
+    <string name="settings_select_language_subtitle">Será aplicado a todo o aplicativo.</string>
     <string name="settings_close">Fechar</string>
     <string name="settings_contact_support">Contatar suporte</string>
     <string name="settings_language_subtitle">Escolha o idioma do app</string>

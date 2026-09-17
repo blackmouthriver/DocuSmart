@@ -103,6 +103,7 @@
     <string name="settings_about">Quant a</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Seleccionar idioma</string>
+    <string name="settings_select_language_subtitle">S\'aplicarà a tota l\'aplicació.</string>
     <string name="settings_close">Tancar</string>
     <string name="settings_contact_support">Contacta amb suport</string>
     <string name="settings_language_subtitle">Tria l\'idioma de l\'aplicació</string>

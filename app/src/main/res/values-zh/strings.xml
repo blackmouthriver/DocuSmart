@@ -102,6 +102,7 @@
     <string name="settings_about">关于</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">选择语言</string>
+    <string name="settings_select_language_subtitle">将应用于整个应用程序。</string>
     <string name="settings_close">关闭</string>
     <string name="settings_contact_support">联系支持</string>
     <string name="settings_language_subtitle">选择应用语言</string>

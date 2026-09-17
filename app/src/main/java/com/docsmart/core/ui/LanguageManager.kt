@@ -20,20 +20,28 @@ enum class AppLanguage(
     // en el estándar Unicode de emoji regionales (solo existen para países,
     // no regiones/comunidades autónomas) -- se reutiliza la de España, el
     // territorio donde ambos son oficiales.
-    val flagEmoji: String
+    val flagEmoji: String,
+    // Backlog UX 2026-09-16 (seguimiento #66, rediseño del modal de idioma
+    // con tarjetas tipo referencia visual del usuario): nombre del país/
+    // región en el propio idioma (mismo criterio que nativeLabel), mostrado
+    // como subtítulo de cada tarjeta -- coherente con flagEmoji de arriba,
+    // no necesariamente igual a la referencia visual (que mostraba países
+    // distintos a los que ya elegía flagEmoji, ej. Brasil para portugués en
+    // vez de Portugal).
+    val regionLabel: String
 ) {
-    SPANISH("es", "Español", "Español", "🇪🇸"),
-    ENGLISH("en", "English", "English", "🇬🇧"),
-    PORTUGUESE("pt", "Portugués", "Português", "🇵🇹"),
-    GERMAN("de", "Alemán", "Deutsch", "🇩🇪"),
-    RUSSIAN("ru", "Ruso", "Русский", "🇷🇺"),
-    JAPANESE("ja", "Japonés", "日本語", "🇯🇵"),
-    KOREAN("ko", "Coreano", "한국어", "🇰🇷"),
-    CHINESE("zh", "Chino", "中文", "🇨🇳"),
-    ITALIAN("it", "Italiano", "Italiano", "🇮🇹"),
-    FRENCH("fr", "Francés", "Français", "🇫🇷"),
-    CATALAN("ca", "Catalán", "Català", "🇪🇸"),
-    BASQUE("eu", "Euskera", "Euskara", "🇪🇸")
+    SPANISH("es", "Español", "Español", "🇪🇸", "España"),
+    ENGLISH("en", "English", "English", "🇬🇧", "United Kingdom"),
+    PORTUGUESE("pt", "Portugués", "Português", "🇵🇹", "Portugal"),
+    GERMAN("de", "Alemán", "Deutsch", "🇩🇪", "Deutschland"),
+    RUSSIAN("ru", "Ruso", "Русский", "🇷🇺", "Россия"),
+    JAPANESE("ja", "Japonés", "日本語", "🇯🇵", "日本"),
+    KOREAN("ko", "Coreano", "한국어", "🇰🇷", "대한민국"),
+    CHINESE("zh", "Chino", "中文", "🇨🇳", "中国"),
+    ITALIAN("it", "Italiano", "Italiano", "🇮🇹", "Italia"),
+    FRENCH("fr", "Francés", "Français", "🇫🇷", "France"),
+    CATALAN("ca", "Catalán", "Català", "🇪🇸", "Espanya"),
+    BASQUE("eu", "Euskera", "Euskara", "🇪🇸", "Espainia")
 }
 
 @Singleton

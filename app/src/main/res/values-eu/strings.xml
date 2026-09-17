@@ -102,6 +102,7 @@
     <string name="settings_about">Honi buruz</string>
     <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
     <string name="settings_select_language">Hautatu hizkuntza</string>
+    <string name="settings_select_language_subtitle">Aplikazio osoan aplikatuko da.</string>
     <string name="settings_close">Itxi</string>
     <string name="settings_contact_support">Laguntzarekin harremanetan jarri</string>
     <string name="settings_language_subtitle">Aukeratu aplikazioaren hizkuntza</string>
