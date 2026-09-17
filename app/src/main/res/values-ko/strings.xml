@@ -953,6 +953,10 @@
     <string name="study_read_all">전체 읽기</string>
     <string name="study_choose_voice">음성 선택</string>
     <string name="study_voice_option_label">음성 %1$d — %2$s(%3$s)</string>
+    <string name="study_voice_option_detail">%1$s · %2$s</string>
+    <string name="study_voice_preview">샘플 듣기</string>
+    <string name="study_voice_preview_playing">샘플 재생 중…</string>
+    <string name="study_voice_sample_phrase">안녕하세요, 저는 %1$s입니다. DocuSmart에서 이런 목소리로 문서를 읽어드립니다.</string>
     <string name="study_voice_quality_very_high">매우 높은 품질</string>
     <string name="study_voice_quality_high">높은 품질</string>
     <string name="study_voice_quality_normal">보통 품질</string>

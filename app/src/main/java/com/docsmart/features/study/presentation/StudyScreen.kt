@@ -75,6 +75,7 @@ import com.docsmart.features.study.domain.StudyStatsStorage
 import com.docsmart.features.study.domain.StudySummaryExporter
 import com.docsmart.features.study.domain.StudyVoicePreference
 import com.docsmart.features.study.domain.TextSummarizer
+import com.docsmart.features.study.domain.personaForVoice
 import com.docsmart.features.study.domain.millisToHoursAndMinutes
 import com.docsmart.features.study.domain.pomodoroCountsByWeekday
 import com.docsmart.core.ui.theme.SuccessGreen
@@ -168,6 +169,11 @@ fun StudyScreen(
     val availableVoices = remember { mutableStateOf<List<Voice>>(emptyList()) }
     val selectedVoice = remember { mutableStateOf<Voice?>(null) }
     var showVoicePicker by remember { mutableStateOf(false) }
+    // HU-64 (feedback real de testers de la prueba cerrada, 2026-09-16):
+    // nombre de la voz que está sonando como muestra ahora mismo (null si
+    // ninguna) -- distinto de `selectedVoice`, que es la voz que se usa
+    // para la lectura real. Escuchar una muestra NUNCA cambia la lectura.
+    var previewingVoiceName by remember { mutableStateOf<String?>(null) }
     // Ver comentario de `extractionComplete` -- si "Leer todo" alcanza el
     // último párrafo ya extraído mientras el resto del PDF sigue procesándose
     // en segundo plano, esto queda en true hasta que aparezcan más párrafos
@@ -387,6 +393,40 @@ fun StudyScreen(
         }
     }
 
+    // HU-64: reproduce una frase corta con ESA voz puntual sin tocar
+    // `selectedVoice` -- la lectura real sigue usando la voz ya elegida.
+    // Restaura la voz seleccionada al terminar (o fallar) la muestra, ya
+    // que `TextToSpeech.voice` es un estado global del motor que aplica a
+    // la PRÓXIMA llamada a speak(), sea de una muestra o de "Leer todo".
+    // La plantilla se resuelve acá vía stringResource() (reacciona a un
+    // cambio de idioma en caliente) en vez de `context.getString()` dentro
+    // de la función -- LocalContextGetResourceValueCall de lint marca ese
+    // segundo patrón como un error real, no solo estilo.
+    val voiceSampleTemplate = stringResource(R.string.study_voice_sample_phrase)
+    fun previewVoice(voice: Voice) {
+        val tts = ttsRef.value ?: return
+        val persona = personaForVoice(voice.name)
+        val sampleText = String.format(voiceSampleTemplate, persona.name)
+        val voiceToRestore = selectedVoice.value
+        previewingVoiceName = voice.name
+        tts.voice = voice
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {
+                Timber.d("Reproduciendo muestra de voz: ${voice.name}")
+            }
+            override fun onDone(utteranceId: String?) {
+                if (voiceToRestore != null) tts.voice = voiceToRestore
+                previewingVoiceName = null
+            }
+            @Deprecated("Deprecated in Java")
+            override fun onError(utteranceId: String?) {
+                if (voiceToRestore != null) tts.voice = voiceToRestore
+                previewingVoiceName = null
+            }
+        })
+        tts.speak(sampleText, TextToSpeech.QUEUE_FLUSH, null, "study_voice_preview")
+    }
+
     Scaffold(
         // Fondo animado global (backlog UX 2026-09-06): transparente para
         // dejar ver la capa pintada una sola vez en MainActivity. Bug real
@@ -412,13 +452,29 @@ fun StudyScreen(
             VoiceSelectorDialog(
                 voices = availableVoices.value,
                 selectedVoice = selectedVoice.value,
+                previewingVoiceName = previewingVoiceName,
                 onVoiceSelected = { voice ->
                     ttsRef.value?.voice = voice
                     selectedVoice.value = voice
                     StudyVoicePreference.save(context, voice.name)
                     showVoicePicker = false
                 },
-                onDismiss = { showVoicePicker = false }
+                onPreviewVoice = { voice -> previewVoice(voice) },
+                onDismiss = {
+                    // Una muestra puede seguir sonando si se cierra el
+                    // diálogo a mitad de la reproducción -- se corta para
+                    // no dejar audio de fondo sin ningún diálogo visible
+                    // que lo explique. `stop()` no garantiza que se
+                    // dispare onDone/onError (puede llamar a onStop o
+                    // nada, según el motor), así que la voz seleccionada
+                    // se restaura acá también, no solo en esos callbacks.
+                    if (previewingVoiceName != null) {
+                        ttsRef.value?.stop()
+                        selectedVoice.value?.let { ttsRef.value?.voice = it }
+                        previewingVoiceName = null
+                    }
+                    showVoicePicker = false
+                }
             )
         }
         Column(
@@ -727,7 +783,18 @@ fun StudyScreen(
                         readingHistory = StudyReadingProgressStorage.loadAll(context)
                     },
                     availableVoices = availableVoices.value,
-                    onVoiceSelectorClick = { showVoicePicker = true }
+                    onVoiceSelectorClick = {
+                        // HU-64/RNF1: no tiene sentido escuchar una muestra
+                        // de otra voz mientras el documento se sigue
+                        // leyendo con la actual -- se pausa antes de abrir
+                        // el selector, mismo patrón ya usado para el botón
+                        // "Detener" de más arriba.
+                        if (isSpeaking.value) {
+                            ttsRef.value?.stop()
+                            isSpeaking.value = false
+                        }
+                        showVoicePicker = true
+                    }
                 )
 
                 // ── Tab Notas ─────────────────────────
@@ -937,11 +1004,16 @@ private fun ReadingTab(
                                 )
                             }
                             // ── Elegir voz (pedido explícito de testers
-                            // 2026-09-12) -- solo si el motor TTS del
-                            // dispositivo tiene más de una voz instalada
-                            // para el idioma actual; si solo hay una no
-                            // tiene sentido mostrar un selector.
-                            if (availableVoices.size > 1) {
+                            // 2026-09-12, ampliado en HU-64 2026-09-16) --
+                            // antes solo se mostraba con 2+ voces
+                            // instaladas ("si hay una no tiene sentido un
+                            // selector"), pero ahora el diálogo también
+                            // deja escuchar una muestra con nombre/avatar
+                            // de personaje, lo cual aporta valor real
+                            // incluso con una sola voz disponible. Solo se
+                            // oculta si el motor no reportó NINGUNA voz
+                            // para el idioma actual.
+                            if (availableVoices.isNotEmpty()) {
                                 // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                                 IconButton(
                                     onClick = onVoiceSelectorClick,
@@ -1898,39 +1970,89 @@ private fun StudyStatsDialog(stats: StudyStats, onDismiss: () -> Unit) {
 // -- nunca las que requieren red, ver el filtro en la inicialización del
 // TTS más arriba (100% local y gratis, sin depender de ningún servicio en
 // la nube).
+//
+// HU-64 (feedback real de testers de la prueba cerrada, 2026-09-16): la
+// versión anterior mostraba "Voz 1 — Español (Muy alta)" y aplicaba la
+// voz apenas se tocaba el radio button, sin forma de escuchar cómo suena
+// antes de elegir. Ahora cada fila tiene un avatar de personaje + nombre
+// (ver VoicePersona.kt) y un botón para escuchar una muestra sin cambiar
+// todavía la voz de lectura.
 @Composable
 private fun VoiceSelectorDialog(
     voices: List<Voice>,
     selectedVoice: Voice?,
+    previewingVoiceName: String?,
     onVoiceSelected: (Voice) -> Unit,
+    onPreviewVoice: (Voice) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.study_choose_voice)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                voices.forEachIndexed { index, voice ->
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 360.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(voices, key = { it.name }) { voice ->
+                    val persona = remember(voice.name) { personaForVoice(voice.name) }
                     val isSelected = voice.name == selectedVoice?.name
+                    val isPreviewing = voice.name == previewingVoiceName
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MaterialTheme.shapes.small)
                             .clickable { onVoiceSelected(voice) }
-                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                            .padding(vertical = 8.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(persona.avatarColor.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Face,
+                                contentDescription = null,
+                                tint = persona.avatarColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = persona.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.study_voice_option_detail,
+                                    voice.locale.displayName,
+                                    voiceQualityLabel(voice.quality)
+                                ),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        IconButton(
+                            onClick = { onPreviewVoice(voice) },
+                            enabled = !isPreviewing
+                        ) {
+                            Icon(
+                                imageVector = if (isPreviewing) Icons.Rounded.VolumeUp else Icons.Rounded.PlayArrow,
+                                contentDescription = stringResource(
+                                    if (isPreviewing) R.string.study_voice_preview_playing
+                                    else R.string.study_voice_preview
+                                ),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         RadioButton(selected = isSelected, onClick = { onVoiceSelected(voice) })
-                        Text(
-                            text = stringResource(
-                                R.string.study_voice_option_label,
-                                index + 1,
-                                voice.locale.displayName,
-                                voiceQualityLabel(voice.quality)
-                            ),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
                     }
                 }
             }

@@ -949,6 +949,10 @@
     <string name="study_read_all">Alles vorlesen</string>
     <string name="study_choose_voice">Stimme wählen</string>
     <string name="study_voice_option_label">Stimme %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_option_detail">%1$s · %2$s</string>
+    <string name="study_voice_preview">Hörprobe abspielen</string>
+    <string name="study_voice_preview_playing">Hörprobe wird abgespielt…</string>
+    <string name="study_voice_sample_phrase">Hallo, ich bin %1$s. So hörst du deine Dokumente in DocuSmart.</string>
     <string name="study_voice_quality_very_high">sehr hohe Qualität</string>
     <string name="study_voice_quality_high">hohe Qualität</string>
     <string name="study_voice_quality_normal">normale Qualität</string>

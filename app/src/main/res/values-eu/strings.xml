@@ -971,6 +971,10 @@
          voces on-device, sin nube. -->
     <string name="study_choose_voice">Aukeratu ahotsa</string>
     <string name="study_voice_option_label">%1$d ahotsa — %2$s (%3$s)</string>
+    <string name="study_voice_option_detail">%1$s · %2$s</string>
+    <string name="study_voice_preview">Entzun lagina</string>
+    <string name="study_voice_preview_playing">Lagina erreproduzitzen…</string>
+    <string name="study_voice_sample_phrase">Kaixo, %1$s naiz. Horrela entzungo dituzu zure dokumentuak DocuSmarten.</string>
     <string name="study_voice_quality_very_high">kalitate oso altua</string>
     <string name="study_voice_quality_high">kalitate altua</string>
     <string name="study_voice_quality_normal">kalitate normala</string>

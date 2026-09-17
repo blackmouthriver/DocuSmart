@@ -983,6 +983,10 @@
          voces on-device, sin nube. -->
     <string name="study_choose_voice">Triar veu</string>
     <string name="study_voice_option_label">Veu %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_option_detail">%1$s · %2$s</string>
+    <string name="study_voice_preview">Escoltar la mostra</string>
+    <string name="study_voice_preview_playing">Reproduint la mostra…</string>
+    <string name="study_voice_sample_phrase">Hola, sóc %1$s. Així sentiràs els teus documents a DocuSmart.</string>
     <string name="study_voice_quality_very_high">qualitat molt alta</string>
     <string name="study_voice_quality_high">qualitat alta</string>
     <string name="study_voice_quality_normal">qualitat normal</string>

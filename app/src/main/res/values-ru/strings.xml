@@ -949,6 +949,10 @@
     <string name="study_read_all">Прочитать всё</string>
     <string name="study_choose_voice">Выбрать голос</string>
     <string name="study_voice_option_label">Голос %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_option_detail">%1$s · %2$s</string>
+    <string name="study_voice_preview">Прослушать образец</string>
+    <string name="study_voice_preview_playing">Воспроизведение образца…</string>
+    <string name="study_voice_sample_phrase">Здравствуйте, меня зовут %1$s. Так будут звучать ваши документы в DocuSmart.</string>
     <string name="study_voice_quality_very_high">очень высокое качество</string>
     <string name="study_voice_quality_high">высокое качество</string>
     <string name="study_voice_quality_normal">обычное качество</string>

@@ -62,12 +62,12 @@ priorización para decidir qué se aborda y en qué orden.
 | 39 | Bug real (revisión final antes de fusionar): 2 de las 4 ramas de `ScanResultScreen` (antes de generar, y el resultado de lote de imágenes) no tenían "Volver al inicio" — único callejón sin salida real, ya que el Escáner no tiene barra de navegación inferior; de paso se encontró que el "Volver al inicio" ya existente en otra rama tampoco limpiaba `ScanSessionManager`, dejando archivos "fantasma" de sesiones abandonadas | Bug | Alta | Baja | Bajo | **✅ Corregido y verificado en dispositivo real 2026-09-06 (las 4 ramas ya llevan a Inicio, las 3 limpian la sesión por igual)** — ver CONTEXT.md §8, "Revisión final antes de fusionar" |
 | 40 | Mejora (revisión final antes de fusionar): la flecha "Volver" vivía integrada dentro del degradado de `DocuSmartTopBanner` (texto/ícono blancos) — pedido explícito del usuario: sacarla del área con color y dejarla debajo | Mejora | Baja | Baja | Bajo (cambio visual en un componente compartido por ~10 pantallas, sin tocar su lógica) | **✅ Implementado y verificado en dispositivo real 2026-09-06 (probado en Seguridad y en el Escáner)** — ver CONTEXT.md §8, "Revisión final antes de fusionar" |
 
-| 41 | Escáner — Filtros de color al escanear (Blanco y negro, Escala de grises, Resaltar texto) | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.1 |
-| 42 | Escáner — Acceso directo a OCR/Firmar/Carpeta Segura desde el resultado del escaneo | Mejora | Media | Baja-Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.1 |
-| 43 | Creador de QR — Nuevos tipos de contenido (Wi-Fi, Contacto/vCard, Evento de calendario) | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.2 |
-| 44 | Creador/Lector de QR — Historial de códigos creados y leídos | Mejora | Media | Media | Bajo | 🆕 Propuesto 2026-09-10 — ver §34.2 |
-| 45 | Creador de QR — Diseño personalizado (color/logo en el centro) | Mejora | Baja | Media-Alta | Bajo-Medio | 🆕 Propuesto 2026-09-10 — ver §34.2 |
-| 46 | Visor — Anotaciones (resaltar texto, notas adhesivas) sobre el PDF | Mejora (épica) | Alta | Alta | Medio-Alto | 🆕 Propuesto 2026-09-10 — ver §34.3 |
+| 41 | Escáner — Filtros de color al escanear (Blanco y negro, Escala de grises, Resaltar texto) | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-14** (commit `692a0c3`) — ver §34.1 |
+| 42 | Escáner — Acceso directo a OCR/Firmar/Carpeta Segura desde el resultado del escaneo | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-14** (commit `5d37ac0`) — ver §34.1 |
+| 43 | Creador de QR — Nuevos tipos de contenido (Wi-Fi, Contacto/vCard, Evento de calendario) | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-14** (commit `251290e`) — ver §34.2 |
+| 44 | Creador/Lector de QR — Historial de códigos creados y leídos | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-14** (commit `4fcd8c4`) — ver §34.2 |
+| 45 | Creador de QR — Diseño personalizado (color/logo en el centro) | Mejora | Baja | Media-Alta | Bajo-Medio | **✅ Implementado y verificado en dispositivo real 2026-09-14/15** (commit `0de5a2c`) — ver §34.2 |
+| 46 | Visor — Anotaciones (resaltar texto, notas adhesivas) sobre el PDF | Mejora (épica) | Alta | Alta | Medio-Alto | **✅ Implementado y verificado en dispositivo real 2026-09-15/16** (commit `0c85c0d`) — ver §34.3 |
 | 47 | Visor — Marcadores de página | Mejora | Media | Baja-Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.3 |
 | 48 | Visor — Recordar la última página vista por documento (distinto de "Retomar lectura" en audio, ya existente en Modo Estudio §33) | Mejora | Media | Baja | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §34.3 |
 | 49 | Notas (Modo Estudio) — Adjuntar una imagen o recorte escaneado a una nota | Mejora | Media | Media | Bajo | 🟡 Solo esquema de datos (`NoteImageEntity`, CASCADE) migrado 2026-09-16, falta el picker de cámara/galería — ver §34.4 |
@@ -85,6 +85,8 @@ priorización para decidir qué se aborda y en qué orden.
 | 61 | IA en la nube — Chat con el documento (preguntas y respuestas sobre un PDF) | Mejora | Alta | Alta | Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio previa (privacidad + costo), ver §34.7 |
 | 62 | IA en la nube — Extracción estructurada de datos de recibos/facturas | Mejora | Media | Alta | Alto | 🆕 Propuesto 2026-09-10 — requiere decisión de negocio previa (privacidad + costo), ver §34.7 |
 | 63 | Fondo animado — más movimiento perceptible (refinamiento del ítem 26) | Mejora | Media-Alta | Baja | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §36 |
+| 64 | Modo Estudio — Selector de voz con avatar, nombre y muestra de audio (refinamiento de la lectura por voz) | Mejora | Media | Media | Bajo | **✅ Implementado y verificado en dispositivo real 2026-09-16** — ver §37 |
+| 65 | Agenda/Calendario — Guardar eventos, reuniones y entregas con recordatorio | Mejora (épica) | Media-Alta | Alta | Medio | 🆕 Propuesto 2026-09-16, feedback real de testers de la prueba cerrada — decisiones de producto ya resueltas (alarma exacta, pantalla propia desde Modo Estudio, con vínculo a documentos en v1), ver §38 |
 
 Los ítems 12-18 **ya estaban catalogados** en sesiones anteriores; se
 listan acá solo para tener una única cola de prioridades. Su detalle
@@ -3971,3 +3973,283 @@ función originalmente (§26).
 valores existentes, no una función nueva), de esfuerzo y riesgo bajos,
 sobre una función que el usuario ya consideró importante al pedirla
 originalmente.
+
+## 37. Modo Estudio — Selector de voz con avatar, nombre y muestra de audio
+
+Pedido explícito del usuario 2026-09-16, a partir de **feedback real de
+testers de la prueba cerrada** de Play Console: a los testers les gusta
+Modo Estudio, pero encuentran confuso el flujo de "Leer con voz".
+
+**Investigado**: la app **ya tiene** un selector de voz
+(`VoiceSelectorDialog`, `StudyScreen.kt`), agregado el 2026-09-12 a
+partir de una ronda anterior de feedback de testers que pedía "más
+opciones de voz". Hoy es un `AlertDialog` con una lista de
+`RadioButton`, cada uno con la etiqueta `"Voz %1$d — %2$s (%3$s)"`
+(ej. "Voz 1 — Español (España) (Muy alta)") — **sin ícono, sin nombre
+propio, sin indicación de género, y sin forma de escuchar una muestra
+antes de elegir**: tocar el radio button aplica la voz de inmediato.
+Esta HU es una **mejora sobre ese diálogo existente**, no un selector
+nuevo desde cero.
+
+- La lista de voces ya se arma filtrando `TextToSpeech.getVoices()` por
+  idioma actual y descartando las que requieren conexión de red, y ya
+  se ordena por calidad (`Voice.quality`) — esa lógica de descubrimiento
+  no cambia.
+- **Limitación real de la API de Android**: `android.speech.tts.Voice`
+  **no expone el género de la voz** como campo público — no hay forma
+  confiable y portable entre fabricantes/motores TTS de saber si una
+  voz es "masculina" o "femenina" a partir de metadata oficial. La
+  única opción realista es una asignación curada por la propia app
+  (nombre + ícono + género visual) por cada voz de la lista, no una
+  lectura directa del sistema.
+- El ícono de "Elegir voz" en la barra de Lectura hoy solo aparece si
+  hay más de una voz disponible (`availableVoices.size > 1`) — a
+  reconsiderar en esta mejora, ver RF4.
+- Persistencia ya existente (`StudyVoicePreference`, SharedPreferences)
+  guarda solo el `name` técnico de la voz (ej.
+  `"es-es-x-eef-local"`) — sigue siendo la clave estable para mapear
+  siempre la misma voz técnica al mismo nombre/ícono curado (AC4).
+
+#### HU-64 — Selector de voz con personaje visual y prueba de audio
+
+**Como** usuario de Modo Estudio que quiere elegir cómo se lee su
+documento en voz alta,
+**quiero** ver cada voz disponible con un ícono de personaje, un
+nombre, y poder escuchar una muestra antes de elegirla,
+**para** decidir con confianza en vez de adivinar qué significa "Voz
+1", "Voz 2".
+
+- **RF1** Cada voz de la lista muestra un ícono/avatar de personaje
+  (ej. un `Icon`/ilustración simple, no necesariamente arte
+  ilustrado complejo) y un nombre propio (ej. "Sofía", "Mateo") en vez
+  de "Voz N".
+- **RF2** Ya que la API no expone género real, la app **asigna** un
+  nombre + avatar con una identidad de género visual (femenina/
+  masculina) a partir de una lista curada, de forma **determinística**
+  por el `name` técnico de la voz (ej. hash estable del `name` técnico
+  → índice en la lista curada) — así la MISMA voz del dispositivo
+  siempre muestra el MISMO nombre/avatar entre sesiones (AC4), sin
+  pretender que la app "sabe" el género real de la síntesis.
+- **RF3** Cada fila de la lista tiene un botón "Escuchar muestra" que
+  reproduce una frase corta de marca (ej. "Hola, soy Sofía. Así vas a
+  escuchar tus documentos en DocuSmart.") usando ESA voz puntual, sin
+  cambiar todavía la voz seleccionada para la lectura real.
+- **RF4** Seleccionar una voz de la lista sigue aplicándola a la
+  lectura, igual que hoy (sin regresión) — evaluar en la
+  implementación si, dado que ahora la muestra de audio aporta valor
+  aunque haya una sola voz instalada, conviene quitar la condición
+  actual `availableVoices.size > 1` que oculta el botón "Elegir voz"
+  cuando solo hay una opción.
+- **RF5** El texto de la muestra de audio debe existir en los 12
+  idiomas soportados por la app (mismo criterio de i18n ya usado en el
+  resto del proyecto), no solo en español.
+- **RNF1** Si hay una lectura en curso cuando se abre el selector,
+  reproducir una muestra no debe mezclarse audiblemente con esa
+  lectura ni dejarla en un estado inconsistente al cerrar el diálogo
+  (pausar la lectura en curso mientras el diálogo está abierto es la
+  opción más simple, a confirmar en la implementación).
+- **RNF2** Debe funcionar con cualquier cantidad de voces que exponga
+  el dispositivo (desde 1 hasta 10+, varía por fabricante/motor TTS
+  instalado) sin romper el layout de la lista.
+- **AC1** Dado que abro el selector de voces en Lectura, veo una lista
+  donde cada voz tiene un ícono de personaje, un nombre, y un botón
+  para escuchar una muestra.
+- **AC2** Dado que toco "Escuchar muestra" en una voz, escucho una
+  frase corta con esa voz, y la voz seleccionada para lectura NO
+  cambia hasta que explícitamente elijo esa fila.
+- **AC3** Dado que elijo una voz de la lista, la lectura posterior usa
+  esa voz (sin regresión del comportamiento actual).
+- **AC4** Dado que cierro y reabro la app (o el selector) más tarde, la
+  misma voz técnica del dispositivo muestra siempre el mismo nombre e
+  ícono que mostró antes — no se reasigna al azar entre sesiones.
+- **AC5** En un dispositivo con una sola voz instalada para el idioma
+  actual, el selector sigue siendo usable y consistente (ver RF4).
+
+**Plan de pruebas sugerido** (mismo criterio ya usado en el resto del
+proyecto):
+- Unitarias: función pura de asignación determinística voz-técnica →
+  (nombre, ícono, género visual) — dado el mismo `name` técnico, mismo
+  resultado siempre; distintos `name` se reparten razonablemente entre
+  las identidades curadas.
+- UI: `VoiceSelectorDialog` renderiza N filas con ícono+nombre+botón de
+  muestra para una lista mock de voces; tocar "Escuchar muestra" invoca
+  el callback correcto sin disparar el callback de selección.
+- Dispositivo real: verificar con las voces reales instaladas (varía
+  por fabricante) que la muestra suena, que elegir una voz sigue
+  funcionando, y que reabrir el selector no reordena/renombra las
+  voces ya vistas.
+
+**Prioridad recomendada**: Media — mejora de UX puntual y acotada (un
+diálogo ya existente), pedida por usuarios reales de la prueba cerrada,
+de riesgo bajo (no toca la lógica de síntesis de voz ya probada, solo
+la presentación del selector).
+
+**Implementado y verificado en dispositivo real (2026-09-16, Motorola
+Edge 30 Neo)**: 3 tests unitarios nuevos para `personaForVoice()`
+(determinismo, distribución, nunca vacío). En vivo, con las voces reales
+del dispositivo (6 voces instaladas): el diálogo muestra avatar+nombre+
+idioma/calidad+botón de muestra por fila (AC1); tocar "Escuchar muestra"
+reproduce la frase de marca con esa voz puntual sin cambiar la voz
+seleccionada para lectura, y el botón vuelve solo a su estado normal al
+terminar el audio (AC2); elegir una voz de la lista sigue aplicándola a
+"Leer todo" (AC3); reabrir el selector más tarde en la misma sesión
+muestra exactamente el mismo nombre/avatar por voz que la primera vez
+(AC4); abrir el selector mientras el documento se estaba leyendo pausó
+la lectura antes de mostrar el diálogo (RNF1). Sin crashes en logcat en
+toda la sesión de pruebas.
+- **Hallazgo operativo, no un bug de esta HU**: a mitad de la
+  verificación el dispositivo rotó (accidental, `accelerometer_rotation`
+  estaba en 1) y Modo Estudio perdió el documento cargado -- el estado
+  de lectura (`documentUri`, voz seleccionada, etc.) vive en `remember{}`
+  local a la pantalla, no en un ViewModel ni `rememberSaveable`, así que
+  cualquier cambio de configuración (rotación, idioma del sistema, etc.)
+  lo reinicia. Preexistente, fuera del alcance de HU-64 -- queda anotado
+  como posible ítem futuro de robustez si se repite en la prueba cerrada.
+
+## 38. Agenda/Calendario — Eventos, reuniones y entregas con recordatorio
+
+Pedido explícito del usuario 2026-09-16, mismo origen que §37 (feedback
+real de testers de la prueba cerrada): quieren poder guardar eventos,
+reuniones, entregas y fechas importantes, y que la app se los recuerde.
+
+**Investigado — antes de escribir código hace falta resolver 2
+decisiones de producto** (ver "Decisiones pendientes" al final):
+
+- **No existe WorkManager ni AlarmManager en el proyecto** (confirmado
+  por búsqueda exhaustiva) — esta HU sería la primera vez que la app
+  programa algo para el futuro sin que esté abierta. El mismo vacío ya
+  estaba anotado para la HU-52 pendiente (recordatorio de repaso de
+  notas, `NoteEntity.reminderAt` ya existe en el esquema pero sin
+  scheduler) — **ambas HUs necesitan la misma infraestructura de
+  programación de recordatorios**, tiene sentido construirla una sola
+  vez y que las dos la reutilicen.
+- **Sí existe** un patrón de notificación reutilizable para el
+  *disparo* del recordatorio: `PomodoroTimerService.kt` ya crea un
+  canal de notificación y llama `NotificationManager.notify(...)`, y
+  `AndroidManifest.xml`/`StudyScreen.kt` ya tienen el permiso
+  `POST_NOTIFICATIONS` y su flujo de solicitud en tiempo de ejecución
+  funcionando en producción. Falta solo la parte de *programar* ese
+  disparo para una fecha/hora futura arbitraria.
+- **Sí existe** un patrón de selector de fecha/hora reutilizable tal
+  cual: `QrContentForms.kt` (creador de QR tipo "Evento", HU-43) ya usa
+  `DatePicker`/`TimePicker` de Material3 sobre `LocalDateTime`, con dos
+  botones (fecha/hora) que abren cada uno su diálogo. La Agenda debería
+  reusar exactamente este patrón en vez de crear uno nuevo.
+- **Esquema de datos**: nueva tabla Room (ej. `agenda_events`),
+  `MIGRATION_5_6` (`DocuSmartDatabase.kt` pasa de versión 5 a 6),
+  siguiendo el mismo patrón de migración explícita ya usado 3 veces en
+  el proyecto (nunca `dropAllTables`, para no perder datos reales de
+  usuarios que ya están usando la app en producción).
+- **Ubicación en la navegación**: hoy Modo Estudio tiene sus pestañas
+  (Lectura/Notas/Pomodoro, más una 4ª "Resumen" ya armada pero oculta
+  para el primer release) como estado interno de una sola pantalla, no
+  como rutas de navegación separadas. Reuniones/entregas no están
+  necesariamente ligadas a "estudiar un documento" — el precedente del
+  propio proyecto (Papelera, QR, Herramientas PDF son rutas de
+  navegación de primer nivel, independientes de Modo Estudio) sugiere
+  que Agenda encaja mejor como **sección propia de primer nivel** que
+  como una pestaña más dentro de Modo Estudio. Queda como decisión a
+  confirmar con el usuario (ver más abajo), no una conclusión cerrada.
+
+#### HU-65 — Agenda con recordatorios de eventos
+
+**Como** usuario que organiza su trabajo con DocuSmart,
+**quiero** guardar eventos, reuniones y fechas de entrega con un
+recordatorio,
+**para** no depender de otra app de calendario para lo que ya gestiono
+en DocuSmart.
+
+- **RF1** Nueva pantalla propia "Agenda" (ruta de `NavRoutes` separada,
+  diseño propio — no una pestaña más del `TabRow` de Modo Estudio),
+  alcanzable desde una tarjeta/botón de entrada dentro de la superficie
+  de Modo Estudio, donde crear un evento con: título (obligatorio),
+  descripción (opcional), fecha y hora (obligatorio, reutilizando el
+  patrón de `QrContentForms.kt`).
+- **RF2** Vincular el evento a un documento existente de la Biblioteca
+  (mismo mecanismo ya usado por Notas en HU-50 —
+  `AppLibraryPickerViewModel`), para casos como "entrega del informe
+  X" apuntando al PDF real — incluido en el alcance de la v1.
+- **RF3** Editar y eliminar un evento ya creado.
+- **RF4** Lista de próximos eventos ordenada por fecha, con indicación
+  visual de "hoy" / "próximo" / "vencido".
+- **RF5** Recordatorio configurable: notificación local en el momento
+  exacto del evento, o con antelación (ej. 15 min / 1 hora / 1 día
+  antes, a definir el set de opciones) — funciona aunque la app esté
+  cerrada.
+- **RNF1** Persistencia local en Room, nueva `MIGRATION_5_6` (ver
+  arriba) — nunca depende de que la app esté abierta ni de conexión a
+  internet (100% local, mismo criterio de privacidad que el resto de
+  la app).
+- **RNF2** Las notificaciones programadas deben sobrevivir un reinicio
+  del dispositivo (rearmar los recordatorios pendientes al recibir
+  `BOOT_COMPLETED`, ya que un `AlarmManager`/`WorkManager` programado
+  se pierde si el dispositivo se apaga y prende de nuevo).
+- **RNF3** Reutiliza el flujo de permiso `POST_NOTIFICATIONS` ya
+  probado en producción (Pomodoro) — no duplicar la lógica de
+  solicitud.
+- **AC1** Dado que creo un evento con fecha/hora futura, lo veo en la
+  lista de Agenda ordenado correctamente.
+- **AC2** Dado que llega la hora programada (o la antelación elegida)
+  con la app cerrada, recibo una notificación local con el título del
+  evento.
+- **AC3** Dado que toco la notificación, la app abre directo el
+  detalle del evento (o el documento vinculado, si lo tiene).
+- **AC4** Dado que edito o elimino un evento con recordatorio ya
+  programado, el recordatorio viejo se cancela/actualiza — nunca quedan
+  dos notificaciones para el mismo evento ni una notificación de un
+  evento ya borrado.
+- **AC5** Dado que reinicio el dispositivo con eventos pendientes, los
+  recordatorios se siguen disparando en su fecha/hora correcta después
+  del reinicio.
+- **AC6** Dado que vinculo un evento a un documento de la Biblioteca y
+  luego ese documento se renombra o se mueve a Carpeta Segura, el
+  evento no queda roto (mismo criterio de mantenimiento de identidad ya
+  centralizado en `DocumentIdentityMaintenance`).
+
+**Plan de pruebas sugerido**:
+- Unitarias: cálculo de la próxima fecha de disparo dado
+  evento+antelación; lógica de "hoy/próximo/vencido" de la lista;
+  cancelación/reprogramación al editar o borrar un evento con
+  recordatorio activo.
+- Integración con Room: DAO real (`Room.inMemoryDatabaseBuilder`) para
+  CRUD de eventos, igual patrón que `NoteDaoTest`/`PageBookmarkDaoTest`.
+- Dispositivo real: crear un evento con recordatorio a 1-2 minutos,
+  cerrar la app completamente, confirmar que la notificación llega a
+  horario; forzar un reinicio del dispositivo con un recordatorio
+  pendiente y confirmar que sigue funcionando después; revisar logcat
+  por crashes en todo el flujo, como en el resto de HUs de esta
+  sesión.
+
+### Decisiones de producto (resueltas por el usuario, 2026-09-16)
+
+1. **Precisión del recordatorio: alarma exacta.** Se usa
+   `AlarmManager.setExactAndAllowWhileIdle()` (o el mecanismo exacto
+   equivalente en versiones nuevas de Android) en vez de `WorkManager`,
+   priorizando que el recordatorio suene justo a la hora programada.
+   Implica declarar y pedir el permiso
+   `SCHEDULE_EXACT_ALARM`/`USE_EXACT_ALARM` (Android 12+) — a
+   documentar explícitamente en el formulario de seguridad de datos/
+   declaración de permisos de Play Console antes de subir la versión
+   que incluya esta HU, dado que la app está en prueba cerrada camino a
+   producción.
+2. **Ubicación en la navegación: pantalla propia, con entrada desde
+   Modo Estudio, sin ser una pestaña del `TabRow`.** Decisión textual
+   del usuario: *"dentro de modo estudio pero no como pestaña,
+   desacoplalos y generá una nueva visual"*. Es decir: Agenda es su
+   propia ruta/pantalla de `NavRoutes` (con su propio diseño, no
+   forzada dentro del `TabRow` de Lectura/Notas/Pomodoro/Resumen), pero
+   el punto de entrada para llegar a ella vive dentro de la superficie
+   de Modo Estudio (ej. una tarjeta/botón destacado en la pantalla de
+   Modo Estudio), no en el grid de accesos rápidos de Home ni en la
+   barra de navegación inferior global.
+3. **Alcance v1: incluye vínculo a documentos.** RF2 (vincular un
+   evento a un documento de la Biblioteca) queda dentro de la primera
+   versión, no se difiere.
+
+**Prioridad recomendada**: Media-Alta — pedido por usuarios reales,
+decisiones de producto ya resueltas. Sigue siendo una épica genuina
+(primera infraestructura de recordatorios programados del proyecto) —
+evaluar si conviene implementarla junto con HU-52 (que necesita la
+misma base de recordatorios) en vez de por separado, ya que ambas
+comparten el mismo mecanismo de alarma exacta + notificación +
+reprogramación tras reinicio.

@@ -499,27 +499,33 @@ ya se justifica.
 2. ~~Política de privacidad publicada y formulario de seguridad de datos
    preparado~~ ✅ (esta sesión, ver §5) — falta solo cargar las respuestas
    en Play Console.
-3. **Subida manual inicial a Play Console** — pendiente del usuario. Google
-   no permite crear la primera versión de una app por API; tiene que
-   hacerse una vez desde la consola web:
-   - Crear la ficha de la app en Play Console (nombre, categoría, etc.).
-   - Completar el **formulario de seguridad de datos** con las respuestas de §5.2.
-   - Enlazar la **política de privacidad** (§5.1) en la ficha.
-   - Subir `app-release.aab` (generado localmente o descargado del workflow)
-     a una pista interna o cerrada primero, no directo a producción.
-4. **Cuenta de servicio de Play Console** — una vez que la app ya tiene al
+3. ~~Subida manual inicial a Play Console~~ ✅ **hecha** — la app está en
+   la pista de **Prueba cerrada** de Play Console con usuarios reales
+   probándola (confirmado 2026-09-16, día 6 de 14 del período de prueba).
+   Esta entrada del checklist quedó sin marcar por mucho tiempo después de
+   que la subida ya había ocurrido -- el aviso de Play Console sobre
+   alineación de 16 KB (§6, 2026-09-11) y el rechazo por `versionCode`
+   duplicado (§6, 2026-09-10) ya eran evidencia de que la app estaba
+   subida; no se había actualizado esta sección en consecuencia.
+4. **AdMob + Firebase conectados y en producción real**: los banners de
+   AdMob están colocados en la app y la vinculación Firebase↔AdMob está
+   establecida en la consola -- la app ya está registrando tráfico e
+   impresiones reales de anuncios durante el período de prueba cerrada
+   (no son datos de prueba/simulados).
+5. **Cuenta de servicio de Play Console** — ahora que la app ya tiene al
    menos una versión subida, se puede crear una cuenta de servicio
    (Play Console → Configuración → Acceso a la API) para automatizar
-   subidas futuras vía Gradle Play Publisher. No tiene sentido crearla antes
-   — no hay nada que actualizar todavía.
-5. **Automatizar publicaciones futuras** (después del punto 4): agregar el
+   subidas futuras vía Gradle Play Publisher, si se quiere dejar de subir
+   el AAB a mano.
+6. **Automatizar publicaciones futuras** (después del punto 5): agregar el
    plugin `com.github.triplet.play` a `app/build.gradle.kts`, un secret
    `PLAY_SERVICE_ACCOUNT_JSON`, y un paso en `release.yml` que suba el AAB a
    una pista (empezar por `internal`, no `production`).
-6. ~~Play Billing real~~ ✅ código conectado (RF-PREM-05, ver
-   `settings-premium.md` §8) — pendiente solo de que la app exista en Play
-   Console con un perfil de pagos configurado para poder probar compras
-   reales (bloqueado por el punto 3, no por código).
+7. ~~Play Billing real~~ ✅ código conectado (RF-PREM-05, ver
+   `settings-premium.md` §8) — la app ya existe en Play Console (punto 3),
+   así que las compras de prueba/reales ya se pueden probar de punta a
+   punta si se configura un perfil de pagos; no está confirmado en esta
+   sesión si ya se probó una compra real durante la prueba cerrada.
 
 ---
 

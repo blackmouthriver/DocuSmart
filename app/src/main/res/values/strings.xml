@@ -989,6 +989,10 @@
          voces on-device, sin nube. -->
     <string name="study_choose_voice">Elegir voz</string>
     <string name="study_voice_option_label">Voz %1$d — %2$s (%3$s)</string>
+    <string name="study_voice_option_detail">%1$s · %2$s</string>
+    <string name="study_voice_preview">Escuchar muestra</string>
+    <string name="study_voice_preview_playing">Reproduciendo muestra…</string>
+    <string name="study_voice_sample_phrase">Hola, soy %1$s. Así vas a escuchar tus documentos en DocuSmart.</string>
     <string name="study_voice_quality_very_high">calidad muy alta</string>
     <string name="study_voice_quality_high">calidad alta</string>
     <string name="study_voice_quality_normal">calidad normal</string>

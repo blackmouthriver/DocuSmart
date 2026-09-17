@@ -953,6 +953,10 @@
     <string name="study_read_all">すべて読み上げる</string>
     <string name="study_choose_voice">音声を選ぶ</string>
     <string name="study_voice_option_label">音声 %1$d — %2$s（%3$s）</string>
+    <string name="study_voice_option_detail">%1$s・%2$s</string>
+    <string name="study_voice_preview">サンプルを再生</string>
+    <string name="study_voice_preview_playing">サンプルを再生中…</string>
+    <string name="study_voice_sample_phrase">こんにちは、%1$sです。DocuSmartではこの声であなたの文書を読み上げます。</string>
     <string name="study_voice_quality_very_high">非常に高音質</string>
     <string name="study_voice_quality_high">高音質</string>
     <string name="study_voice_quality_normal">標準音質</string>

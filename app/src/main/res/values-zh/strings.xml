@@ -953,6 +953,10 @@
     <string name="study_read_all">朗读全部</string>
     <string name="study_choose_voice">选择声音</string>
     <string name="study_voice_option_label">声音 %1$d — %2$s（%3$s）</string>
+    <string name="study_voice_option_detail">%1$s · %2$s</string>
+    <string name="study_voice_preview">试听样音</string>
+    <string name="study_voice_preview_playing">正在播放样音…</string>
+    <string name="study_voice_sample_phrase">你好，我是%1$s。在 DocuSmart 中，你的文档将以这种声音朗读。</string>
     <string name="study_voice_quality_very_high">极高音质</string>
     <string name="study_voice_quality_high">高音质</string>
     <string name="study_voice_quality_normal">普通音质</string>
