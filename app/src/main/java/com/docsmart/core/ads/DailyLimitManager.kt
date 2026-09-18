@@ -1,6 +1,7 @@
 package com.docsmart.core.ads
 
 import android.content.Context
+import com.docsmart.core.util.elapsedRealtimeMillisSafe
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import java.text.SimpleDateFormat
@@ -46,6 +47,27 @@ class DailyLimitManager @Inject constructor(
         // recompensado).
         private const val KEY_SCANS_SAVED       = "count_scans_saved"
         private const val KEY_EXTRA_SCANS_SAVED = "extra_scans_saved"
+        // Hallazgo real de la auditoría general 2026-09-17 (séptima
+        // ronda, Media): el reseteo solo miraba la fecha de pared
+        // (`SimpleDateFormat`, ajustable por el usuario) -- cambiar la
+        // fecha/zona horaria del dispositivo y volver reseteaba los
+        // contadores a 0 sin límite, neutralizando por completo el
+        // propósito de negocio del límite diario. Se ancla con el mismo
+        // tipo de mecanismo de "reloj confiable" ya usado para el bloqueo
+        // de PIN (`SecurityManager.trustedNowMillis()`, sexta ronda): un
+        // primer intento de este fix solo comparaba `elapsedRealtime()`
+        // contra el último reseteo y permitía el reseteo sin más ante
+        // cualquier reinicio detectado -- exactamente el mismo bypass de
+        // 2 pasos (adelantar el reloj + reiniciar el dispositivo) que
+        // rompió el primer intento del fix de PIN, hallado por la revisión
+        // adversarial de esta ronda. `trustedNowMillis()` de abajo congela
+        // el ancla ante un reinicio en vez de confiar en el reloj de pared
+        // en ese momento, así que un reinicio ya no basta para saltarse la
+        // espera.
+        private const val KEY_ANCHOR_WALL = "reset_anchor_wall"
+        private const val KEY_ANCHOR_ELAPSED = "reset_anchor_elapsed"
+        private const val KEY_LAST_RESET_TRUSTED = "last_reset_trusted"
+        private const val MIN_REAL_MS_BETWEEN_RESETS = 20L * 60 * 60 * 1000
 
         // ── Límites diarios ───────────────────────────────────────────────────
         const val LIMIT_CONVERSIONS = 5
@@ -95,30 +117,88 @@ class DailyLimitManager @Inject constructor(
         // UseCase) y elimina el problema de raíz.
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val savedDate = prefs.getString(KEY_DATE, "")
-        if (savedDate != today) {
-            Timber.d("DailyLimitManager: nuevo día — reseteando contadores")
-            prefs.edit()
-                .putString(KEY_DATE,        today)
-                .putInt(KEY_CONVERSIONS,    0)
-                .putInt(KEY_MERGE,          0)
-                .putInt(KEY_SPLIT,          0)
-                .putInt(KEY_COMPRESS,       0)
-                .putInt(KEY_ROTATE,         0)
-                .putInt(KEY_NUMBER_PAGES,   0)
-                .putInt(KEY_WATERMARK,      0)
-                .putInt(KEY_REORDER_PAGES,  0)
-                .putInt(KEY_COMPARE,        0)
-                .putInt(KEY_REDACT,         0)
-                .putInt(KEY_CROP,           0)
-                .putInt(KEY_EDIT_TEXT,      0)
-                .putInt(KEY_SIGN,           0)
-                .putInt(KEY_FILL_FORM,      0)
-                .putInt(KEY_OCR,            0)
-                .putInt(KEY_EXTRA_CONVERSIONS, 0)
-                .putInt(KEY_EXTRA_PDF_TOOLS, 0)
-                .putInt(KEY_SCANS_SAVED, 0)
-                .putInt(KEY_EXTRA_SCANS_SAVED, 0)
-                .apply()
+        if (savedDate == today) return
+
+        val trustedNow = trustedNowMillis()
+        val lastResetTrusted = prefs.getLong(KEY_LAST_RESET_TRUSTED, 0L)
+        // lastResetTrusted==0L cubre la primera vez que se llama (nunca
+        // hubo un reset registrado) -- se permite el reset y queda fijado
+        // como punto de partida. De ahí en más, trustedNow ya no puede
+        // avanzar por un simple cambio del reloj de pared ni por un
+        // reinicio del dispositivo (ver trustedNowMillis()), así que esta
+        // resta sí refleja tiempo real transcurrido.
+        val realTimeElapsedEnough = lastResetTrusted == 0L ||
+            trustedNow - lastResetTrusted >= MIN_REAL_MS_BETWEEN_RESETS
+        if (!realTimeElapsedEnough) {
+            Timber.w(
+                "DailyLimitManager: fecha cambió a $today pero no pasó suficiente tiempo real " +
+                    "desde el último reseteo -- se ignora (posible manipulación del reloj)"
+            )
+            return
+        }
+
+        Timber.d("DailyLimitManager: nuevo día — reseteando contadores")
+        prefs.edit()
+            .putString(KEY_DATE,        today)
+            .putLong(KEY_LAST_RESET_TRUSTED, trustedNow)
+            .putInt(KEY_CONVERSIONS,    0)
+            .putInt(KEY_MERGE,          0)
+            .putInt(KEY_SPLIT,          0)
+            .putInt(KEY_COMPRESS,       0)
+            .putInt(KEY_ROTATE,         0)
+            .putInt(KEY_NUMBER_PAGES,   0)
+            .putInt(KEY_WATERMARK,      0)
+            .putInt(KEY_REORDER_PAGES,  0)
+            .putInt(KEY_COMPARE,        0)
+            .putInt(KEY_REDACT,         0)
+            .putInt(KEY_CROP,           0)
+            .putInt(KEY_EDIT_TEXT,      0)
+            .putInt(KEY_SIGN,           0)
+            .putInt(KEY_FILL_FORM,      0)
+            .putInt(KEY_OCR,            0)
+            .putInt(KEY_EXTRA_CONVERSIONS, 0)
+            .putInt(KEY_EXTRA_PDF_TOOLS, 0)
+            .putInt(KEY_SCANS_SAVED, 0)
+            .putInt(KEY_EXTRA_SCANS_SAVED, 0)
+            .apply()
+    }
+
+    // Reconstruye un "ahora" que no puede adelantarse solo por manipular el
+    // reloj de pared ni por reiniciar el dispositivo -- mismo tipo de ancla
+    // que `SecurityManager.trustedNowMillis()` (sexta ronda, bloqueo de
+    // PIN), reimplementada acá mismo (en vez de extraerla y compartirla)
+    // para no tocar ese código ya probado y en producción por un hallazgo
+    // de severidad Media.
+    //
+    // Mientras no haya reinicio, avanza como `elapsedRealtime()` real
+    // (inmune al reloj de pared). Si detecta un reinicio (elapsed actual
+    // menor al ancla guardada), NO confía en el reloj de pared de ese
+    // instante -- solo re-basa el punto de partida de `elapsedRealtime()`
+    // para el nuevo arranque y sigue devolviendo el mismo valor de ancla
+    // congelado hasta que pase tiempo real de verdad en este nuevo arranque.
+    // `minOf(currentWall, reconstruido)` es la parte que de verdad resiste
+    // el ataque: ante un reloj adelantado, siempre gana el valor más
+    // conservador (el que diga que pasó MENOS tiempo), nunca el que el
+    // usuario pueda inflar a su favor.
+    private fun trustedNowMillis(): Long {
+        val currentWall = System.currentTimeMillis()
+        val currentElapsed = elapsedRealtimeMillisSafe()
+        val anchorWall = prefs.getLong(KEY_ANCHOR_WALL, 0L)
+        val anchorElapsed = prefs.getLong(KEY_ANCHOR_ELAPSED, 0L)
+
+        return when {
+            anchorWall == 0L -> {
+                prefs.edit()
+                    .putLong(KEY_ANCHOR_WALL, currentWall)
+                    .putLong(KEY_ANCHOR_ELAPSED, currentElapsed)
+                    .apply()
+                currentWall
+            }
+            currentElapsed < anchorElapsed -> {
+                prefs.edit().putLong(KEY_ANCHOR_ELAPSED, currentElapsed).apply()
+                minOf(currentWall, anchorWall)
+            }
+            else -> minOf(currentWall, anchorWall + (currentElapsed - anchorElapsed))
         }
     }
 

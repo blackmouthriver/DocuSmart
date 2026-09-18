@@ -451,8 +451,20 @@ private fun NavGraphBuilder.onboardingComposable(navController: NavHostControlle
     composable(NavRoutes.Onboarding.route) {
         OnboardingScreen(
             onFinished = {
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (séptima ronda, Media -- O1): reingresar acá desde
+                // Ajustes ("Ver tutorial") deja el back stack
+                // [Home, Settings, Onboarding] -- popUpTo(Onboarding)
+                // solo saca Onboarding, empujando un Home NUEVO encima
+                // ([Home, Settings, Home]), así que había que presionar
+                // Atrás 3 veces para salir en vez de 1. Apuntar el
+                // popUpTo a Home (con launchSingleTop) limpia Settings+
+                // Onboarding y reutiliza el Home ya existente cuando se
+                // reingresa desde Ajustes, sin cambiar nada en el
+                // arranque en frío (Home aún no existe, se agrega igual).
                 navController.navigate(NavRoutes.Home.route) {
-                    popUpTo(NavRoutes.Onboarding.route) { inclusive = true }
+                    popUpTo(NavRoutes.Home.route) { inclusive = false }
+                    launchSingleTop = true
                 }
             }
         )

@@ -9,8 +9,10 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.docsmart.R
 
 @Composable
 fun DocuSmartSearchBar(
@@ -35,9 +37,13 @@ fun DocuSmartSearchBar(
             )
         },
         leadingIcon = {
+            // Hallazgo real de la auditoría general 2026-09-17 (séptima
+            // ronda, Media -- A3): contentDescription hardcodeado en
+            // español, sin stringResource -- mismo tipo de bug ya
+            // corregido en 2026-09-16-v2 #15, no aplicado acá.
             Icon(
                 imageVector = Icons.Rounded.Search,
-                contentDescription = "Buscar",
+                contentDescription = stringResource(R.string.search_bar_icon_desc),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
@@ -47,7 +53,7 @@ fun DocuSmartSearchBar(
                 IconButton(onClick = onClear) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Limpiar",
+                        contentDescription = stringResource(R.string.search_bar_clear_desc),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )

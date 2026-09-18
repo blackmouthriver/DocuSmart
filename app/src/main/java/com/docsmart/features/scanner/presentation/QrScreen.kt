@@ -241,10 +241,15 @@ fun QrReaderScreen(
                             else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             trailingIcon = {
+                                // Hallazgo real de la auditoría general
+                                // 2026-09-17 (séptima ronda, Alta -- A1).
                                 IconButton(onClick = { qrPasswordVisible = !qrPasswordVisible }) {
                                     Icon(
                                         if (qrPasswordVisible) Icons.Rounded.VisibilityOff
-                                        else Icons.Rounded.Visibility, null
+                                        else Icons.Rounded.Visibility,
+                                        contentDescription = stringResource(
+                                            if (qrPasswordVisible) R.string.password_hide else R.string.password_show
+                                        )
                                     )
                                 }
                             },
@@ -1251,11 +1256,15 @@ fun QrCreatorScreen(
                                     modifier = Modifier.size(18.dp))
                             },
                             trailingIcon = {
+                                // Hallazgo real de la auditoría general
+                                // 2026-09-17 (séptima ronda, Alta -- A1).
                                 IconButton(onClick = { showPassword = !showPassword }) {
                                     Icon(
                                         if (showPassword) Icons.Rounded.VisibilityOff
                                         else Icons.Rounded.Visibility,
-                                        null,
+                                        contentDescription = stringResource(
+                                            if (showPassword) R.string.password_hide else R.string.password_show
+                                        ),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }

@@ -37,6 +37,8 @@
     <string name="library_title">Library</string>
     <string name="library_subtitle">All your documents</string>
     <string name="library_search">Search in library…</string>
+    <string name="search_bar_icon_desc">Search</string>
+    <string name="search_bar_clear_desc">Clear</string>
     <string name="library_documents">documents</string>
     <string name="library_document_count">%1$d documents</string>
     <string name="library_search_results_count">%1$d results for \"%2$s\"</string>
@@ -100,7 +102,7 @@
     <string name="settings_storage">Storage</string>
     <string name="settings_storage_subtitle">View generated files</string>
     <string name="settings_about">About</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">Select language</string>
     <string name="settings_select_language_subtitle">This will apply to the whole app.</string>
     <string name="settings_close">Close</string>
@@ -127,7 +129,7 @@
     <string name="settings_section_system">System</string>
     <string name="settings_reset">Reset settings</string>
     <string name="settings_reset_subtitle">Return to default values</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">Got it</string>
     <string name="settings_storage_conversions">Conversions</string>
     <string name="settings_storage_viewer_share">Shared with annotations</string>
@@ -147,6 +149,7 @@
     <string name="settings_help_a4">Yes. All processing is local. No file leaves your device.</string>
     <string name="settings_reset_body">Theme, accent color, font size, animated background, sound effects and language will be reset to their default values, and the cache of generated files will be cleared. Your documents will not be deleted. Continue?</string>
     <string name="settings_reset_confirm">Reset</string>
+    <string name="settings_reset_error">Couldn\'t reset settings.</string>
     <string name="settings_about_dialog_title">About DocuSmart</string>
     <string name="settings_about_body">Smart document viewer and converter. Manage, convert and organize your files quickly and securely.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

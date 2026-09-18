@@ -37,6 +37,8 @@
     <string name="library_title">资料库</string>
     <string name="library_subtitle">你的所有文档</string>
     <string name="library_search">在资料库中搜索…</string>
+    <string name="search_bar_icon_desc">搜索</string>
+    <string name="search_bar_clear_desc">清除</string>
     <string name="library_documents">个文档</string>
     <string name="library_document_count">%1$d 个文档</string>
     <string name="library_search_results_count">找到 %1$d 个与\"%2$s\"匹配的结果</string>
@@ -100,7 +102,7 @@
     <string name="settings_storage">存储空间</string>
     <string name="settings_storage_subtitle">查看已生成的文件</string>
     <string name="settings_about">关于</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">选择语言</string>
     <string name="settings_select_language_subtitle">将应用于整个应用程序。</string>
     <string name="settings_close">关闭</string>
@@ -127,7 +129,7 @@
     <string name="settings_section_system">系统</string>
     <string name="settings_reset">重置设置</string>
     <string name="settings_reset_subtitle">恢复为默认值</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">知道了</string>
     <string name="settings_storage_conversions">转换记录</string>
     <string name="settings_storage_viewer_share">带注释分享</string>
@@ -147,6 +149,7 @@
     <string name="settings_help_a4">是的。所有处理都在本地完成，任何文件都不会离开你的设备。</string>
     <string name="settings_reset_body">主题、强调色、字体大小、动态背景、音效和语言将恢复为默认值，并清除已生成文件的缓存。您的文档不会被删除。是否继续?</string>
     <string name="settings_reset_confirm">重置</string>
+    <string name="settings_reset_error">无法重置设置。</string>
     <string name="settings_about_dialog_title">关于 DocuSmart</string>
     <string name="settings_about_body">智能文档查看器和转换器。快速、安全地管理、转换和整理你的文件。</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

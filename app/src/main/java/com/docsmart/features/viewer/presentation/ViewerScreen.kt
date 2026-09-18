@@ -623,9 +623,13 @@ private fun SearchBar(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
+            // Hallazgo real de la auditoría general 2026-09-17 (séptima
+            // ronda, Alta -- A2): botón ícono-solo sin contentDescription
+            // en la pantalla de uso más frecuente de la app.
             IconButton(onClick = onClose) {
                 Icon(
-                    Icons.Rounded.Close, null,
+                    Icons.Rounded.Close,
+                    contentDescription = stringResource(R.string.general_close),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -2047,11 +2051,18 @@ private fun PdfPasswordDialogBody(
                 keyboardType = androidx.compose.ui.text.input.KeyboardType.Password
             ),
             trailingIcon = {
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (séptima ronda, Alta -- A1): la misma corrección ya
+                // aplicada en SecurityScreen.kt/PdfPasswordScreen.kt
+                // (B2) nunca se replicó acá -- TalkBack anunciaba solo
+                // "Botón" sin decir qué hace.
                 IconButton(onClick = onToggleShowPassword) {
                     Icon(
                         if (showPassword) Icons.Rounded.VisibilityOff
                         else Icons.Rounded.Visibility,
-                        null
+                        contentDescription = stringResource(
+                            if (showPassword) R.string.password_hide else R.string.password_show
+                        )
                     )
                 }
             },

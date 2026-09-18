@@ -27,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -1790,10 +1792,18 @@ private fun ScanImageEditorDialog(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (séptima ronda, Media -- A5): el Slider en sí no tenía
+                // contentDescription -- TalkBack anunciaba solo el
+                // porcentaje, sin decir "Brillo"/"Contraste", indistinguible
+                // entre los dos sliders idénticos. Reusa el mismo string ya
+                // formateado que el Text de arriba.
+                val brightnessDesc = stringResource(R.string.scan_edit_brightness, brightnessDisplay.roundToInt())
                 Slider(
                     value = brightnessDisplay,
                     onValueChange = { brightnessDisplay = it },
-                    valueRange = 0f..100f
+                    valueRange = 0f..100f,
+                    modifier = Modifier.semantics { contentDescription = brightnessDesc }
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -1802,10 +1812,12 @@ private fun ScanImageEditorDialog(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                val contrastDesc = stringResource(R.string.scan_edit_contrast, contrastDisplay.roundToInt())
                 Slider(
                     value = contrastDisplay,
                     onValueChange = { contrastDisplay = it },
-                    valueRange = 0f..100f
+                    valueRange = 0f..100f,
+                    modifier = Modifier.semantics { contentDescription = contrastDesc }
                 )
 
                 Spacer(Modifier.height(16.dp))

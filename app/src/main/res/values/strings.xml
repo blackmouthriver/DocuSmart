@@ -37,6 +37,8 @@
     <string name="library_title">Biblioteca</string>
     <string name="library_subtitle">Todos tus documentos</string>
     <string name="library_search">Buscar en biblioteca…</string>
+    <string name="search_bar_icon_desc">Buscar</string>
+    <string name="search_bar_clear_desc">Limpiar</string>
     <string name="library_documents">documentos</string>
     <string name="library_document_count">%1$d documentos</string>
     <string name="library_search_results_count">%1$d resultados para \"%2$s\"</string>
@@ -100,7 +102,7 @@
     <string name="settings_storage">Almacenamiento</string>
     <string name="settings_storage_subtitle">Ver archivos generados</string>
     <string name="settings_about">Acerca de</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">Seleccionar idioma</string>
     <string name="settings_select_language_subtitle">Se aplicará a toda la aplicación.</string>
     <string name="settings_close">Cerrar</string>
@@ -137,7 +139,7 @@
     <string name="settings_section_system">Sistema</string>
     <string name="settings_reset">Restablecer configuración</string>
     <string name="settings_reset_subtitle">Volver a los valores predeterminados</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">Entendido</string>
     <string name="settings_storage_conversions">Conversiones</string>
     <string name="settings_storage_viewer_share">Compartido con anotaciones</string>
@@ -163,6 +165,7 @@
          restablece. -->
     <string name="settings_reset_body">Se restablecerán el tema, el color de acento, el tamaño de letra, el fondo animado, los efectos de sonido y el idioma a sus valores predeterminados, y se limpiará el caché de archivos generados. Los documentos no se eliminarán. ¿Continuar?</string>
     <string name="settings_reset_confirm">Restablecer</string>
+    <string name="settings_reset_error">No se pudo restablecer la configuración.</string>
     <string name="settings_about_dialog_title">Acerca de DocuSmart</string>
     <string name="settings_about_body">Visor y convertidor inteligente de documentos. Gestiona, convierte y organiza tus archivos de forma rápida y segura.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

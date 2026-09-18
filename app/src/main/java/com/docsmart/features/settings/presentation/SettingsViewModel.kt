@@ -43,6 +43,18 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (séptima ronda,
+    // Media -- S3): "Restablecer configuración" cambiaba el idioma ANTES
+    // de esperar a que este traspaso terminara -- si el idioma del
+    // dispositivo difiere del activo, MainActivity reinicia la Activity
+    // casi de inmediato al detectar el cambio, cancelando
+    // `viewModelScope` (y con él este `launch` de arriba) a mitad del
+    // `forEach`. Variante awaitable para que el llamador pueda esperar a
+    // que termine de verdad antes de disparar el cambio de idioma.
+    suspend fun moveConvertedFilesToTrashAwait(documentIds: List<String>) {
+        documentIds.forEach { trashRepository.moveToTrash(it) }
+    }
+
     // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
     // Media -- S3): a diferencia de los archivos de arriba, la copia
     // efímera de vista previa de Carpeta Segura (cacheDir/secure_preview/)

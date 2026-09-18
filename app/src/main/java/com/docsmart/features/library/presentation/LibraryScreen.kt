@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -318,7 +320,8 @@ private fun LibraryTabs(
                 subtitle = stringResource(R.string.library_tab_file_count, trashCount),
                 selected = false,
                 onClick  = onTrashClick,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                isTab    = false
             )
         }
     } else {
@@ -357,7 +360,8 @@ private fun LibraryTabs(
                     subtitle = stringResource(R.string.library_tab_file_count, trashCount),
                     selected = false,
                     onClick  = onTrashClick,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isTab    = false
                 )
                 // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX):
                 // muestra el nombre real de la carpeta elegida (ej. "DMSS"),
@@ -368,7 +372,8 @@ private fun LibraryTabs(
                     subtitle = stringResource(R.string.library_folder_shortcut_subtitle),
                     selected = false,
                     onClick  = { onOpenFolderClick(linkedFolderUri) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isTab    = false
                 )
             }
         }
@@ -382,7 +387,16 @@ private fun LibraryTabItem(
     subtitle: String,
     selected: Boolean,
     onClick : () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Hallazgo real de la auditoría general 2026-09-17 (séptima ronda,
+    // Media -- A4): "Dispositivo"/"Mis archivos" son pestañas reales
+    // (participan de `selected`), pero "Papelera"/el atajo de carpeta
+    // reutilizan el mismo componente visual sin serlo -- antes ambos
+    // casos usaban `.clickable{}` puro, sin `role`/`selected` para
+    // TalkBack, así que ninguna pestaña anunciaba "seleccionada". La
+    // barra de navegación inferior ya usa `Modifier.selectable(...)`
+    // para el mismo patrón (`DocuSmartBottomBar.kt`) -- se alinea acá.
+    isTab: Boolean = true
 ) {
     val shape = MaterialTheme.shapes.large
     val containerColor = if (selected)
@@ -406,7 +420,11 @@ private fun LibraryTabItem(
                 else
                     Modifier.accentBorder(shape = shape)
             )
-            .clickable { onClick() }
+            .selectable(
+                selected = selected,
+                onClick  = onClick,
+                role     = if (isTab) Role.Tab else Role.Button
+            )
     ) {
         // HU-UX-05: con "Grande"/"Muy grande" activo, "Dispositivo"/"Mis
         // archivos"/"Papelera" no entran ni en 2 líneas compartiendo el ancho

@@ -68,6 +68,9 @@ class MainActivity : AppCompatActivity() {
     // `pendingAgendaEventId` de arriba.
     private var pendingNoteId by mutableStateOf<String?>(null)
     private var adsInitialized  = false
+    // Guarda de una sola vez para el LaunchedEffect(currentRoute) de más
+    // abajo que difiere requestStoragePermissions() -- ver hallazgo O2.
+    private var storagePermissionRequested = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -95,7 +98,15 @@ class MainActivity : AppCompatActivity() {
         externalFileUri = resolveExternalIntent(intent)
         pendingAgendaEventId = intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)
         pendingNoteId = intent.getStringExtra(EXTRA_OPEN_NOTE_ID)
-        requestStoragePermissions()
+        // Hallazgo real de la auditoría general 2026-09-17 (séptima
+        // ronda, Media -- O2): antes se pedía acá mismo, sincrónicamente,
+        // antes de que se pintara cualquier UI propia -- lo primero que
+        // veía un usuario nuevo podía ser el diálogo de permisos del
+        // sistema superpuesto a la animación del splash, sin ningún
+        // contexto previo (a diferencia de POST_NOTIFICATIONS, que ya se
+        // pide en el momento de uso real). Se difiere con el mismo
+        // mecanismo ya usado para externalFileUri/pendingAgendaEventId
+        // más abajo (LaunchedEffect(currentRoute) + isStillOnSplashOrOnboarding()).
         // Bug real encontrado 2026-09-06 ("línea/franja blanca" reportada
         // por el usuario tapando botones en Convertir/Herramientas PDF):
         // enableEdgeToEdge() sin parámetros usa SystemBarStyle.auto(...) por
@@ -197,6 +208,21 @@ class MainActivity : AppCompatActivity() {
                     if (isStillOnSplashOrOnboarding(currentRoute)) return@LaunchedEffect
                     navController.navigate(NavRoutes.Study.createRoute(tab = 1, openNoteId = noteId))
                     pendingNoteId = null
+                }
+
+                // Hallazgo real de la auditoría general 2026-09-17 (séptima
+                // ronda, Media -- O2): mismo mecanismo que arriba, pero para
+                // el permiso de almacenamiento -- antes se pedía en onCreate()
+                // antes de pintar cualquier UI propia, así que un usuario
+                // nuevo podía ver el diálogo del sistema superpuesto al
+                // splash sin ningún contexto. `storagePermissionRequested`
+                // asegura que se pida una sola vez por creación de la
+                // Activity, apenas se sale de splash/onboarding.
+                LaunchedEffect(currentRoute) {
+                    if (storagePermissionRequested) return@LaunchedEffect
+                    if (isStillOnSplashOrOnboarding(currentRoute)) return@LaunchedEffect
+                    storagePermissionRequested = true
+                    requestStoragePermissions()
                 }
 
                 // Fondo animado (backlog UX 2026-09-06): capa 0 detrás de toda

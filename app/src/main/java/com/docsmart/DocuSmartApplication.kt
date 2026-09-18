@@ -4,6 +4,7 @@ import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import com.docsmart.core.analytics.CrashlyticsTree
+import com.docsmart.core.billing.BillingManager
 import com.docsmart.core.media.PdfThumbnailFetcher
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.remoteconfig.RemoteConfigManager
@@ -26,6 +27,21 @@ class DocuSmartApplication : Application(), ImageLoaderFactory {
     @Inject lateinit var premiumManager: PremiumManager
 
     @Inject lateinit var securityManager: SecurityManager
+
+    // Hallazgo real de la auditoría general 2026-09-17 (séptima ronda,
+    // Alta -- M1): BillingManager es un Singleton de Hilt que solo se
+    // construía la primera vez que algo lo inyectaba -- el único punto de
+    // inyección en toda la app era PremiumViewModel (la pantalla
+    // Premium). Un usuario que cancelaba/pedía reembolso de su suscripción
+    // y no volvía a abrir esa pantalla seguía viéndose Premium
+    // indefinidamente, incluso entre reinicios de proceso, porque
+    // restorePurchases() (que sí revalida contra Play Billing y
+    // desactiva Premium si corresponde) nunca volvía a correr. Esta
+    // inyección temprana garantiza al menos una revalidación real en
+    // cada arranque en frío -- BillingManager también se re-suscribe a
+    // ON_START vía AppLifecycleTracker para cubrir sesiones largas sin
+    // reinicio de proceso (ver BillingManager.kt).
+    @Inject lateinit var billingManager: BillingManager
 
     override fun onCreate() {
         super.onCreate()

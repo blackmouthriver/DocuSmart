@@ -37,6 +37,8 @@
     <string name="library_title">ライブラリ</string>
     <string name="library_subtitle">すべてのドキュメント</string>
     <string name="library_search">ライブラリを検索…</string>
+    <string name="search_bar_icon_desc">検索</string>
+    <string name="search_bar_clear_desc">クリア</string>
     <string name="library_documents">ドキュメント</string>
     <string name="library_document_count">%1$d件のドキュメント</string>
     <string name="library_search_results_count">\"%2$s\" の検索結果 %1$d 件</string>
@@ -100,7 +102,7 @@
     <string name="settings_storage">ストレージ</string>
     <string name="settings_storage_subtitle">生成されたファイルを表示</string>
     <string name="settings_about">アプリについて</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">言語を選択</string>
     <string name="settings_select_language_subtitle">アプリ全体に適用されます。</string>
     <string name="settings_close">閉じる</string>
@@ -127,7 +129,7 @@
     <string name="settings_section_system">システム</string>
     <string name="settings_reset">設定をリセット</string>
     <string name="settings_reset_subtitle">デフォルト設定に戻す</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">了解</string>
     <string name="settings_storage_conversions">変換</string>
     <string name="settings_storage_viewer_share">注釈付きで共有</string>
@@ -147,6 +149,7 @@
     <string name="settings_help_a4">はい。すべての処理はローカルで行われます。ファイルが端末の外に出ることはありません。</string>
     <string name="settings_reset_body">テーマ、アクセントカラー、文字サイズ、アニメーション背景、効果音、言語が初期設定に戻り、生成されたファイルのキャッシュが削除されます。ドキュメントは削除されません。続行しますか?</string>
     <string name="settings_reset_confirm">リセット</string>
+    <string name="settings_reset_error">設定をリセットできませんでした。</string>
     <string name="settings_about_dialog_title">DocuSmartについて</string>
     <string name="settings_about_body">スマートなドキュメントビューア&amp;コンバーター。ファイルをすばやく安全に管理・変換・整理できます。</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

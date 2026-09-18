@@ -37,6 +37,8 @@
     <string name="library_title">Liburutegia</string>
     <string name="library_subtitle">Zure dokumentu guztiak</string>
     <string name="library_search">Bilatu liburutegian…</string>
+    <string name="search_bar_icon_desc">Bilatu</string>
+    <string name="search_bar_clear_desc">Garbitu</string>
     <string name="library_documents">dokumentu</string>
     <string name="library_document_count">%1$d dokumentu</string>
     <string name="library_search_results_count">\"%2$s\"(r)en %1$d emaitza</string>
@@ -100,7 +102,7 @@
     <string name="settings_storage">Biltegiratzea</string>
     <string name="settings_storage_subtitle">Ikusi sortutako fitxategiak</string>
     <string name="settings_about">Honi buruz</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">Hautatu hizkuntza</string>
     <string name="settings_select_language_subtitle">Aplikazio osoan aplikatuko da.</string>
     <string name="settings_close">Itxi</string>
@@ -137,7 +139,7 @@
     <string name="settings_section_system">Sistema</string>
     <string name="settings_reset">Berrezarri konfigurazioa</string>
     <string name="settings_reset_subtitle">Itzuli balio lehenetsietara</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">Ulertuta</string>
     <string name="settings_storage_conversions">Bihurketak</string>
     <string name="settings_storage_viewer_share">Oharrekin partekatua</string>
@@ -157,6 +159,7 @@
     <string name="settings_help_a4">Bai. Prozesamendu guztia lokala da. Fitxategirik ez da zure gailutik ateratzen.</string>
     <string name="settings_reset_body">Gaia, azentu-kolorea, letra-tamaina, atzeko plano animatua, soinu-efektuak eta hizkuntza balio lehenetsietara berrezarriko dira, eta sortutako fitxategien cachea garbituko da. Zure dokumentuak ez dira ezabatuko. Jarraitu?</string>
     <string name="settings_reset_confirm">Berrezarri</string>
+    <string name="settings_reset_error">Ezin izan da konfigurazioa berrezarri.</string>
     <string name="settings_about_dialog_title">DocuSmarti buruz</string>
     <string name="settings_about_body">Dokumentuen ikustaile eta bihurgailu adimenduna. Kudeatu, bihurtu eta antolatu zure fitxategiak modu azkar eta seguruan.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

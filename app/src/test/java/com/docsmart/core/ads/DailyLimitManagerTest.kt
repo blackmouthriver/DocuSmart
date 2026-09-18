@@ -268,6 +268,10 @@ class DailyLimitManagerTest {
             store[firstArg<String>()] = secondArg<Int>()
             editor
         }
+        every { editor.putLong(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Long>()
+            editor
+        }
         every { editor.apply() } just Runs
 
         val prefs = mockk<SharedPreferences>()
@@ -277,6 +281,9 @@ class DailyLimitManagerTest {
         }
         every { prefs.getInt(any(), any()) } answers {
             (store[firstArg<String>()] as? Int) ?: secondArg()
+        }
+        every { prefs.getLong(any(), any()) } answers {
+            (store[firstArg<String>()] as? Long) ?: secondArg()
         }
         return prefs
     }

@@ -37,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.LanguageManager
@@ -65,6 +66,7 @@ fun SettingsScreen(
     viewModel      : SettingsViewModel = hiltViewModel()
 ) {
     val context         = LocalContext.current
+    val scope           = rememberCoroutineScope()
     val currentTheme       by themeManager.currentTheme.collectAsState()
     val currentAccentColor by themeManager.accentColor.collectAsState()
     val currentFontScale   by themeManager.fontScale.collectAsState()
@@ -120,7 +122,11 @@ fun SettingsScreen(
     // (Almacenamiento) o directamente no lo hacía (Restablecer, bug real
     // encontrado 2026-09-14: el texto del diálogo prometía "se limpiará el
     // caché" pero el handler nunca tocaba ningún archivo).
-    fun clearGeneratedFilesCache() {
+    // Hallazgo real de la auditoría general 2026-09-17 (séptima ronda,
+    // Media -- S3): ahora es `suspend` para que el llamador pueda esperar
+    // a que el traspaso a Papelera termine de verdad antes de seguir
+    // (ver el handler de "Restablecer configuración" más abajo).
+    suspend fun clearGeneratedFilesCache() {
         val convertedDir = java.io.File(context.filesDir, "converted")
         val pdfToolsDir  = java.io.File(context.filesDir, "pdftools")
         // HU-46: hallazgo real de la revisión de seguridad -- las copias
@@ -137,7 +143,7 @@ fun SettingsScreen(
             viewerShareDir.listFiles()?.toList().orEmpty() +
             studyExportsDir.listFiles()?.toList().orEmpty()
         if (allFiles.isNotEmpty()) {
-            viewModel.moveConvertedFilesToTrash(allFiles.map { it.absolutePath })
+            viewModel.moveConvertedFilesToTrashAwait(allFiles.map { it.absolutePath })
         }
         // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
         // Media -- S3): a diferencia de los archivos de arriba, esta
@@ -217,10 +223,14 @@ fun SettingsScreen(
         val viewerShareFiles = viewerShareDir.listFiles()?.size ?: 0
         val studyExportsFiles = studyExportsDir.listFiles()?.size ?: 0
         val totalFiles      = convertedFiles + pdfToolsFiles + viewerShareFiles + studyExportsFiles
-        val convertedSize   = convertedDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
-        val pdfToolsSize    = pdfToolsDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
-        val viewerShareSize = viewerShareDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
-        val studyExportsSize = studyExportsDir.listFiles()?.sumOf { it.length() }?.div(1024) ?: 0
+        // Hallazgo real de la auditoría general 2026-09-17 (séptima
+        // ronda, Media -- S1): antes se dividía a KB acá mismo (división
+        // entera, sin rama de Bytes/MB) -- ahora se guardan los bytes
+        // reales y formatStorageSize() decide la unidad.
+        val convertedSize   = convertedDir.listFiles()?.sumOf { it.length() } ?: 0
+        val pdfToolsSize    = pdfToolsDir.listFiles()?.sumOf { it.length() } ?: 0
+        val viewerShareSize = viewerShareDir.listFiles()?.sumOf { it.length() } ?: 0
+        val studyExportsSize = studyExportsDir.listFiles()?.sumOf { it.length() } ?: 0
         val totalSize       = convertedSize + pdfToolsSize + viewerShareSize + studyExportsSize
 
         AlertDialog(
@@ -229,16 +239,22 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.settings_storage),
                 style = MaterialTheme.typography.titleLarge) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (séptima ronda, Media -- S4): ver el mismo fix en el
+                // diálogo de Ayuda más abajo.
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     StorageRow(
                         label  = stringResource(R.string.settings_storage_conversions),
                         files  = convertedFiles,
-                        sizeKb = convertedSize
+                        sizeBytes = convertedSize
                     )
                     StorageRow(
                         label  = stringResource(R.string.pdf_tools_title),
                         files  = pdfToolsFiles,
-                        sizeKb = pdfToolsSize
+                        sizeBytes = pdfToolsSize
                     )
                     // Hallazgo #55 (revisión general 2026-09-16): viewer_share/
                     // y study_exports/ ya se sumaban al Total, pero sin fila
@@ -249,14 +265,14 @@ fun SettingsScreen(
                         StorageRow(
                             label  = stringResource(R.string.settings_storage_viewer_share),
                             files  = viewerShareFiles,
-                            sizeKb = viewerShareSize
+                            sizeBytes = viewerShareSize
                         )
                     }
                     if (studyExportsFiles > 0) {
                         StorageRow(
                             label  = stringResource(R.string.settings_storage_study_exports),
                             files  = studyExportsFiles,
-                            sizeKb = studyExportsSize
+                            sizeBytes = studyExportsSize
                         )
                     }
                     HorizontalDivider()
@@ -269,7 +285,7 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             "$totalFiles ${stringResource(R.string.settings_storage_files_unit)} · " +
-                                stringResource(R.string.file_size_kb, totalSize),
+                                formatStorageSize(totalSize),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary)
                     }
@@ -283,7 +299,7 @@ fun SettingsScreen(
             dismissButton = {
                 if (totalFiles > 0) {
                     TextButton(onClick = {
-                        clearGeneratedFilesCache()
+                        scope.launch { clearGeneratedFilesCache() }
                         showStorageDialog = false
                     }) {
                         Text(
@@ -376,7 +392,17 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.settings_help),
                 style = MaterialTheme.typography.titleLarge) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (séptima ronda, Media -- S4): ningún AlertDialog de
+                // Ajustes tenía scroll propio -- Material3 no lo agrega
+                // solo si el contenido excede la altura disponible. Con
+                // "Muy grande" + un idioma verboso, las 4 preguntas de
+                // este diálogo (el más largo) podían recortarse sin
+                // ninguna forma de desplazarse para leer el resto.
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     HelpItem(
                         question = stringResource(R.string.settings_help_q1),
                         answer   = stringResource(R.string.settings_help_a1)
@@ -416,6 +442,11 @@ fun SettingsScreen(
     }
 
     // ── Diálogo: Restablecer ──────────────────────────────────────────────────
+    // Hallazgo real de la revisión de lint de esta misma ronda:
+    // `context.getString(...)` dentro del onClick usaba LocalContext.current
+    // directo en vez de `stringResource` (LocalContextGetResourceValueCall) --
+    // mismo patrón ya usado arriba para linkFolderErrorMessage.
+    val resetErrorMessage = stringResource(R.string.settings_reset_error)
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -441,8 +472,31 @@ fun SettingsScreen(
                     themeManager.setFontScale(FontScale.NORMAL)
                     themeManager.setAnimatedBackgroundEnabled(true)
                     viewModel.soundEffectPlayer.setEnabled(true)
-                    languageManager.setLanguage(languageManager.deviceDefaultLanguage())
-                    clearGeneratedFilesCache()
+                    // Hallazgo real de la auditoría general 2026-09-17
+                    // (séptima ronda, Media -- S3): antes el idioma se
+                    // cambiaba ANTES de esperar a que terminara el
+                    // traspaso a Papelera -- si el idioma del dispositivo
+                    // difiere del activo, MainActivity reinicia la
+                    // Activity casi de inmediato al detectar el cambio,
+                    // cancelando el traspaso a mitad de camino. Ahora se
+                    // espera a que termine de verdad antes de cambiar el
+                    // idioma (lo último, ya que dispara el reinicio).
+                    // Hallazgo real de la revisión adversarial de esta
+                    // misma ronda: un fallo real de `clearGeneratedFilesCache()`
+                    // (I/O al mover a Papelera) quedaba tragado en silencio
+                    // -- el usuario veía el diálogo cerrarse como si todo
+                    // hubiera salido bien. Con try/catch + Toast (mismo
+                    // patrón ya usado en esta pantalla para el error de
+                    // carpeta vinculada) al menos se avisa del fallo.
+                    scope.launch {
+                        try {
+                            clearGeneratedFilesCache()
+                            languageManager.setLanguage(languageManager.deviceDefaultLanguage())
+                        } catch (e: Exception) {
+                            Timber.e(e, "SettingsScreen: fallo al restablecer configuración")
+                            Toast.makeText(context, resetErrorMessage, Toast.LENGTH_SHORT).show()
+                        }
+                    }
                     showResetDialog = false
                 }) {
                     Text(
@@ -469,7 +523,13 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleLarge
             )},
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (séptima ronda, Media -- S4): ver el mismo fix en el
+                // diálogo de Ayuda más arriba.
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment     = Alignment.CenterVertically
@@ -489,7 +549,16 @@ fun SettingsScreen(
                             Text(stringResource(R.string.app_name),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface)
-                            Text(stringResource(R.string.settings_about_subtitle),
+                            // Hallazgo real de la auditoría general
+                            // 2026-09-17 (séptima ronda, Baja-Media --
+                            // S2): "v1.0.0" estaba hardcodeado dentro del
+                            // string localizado (en los 12 idiomas) en vez
+                            // de usar BuildConfig.VERSION_NAME -- mismo
+                            // problema que B16 ya corrigió para el email
+                            // de soporte, nunca extendido acá.
+                            Text(
+                                "${stringResource(R.string.settings_about_subtitle)} " +
+                                    "v${com.docsmart.BuildConfig.VERSION_NAME}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -936,7 +1005,11 @@ fun SettingsScreen(
             SettingsItem(
                 icon     = Icons.Rounded.Info,
                 title    = stringResource(R.string.settings_about),
-                subtitle = stringResource(R.string.settings_about_subtitle_full),
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (séptima ronda, Baja-Media -- S2): ver el comentario del
+                // diálogo "Acerca de" más arriba.
+                subtitle = "${stringResource(R.string.settings_about_subtitle_full)} " +
+                    "v${com.docsmart.BuildConfig.VERSION_NAME}",
                 onClick  = { showAboutDialog = true }
             )
         }
@@ -997,7 +1070,7 @@ private fun SettingsItem(
 // sin stringResource, mismo patrón ya corregido en M2 para Papelera/
 // Biblioteca/Carpeta Segura.
 @Composable
-private fun StorageRow(label: String, files: Int, sizeKb: Long) {
+private fun StorageRow(label: String, files: Int, sizeBytes: Long) {
     Row(
         modifier              = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1006,9 +1079,26 @@ private fun StorageRow(label: String, files: Int, sizeKb: Long) {
         Text(label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface)
-        Text("$files · ${stringResource(R.string.file_size_kb, sizeKb)}",
+        Text("$files · ${formatStorageSize(sizeBytes)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+// Hallazgo real de la auditoría general 2026-09-17 (séptima ronda, Media
+// -- S1): este diálogo siempre mostraba "%d KB" con división entera, sin
+// rama de Bytes/MB -- mismo bug que M2/B14 ya corrigieron en
+// TrashScreen.kt/DocumentRepository.kt/SecurityScreen.kt/
+// ScanSessionManager.kt, nunca aplicado acá (esos 4 sitios no exponen una
+// función compartida a propósito -- ver el comentario de
+// TrashScreen.formatTrashSize()).
+@Composable
+private fun formatStorageSize(bytes: Long): String = when {
+    bytes < 1024        -> stringResource(R.string.file_size_bytes, bytes)
+    bytes < 1024 * 1024 -> stringResource(R.string.file_size_kb, bytes / 1024)
+    else -> {
+        val locale = androidx.compose.ui.platform.LocalLocale.current.platformLocale
+        stringResource(R.string.file_size_mb, String.format(locale, "%.1f", bytes / (1024.0 * 1024.0)))
     }
 }
 

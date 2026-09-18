@@ -37,6 +37,8 @@
     <string name="library_title">Bibliothek</string>
     <string name="library_subtitle">Alle deine Dokumente</string>
     <string name="library_search">In der Bibliothek suchen…</string>
+    <string name="search_bar_icon_desc">Suchen</string>
+    <string name="search_bar_clear_desc">Löschen</string>
     <string name="library_documents">Dokumente</string>
     <string name="library_document_count">%1$d Dokumente</string>
     <string name="library_search_results_count">%1$d Ergebnisse für \"%2$s\"</string>
@@ -100,7 +102,7 @@
     <string name="settings_storage">Speicher</string>
     <string name="settings_storage_subtitle">Erstellte Dateien anzeigen</string>
     <string name="settings_about">Über die App</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">Sprache auswählen</string>
     <string name="settings_select_language_subtitle">Wird auf die gesamte App angewendet.</string>
     <string name="settings_close">Schließen</string>
@@ -127,7 +129,7 @@
     <string name="settings_section_system">System</string>
     <string name="settings_reset">Einstellungen zurücksetzen</string>
     <string name="settings_reset_subtitle">Auf Standardwerte zurücksetzen</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">Verstanden</string>
     <string name="settings_storage_conversions">Konvertierungen</string>
     <string name="settings_storage_viewer_share">Mit Anmerkungen geteilt</string>
@@ -147,6 +149,7 @@
     <string name="settings_help_a4">Ja. Die gesamte Verarbeitung erfolgt lokal. Keine Datei verlässt dein Gerät.</string>
     <string name="settings_reset_body">Design, Akzentfarbe, Schriftgröße, animierter Hintergrund, Soundeffekte und Sprache werden auf die Standardwerte zurückgesetzt, und der Cache der generierten Dateien wird geleert. Deine Dokumente werden nicht gelöscht. Fortfahren?</string>
     <string name="settings_reset_confirm">Zurücksetzen</string>
+    <string name="settings_reset_error">Die Einstellungen konnten nicht zurückgesetzt werden.</string>
     <string name="settings_about_dialog_title">Über DocuSmart</string>
     <string name="settings_about_body">Intelligenter Dokumentenbetrachter und -konverter. Verwalte, konvertiere und organisiere deine Dateien schnell und sicher.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

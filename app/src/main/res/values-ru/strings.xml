@@ -37,6 +37,8 @@
     <string name="library_title">Библиотека</string>
     <string name="library_subtitle">Все ваши документы</string>
     <string name="library_search">Поиск в библиотеке…</string>
+    <string name="search_bar_icon_desc">Поиск</string>
+    <string name="search_bar_clear_desc">Очистить</string>
     <string name="library_documents">документов</string>
     <string name="library_document_count">%1$d документов</string>
     <string name="library_search_results_count">Результатов: %1$d по запросу «%2$s»</string>
@@ -100,7 +102,7 @@
     <string name="settings_storage">Хранилище</string>
     <string name="settings_storage_subtitle">Просмотр созданных файлов</string>
     <string name="settings_about">О приложении</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">Выбрать язык</string>
     <string name="settings_select_language_subtitle">Будет применено ко всему приложению.</string>
     <string name="settings_close">Закрыть</string>
@@ -127,7 +129,7 @@
     <string name="settings_section_system">Система</string>
     <string name="settings_reset">Сбросить настройки</string>
     <string name="settings_reset_subtitle">Вернуть значения по умолчанию</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">Понятно</string>
     <string name="settings_storage_conversions">Конвертации</string>
     <string name="settings_storage_viewer_share">Отправлено с аннотациями</string>
@@ -147,6 +149,7 @@
     <string name="settings_help_a4">Да. Вся обработка выполняется локально. Ни один файл не покидает ваше устройство.</string>
     <string name="settings_reset_body">Тема, акцентный цвет, размер шрифта, анимированный фон, звуковые эффекты и язык будут сброшены к значениям по умолчанию, а кэш созданных файлов будет очищен. Ваши документы не будут удалены. Продолжить?</string>
     <string name="settings_reset_confirm">Сбросить</string>
+    <string name="settings_reset_error">Не удалось сбросить настройки.</string>
     <string name="settings_about_dialog_title">О DocuSmart</string>
     <string name="settings_about_body">Умный просмотрщик и конвертер документов. Управляйте, конвертируйте и организуйте файлы быстро и безопасно.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

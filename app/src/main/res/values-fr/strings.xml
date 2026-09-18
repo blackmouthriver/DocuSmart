@@ -37,6 +37,8 @@
     <string name="library_title">Bibliothèque</string>
     <string name="library_subtitle">Tous tes documents</string>
     <string name="library_search">Rechercher dans la bibliothèque…</string>
+    <string name="search_bar_icon_desc">Rechercher</string>
+    <string name="search_bar_clear_desc">Effacer</string>
     <string name="library_documents">documents</string>
     <string name="library_document_count">%1$d documents</string>
     <string name="library_search_results_count">%1$d résultats pour « %2$s »</string>
@@ -103,7 +105,7 @@
     <string name="settings_storage">Stockage</string>
     <string name="settings_storage_subtitle">Voir les fichiers générés</string>
     <string name="settings_about">À propos</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">Choisir la langue</string>
     <string name="settings_select_language_subtitle">S\'appliquera à toute l\'application.</string>
     <string name="settings_close">Fermer</string>
@@ -130,7 +132,7 @@
     <string name="settings_section_system">Système</string>
     <string name="settings_reset">Réinitialiser la configuration</string>
     <string name="settings_reset_subtitle">Revenir aux valeurs par défaut</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">Compris</string>
     <string name="settings_storage_conversions">Conversions</string>
     <string name="settings_storage_viewer_share">Partagé avec annotations</string>
@@ -150,6 +152,7 @@
     <string name="settings_help_a4">Oui. Tout le traitement est local. Aucun fichier ne quitte ton appareil.</string>
     <string name="settings_reset_body">Le thème, la couleur d\'accent, la taille de police, le fond animé, les effets sonores et la langue seront réinitialisés à leurs valeurs par défaut, et le cache des fichiers générés sera vidé. Vos documents ne seront pas supprimés. Continuer ?</string>
     <string name="settings_reset_confirm">Réinitialiser</string>
+    <string name="settings_reset_error">Impossible de réinitialiser les paramètres.</string>
     <string name="settings_about_dialog_title">À propos de DocuSmart</string>
     <string name="settings_about_body">Visionneuse et convertisseur intelligent de documents. Gère, convertis et organise tes fichiers rapidement et en toute sécurité.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

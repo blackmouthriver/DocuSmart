@@ -37,6 +37,8 @@
     <string name="library_title">Biblioteca</string>
     <string name="library_subtitle">Tots els teus documents</string>
     <string name="library_search">Cerca a la biblioteca…</string>
+    <string name="search_bar_icon_desc">Cerca</string>
+    <string name="search_bar_clear_desc">Neteja</string>
     <string name="library_documents">documents</string>
     <string name="library_document_count">%1$d documents</string>
     <string name="library_search_results_count">%1$d resultats per a \"%2$s\"</string>
@@ -101,7 +103,7 @@
     <string name="settings_storage">Emmagatzematge</string>
     <string name="settings_storage_subtitle">Veure arxius generats</string>
     <string name="settings_about">Quant a</string>
-    <string name="settings_about_subtitle">DocuSmart v1.0.0</string>
+    <string name="settings_about_subtitle">DocuSmart</string>
     <string name="settings_select_language">Seleccionar idioma</string>
     <string name="settings_select_language_subtitle">S\'aplicarà a tota l\'aplicació.</string>
     <string name="settings_close">Tancar</string>
@@ -138,7 +140,7 @@
     <string name="settings_section_system">Sistema</string>
     <string name="settings_reset">Restablir configuració</string>
     <string name="settings_reset_subtitle">Tornar als valors predeterminats</string>
-    <string name="settings_about_subtitle_full">DocuSmart v1.0.0 · mouthblack technology</string>
+    <string name="settings_about_subtitle_full">DocuSmart · mouthblack technology</string>
     <string name="settings_got_it">Entès</string>
     <string name="settings_storage_conversions">Conversions</string>
     <string name="settings_storage_viewer_share">Compartit amb anotacions</string>
@@ -158,6 +160,7 @@
     <string name="settings_help_a4">Sí. Tot el processament és local. Cap arxiu surt del teu dispositiu.</string>
     <string name="settings_reset_body">El tema, el color d\'accent, la mida de lletra, el fons animat, els efectes de so i l\'idioma es restabliran als valors predeterminats, i s\'esborrarà la memòria cau dels fitxers generats. Els teus documents no s\'eliminaran. Continuar?</string>
     <string name="settings_reset_confirm">Restablir</string>
+    <string name="settings_reset_error">No s\'ha pogut restablir la configuració.</string>
     <string name="settings_about_dialog_title">Quant a DocuSmart</string>
     <string name="settings_about_body">Visor i convertidor intel·ligent de documents. Gestiona, converteix i organitza els teus arxius de forma ràpida i segura.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>

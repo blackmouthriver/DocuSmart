@@ -2,6 +2,9 @@ package com.docsmart.core.billing
 
 import android.app.Activity
 import android.content.Context
+import android.os.SystemClock
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.BillingClient
@@ -16,6 +19,7 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import com.docsmart.core.premium.PremiumManager
+import com.docsmart.core.util.AppLifecycleTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -71,13 +75,27 @@ data class PlanOffer(val price: String, val trialDays: Int? = null)
 @Singleton
 class BillingManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val premiumManager: PremiumManager
+    private val premiumManager: PremiumManager,
+    private val appLifecycleTracker: AppLifecycleTracker
 ) {
     companion object {
         const val PRODUCT_MONTHLY  = "com.docsmart.premium.monthly"
         const val PRODUCT_ANNUAL   = "com.docsmart.premium.annual"
         private val SUBSCRIPTION_PRODUCT_IDS = listOf(PRODUCT_MONTHLY, PRODUCT_ANNUAL)
         private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
+        // Hallazgo real de la auditoría general 2026-09-17 (séptima
+        // ronda, Alta -- M1): restorePurchases() antes solo corría en la
+        // conexión inicial del BillingClient, y BillingManager (Singleton
+        // de Hilt) solo se construía la primera vez que algo lo inyectaba
+        // -- el único punto de inyección era PremiumViewModel (la
+        // pantalla Premium). Un usuario que cancelaba/pedía reembolso y
+        // no volvía a abrir esa pantalla seguía viéndose Premium
+        // indefinidamente, incluso entre reinicios de proceso (ver
+        // DocuSmartApplication, ahora inyecta este Singleton en
+        // onCreate()). Este throttle evita reconsultar Play Billing en
+        // cada ON_START real de la app (cambiar de app y volver), sin
+        // dejar pasar más de 4h sin revalidar mientras la app siga en uso.
+        private const val REVALIDATE_THROTTLE_MS = 4 * 60 * 60 * 1000L
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -94,6 +112,15 @@ class BillingManager @Inject constructor(
     val planOffers: StateFlow<Map<String, PlanOffer>> = _planOffers.asStateFlow()
 
     private var productDetailsCache: Map<String, com.android.billingclient.api.ProductDetails> = emptyMap()
+    // Hallazgo real de la revisión adversarial de esta misma ronda: al
+    // principio se fijaba en `init{}` de forma incondicional, antes de
+    // saber si `startConnection()` realmente iba a lograr conectar --
+    // si la primera conexión fallaba (sin red, Play Store no disponible),
+    // el throttle quedaba "gastado" sin haber revalidado nada, bloqueando
+    // el mecanismo de respaldo de ON_START hasta por 4h. `null` significa
+    // "todavía nunca se completó un intento real", y en ese estado el
+    // throttle no bloquea nada.
+    private var lastRestoreCheckElapsedMs: Long? = null
 
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
         when (billingResult.responseCode) {
@@ -127,6 +154,7 @@ class BillingManager @Inject constructor(
                 Timber.d("BillingManager: conexión lista=$ready (${billingResult.debugMessage})")
                 if (!readyDeferred.isCompleted) readyDeferred.complete(ready)
                 if (ready) {
+                    lastRestoreCheckElapsedMs = SystemClock.elapsedRealtime()
                     scope.launch {
                         queryProductDetails()
                         restorePurchases()
@@ -137,6 +165,14 @@ class BillingManager @Inject constructor(
             override fun onBillingServiceDisconnected() {
                 Timber.w("BillingManager: servicio desconectado (reconexión automática habilitada)")
             }
+        })
+        appLifecycleTracker.addObserver(LifecycleEventObserver { _, event ->
+            if (event != Lifecycle.Event.ON_START) return@LifecycleEventObserver
+            val now = SystemClock.elapsedRealtime()
+            val last = lastRestoreCheckElapsedMs
+            if (last != null && now - last < REVALIDATE_THROTTLE_MS) return@LifecycleEventObserver
+            lastRestoreCheckElapsedMs = now
+            scope.launch { restorePurchases() }
         })
     }
 
