@@ -527,7 +527,7 @@ dependencies {
     implementation("com.google.firebase:firebase-config")
 
     // ── Testing ───────────────────────────────────────────────────────────────
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("app.cash.turbine:turbine:1.2.1")
