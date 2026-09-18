@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.core.ui.theme.DocuBlue
@@ -34,7 +35,9 @@ fun DocuSmartCard(
             .background(MaterialTheme.colorScheme.surface)
             .accentBorder(shape = shape)
             .then(
-                if (onClick != null) Modifier.clickable { onClick() }
+                // H23 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+                // role, TalkBack no anunciaba esta tarjeta como accionable.
+                if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick)
                 else Modifier
             )
     ) {
@@ -64,7 +67,10 @@ fun  DocuSmartQuickAccessCard(
             .clip(shape)
             .background(backgroundColor)
             .accentBorder(shape = shape)
-            .clickable { onClick() }
+            // H2 (auditoría de accesibilidad TalkBack 2026-09-18): sin role,
+            // TalkBack no anunciaba las 9 tarjetas de acceso rápido de Inicio
+            // como accionables.
+            .clickable(role = Role.Button, onClick = onClick)
     ) {
         Column(
             modifier = Modifier
@@ -127,7 +133,9 @@ fun DocuSmartToolCard(
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
             .accentBorder(shape = shape)
-            .clickable { onClick() }
+            // H23 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+            // role, TalkBack no anunciaba esta tarjeta como accionable.
+            .clickable(role = Role.Button, onClick = onClick)
     ) {
         Row(
             modifier = Modifier

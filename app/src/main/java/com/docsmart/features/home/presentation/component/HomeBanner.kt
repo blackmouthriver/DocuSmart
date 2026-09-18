@@ -85,7 +85,11 @@ fun HomeBanner(
                 ) {
                     Image(
                         painter            = painterResource(R.drawable.ic_docusmart_logo),
-                        contentDescription = "DocuSmart",
+                        // H1 (auditoría de accesibilidad TalkBack 2026-09-18):
+                        // el texto visible "Docu"+"Smart" de al lado ya dice
+                        // "DocuSmart" -- con contentDescription acá, TalkBack
+                        // anunciaba el nombre 3 veces seguidas (logo + 2 Text).
+                        contentDescription = null,
                         modifier           = Modifier
                             .size(30.dp)
                             .padding(2.dp)

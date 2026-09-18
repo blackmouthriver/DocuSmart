@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import com.docsmart.core.data.db.AgendaEventEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -71,8 +72,19 @@ class ReminderScheduler @Inject constructor(
     // (solo componente/acción/datos/categorías) -- por eso cancel() puede
     // pasar un título vacío y sigue matcheando el mismo PendingIntent que se
     // programó con el título real.
+    //
+    // Hallazgo real de la auditoría de Agenda 2026-09-18 (Media): el
+    // requestCode era `eventId.hashCode()` (32 bits) sin `data` propio -- dos
+    // eventos distintos cuyo hashCode colisionara compartían el mismo
+    // PendingIntent, y FLAG_UPDATE_CURRENT reemplazaba en silencio la alarma
+    // del primero por la del segundo. Mismo fix ya aplicado en
+    // AgendaReminderReceiver.showNotification() para su propio PendingIntent:
+    // `setData()` con una Uri única por eventId vuelve al Intent siempre
+    // distinto (data SÍ es parte de la igualdad de un PendingIntent), sin
+    // depender de que el requestCode nunca choque.
     private fun reminderPendingIntent(eventId: String, title: String): PendingIntent {
         val intent = Intent(context, AgendaReminderReceiver::class.java).apply {
+            data = Uri.parse("docusmart://agenda-reminder/$eventId")
             putExtra(EXTRA_EVENT_ID, eventId)
             putExtra(EXTRA_EVENT_TITLE, title)
         }

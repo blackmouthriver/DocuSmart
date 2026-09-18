@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,6 +31,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -357,7 +360,10 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
+                            // H14 (auditoría de accesibilidad TalkBack
+                            // 2026-09-18): sin role, TalkBack no anunciaba
+                            // esta fila como accionable.
+                            .clickable(role = Role.Button) {
                                 showPrivacyDialog = false
                                 openAppSettings(context)
                             }
@@ -646,14 +652,25 @@ fun SettingsScreen(
                     val label = accentColorLabel(accent)
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            // H13 (auditoría de accesibilidad TalkBack
+                            // 2026-09-18): 40dp -> 48dp, mínimo táctil
+                            // recomendado de Android.
+                            .size(48.dp)
                             .background(accent.swatch, shape = CircleShape)
                             // Antes no tenía ninguna etiqueta accesible (ni
                             // texto ni contentDescription) -- ni TalkBack ni
                             // un test de Compose podían identificar qué color
                             // era cada círculo, solo la posición.
                             .semantics { contentDescription = label }
-                            .clickable { themeManager.setAccentColor(accent) },
+                            // H13: `.clickable{}` puro no comunicaba el
+                            // estado seleccionado -- `selectable` con
+                            // Role.RadioButton (son 10 opciones mutuamente
+                            // excluyentes) sí lo anuncia.
+                            .selectable(
+                                selected = selected,
+                                role     = Role.RadioButton,
+                                onClick  = { themeManager.setAccentColor(accent) }
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         if (selected) {
@@ -704,7 +721,17 @@ fun SettingsScreen(
     @Composable
     fun AppearanceToggleRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         Row(
-            modifier              = Modifier.fillMaxWidth(),
+            // H15 (auditoría de accesibilidad TalkBack 2026-09-18): el
+            // Switch era un nodo separado del texto -- envolver toda la fila
+            // en `toggleable` fusiona ambos en un solo nodo accionable con
+            // el estado on/off anunciado.
+            modifier              = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value    = checked,
+                    role     = Role.Switch,
+                    onValueChange = onCheckedChange
+                ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment     = Alignment.CenterVertically
         ) {
@@ -716,7 +743,10 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
+            // `onCheckedChange = null`: el toque ya lo capta `toggleable` en
+            // la fila completa -- si el Switch también lo capturara, tocar
+            // el texto no togglearía nada y TalkBack anunciaría dos nodos.
+            Switch(checked = checked, onCheckedChange = null)
         }
     }
 
@@ -726,7 +756,9 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .clickable(onClick = onClick),
+                // H14 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+                // role, TalkBack no anunciaba esta fila como accionable.
+                .clickable(role = Role.Button, onClick = onClick),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment     = Alignment.CenterVertically
         ) {
@@ -827,7 +859,10 @@ fun SettingsScreen(
         // ── Premium card ──────────────────────────────────────────────────────
         item {
             Card(
-                modifier  = Modifier.fillMaxWidth().clickable { onPremiumClick() },
+                // H14 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+                // role, TalkBack no anunciaba la tarjeta Premium como
+                // accionable.
+                modifier  = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onPremiumClick),
                 shape     = MaterialTheme.shapes.large,
                 colors    = CardDefaults.cardColors(
                     containerColor = PremiumGold.copy(alpha = 0.1f)
@@ -1043,7 +1078,9 @@ private fun SettingsItem(
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
             .accentBorder(shape = shape)
-            .clickable { onClick() }
+            // H14 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+            // role, TalkBack no anunciaba estos 9 ítems como accionables.
+            .clickable(role = Role.Button, onClick = onClick)
     ) {
         Row(
             modifier              = Modifier.fillMaxWidth().padding(16.dp),

@@ -61,14 +61,25 @@ class BillingManagerTest {
         assertEquals(RestoreOutcome.NothingOwned, outcome)
     }
 
+    // Hallazgo 3 de la auditoría de monetización 2026-09-18 (Media): esta
+    // aserción codificaba el bug real -- antes, una compra PENDING (pago en
+    // efectivo/transferencia, método común en Latinoamérica que tarda en
+    // confirmarse) que reaparecía en una revalidación posterior se trataba
+    // exactamente igual que "el usuario nunca compró nada", desactivando
+    // Premium y mostrando "no se encontraron compras" en vez de indicar que
+    // el pago sigue en trámite. Corregido para devolver `RestoreOutcome.Pending`
+    // en vez de `NothingOwned` (ver el nuevo test más abajo).
     @Test
-    fun `una consulta exitosa con solo compras pendientes se trata como que no hay nada que restaurar`() {
+    fun `una consulta exitosa con solo compras pendientes se trata como pendiente, no como que no hay nada`() {
+        val pending = purchaseOf(Purchase.PurchaseState.PENDING)
+
         val outcome = evaluateRestoreOutcome(
             responseCode = BillingClient.BillingResponseCode.OK,
-            purchasesList = listOf(purchaseOf(Purchase.PurchaseState.PENDING))
+            purchasesList = listOf(pending)
         )
 
-        assertEquals(RestoreOutcome.NothingOwned, outcome)
+        assertTrue(outcome is RestoreOutcome.Pending)
+        assertEquals(listOf(pending), (outcome as RestoreOutcome.Pending).purchases)
     }
 
     @Test

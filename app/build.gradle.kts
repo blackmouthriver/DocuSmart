@@ -21,6 +21,9 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.kover)
     jacoco
     // Bug real corregido 2026-09-03: google-services.json ya estaba en el
     // repo y las dependencias de Firebase Analytics/Crashlytics ya estaban
@@ -180,6 +183,60 @@ detekt {
 
 jacoco {
     toolVersion = "0.8.12"
+}
+
+// ktlint (estilo de código Kotlin) -- agregado al gauntlet por pedido
+// explícito del usuario (2026-09-18), en paralelo a detekt (que cubre
+// reglas de calidad/complejidad, no de formato). `ktlintCheck` no
+// modifica archivos; `ktlintFormat` sí autoformatea.
+ktlint {
+    android.set(true)
+    ignoreFailures.set(false)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+    }
+}
+
+// Spotless (formato general, incluye los propios *.gradle.kts) -- agregado
+// al gauntlet por pedido explícito del usuario (2026-09-18). El bloque
+// `kotlin{}` reutiliza el motor de ktlint (mismo criterio que el plugin de
+// arriba) para no divergir en reglas entre ambas herramientas; `spotlessApply`
+// autoformatea, `spotlessCheck` solo valida (es lo que entra al gauntlet).
+spotless {
+    kotlin {
+        target("src/**/*.kt")
+        targetExclude("**/build/**/*.kt")
+        ktlint()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("*.gradle.kts")
+        ktlint()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+// Kover (cobertura vía el compilador de Kotlin, no JaCoCo) -- agregado al
+// gauntlet por pedido explícito del usuario (2026-09-18), en paralelo al
+// `jacocoTestReport` ya wireado a SonarCloud más abajo (no lo reemplaza).
+// `koverXmlReport`/`koverHtmlReport`/`koverVerify` corren independientes,
+// mismos filtros de exclusión que jacocoTestReport para no contar código
+// generado (Hilt/Dagger/KSP, R, BuildConfig) como cobertura real.
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "*.R", "*.R\$*", "*.BuildConfig", "*Test*",
+                    "*Hilt_*", "*_Factory", "*_MembersInjector",
+                    "*Module_*Factory", "*_HiltModules*", "*.di.*"
+                )
+            }
+        }
+    }
 }
 
 // Hallazgo SonarCloud text:S8569: sin lock file, dos builds del mismo commit

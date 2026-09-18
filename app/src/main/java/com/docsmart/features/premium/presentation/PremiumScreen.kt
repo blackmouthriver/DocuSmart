@@ -143,6 +143,20 @@ fun PremiumScreen(
                 }
             }
 
+            // ── Aviso persistente de compra pendiente ─
+            // Hallazgo 3 (auditoría monetización 2026-09-18, Media): antes de
+            // esto, una compra PENDING (pago en efectivo/transferencia, común
+            // en Latinoamérica) que seguía pendiente en una revalidación
+            // posterior se descartaba como "sin compras" -- ahora
+            // isPendingPurchase persiste en el estado (ver PremiumViewModel)
+            // y se muestra acá mientras dure, en vez de solo en el snackbar
+            // transitorio del momento en que se detectó.
+            if (uiState.isPendingPurchase) {
+                item {
+                    PremiumPendingCard()
+                }
+            }
+
             // ── Lista de funciones ────────────────────
             item {
                 PremiumFeatureList(
@@ -329,6 +343,51 @@ private fun PremiumActiveCard(onClose: () -> Unit, trialEndsAtMillis: Long? = nu
                 Text(
                     text = stringResource(R.string.premium_continue),
                     style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+}
+
+// ── Card de aviso persistente: compra pendiente de confirmación ──
+// Hallazgo 3 (auditoría monetización 2026-09-18, Media): estilo deliberadamente
+// distinto de PremiumActiveCard (tertiaryContainer en vez de primaryContainer)
+// para que no se confunda visualmente con "ya sos Premium" -- el usuario
+// todavía no tiene acceso, solo está esperando la confirmación del pago.
+@Composable
+private fun PremiumPendingCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Schedule,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.premium_pending_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+                Text(
+                    text = stringResource(R.string.premium_pending_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
                 )
             }
         }

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="converter_image_position_a11y">Bild %1$d von %2$d</string>
+</resources>

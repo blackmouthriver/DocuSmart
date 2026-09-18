@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -94,6 +95,11 @@ class PdfToTextUseCase @Inject constructor(
                 pageCount = pageCount,
                 fileSizeKb = (outputFile.length() / 1024).toInt()
             )
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+            // en ConvertImageToPdfUseCase.kt. La limpieza de cacheFile sigue
+            // corriendo igual vía el `finally` de abajo.
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error extrayendo texto del PDF")
             ConversionResult.Error(

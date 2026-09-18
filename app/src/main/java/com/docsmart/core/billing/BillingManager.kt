@@ -22,10 +22,12 @@ import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.util.AppLifecycleTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -34,6 +36,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -97,10 +100,29 @@ class BillingManager @Inject constructor(
         // cada ON_START real de la app (cambiar de app y volver), sin
         // dejar pasar más de 4h sin revalidar mientras la app siga en uso.
         private const val REVALIDATE_THROTTLE_MS = 4 * 60 * 60 * 1000L
+        // Hallazgo 5 (auditoría monetización 2026-09-18, Baja): un solo
+        // reintento inmediato tras un delay corto -- no vale la pena un
+        // backoff más elaborado para un fallo puntual de acknowledgePurchase()
+        // (red intermitente), pero tampoco hay que dejar la compra sin
+        // confirmar para siempre sin al menos un segundo intento.
+        private const val ACK_RETRY_DELAY_MS = 1500L
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val readyDeferred = CompletableDeferred<Boolean>()
+    // Hallazgo 1 (auditoría monetización 2026-09-18, Alta): antes era un
+    // `val` -- un CompletableDeferred solo puede completarse UNA VEZ, así que
+    // si la primerísima conexión con Play Billing fallaba (sin red,
+    // BILLING_UNAVAILABLE), quedaba fijado en `false` para siempre y
+    // restorePurchases() (readyDeferred.await()) cortaba con error
+    // indefinidamente, incluso si enableAutoServiceReconnection() lograba
+    // reconectar después y onBillingSetupFinished volvía a llamarse con
+    // ready=true -- esa segunda finalización se ignoraba silenciosamente
+    // (`if (!readyDeferred.isCompleted)`). Ahora es un `var`: ver
+    // completeReady() más abajo, que reemplaza el Deferred por uno nuevo
+    // cuando el actual ya estaba resuelto, para que awaits posteriores
+    // reflejen el estado ACTUAL de conexión y no uno cacheado del pasado.
+    @Volatile
+    private var readyDeferred = CompletableDeferred<Boolean>()
 
     private val _purchaseResult = MutableSharedFlow<PurchaseResult>()
     val purchaseResult: SharedFlow<PurchaseResult> = _purchaseResult.asSharedFlow()
@@ -122,6 +144,15 @@ class BillingManager @Inject constructor(
     // "todavía nunca se completó un intento real", y en ese estado el
     // throttle no bloquea nada.
     private var lastRestoreCheckElapsedMs: Long? = null
+
+    // Hallazgo 6 (auditoría monetización 2026-09-18, Baja): en una carrera
+    // estrecha entre purchasesUpdatedListener (compra recién hecha) y una
+    // revalidación de ON_START simultánea, la misma compra podía procesarse
+    // dos veces antes de que isAcknowledged pasara a true, duplicando el
+    // evento de conversión. Se deduplica por purchaseToken en memoria --
+    // alcanza para el proceso actual, no necesita persistir entre reinicios
+    // porque isAcknowledged ya cubre esa ventana más larga.
+    private val loggedPurchaseTokens = ConcurrentHashMap.newKeySet<String>()
 
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
         when (billingResult.responseCode) {
@@ -153,7 +184,7 @@ class BillingManager @Inject constructor(
             override fun onBillingSetupFinished(billingResult: BillingResult) {
                 val ready = billingResult.responseCode == BillingClient.BillingResponseCode.OK
                 Timber.d("BillingManager: conexión lista=$ready (${billingResult.debugMessage})")
-                if (!readyDeferred.isCompleted) readyDeferred.complete(ready)
+                completeReady(ready)
                 if (ready) {
                     lastRestoreCheckElapsedMs = SystemClock.elapsedRealtime()
                     scope.launch {
@@ -177,22 +208,54 @@ class BillingManager @Inject constructor(
         })
     }
 
+    // Hallazgo 1: si el Deferred actual ya estaba resuelto (típicamente en
+    // `false`, de un intento de conexión anterior fallido), no tiene sentido
+    // "completarlo" de nuevo -- Play Billing simplemente ignora esa segunda
+    // llamada. Se reemplaza por un Deferred nuevo ya resuelto con el
+    // resultado ACTUAL, para que cualquier await() posterior (restorePurchases()
+    // llamado después de este punto) vea el estado real de la conexión en
+    // vez de quedar pegado al primer resultado cacheado para siempre.
+    // `synchronized` porque Play Billing puede invocar onBillingSetupFinished
+    // desde su propio hilo interno, y esto se lee/escribe también desde las
+    // corrutinas de `scope` (Dispatchers.IO).
+    private fun completeReady(ready: Boolean) = synchronized(this) {
+        val current = readyDeferred
+        if (current.isCompleted) {
+            readyDeferred = CompletableDeferred<Boolean>().apply { complete(ready) }
+        } else {
+            current.complete(ready)
+        }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun queryProductDetails() {
-        val subsParams = QueryProductDetailsParams.newBuilder()
-            .setProductList(SUBSCRIPTION_PRODUCT_IDS.map {
-                QueryProductDetailsParams.Product.newBuilder()
-                    .setProductId(it)
-                    .setProductType(BillingClient.ProductType.SUBS)
-                    .build()
-            })
-            .build()
+        try {
+            val subsParams = QueryProductDetailsParams.newBuilder()
+                .setProductList(SUBSCRIPTION_PRODUCT_IDS.map {
+                    QueryProductDetailsParams.Product.newBuilder()
+                        .setProductId(it)
+                        .setProductType(BillingClient.ProductType.SUBS)
+                        .build()
+                })
+                .build()
 
-        val subsResult = billingClient.queryProductDetails(subsParams)
-        val allDetails = subsResult.productDetailsList.orEmpty()
+            val subsResult = billingClient.queryProductDetails(subsParams)
+            val allDetails = subsResult.productDetailsList.orEmpty()
 
-        productDetailsCache = allDetails.associateBy { it.productId }
-        _planOffers.value = allDetails.associate { it.productId to planOfferOf(it) }
-        Timber.d("BillingManager: ${productDetailsCache.size} productos encontrados en Play Console")
+            productDetailsCache = allDetails.associateBy { it.productId }
+            _planOffers.value = allDetails.associate { it.productId to planOfferOf(it) }
+            Timber.d("BillingManager: ${productDetailsCache.size} productos encontrados en Play Console")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Hallazgo 2 (auditoría monetización 2026-09-18, Media): esta
+            // corrutina corre en `scope` (SupervisorJob, sin manejador de
+            // excepciones) desde DocuSmartApplication.onCreate() -- una
+            // excepción real de Play Billing acá (no solo un
+            // BillingResponseCode de error) tumbaba el proceso entero para
+            // cualquier usuario, no solo en la pantalla Premium.
+            Timber.e(e, "BillingManager: excepción al consultar productos de Play Billing")
+        }
     }
 
     // HU-54: si Play Console tiene configurada una fase de prueba gratuita
@@ -242,6 +305,7 @@ class BillingManager @Inject constructor(
             .build()
     }
 
+    @Suppress("TooGenericExceptionCaught")
     suspend fun restorePurchases() {
         // Bug real corregido 2026-09-08: antes se llamaba a
         // queryPurchasesAsync() sin esperar a que la conexión con Play
@@ -256,37 +320,65 @@ class BillingManager @Inject constructor(
             return
         }
 
-        val subs = billingClient.queryPurchasesAsync(
-            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
-        )
+        try {
+            val subs = billingClient.queryPurchasesAsync(
+                QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
+            )
 
-        // Bug real corregido 2026-09-08: antes no se revisaba si la consulta
-        // en sí había fallado (sin red, servicio de Play Store caído, etc.)
-        // -- una consulta fallida devuelve `purchasesList` vacía, exactamente
-        // igual que "el usuario genuinamente no tiene compras", así que esta
-        // función desactivaba Premium a un usuario que sí había pagado, cada
-        // vez que la app arranca (esto corre automáticamente en cada inicio,
-        // no solo al tocar "Restaurar compras"). `evaluateRestoreOutcome()`
-        // deja esa decisión como función pura testeable (ver BillingManagerTest)
-        // para que este bug no pueda reaparecer sin que un test lo detecte.
-        when (val outcome = evaluateRestoreOutcome(subs.billingResult.responseCode, subs.purchasesList)) {
-            RestoreOutcome.QueryFailed -> {
-                Timber.w(
-                    "BillingManager: restorePurchases() -- la consulta falló, no se toca el estado " +
-                        "Premium actual (${subs.billingResult.debugMessage})"
-                )
-                emitResult(PurchaseResult.Error(subs.billingResult.debugMessage))
+            // Bug real corregido 2026-09-08: antes no se revisaba si la consulta
+            // en sí había fallado (sin red, servicio de Play Store caído, etc.)
+            // -- una consulta fallida devuelve `purchasesList` vacía, exactamente
+            // igual que "el usuario genuinamente no tiene compras", así que esta
+            // función desactivaba Premium a un usuario que sí había pagado, cada
+            // vez que la app arranca (esto corre automáticamente en cada inicio,
+            // no solo al tocar "Restaurar compras"). `evaluateRestoreOutcome()`
+            // deja esa decisión como función pura testeable (ver BillingManagerTest)
+            // para que este bug no pueda reaparecer sin que un test lo detecte.
+            when (val outcome = evaluateRestoreOutcome(subs.billingResult.responseCode, subs.purchasesList)) {
+                RestoreOutcome.QueryFailed -> {
+                    Timber.w(
+                        "BillingManager: restorePurchases() -- la consulta falló, no se toca el estado " +
+                            "Premium actual (${subs.billingResult.debugMessage})"
+                    )
+                    emitResult(PurchaseResult.Error(subs.billingResult.debugMessage))
+                }
+                RestoreOutcome.NothingOwned -> {
+                    premiumManager.deactivatePremium()
+                    emitResult(PurchaseResult.NoPurchasesToRestore)
+                }
+                is RestoreOutcome.Owned -> {
+                    outcome.purchases.forEach { handlePurchase(it, isRestore = true) }
+                }
+                is RestoreOutcome.Pending -> {
+                    // Hallazgo 3 (auditoría monetización 2026-09-18, Media):
+                    // antes evaluateRestoreOutcome() no distinguía "pendiente"
+                    // de "sin compras" -- cualquier apertura posterior de la
+                    // app con la compra todavía PENDING (pago en efectivo o
+                    // transferencia, método común en Latinoamérica que tarda
+                    // en confirmarse) la descartaba como NothingOwned,
+                    // desactivando Premium innecesariamente y mostrándole al
+                    // usuario "no se encontraron compras" en vez de indicar
+                    // que su pago sigue en trámite. No se llama a
+                    // deactivatePremium() acá: una compra pendiente nunca
+                    // activó Premium (ver handlePurchase, rama PENDING), así
+                    // que no hay nada que desactivar -- solo se evita el
+                    // mensaje engañoso de "sin compras".
+                    Timber.d("BillingManager: restorePurchases() -- compra(s) pendiente(s) de confirmación")
+                    emitResult(PurchaseResult.Pending)
+                }
             }
-            RestoreOutcome.NothingOwned -> {
-                premiumManager.deactivatePremium()
-                emitResult(PurchaseResult.NoPurchasesToRestore)
-            }
-            is RestoreOutcome.Owned -> {
-                outcome.purchases.forEach { handlePurchase(it, isRestore = true) }
-            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Hallazgo 2 (auditoría monetización 2026-09-18, Media): ver
+            // mismo razonamiento en queryProductDetails() -- una excepción
+            // real acá corría el riesgo de tumbar el proceso completo.
+            Timber.e(e, "BillingManager: excepción al restaurar compras")
+            emitResult(PurchaseResult.Error(e.message ?: "Error al restaurar compras"))
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun handlePurchase(purchase: Purchase, isRestore: Boolean = false) {
         when (purchase.purchaseState) {
             Purchase.PurchaseState.PURCHASED -> {
@@ -315,17 +407,24 @@ class BillingManager @Inject constructor(
                 // más abajo -- una vez confirmada la compra, cualquier
                 // reentrega posterior llega con `isAcknowledged=true` y
                 // ya no debe contarse de nuevo.
-                if (!isRestore && !purchase.isAcknowledged) {
+                if (!isRestore && !purchase.isAcknowledged && loggedPurchaseTokens.add(purchase.purchaseToken)) {
                     DocuSmartAnalytics.logPremiumPurchaseSuccess(purchase.products.firstOrNull().orEmpty())
                 }
                 if (!purchase.isAcknowledged) {
                     scope.launch {
-                        val ackParams = AcknowledgePurchaseParams.newBuilder()
-                            .setPurchaseToken(purchase.purchaseToken)
-                            .build()
-                        val ackResult = billingClient.acknowledgePurchase(ackParams)
-                        if (ackResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                            Timber.e("BillingManager: no se pudo confirmar la compra — ${ackResult.debugMessage}")
+                        try {
+                            val ackResult = acknowledgePurchaseWithRetry(purchase)
+                            if (ackResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                                Timber.e(
+                                    "BillingManager: no se pudo confirmar la compra tras reintento — " +
+                                        ackResult.debugMessage
+                                )
+                            }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            // Hallazgo 2: idem queryProductDetails()/restorePurchases().
+                            Timber.e(e, "BillingManager: excepción al confirmar la compra")
                         }
                     }
                 }
@@ -338,6 +437,24 @@ class BillingManager @Inject constructor(
                 if (!isRestore) emitResult(PurchaseResult.Error("Estado de compra desconocido"))
             }
         }
+    }
+
+    // Hallazgo 5 (auditoría monetización 2026-09-18, Baja): antes un fallo
+    // de acknowledgePurchase() (red intermitente) se registraba y se
+    // abandonaba -- Play Billing revierte automáticamente una compra no
+    // confirmada a los 3 días, así que un usuario con mala señal justo en
+    // ese momento podía perder la compra sin ningún reintento. Un solo
+    // reintento inmediato tras un delay corto cubre el caso común sin
+    // complicar la lógica con un backoff completo.
+    private suspend fun acknowledgePurchaseWithRetry(purchase: Purchase): BillingResult {
+        val ackParams = AcknowledgePurchaseParams.newBuilder()
+            .setPurchaseToken(purchase.purchaseToken)
+            .build()
+        val first = billingClient.acknowledgePurchase(ackParams)
+        if (first.responseCode == BillingClient.BillingResponseCode.OK) return first
+        Timber.w("BillingManager: acknowledgePurchase() falló (${first.debugMessage}), reintentando una vez...")
+        delay(ACK_RETRY_DELAY_MS)
+        return billingClient.acknowledgePurchase(ackParams)
     }
 
     private fun emitResult(result: PurchaseResult) {
@@ -389,10 +506,21 @@ internal sealed interface RestoreOutcome {
     data object QueryFailed : RestoreOutcome
     data object NothingOwned : RestoreOutcome
     data class Owned(val purchases: List<Purchase>) : RestoreOutcome
+    // Hallazgo 3 (auditoría monetización 2026-09-18, Media): antes una
+    // compra PENDING (sin ninguna PURCHASED) caía en NothingOwned, exactamente
+    // igual que "nunca compró nada" -- ver razonamiento completo en el
+    // llamador (restorePurchases()).
+    data class Pending(val purchases: List<Purchase>) : RestoreOutcome
 }
 
 internal fun evaluateRestoreOutcome(responseCode: Int, purchasesList: List<Purchase>): RestoreOutcome {
     if (responseCode != BillingClient.BillingResponseCode.OK) return RestoreOutcome.QueryFailed
     val owned = purchasesList.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
-    return if (owned.isEmpty()) RestoreOutcome.NothingOwned else RestoreOutcome.Owned(owned)
+    val pending = purchasesList.filter { it.purchaseState == Purchase.PurchaseState.PENDING }
+    // detekt (ReturnCount, máx. 2): un solo `when` en vez de un tercer `return` anticipado.
+    return when {
+        owned.isNotEmpty() -> RestoreOutcome.Owned(owned)
+        pending.isNotEmpty() -> RestoreOutcome.Pending(pending)
+        else -> RestoreOutcome.NothingOwned
+    }
 }

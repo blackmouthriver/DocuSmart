@@ -5,6 +5,7 @@ import android.net.Uri
 import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -148,6 +149,10 @@ class ExcelToHtmlUseCase @Inject constructor(
                 pageCount  = 1,
                 fileSizeKb = (outputFile.length() / 1024).toInt()
             )
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+            // en ConvertImageToPdfUseCase.kt.
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "ExcelToHtmlUseCase: error")
             ConversionResult.Error(

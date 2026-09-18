@@ -8,6 +8,7 @@ import android.os.ParcelFileDescriptor
 import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -44,20 +45,14 @@ class PdfToImageUseCase @Inject constructor(
         try {
             // ── Copiar al cache ───────────────────────
             cacheFile = File(context.cacheDir, "temp_convert_${System.currentTimeMillis()}.pdf")
-            context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                cacheFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
+            if (!copyPdfToCache(pdfUri, cacheFile)) {
+                return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
+            }
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName = fileName ?: generateTimestamp()
 
-            ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fileDescriptor ->
-                PdfRenderer(fileDescriptor).use { renderer ->
-                    for (i in 0 until renderer.pageCount) {
-                        outputFiles.add(renderPageToFile(renderer, i, outputDir, baseName))
-                    }
-                }
-            }
+            outputFiles.addAll(renderAllPages(cacheFile, outputDir, baseName))
 
             if (outputFiles.isEmpty()) {
                 return@withContext ConversionResult.Error(
@@ -72,6 +67,15 @@ class PdfToImageUseCase @Inject constructor(
                 fileSizeKb = outputFiles.sumOf { it.length() / 1024 }.toInt(),
                 extraFiles = outputFiles.drop(1)
             )
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+            // en ConvertImageToPdfUseCase.kt. Las páginas ya escritas a
+            // disco antes de la cancelación se borran igual que en los
+            // catches de error (mismo criterio de cleanupOrphanPages), pero
+            // sin construir un ConversionResult.Error -- la cancelación se
+            // relanza tal cual.
+            outputFiles.forEach { it.delete() }
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo PDF a imagen")
             cleanupOrphanPages(outputFiles, e.message ?: "")
@@ -84,6 +88,32 @@ class PdfToImageUseCase @Inject constructor(
         } finally {
             cacheFile?.delete()
         }
+    }
+
+    // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al
+    // agregar el catch de CancellationException del hallazgo 1 de la
+    // auditoría del Convertidor).
+    private fun copyPdfToCache(pdfUri: Uri, cacheFile: File): Boolean {
+        var copied = false
+        context.contentResolver.openInputStream(pdfUri)?.use { input ->
+            cacheFile.outputStream().use { output -> input.copyTo(output) }
+            copied = true
+        }
+        return copied
+    }
+
+    // Extraído de invoke() (mismo motivo que copyPdfToCache()) -- agrupa la
+    // apertura del PdfRenderer y el render de todas las páginas.
+    private fun renderAllPages(cacheFile: File, outputDir: File, baseName: String): List<File> {
+        val rendered = mutableListOf<File>()
+        ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fileDescriptor ->
+            PdfRenderer(fileDescriptor).use { renderer ->
+                for (i in 0 until renderer.pageCount) {
+                    rendered.add(renderPageToFile(renderer, i, outputDir, baseName))
+                }
+            }
+        }
+        return rendered
     }
 
     // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al

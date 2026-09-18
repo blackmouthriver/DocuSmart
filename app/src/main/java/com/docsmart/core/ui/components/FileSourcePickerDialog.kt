@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -78,7 +79,11 @@ fun FileSourcePickerDialog(
                 )
                 Spacer(Modifier.height(8.dp))
                 Card(
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onChooseFromDevice),
+                    // H23 (auditoría de accesibilidad TalkBack 2026-09-18):
+                    // sin role, TalkBack no anunciaba esta tarjeta como
+                    // accionable.
+                    modifier = Modifier.fillMaxWidth()
+                        .clickable(role = Role.Button, onClick = onChooseFromDevice),
                     shape    = MaterialTheme.shapes.medium,
                     colors   = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -136,7 +141,11 @@ fun FileSourcePickerDialog(
                                     .clip(shape)
                                     .background(MaterialTheme.colorScheme.surface)
                                     .accentBorder(shape = shape)
-                                    .clickable { onChooseDocument(document) }
+                                    // H23 (auditoría de accesibilidad
+                                    // TalkBack 2026-09-18): sin role,
+                                    // TalkBack no anunciaba esta fila como
+                                    // accionable.
+                                    .clickable(role = Role.Button) { onChooseDocument(document) }
                             ) {
                                 Row(
                                     modifier              = Modifier.fillMaxWidth().padding(12.dp),

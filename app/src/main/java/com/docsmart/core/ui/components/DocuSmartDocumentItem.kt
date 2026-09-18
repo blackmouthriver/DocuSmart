@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -80,7 +81,14 @@ fun DocumentThumbnail(
     document  : DocumentUiModel,
     modifier  : Modifier = Modifier,
     shape     : androidx.compose.ui.graphics.Shape = MaterialTheme.shapes.small,
-    labelStyle: TextStyle = MaterialTheme.typography.labelSmall
+    labelStyle: TextStyle = MaterialTheme.typography.labelSmall,
+    // H4 (auditoría de accesibilidad TalkBack 2026-09-18): dentro de una
+    // fila con combinedClickable (que fusiona la semántica de sus hijos) y
+    // un Text adyacente que ya muestra `document.name`, dejar el
+    // contentDescription acá duplicaba el anuncio del nombre. Por defecto
+    // sigue en `true` para no afectar otros usos donde el nombre no se
+    // muestra como texto visible al lado.
+    showContentDescription: Boolean = true
 ) {
     val iconBg = remember(document.type.color) { document.type.color.copy(alpha = 0.12f) }
     val typeBox: @Composable () -> Unit = {
@@ -95,7 +103,7 @@ fun DocumentThumbnail(
     if (document.type == DocumentType.IMAGE || document.type == DocumentType.PDF) {
         SubcomposeAsyncImage(
             model              = document.toContentUri(),
-            contentDescription = document.name,
+            contentDescription = if (showContentDescription) document.name else null,
             modifier           = modifier.clip(shape),
             contentScale       = ContentScale.Crop,
             loading            = { typeBox() },
@@ -159,7 +167,11 @@ fun DocuSmartDocumentItem(
                 .fillMaxWidth()
                 .combinedClickable(
                     onClick     = onClick,
-                    onLongClick = { showMenu = true }
+                    onLongClick = { showMenu = true },
+                    // H5 (auditoría de accesibilidad TalkBack 2026-09-18):
+                    // sin role, TalkBack no anunciaba esta fila como
+                    // accionable.
+                    role        = Role.Button
                 )
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -167,7 +179,10 @@ fun DocuSmartDocumentItem(
             DocumentThumbnail(
                 document = document,
                 modifier = Modifier.size(44.dp),
-                shape    = MaterialTheme.shapes.small
+                shape    = MaterialTheme.shapes.small,
+                // H4: el nombre ya es visible en el Text de abajo, dentro de
+                // esta misma fila con semántica fusionada.
+                showContentDescription = false
             )
 
             Spacer(modifier = Modifier.width(12.dp))

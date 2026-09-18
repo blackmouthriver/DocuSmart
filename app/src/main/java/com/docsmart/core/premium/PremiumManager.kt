@@ -4,9 +4,14 @@ import android.content.Context
 import android.content.pm.PackageManager
 import com.docsmart.features.premium.domain.model.PremiumFeature
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -57,6 +62,63 @@ class PremiumManager @Inject constructor(
     private val _trialEndsAtMillis = MutableStateFlow(loadTrialEndsAt())
     val trialEndsAtMillis: StateFlow<Long?> = _trialEndsAtMillis.asStateFlow()
 
+    // Hallazgo 4 (auditoría monetización 2026-09-18, Media): la única vía
+    // que recalculaba isAutoTrialActive() era el observer de ON_START de
+    // BillingManager (vía AppLifecycleTracker/ProcessLifecycleOwner) -- si
+    // el usuario mantenía la app abierta en primer plano sin interrupción
+    // durante los 3 días completos del trial, ese evento nunca volvía a
+    // dispararse y el usuario seguía viéndose Premium más allá de la fecha
+    // de expiración hasta pasar a segundo plano o reiniciar el proceso.
+    // PremiumManager es @Singleton -- este scope/init corre una única vez
+    // por proceso (no hay riesgo de relanzar la corrutina en cada
+    // recomposición, porque nada de esto vive en el mundo de Compose).
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    // Revisión adversarial de seguridad/correctitud (ronda 12, hallazgo
+    // confirmado independientemente por ambos revisores): activatePremium()/
+    // deactivatePremium() (llamados desde el scope de BillingManager, hilo
+    // IO) y el callback de scheduleAutoTrialExpiryCheck() de acá abajo (hilo
+    // Default) escribían _hasPurchased/_isPremium sin ningún lock
+    // compartido -- un usuario comprando justo en el instante en que expira
+    // su trial automático podía terminar con isPremium=false pese a tener
+    // una compra real recién confirmada (el check-then-act de la línea de
+    // abajo se intercalaba con activatePremium() de la otra corrutina).
+    // synchronized (no un Mutex de coroutines) porque activatePremium()/
+    // deactivatePremium() son funciones no-suspend llamadas de forma
+    // síncrona -- la sección crítica es solo un puñado de asignaciones más
+    // I/O de SharedPreferences, breve y sin punto de suspensión real.
+    private val stateLock = Any()
+
+    init {
+        scheduleAutoTrialExpiryCheck()
+    }
+
+    // Espera de forma perezosa hasta el instante exacto en que expira el
+    // trial automático y fuerza la reevaluación de isPremium en ese momento
+    // -- solo si para entonces el trial automático seguía siendo la fuente
+    // activa del estado Premium (no pisa una suscripción real: si
+    // _hasPurchased ya es true, no toca nada). Si el trial ya expiró al
+    // construirse (delayMs <= 0), delay() no espera y reevalúa de
+    // inmediato -- idempotente respecto al valor ya calculado en la
+    // inicialización de _isPremium más arriba.
+    private fun scheduleAutoTrialExpiryCheck() {
+        val expiresAtMillis = firstInstallTimeMillis + AUTO_TRIAL_DAYS * MILLIS_PER_DAY
+        scope.launch {
+            val delayMs = expiresAtMillis - System.currentTimeMillis()
+            if (delayMs > 0) delay(delayMs)
+            synchronized(stateLock) {
+                if (!_hasPurchased.value) {
+                    _isPremium.value = isAutoTrialActive()
+                    _autoTrialDaysRemaining.value =
+                        autoTrialDaysRemaining(firstInstallTimeMillis, System.currentTimeMillis(), AUTO_TRIAL_DAYS)
+                    Timber.d(
+                        "PremiumManager: trial automático expirado, isPremium reevaluado=${_isPremium.value}"
+                    )
+                }
+            }
+        }
+    }
+
     fun isFeatureAvailable(feature: PremiumFeature): Boolean {
         return feature.isAvailableFree || _isPremium.value
     }
@@ -70,7 +132,7 @@ class PremiumManager @Inject constructor(
         return _isPremium.value || dailyCheck()
     }
 
-    fun activatePremium(trialEndsAtMillis: Long? = null) {
+    fun activatePremium(trialEndsAtMillis: Long? = null) = synchronized(stateLock) {
         _hasPurchased.value = true
         savePremiumStatus(true)
         _trialEndsAtMillis.value = trialEndsAtMillis
@@ -82,7 +144,7 @@ class PremiumManager @Inject constructor(
         )
     }
 
-    fun deactivatePremium() {
+    fun deactivatePremium() = synchronized(stateLock) {
         _hasPurchased.value = false
         savePremiumStatus(false)
         _trialEndsAtMillis.value = null

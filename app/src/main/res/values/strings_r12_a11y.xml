@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Ronda 12 de accesibilidad TalkBack (2026-09-18): contentDescription
+         con posición para las miniaturas del carrusel de imágenes
+         seleccionadas en el Convertidor (H10). -->
+    <string name="converter_image_position_a11y">Imagen %1$d de %2$d</string>
+</resources>

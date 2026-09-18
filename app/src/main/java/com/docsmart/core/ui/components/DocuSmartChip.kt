@@ -7,6 +7,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 
 // ── Chip de filtro estandarizado ──────────────────────────────────────────────
@@ -72,7 +74,14 @@ fun DocuSmartFileTypeChip(
                 color = color
             )
         },
-        modifier = modifier,
+        // H22 (auditoría de accesibilidad TalkBack 2026-09-18): este chip es
+        // puramente informativo (badge de tipo de archivo), pero
+        // SuggestionChip siempre expone un rol/acción de clic -- TalkBack lo
+        // anunciaba como "botón" aunque `onClick = {}` no hace nada.
+        // `clearAndSetSemantics` reemplaza la semántica del subárbol
+        // (incluida la acción de clic) solo por el texto visible, sin tocar
+        // la apariencia visual del chip.
+        modifier = modifier.clearAndSetSemantics { contentDescription = label },
         shape    = MaterialTheme.shapes.extraSmall,
         colors   = SuggestionChipDefaults.suggestionChipColors(
             containerColor = color.copy(alpha = 0.12f)

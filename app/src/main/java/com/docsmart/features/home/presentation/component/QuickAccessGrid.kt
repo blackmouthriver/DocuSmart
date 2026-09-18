@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
@@ -274,7 +275,9 @@ private fun ScannerOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            // H3 (auditoría de accesibilidad TalkBack 2026-09-18): sin role,
+            // TalkBack no anunciaba esta opción como accionable.
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment     = Alignment.CenterVertically

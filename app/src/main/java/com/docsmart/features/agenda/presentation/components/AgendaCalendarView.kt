@@ -1,7 +1,6 @@
 package com.docsmart.features.agenda.presentation.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -243,6 +245,16 @@ private fun MonthGrid(
 // Hallazgo real de la auditoría general 2026-09-17 (B23): celda de día sin
 // contentDescription -- TalkBack solo leía el número suelto ("15"), sin mes
 // ni año ni indicar si es hoy/está seleccionado/tiene eventos.
+//
+// Hallazgo real de la auditoría de Agenda 2026-09-18 (Media): además de lo
+// anterior, la celda usaba `.semantics{}.clickable()` puro -- sin `role` ni
+// `selected`, TalkBack no anunciaba ni el rol de botón ni el estado
+// seleccionado (`accessibleLabel` tampoco lo incluía). `.selectable(selected
+// = isSelected, ...)` agrega ambas cosas automáticamente al árbol de
+// accesibilidad (mismo patrón ya usado en LibraryTabItem/DocuSmartBottomBar),
+// así que no hace falta duplicar "seleccionado" en el string. También se
+// agrega `sizeIn` para garantizar el objetivo táctil mínimo de 48dp incluso
+// en una grilla de 7 columnas angosta.
 @Composable
 private fun CalendarDayCell(
     day: Int,
@@ -267,12 +279,13 @@ private fun CalendarDayCell(
 
     Column(
         modifier = modifier
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
             .aspectRatio(1f)
             .padding(2.dp)
             .clip(CircleShape)
             .background(backgroundColor)
-            .semantics { contentDescription = accessibleLabel }
-            .clickable(onClick = onClick),
+            .selectable(selected = isSelected, onClick = onClick, role = Role.Button)
+            .semantics(mergeDescendants = true) { contentDescription = accessibleLabel },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

@@ -35,7 +35,16 @@ data class PremiumUiState(
     // de instalación -- la pantalla necesita esto para no ocultarle el
     // botón de suscripción a este último.
     val isPaidPremium: Boolean = false,
-    val autoTrialDaysRemaining: Int? = null
+    val autoTrialDaysRemaining: Int? = null,
+    // Hallazgo 3 (auditoría monetización 2026-09-18, Media): antes la única
+    // señal de "compra pendiente" era el snackbar transitorio de
+    // observePurchaseResult(), que solo aparece en el momento exacto en que
+    // llega el resultado -- cualquier revalidación posterior (incluida la
+    // automática de cada ON_START, ver BillingManager) que volviera a
+    // encontrar la misma compra en PENDING no tenía forma de mostrarlo de
+    // nuevo. Este flag persiste en el estado de la pantalla para que
+    // PremiumScreen pueda mostrar un aviso permanente mientras dure.
+    val isPendingPurchase: Boolean = false
 )
 
 @HiltViewModel
@@ -137,15 +146,24 @@ class PremiumViewModel @Inject constructor(
             billingManager.purchaseResult.collect { result ->
                 _uiState.update { state ->
                     when (result) {
+                        // isPendingPurchase = false: una compra recién exitosa ya
+                        // no está pendiente (y si venía de una revalidación
+                        // automática detrás de una PENDING anterior, corresponde
+                        // apagar el aviso persistente).
                         is PurchaseResult.Success -> state.copy(
-                            isPurchasing = false, purchaseSuccess = true, errorMessage = null
+                            isPurchasing = false, purchaseSuccess = true, errorMessage = null,
+                            isPendingPurchase = false
                         )
                         is PurchaseResult.Cancelled -> state.copy(isPurchasing = false)
                         is PurchaseResult.Pending -> state.copy(
-                            isPurchasing = false, errorMessage = pendingMessage
+                            isPurchasing = false, errorMessage = pendingMessage, isPendingPurchase = true
                         )
+                        // NoPurchasesToRestore ahora solo llega cuando de verdad no
+                        // hay ninguna compra (ver evaluateRestoreOutcome/H3) -- ya no
+                        // puede confundirse con una PENDING, así que también apaga
+                        // el aviso persistente.
                         is PurchaseResult.NoPurchasesToRestore -> state.copy(
-                            isPurchasing = false, errorMessage = noPurchasesFoundMessage
+                            isPurchasing = false, errorMessage = noPurchasesFoundMessage, isPendingPurchase = false
                         )
                         is PurchaseResult.Error -> state.copy(
                             isPurchasing = false,

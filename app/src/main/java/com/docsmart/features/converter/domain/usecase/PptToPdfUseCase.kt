@@ -10,6 +10,7 @@ import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.AreaBreak
 import com.itextpdf.layout.element.Paragraph
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -104,6 +105,11 @@ class PptToPdfUseCase @Inject constructor(
                 pageCount = slideMap.size,
                 fileSizeKb = (outputFile!!.length() / 1024).toInt()
             )
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+            // en ConvertImageToPdfUseCase.kt.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo PowerPoint a PDF")
             outputFile?.delete()

@@ -17,6 +17,7 @@ import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.domain.usecase.*
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -226,40 +227,64 @@ class ConverterViewModel @Inject constructor(
             // quedaba en true para siempre, mismo criterio que ya se corrigió
             // en PdfToolsViewModel.runTool() (hallazgo #23).
             try {
-                if (isBatch) {
-                    val items = runBatchConversion(context, type, files)
-                    if (items.any { it.result is ConversionResult.Success }) soundEffectPlayer.playConvert()
-                    _uiState.update { it.copy(
-                        isConverting    = false,
-                        batchResults    = items,
-                        conversionCount = dailyLimitManager.getConversionCount(),
-                        conversionLimit = dailyLimitManager.getConversionLimit()
-                    )}
-                    return@launch
-                }
-
-                val result = if (type == ConversionType.IMAGE_TO_PDF)
-                    convertImageToPdf(imageUris = files, fileName = customName, highResolution = useHighRes)
-                else
-                    runConversionForUri(type, files.first(), customName)
-
-                Timber.d("ConverterViewModel: resultado $type → $result")
-                logConversionOutcome(type, result)
-                if (result is ConversionResult.Success) soundEffectPlayer.playConvert()
-
-                _uiState.update { state ->
-                    applySingleConversionResult(state, result)
-                }
+                performConversion(context, type, files, customName, useHighRes, isBatch)
             } catch (e: OutOfMemoryError) {
                 Timber.e(e, "ConverterViewModel: sin memoria convirtiendo $type")
                 val message = context.getString(R.string.converter_error_unknown)
                 _uiState.update { it.copy(isConverting = false, errorMessage = message) }
+            } catch (e: CancellationException) {
+                // Hallazgo 1 (auditoría del Convertidor): CancellationException
+                // hereda de Exception -- sin este catch específico antes del
+                // genérico de abajo, salir de la pantalla a mitad de una
+                // conversión se atrapaba como un error genérico en vez de
+                // propagarse como cancelación real, y "Cancelar" no cancelaba
+                // nada de verdad. No se toca `isConverting` acá: la corrutina
+                // cancelada no debe seguir actualizando el estado de una
+                // pantalla de la que el usuario ya se fue.
+                throw e
             } catch (e: Exception) {
                 Timber.e(e, "ConverterViewModel: error inesperado convirtiendo $type")
                 val message = context.getString(R.string.general_error_format, e.message ?: "")
                 _uiState.update { it.copy(isConverting = false, errorMessage = message) }
             }
         }
+    }
+
+    // Extraído de convert() (detekt: CyclomaticComplexMethod, disparado al
+    // agregar el catch de CancellationException del hallazgo 1 de la
+    // auditoría del Convertidor) -- agrupa la ejecución real de la
+    // conversión (lote o archivo único) y la actualización de estado
+    // resultante, separado del try/catch que la envuelve en convert().
+    private suspend fun performConversion(
+        context: Context,
+        type: ConversionType,
+        files: List<Uri>,
+        customName: String,
+        useHighRes: Boolean,
+        isBatch: Boolean
+    ) {
+        if (isBatch) {
+            val items = runBatchConversion(context, type, files)
+            if (items.any { it.result is ConversionResult.Success }) soundEffectPlayer.playConvert()
+            _uiState.update { it.copy(
+                isConverting    = false,
+                batchResults    = items,
+                conversionCount = dailyLimitManager.getConversionCount(),
+                conversionLimit = dailyLimitManager.getConversionLimit()
+            )}
+            return
+        }
+
+        val result = if (type == ConversionType.IMAGE_TO_PDF)
+            convertImageToPdf(imageUris = files, fileName = customName, highResolution = useHighRes)
+        else
+            runConversionForUri(type, files.first(), customName)
+
+        Timber.d("ConverterViewModel: resultado $type → $result")
+        logConversionOutcome(type, result)
+        if (result is ConversionResult.Success) soundEffectPlayer.playConvert()
+
+        _uiState.update { state -> applySingleConversionResult(state, result) }
     }
 
     // Extraído de convert() (detekt: CyclomaticComplexMethod) -- registrar
@@ -436,6 +461,10 @@ class ConverterViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(errorMessage = context.getString(R.string.converter_error_unknown), isSaving = false)
                 }
+            } catch (e: CancellationException) {
+                // Hallazgo 1 (auditoría del Convertidor): ver el mismo
+                // hallazgo en convert() más arriba.
+                throw e
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -520,6 +549,10 @@ class ConverterViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(errorMessage = context.getString(R.string.converter_error_unknown), isSaving = false)
                 }
+            } catch (e: CancellationException) {
+                // Hallazgo 1 (auditoría del Convertidor): ver el mismo
+                // hallazgo en convert() más arriba.
+                throw e
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(

@@ -5,6 +5,7 @@ import android.net.Uri
 import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.poi.EncryptedDocumentException
@@ -34,25 +35,30 @@ class ExcelToCsvUseCase @Inject constructor(
             var rowCount = 0
 
             context.contentResolver.openInputStream(excelUri)?.use { input ->
-                val workbook = WorkbookFactory.create(input)
-                // Solo la primera hoja: CSV es de una sola tabla, no soporta múltiples hojas.
-                val sheet = workbook.getSheetAt(0)
-                // Hallazgo real de la revisión general 2026-09-16: cell.toString()
-                // en una celda de fórmula devuelve el texto de la fórmula
-                // ("=SUM(A1:A2)"), no el resultado calculado -- pérdida
-                // silenciosa de datos. DataFormatter + FormulaEvaluator la
-                // evalúa y la formatea igual que Excel lo mostraría.
-                val evaluator    = workbook.creationHelper.createFormulaEvaluator()
-                val dataFormatter = DataFormatter()
+                // Hallazgo real de la auditoría del Convertidor (H4): antes
+                // el workbook se usaba suelto sin `.use{}` -- workbook.close()
+                // solo se alcanzaba en el camino feliz, así que cualquier
+                // excepción leyendo/formateando una celda dejaba el Workbook
+                // sin cerrar. Mismo patrón ya usado en ExcelToPdfUseCase.kt.
+                WorkbookFactory.create(input).use { workbook ->
+                    // Solo la primera hoja: CSV es de una sola tabla, no soporta múltiples hojas.
+                    val sheet = workbook.getSheetAt(0)
+                    // Hallazgo real de la revisión general 2026-09-16: cell.toString()
+                    // en una celda de fórmula devuelve el texto de la fórmula
+                    // ("=SUM(A1:A2)"), no el resultado calculado -- pérdida
+                    // silenciosa de datos. DataFormatter + FormulaEvaluator la
+                    // evalúa y la formatea igual que Excel lo mostraría.
+                    val evaluator    = workbook.creationHelper.createFormulaEvaluator()
+                    val dataFormatter = DataFormatter()
 
-                sheet.forEach { row ->
-                    val cells = row.map { cell -> escapeCsv(formatCellSafely(cell, dataFormatter, evaluator)) }
-                    if (cells.any { it.isNotBlank() }) {
-                        sb.appendLine(cells.joinToString(","))
-                        rowCount++
+                    sheet.forEach { row ->
+                        val cells = row.map { cell -> escapeCsv(formatCellSafely(cell, dataFormatter, evaluator)) }
+                        if (cells.any { it.isNotBlank() }) {
+                            sb.appendLine(cells.joinToString(","))
+                            rowCount++
+                        }
                     }
                 }
-                workbook.close()
             } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_excel))
 
             if (rowCount == 0) {
@@ -80,6 +86,10 @@ class ExcelToCsvUseCase @Inject constructor(
             // mensaje claro sobre la contraseña.
             Timber.w(e, "ExcelToCsvUseCase: archivo protegido con contraseña")
             ConversionResult.Error(context.getString(R.string.converter_error_password_protected))
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+            // en ConvertImageToPdfUseCase.kt.
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Excel a CSV")
             ConversionResult.Error(

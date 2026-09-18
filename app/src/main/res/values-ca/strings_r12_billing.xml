@@ -1,0 +1,4 @@
+<resources>
+    <string name="premium_pending_title">Pagament en procés</string>
+    <string name="premium_pending_body">Estem confirmant el teu pagament. Pot trigar uns minuts o hores segons el mètode utilitzat — t\'avisarem tan bon punt s\'activi.</string>
+</resources>

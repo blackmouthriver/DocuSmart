@@ -318,7 +318,7 @@ internal fun shareFile(context: Context, file: File, shareLabel: String) {
     try {
         // ── Verificar que el archivo existe antes de compartir
         if (!file.exists()) {
-            Timber.e("shareFile: archivo no encontrado — ${file.absolutePath}")
+            Timber.e("shareFile: archivo no encontrado")
             return
         }
 
@@ -344,7 +344,7 @@ internal fun shareFile(context: Context, file: File, shareLabel: String) {
 
     } catch (e: IllegalArgumentException) {
         // FileProvider no encontró el archivo en las rutas configuradas
-        Timber.e(e, "shareFile: archivo fuera de rutas FileProvider — ${file.absolutePath}")
+        Timber.e(e, "shareFile: archivo fuera de rutas FileProvider")
     } catch (e: Exception) {
         Timber.e(e, "shareFile: error inesperado — ${e.message}")
     }

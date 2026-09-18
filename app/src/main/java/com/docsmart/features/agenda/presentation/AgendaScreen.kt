@@ -40,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,8 +83,20 @@ fun AgendaScreen(
     ) { /* No-op: la alarma se programa igual sin el permiso, solo no se ve
           la notificación cuando llegue la hora del recordatorio. */ }
 
+    // Hallazgo real de la auditoría de Agenda 2026-09-18 (Media): `openEventId`
+    // nunca se consumía -- rotar el dispositivo recompone AgendaScreen desde
+    // cero, y como el argumento de navegación no cambia de valor, este
+    // LaunchedEffect se relanzaba y reabría el editor que el usuario ya había
+    // cerrado. `rememberSaveable` persiste "cuál fue el último eventId ya
+    // abierto" a través de la recreación de la Activity (rotación), así que
+    // tras la primera apertura, cualquier recomposición posterior con el
+    // mismo openEventId no vuelve a llamar a openEventFromNotification().
+    var openedEventId by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(openEventId) {
-        openEventId?.let { viewModel.openEventFromNotification(it) }
+        if (openEventId != null && openEventId != openedEventId) {
+            openedEventId = openEventId
+            viewModel.openEventFromNotification(openEventId)
+        }
     }
 
     // Sin este pedido, un usuario que entra a Agenda sin haber pasado nunca

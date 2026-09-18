@@ -302,7 +302,12 @@ private fun BottomNavAnimatedItem(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = label,
+                // H21 (auditoría de accesibilidad TalkBack 2026-09-18):
+                // cuando la pestaña está activa, el Text(label) de abajo ya
+                // es visible en este mismo nodo fusionado (`selectable` en
+                // el Column padre) -- dejar el contentDescription acá
+                // duplicaba el anuncio del nombre.
+                contentDescription = if (active) null else label,
                 tint = iconColor,
                 modifier = Modifier.size(iconSize)
             )

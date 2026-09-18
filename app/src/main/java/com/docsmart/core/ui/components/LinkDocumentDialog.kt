@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -73,7 +74,10 @@ fun LinkDocumentDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSelect(doc) }
+                                // H23 (auditoría de accesibilidad TalkBack
+                                // 2026-09-18): sin role, TalkBack no
+                                // anunciaba esta fila como accionable.
+                                .clickable(role = Role.Button) { onSelect(doc) }
                                 .padding(vertical = 10.dp),
                             verticalAlignment     = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)

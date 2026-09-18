@@ -1,0 +1,4 @@
+<resources>
+    <string name="premium_pending_title">Payment in progress</string>
+    <string name="premium_pending_body">We\'re confirming your payment. It can take a few minutes or hours depending on the method used — we\'ll let you know as soon as it\'s activated.</string>
+</resources>

@@ -13,6 +13,7 @@ import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData
 import com.itextpdf.kernel.pdf.canvas.parser.data.TextRenderInfo
 import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.poi.xwpf.usermodel.BreakType
@@ -78,6 +79,13 @@ class PdfToWordUseCase @Inject constructor(
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
         var cacheFile: File? = null
+        // Hallazgo 2 (auditoría del Convertidor): outputFile estaba
+        // declarado como `val` DENTRO del try -- si buildDocx() fallaba a
+        // mitad de escritura (ej. OutOfMemoryError), los catches no tenían
+        // forma de referenciarlo para borrar el .docx huérfano/corrupto que
+        // ya quedó parcialmente escrito en disco. Mismo patrón ya usado en
+        // WordToPdfUseCase.kt/ExcelToPdfUseCase.kt/PptToPdfUseCase.kt.
+        var outputFile: File? = null
         try {
             cacheFile = File(context.cacheDir, "pdftodocx_${System.currentTimeMillis()}.pdf")
             context.contentResolver.openInputStream(pdfUri)?.use { input ->
@@ -108,24 +116,30 @@ class PdfToWordUseCase @Inject constructor(
 
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName = fileName ?: generateTimestamp()
-            val outputFile = File(outputDir, "$baseName.docx")
+            outputFile = File(outputDir, "$baseName.docx")
 
-            buildDocx(pages, outputFile)
+            buildDocx(pages, outputFile!!)
 
-            if (outputFile.length() == 0L)
+            if (outputFile!!.length() == 0L)
                 return@withContext ConversionResult.Error(
                     context.getString(R.string.converter_error_generate_word_failed)
                 )
 
-            Timber.d("PdfToWordUseCase: docx creado — ${outputFile.length() / 1024} KB")
+            Timber.d("PdfToWordUseCase: docx creado — ${outputFile!!.length() / 1024} KB")
 
             ConversionResult.Success(
-                outputFile = outputFile,
+                outputFile = outputFile!!,
                 pageCount = totalPages,
-                fileSizeKb = (outputFile.length() / 1024).toInt()
+                fileSizeKb = (outputFile!!.length() / 1024).toInt()
             )
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+            // en ConvertImageToPdfUseCase.kt.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "PdfToWordUseCase: error — ${e.message}")
+            outputFile?.delete()
             ConversionResult.Error(
                 String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
             )
@@ -134,6 +148,7 @@ class PdfToWordUseCase @Inject constructor(
             // pasada): OutOfMemoryError no hereda de Exception, así que el
             // catch de arriba nunca la atrapaba con un PDF grande.
             Timber.e(e, "PdfToWordUseCase: sin memoria convirtiendo el documento")
+            outputFile?.delete()
             ConversionResult.Error(
                 String.format(
                     context.getString(R.string.converter_error_generic_format),

@@ -102,7 +102,12 @@ fun DocuSmartTopBanner(
                     ) {
                         Image(
                             painter           = painterResource(R.drawable.ic_docusmart_logo),
-                            contentDescription = "DocuSmart",
+                            // H1 (auditoría de accesibilidad TalkBack
+                            // 2026-09-18): el texto visible "Docu"+"Smart" de
+                            // al lado ya dice "DocuSmart" -- con
+                            // contentDescription acá, TalkBack anunciaba el
+                            // nombre repetido (logo + 2 Text).
+                            contentDescription = null,
                             modifier          = Modifier
                                 .size(24.dp)
                                 .padding(1.dp)
@@ -173,6 +178,11 @@ fun DocuSmartTopBanner(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier
                     .padding(top = 10.dp)
+                    // H17 (auditoría de accesibilidad TalkBack 2026-09-18):
+                    // el objetivo táctil real medía ~20-24dp de alto (por
+                    // debajo del mínimo de 48dp) -- se asegura el mínimo sin
+                    // tocar el tamaño visual del ícono/texto.
+                    .heightIn(min = 48.dp)
                     .clickable(role = Role.Button, onClick = onBack)
             ) {
                 Icon(

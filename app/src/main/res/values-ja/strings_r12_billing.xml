@@ -1,0 +1,4 @@
+<resources>
+    <string name="premium_pending_title">お支払い処理中</string>
+    <string name="premium_pending_body">お支払いを確認しています。ご利用の決済方法によっては数分から数時間かかる場合があります。有効化され次第お知らせします。</string>
+</resources>

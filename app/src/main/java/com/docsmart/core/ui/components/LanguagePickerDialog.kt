@@ -9,9 +9,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -171,7 +172,17 @@ private fun LanguageTile(language: AppLanguage, selected: Boolean, onClick: () -
             .clip(RoundedCornerShape(18.dp))
             .border(1.5.dp, borderColor, RoundedCornerShape(18.dp))
             .background(Brush.linearGradient(listOf(gradientStart, gradientEnd)))
-            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+            // H20 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+            // role ni estado `selected`, TalkBack no anunciaba cuál de los
+            // 12 idiomas estaba elegido -- `selectable` con
+            // Role.RadioButton (son mutuamente excluyentes) sí lo hace.
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
     ) {
         // Pedido explícito del usuario tras revisar la tarjeta a sangre:
         // bandera y texto en una sola fila, con separación entre ambos --

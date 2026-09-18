@@ -9,6 +9,7 @@ import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Paragraph
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.poi.EncryptedDocumentException
@@ -71,6 +72,11 @@ class ExcelToPdfUseCase @Inject constructor(
             Timber.w(e, "ExcelToPdfUseCase: archivo protegido con contraseña")
             outputFile?.delete()
             ConversionResult.Error(context.getString(R.string.converter_error_password_protected))
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+            // en ConvertImageToPdfUseCase.kt.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Excel a PDF")
             outputFile?.delete()

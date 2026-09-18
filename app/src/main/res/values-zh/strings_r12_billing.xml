@@ -1,0 +1,4 @@
+<resources>
+    <string name="premium_pending_title">支付处理中</string>
+    <string name="premium_pending_body">我们正在确认您的付款。根据所用的支付方式，可能需要几分钟到几小时——一旦激活我们会立即通知您。</string>
+</resources>

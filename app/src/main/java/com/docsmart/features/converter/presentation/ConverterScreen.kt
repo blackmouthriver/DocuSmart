@@ -22,6 +22,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -350,7 +354,14 @@ private fun ConversionLimitIndicator(
                     // visible para todo usuario free.
                     stringResource(R.string.converter_daily_count_label, count, limit),
                     style = MaterialTheme.typography.labelMedium,
-                    color = color
+                    color = color,
+                    // H11 (auditoría de accesibilidad TalkBack 2026-09-18):
+                    // el contador cambia tras cada conversión sin que
+                    // TalkBack lo anuncie -- liveRegion hace que se lea el
+                    // valor nuevo automáticamente.
+                    modifier = Modifier.semantics {
+                        liveRegion = LiveRegionMode.Polite
+                    }
                 )
             }
             LinearProgressIndicator(
@@ -444,7 +455,10 @@ private fun ConversionGridCard(
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
             .accentBorder(shape = shape)
-            .clickable { onClick() }
+            // H8 (auditoría de accesibilidad TalkBack 2026-09-18): sin role,
+            // TalkBack no anunciaba las 17 tarjetas de la grilla como
+            // accionables.
+            .clickable(role = Role.Button, onClick = onClick)
     ) {
         Column(
             modifier            = Modifier.fillMaxSize().padding(14.dp),
@@ -534,7 +548,9 @@ private fun ConversionDetailCard(
         }
 
         Card(
-            modifier  = Modifier.fillMaxWidth().clickable { onSelectFiles() },
+            // H9 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+            // role, TalkBack no anunciaba esta tarjeta como accionable.
+            modifier  = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onSelectFiles),
             shape     = MaterialTheme.shapes.large,
             colors    = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -660,11 +676,17 @@ private fun ConversionDetailCard(
 @Composable
 private fun SelectedImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        itemsIndexed(uris) { _, uri ->
+        itemsIndexed(uris) { index, uri ->
             Box(modifier = Modifier.size(84.dp)) {
                 AsyncImage(
                     model = uri,
-                    contentDescription = null,
+                    // H10 (auditoría de accesibilidad TalkBack 2026-09-18):
+                    // cada miniatura no tenía ningún texto identificador --
+                    // TalkBack solo anunciaba "Imagen" genérico, sin decir
+                    // cuál ni cuántas había en total.
+                    contentDescription = stringResource(
+                        R.string.converter_image_position_a11y, index + 1, uris.size
+                    ),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()

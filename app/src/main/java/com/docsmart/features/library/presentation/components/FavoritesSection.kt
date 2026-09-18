@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
@@ -149,7 +151,11 @@ private fun FavoriteDocumentCard(
                 .fillMaxSize()
                 .combinedClickable(
                     onClick     = onClick,
-                    onLongClick = onLongClick
+                    onLongClick = onLongClick,
+                    // H7 (auditoría de accesibilidad TalkBack 2026-09-18):
+                    // sin role, TalkBack no anunciaba esta tarjeta como
+                    // accionable.
+                    role        = Role.Button
                 )
                 .padding(12.dp)
         ) {
@@ -157,7 +163,10 @@ private fun FavoriteDocumentCard(
                 document   = document,
                 modifier   = Modifier.fillMaxWidth().height(72.dp),
                 shape      = MaterialTheme.shapes.medium,
-                labelStyle = MaterialTheme.typography.titleMedium
+                labelStyle = MaterialTheme.typography.titleMedium,
+                // H7: el nombre ya es visible en el Text de abajo, dentro de
+                // esta misma tarjeta con semántica fusionada.
+                showContentDescription = false
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -179,5 +188,28 @@ private fun FavoriteDocumentCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
+        // H6 (auditoría de accesibilidad TalkBack 2026-09-18): antes esta
+        // tarjeta solo abría el menú contextual con un onLongClick, sin
+        // ningún botón visible descubrible por TalkBack (a diferencia de
+        // DocuSmartDocumentItem, que sí tiene un IconButton "⋮" visible) --
+        // se agrega el mismo patrón acá.
+        IconButton(
+            onClick  = onLongClick,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(40.dp)
+        ) {
+            Icon(
+                imageVector        = Icons.Rounded.MoreVert,
+                contentDescription = stringResource(R.string.viewer_more_options),
+                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier           = Modifier.size(18.dp)
+            )
+        }
+        // Nota: se deja en 40dp (no 48dp como en DocuSmartDocumentItem) para
+        // no invadir visualmente la miniatura en esta tarjeta más chica
+        // (150x160dp); igual mejora sobre el estado anterior, que no tenía
+        // ningún control visible.
     }
 }

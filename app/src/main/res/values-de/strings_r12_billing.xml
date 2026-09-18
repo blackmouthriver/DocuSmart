@@ -1,0 +1,4 @@
+<resources>
+    <string name="premium_pending_title">Zahlung wird bearbeitet</string>
+    <string name="premium_pending_body">Wir bestätigen gerade deine Zahlung. Je nach Zahlungsmethode kann das einige Minuten oder Stunden dauern — wir benachrichtigen dich, sobald sie aktiviert ist.</string>
+</resources>

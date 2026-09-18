@@ -14,6 +14,7 @@ import androidx.exifinterface.media.ExifInterface
 import com.docsmart.R
 import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -69,73 +70,15 @@ class ConvertImageToPdfUseCase @Inject constructor(
 
             Timber.d("Convirtiendo ${imageUris.size} imágenes a PDF (highResolution=$highResolution)")
 
-            val pdfDocument = PdfDocument()
-            // Hallazgo real de la auditoría general 2026-09-17 (B6):
-            // pdfDocument.close() solo se llamaba en los 2 caminos felices
-            // (0 páginas / éxito) -- si algo lanzaba entre medio (ej.
-            // FileOutputStream falla por disco lleno), el catch de abajo no
-            // lo cerraba, mismo patrón de fuga ya corregido en el resto de
-            // Herramientas PDF/Convertidor.
-            try {
-                val paint = Paint().apply {
-                    isAntiAlias    = true
-                    isFilterBitmap = true
-                }
-
-                // Bug real encontrado 2026-09-14 (repaso general): antes se
-                // reportaba pageCount = imageUris.size (el original) sin
-                // importar cuántas páginas se generaron de verdad -- si TODAS
-                // las imágenes fallaban al decodificar, el resultado igual
-                // llegaba como Success con 0 páginas reales (el header/xref de
-                // un PdfDocument vacío ya pesa > 0 bytes, así que el chequeo de
-                // abajo tampoco lo detectaba).
-                var pageCount = 0
-                imageUris.forEachIndexed { index, uri ->
-                    val bitmap = loadBitmapFromUri(uri)
-                    if (bitmap == null) {
-                        Timber.w("No se pudo cargar imagen $index: $uri")
-                        return@forEachIndexed
-                    }
-
-                    if (drawImagePage(pdfDocument, paint, bitmap, pageCount + 1, highResolution, index)) {
-                        pageCount++
-                        Timber.d("Página $pageCount generada")
-                    }
-                }
-
-                if (pageCount == 0) {
-                    return@withContext ConversionResult.Error(
-                        context.getString(R.string.converter_error_no_images_loaded)
-                    )
-                }
-
-                val outputDir = File(context.filesDir, "converted").apply {
-                    if (!exists()) mkdirs()
-                }
-                val outputFile = File(outputDir, "$fileName.pdf")
-
-                FileOutputStream(outputFile).use { stream ->
-                    pdfDocument.writeTo(stream)
-                    stream.flush()
-                }
-
-                Timber.d("PDF guardado: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
-
-                if (outputFile.length() == 0L) {
-                    return@withContext ConversionResult.Error(
-                        context.getString(R.string.converter_error_generate_pdf_failed)
-                    )
-                }
-
-                ConversionResult.Success(
-                    outputFile = outputFile,
-                    pageCount  = pageCount,
-                    fileSizeKb = (outputFile.length() / 1024).toInt()
-                )
-            } finally {
-                pdfDocument.close()
-            }
-
+            buildPdfFromImages(imageUris, fileName, highResolution)
+        } catch (e: CancellationException) {
+            // Hallazgo 1 (auditoría del Convertidor): CancellationException
+            // hereda de Exception -- sin este catch específico antes del
+            // genérico de abajo, salir de la pantalla a mitad de la
+            // conversión se registraba como un error de conversión en vez
+            // de propagarse como cancelación real (mismo criterio que
+            // CompressPdfUseCase.kt).
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error en conversión: ${e.message}")
             ConversionResult.Error(
@@ -153,6 +96,89 @@ class ConvertImageToPdfUseCase @Inject constructor(
             ConversionResult.Error(
                 context.getString(R.string.converter_error_generic_format)
                     .let { String.format(it, context.getString(R.string.converter_error_unknown)) }
+            )
+        }
+    }
+
+    // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al
+    // agregar el catch de CancellationException del hallazgo 1 de la
+    // auditoría del Convertidor) -- agrupa la generación real del PDF
+    // (páginas + escritura a disco), separado del manejo de errores.
+    //
+    // Hallazgo real de la auditoría general 2026-09-17 (B6): pdfDocument.close()
+    // solo se llamaba en los 2 caminos felices (0 páginas / éxito) -- si algo
+    // lanzaba entre medio (ej. FileOutputStream falla por disco lleno), el
+    // catch de invoke() no lo cerraba, mismo patrón de fuga ya corregido en
+    // el resto de Herramientas PDF/Convertidor.
+    private fun buildPdfFromImages(
+        imageUris: List<Uri>,
+        fileName: String,
+        highResolution: Boolean
+    ): ConversionResult {
+        val pdfDocument = PdfDocument()
+        try {
+            val paint = Paint().apply {
+                isAntiAlias    = true
+                isFilterBitmap = true
+            }
+
+            // Bug real encontrado 2026-09-14 (repaso general): antes se
+            // reportaba pageCount = imageUris.size (el original) sin
+            // importar cuántas páginas se generaron de verdad -- si TODAS
+            // las imágenes fallaban al decodificar, el resultado igual
+            // llegaba como Success con 0 páginas reales (el header/xref de
+            // un PdfDocument vacío ya pesa > 0 bytes, así que el chequeo de
+            // abajo tampoco lo detectaba).
+            var pageCount = 0
+            imageUris.forEachIndexed { index, uri ->
+                val bitmap = loadBitmapFromUri(uri)
+                if (bitmap == null) {
+                    Timber.w("No se pudo cargar imagen $index")
+                    return@forEachIndexed
+                }
+
+                if (drawImagePage(pdfDocument, paint, bitmap, pageCount + 1, highResolution, index)) {
+                    pageCount++
+                    Timber.d("Página $pageCount generada")
+                }
+            }
+
+            // detekt: ReturnCount -- un solo `return` con un if/else en vez
+            // de 3 returns tempranos separados (0 páginas / PDF vacío /
+            // éxito), disparado al agregar el catch de CancellationException
+            // del hallazgo 1 de la auditoría del Convertidor.
+            return if (pageCount == 0) {
+                ConversionResult.Error(context.getString(R.string.converter_error_no_images_loaded))
+            } else {
+                writePdfDocumentToFile(pdfDocument, fileName, pageCount)
+            }
+        } finally {
+            pdfDocument.close()
+        }
+    }
+
+    // Extraído de buildPdfFromImages() para bajar ReturnCount/complejidad --
+    // escribe el PdfDocument ya renderizado a disco y arma el resultado.
+    private fun writePdfDocumentToFile(pdfDocument: PdfDocument, fileName: String, pageCount: Int): ConversionResult {
+        val outputDir = File(context.filesDir, "converted").apply {
+            if (!exists()) mkdirs()
+        }
+        val outputFile = File(outputDir, "$fileName.pdf")
+
+        FileOutputStream(outputFile).use { stream ->
+            pdfDocument.writeTo(stream)
+            stream.flush()
+        }
+
+        Timber.d("PDF guardado: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
+
+        return if (outputFile.length() == 0L) {
+            ConversionResult.Error(context.getString(R.string.converter_error_generate_pdf_failed))
+        } else {
+            ConversionResult.Success(
+                outputFile = outputFile,
+                pageCount  = pageCount,
+                fileSizeKb = (outputFile.length() / 1024).toInt()
             )
         }
     }
