@@ -45,23 +45,43 @@ class ScanImageEditor @Inject constructor(
         contrast: Int,
         scalePercent: Int
     ): Uri? = withContext(Dispatchers.IO) {
+        var original: Bitmap? = null
+        var scaled: Bitmap? = null
+        var adjusted: Bitmap? = null
         try {
-            val original = loadBitmap(sourceUri) ?: return@withContext null
-            val scaled = scaleBitmap(original, scalePercent)
-            val adjusted = applyColorAdjustments(scaled, brightness, contrast)
+            original = loadBitmap(sourceUri) ?: return@withContext null
+            scaled = scaleBitmap(original, scalePercent)
+            adjusted = applyColorAdjustments(scaled, brightness, contrast)
 
             val outputFile = writeToCache(adjusted)
-
-            if (adjusted !== scaled) adjusted.recycle()
-            if (scaled !== original) scaled.recycle()
-            original.recycle()
 
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
             ownedCacheFiles[uri] = outputFile
             uri
+        } catch (e: OutOfMemoryError) {
+            // H4: en Kotlin/JVM, Error no es subclase de Exception -- un OOM
+            // real decodificando/escalando el bitmap (dispositivo con poca
+            // RAM) no lo capturaba el catch genérico de abajo y tumbaba la
+            // app en vez de devolver null con gracia.
+            Timber.e(e, "Sin memoria aplicando ajustes a la imagen escaneada")
+            null
         } catch (e: Exception) {
             Timber.e(e, "Error aplicando ajustes a la imagen escaneada")
             null
+        } finally {
+            // Revisión adversarial de seguridad (ronda 11): el catch de OOM
+            // devolvía null sin reciclar los bitmaps ya asignados hasta ese
+            // punto -- justo cuando más urge liberar memoria nativa de
+            // inmediato, antes del próximo intento del usuario. Recicla en
+            // TODOS los caminos (éxito o error), sin doble-reciclar cuando
+            // dos referencias apuntan al mismo bitmap (scalePercent=100 o
+            // brightness=contrast=0 devuelven el mismo objeto sin copiar).
+            val a = adjusted
+            val s = scaled
+            val o = original
+            if (a != null && a !== s) a.recycle()
+            if (s != null && s !== o) s.recycle()
+            o?.recycle()
         }
     }
 
@@ -83,14 +103,13 @@ class ScanImageEditor @Inject constructor(
     @Suppress("TooGenericExceptionCaught")
     suspend fun applyColorMode(sourceUri: Uri, mode: ScanColorMode): Uri? = withContext(Dispatchers.IO) {
         if (mode == ScanColorMode.COLOR) return@withContext sourceUri
+        var original: Bitmap? = null
+        var filtered: Bitmap? = null
         try {
-            val original = loadBitmap(sourceUri) ?: return@withContext null
-            val filtered = applyMatrix(original, buildColorModeMatrix(mode))
+            original = loadBitmap(sourceUri) ?: return@withContext null
+            filtered = applyMatrix(original, buildColorModeMatrix(mode))
 
             val outputFile = writeToCache(filtered)
-
-            filtered.recycle()
-            original.recycle()
 
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
             // Hallazgo real de la auditoría general 2026-09-17 (quinta
@@ -100,9 +119,20 @@ class ScanImageEditor @Inject constructor(
             // quedaba huérfano para siempre en cacheDir/scanner_edits/.
             ownedCacheFiles[uri] = outputFile
             uri
+        } catch (e: OutOfMemoryError) {
+            // H4: mismo motivo que en applyAdjustments() -- Error no es
+            // subclase de Exception, así que un OOM real acá también
+            // necesita su propio catch para no tumbar la app.
+            Timber.e(e, "Sin memoria aplicando modo de color a la imagen escaneada")
+            null
         } catch (e: Exception) {
             Timber.e(e, "Error aplicando modo de color a la imagen escaneada")
             null
+        } finally {
+            // Revisión adversarial de seguridad (ronda 11): recicla en TODOS
+            // los caminos, no solo el de éxito -- ver applyAdjustments().
+            filtered?.recycle()
+            original?.recycle()
         }
     }
 
@@ -135,8 +165,18 @@ class ScanImageEditor @Inject constructor(
     private fun writeToCache(bitmap: Bitmap): File {
         val dir = File(context.cacheDir, "scanner_edits").apply { mkdirs() }
         val file = File(dir, "edit_${System.currentTimeMillis()}.jpg")
-        file.outputStream().use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+        try {
+            file.outputStream().use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+            }
+        } catch (e: OutOfMemoryError) {
+            // Revisión adversarial de seguridad (ronda 11): bitmap.compress()
+            // es la asignación de buffers más grande del pipeline -- un OOM
+            // justo acá dejaba un archivo vacío/truncado huérfano en
+            // cacheDir/scanner_edits/ para siempre, ya que nunca llegaba a
+            // registrarse en ownedCacheFiles.
+            file.delete()
+            throw e
         }
         return file
     }

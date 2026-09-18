@@ -16,6 +16,7 @@ import com.itextpdf.kernel.pdf.annot.PdfTextAnnotation
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -65,38 +66,55 @@ class FlattenAnnotationsPdfUseCase @Inject constructor(
             // camino (tras crear el archivo físico en filesDir/viewer_share),
             // ese PDF parcial quedaba huérfano en disco para siempre.
             var outputFile: File? = null
+            // Revisión adversarial de correctitud (ronda 11): el borrado de
+            // outputFile solo vivía en el catch de Exception -- el nuevo
+            // catch de CancellationException (usuario navega fuera mientras
+            // esto sigue en curso) lo saltaba por completo, dejando el PDF
+            // parcial huérfano. `committed` protege el único caso donde
+            // outputFile debe sobrevivir: cuando se devuelve como resultado.
+            var committed = false
             try {
                 cacheFile = copyUriToCache(sourceUri) ?: return@withContext null
                 outputFile = createOutputFile()
-                val byPage = annotations.groupBy { it.page }
-                val gState = PdfExtGState().setFillOpacity(HIGHLIGHT_OPACITY)
 
                 PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
-                    for ((pageNumber, pageAnnotations) in byPage) {
-                        if (pageNumber < 1 || pageNumber > pdf.numberOfPages) continue
-                        val page = pdf.getPage(pageNumber)
-                        pageAnnotations.forEach { annotation ->
-                            when (annotation.type) {
-                                AnnotationType.HIGHLIGHT -> drawHighlight(page, annotation, gState)
-                                AnnotationType.NOTE      -> drawNote(page, annotation)
-                            }
-                        }
-                    }
+                    flattenAnnotationsOntoDocument(pdf, annotations)
                 }
 
                 if (outputFile.length() == 0L) {
-                    outputFile.delete()
                     return@withContext null
                 }
+                committed = true
                 outputFile
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Timber.e(e, "$TAG: error aplanando anotaciones")
-                outputFile?.delete()
                 null
             } finally {
                 cacheFile?.delete()
+                if (!committed) outputFile?.delete()
             }
         }
+
+    // Extraído de invoke() (revisión adversarial de correctitud, ronda 11)
+    // para bajar su complejidad ciclomática por debajo del límite de detekt
+    // tras agregar el manejo de `committed` -- mismo cuerpo, sin cambio de
+    // comportamiento.
+    private fun flattenAnnotationsOntoDocument(pdf: PdfDocument, annotations: List<AnnotationEntity>) {
+        val byPage = annotations.groupBy { it.page }
+        val gState = PdfExtGState().setFillOpacity(HIGHLIGHT_OPACITY)
+        for ((pageNumber, pageAnnotations) in byPage) {
+            if (pageNumber < 1 || pageNumber > pdf.numberOfPages) continue
+            val page = pdf.getPage(pageNumber)
+            pageAnnotations.forEach { annotation ->
+                when (annotation.type) {
+                    AnnotationType.HIGHLIGHT -> drawHighlight(page, annotation, gState)
+                    AnnotationType.NOTE      -> drawNote(page, annotation)
+                }
+            }
+        }
+    }
 
     private fun drawHighlight(
         page: com.itextpdf.kernel.pdf.PdfPage,

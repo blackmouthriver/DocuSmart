@@ -1,0 +1,7 @@
+<resources>
+    <string name="study_pomodoro_study_complete_title">Ikasketa-blokea osatu da!</string>
+    <string name="study_pomodoro_study_complete_body">Atsedena hartzeko garaia da</string>
+    <string name="study_pomodoro_break_complete_title">Atsedena amaitu da!</string>
+    <string name="study_pomodoro_break_complete_body">Ikasten jarraitzeko garaia da</string>
+    <string name="study_pomodoro_alert_channel">Pomodoro: saioaren amaiera</string>
+</resources>

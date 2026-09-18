@@ -829,6 +829,24 @@ private fun PdfViewerContent(
         onPageChanged(0, pages.size)
     }
 
+    // Hallazgo real de la auditoría general 2026-09-18 (R11): renderAllPages()
+    // crea un bitmap ARGB_8888 a 2x por cada página y nunca se reciclaba
+    // explícitamente -- para un PDF de 30-50 páginas eso son 240-400MB
+    // nativos residentes hasta que el GC decidiera pasar, un riesgo real de
+    // OOM en dispositivos con poca RAM. `key(fileUri?.toString())` en el
+    // llamador ya fuerza recrear este composable en cada cambio de
+    // documento, así que un DisposableEffect(uri) libera la lista ANTERIOR
+    // de bitmaps de forma determinista, tanto al cambiar de documento como
+    // al cerrar el Visor. Alcance de esta ronda: liberación determinista al
+    // cambiar/cerrar documento -- una reescritura a renderizado perezoso
+    // (solo página visible ± margen) queda fuera de alcance por ser un
+    // cambio arquitectónico mayor sobre un componente ya en producción.
+    DisposableEffect(uri) {
+        onDispose {
+            pages.forEach { it.bitmap.recycle() }
+        }
+    }
+
     if (loadError) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
@@ -1871,13 +1889,28 @@ private fun PptShapeView(shape: PptShapeContent) {
 }
 
 // ── Visor de texto plano ──────────────────────────────────────────────────────
+// Hallazgo real de la auditoría general 2026-09-18 (R11): rememberDocumentLoad
+// cargaba el archivo de texto/CSV/Markdown COMPLETO en memoria sin límite de
+// tamaño -- un archivo de texto/log gigante podía provocar un OOM real. Se
+// acota la lectura a un tope razonable y se avisa con un texto truncado
+// visible en vez de fallar en silencio.
+private const val MAX_TEXT_VIEWER_CHARS = 5_000_000
+
 @Composable
 private fun TextViewerContent(
     uri        : Uri?,
     searchQuery: String = "",
     onTap      : () -> Unit
 ) {
-    val load = rememberDocumentLoad(uri, "", "TXT") { it.bufferedReader().readText() }
+    val truncatedNotice = stringResource(R.string.viewer_text_truncated_notice)
+    val load = rememberDocumentLoad(uri, "", "TXT") { input ->
+        val text = input.bufferedReader().readText()
+        if (text.length > MAX_TEXT_VIEWER_CHARS) {
+            text.take(MAX_TEXT_VIEWER_CHARS) + "\n\n" + truncatedNotice
+        } else {
+            text
+        }
+    }
 
     DocumentContentBox(
         isLoading    = load.isLoading,

@@ -3500,6 +3500,16 @@ private suspend fun extractTextFromUri(
         val fileName = resolveFileName(context, uri, messages)
         val (paragraphs, pageBoundaries, extractionFailed) = extractPdfText(context, uri, messages, onPageExtracted)
         StudyExtractionResult(paragraphs, fileName, pageBoundaries, isError = extractionFailed)
+    } catch (e: CancellationException) {
+        // Hallazgo real de la auditoría general 2026-09-18 (Media): si el
+        // usuario navega fuera de Modo Lectura mientras una extracción
+        // larga está en curso, el catch genérico de abajo tragaba la
+        // CancellationException como isError = true, y loadDocument()
+        // borraba el progreso de "Continuar leyendo" de un documento que en
+        // realidad nunca falló. Mismo patrón ya aplicado en
+        // shareStudyNotes de este mismo archivo: relanzarla siempre, nunca
+        // tragarla.
+        throw e
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto")
         StudyExtractionResult(
@@ -3563,6 +3573,11 @@ private suspend fun extractPdfText(
         } else {
             Triple(paragraphs, pageBoundaries, false)
         }
+    } catch (e: CancellationException) {
+        // Ver comentario equivalente en extractTextFromUri: relanzar
+        // siempre, nunca tragar la cancelación como si fuera un error de
+        // extracción real.
+        throw e
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto PDF")
         Triple(listOf(String.format(messages.pdfErrorTemplate, e.message ?: "")), emptyList(), true)

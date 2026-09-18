@@ -1,0 +1,7 @@
+<resources>
+    <string name="study_pomodoro_study_complete_title">Блок учёбы завершён!</string>
+    <string name="study_pomodoro_study_complete_body">Время для перерыва</string>
+    <string name="study_pomodoro_break_complete_title">Перерыв закончился!</string>
+    <string name="study_pomodoro_break_complete_body">Пора вернуться к учёбе</string>
+    <string name="study_pomodoro_alert_channel">Помодоро: конец сессии</string>
+</resources>

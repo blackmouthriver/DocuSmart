@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -84,12 +85,26 @@ fun ScannerScreen(
         }
     }
 
+    // H1 (auditoría, corrección real): `LaunchedEffect(Unit)` se vuelve a
+    // ejecutar cada vez que se recompone esta pantalla desde cero, y
+    // rotar el dispositivo mientras el escáner de ML Kit está en pantalla
+    // (una Activity externa) recrea esta Activity y, con ella, toda la
+    // composición -- sin ningún flag que sobreviva esa recreación,
+    // `launchDocumentScanner()` se disparaba una segunda vez, abriendo el
+    // picker de ML Kit por partida doble. `rememberSaveable` (a diferencia
+    // de `remember`) persiste en el Bundle de `onSaveInstanceState` y se
+    // restaura ANTES de que este `LaunchedEffect` vuelva a correr, así que
+    // sobrevive la rotación igual que lo haría un flag en el ViewModel.
+    var hasLaunchedScanner by rememberSaveable { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
+        if (hasLaunchedScanner) return@LaunchedEffect
         if (activity == null) {
             scanSessionViewModel.clearSession()
             onBack()
             return@LaunchedEffect
         }
+        hasLaunchedScanner = true
         launchDocumentScanner(
             activity = activity,
             mode = uiState.selectedMode,

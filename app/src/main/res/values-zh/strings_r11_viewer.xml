@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="viewer_text_truncated_notice">文件过大——仅显示前面部分内容</string>
+</resources>

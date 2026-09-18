@@ -1,0 +1,7 @@
+<resources>
+    <string name="study_pomodoro_study_complete_title">Blocco di studio completato!</string>
+    <string name="study_pomodoro_study_complete_body">È ora di una pausa</string>
+    <string name="study_pomodoro_break_complete_title">Pausa terminata!</string>
+    <string name="study_pomodoro_break_complete_body">È ora di tornare a studiare</string>
+    <string name="study_pomodoro_alert_channel">Pomodoro: fine sessione</string>
+</resources>

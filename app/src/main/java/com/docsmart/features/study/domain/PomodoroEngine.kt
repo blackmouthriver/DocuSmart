@@ -3,13 +3,16 @@ package com.docsmart.features.study.domain
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -67,6 +70,12 @@ internal fun tickPomodoro(current: PomodoroState): PomodoroState = when {
 internal fun tickCompletesStudyBlock(current: PomodoroState): Boolean =
     current.seconds == 0 && current.minutes == 0 && !current.isBreak
 
+// Hallazgo real de la auditoría general 2026-09-18 (Alta -- fin de sesión
+// silencioso): análoga a tickCompletesStudyBlock pero para el cierre de un
+// bloque de DESCANSO, usada para disparar completionEvents desde tick().
+internal fun tickCompletesBreakBlock(current: PomodoroState): Boolean =
+    current.seconds == 0 && current.minutes == 0 && current.isBreak
+
 /**
  * RF-STU-10: motor del Pomodoro, vivo fuera de la composición de
  * `StudyScreen`. Antes el conteo era un `LaunchedEffect(isRunning)` dentro
@@ -90,6 +99,43 @@ object PomodoroEngine {
 
     private val _state = MutableStateFlow(PomodoroState())
     val state: StateFlow<PomodoroState> = _state
+
+    // Hallazgo real de la auditoría general 2026-09-18 (Alta -- fin de
+    // sesión silencioso): evento de un solo disparo para que
+    // PomodoroTimerService pueda avisar (sonido/vibración) cuando un bloque
+    // TERMINA, sin acoplar ese aviso al StateFlow de progreso (`_state`),
+    // que ya se usa para actualizar la notificación en curso en cada tick.
+    // El Boolean indica si el bloque que terminó era un descanso.
+    //
+    // Hallazgo real de la revisión adversarial de correctitud de este mismo
+    // lote: con replay=0, un suscriptor que se registra DESPUÉS del emit
+    // nunca lo ve. PomodoroTimerService recién se suscribe en su onCreate(),
+    // lanzado de forma asíncrona vía startForegroundService() -- pausar y
+    // reanudar con pocos segundos restantes puede completar el bloque antes
+    // de que el servicio recién recreado termine de suscribirse, perdiendo
+    // la alerta en silencio (justo lo que este fix quería resolver).
+    // replay=1 + consumeCompletionEvent() (llamado por el único suscriptor
+    // real tras procesar el evento) lo convierte en un buzón de una sola
+    // casilla: si el suscriptor llega tarde, igual recibe el último evento
+    // pendiente; una vez consumido, no se re-emite a suscriptores futuros.
+    private val _completionEvents = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1)
+    val completionEvents: SharedFlow<Boolean> = _completionEvents
+
+    fun consumeCompletionEvent() {
+        _completionEvents.resetReplayCache()
+    }
+
+    // Hallazgo real de la auditoría general 2026-09-18 (Alta -- Pomodoro sin
+    // ancla de tiempo real): delay(1000) en el bucle de start() asume que
+    // cada suspensión corresponde a exactamente 1 segundo real, pero el CPU
+    // puede entrar en sleep con la pantalla apagada (no hay ningún
+    // WAKE_LOCK en el proyecto) y "recuperar" de golpe al despertar,
+    // desincronizando el cronómetro visible del tiempo real transcurrido.
+    // Se ancla el bucle contra SystemClock.elapsedRealtime() (a diferencia
+    // de uptimeMillis(), sigue avanzando durante el sleep del CPU, así que
+    // refleja tiempo real transcurrido) y se hace catch-up llamando a
+    // tick() tantas veces como segundos reales hayan pasado de verdad.
+    private var lastTickElapsedRealtime: Long = 0L
 
     // Hallazgo #58 (revisión general 2026-09-16), afinado tras la revisión
     // de correctitud adversarial de este mismo lote: un chequeo basado en
@@ -170,11 +216,17 @@ object PomodoroEngine {
         // Cancela cualquier bucle viejo antes de lanzar uno nuevo -- ver
         // el comentario en reset()/pause() sobre la condición de carrera.
         tickerJob?.cancel()
+        lastTickElapsedRealtime = SystemClock.elapsedRealtime()
         tickerJob = scope.launch {
             while (_state.value.isRunning) {
                 delay(1000)
                 if (!_state.value.isRunning) break
-                tick(context)
+                val now = SystemClock.elapsedRealtime()
+                val elapsedSeconds = ((now - lastTickElapsedRealtime) / 1000L).toInt().coerceAtLeast(1)
+                lastTickElapsedRealtime += elapsedSeconds * 1000L
+                repeat(elapsedSeconds) {
+                    if (_state.value.isRunning) tick(context)
+                }
             }
         }
     }
@@ -208,6 +260,9 @@ object PomodoroEngine {
         if (tickCompletesStudyBlock(current)) {
             StudyStatsStorage.recordPomodoroCompletion(context)
             DocuSmartAnalytics.logPomodoroCompleted(next.pomodoroCount)
+            _completionEvents.tryEmit(false)
+        } else if (tickCompletesBreakBlock(current)) {
+            _completionEvents.tryEmit(true)
         }
         // El descanso terminó y arrancó un bloque de estudio nuevo (pausado,
         // esperando "Iniciar") -- ese bloque todavía no logueó su propio

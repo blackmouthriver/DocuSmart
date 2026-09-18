@@ -72,6 +72,7 @@ import com.docsmart.features.scanner.domain.ScanColorMode
 import com.docsmart.features.scanner.domain.buildColorMatrix
 import com.docsmart.features.scanner.domain.buildColorModeMatrix
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -273,7 +274,7 @@ fun ScanResultScreen(
 
     // "Agregar página" (backlog UX 2026-09-06) -- ver ScanAddPageSection.
     // HU-41: la página nueva hereda el modo de color "default" vigente.
-    val onAddPage = rememberAddPageLauncher(activity) { uri ->
+    val addPageLauncherState = rememberAddPageLauncher(activity) { uri ->
         editableUris = editableUris + uri
         pageColorModes = pageColorModes + defaultColorMode
     }
@@ -301,9 +302,9 @@ fun ScanResultScreen(
             pageCount = editableUris.size,
             isPremium = isPremium,
             isRewardedReady = isRewardedReady,
+            launcherState = addPageLauncherState,
             activity = activity,
             adManager = converterViewModel.adManager,
-            onAddPage = onAddPage,
             onPremiumClick = onPremiumClick
         ),
         batchArgs = ScanBatchDisplayArgs(
@@ -384,7 +385,7 @@ fun ScanResultScreen(
                 onScanAgain = scanAgainAction,
                 onDone = goHomeAction,
                 onFinalized = { file ->
-                    scanSessionViewModel.addFile(file)
+                    scanSessionViewModel.addFile(file, context)
                     scanSessionViewModel.registerScanSaved()
                     sessionFinalized = true
                 },
@@ -606,11 +607,12 @@ private fun ScanBatchSessionSync(
     scanSessionViewModel: ScanSessionViewModel,
     onFinalized: () -> Unit
 ) {
+    val context = LocalContext.current
     LaunchedEffect(batchSavedToDownloads) {
         if (!batchSavedToDownloads) return@LaunchedEffect
         batchResults.forEach { item ->
             (item.result as? ConversionResult.Success)?.outputFile?.let { file ->
-                scanSessionViewModel.addFile(file)
+                scanSessionViewModel.addFile(file, context)
             }
         }
         onFinalized()
@@ -710,31 +712,38 @@ private data class ScanAddPageArgs(
     val pageLimit: Int,
     val isPremium: Boolean,
     val isRewardedReady: Boolean,
+    // H7: mientras el intent del escáner de ML Kit sigue en vuelo, se
+    // deshabilita el botón en vez de dejarlo abierto a un segundo toque.
+    val isAddingPage: Boolean,
     val onAddPageDirect: () -> Unit,
     val onWatchAdForPage: () -> Unit,
     val onPremiumClick: () -> Unit
 )
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- arma ScanAddPageArgs.
+// H7: recibe el `AddPageLauncherState` completo (en vez de `isAddingPage` +
+// `onAddPage` sueltos) para no pasar de 8 parámetros (LongParameterList de
+// detekt) al sumar el guard de doble-toque.
 private fun buildScanAddPageArgs(
     pageCount: Int,
     isPremium: Boolean,
     isRewardedReady: Boolean,
+    launcherState: AddPageLauncherState,
     activity: Activity?,
     adManager: AdManager,
-    onAddPage: () -> Unit,
     onPremiumClick: () -> Unit
 ): ScanAddPageArgs = ScanAddPageArgs(
     pageCount = pageCount,
     pageLimit = SCAN_DEFAULT_PAGE_LIMIT,
     isPremium = isPremium,
     isRewardedReady = isRewardedReady,
-    onAddPageDirect = onAddPage,
+    isAddingPage = launcherState.isLaunching,
+    onAddPageDirect = launcherState.launch,
     onWatchAdForPage = {
         activity?.let {
             adManager.showRewardedAd(
                 activity = it,
-                onRewarded = onAddPage,
+                onRewarded = launcherState.launch,
                 onFailed = { Timber.w("ScanResultScreen: anuncio para agregar página no disponible") }
             )
         }
@@ -1088,32 +1097,53 @@ private fun ScanPreviewSection(
 // mini-sesión de ML Kit limitada a 1 página (`pageLimit = 1`) y la agrega
 // al documento actual -- reutiliza `launchDocumentScanner()`, mismo
 // mecanismo que el escaneo inicial de `ScannerScreen`.
+//
+// H7 (auditoría): `getStartScanIntent(activity)` de `launchDocumentScanner()`
+// es asíncrono (`addOnSuccessListener`/`addOnFailureListener`) -- nada
+// bloqueaba tocar "Agregar página" una segunda vez mientras la primera
+// llamada todavía esperaba ese callback, lo que podía disparar
+// `launcher.launch()` dos veces sobre el mismo `ActivityResultLauncher`
+// antes de que el primer resultado volviera. `isLaunching` se pone en
+// `true` justo antes de pedir el intent y se resetea en el callback de
+// éxito (vía el propio `ActivityResultLauncher`) o de error.
+private data class AddPageLauncherState(
+    val isLaunching: Boolean,
+    val launch: () -> Unit
+)
+
 @Composable
 private fun rememberAddPageLauncher(
     activity: Activity?,
     onPageAdded: (Uri) -> Unit
-): () -> Unit {
+): AddPageLauncherState {
+    var isLaunching by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
+        isLaunching = false
         if (result.resultCode == Activity.RESULT_OK) {
             GmsDocumentScanningResult.fromActivityResultIntent(result.data)
                 ?.pages?.firstOrNull()?.imageUri?.let(onPageAdded)
         }
     }
-    return {
-        activity?.let {
-            launchDocumentScanner(
-                activity = it,
-                mode = ScannerMode.DOCUMENT,
-                pageLimit = 1,
-                onLaunched = { intentSender ->
-                    launcher.launch(IntentSenderRequest.Builder(intentSender).build())
-                },
-                onError = { message -> Timber.e("Error agregando página: $message") }
-            )
-        }
+    val launch: () -> Unit = launch@{
+        if (isLaunching) return@launch
+        val act = activity ?: return@launch
+        isLaunching = true
+        launchDocumentScanner(
+            activity = act,
+            mode = ScannerMode.DOCUMENT,
+            pageLimit = 1,
+            onLaunched = { intentSender ->
+                launcher.launch(IntentSenderRequest.Builder(intentSender).build())
+            },
+            onError = { message ->
+                isLaunching = false
+                Timber.e("Error agregando página: $message")
+            }
+        )
     }
+    return AddPageLauncherState(isLaunching, launch)
 }
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- contador de
@@ -1145,6 +1175,9 @@ private fun ScanAddPageSection(args: ScanAddPageArgs) {
         DocuSmartSecondaryButton(
             text = stringResource(R.string.scan_add_page),
             modifier = Modifier.accentShadow(buttonShape).accentBorder(buttonShape),
+            // H7: deshabilitado mientras isAddingPage es true evita que un
+            // segundo toque llegue siquiera a pedir otro intent de escaneo.
+            enabled = !args.isAddingPage,
             onClick = {
                 if (args.isPremium || args.pageCount < args.pageLimit) {
                     args.onAddPageDirect()
@@ -1912,7 +1945,13 @@ private suspend fun copyUriToConvertedDir(
 // ── Compartir archivo via FileProvider ────────────────
 private fun buildShareIntentOrNull(context: Context, file: File): Intent? {
     if (!file.exists()) {
-        Timber.e("shareFile: archivo no existe — ${file.absolutePath}")
+        // H5 (revisión adversarial de seguridad, ronda 11): ni siquiera
+        // file.name debe loguearse -- es el nombre real que el usuario le
+        // puso al documento (a menudo descriptivo del contenido), y
+        // CrashlyticsTree reenvía este mensaje a Firebase Crashlytics sin
+        // throwable de por medio. Mismo criterio que TrashRepository, que
+        // omite el identificador del documento por completo.
+        Timber.e("shareFile: archivo no existe")
         return null
     }
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
@@ -2005,6 +2044,13 @@ private suspend fun shareFileAwaitingSelection(
             context.startActivity(Intent.createChooser(intent, chooserTitle, pendingIntent.intentSender))
             Timber.d("shareFileAwaitingSelection: compartiendo ${file.name}")
         }
+    } catch (e: CancellationException) {
+        // H6: CancellationException hereda de Exception -- sin este catch
+        // específico antes del genérico de abajo, cancelar la corrutina
+        // que llama a esta función mientras suspendCancellableCoroutine
+        // espera la selección de "Compartir" se registraba como un error
+        // real de "compartir", en vez de propagarse como cancelación.
+        throw e
     } catch (e: Exception) {
         Timber.e(e, "Error compartiendo archivo: ${e.message}")
         false

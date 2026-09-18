@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="viewer_text_truncated_notice">파일이 너무 커서 처음 일부 문자만 표시됩니다</string>
+</resources>

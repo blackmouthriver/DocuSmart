@@ -106,24 +106,10 @@ fun LibraryScreen(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
 
-    LaunchedEffect(Unit) {
-        if (!hasPermission) permissionLauncher.launch(getRequiredPermissions())
-    }
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) {
-            viewModel.loadDocuments()
-            viewModel.loadTrashCount()
-        }
-    }
-
-    // Hallazgo real de la revisión general 2026-09-16 (#52): esta pantalla
-    // solo cargaba la lista una vez (al obtener el permiso), así que un
-    // documento movido/borrado en otra pantalla (ej. Visor) seguía
-    // apareciendo como "fantasma" al volver atrás.
-    ReloadOnScreenResume(enabled = hasPermission) {
-        viewModel.loadDocuments()
-        viewModel.loadTrashCount()
-    }
+    // Efectos de permiso (solicitud inicial, recarga al concederlo, recarga
+    // en cada resume, y el fix R11 de recheck en cada resume) extraídos a
+    // LibraryPermissionEffects más abajo -- ver el comentario ahí.
+    LibraryPermissionEffects(context, viewModel, hasPermission, permissionLauncher) { hasPermission = it }
 
     LazyColumn(
         modifier        = Modifier.fillMaxSize(),
@@ -260,6 +246,50 @@ fun LibraryScreen(
                 searchQuery     = uiState.searchQuery
             )
         }
+    }
+}
+
+// Efectos de permiso de LibraryScreen, extraídos a una función aparte para
+// mantener el tamaño del Composable principal dentro del límite de detekt
+// (LongMethod). Sin cambios de comportamiento respecto a como vivían inline.
+@Composable
+private fun LibraryPermissionEffects(
+    context           : android.content.Context,
+    viewModel         : LibraryViewModel,
+    hasPermission     : Boolean,
+    permissionLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>,
+    onPermissionChanged: (Boolean) -> Unit
+) {
+    LaunchedEffect(Unit) {
+        if (!hasPermission) permissionLauncher.launch(getRequiredPermissions())
+    }
+    LaunchedEffect(hasPermission) {
+        if (hasPermission) {
+            viewModel.loadDocuments()
+            viewModel.loadTrashCount()
+        }
+    }
+
+    // Hallazgo real de la revisión general 2026-09-16 (#52): esta pantalla
+    // solo cargaba la lista una vez (al obtener el permiso), así que un
+    // documento movido/borrado en otra pantalla (ej. Visor) seguía
+    // apareciendo como "fantasma" al volver atrás.
+    ReloadOnScreenResume(enabled = hasPermission) {
+        viewModel.loadDocuments()
+        viewModel.loadTrashCount()
+    }
+
+    // Hallazgo de auditoría (R11): si el usuario deniega el permiso, sale a
+    // Ajustes del sistema, lo concede ahí manualmente y vuelve a DocuSmart
+    // SIN abandonar la pestaña Biblioteca (solo cambia de app y vuelve), el
+    // `ReloadOnScreenResume` de arriba nunca se disparaba porque su propia
+    // condición (`enabled = hasPermission`) seguía en `false` -- nada volvía
+    // a consultar el permiso real. Este segundo observer, sin condición,
+    // revisa el permiso en cada ON_RESUME (mismo patrón que AgendaScreen/
+    // NotesTab) para poder salir del estado "Sin permisos" sin reintentar
+    // manualmente.
+    ReloadOnScreenResume(enabled = true) {
+        onPermissionChanged(checkStoragePermission(context))
     }
 }
 

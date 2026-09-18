@@ -1,0 +1,7 @@
+<resources>
+    <string name="study_pomodoro_study_complete_title">学習ブロックが完了しました!</string>
+    <string name="study_pomodoro_study_complete_body">休憩の時間です</string>
+    <string name="study_pomodoro_break_complete_title">休憩が終わりました!</string>
+    <string name="study_pomodoro_break_complete_body">学習を再開する時間です</string>
+    <string name="study_pomodoro_alert_channel">ポモドーロ: セッション終了</string>
+</resources>

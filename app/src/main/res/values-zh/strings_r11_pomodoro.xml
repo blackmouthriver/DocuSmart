@@ -1,0 +1,7 @@
+<resources>
+    <string name="study_pomodoro_study_complete_title">学习时段已完成!</string>
+    <string name="study_pomodoro_study_complete_body">该休息一下了</string>
+    <string name="study_pomodoro_break_complete_title">休息结束!</string>
+    <string name="study_pomodoro_break_complete_body">该继续学习了</string>
+    <string name="study_pomodoro_alert_channel">番茄钟：时段结束</string>
+</resources>

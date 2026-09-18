@@ -36,8 +36,8 @@ internal fun detectQrContentType(value: String): QrContentType {
         lower.startsWith("mailto:")          -> QrContentType.EMAIL
         lower.startsWith("tel:")             -> QrContentType.PHONE
         lower.startsWith("wifi:")            -> QrContentType.WIFI
-        trimmed.contains("BEGIN:VCARD")      -> QrContentType.CONTACT
-        trimmed.contains("BEGIN:VEVENT")     -> QrContentType.EVENT
+        trimmed.contains("BEGIN:VCARD", ignoreCase = true)  -> QrContentType.CONTACT
+        trimmed.contains("BEGIN:VEVENT", ignoreCase = true) -> QrContentType.EVENT
         else                                 -> QrContentType.TEXT
     }
 }

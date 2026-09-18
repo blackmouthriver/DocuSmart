@@ -1,6 +1,7 @@
 package com.docsmart.features.scanner.presentation
 
 import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
@@ -62,7 +63,13 @@ class ScanSessionViewModel @Inject constructor(
         }
     }
 
-    fun addFile(file: File) = sessionManager.addFile(file)
+    // Hallazgo H8 (undécima auditoría, 2026-09-18): recibe el Context
+    // localizado del Composable llamador -- el Context inyectado en
+    // ScanSessionManager es @ApplicationContext y nunca lleva el
+    // locale-override del idioma elegido en la app (solo
+    // MainActivity.attachBaseContext() lo aplica), así que formatFileSize()
+    // mostraba el tamaño de archivo siempre en el idioma del sistema.
+    fun addFile(file: File, context: Context) = sessionManager.addFile(file, context)
 
     fun clearSession() = sessionManager.clear()
 

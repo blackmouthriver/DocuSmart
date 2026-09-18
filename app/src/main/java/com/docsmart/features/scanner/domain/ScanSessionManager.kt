@@ -7,7 +7,6 @@ import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,17 +39,25 @@ import javax.inject.Singleton
 class ScanSessionManager @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
     private val documentRepository: DocumentRepository,
-    private val trashRepository: TrashRepository,
-    @ApplicationContext private val context: Context
+    private val trashRepository: TrashRepository
 ) {
 
     private val _scannedFiles = MutableStateFlow<List<DocumentUiModel>>(emptyList())
     val scannedFiles: StateFlow<List<DocumentUiModel>> = _scannedFiles.asStateFlow()
 
-    fun addFile(file: File) {
+    // H8 (undécima auditoría, 2026-09-18): `formatFileSize()` usaba el
+    // Context inyectado (@ApplicationContext), que NUNCA lleva el
+    // locale-override de idioma de la app -- solo
+    // MainActivity.attachBaseContext() lo aplica -- así que un usuario con
+    // un idioma distinto al del sistema veía el tamaño del archivo siempre
+    // en el idioma del sistema. `context` ahora es un parámetro explícito;
+    // los dos llamadores reales (ScanResultScreen.kt, vía
+    // ScanSessionViewModel.addFile) pasan el Context localizado del
+    // Composable (`LocalContext.current`).
+    fun addFile(file: File, context: Context) {
         val id = file.absolutePath
         _scannedFiles.update { current ->
-            if (current.any { it.id == id }) current else current + buildDocumentUiModel(file)
+            if (current.any { it.id == id }) current else current + buildDocumentUiModel(file, context)
         }
     }
 
@@ -80,11 +87,11 @@ class ScanSessionManager @Inject constructor(
         return movedToTrash
     }
 
-    private fun buildDocumentUiModel(file: File): DocumentUiModel = DocumentUiModel(
+    private fun buildDocumentUiModel(file: File, context: Context): DocumentUiModel = DocumentUiModel(
         id         = file.absolutePath,
         name       = file.name,
         type       = documentTypeForExtension(file.extension),
-        size       = formatFileSize(file.length()),
+        size       = formatFileSize(file.length(), context),
         date       = "",
         isFavorite = favoritesRepository.isFavorite(file.absolutePath),
         sizeBytes  = file.length()
@@ -100,7 +107,7 @@ class ScanSessionManager @Inject constructor(
     // unidades "B"/"KB"/"MB" hardcodeadas sin stringResource, fuera del
     // sistema de 12 idiomas. Mismo patrón ya corregido para
     // PdfToolsScreen (hallazgo #30 del backlog anterior).
-    private fun formatFileSize(bytes: Long): String = when {
+    private fun formatFileSize(bytes: Long, context: Context): String = when {
         bytes < 1024 -> context.getString(R.string.file_size_bytes, bytes)
         bytes < 1024 * 1024 -> context.getString(R.string.file_size_kb, bytes / 1024)
         else -> context.getString(

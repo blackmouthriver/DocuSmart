@@ -156,19 +156,29 @@ class OcrPdfUseCase @Inject constructor(
             var processedPages = 0
             var totalWords = 0
 
-            PdfDocument(PdfReader(cacheFile), PdfWriter(output)).use { pdf ->
-                if (pdf.numberOfPages == 0) {
-                    // Hallazgo real de la revisión general 2026-09-16 (#27):
-                    // outputFile ya existía en disco (PdfWriter lo abre al
-                    // construirse, arriba) -- este return salteaba el
-                    // delete() que sí se hace más abajo para
-                    // alreadyHasText/noTextFound, dejándolo huérfano.
-                    output.delete()
-                    return@withContext PdfToolResult.Error(messages.noPages)
+            // H3: TextRecognition.getClient() implementa Closeable (motor
+            // OCR nativo detrás) -- sin cerrarlo explícitamente quedaba
+            // huérfano en cada "Hacer buscable", fuga de recursos nativos.
+            // finally (no recognizer.use{} envolviendo todo el bloque) para
+            // no reindentar los return@withContext de más abajo, que no
+            // necesitan al recognizer ya cerrado.
+            try {
+                PdfDocument(PdfReader(cacheFile), PdfWriter(output)).use { pdf ->
+                    if (pdf.numberOfPages == 0) {
+                        // Hallazgo real de la revisión general 2026-09-16 (#27):
+                        // outputFile ya existía en disco (PdfWriter lo abre al
+                        // construirse, arriba) -- este return salteaba el
+                        // delete() que sí se hace más abajo para
+                        // alreadyHasText/noTextFound, dejándolo huérfano.
+                        output.delete()
+                        return@withContext PdfToolResult.Error(messages.noPages)
+                    }
+                    val (pages, words) = ocrAllPages(pdf, cacheFile, recognizer, font)
+                    processedPages = pages
+                    totalWords = words
                 }
-                val (pages, words) = ocrAllPages(pdf, cacheFile, recognizer, font)
-                processedPages = pages
-                totalWords = words
+            } finally {
+                recognizer.close()
             }
 
             if (output.length() == 0L) {

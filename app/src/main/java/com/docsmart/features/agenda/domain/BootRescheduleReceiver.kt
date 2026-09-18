@@ -7,6 +7,7 @@ import com.docsmart.core.data.db.AgendaEventDao
 import com.docsmart.core.data.db.NoteDao
 import com.docsmart.features.study.domain.NoteReminderScheduler
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -48,6 +49,10 @@ class BootRescheduleReceiver : BroadcastReceiver() {
                     "BootRescheduleReceiver: ${events.size} recordatorios de Agenda + " +
                         "${notes.size} de Notas reprogramados"
                 )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "BootRescheduleReceiver: error al reprogramar recordatorios tras reinicio")
             } finally {
                 pendingResult.finish()
             }

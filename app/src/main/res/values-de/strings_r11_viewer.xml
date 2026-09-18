@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="viewer_text_truncated_notice">Datei zu groß — es werden nur die ersten Zeichen angezeigt</string>
+</resources>

@@ -1,0 +1,7 @@
+<resources>
+    <string name="study_pomodoro_study_complete_title">Study block complete!</string>
+    <string name="study_pomodoro_study_complete_body">Time for a break</string>
+    <string name="study_pomodoro_break_complete_title">Break finished!</string>
+    <string name="study_pomodoro_break_complete_body">Time to get back to studying</string>
+    <string name="study_pomodoro_alert_channel">Pomodoro: session end</string>
+</resources>

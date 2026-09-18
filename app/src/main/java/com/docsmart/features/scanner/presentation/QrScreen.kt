@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,6 +114,26 @@ fun QrReaderScreen(
         )
     }
 
+    // Hallazgo real de la auditoría (Media): `hasCameraPermission` solo se
+    // calculaba una vez al componer la pantalla -- si el usuario revocaba el
+    // permiso de Cámara desde Ajustes del sistema (o Android lo revocaba
+    // solo por inactividad) mientras estaba en esta pantalla y volvía, la UI
+    // seguía mostrando la rama de "vista de cámara" (que fallaba en
+    // silencio con SecurityException) en vez de la de "sin permiso". Se
+    // vuelve a consultar el permiso real cada vez que la pantalla vuelve a
+    // primer plano.
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.CAMERA
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // Hallazgo real de la revisión general 2026-09-16 (#8): si el usuario
     // deniega el permiso marcando "no volver a preguntar", shouldShowRequestPermissionRationale()
     // pasa a devolver false (mismo valor que ANTES de pedirlo la primera
@@ -136,11 +157,26 @@ fun QrReaderScreen(
     }
 
     LaunchedEffect(Unit) {
-        if (!hasCameraPermission) permissionLauncher.launch(android.Manifest.permission.CAMERA)
+        // Hallazgo real de la auditoría (Media/Alta): `permissionRequestedOnce`
+        // debe quedar en true de forma SÍNCRONA antes de lanzar el pedido de
+        // permiso -- si el callback de `permissionLauncher` resuelve
+        // `granted=false` antes de que se procese la recomposición que pone
+        // `permissionRequestedOnce = true` (ver más abajo), la condición de
+        // "denegado permanentemente" no llegaba a evaluar
+        // shouldShowRequestPermissionRationale() en el primer intento de una
+        // sesión nueva del proceso con el permiso ya denegado para siempre.
+        if (!hasCameraPermission) {
+            permissionRequestedOnce = true
+            permissionLauncher.launch(android.Manifest.permission.CAMERA)
+        }
     }
 
-    var qrResult     by remember { mutableStateOf<String?>(null) }
-    var qrType       by remember { mutableStateOf(QrContentType.TEXT) }
+    // Hallazgo real de la auditoría (Media): sin rememberSaveable, rotar la
+    // pantalla con un QR ya escaneado perdía el resultado completo y volvía
+    // a mostrar la vista de cámara -- mismo criterio ya usado arriba para
+    // `permissionRequestedOnce`/`permissionPermanentlyDenied`.
+    var qrResult     by rememberSaveable { mutableStateOf<String?>(null) }
+    var qrType       by rememberSaveable { mutableStateOf(QrContentType.TEXT) }
     var isScanning   by remember { mutableStateOf(true) }
     var copiedMsg    by remember { mutableStateOf(false) }
     var imageBitmap  by remember { mutableStateOf<Bitmap?>(null) }
@@ -153,6 +189,11 @@ fun QrReaderScreen(
 
     // ── QR protegido (HU-SEC-09/10) ───────────────────
     var pendingProtectedContent by remember { mutableStateOf<String?>(null) }
+    // Revisión adversarial de seguridad (ronda 11): una contraseña en texto
+    // plano no debe sobrevivir en el Bundle de onSaveInstanceState (puede
+    // persistir tras restaurar el proceso, y en algunos fabricantes llega a
+    // tocar disco) -- se acepta perderla en rotación, a diferencia del
+    // resto del formulario.
     var qrPassword              by remember { mutableStateOf("") }
     var qrPasswordVisible       by remember { mutableStateOf(false) }
     var qrPasswordError         by remember { mutableStateOf<String?>(null) }
@@ -702,6 +743,23 @@ internal fun qrTypeChipBorder(selected: Boolean) = FilterChipDefaults.filterChip
     selectedBorderWidth = 1.5.dp
 )
 
+// Hallazgo real de la auditoría (Alta, QrCreatorScreen): Uri no es
+// Parcelable-friendly de forma trivial para rememberSaveable -- se persiste
+// como String (mismo criterio sugerido para este caso: Saver simple
+// toString()/Uri.parse()).
+private val QrUriSaver = Saver<Uri?, String>(
+    save = { it?.toString() ?: "" },
+    restore = { if (it.isEmpty()) null else Uri.parse(it) }
+)
+
+// LocalDateTime no es directamente Bundle-Saveable de forma confiable con
+// autoSaver() -- se persiste como String ISO-8601 (formato que el propio
+// LocalDateTime.toString()/parse() ya usan).
+private val QrLocalDateTimeSaver = Saver<LocalDateTime, String>(
+    save = { it.toString() },
+    restore = { LocalDateTime.parse(it) }
+)
+
 // ── Pantalla: Crear QR ────────────────────────────────────────────────────────
 // HU-43: ExperimentalLayoutApi por el FlowRow del selector de tipo.
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -723,11 +781,16 @@ fun QrCreatorScreen(
     val scope   = rememberCoroutineScope()
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
+    // Hallazgo real de la auditoría (Alta): QrCreatorScreen perdía TODO el
+    // formulario al rotar pantalla porque ningún campo usaba
+    // rememberSaveable -- se migran acá los campos de texto/selección
+    // simples. El Bitmap del logo (`logoBitmap`) se deja en `remember`
+    // normal más abajo (se regenera, aceptable perder solo el logo visual).
     // 0=URL, 1=Texto, 2=Email, 3=Teléfono, 4=Imagen, 5=Documento
-    var selectedType by remember { mutableIntStateOf(0) }
-    var content      by remember { mutableStateOf("") }
-    var selectedUri  by remember { mutableStateOf<Uri?>(null) }
-    var selectedName by remember { mutableStateOf("") }
+    var selectedType by rememberSaveable { mutableIntStateOf(0) }
+    var content      by rememberSaveable { mutableStateOf("") }
+    var selectedUri  by rememberSaveable(stateSaver = QrUriSaver) { mutableStateOf<Uri?>(null) }
+    var selectedName by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(initialFileUri) {
         if (initialFileUri != null) {
@@ -737,9 +800,11 @@ fun QrCreatorScreen(
             content      = initialFileUri
         }
     }
+    // Revisión adversarial de seguridad (ronda 11): no persistir la
+    // contraseña en texto plano en el Bundle de onSaveInstanceState.
     var password     by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var usePassword  by remember { mutableStateOf(false) }
+    var usePassword  by rememberSaveable { mutableStateOf(false) }
     var qrBitmap     by remember { mutableStateOf<Bitmap?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
     var savedMsg     by remember { mutableStateOf<String?>(null) }
@@ -749,24 +814,28 @@ fun QrCreatorScreen(
     // cada uno con sus propios campos (no comparten `content` como URL/
     // Texto/Email/Teléfono), así que cambiar de tipo y volver conserva lo
     // ya escrito sin necesitar lógica extra de reset.
-    var wifiSsid       by remember { mutableStateOf("") }
+    var wifiSsid       by rememberSaveable { mutableStateOf("") }
+    // Revisión adversarial de seguridad (ronda 11): no persistir la
+    // contraseña de Wi-Fi en texto plano en el Bundle de onSaveInstanceState.
     var wifiPassword   by remember { mutableStateOf("") }
     var wifiShowPass   by remember { mutableStateOf(false) }
-    var wifiSecurity   by remember { mutableStateOf(QrWifiSecurity.WPA) }
-    var contactName    by remember { mutableStateOf("") }
-    var contactPhone   by remember { mutableStateOf("") }
-    var contactEmail   by remember { mutableStateOf("") }
-    var eventTitle     by remember { mutableStateOf("") }
-    var eventLocation  by remember { mutableStateOf("") }
-    var eventStart     by remember {
+    var wifiSecurity   by rememberSaveable { mutableStateOf(QrWifiSecurity.WPA) }
+    var contactName    by rememberSaveable { mutableStateOf("") }
+    var contactPhone   by rememberSaveable { mutableStateOf("") }
+    var contactEmail   by rememberSaveable { mutableStateOf("") }
+    var eventTitle     by rememberSaveable { mutableStateOf("") }
+    var eventLocation  by rememberSaveable { mutableStateOf("") }
+    var eventStart     by rememberSaveable(stateSaver = QrLocalDateTimeSaver) {
         mutableStateOf(LocalDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0))
     }
-    var eventEnd       by remember { mutableStateOf(eventStart.plusHours(1)) }
+    var eventEnd       by rememberSaveable(stateSaver = QrLocalDateTimeSaver) {
+        mutableStateOf(eventStart.plusHours(1))
+    }
 
     // HU-45 (backlog UX 2026-08-30/09-14): color de los módulos (RF1,
     // Negro por defecto -- AC3 de HU-43/mismo criterio de "sin cambios
     // para quien no toca la opción") y logo opcional (RF2).
-    var moduleColor by remember { mutableStateOf(QR_DEFAULT_MODULE_COLOR) }
+    var moduleColor by rememberSaveable { mutableStateOf(QR_DEFAULT_MODULE_COLOR) }
     var logoBitmap  by remember { mutableStateOf<Bitmap?>(null) }
 
     val types = listOf(
@@ -1358,6 +1427,16 @@ fun QrCreatorScreen(
                     savedMsg     = null
                     isGenerating = true
                     scope.launch {
+                        // Hallazgo real de la auditoría (Media): cada QR
+                        // guardado/compartido se escribía en
+                        // cacheDir/qr/QR_<timestamp>.png y nunca se borraba
+                        // -- "Limpiar caché" de Ajustes no toca cacheDir. El
+                        // archivo recién compartido no puede borrarse de
+                        // inmediato (FileProvider lo sirve de forma
+                        // asíncrona a la app receptora), así que se limpian acá
+                        // los archivos viejos (>1h) al iniciar una nueva
+                        // generación.
+                        cleanOldQrCacheFiles(context)
                         val rawContent = when (selectedType) {
                             4, 5 -> selectedUri.toString()
                             // Hallazgo real de la auditoría general 2026-09-17
@@ -1704,6 +1783,28 @@ internal suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
             file
         } catch (e: Exception) { Timber.e(e, "saveQrToFile"); null }
     }
+
+// Hallazgo real de la auditoría (Media): los PNG temporales de
+// cacheDir/qr/ (creados por saveQrToFile para compartir/guardar vía
+// FileProvider) nunca se borraban -- "Limpiar caché" de Ajustes no toca
+// cacheDir. Se borran acá los que tengan más de 1 hora, sin tocar el
+// recién compartido (todavía puede estar siendo leído de forma asíncrona
+// por la app receptora del Intent.ACTION_SEND).
+private const val QR_CACHE_MAX_AGE_MILLIS = 60 * 60 * 1000L
+
+internal suspend fun cleanOldQrCacheFiles(context: Context) {
+    withContext(Dispatchers.IO) {
+        try {
+            val dir = File(context.cacheDir, "qr")
+            val cutoff = System.currentTimeMillis() - QR_CACHE_MAX_AGE_MILLIS
+            dir.listFiles()?.forEach { file ->
+                if (file.lastModified() < cutoff) file.delete()
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "cleanOldQrCacheFiles")
+        }
+    }
+}
 
 
 internal fun shareQrImage(context: Context, file: File, chooserTitle: String) {

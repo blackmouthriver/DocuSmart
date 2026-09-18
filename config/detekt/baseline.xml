@@ -274,6 +274,7 @@
     <ID>SwallowedException:SettingsScreen.kt$e: ActivityNotFoundException</ID>
     <ID>SwallowedException:StudyScreen.kt$e: Exception</ID>
     <ID>SwallowedException:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BootRescheduleReceiver.kt$BootRescheduleReceiver$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ComparePdfUseCase.kt$ComparePdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:CompressPdfUseCase.kt$CompressPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ConversionSuccess.kt$e: Exception</ID>

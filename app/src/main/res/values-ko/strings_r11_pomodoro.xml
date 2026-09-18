@@ -1,0 +1,7 @@
+<resources>
+    <string name="study_pomodoro_study_complete_title">학습 블록 완료!</string>
+    <string name="study_pomodoro_study_complete_body">휴식 시간이에요</string>
+    <string name="study_pomodoro_break_complete_title">휴식이 끝났어요!</string>
+    <string name="study_pomodoro_break_complete_body">다시 학습할 시간이에요</string>
+    <string name="study_pomodoro_alert_channel">뽀모도로: 세션 종료</string>
+</resources>
