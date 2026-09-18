@@ -314,6 +314,7 @@
     <string name="converter_error_empty_spreadsheet">스프레드시트에 데이터가 없습니다</string>
     <string name="converter_error_empty_presentation">프리젠테이션에 텍스트가 없습니다</string>
     <string name="converter_error_legacy_format_unsupported">이 이전 형식(Office 2007 이전의 .xls/.ppt)은 아직 지원되지 않습니다. .xlsx/.pptx로 저장한 후 다시 시도해 보세요.</string>
+    <string name="converter_error_password_protected">이 파일은 암호로 보호되어 있습니다. Word/Excel/PowerPoint에서 암호를 제거한 후(파일 → 문서 보호) 다시 시도해 보세요.</string>
     <string name="converter_error_empty_word_document">문서에 추출 가능한 텍스트가 없습니다</string>
     <string name="converter_error_empty_pdf_text">PDF에 추출 가능한 텍스트가 없습니다</string>
     <string name="converter_error_empty_pdf_text_scanned">PDF에 추출 가능한 텍스트가 없습니다. 스캔된 PDF일 수 있습니다.</string>
@@ -494,6 +495,7 @@
     <string name="pdf_redact_next_page">다음 페이지</string>
     <string name="pdf_redact_loading_preview">미리보기 불러오는 중…</string>
     <string name="pdf_redact_preview_desc">페이지 미리보기</string>
+    <string name="pdf_redact_canvas_desc">페이지 미리보기. 손가락으로 드래그하여 가릴 영역을 표시하세요. 이 페이지에 표시된 영역: %1$d개.</string>
     <string name="pdf_redact_draw_hint">미리보기 위에서 드래그하여 가릴 영역을 표시하세요</string>
     <string name="pdf_redact_zones_marked">%1$d개 영역 표시됨</string>
     <string name="pdf_redact_undo">실행 취소</string>
@@ -549,6 +551,8 @@
     <string name="pdf_sign_next_page">다음 페이지</string>
     <string name="pdf_sign_draw_label">서명</string>
     <string name="pdf_sign_draw_hint">위 상자 안에 손가락으로 서명을 그리세요</string>
+    <string name="pdf_sign_canvas_desc">손가락으로 서명을 그리는 영역입니다. 스크린 리더를 사용 중이라면 아래 입력란에 이름을 입력하세요.</string>
+    <string name="pdf_sign_type_label">또는 이름 입력</string>
     <string name="pdf_sign_hint">아직 서명을 그리지 않았습니다</string>
     <string name="pdf_sign_captured">서명이 등록되었습니다</string>
     <string name="pdf_sign_clear">지우기</string>
@@ -1042,6 +1046,7 @@
     <string name="study_extract_pdf_error">PDF 읽기 오류: %1$s</string>
     <string name="study_extract_generic_error">오류: %1$s</string>
     <string name="study_default_document_name">문서</string>
+    <string name="study_extract_out_of_memory">메모리 부족</string>
     <string name="study_pomodoro_notification_channel">뽀모도로</string>
     <string name="study_pomodoro_notification_text">%1$s 남음</string>
     <string name="study_export_notes">메모 내보내기</string>
@@ -1071,6 +1076,7 @@
     <string name="trash_deletes_today">오늘 삭제됨</string>
     <string name="trash_days_remaining">%1$d일 남음</string>
     <string name="trash_restore">복원</string>
+    <string name="trash_restore_error">파일을 복원할 수 없습니다 -- 더 이상 존재하지 않습니다.</string>
     <string name="trash_delete_forever">지금 삭제</string>
     <string name="trash_delete_forever_confirm_title">영구적으로 삭제하시겠어요?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s이(가) 영구적으로 삭제되며 복구할 수 없습니다."</string>

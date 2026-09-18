@@ -11,6 +11,7 @@ import com.itextpdf.layout.element.Paragraph
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.poi.EncryptedDocumentException
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.DataFormatter
 import org.apache.poi.ss.usermodel.FormulaEvaluator
@@ -48,43 +49,28 @@ class ExcelToPdfUseCase @Inject constructor(
             // el PdfDocument/Document y el Workbook de POI sin cerrar, con el
             // FileOutputStream de outputFile abierto. .use{} anidado garantiza
             // el cierre de ambos pase lo que pase.
-            context.contentResolver.openInputStream(excelUri)?.use { input ->
-                WorkbookFactory.create(input).use { workbook ->
-                    val writer = PdfWriter(outputFile!!)
-                    val pdfDoc = PdfDocument(writer)
-                    // Hallazgo real de la revisión general 2026-09-16:
-                    // cell.toString() en una celda de fórmula devuelve el
-                    // texto de la fórmula, no el resultado calculado --
-                    // mismo bug que en ExcelToCsvUseCase.
-                    val evaluator     = workbook.creationHelper.createFormulaEvaluator()
-                    val dataFormatter = DataFormatter()
-                    Document(pdfDoc).use { document ->
-                        for (sheetIndex in 0 until workbook.numberOfSheets) {
-                            val sheet = workbook.getSheetAt(sheetIndex)
-                            document.add(Paragraph("=== ${sheet.sheetName} ==="))
-
-                            sheet.forEach { row ->
-                                val rowText = buildString {
-                                    row.forEach { cell ->
-                                        append(formatCellSafely(cell, dataFormatter, evaluator))
-                                        append("\t")
-                                    }
-                                }.trim()
-                                if (rowText.isNotBlank()) {
-                                    document.add(Paragraph(rowText))
-                                }
-                            }
-                            document.add(Paragraph(""))
-                        }
-                    }
-                }
-            } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_excel))
+            // Extraído a writeWorkbookToPdf() -- además de mantener la
+            // complejidad ciclomática de invoke() bajo el límite de detekt
+            // (creció al agregar el catch de EncryptedDocumentException,
+            // hallazgo C1 de la décima ronda), agrupa toda la escritura en
+            // un solo lugar.
+            val wrote = writeWorkbookToPdf(excelUri, outputFile!!)
+            if (!wrote) {
+                return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_excel))
+            }
 
             ConversionResult.Success(
                 outputFile = outputFile!!,
                 pageCount = 1,
                 fileSizeKb = (outputFile!!.length() / 1024).toInt()
             )
+        } catch (e: EncryptedDocumentException) {
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Alta -- C1): ver el mismo hallazgo en
+            // ExcelToCsvUseCase.kt.
+            Timber.w(e, "ExcelToPdfUseCase: archivo protegido con contraseña")
+            outputFile?.delete()
+            ConversionResult.Error(context.getString(R.string.converter_error_password_protected))
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Excel a PDF")
             outputFile?.delete()
@@ -105,6 +91,53 @@ class ExcelToPdfUseCase @Inject constructor(
                 )
             )
         }
+    }
+
+    private fun writeWorkbookToPdf(excelUri: Uri, outputFile: File): Boolean {
+        var wrote = false
+        context.contentResolver.openInputStream(excelUri)?.use { input ->
+            WorkbookFactory.create(input).use { workbook -> writeWorkbookContent(workbook, outputFile) }
+            wrote = true
+        }
+        return wrote
+    }
+
+    // Extraído de writeWorkbookToPdf() -- detekt: NestedBlockDepth, disparado
+    // al agrupar toda la escritura para bajar la complejidad ciclomática de
+    // invoke() (hallazgo C1, décima ronda).
+    private fun writeWorkbookContent(workbook: org.apache.poi.ss.usermodel.Workbook, outputFile: File) {
+        val pdfDoc = PdfDocument(PdfWriter(outputFile))
+        // Hallazgo real de la revisión general 2026-09-16: cell.toString()
+        // en una celda de fórmula devuelve el texto de la fórmula, no el
+        // resultado calculado -- mismo bug que en ExcelToCsvUseCase.
+        val evaluator     = workbook.creationHelper.createFormulaEvaluator()
+        val dataFormatter = DataFormatter()
+        Document(pdfDoc).use { document ->
+            for (sheetIndex in 0 until workbook.numberOfSheets) {
+                appendSheetToDocument(document, workbook.getSheetAt(sheetIndex), dataFormatter, evaluator)
+            }
+        }
+    }
+
+    private fun appendSheetToDocument(
+        document: Document,
+        sheet: org.apache.poi.ss.usermodel.Sheet,
+        dataFormatter: DataFormatter,
+        evaluator: FormulaEvaluator
+    ) {
+        document.add(Paragraph("=== ${sheet.sheetName} ==="))
+        sheet.forEach { row ->
+            val rowText = buildString {
+                row.forEach { cell ->
+                    append(formatCellSafely(cell, dataFormatter, evaluator))
+                    append("\t")
+                }
+            }.trim()
+            if (rowText.isNotBlank()) {
+                document.add(Paragraph(rowText))
+            }
+        }
+        document.add(Paragraph(""))
     }
 
     // Hallazgo real de la revisión de corrección 2026-09-16: evaluator.evaluate()

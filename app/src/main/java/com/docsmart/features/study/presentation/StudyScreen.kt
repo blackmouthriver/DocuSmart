@@ -106,6 +106,7 @@ import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
 import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData
 import com.itextpdf.kernel.pdf.canvas.parser.data.TextRenderInfo
 import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
@@ -193,7 +194,8 @@ fun StudyScreen(
         pdfNoText            = stringResource(R.string.study_extract_pdf_no_text),
         pdfErrorTemplate     = stringResource(R.string.study_extract_pdf_error),
         genericErrorTemplate = stringResource(R.string.study_extract_generic_error),
-        defaultDocumentName  = stringResource(R.string.study_default_document_name)
+        defaultDocumentName  = stringResource(R.string.study_default_document_name),
+        outOfMemoryMessage   = stringResource(R.string.study_extract_out_of_memory)
     )
     // Se preserva con `rememberSaveable` para no perder una nota a medio
     // escribir (texto/resaltados) si el dispositivo rota mientras se
@@ -409,6 +411,17 @@ fun StudyScreen(
                 currentSpeakingIndex.intValue = resumeFromParagraph
                     ?.coerceIn(0, (result.paragraphs.size - 1).coerceAtLeast(0))
                     ?: -1
+            }
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Media -- N4): si la extracción falla (documento
+            // borrado/movido, sin texto, sin memoria) mientras se estaba
+            // "retomando" una lectura guardada, antes la entrada de
+            // progreso quedaba fantasma en StudyReadingProgressStorage
+            // para siempre -- el usuario volvía a ver "Continuar leyendo"
+            // apuntando a un documento roto una y otra vez.
+            if (result.isError && resumeFromParagraph != null) {
+                StudyReadingProgressStorage.remove(context, uri.toString())
+                readingHistory = StudyReadingProgressStorage.loadAll(context)
             }
             isLoadingDoc = false
             extractionComplete = true
@@ -2608,38 +2621,61 @@ private enum class StudyExportFormat { TEXT, PDF, WORD }
 @Composable
 private fun StudyExportNotesButton(notes: List<NoteWithImages>) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
+    // Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda,
+    // Alta -- N1): shareStudyNotes() corría síncrono en el hilo principal
+    // (I/O + decodificación de imágenes con iText/POI) sin ningún guard --
+    // riesgo real de ANR con varias notas con imágenes, y sin guard un
+    // doble-toque podía lanzar 2 exportaciones seguidas (nombre de
+    // archivo con timestamp a nivel de segundo, pueden colisionar). Mismo
+    // patrón ya usado en ViewerViewModel.shareWithAnnotations()
+    // (corrutina + flag de carga).
+    var isExporting by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.study_export_share_title)
 
+    fun exportAs(format: StudyExportFormat) {
+        if (isExporting) return
+        isExporting = true
+        scope.launch {
+            shareStudyNotes(context, notes, format, shareTitle)
+            isExporting = false
+        }
+    }
+
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Icon(
-                imageVector = Icons.Rounded.IosShare,
-                contentDescription = stringResource(R.string.study_export_notes),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
+        IconButton(onClick = { expanded = true }, enabled = !isExporting) {
+            if (isExporting) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(
+                    imageVector = Icons.Rounded.IosShare,
+                    contentDescription = stringResource(R.string.study_export_notes),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.study_export_as_text)) },
                 onClick = {
                     expanded = false
-                    shareStudyNotes(context, notes, StudyExportFormat.TEXT, shareTitle)
+                    exportAs(StudyExportFormat.TEXT)
                 }
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.study_export_as_pdf)) },
                 onClick = {
                     expanded = false
-                    shareStudyNotes(context, notes, StudyExportFormat.PDF, shareTitle)
+                    exportAs(StudyExportFormat.PDF)
                 }
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.note_export_as_word)) },
                 onClick = {
                     expanded = false
-                    shareStudyNotes(context, notes, StudyExportFormat.WORD, shareTitle)
+                    exportAs(StudyExportFormat.WORD)
                 }
             )
         }
@@ -2652,47 +2688,71 @@ private fun StudyExportNotesButton(notes: List<NoteWithImages>) {
 @Composable
 private fun StudyExportSingleNoteButton(note: NoteWithImages) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
+    // Ver el mismo hallazgo (N1) en StudyExportNotesButton más arriba.
+    var isExporting by remember { mutableStateOf(false) }
     val shareTitle = stringResource(R.string.study_export_share_title)
 
+    fun exportAs(format: StudyExportFormat) {
+        if (isExporting) return
+        isExporting = true
+        scope.launch {
+            shareStudyNotes(context, listOf(note), format, shareTitle)
+            isExporting = false
+        }
+    }
+
     Box {
-        IconButton(onClick = { expanded = true }, modifier = Modifier.size(40.dp)) {
-            Icon(
-                imageVector        = Icons.Rounded.IosShare,
-                contentDescription = stringResource(R.string.note_export_note_desc),
-                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier           = Modifier.size(16.dp)
-            )
+        IconButton(onClick = { expanded = true }, enabled = !isExporting, modifier = Modifier.size(40.dp)) {
+            if (isExporting) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(
+                    imageVector        = Icons.Rounded.IosShare,
+                    contentDescription = stringResource(R.string.note_export_note_desc),
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier           = Modifier.size(16.dp)
+                )
+            }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.study_export_as_pdf)) },
                 onClick = {
                     expanded = false
-                    shareStudyNotes(context, listOf(note), StudyExportFormat.PDF, shareTitle)
+                    exportAs(StudyExportFormat.PDF)
                 }
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.note_export_as_word)) },
                 onClick = {
                     expanded = false
-                    shareStudyNotes(context, listOf(note), StudyExportFormat.WORD, shareTitle)
+                    exportAs(StudyExportFormat.WORD)
                 }
             )
         }
     }
 }
 
+// Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda, Alta
+// -- N1): antes corría entero en el hilo principal -- StudyNotesExporter
+// hace I/O + decodificación de imágenes con iText/POI, igual de pesado
+// que ViewerViewModel.shareWithAnnotations() (que sí usa
+// viewModelScope.launch). Ahora la generación del archivo corre en
+// Dispatchers.IO; solo el Intent final (rápido) vuelve al hilo que llamó.
 @Suppress("TooGenericExceptionCaught")
-private fun shareStudyNotes(
+private suspend fun shareStudyNotes(
     context: Context, notes: List<NoteWithImages>, format: StudyExportFormat, shareTitle: String
 ) {
     try {
-        val (file, mimeType) = when (format) {
-            StudyExportFormat.TEXT -> StudyNotesExporter.exportAsTextFile(context, notes) to "text/plain"
-            StudyExportFormat.PDF  -> StudyNotesExporter.exportAsPdfFile(context, notes) to "application/pdf"
-            StudyExportFormat.WORD -> StudyNotesExporter.exportAsWordFile(context, notes) to
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        val (file, mimeType) = withContext(Dispatchers.IO) {
+            when (format) {
+                StudyExportFormat.TEXT -> StudyNotesExporter.exportAsTextFile(context, notes) to "text/plain"
+                StudyExportFormat.PDF  -> StudyNotesExporter.exportAsPdfFile(context, notes) to "application/pdf"
+                StudyExportFormat.WORD -> StudyNotesExporter.exportAsWordFile(context, notes) to
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            }
         }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
@@ -2701,6 +2761,17 @@ private fun shareStudyNotes(
             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.startActivity(android.content.Intent.createChooser(intent, shareTitle))
+    } catch (e: CancellationException) {
+        // Hallazgo real de la revisión adversarial de esta misma ronda
+        // (Media): si el usuario navega fuera de la pantalla mientras se
+        // genera el archivo (rememberCoroutineScope() cancela la
+        // corrutina), el catch genérico de abajo tragaba la
+        // CancellationException como si fuera un error más -- rompe la
+        // cancelación estructurada (esta corrutina "cancelada" seguía
+        // corriendo hasta el final en vez de detenerse de verdad). Mismo
+        // patrón ya aplicado hoy en OcrPdfUseCase/CompressPdfUseCase:
+        // relanzarla siempre, nunca tragarla.
+        throw e
     } catch (e: Exception) {
         Timber.e(e, "Error exportando notas de estudio")
     }
@@ -3388,7 +3459,9 @@ data class StudyExtractionMessages(
     val pdfNoText           : String,
     val pdfErrorTemplate    : String, // formato: %1$s
     val genericErrorTemplate: String, // formato: %1$s
-    val defaultDocumentName : String
+    val defaultDocumentName : String,
+    // Ver N3 (décima ronda) más abajo, en extractTextFromUri().
+    val outOfMemoryMessage  : String
 )
 
 data class StudyExtractionResult(
@@ -3397,7 +3470,16 @@ data class StudyExtractionResult(
     // "Retomar lectura" (2026-09-08): cuántos párrafos acumulados hay al
     // terminar cada página del PDF -- permite traducir el índice de párrafo
     // que va leyendo la voz a un número de página real (`pageForParagraph`).
-    val pageBoundaries: List<Int> = emptyList()
+    val pageBoundaries: List<Int> = emptyList(),
+    // Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda,
+    // Media -- N4): antes, si el documento se borraba/movía mientras
+    // había progreso de lectura guardado, el mensaje de error de
+    // extracción se devolvía COMO SI fuera un párrafo real del documento
+    // (dentro de `paragraphs`) -- "Continuar leyendo" mostraba ese texto
+    // de error en vez de avisar que el documento ya no existe, y la
+    // entrada quedaba fantasma en `StudyReadingProgressStorage` para
+    // siempre. Este flag deja distinguir ambos casos en el llamador.
+    val isError       : Boolean = false
 )
 
 // ── Extraer texto de un PDF ───────────────────────────
@@ -3416,11 +3498,27 @@ private suspend fun extractTextFromUri(
 ): StudyExtractionResult = withContext(Dispatchers.IO) {
     try {
         val fileName = resolveFileName(context, uri, messages)
-        val (paragraphs, pageBoundaries) = extractPdfText(context, uri, messages, onPageExtracted)
-        StudyExtractionResult(paragraphs, fileName, pageBoundaries)
+        val (paragraphs, pageBoundaries, extractionFailed) = extractPdfText(context, uri, messages, onPageExtracted)
+        StudyExtractionResult(paragraphs, fileName, pageBoundaries, isError = extractionFailed)
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto")
-        StudyExtractionResult(emptyList(), String.format(messages.genericErrorTemplate, e.message ?: ""))
+        StudyExtractionResult(
+            emptyList(),
+            String.format(messages.genericErrorTemplate, e.message ?: ""),
+            isError = true
+        )
+    } catch (e: OutOfMemoryError) {
+        // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+        // ronda, Media -- N3): OutOfMemoryError no hereda de Exception --
+        // mismo patrón ya corregido en 11 conversores del Convertidor
+        // (P1, quinta ronda), nunca extendido a Lectura, que acumula
+        // todos los párrafos de un PDF grande en memoria.
+        Timber.e(e, "StudyScreen: sin memoria extrayendo el documento")
+        StudyExtractionResult(
+            emptyList(),
+            String.format(messages.genericErrorTemplate, messages.outOfMemoryMessage),
+            isError = true
+        )
     }
 }
 
@@ -3446,13 +3544,13 @@ private suspend fun extractPdfText(
     uri     : Uri,
     messages: StudyExtractionMessages,
     onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> }
-): Pair<List<String>, List<Int>> {
+): Triple<List<String>, List<Int>, Boolean> {
     var cacheFile: File? = null
     return try {
         cacheFile = File.createTempFile("study_temp", ".pdf", context.cacheDir)
         context.contentResolver.openInputStream(uri)?.use { input ->
             cacheFile.outputStream().use { output -> input.copyTo(output) }
-        } ?: return listOf(messages.couldNotRead) to emptyList()
+        } ?: return Triple(listOf(messages.couldNotRead), emptyList(), true)
 
         val paragraphs = mutableListOf<String>()
         val pageBoundaries = mutableListOf<Int>()
@@ -3460,10 +3558,14 @@ private suspend fun extractPdfText(
             extractPdfPages(pdfDoc, paragraphs, pageBoundaries, onPageExtracted)
         }
 
-        if (paragraphs.isEmpty()) listOf(messages.pdfNoText) to emptyList() else paragraphs to pageBoundaries
+        if (paragraphs.isEmpty()) {
+            Triple(listOf(messages.pdfNoText), emptyList(), true)
+        } else {
+            Triple(paragraphs, pageBoundaries, false)
+        }
     } catch (e: Exception) {
         Timber.e(e, "Error extrayendo texto PDF")
-        listOf(String.format(messages.pdfErrorTemplate, e.message ?: "")) to emptyList()
+        Triple(listOf(String.format(messages.pdfErrorTemplate, e.message ?: "")), emptyList(), true)
     } finally {
         cacheFile?.delete()
     }

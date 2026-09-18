@@ -314,6 +314,7 @@
     <string name="converter_error_empty_spreadsheet">表計算シートにデータがありません</string>
     <string name="converter_error_empty_presentation">プレゼンテーションにテキストがありません</string>
     <string name="converter_error_legacy_format_unsupported">この古い形式（Office 2007より前の.xls/.ppt）はまだ対応していません。.xlsx/.pptx形式で保存してから再度お試しください。</string>
+    <string name="converter_error_password_protected">このファイルはパスワードで保護されています。Word/Excel/PowerPointでパスワードを解除してから（ファイル→文書の保護）、再度お試しください。</string>
     <string name="converter_error_empty_word_document">ドキュメントに抽出可能なテキストがありません</string>
     <string name="converter_error_empty_pdf_text">PDFに抽出可能なテキストがありません</string>
     <string name="converter_error_empty_pdf_text_scanned">PDFに抽出可能なテキストがありません。スキャンされたPDFの可能性があります。</string>
@@ -494,6 +495,7 @@
     <string name="pdf_redact_next_page">次のページ</string>
     <string name="pdf_redact_loading_preview">プレビューを読み込み中…</string>
     <string name="pdf_redact_preview_desc">ページのプレビュー</string>
+    <string name="pdf_redact_canvas_desc">ページのプレビュー。指でドラッグして黒塗りにする範囲を指定します。このページで指定済みの範囲: %1$d件。</string>
     <string name="pdf_redact_draw_hint">プレビュー上をドラッグして黒塗りする部分を指定してください</string>
     <string name="pdf_redact_zones_marked">%1$d箇所を指定済み</string>
     <string name="pdf_redact_undo">元に戻す</string>
@@ -549,6 +551,8 @@
     <string name="pdf_sign_next_page">次のページ</string>
     <string name="pdf_sign_draw_label">あなたの署名</string>
     <string name="pdf_sign_draw_hint">上の枠内に指で署名を描いてください</string>
+    <string name="pdf_sign_canvas_desc">指で署名を描くエリアです。スクリーンリーダーを使用している場合は、代わりに下の欄に名前を入力してください。</string>
+    <string name="pdf_sign_type_label">または名前を入力</string>
     <string name="pdf_sign_hint">まだ署名が描かれていません</string>
     <string name="pdf_sign_captured">署名を取得しました</string>
     <string name="pdf_sign_clear">消去</string>
@@ -1042,6 +1046,7 @@
     <string name="study_extract_pdf_error">PDFの読み取り中にエラーが発生しました: %1$s</string>
     <string name="study_extract_generic_error">エラー: %1$s</string>
     <string name="study_default_document_name">ドキュメント</string>
+    <string name="study_extract_out_of_memory">メモリ不足</string>
     <string name="study_pomodoro_notification_channel">ポモドーロ</string>
     <string name="study_pomodoro_notification_text">残り%1$s</string>
     <string name="study_export_notes">メモをエクスポート</string>
@@ -1071,6 +1076,7 @@
     <string name="trash_deletes_today">本日削除されます</string>
     <string name="trash_days_remaining">残り%1$d日</string>
     <string name="trash_restore">復元</string>
+    <string name="trash_restore_error">ファイルを復元できませんでした -- 既に存在しません。</string>
     <string name="trash_delete_forever">今すぐ削除</string>
     <string name="trash_delete_forever_confirm_title">完全に削除しますか?</string>
     <string name="trash_delete_forever_confirm_body">"%1$sは完全に削除され、復元できなくなります。"</string>

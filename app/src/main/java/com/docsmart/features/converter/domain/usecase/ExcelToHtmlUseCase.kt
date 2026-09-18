@@ -34,6 +34,16 @@ class ExcelToHtmlUseCase @Inject constructor(
             // vacía" en vez de avisar que el formato en sí no está
             // soportado.
             if (isLegacyOle2Uri(context, excelUri)) {
+                // Hallazgo real de la auditoría general 2026-09-17/18
+                // (décima ronda, Alta -- C1): un .xlsx protegido con
+                // contraseña de Office tiene la MISMA firma OLE2 que un
+                // .xls legado real -- sin distinguirlos, el usuario veía
+                // "guardalo como .xlsx" sobre un archivo que YA es .xlsx.
+                if (isPasswordProtectedOfficeUri(context, excelUri)) {
+                    return@withContext ConversionResult.Error(
+                        context.getString(R.string.converter_error_password_protected)
+                    )
+                }
                 return@withContext ConversionResult.Error(
                     context.getString(R.string.converter_error_legacy_format_unsupported)
                 )

@@ -29,6 +29,14 @@ class PptToTextUseCase @Inject constructor(
             // .ppt real fallaba con "sin texto" en vez de avisar que el
             // formato en sí no está soportado.
             if (isLegacyOle2Uri(context, pptUri)) {
+                // Hallazgo real de la auditoría general 2026-09-17/18
+                // (décima ronda, Alta -- C1): ver el mismo hallazgo en
+                // ExcelToHtmlUseCase.kt.
+                if (isPasswordProtectedOfficeUri(context, pptUri)) {
+                    return@withContext ConversionResult.Error(
+                        context.getString(R.string.converter_error_password_protected)
+                    )
+                }
                 return@withContext ConversionResult.Error(
                     context.getString(R.string.converter_error_legacy_format_unsupported)
                 )

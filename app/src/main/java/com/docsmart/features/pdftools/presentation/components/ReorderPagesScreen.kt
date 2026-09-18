@@ -144,7 +144,13 @@ fun ReorderPagesScreen(
 
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = selectedPdf != null && pageOrder.isNotEmpty(),
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Baja-Media -- H3): con 1 sola página no hay ningún
+            // reorden posible (no hay drag que cambie el orden, ni
+            // "Quitar" está habilitado), pero el botón seguía habilitado
+            // igual -- el usuario podía gastar uno de sus 3 usos diarios
+            // y obtener un archivo idéntico al original con otro nombre.
+            enabled = selectedPdf != null && pageOrder.size > 1,
             progressText = stringResource(R.string.pdf_reorder_pages_progress),
             buttonLabel = stringResource(R.string.pdf_reorder_pages_execute),
             buttonIcon = Icons.Rounded.Reorder,

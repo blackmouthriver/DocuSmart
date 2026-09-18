@@ -324,6 +324,7 @@
     <string name="converter_error_empty_spreadsheet">Kalkulu-orriak ez du daturik</string>
     <string name="converter_error_empty_presentation">Aurkezpenak ez du testurik</string>
     <string name="converter_error_legacy_format_unsupported">Formatu zahar hau (.xls/.ppt, Office 2007 baino lehenagokoa) ez da onartzen oraindik. Gorde .xlsx/.pptx gisa eta saiatu berriz.</string>
+    <string name="converter_error_password_protected">Fitxategi hau pasahitzez babestuta dago. Kendu pasahitza Word/Excel/PowerPoint-etik (Fitxategia → Babestu dokumentua) eta saiatu berriz.</string>
     <string name="converter_error_empty_word_document">Dokumentuak ez du atera daitekeen testurik</string>
     <string name="converter_error_empty_pdf_text">PDFak ez du atera daitekeen testurik</string>
     <string name="converter_error_empty_pdf_text_scanned">PDFak ez du atera daitekeen testurik. Eskaneatutako PDFa izan daiteke.</string>
@@ -504,6 +505,7 @@
     <string name="pdf_redact_next_page">Hurrengo orrialdea</string>
     <string name="pdf_redact_loading_preview">Aurrebista kargatzen…</string>
     <string name="pdf_redact_preview_desc">Orrialdearen aurrebista</string>
+    <string name="pdf_redact_canvas_desc">Orrialdearen aurrebista. Arrastatu hatza zentsuratzeko area bat markatzeko. Orrialde honetan markatutako areak: %1$d.</string>
     <string name="pdf_redact_draw_hint">Arrastatu aurrebistaren gainean zentsuratu beharreko eremu bat markatzeko</string>
     <string name="pdf_redact_zones_marked">%1$d eremu markatuta</string>
     <string name="pdf_redact_undo">Desegin</string>
@@ -559,6 +561,8 @@
     <string name="pdf_sign_next_page">Hurrengo orrialdea</string>
     <string name="pdf_sign_draw_label">Zure sinadura</string>
     <string name="pdf_sign_draw_hint">Marraztu zure sinadura hatzarekin goiko laukian</string>
+    <string name="pdf_sign_canvas_desc">Zure sinadura hatzarekin marrazteko area. Pantaila-irakurgailua erabiltzen baduzu, idatzi zure izena beheko eremuan.</string>
+    <string name="pdf_sign_type_label">Edo idatzi zure izena</string>
     <string name="pdf_sign_hint">Oraindik ez duzu zure sinadura marraztu</string>
     <string name="pdf_sign_captured">Sinadura harrapatuta</string>
     <string name="pdf_sign_clear">Ezabatu</string>
@@ -1060,6 +1064,7 @@
     <string name="study_extract_pdf_error">Errorea PDFa irakurtzean: %1$s</string>
     <string name="study_extract_generic_error">Errorea: %1$s</string>
     <string name="study_default_document_name">Dokumentua</string>
+    <string name="study_extract_out_of_memory">Ez dago nahikoa memoria</string>
     <string name="study_pomodoro_notification_channel">Pomodoro</string>
     <string name="study_pomodoro_notification_text">%1$s geratzen dira</string>
     <string name="study_export_notes">Esportatu oharrak</string>
@@ -1089,6 +1094,7 @@
     <string name="trash_deletes_today">Gaur ezabatzen da</string>
     <string name="trash_days_remaining">%1$d egun geratzen dira</string>
     <string name="trash_restore">Berreskuratu</string>
+    <string name="trash_restore_error">Ezin izan da fitxategia berreskuratu -- jada ez dago.</string>
     <string name="trash_delete_forever">Ezabatu orain</string>
     <string name="trash_delete_forever_confirm_title">Behin betiko ezabatu?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s betiko ezabatuko da eta ezingo da gehiago berreskuratu."</string>

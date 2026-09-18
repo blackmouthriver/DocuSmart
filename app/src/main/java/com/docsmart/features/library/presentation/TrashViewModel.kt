@@ -60,6 +60,16 @@ class TrashViewModel @Inject constructor(
     private val _pendingDeleteRequest = MutableSharedFlow<PendingDeleteRequest>(extraBufferCapacity = 1)
     val pendingDeleteRequest: SharedFlow<PendingDeleteRequest> = _pendingDeleteRequest.asSharedFlow()
 
+    // Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda,
+    // Media -- P2): "Eliminar definitivamente"/"Vaciar todo" no tenían
+    // guard de doble-toque -- un segundo toque rápido en "Eliminar"
+    // encontraba el archivo ya borrado y mostraba "No se pudo eliminar"
+    // DESPUÉS de un borrado exitoso (mensaje engañoso), y en "Vaciar
+    // todo" podía invocarse `permissionLauncher.launch()` dos veces casi
+    // simultáneas. Guard síncrono (se fija ANTES de lanzar la corrutina,
+    // mismo patrón ya usado para AgendaViewModel.saveDraft()).
+    private var isBusy = false
+
     init { load() }
 
     fun load() {
@@ -70,7 +80,11 @@ class TrashViewModel @Inject constructor(
             val items = trashed.map { entry ->
                 val elapsedDays   = (now - entry.deletedAt) / DAY_MILLIS
                 val daysRemaining = (TrashRepository.TRASH_RETENTION_DAYS - elapsedDays)
-                    .toInt().coerceAtLeast(0)
+                    // Hallazgo real de la auditoría general 2026-09-17/18
+                    // (décima ronda, Baja -- P4): sin coerceAtMost(30), un
+                    // reloj atrasado producía elapsedDays negativo y
+                    // mostraba p. ej. "35 días restantes".
+                    .toInt().coerceIn(0, TrashRepository.TRASH_RETENTION_DAYS)
                 TrashedItemUi(entry.document, daysRemaining)
             }
             _uiState.update { it.copy(items = items, isLoading = false) }
@@ -79,22 +93,36 @@ class TrashViewModel @Inject constructor(
 
     fun restore(documentId: String) {
         viewModelScope.launch {
-            repository.restoreFromTrash(documentId)
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Media -- P3): antes se ignoraba el resultado de
+            // restoreFromTrash() -- si el archivo real ya no existía
+            // (borrado por fuera de la app), el documento desaparecía sin
+            // ningún aviso.
+            val restored = repository.restoreFromTrash(documentId)
+            if (!restored) {
+                _uiState.update { it.copy(actionError = context.getString(R.string.trash_restore_error)) }
+            }
             load()
         }
     }
 
     fun deleteForever(documentId: String) {
+        if (isBusy) return
+        isBusy = true
         viewModelScope.launch {
-            when (val outcome = repository.deleteForever(documentId)) {
-                DocumentRepository.DeleteOutcome.Deleted -> {
-                    soundEffectPlayer.playDelete()
-                    load()
+            try {
+                when (val outcome = repository.deleteForever(documentId)) {
+                    DocumentRepository.DeleteOutcome.Deleted -> {
+                        soundEffectPlayer.playDelete()
+                        load()
+                    }
+                    DocumentRepository.DeleteOutcome.Failed ->
+                        _uiState.update { it.copy(actionError = context.getString(R.string.general_delete_error)) }
+                    is DocumentRepository.DeleteOutcome.NeedsPermission ->
+                        _pendingDeleteRequest.emit(PendingDeleteRequest.Single(outcome.intentSender, documentId))
                 }
-                DocumentRepository.DeleteOutcome.Failed ->
-                    _uiState.update { it.copy(actionError = context.getString(R.string.general_delete_error)) }
-                is DocumentRepository.DeleteOutcome.NeedsPermission ->
-                    _pendingDeleteRequest.emit(PendingDeleteRequest.Single(outcome.intentSender, documentId))
+            } finally {
+                isBusy = false
             }
         }
     }
@@ -110,24 +138,30 @@ class TrashViewModel @Inject constructor(
     }
 
     fun deleteAll() {
+        if (isBusy) return
+        val ids = _uiState.value.items.map { it.document.id }
+        if (ids.isEmpty()) return
+        isBusy = true
         viewModelScope.launch {
-            val ids = _uiState.value.items.map { it.document.id }
-            if (ids.isEmpty()) return@launch
-            when (val outcome = repository.deleteAllForever(ids)) {
-                TrashRepository.BulkDeleteOutcome.Done -> {
-                    soundEffectPlayer.playDelete()
-                    load()
-                }
-                is TrashRepository.BulkDeleteOutcome.NeedsPermission ->
-                    _pendingDeleteRequest.emit(
-                        PendingDeleteRequest.Bulk(outcome.intentSender, outcome.documentIds)
-                    )
-                TrashRepository.BulkDeleteOutcome.PartialNeedsPermission -> {
-                    _uiState.update {
-                        it.copy(actionError = context.getString(R.string.trash_bulk_delete_partial_error))
+            try {
+                when (val outcome = repository.deleteAllForever(ids)) {
+                    TrashRepository.BulkDeleteOutcome.Done -> {
+                        soundEffectPlayer.playDelete()
+                        load()
                     }
-                    load()
+                    is TrashRepository.BulkDeleteOutcome.NeedsPermission ->
+                        _pendingDeleteRequest.emit(
+                            PendingDeleteRequest.Bulk(outcome.intentSender, outcome.documentIds)
+                        )
+                    TrashRepository.BulkDeleteOutcome.PartialNeedsPermission -> {
+                        _uiState.update {
+                            it.copy(actionError = context.getString(R.string.trash_bulk_delete_partial_error))
+                        }
+                        load()
+                    }
                 }
+            } finally {
+                isBusy = false
             }
         }
     }

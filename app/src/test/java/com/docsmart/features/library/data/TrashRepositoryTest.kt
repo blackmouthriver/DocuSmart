@@ -1,6 +1,7 @@
 package com.docsmart.features.library.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
@@ -43,6 +44,9 @@ class TrashRepositoryTest {
         filesDir = Files.createTempDirectory("docsmart_trashrepo_files_").toFile()
         context = mockk()
         every { context.filesDir } returns filesDir
+        // Ver P1 (auditoría 2026-09-17/18, décima ronda): purgeExpiredTrash()
+        // ahora persiste candidatos de vencimiento en SharedPreferences.
+        every { context.getSharedPreferences(any(), any()) } returns fakeSharedPreferences()
         historyDao = FakeDocumentHistoryDao()
         trashDao = FakeTrashDao()
         favorites = mockk()
@@ -70,7 +74,7 @@ class TrashRepositoryTest {
             mockk<DownloadsAccessManager>(relaxed = true), identityMaintenance
         )
         repository = TrashRepository(
-            documentRepository, trashDao, historyDao, mediaDeletePermission, identityMaintenance
+            documentRepository, trashDao, historyDao, mediaDeletePermission, identityMaintenance, context
         )
     }
 
@@ -166,9 +170,18 @@ class TrashRepositoryTest {
         trashDao.insert(TrashEntry(old.absolutePath, now - retentionMillis - 1))
         trashDao.insert(TrashEntry(recent.absolutePath, now - 1000L))
 
-        repository.purgeExpiredTrash(now)
+        // Hallazgo P1 (auditoría 2026-09-17/18, décima ronda): la primera
+        // vez que una entrada se ve vencida solo queda anotada como
+        // candidata, todavía no se borra -- hace falta una segunda purga
+        // con suficiente tiempo REAL (elapsedRealtime) transcurrido. Se
+        // simulan las 2 purgas con `nowElapsed` explícito para no depender
+        // de mockear el reloj real del sistema.
+        repository.purgeExpiredTrash(now, nowElapsed = 1_000_000L)
+        assertTrue(old.exists(), "no debe borrar en la primera detección")
 
-        assertFalse(old.exists(), "la entrada vencida debe borrarse de verdad")
+        repository.purgeExpiredTrash(now, nowElapsed = 1_000_000L + TrashRepository.MIN_REAL_MS_BEFORE_PURGE + 1)
+
+        assertFalse(old.exists(), "la entrada vencida debe borrarse de verdad tras confirmar con tiempo real")
         assertTrue(recent.exists(), "la entrada reciente no debe tocarse")
         assertEquals(listOf(recent.absolutePath), trashDao.getAll().map { it.documentId })
         // Hallazgo #50 (revisión general 2026-09-16): purgeExpiredTrash no
@@ -176,6 +189,25 @@ class TrashRepositoryTest {
         coVerify { favorites.removeAlias(old.absolutePath) }
         coVerify { favorites.removeFavorite(old.absolutePath) }
         coVerify(exactly = 0) { favorites.removeFavorite(recent.absolutePath) }
+    }
+
+    @Test
+    fun `purgeExpiredTrash no borra en la primera deteccion, resiste un salto instantaneo del reloj`() = runTest {
+        // Escenario real del hallazgo P1: el usuario adelanta la fecha del
+        // sistema 31+ días y abre Papelera -- sin este fix, esto borraba
+        // todo de una sola vez, sin ningún aviso.
+        val dir = File(filesDir, "converted").apply { mkdirs() }
+        val old = File(dir, "viejo.pdf").apply { writeText("contenido") }
+        val now = 100_000_000_000L
+        val retentionMillis = TrashRepository.TRASH_RETENTION_DAYS * 24L * 60 * 60 * 1000
+        trashDao.insert(TrashEntry(old.absolutePath, now - retentionMillis - 1))
+
+        repository.purgeExpiredTrash(now, nowElapsed = 5_000L)
+        // Reabrir Papelera de inmediato (mismo instante real) no alcanza.
+        repository.purgeExpiredTrash(now, nowElapsed = 5_500L)
+
+        assertTrue(old.exists(), "un salto instantáneo del reloj no debe alcanzar para purgar")
+        assertEquals(1, trashDao.getAll().size)
     }
 
     // `loadTrashedDocuments()` no está cubierto por un test directo: depende
@@ -223,5 +255,28 @@ class TrashRepositoryTest {
         }
 
         override suspend fun getAll(): List<TrashEntry> = store.values.toList()
+    }
+
+    // Respaldado por un mapa real -- mismo patrón ya usado en
+    // DailyLimitManagerTest para SharedPreferences con getLong/putLong.
+    private fun fakeSharedPreferences(): SharedPreferences {
+        val store = mutableMapOf<String, Long>()
+        val editor = mockk<SharedPreferences.Editor>()
+        every { editor.putLong(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Long>()
+            editor
+        }
+        every { editor.remove(any()) } answers {
+            store.remove(firstArg<String>())
+            editor
+        }
+        every { editor.apply() } just Runs
+
+        val prefs = mockk<SharedPreferences>()
+        every { prefs.edit() } returns editor
+        every { prefs.getLong(any(), any()) } answers {
+            store[firstArg<String>()] ?: secondArg()
+        }
+        return prefs
     }
 }

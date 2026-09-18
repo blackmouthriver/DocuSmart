@@ -314,6 +314,7 @@
     <string name="converter_error_empty_spreadsheet">电子表格没有数据</string>
     <string name="converter_error_empty_presentation">演示文稿没有文字</string>
     <string name="converter_error_legacy_format_unsupported">暂不支持此旧格式（Office 2007之前的.xls/.ppt）。请另存为.xlsx/.pptx后重试。</string>
+    <string name="converter_error_password_protected">此文件受密码保护。请在 Word/Excel/PowerPoint 中移除密码（文件→保护文档）后重试。</string>
     <string name="converter_error_empty_word_document">文档没有可提取的文字</string>
     <string name="converter_error_empty_pdf_text">PDF 没有可提取的文字</string>
     <string name="converter_error_empty_pdf_text_scanned">PDF 没有可提取的文字，可能是扫描版 PDF。</string>
@@ -494,6 +495,7 @@
     <string name="pdf_redact_next_page">下一页</string>
     <string name="pdf_redact_loading_preview">正在加载预览…</string>
     <string name="pdf_redact_preview_desc">页面预览</string>
+    <string name="pdf_redact_canvas_desc">页面预览。用手指拖动以标记要遮盖的区域。此页面已标记的区域数：%1$d。</string>
     <string name="pdf_redact_draw_hint">在预览上拖动以标记要遮盖的区域</string>
     <string name="pdf_redact_zones_marked">已标记 %1$d 个区域</string>
     <string name="pdf_redact_undo">撤销</string>
@@ -549,6 +551,8 @@
     <string name="pdf_sign_next_page">下一页</string>
     <string name="pdf_sign_draw_label">你的签名</string>
     <string name="pdf_sign_draw_hint">在上方框中用手指绘制你的签名</string>
+    <string name="pdf_sign_canvas_desc">用手指绘制签名的区域。如果你使用屏幕阅读器，请改为在下方输入框中输入姓名。</string>
+    <string name="pdf_sign_type_label">或输入姓名</string>
     <string name="pdf_sign_hint">你还没有绘制签名</string>
     <string name="pdf_sign_captured">已捕获签名</string>
     <string name="pdf_sign_clear">清除</string>
@@ -1042,6 +1046,7 @@
     <string name="study_extract_pdf_error">读取 PDF 时出错：%1$s</string>
     <string name="study_extract_generic_error">出错：%1$s</string>
     <string name="study_default_document_name">文档</string>
+    <string name="study_extract_out_of_memory">内存不足</string>
     <string name="study_pomodoro_notification_channel">番茄钟</string>
     <string name="study_pomodoro_notification_text">剩余 %1$s</string>
     <string name="study_export_notes">导出笔记</string>
@@ -1071,6 +1076,7 @@
     <string name="trash_deletes_today">今天将被删除</string>
     <string name="trash_days_remaining">还剩 %1$d 天</string>
     <string name="trash_restore">恢复</string>
+    <string name="trash_restore_error">无法恢复文件——它已不存在。</string>
     <string name="trash_delete_forever">立即删除</string>
     <string name="trash_delete_forever_confirm_title">永久删除？</string>
     <string name="trash_delete_forever_confirm_body">"%1$s 将被永久删除，无法恢复。"</string>

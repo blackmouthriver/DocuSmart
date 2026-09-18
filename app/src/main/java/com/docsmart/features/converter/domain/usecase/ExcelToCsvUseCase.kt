@@ -7,6 +7,7 @@ import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.poi.EncryptedDocumentException
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.DataFormatter
 import org.apache.poi.ss.usermodel.FormulaEvaluator
@@ -68,6 +69,17 @@ class ExcelToCsvUseCase @Inject constructor(
                 pageCount = rowCount,
                 fileSizeKb = (outputFile.length() / 1024).toInt()
             )
+        } catch (e: EncryptedDocumentException) {
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Alta -- C1): a diferencia de Excel→HTML/PPT→PDF/TXT
+            // (que confunden un .xlsx cifrado con formato legado, ver
+            // ExcelToHtmlUseCase.kt), acá WorkbookFactory.create() sí
+            // distingue el cifrado y lanza esta excepción específica de
+            // POI -- pero antes caía en el catch genérico de abajo y
+            // mostraba texto técnico crudo sin traducir en vez de un
+            // mensaje claro sobre la contraseña.
+            Timber.w(e, "ExcelToCsvUseCase: archivo protegido con contraseña")
+            ConversionResult.Error(context.getString(R.string.converter_error_password_protected))
         } catch (e: Exception) {
             Timber.e(e, "Error convirtiendo Excel a CSV")
             ConversionResult.Error(

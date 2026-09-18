@@ -314,6 +314,7 @@
     <string name="converter_error_empty_spreadsheet">Die Tabelle enthält keine Daten</string>
     <string name="converter_error_empty_presentation">Die Präsentation enthält keinen Text</string>
     <string name="converter_error_legacy_format_unsupported">Dieses ältere Format (.xls/.ppt von vor Office 2007) wird noch nicht unterstützt. Speichere es als .xlsx/.pptx und versuche es erneut.</string>
+    <string name="converter_error_password_protected">Diese Datei ist passwortgeschützt. Entferne das Passwort in Word/Excel/PowerPoint (Datei → Dokument schützen) und versuche es erneut.</string>
     <string name="converter_error_empty_word_document">Das Dokument enthält keinen extrahierbaren Text</string>
     <string name="converter_error_empty_pdf_text">Das PDF enthält keinen extrahierbaren Text</string>
     <string name="converter_error_empty_pdf_text_scanned">Das PDF enthält keinen extrahierbaren Text. Es könnte sich um ein gescanntes PDF handeln.</string>
@@ -494,6 +495,7 @@
     <string name="pdf_redact_next_page">Nächste Seite</string>
     <string name="pdf_redact_loading_preview">Vorschau wird geladen…</string>
     <string name="pdf_redact_preview_desc">Seitenvorschau</string>
+    <string name="pdf_redact_canvas_desc">Seitenvorschau. Ziehe mit dem Finger, um einen zu schwärzenden Bereich zu markieren. Markierte Bereiche auf dieser Seite: %1$d.</string>
     <string name="pdf_redact_draw_hint">Ziehe über die Vorschau, um einen zu schwärzenden Bereich zu markieren</string>
     <string name="pdf_redact_zones_marked">%1$d Bereiche markiert</string>
     <string name="pdf_redact_undo">Rückgängig</string>
@@ -549,6 +551,8 @@
     <string name="pdf_sign_next_page">Nächste Seite</string>
     <string name="pdf_sign_draw_label">Deine Unterschrift</string>
     <string name="pdf_sign_draw_hint">Zeichne deine Unterschrift mit dem Finger im Feld oben</string>
+    <string name="pdf_sign_canvas_desc">Bereich zum Zeichnen deiner Unterschrift mit dem Finger. Wenn du einen Screenreader verwendest, gib stattdessen deinen Namen in das Feld unten ein.</string>
+    <string name="pdf_sign_type_label">Oder gib deinen Namen ein</string>
     <string name="pdf_sign_hint">Du hast deine Unterschrift noch nicht gezeichnet</string>
     <string name="pdf_sign_captured">Unterschrift erfasst</string>
     <string name="pdf_sign_clear">Löschen</string>
@@ -1038,6 +1042,7 @@
     <string name="study_extract_pdf_error">Fehler beim Lesen des PDFs: %1$s</string>
     <string name="study_extract_generic_error">Fehler: %1$s</string>
     <string name="study_default_document_name">Dokument</string>
+    <string name="study_extract_out_of_memory">Nicht genügend Speicher</string>
     <string name="study_pomodoro_notification_channel">Pomodoro</string>
     <string name="study_pomodoro_notification_text">%1$s verbleibend</string>
     <string name="study_export_notes">Notizen exportieren</string>
@@ -1067,6 +1072,7 @@
     <string name="trash_deletes_today">Wird heute gelöscht</string>
     <string name="trash_days_remaining">Noch %1$d Tage</string>
     <string name="trash_restore">Wiederherstellen</string>
+    <string name="trash_restore_error">Die Datei konnte nicht wiederhergestellt werden -- sie existiert nicht mehr.</string>
     <string name="trash_delete_forever">Jetzt löschen</string>
     <string name="trash_delete_forever_confirm_title">Endgültig löschen?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s wird endgültig gelöscht und kann nicht mehr wiederhergestellt werden."</string>

@@ -2,6 +2,7 @@ package com.docsmart.features.converter.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -91,4 +92,33 @@ internal fun isLegacyOle2Uri(context: Context, uri: Uri): Boolean {
     val header = ByteArray(OLE2_SIGNATURE.size)
     val read = context.contentResolver.openInputStream(uri)?.use { it.read(header) } ?: return false
     return read == OLE2_SIGNATURE.size && header.isLegacyOle2()
+}
+
+// Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda, Alta
+// -- C1): un .docx/.xlsx/.pptx protegido con contraseña de Office (no
+// confundir con el PIN de Carpeta Segura de la app, que es un candado
+// distinto) se guarda como un contenedor OLE2 -- MISMA firma binaria que
+// un .doc/.xls/.ppt legado real de Office 97-2003 (ver isLegacyOle2Uri()
+// arriba). Antes de este fix, cualquier archivo protegido caía en esa
+// misma rama: Excel→HTML/PPT→PDF/PPT→TXT mostraban "guardalo como .xlsx"
+// sobre un archivo que YA es .xlsx, y las 3 conversiones de Word
+// terminaban lanzando una excepción cruda de Apache POI al no encontrar
+// el stream "WordDocument" esperado. La estructura estándar
+// MS-OFFCRYPTO envuelve el paquete real cifrado en un stream llamado
+// "EncryptedPackage" -- distinguirlo alcanza para dar el mensaje
+// correcto sin necesitar la contraseña (no se intenta descifrar nada).
+@Suppress("TooGenericExceptionCaught", "SwallowedException")
+internal fun isPasswordProtectedOfficeUri(context: Context, uri: Uri): Boolean {
+    return try {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            POIFSFileSystem(input).use { fs ->
+                fs.root.any { entry -> entry.name.equals("EncryptedPackage", ignoreCase = true) }
+            }
+        } ?: false
+    } catch (e: Exception) {
+        // No es un OLE2 válido, o algún otro problema de lectura -- lo que
+        // haya llamado a esto ya tiene su propio manejo de error para esos
+        // casos, acá solo interesa la pregunta puntual "¿está cifrado?".
+        false
+    }
 }

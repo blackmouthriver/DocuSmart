@@ -332,6 +332,7 @@
     <string name="converter_error_empty_spreadsheet">El full de càlcul no conté dades</string>
     <string name="converter_error_empty_presentation">La presentació no conté text</string>
     <string name="converter_error_legacy_format_unsupported">Aquest format antic (.xls/.ppt d\'abans de l\'Office 2007) encara no és compatible. Desa\'l com a .xlsx/.pptx i torna-ho a provar.</string>
+    <string name="converter_error_password_protected">Aquest fitxer està protegit amb contrasenya. Treu-li la contrasenya des de Word/Excel/PowerPoint (Fitxer → Protegeix el document) i torna-ho a provar.</string>
     <string name="converter_error_empty_word_document">El document no conté text extraïble</string>
     <string name="converter_error_empty_pdf_text">El PDF no conté text extraïble</string>
     <string name="converter_error_empty_pdf_text_scanned">El PDF no conté text extraïble. Pot ser un PDF escanejat.</string>
@@ -516,6 +517,7 @@
     <string name="pdf_redact_next_page">Pàgina següent</string>
     <string name="pdf_redact_loading_preview">Carregant vista prèvia…</string>
     <string name="pdf_redact_preview_desc">Vista prèvia de la pàgina</string>
+    <string name="pdf_redact_canvas_desc">Vista prèvia de la pàgina. Arrossega el dit per marcar una zona a censurar. Zones marcades en aquesta pàgina: %1$d.</string>
     <string name="pdf_redact_draw_hint">Arrossega sobre la vista prèvia per marcar una zona a censurar</string>
     <string name="pdf_redact_zones_marked">%1$d zones marcades</string>
     <string name="pdf_redact_undo">Desfer</string>
@@ -571,6 +573,8 @@
     <string name="pdf_sign_next_page">Pàgina següent</string>
     <string name="pdf_sign_draw_label">La teva signatura</string>
     <string name="pdf_sign_draw_hint">Dibuixa la teva signatura amb el dit al requadre de dalt</string>
+    <string name="pdf_sign_canvas_desc">Àrea per dibuixar la teva signatura amb el dit. Si fas servir un lector de pantalla, escriu el teu nom al camp de sota.</string>
+    <string name="pdf_sign_type_label">O escriu el teu nom</string>
     <string name="pdf_sign_hint">Encara no has dibuixat la teva signatura</string>
     <string name="pdf_sign_captured">Signatura capturada</string>
     <string name="pdf_sign_clear">Esborrar</string>
@@ -1072,6 +1076,7 @@
     <string name="study_extract_pdf_error">Error en llegir el PDF: %1$s</string>
     <string name="study_extract_generic_error">Error: %1$s</string>
     <string name="study_default_document_name">Document</string>
+    <string name="study_extract_out_of_memory">Memòria insuficient</string>
     <string name="study_pomodoro_notification_channel">Pomodoro</string>
     <string name="study_pomodoro_notification_text">%1$s restants</string>
     <string name="study_export_notes">Exportar notes</string>
@@ -1101,6 +1106,7 @@
     <string name="trash_deletes_today">S\'elimina avui</string>
     <string name="trash_days_remaining">Queden %1$d dies</string>
     <string name="trash_restore">Restaurar</string>
+    <string name="trash_restore_error">No s\'ha pogut restaurar el fitxer -- ja no existeix.</string>
     <string name="trash_delete_forever">Eliminar ara</string>
     <string name="trash_delete_forever_confirm_title">Vols eliminar-ho definitivament?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s s\'eliminarà per sempre i ja no es podrà recuperar."</string>

@@ -315,6 +315,7 @@
     <string name="converter_error_empty_spreadsheet">Il foglio di calcolo non contiene dati</string>
     <string name="converter_error_empty_presentation">La presentazione non contiene testo</string>
     <string name="converter_error_legacy_format_unsupported">Questo formato datato (.xls/.ppt precedente a Office 2007) non è ancora supportato. Salvalo come .xlsx/.pptx e riprova.</string>
+    <string name="converter_error_password_protected">Questo file è protetto da password. Rimuovi la password da Word/Excel/PowerPoint (File → Proteggi documento) e riprova.</string>
     <string name="converter_error_empty_word_document">Il documento non contiene testo estraibile</string>
     <string name="converter_error_empty_pdf_text">Il PDF non contiene testo estraibile</string>
     <string name="converter_error_empty_pdf_text_scanned">Il PDF non contiene testo estraibile. Potrebbe essere un PDF scansionato.</string>
@@ -496,6 +497,7 @@
     <string name="pdf_redact_next_page">Pagina successiva</string>
     <string name="pdf_redact_loading_preview">Caricamento anteprima…</string>
     <string name="pdf_redact_preview_desc">Anteprima della pagina</string>
+    <string name="pdf_redact_canvas_desc">Anteprima della pagina. Trascina il dito per contrassegnare un\'area da censurare. Aree contrassegnate in questa pagina: %1$d.</string>
     <string name="pdf_redact_draw_hint">Trascina sull\'anteprima per contrassegnare una zona da oscurare</string>
     <string name="pdf_redact_zones_marked">%1$d zone contrassegnate</string>
     <string name="pdf_redact_undo">Annulla</string>
@@ -551,6 +553,8 @@
     <string name="pdf_sign_next_page">Pagina successiva</string>
     <string name="pdf_sign_draw_label">La tua firma</string>
     <string name="pdf_sign_draw_hint">Disegna la tua firma con il dito nel riquadro qui sopra</string>
+    <string name="pdf_sign_canvas_desc">Area per disegnare la tua firma con il dito. Se usi uno screen reader, scrivi il tuo nome nel campo qui sotto.</string>
+    <string name="pdf_sign_type_label">Oppure scrivi il tuo nome</string>
     <string name="pdf_sign_hint">Non hai ancora disegnato la tua firma</string>
     <string name="pdf_sign_captured">Firma acquisita</string>
     <string name="pdf_sign_clear">Cancella</string>
@@ -1045,6 +1049,7 @@
     <string name="study_extract_pdf_error">Errore durante la lettura del PDF: %1$s</string>
     <string name="study_extract_generic_error">Errore: %1$s</string>
     <string name="study_default_document_name">Documento</string>
+    <string name="study_extract_out_of_memory">Memoria insufficiente</string>
     <string name="study_pomodoro_notification_channel">Pomodoro</string>
     <string name="study_pomodoro_notification_text">%1$s rimanenti</string>
     <string name="study_export_notes">Esporta note</string>
@@ -1074,6 +1079,7 @@
     <string name="trash_deletes_today">Viene eliminato oggi</string>
     <string name="trash_days_remaining">Mancano %1$d giorni</string>
     <string name="trash_restore">Ripristina</string>
+    <string name="trash_restore_error">Impossibile ripristinare il file -- non esiste più.</string>
     <string name="trash_delete_forever">Elimina ora</string>
     <string name="trash_delete_forever_confirm_title">Eliminare definitivamente?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s verrà eliminato per sempre e non potrà più essere recuperato."</string>

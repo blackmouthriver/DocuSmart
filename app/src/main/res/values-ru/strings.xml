@@ -314,6 +314,7 @@
     <string name="converter_error_empty_spreadsheet">В таблице нет данных</string>
     <string name="converter_error_empty_presentation">В презентации нет текста</string>
     <string name="converter_error_legacy_format_unsupported">Этот устаревший формат (.xls/.ppt до Office 2007) пока не поддерживается. Сохраните файл как .xlsx/.pptx и попробуйте снова.</string>
+    <string name="converter_error_password_protected">Этот файл защищён паролем. Снимите пароль в Word/Excel/PowerPoint (Файл → Защита документа) и попробуйте снова.</string>
     <string name="converter_error_empty_word_document">В документе нет текста для извлечения</string>
     <string name="converter_error_empty_pdf_text">В PDF нет текста для извлечения</string>
     <string name="converter_error_empty_pdf_text_scanned">В PDF нет текста для извлечения. Возможно, это отсканированный PDF.</string>
@@ -494,6 +495,7 @@
     <string name="pdf_redact_next_page">Следующая страница</string>
     <string name="pdf_redact_loading_preview">Загрузка предпросмотра…</string>
     <string name="pdf_redact_preview_desc">Предпросмотр страницы</string>
+    <string name="pdf_redact_canvas_desc">Предпросмотр страницы. Проведите пальцем, чтобы отметить область для скрытия. Отмеченные области на этой странице: %1$d.</string>
     <string name="pdf_redact_draw_hint">Проведите по предпросмотру, чтобы отметить область для скрытия</string>
     <string name="pdf_redact_zones_marked">Отмечено зон: %1$d</string>
     <string name="pdf_redact_undo">Отменить</string>
@@ -549,6 +551,8 @@
     <string name="pdf_sign_next_page">Следующая страница</string>
     <string name="pdf_sign_draw_label">Ваша подпись</string>
     <string name="pdf_sign_draw_hint">Нарисуйте подпись пальцем в поле выше</string>
+    <string name="pdf_sign_canvas_desc">Область для рисования подписи пальцем. Если вы используете программу чтения с экрана, введите имя в поле ниже.</string>
+    <string name="pdf_sign_type_label">Или введите имя</string>
     <string name="pdf_sign_hint">Вы ещё не нарисовали подпись</string>
     <string name="pdf_sign_captured">Подпись сохранена</string>
     <string name="pdf_sign_clear">Очистить</string>
@@ -1038,6 +1042,7 @@
     <string name="study_extract_pdf_error">Ошибка чтения PDF: %1$s</string>
     <string name="study_extract_generic_error">Ошибка: %1$s</string>
     <string name="study_default_document_name">Документ</string>
+    <string name="study_extract_out_of_memory">Недостаточно памяти</string>
     <string name="study_pomodoro_notification_channel">Помодоро</string>
     <string name="study_pomodoro_notification_text">Осталось %1$s</string>
     <string name="study_export_notes">Экспортировать заметки</string>
@@ -1067,6 +1072,7 @@
     <string name="trash_deletes_today">Удаляется сегодня</string>
     <string name="trash_days_remaining">Осталось дней: %1$d</string>
     <string name="trash_restore">Восстановить</string>
+    <string name="trash_restore_error">Не удалось восстановить файл -- он больше не существует.</string>
     <string name="trash_delete_forever">Удалить сейчас</string>
     <string name="trash_delete_forever_confirm_title">Удалить навсегда?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s будет удалён навсегда и его больше нельзя будет восстановить."</string>

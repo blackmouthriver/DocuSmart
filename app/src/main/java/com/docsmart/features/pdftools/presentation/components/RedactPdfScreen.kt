@@ -46,6 +46,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
@@ -219,10 +221,32 @@ private fun RedactPageEditor(
                     var dragStart by remember(currentPage) { mutableStateOf<Offset?>(null) }
                     var dragCurrent by remember(currentPage) { mutableStateOf<Offset?>(null) }
 
+                    val redactCanvasDescription = stringResource(
+                        R.string.pdf_redact_canvas_desc, rectsForPage.size
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                            // Hallazgo real de la auditoría general
+                            // 2026-09-17/18 (décima ronda, Alta -- H2):
+                            // la única forma de agregar una zona de
+                            // censura es el gesto de arrastre, sin
+                            // ninguna semántica -- TalkBack solo
+                            // anunciaba "Vista previa de la página" del
+                            // Image de abajo, sin indicar que el gesto
+                            // existe ni cuántas zonas ya hay marcadas.
+                            // No hay una alternativa accesible real para
+                            // marcar coordenadas arbitrarias sin un
+                            // gesto de arrastre (a diferencia de Firmar,
+                            // que sí admite escribir el nombre) -- se
+                            // documenta la limitación en el string en
+                            // vez de fingir que este cambio la resuelve
+                            // del todo, y al menos se anuncia el estado
+                            // (cuántas zonas hay) y la instrucción.
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = redactCanvasDescription
+                            }
                             .pointerInput(currentPage) {
                                 detectDragGestures(
                                     onDragStart = { offset ->

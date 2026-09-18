@@ -28,6 +28,19 @@ class WordToTextUseCase @Inject constructor(
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Alta -- C1): un .docx protegido con contraseña de
+            // Office tiene la MISMA firma OLE2 que un .doc legado real --
+            // sin distinguirlos, extractLegacyDocBlocks() (HWPFDocument)
+            // no encuentra el stream "WordDocument" esperado y termina
+            // lanzando una excepción cruda de Apache POI, mostrada tal
+            // cual al usuario. Se chequea ANTES de intentar leer.
+            if (isPasswordProtectedOfficeUri(context, wordUri)) {
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_password_protected)
+                )
+            }
+
             val (text, pageCount) = readWordText(wordUri)
                 ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
 

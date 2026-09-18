@@ -76,6 +76,12 @@ class RedactPdfUseCase @Inject constructor(
         // mitad de camino, mismo patrón ya corregido en Compare/Compress/
         // OCR (hallazgos #25-27).
         var outputFile: File? = null
+        // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+        // ronda, Baja -- H4): el mensaje de éxito usaba `rects.size` (el
+        // total original) en vez de la cantidad REALMENTE aplicada tras
+        // filtrar las que caen en una página fuera de rango -- se saca
+        // afuera del bloque para poder usar su tamaño real en el mensaje.
+        var appliedCount = 0
         try {
             cacheFile = copyUriToCache(pdfUri)
                 ?: return@withContext PdfToolResult.Error(messages.readError)
@@ -102,6 +108,7 @@ class RedactPdfUseCase @Inject constructor(
                     val pdfHeight = rect.hFrac * pageSize.height
                     PdfCleanUpLocation(rect.pageNumber, Rectangle(pdfX, pdfY, pdfWidth, pdfHeight))
                 }
+                appliedCount = locations.size
                 PdfCleaner.cleanUp(pdf, locations)
             }
 
@@ -109,11 +116,11 @@ class RedactPdfUseCase @Inject constructor(
                 return@withContext PdfToolResult.Error(messages.generateError)
             }
 
-            Timber.d("$TAG: censura exitosa — ${rects.size} zonas")
+            Timber.d("$TAG: censura exitosa — $appliedCount zonas")
 
             PdfToolResult.Success(
                 outputFile = outputFile,
-                message = String.format(messages.success, rects.size)
+                message = String.format(messages.success, appliedCount)
             )
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al censurar PDF")

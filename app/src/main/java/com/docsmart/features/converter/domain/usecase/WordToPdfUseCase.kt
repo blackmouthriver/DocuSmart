@@ -38,6 +38,16 @@ class WordToPdfUseCase @Inject constructor(
         // (hallazgos #25-27) y en el resto del Convertidor.
         var outputFile: File? = null
         try {
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Alta -- C1): ver el mismo hallazgo en
+            // WordToTextUseCase.kt/ExcelToHtmlUseCase.kt. Se chequea antes
+            // de crear outputFile para no dejar un PDF vacío huérfano.
+            if (isPasswordProtectedOfficeUri(context, wordUri)) {
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_password_protected)
+                )
+            }
+
             val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
             val baseName = fileName ?: generateTimestamp()
             outputFile = File(outputDir, "$baseName.pdf")

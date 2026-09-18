@@ -321,6 +321,7 @@
     <string name="converter_error_empty_spreadsheet">The spreadsheet has no data</string>
     <string name="converter_error_empty_presentation">The presentation has no text</string>
     <string name="converter_error_legacy_format_unsupported">This legacy format (.xls/.ppt from before Office 2007) isn\'t supported yet. Save it as .xlsx/.pptx and try again.</string>
+    <string name="converter_error_password_protected">This file is password-protected. Remove the password in Word/Excel/PowerPoint (File → Protect Document) and try again.</string>
     <string name="converter_error_empty_word_document">The document has no extractable text</string>
     <string name="converter_error_empty_pdf_text">The PDF has no extractable text</string>
     <string name="converter_error_empty_pdf_text_scanned">The PDF has no extractable text. It might be a scanned PDF.</string>
@@ -504,6 +505,7 @@
     <string name="pdf_redact_next_page">Next page</string>
     <string name="pdf_redact_loading_preview">Loading preview…</string>
     <string name="pdf_redact_preview_desc">Page preview</string>
+    <string name="pdf_redact_canvas_desc">Page preview. Drag your finger to mark an area to redact. Marked areas on this page: %1$d.</string>
     <string name="pdf_redact_draw_hint">Drag over the preview to mark an area to censor</string>
     <string name="pdf_redact_zones_marked">%1$d zones marked</string>
     <string name="pdf_redact_undo">Undo</string>
@@ -559,6 +561,8 @@
     <string name="pdf_sign_next_page">Next page</string>
     <string name="pdf_sign_draw_label">Your signature</string>
     <string name="pdf_sign_draw_hint">Draw your signature with your finger in the box above</string>
+    <string name="pdf_sign_canvas_desc">Area to draw your signature with your finger. If you use a screen reader, type your name in the field below instead.</string>
+    <string name="pdf_sign_type_label">Or type your name</string>
     <string name="pdf_sign_hint">You haven\'t drawn your signature yet</string>
     <string name="pdf_sign_captured">Signature captured</string>
     <string name="pdf_sign_clear">Clear</string>
@@ -1047,6 +1051,7 @@
     <string name="study_extract_pdf_error">Error reading the PDF: %1$s</string>
     <string name="study_extract_generic_error">Error: %1$s</string>
     <string name="study_default_document_name">Document</string>
+    <string name="study_extract_out_of_memory">Not enough memory</string>
     <string name="study_pomodoro_notification_channel">Pomodoro</string>
     <string name="study_pomodoro_notification_text">%1$s left</string>
     <string name="study_export_notes">Export notes</string>
@@ -1076,6 +1081,7 @@
     <string name="trash_deletes_today">Deletes today</string>
     <string name="trash_days_remaining">%1$d days left</string>
     <string name="trash_restore">Restore</string>
+    <string name="trash_restore_error">Couldn\'t restore the file -- it no longer exists.</string>
     <string name="trash_delete_forever">Delete now</string>
     <string name="trash_delete_forever_confirm_title">Delete permanently?</string>
     <string name="trash_delete_forever_confirm_body">"%1$s will be permanently deleted and can no longer be recovered."</string>

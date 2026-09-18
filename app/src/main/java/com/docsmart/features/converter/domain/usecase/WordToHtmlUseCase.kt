@@ -23,6 +23,15 @@ class WordToHtmlUseCase @Inject constructor(
         fileName: String? = null
     ): ConversionResult = withContext(Dispatchers.IO) {
         try {
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Alta -- C1): ver el mismo hallazgo en
+            // WordToTextUseCase.kt/ExcelToHtmlUseCase.kt.
+            if (isPasswordProtectedOfficeUri(context, wordUri)) {
+                return@withContext ConversionResult.Error(
+                    context.getString(R.string.converter_error_password_protected)
+                )
+            }
+
             val paragraphs = extractParagraphs(wordUri)
                 ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
 

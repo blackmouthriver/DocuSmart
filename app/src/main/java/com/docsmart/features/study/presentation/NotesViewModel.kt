@@ -15,6 +15,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda, Baja
+// -- N5): a diferencia del campo "Nota" del Visor (anotaciones sobre un
+// PDF, `ViewerViewModel.MAX_NOTE_LENGTH`), el texto de Notas de Estudio no
+// tenía ningún límite -- mismo valor y mismo motivo (acotar el tamaño real
+// en Room/al exportar), aplicado acá también para consistencia.
+private const val MAX_NOTE_LENGTH = 2000
+
 data class NotesUiState(
     val notes: List<NoteWithImages> = emptyList(),
     // Backlog UX #50: id de la nota que está eligiendo documento a vincular
@@ -56,7 +63,7 @@ class NotesViewModel @Inject constructor(
         reminderAt: Long? = null
     ) {
         viewModelScope.launch {
-            noteRepository.createNote(title, text, imageUris = imageUris, reminderAt = reminderAt)
+            noteRepository.createNote(title, text.take(MAX_NOTE_LENGTH), imageUris = imageUris, reminderAt = reminderAt)
             DocuSmartAnalytics.logNoteCreated()
         }
     }
@@ -103,9 +110,22 @@ class NotesViewModel @Inject constructor(
         removedImages: List<NoteImageEntity>,
         newImageUris: List<Uri>
     ) {
+        // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+        // ronda, Media -- N2): `editingNoteId = null` (que cierra el
+        // diálogo) recién se asignaba DESPUÉS de que
+        // noteRepository.updateNote() terminara -- con imágenes nuevas
+        // adjuntas, un doble-toque real en "Guardar" las copiaba e
+        // insertaba dos veces. Mismo criterio ya usado para
+        // AgendaViewModel.saveDraft() (sexta ronda): se limpia el estado
+        // de inmediato, ANTES de lanzar la corrutina, así un segundo
+        // toque encuentra `editingNoteId` ya distinto y no vuelve a
+        // llamar a esta función (ver NoteEditDialog).
+        if (_uiState.value.editingNoteId != noteId) return
+        _uiState.update { it.copy(editingNoteId = null) }
         viewModelScope.launch {
-            noteRepository.updateNote(noteId, title, text, reminderAt, keptImages, removedImages, newImageUris)
-            _uiState.update { it.copy(editingNoteId = null) }
+            noteRepository.updateNote(
+                noteId, title, text.take(MAX_NOTE_LENGTH), reminderAt, keptImages, removedImages, newImageUris
+            )
         }
     }
 }

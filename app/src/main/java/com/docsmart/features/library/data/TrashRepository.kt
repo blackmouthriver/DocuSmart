@@ -1,15 +1,20 @@
 package com.docsmart.features.library.data
 
+import android.content.Context
 import android.content.IntentSender
+import android.net.Uri
 import android.os.Build
 import com.docsmart.core.data.DocumentIdentityMaintenance
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.data.db.TrashEntry
 import com.docsmart.core.ui.components.DocumentUiModel
+import com.docsmart.core.util.elapsedRealtimeMillisSafe
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,17 +42,35 @@ class TrashRepository @Inject constructor(
     private val trashDao: TrashDao,
     private val documentHistoryDao: DocumentHistoryDao,
     private val mediaDeletePermission: MediaDeletePermission,
-    private val documentIdentityMaintenance: DocumentIdentityMaintenance
+    private val documentIdentityMaintenance: DocumentIdentityMaintenance,
+    @ApplicationContext private val context: Context
 ) {
     companion object {
         const val TRASH_RETENTION_DAYS = 30
         private const val DAY_MILLIS = 24 * 60 * 60 * 1000L
         private const val TRASH_RETENTION_MILLIS = TRASH_RETENTION_DAYS * DAY_MILLIS
+        private const val PURGE_CANDIDATES_PREFS = "docusmart_trash_purge_candidates"
+        // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+        // ronda, Alta -- P1): a diferencia del PIN y el límite diario (ya
+        // blindados con elapsedRealtime), la purga automática confiaba
+        // solo en el reloj de pared, SIN ningún diálogo de confirmación --
+        // adelantar la fecha del sistema 31+ días y abrir Papelera borraba
+        // todo de forma irreversible en un solo paso. Mismo criterio ya
+        // usado para DailyLimitManager: exigir al menos
+        // MIN_REAL_MS_BEFORE_PURGE de tiempo real (elapsedRealtime, inmune
+        // al reloj de pared) entre la PRIMERA vez que una entrada se ve
+        // vencida y el borrado real -- un salto instantáneo del reloj ya
+        // no alcanza por sí solo, hace falta además que pase tiempo real.
+        internal const val MIN_REAL_MS_BEFORE_PURGE = 20L * 60 * 60 * 1000
 
         // Función pura, sin I/O -- separada para poder testearla directo con
         // timestamps, sin mockear Room.
         internal fun isTrashEntryExpired(deletedAt: Long, now: Long): Boolean =
             now - deletedAt >= TRASH_RETENTION_MILLIS
+    }
+
+    private val purgeCandidatePrefs by lazy {
+        context.getSharedPreferences(PURGE_CANDIDATES_PREFS, Context.MODE_PRIVATE)
     }
 
     /**
@@ -77,6 +100,10 @@ class TrashRepository @Inject constructor(
         try {
             trashDao.insert(TrashEntry(documentId, System.currentTimeMillis()))
             documentHistoryDao.remove(documentId)
+            // Arranca un ciclo de vencimiento nuevo y limpio (ver P1 en
+            // purgeExpiredTrash()) -- si este mismo id ya había pasado por
+            // la papelera antes, no debe heredar un firstSeenElapsed viejo.
+            clearPurgeCandidate(documentId)
             true
         } catch (e: Exception) {
             Timber.e(e, "Error moviendo a la papelera: $documentId")
@@ -84,10 +111,34 @@ class TrashRepository @Inject constructor(
         }
     }
 
-    /** Saca un documento de la papelera sin tocar el archivo real. */
+    /**
+     * Saca un documento de la papelera sin tocar el archivo real.
+     *
+     * Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda,
+     * Media -- P3): antes solo borraba la fila de `trash_entries` sin
+     * verificar que el archivo siguiera existiendo -- si se había
+     * borrado por fuera de la app (otro gestor de archivos, carpeta SAF
+     * desvinculada), el documento simplemente desaparecía sin ningún
+     * aviso (ya no estaba en Papelera ni en Biblioteca). Ahora se
+     * confirma que el archivo sigue ahí antes de "restaurarlo" -- si no,
+     * se devuelve `false` para que el llamador pueda avisar, igual que ya
+     * hace `deleteForever` con sus propios fallos.
+     */
     suspend fun restoreFromTrash(documentId: String): Boolean = withContext(Dispatchers.IO) {
         try {
+            if (!documentStillExists(documentId)) {
+                // Hallazgo real de la revisión adversarial de esta misma
+                // ronda (Baja-Media): `documentId` es la ruta/URI real del
+                // archivo -- CrashlyticsTree reenvía todo Timber.w/e como
+                // breadcrumb, así que se omite del mensaje (mismo criterio
+                // ya aplicado a DownloadsAccessManager en la octava ronda).
+                Timber.w("TrashRepository: no se pudo restaurar un documento -- el archivo ya no existe")
+                trashDao.remove(documentId)
+                clearPurgeCandidate(documentId)
+                return@withContext false
+            }
             trashDao.remove(documentId)
+            clearPurgeCandidate(documentId)
             true
         } catch (e: Exception) {
             Timber.e(e, "Error restaurando de la papelera: $documentId")
@@ -115,6 +166,13 @@ class TrashRepository @Inject constructor(
         val outcome = documentRepository.deleteDocument(documentId)
         if (outcome is DocumentRepository.DeleteOutcome.Deleted) {
             trashDao.remove(documentId)
+            // Hallazgo real de la revisión adversarial de esta misma
+            // ronda (Media): ninguno de los 3 caminos de borrado
+            // DEFINITIVO limpiaba el candidato de purga (P1, más abajo)
+            // -- `documentId` (ruta/URI real, potencialmente sensible)
+            // quedaba huérfano en SharedPreferences para siempre después
+            // de un borrado que se supone completo.
+            clearPurgeCandidate(documentId)
             documentIdentityMaintenance.onPermanentlyDeleted(documentId)
         }
         outcome
@@ -124,12 +182,14 @@ class TrashRepository @Inject constructor(
      *  diálogo de sistema (Android ya borró la fila en ese punto). */
     suspend fun finalizeDeleteForever(documentId: String) = withContext(Dispatchers.IO) {
         trashDao.remove(documentId)
+        clearPurgeCandidate(documentId)
         documentIdentityMaintenance.onPermanentlyDeleted(documentId)
     }
 
     suspend fun finalizeDeleteForever(documentIds: List<String>) = withContext(Dispatchers.IO) {
         documentIds.forEach {
             trashDao.remove(it)
+            clearPurgeCandidate(it)
             documentIdentityMaintenance.onPermanentlyDeleted(it)
         }
     }
@@ -156,6 +216,7 @@ class TrashRepository @Inject constructor(
         plainFiles.forEach { id ->
             if (documentRepository.deleteDocument(id) is DocumentRepository.DeleteOutcome.Deleted) {
                 trashDao.remove(id)
+                clearPurgeCandidate(id)
                 documentIdentityMaintenance.onPermanentlyDeleted(id)
             }
         }
@@ -173,6 +234,7 @@ class TrashRepository @Inject constructor(
             when (documentRepository.deleteDocument(id)) {
                 is DocumentRepository.DeleteOutcome.Deleted -> {
                     trashDao.remove(id)
+                    clearPurgeCandidate(id)
                     documentIdentityMaintenance.onPermanentlyDeleted(id)
                 }
                 is DocumentRepository.DeleteOutcome.NeedsPermission -> pendingPermission = true
@@ -190,10 +252,36 @@ class TrashRepository @Inject constructor(
      * caso (no hay una garantía de "debe borrarse exactamente al día 30
      * aunque la app esté cerrada" en los requisitos).
      */
-    internal suspend fun purgeExpiredTrash(now: Long = System.currentTimeMillis()) {
+    internal suspend fun purgeExpiredTrash(
+        now: Long = System.currentTimeMillis(),
+        nowElapsed: Long = elapsedRealtimeMillisSafe()
+    ) {
         trashDao.getAll()
             .filter { isTrashEntryExpired(it.deletedAt, now) }
             .forEach { entry ->
+                val key = "candidate_${entry.documentId}"
+                val firstSeenElapsed = purgeCandidatePrefs.getLong(key, 0L)
+                // Ver el comentario de MIN_REAL_MS_BEFORE_PURGE arriba (P1).
+                // Primera vez que esta entrada se ve vencida: se anota el
+                // momento (reloj real, inmune al de pared) pero TODAVÍA no
+                // se borra -- recién se confirma en una purga posterior,
+                // una vez que pasó tiempo real de verdad desde esa primera
+                // detección.
+                if (firstSeenElapsed == 0L) {
+                    purgeCandidatePrefs.edit().putLong(key, nowElapsed).apply()
+                    return@forEach
+                }
+                val realElapsedSinceFirstSeen = nowElapsed - firstSeenElapsed
+                if (realElapsedSinceFirstSeen < MIN_REAL_MS_BEFORE_PURGE) {
+                    // Se omite entry.documentId (ruta/URI real) del mensaje
+                    // -- ver la nota de arriba en restoreFromTrash().
+                    Timber.w(
+                        "TrashRepository: un documento figura vencido pero no pasó " +
+                            "suficiente tiempo real desde que se detectó -- se ignora (posible " +
+                            "manipulación del reloj)"
+                    )
+                    return@forEach
+                }
                 // Solo se quita la entrada si el borrado real se confirmó --
                 // si Android pidió permiso (NeedsPermission) no hay Activity
                 // disponible acá para mostrar el diálogo, así que el archivo
@@ -203,6 +291,7 @@ class TrashRepository @Inject constructor(
                     is DocumentRepository.DeleteOutcome.Deleted
                 ) {
                     trashDao.remove(entry.documentId)
+                    purgeCandidatePrefs.edit().remove(key).apply()
                     // Hallazgo real #50: esta rama (purga automática a los
                     // 30 días) no limpiaba ni el alias ni el favorito --
                     // a diferencia de las otras 4 vías de borrado
@@ -212,5 +301,24 @@ class TrashRepository @Inject constructor(
                     documentIdentityMaintenance.onPermanentlyDeleted(entry.documentId)
                 }
             }
+    }
+
+    private fun clearPurgeCandidate(documentId: String) {
+        purgeCandidatePrefs.edit().remove("candidate_$documentId").apply()
+    }
+
+    // Mismo criterio de distinción file:// vs content:// que el resto del
+    // repositorio (ver DocumentRepository.deleteDocument()).
+    private fun documentStillExists(documentId: String): Boolean {
+        if (documentId.startsWith("content://")) {
+            return try {
+                context.contentResolver.query(Uri.parse(documentId), null, null, null, null)
+                    ?.use { it.moveToFirst() } ?: false
+            } catch (e: Exception) {
+                Timber.w(e, "TrashRepository: no se pudo confirmar si un documento sigue existiendo")
+                false
+            }
+        }
+        return File(documentId).exists()
     }
 }
