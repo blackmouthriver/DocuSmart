@@ -20,6 +20,12 @@ object AdConstants {
     const val BANNER_VIEWER_ID      = "ca-app-pub-1109506701099935/9485996369"
     const val BANNER_STUDY_ID       = "ca-app-pub-1109506701099935/3887396772"
     const val BANNER_QR_ID          = "ca-app-pub-1109506701099935/3363441149"
+    // Hallazgo real de la auditoría general 2026-09-17 (octava ronda,
+    // G5): Agenda reutilizaba BANNER_STUDY_ID por no tener bloque propio
+    // creado en AdMob todavía -- mezclaba las métricas de impresiones de
+    // ambas pantallas en la consola. Bloque creado por el usuario el
+    // 2026-09-18.
+    const val BANNER_AGENDA_ID      = "ca-app-pub-1109506701099935/9228781384"
 
     // ── Interstitial ──────────────────────────────────────────────────────────
     const val INTERSTITIAL_CONVERSION_ID = "ca-app-pub-1109506701099935/7653688296"

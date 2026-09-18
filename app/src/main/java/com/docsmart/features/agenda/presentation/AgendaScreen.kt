@@ -138,15 +138,10 @@ fun AgendaScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                // Reutiliza el ID de anuncio de Modo Estudio -- Agenda todavía
-                // no tiene un placement propio creado en la consola de AdMob
-                // (no se puede generar uno desde acá); si el usuario quiere
-                // métricas separadas por pantalla, hay que crear el ad unit en
-                // apps.admob.com y actualizar AdConstants.BANNER_AGENDA_ID.
                 // Sin padding horizontal propio: DocuSmartScreenHeader ya
                 // aplica el margen de 16dp estándar de todas las pantallas.
                 DocuSmartScreenHeader(
-                    adUnitId = AdConstants.BANNER_STUDY_ID,
+                    adUnitId = AdConstants.BANNER_AGENDA_ID,
                     adManager = viewModel.adManager
                 ) {
                     DocuSmartTopBanner(
