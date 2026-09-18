@@ -53,6 +53,13 @@ fun HomeScreen(
 ) {
     Timber.d("HomeScreen: iniciando composición")
 
+    // Único disparador de la carga inicial (ver HomeViewModel.kt -- ya no
+    // carga en `init{}` para no duplicar esta misma llamada, hallazgo
+    // G10 de la octava ronda). Se re-ejecuta en cada composición nueva de
+    // esta pantalla, incluida la que sigue a un cambio de configuración
+    // (rotación) -- a diferencia de un `init{}` de ViewModel, que no
+    // vuelve a correr si el ViewModel sobrevive la recreación de la
+    // Activity.
     LaunchedEffect(Unit) {
         viewModel.loadRecentDocuments()
     }
@@ -72,6 +79,17 @@ fun HomeScreen(
         uiState.deleteError?.let { message ->
             android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
             viewModel.dismissDeleteError()
+        }
+    }
+
+    // Hallazgo real de la auditoría general 2026-09-17 (octava ronda,
+    // Baja -- G9): un fallo real de lectura de Recientes se veía
+    // exactamente igual que "sin documentos" -- mismo patrón que
+    // deleteError de arriba, para no dejarlo pasar en silencio.
+    LaunchedEffect(uiState.loadError) {
+        uiState.loadError?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.dismissLoadError()
         }
     }
 
@@ -140,6 +158,7 @@ fun HomeScreen(
         item {
             RecentDocuments(
                 documents       = uiState.recentDocuments,
+                isLoading       = uiState.isLoading,
                 onDocumentClick = { doc -> onDocumentClick(doc.id) },
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
                 onSeeAllClick   = onSeeAll,

@@ -23,6 +23,7 @@
     <string name="home_see_all">Ver todos</string>
     <string name="home_no_recent_title">Sin documentos recientes</string>
     <string name="home_no_recent_desc">Abre un archivo para verlo aquí</string>
+    <string name="home_load_recent_error">No se pudieron cargar los documentos recientes</string>
     <string name="home_open_file_action">Abrir archivo</string>
     <string name="home_share_document">Compartir %1$s</string>
     <string name="home_qr_read">Leer QR</string>
@@ -793,7 +794,7 @@
     <string name="security_preview">Vista previa</string>
     <string name="security_preview_error">No se pudo abrir la vista previa</string>
     <string name="security_delete_confirm_title">¿Eliminar archivo protegido?</string>
-    <string name="security_delete_confirm_body">"%1$s" se eliminará de forma permanente, sin pasar por la Papelera. Esta acción no se puede deshacer.</string>
+    <string name="security_delete_confirm_body">«%1$s» se eliminará de forma permanente, sin pasar por la Papelera. Esta acción no se puede deshacer.</string>
     <string name="security_protect_file_dialog_title">Proteger archivo</string>
     <string name="pdf_pw_screen_subtitle">Protege o desbloquea tus PDFs</string>
     <string name="pdf_pw_mode_protect_title">Proteger PDF</string>

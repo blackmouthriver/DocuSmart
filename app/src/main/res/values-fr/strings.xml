@@ -23,6 +23,7 @@
     <string name="home_see_all">Tout voir</string>
     <string name="home_no_recent_title">Aucun document récent</string>
     <string name="home_no_recent_desc">Ouvre un fichier pour le voir ici</string>
+    <string name="home_load_recent_error">Impossible de charger les documents récents</string>
     <string name="home_open_file_action">Ouvrir un fichier</string>
     <string name="home_share_document">Partager %1$s</string>
     <string name="home_qr_read">Lire le QR</string>
@@ -767,7 +768,7 @@
     <string name="security_preview">Aperçu</string>
     <string name="security_preview_error">Impossible d’ouvrir l’aperçu</string>
     <string name="security_delete_confirm_title">Supprimer le fichier protégé ?</string>
-    <string name="security_delete_confirm_body">"%1$s" sera supprimé définitivement, sans passer par la Corbeille. Cette action est irréversible.</string>
+    <string name="security_delete_confirm_body">« %1$s » sera supprimé définitivement, sans passer par la Corbeille. Cette action est irréversible.</string>
     <string name="security_protect_file_dialog_title">Protéger un fichier</string>
     <string name="pdf_pw_screen_subtitle">Protège ou déverrouille tes PDF</string>
     <string name="pdf_pw_mode_protect_title">Protéger un PDF</string>

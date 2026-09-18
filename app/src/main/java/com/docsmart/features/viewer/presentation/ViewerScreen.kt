@@ -391,9 +391,17 @@ fun ViewerScreen(
             // visible junto con el resto de los controles del Visor en vez
             // de fijo (rompería el modo de lectura inmersiva) ────────────
             if (!isPremium && uiState.showControls) {
+                // Hallazgo real de la auditoría general 2026-09-17 (octava
+                // ronda, Baja-Media -- G4, cierra el pendiente de la quinta
+                // pasada): el banner vive abajo (junto a ViewerBottomBar, a
+                // propósito, para no tapar el documento en modo inmersivo)
+                // pero sin margen lateral, a diferencia del resto de la
+                // app (16dp). Ambos comparten esta misma Column vertical
+                // sin superponerse, así que agregar el margen no rompe nada.
                 DocuSmartBannerAd(
                     adUnitId  = AdConstants.BANNER_VIEWER_ID,
-                    adManager = viewModel.adManager
+                    adManager = viewModel.adManager,
+                    modifier  = Modifier.padding(horizontal = 16.dp)
                 )
             }
             ViewerBottomBar(

@@ -23,6 +23,7 @@
     <string name="home_see_all">Vedi tutti</string>
     <string name="home_no_recent_title">Nessun documento recente</string>
     <string name="home_no_recent_desc">Apri un file per vederlo qui</string>
+    <string name="home_load_recent_error">Impossibile caricare i documenti recenti</string>
     <string name="home_open_file_action">Apri file</string>
     <string name="home_share_document">Condividi %1$s</string>
     <string name="home_qr_read">Leggi QR</string>
@@ -762,7 +763,7 @@
     <string name="security_preview">Anteprima</string>
     <string name="security_preview_error">Impossibile aprire l\'anteprima</string>
     <string name="security_delete_confirm_title">Eliminare il file protetto?</string>
-    <string name="security_delete_confirm_body">"%1$s" verrà eliminato definitivamente, senza passare dal Cestino. Questa azione non può essere annullata.</string>
+    <string name="security_delete_confirm_body">«%1$s» verrà eliminato definitivamente, senza passare dal Cestino. Questa azione non può essere annullata.</string>
     <string name="security_protect_file_dialog_title">Proteggi file</string>
     <string name="pdf_pw_screen_subtitle">Proteggi o sblocca i tuoi PDF</string>
     <string name="pdf_pw_mode_protect_title">Proteggi PDF</string>
@@ -1135,7 +1136,7 @@
     <string name="agenda_editor_title_new">Nuovo evento</string>
     <string name="agenda_editor_title_edit">Modifica evento</string>
     <string name="agenda_delete_confirm_title">Eliminare questo evento?</string>
-    <string name="agenda_delete_confirm_body">"%1$s" verrà eliminato insieme al suo promemoria. Questa azione non può essere annullata.</string>
+    <string name="agenda_delete_confirm_body">«%1$s» verrà eliminato insieme al suo promemoria. Questa azione non può essere annullata.</string>
     <string name="agenda_field_title">Titolo</string>
     <string name="agenda_field_description">Descrizione (facoltativa)</string>
     <string name="agenda_field_datetime">Data e ora</string>

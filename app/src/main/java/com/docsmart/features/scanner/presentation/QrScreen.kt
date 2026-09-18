@@ -450,7 +450,14 @@ fun QrReaderScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(20.dp),
+                        // Hallazgo real de la auditoría general 2026-09-17
+                        // (octava ronda, Media -- G3): el padding uniforme de
+                        // 20dp hacía que el banner de anuncios se viera más
+                        // angosto que en el resto de la app (16dp laterales,
+                        // ver DocuSmartScreenHeader). Se separa en
+                        // horizontal/vertical para unificar el margen lateral
+                        // sin tocar el espaciado vertical ya establecido acá.
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -890,7 +897,13 @@ fun QrCreatorScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                // Hallazgo real de la auditoría general 2026-09-17 (octava
+                // ronda, Media -- G3, cierra el pendiente de la quinta
+                // pasada): mismo motivo que en la Column de arriba --
+                // separar horizontal/vertical unifica el margen lateral
+                // del banner con el resto de la app (16dp) sin tocar el
+                // espaciado vertical.
+                .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Hallazgo real de la auditoría general 2026-09-17 (quinta

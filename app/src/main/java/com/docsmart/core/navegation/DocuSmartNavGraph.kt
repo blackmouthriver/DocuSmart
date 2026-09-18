@@ -343,6 +343,18 @@ private fun DocumentType.toQrFileType(): String =
     if (this == DocumentType.IMAGE) "image" else "document"
 
 private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
+    // Hallazgo real de la revisión adversarial de la octava ronda (Alta):
+    // el fix de G6 le agregó `launchSingleTop=true` a esta función, pero
+    // sus argumentos VARÍAN por llamada (un `document` distinto cada vez,
+    // desde Biblioteca/Visor/Home) -- con la versión de Navigation-Compose
+    // de este proyecto (2.8.4), cuando `launchSingleTop` encuentra el
+    // mismo destino ya en el tope del back stack, REUTILIZA la entrada
+    // existente con sus argumentos ORIGINALES, no los nuevos. Escenario
+    // real: Convertir sobre el documento A, volver, Convertir sobre el
+    // documento B sin que Convertidor salga del tope -- mostraría el
+    // documento A otra vez. Se revierte a `navigate()` simple; el guard
+    // de doble-toque de G6 queda solo en los destinos de Home cuyos
+    // argumentos NO varían (ver homeComposable() más abajo).
     navigate(
         NavRoutes.Converter.createRoute(
             // Bug real encontrado 2026-09-14 (revisión pre-fusión HU-42):
@@ -387,6 +399,9 @@ private fun NavHostController.navigateToQrCreator(context: Context, document: Do
         ).show()
         return
     }
+    // Ver nota de navigateToConvert() más arriba -- mismo motivo, se
+    // revierte launchSingleTop acá también (argumentos varían por
+    // documento).
     navigate(
         NavRoutes.QrCreator.createRoute(
             initialFileUri  = safeUri.toString(),
@@ -401,6 +416,9 @@ private fun NavHostController.navigateToQrCreator(context: Context, document: Do
 // "atajo de navegación con parámetros opcionales" que Convertir/Crear QR
 // (HU-UX-01/02) de arriba, extendido a Biblioteca/Recientes/Visor/lista de
 // sesión del Escáner (el mismo `DocumentContextMenu` compartido por los 4).
+// Ver nota de navigateToConvert() más arriba -- mismo motivo en las 3
+// funciones de abajo, se revierte launchSingleTop (argumentos varían por
+// documento).
 private fun NavHostController.navigateToOcr(document: DocumentUiModel) {
     navigate(NavRoutes.PdfTools.createRoute(initialTool = "OCR", initialFileUri = document.toContentUri().toString()))
 }
@@ -521,27 +539,48 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                 val uri = canonicalMediaUri(resolved)
                 navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
             },
-            onScan      = { navController.navigate(NavRoutes.Scanner.route) },
-            onConvert   = { navController.navigate(NavRoutes.Converter.createRoute()) },
+            // Hallazgo real de la auditoría general 2026-09-17 (octava
+            // ronda, Media -- G6): ninguna de estas lambdas usaba
+            // `launchSingleTop`, ni había guard/debounce en
+            // QuickAccessGrid.kt/DocuSmartDocumentItem -- un doble-toque
+            // rápido apilaba el mismo destino 2 veces, y "Atrás" reaparecía
+            // en una segunda instancia de la misma pantalla en vez de
+            // volver a Home. Ya se usaba `launchSingleTop` en otros puntos
+            // de este mismo archivo (ver onboardingComposable); se extiende
+            // acá SOLO a los destinos cuyos argumentos NUNCA varían entre
+            // llamadas -- la revisión adversarial de esta misma ronda
+            // encontró que Navigation-Compose 2.8.4 reutiliza los
+            // argumentos ORIGINALES (no los nuevos) cuando launchSingleTop
+            // encuentra el mismo destino ya en el tope, así que se dejó
+            // sin este guard a onStudy/onDocumentClick (tab/documentId
+            // varían por toque) y a los atajos que navegan con un
+            // documento (onConvertDocument y el resto, más abajo).
+            onScan      = { navController.navigate(NavRoutes.Scanner.route) { launchSingleTop = true } },
+            onConvert   = { navController.navigate(NavRoutes.Converter.createRoute()) { launchSingleTop = true } },
             // Acceso rápido "Img→PDF": abre el Convertidor ya en Imagen→PDF
             // en vez del genérico -- antes iba al mismo lugar que el botón
             // "Convertir" grande, sin ninguna diferencia real entre los dos.
             onQuickConvertImageToPdf = {
                 navController.navigate(
                     NavRoutes.Converter.createRoute(ConversionType.IMAGE_TO_PDF.name)
-                )
+                ) { launchSingleTop = true }
             },
-            onSecurity  = { navController.navigate(NavRoutes.Security.route) },
+            onSecurity  = { navController.navigate(NavRoutes.Security.route) { launchSingleTop = true } },
+            // Sin launchSingleTop: `tab` varía según qué acceso rápido se
+            // toque (Estudio/Notas/Pomodoro comparten esta misma lambda
+            // con tabs distintos).
             onStudy     = { tab -> navController.navigate(NavRoutes.Study.createRoute(tab)) },
-            onSeeAll    = { navController.navigate(NavRoutes.Library.route) },
-            onQrReader  = { navController.navigate(NavRoutes.QrReader.route) },
+            onSeeAll    = { navController.navigate(NavRoutes.Library.route) { launchSingleTop = true } },
+            onQrReader  = { navController.navigate(NavRoutes.QrReader.route) { launchSingleTop = true } },
             // Bug real corregido 2026-09-08: navegaba con `NavRoutes.QrCreator.route`,
             // la plantilla cruda de la ruta ("...&initialFileName={initialFileName}")
             // -- al no pasar por `createRoute()`, esos marcadores de posición
             // literales quedaban como el valor real del argumento (se veía el
             // texto "{initialFileName}" en la pantalla en vez de un campo vacío).
-            onQrCreator = { navController.navigate(NavRoutes.QrCreator.createRoute()) },
-            onTrash     = { navController.navigate(NavRoutes.Trash.route) },
+            onQrCreator = { navController.navigate(NavRoutes.QrCreator.createRoute()) { launchSingleTop = true } },
+            onTrash     = { navController.navigate(NavRoutes.Trash.route) { launchSingleTop = true } },
+            // Sin launchSingleTop: `documentId` varía según qué tarjeta de
+            // Recientes se toque.
             onDocumentClick = { documentId ->
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
             },

@@ -23,7 +23,13 @@ data class HomeUiState(
     val recentDocuments: List<DocumentUiModel> = emptyList(),
     val isLoading: Boolean = false,
     val userName: String = "Usuario",
-    val deleteError: String? = null
+    val deleteError: String? = null,
+    // Hallazgo real de la auditoría general 2026-09-17 (octava ronda,
+    // Baja -- G9): antes un fallo real de lectura (BD/almacenamiento) se
+    // veía exactamente igual que "no tienes documentos recientes" -- sin
+    // ningún aviso, a diferencia de removeDocument() que sí expone
+    // deleteError.
+    val loadError: String? = null
 )
 
 @HiltViewModel
@@ -40,11 +46,29 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    init { loadRecentDocuments() }
+    // Hallazgo real de la auditoría general 2026-09-17 (octava ronda,
+    // Baja -- G10, corregido de otra forma tras la revisión adversarial
+    // de la misma ronda): el primer intento de este fix ponía la carga
+    // inicial acá, en `init{}`, y quitaba el `LaunchedEffect(Unit)` de
+    // HomeScreen.kt por considerarlo redundante -- pero `init{}` solo
+    // corre la primera vez que Hilt construye este ViewModel, y el
+    // ViewModel SOBREVIVE un cambio de configuración (rotación), a
+    // diferencia del `NavBackStackEntry`/Lifecycle que usa
+    // `ReloadOnScreenResume` (que sí se recrea, y deliberadamente
+    // descarta su primer ON_RESUME asumiendo que YA existe una carga
+    // inicial propia del llamador). Sin `LaunchedEffect(Unit)`, ese hueco
+    // quedaba sin ningún disparador -- "Recientes" podía quedar
+    // desactualizado en silencio tras rotar el dispositivo. Se revierte:
+    // la carga inicial vuelve a vivir en el `LaunchedEffect(Unit)` de
+    // HomeScreen.kt (que sí se re-ejecuta en cada composición nueva,
+    // incluida la que sigue a una rotación), y este ViewModel ya NO
+    // carga en `init{}` -- así se evita la duplicación original (G10)
+    // sin reabrir el hueco de refresco que encontró la revisión
+    // adversarial.
 
     fun loadRecentDocuments() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, loadError = null) }
             try {
                 // DocumentRepository ya aplica isFavorite desde FavoritesRepository.
                 // loadRecentlyOpened refleja uso real (RF-VIS/HOME), no solo la
@@ -59,9 +83,15 @@ class HomeViewModel @Inject constructor(
                 Timber.d("HomeViewModel: ${docs.size} documentos recientes")
             } catch (e: Exception) {
                 Timber.e(e, "HomeViewModel: error cargando recientes")
-                _uiState.update { it.copy(isLoading = false) }
+                _uiState.update {
+                    it.copy(isLoading = false, loadError = context.getString(R.string.home_load_recent_error))
+                }
             }
         }
+    }
+
+    fun dismissLoadError() {
+        _uiState.update { it.copy(loadError = null) }
     }
 
     fun toggleFavorite(documentId: String) {

@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +24,13 @@ import com.docsmart.core.util.shareDocument
 @Composable
 fun RecentDocuments(
     documents      : List<DocumentUiModel>,
+    // Hallazgo real de la auditoría general 2026-09-17 (octava ronda,
+    // Media -- G8): `isLoading` ya existía en HomeUiState pero nunca se
+    // consultaba acá -- la sección decidía solo por `documents.isEmpty()`.
+    // Si loadRecentlyOpened() tarda (almacenamiento externo lento), el
+    // usuario veía un instante "Sin documentos recientes" aunque sí
+    // tuviera, que luego aparecían de golpe.
+    isLoading      : Boolean = false,
     onDocumentClick: (DocumentUiModel) -> Unit,
     onFavoriteClick: (String) -> Unit,
     onSeeAllClick  : () -> Unit,
@@ -78,7 +86,14 @@ fun RecentDocuments(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        if (documents.isEmpty()) {
+        if (isLoading && documents.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+            }
+        } else if (documents.isEmpty()) {
             DocuSmartEmptyState(
                 icon        = Icons.Rounded.FolderOff,
                 title       = stringResource(R.string.home_no_recent_title),

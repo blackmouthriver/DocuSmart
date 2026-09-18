@@ -23,6 +23,7 @@
     <string name="home_see_all">Veure-ho tot</string>
     <string name="home_no_recent_title">Sense documents recents</string>
     <string name="home_no_recent_desc">Obre un arxiu per veure\'l aquí</string>
+    <string name="home_load_recent_error">No s\'han pogut carregar els documents recents</string>
     <string name="home_open_file_action">Obrir arxiu</string>
     <string name="home_share_document">Compartir %1$s</string>
     <string name="home_qr_read">Llegir QR</string>
@@ -787,7 +788,7 @@
     <string name="security_preview">Vista prèvia</string>
     <string name="security_preview_error">No s\'ha pogut obrir la vista prèvia</string>
     <string name="security_delete_confirm_title">Vols eliminar l\'arxiu protegit?</string>
-    <string name="security_delete_confirm_body">"%1$s" s\'eliminarà de forma permanent, sense passar per la Paperera. Aquesta acció no es pot desfer.</string>
+    <string name="security_delete_confirm_body">«%1$s» s\'eliminarà de forma permanent, sense passar per la Paperera. Aquesta acció no es pot desfer.</string>
     <string name="security_protect_file_dialog_title">Protegir arxiu</string>
     <string name="pdf_pw_screen_subtitle">Protegeix o desbloqueja els teus PDF</string>
     <string name="pdf_pw_mode_protect_title">Protegir PDF</string>

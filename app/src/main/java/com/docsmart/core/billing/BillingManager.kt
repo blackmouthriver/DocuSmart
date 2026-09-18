@@ -18,6 +18,7 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.util.AppLifecycleTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -290,6 +291,33 @@ class BillingManager @Inject constructor(
         when (purchase.purchaseState) {
             Purchase.PurchaseState.PURCHASED -> {
                 premiumManager.activatePremium(trialEndsAtMillisFor(purchase))
+                // Hallazgo real de la auditoría general 2026-09-17 (octava
+                // ronda, Alta -- G1): solo existía `logPremiumPurchaseAttempt()`,
+                // nunca un evento de conversión real -- el dashboard de
+                // Firebase no podía distinguir "intentos" de compras
+                // efectivamente concretadas, el dato de negocio más
+                // crítico de toda la monetización. Se excluye `isRestore`
+                // a propósito: una restauración automática en cada
+                // `ON_START` (ver M1, séptima ronda) no es una conversión
+                // nueva, solo re-confirma una compra ya existente --
+                // contarla inflaría la métrica cada vez que el usuario
+                // reabre la app.
+                //
+                // Hallazgo real de la revisión adversarial de esta misma
+                // ronda (Media): faltaba también excluir `isAcknowledged`
+                // -- `purchasesUpdatedListener` puede reentregar la MISMA
+                // compra sin confirmar más de una vez (reconexión del
+                // BillingClient, recreación de la Activity a mitad del
+                // flujo de compra, escenario documentado de Play Billing),
+                // y cada reentrega volvía a disparar el evento de
+                // conversión. `isAcknowledged` ya es la misma guarda
+                // idempotente que evita duplicar `acknowledgePurchase()`
+                // más abajo -- una vez confirmada la compra, cualquier
+                // reentrega posterior llega con `isAcknowledged=true` y
+                // ya no debe contarse de nuevo.
+                if (!isRestore && !purchase.isAcknowledged) {
+                    DocuSmartAnalytics.logPremiumPurchaseSuccess(purchase.products.firstOrNull().orEmpty())
+                }
                 if (!purchase.isAcknowledged) {
                     scope.launch {
                         val ackParams = AcknowledgePurchaseParams.newBuilder()

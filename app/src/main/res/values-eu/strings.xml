@@ -23,6 +23,7 @@
     <string name="home_see_all">Ikusi guztiak</string>
     <string name="home_no_recent_title">Ez dago azken dokumenturik</string>
     <string name="home_no_recent_desc">Ireki fitxategi bat hemen ikusteko</string>
+    <string name="home_load_recent_error">Ezin izan dira azken dokumentuak kargatu</string>
     <string name="home_open_file_action">Ireki fitxategia</string>
     <string name="home_share_document">Partekatu %1$s</string>
     <string name="home_qr_read">Irakurri QRa</string>
@@ -775,7 +776,7 @@
     <string name="security_preview">Aurrebista</string>
     <string name="security_preview_error">Ezin izan da aurrebista ireki</string>
     <string name="security_delete_confirm_title">Babestutako fitxategia ezabatu?</string>
-    <string name="security_delete_confirm_body">"%1$s" behin betiko ezabatuko da, Zakarrontzitik igaro gabe. Ekintza hau ezin da desegin.</string>
+    <string name="security_delete_confirm_body">«%1$s» behin betiko ezabatuko da, Zakarrontzitik igaro gabe. Ekintza hau ezin da desegin.</string>
     <string name="security_protect_file_dialog_title">Babestu fitxategia</string>
     <string name="pdf_pw_screen_subtitle">Babestu edo desblokeatu zure PDFak</string>
     <string name="pdf_pw_mode_protect_title">Babestu PDFa</string>

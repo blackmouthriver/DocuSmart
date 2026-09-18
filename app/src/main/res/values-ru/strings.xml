@@ -23,6 +23,7 @@
     <string name="home_see_all">Смотреть все</string>
     <string name="home_no_recent_title">Нет недавних документов</string>
     <string name="home_no_recent_desc">Откройте файл, чтобы увидеть его здесь</string>
+    <string name="home_load_recent_error">Не удалось загрузить последние документы</string>
     <string name="home_open_file_action">Открыть файл</string>
     <string name="home_share_document">Поделиться %1$s</string>
     <string name="home_qr_read">Считать QR</string>

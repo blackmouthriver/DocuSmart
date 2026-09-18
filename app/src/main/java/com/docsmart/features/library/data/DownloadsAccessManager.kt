@@ -62,7 +62,17 @@ class DownloadsAccessManager @Inject constructor(
             Timber.d("DownloadsAccessManager: carpeta vinculada -> $uri")
             true
         } catch (e: SecurityException) {
-            Timber.e(e, "DownloadsAccessManager: no se pudo persistir el permiso de $uri")
+            // Hallazgo real de la auditoría general 2026-09-17 (octava
+            // ronda, Media -- G2): una Uri de árbol SAF codifica en texto
+            // plano el nombre real de la carpeta elegida por el usuario
+            // (ver folderDisplayName() más abajo) -- este catch usa
+            // Timber.e, que SÍ sube como breadcrumb+no-fatal a
+            // Crashlytics (a diferencia del Timber.d de arriba), mismo
+            // tipo de fuga ya corregida para Carpeta Segura
+            // (SecurityManager/PdfPasswordUseCase). Se quita la Uri del
+            // mensaje y se redacta también el mensaje propio de la
+            // excepción (Android suele incluir la Uri ahí también).
+            Timber.e(redactedForLog(e), "DownloadsAccessManager: no se pudo persistir el permiso de la carpeta")
             false
         }
     }
@@ -79,11 +89,17 @@ class DownloadsAccessManager @Inject constructor(
                 uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
         } catch (e: SecurityException) {
-            Timber.w(e, "DownloadsAccessManager: no se pudo liberar el permiso de $uri")
+            Timber.w(redactedForLog(e), "DownloadsAccessManager: no se pudo liberar el permiso de la carpeta")
         }
         prefs.edit().remove(KEY_URI).apply()
         _linkedFolderUri.value = null
     }
+
+    // Mismo criterio ya usado en SecurityManager/PdfPasswordUseCase para
+    // Carpeta Segura -- solo el tipo de excepción, nunca su mensaje
+    // original (que en SecurityException de SAF suele incluir la Uri).
+    private fun redactedForLog(e: SecurityException) =
+        SecurityException("DownloadsAccessManager: ${e.javaClass.simpleName}")
 
     // El usuario puede revocar el permiso desde Ajustes del sistema sin que
     // la app se entere -- se valida contra la lista real de permisos

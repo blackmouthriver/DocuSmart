@@ -23,6 +23,7 @@
     <string name="home_see_all">Alle anzeigen</string>
     <string name="home_no_recent_title">Keine kürzlichen Dokumente</string>
     <string name="home_no_recent_desc">Öffne eine Datei, um sie hier zu sehen</string>
+    <string name="home_load_recent_error">Die zuletzt geöffneten Dokumente konnten nicht geladen werden</string>
     <string name="home_open_file_action">Datei öffnen</string>
     <string name="home_share_document">%1$s teilen</string>
     <string name="home_qr_read">QR lesen</string>
@@ -755,7 +756,7 @@
     <string name="security_preview">Vorschau</string>
     <string name="security_preview_error">Die Vorschau konnte nicht geöffnet werden</string>
     <string name="security_delete_confirm_title">Geschützte Datei löschen?</string>
-    <string name="security_delete_confirm_body">"%1$s" wird dauerhaft gelöscht, ohne über den Papierkorb zu gehen. Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="security_delete_confirm_body">„%1$s“ wird dauerhaft gelöscht, ohne über den Papierkorb zu gehen. Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="security_protect_file_dialog_title">Datei schützen</string>
     <string name="pdf_pw_screen_subtitle">Schütze oder entsperre deine PDFs</string>
     <string name="pdf_pw_mode_protect_title">PDF schützen</string>

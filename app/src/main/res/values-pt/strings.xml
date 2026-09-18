@@ -23,6 +23,7 @@
     <string name="home_see_all">Ver todos</string>
     <string name="home_no_recent_title">Nenhum documento recente</string>
     <string name="home_no_recent_desc">Abra um arquivo para vê-lo aqui</string>
+    <string name="home_load_recent_error">Não foi possível carregar os documentos recentes</string>
     <string name="home_open_file_action">Abrir arquivo</string>
     <string name="home_share_document">Compartilhar %1$s</string>
     <string name="home_qr_read">Ler QR</string>
@@ -755,7 +756,7 @@
     <string name="security_preview">Pré-visualização</string>
     <string name="security_preview_error">Não foi possível abrir a pré-visualização</string>
     <string name="security_delete_confirm_title">Excluir arquivo protegido?</string>
-    <string name="security_delete_confirm_body">"%1$s" será excluído permanentemente, sem passar pela Lixeira. Esta ação não pode ser desfeita.</string>
+    <string name="security_delete_confirm_body">«%1$s» será excluído permanentemente, sem passar pela Lixeira. Esta ação não pode ser desfeita.</string>
     <string name="security_protect_file_dialog_title">Proteger arquivo</string>
     <string name="pdf_pw_screen_subtitle">Proteja ou desbloqueie seus PDFs</string>
     <string name="pdf_pw_mode_protect_title">Proteger PDF</string>
@@ -1128,7 +1129,7 @@
     <string name="agenda_editor_title_new">Novo evento</string>
     <string name="agenda_editor_title_edit">Editar evento</string>
     <string name="agenda_delete_confirm_title">Excluir este evento?</string>
-    <string name="agenda_delete_confirm_body">"%1$s" será excluído junto com seu lembrete. Esta ação não pode ser desfeita.</string>
+    <string name="agenda_delete_confirm_body">«%1$s» será excluído junto com seu lembrete. Esta ação não pode ser desfeita.</string>
     <string name="agenda_field_title">Título</string>
     <string name="agenda_field_description">Descrição (opcional)</string>
     <string name="agenda_field_datetime">Data e hora</string>

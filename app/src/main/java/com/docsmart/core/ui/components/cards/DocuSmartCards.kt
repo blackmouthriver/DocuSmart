@@ -82,7 +82,15 @@ fun  DocuSmartQuickAccessCard(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = label,
+                    // Hallazgo real de la auditoría general 2026-09-17
+                    // (octava ronda, Media -- G7): el mismo texto ya es
+                    // visible en el Text de abajo, dentro del mismo
+                    // Box.clickable (que fusiona la semántica de sus
+                    // hijos en un solo nodo) -- TalkBack anunciaba el
+                    // nombre 2 veces por cada uno de los 9 accesos
+                    // rápidos. Mismo criterio que DocuSmartToolCard más
+                    // abajo, que ya usa null para este mismo patrón.
+                    contentDescription = null,
                     tint = iconTint,
                     modifier = Modifier.size(22.dp)  // ← reducido de 28dp a 22dp
                 )

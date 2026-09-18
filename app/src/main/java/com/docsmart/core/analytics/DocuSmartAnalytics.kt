@@ -140,6 +140,20 @@ object DocuSmartAnalytics {
         Timber.d("Analytics: premium_purchase_attempt → $planName")
     }
 
+    // Hallazgo real de la auditoría general 2026-09-17 (octava ronda,
+    // Alta -- G1): `logPremiumPurchaseAttempt()` medía intentos, pero
+    // nunca existió un evento de conversión REAL -- imposible saber
+    // cuántas compras se concretaban de verdad, ni distinguir plan
+    // mensual/anual, el dato de negocio más importante de la
+    // monetización. Deliberadamente separado de `logPremiumPurchaseAttempt`
+    // (no se reutiliza ese evento) para que el embudo intento→conversión
+    // se pueda medir en Firebase sin ambigüedad.
+    fun logPremiumPurchaseSuccess(productId: String) = safely {
+        val bundle = Bundle().apply { putString("product_id", productId) }
+        analytics.logEvent("premium_purchase_success", bundle)
+        Timber.d("Analytics: premium_purchase_success → $productId")
+    }
+
     // ── Errores ───────────────────────────────────────────────────────────────
     fun logError(context: String, message: String) = safely {
         val bundle = Bundle().apply {
