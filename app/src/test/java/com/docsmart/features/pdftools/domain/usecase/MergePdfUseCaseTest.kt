@@ -103,6 +103,38 @@ class MergePdfUseCaseTest {
         assertEquals("success 2 5 partial 1", success.message)
     }
 
+    // Revisión adversarial de correctitud (ronda 13, Alta): a diferencia
+    // del test de arriba (URI que ni siquiera se pudo COPIAR), acá el
+    // archivo SÍ se copia bien al cache pero no es un PDF válido
+    // (protegido/corrupto) -- justo la ruta que el fix del Hallazgo 1
+    // agregó (mergeOneUri()/copyFilePagesOrNull()). El bug real: el
+    // mensaje contaba este archivo DOS veces (una en "N archivos", vía
+    // cacheFiles.size, y otra en "N no se pudo incluir"), porque
+    // cacheFiles.size mide "se copió al cache", no "se incorporó al
+    // merge". mergedFileCount corrige esto contando solo lo realmente
+    // unido.
+    @Test
+    fun `merge cuenta una sola vez un archivo que se copia bien pero no es un PDF valido`() = runTest {
+        val uriA = mockk<Uri>()
+        val uriCorrupto = mockk<Uri>()
+        val uriB = mockk<Uri>()
+        val resolver = mockk<ContentResolver>()
+        every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
+        every { resolver.openInputStream(uriCorrupto) } answers {
+            ByteArrayInputStream("esto no es un pdf".toByteArray())
+        }
+        every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
+        every { context.contentResolver } returns resolver
+
+        val result = useCase(listOf(uriA, uriCorrupto, uriB), messages = messages)
+
+        assertTrue(result is PdfToolResult.Success)
+        val success = result as PdfToolResult.Success
+        assertEquals(5, pageCountOf(success.outputFile))
+        // 2 archivos realmente unidos (no 3, que sería contar el corrupto dos veces).
+        assertEquals("success 2 5 partial 1", success.message)
+    }
+
     // ── helpers ────────────────────────────────────────────────────────────
 
     private fun createTestPdf(pages: Int): ByteArray {

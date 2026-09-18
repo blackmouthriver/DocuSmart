@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="pdf_watermark_unsupported_chars_error">Watermark text only supports basic letters, numbers and symbols for now</string>
+    <string name="pdf_split_from_page_decrease">Decrease start page</string>
+    <string name="pdf_split_from_page_increase">Increase start page</string>
+    <string name="pdf_split_to_page_decrease">Decrease end page</string>
+    <string name="pdf_split_to_page_increase">Increase end page</string>
+</resources>

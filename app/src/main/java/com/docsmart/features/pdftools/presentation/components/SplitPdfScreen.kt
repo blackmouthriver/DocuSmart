@@ -100,7 +100,8 @@ fun SplitPdfScreen(
                                     modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
-                                        Icons.Rounded.Remove, null,
+                                        Icons.Rounded.Remove,
+                                        contentDescription = stringResource(R.string.pdf_split_from_page_decrease),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -117,7 +118,8 @@ fun SplitPdfScreen(
                                     modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
-                                        Icons.Rounded.Add, null,
+                                        Icons.Rounded.Add,
+                                        contentDescription = stringResource(R.string.pdf_split_from_page_increase),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -146,7 +148,8 @@ fun SplitPdfScreen(
                                     modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
-                                        Icons.Rounded.Remove, null,
+                                        Icons.Rounded.Remove,
+                                        contentDescription = stringResource(R.string.pdf_split_to_page_decrease),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -163,7 +166,8 @@ fun SplitPdfScreen(
                                     modifier = Modifier.size(48.dp)
                                 ) {
                                     Icon(
-                                        Icons.Rounded.Add, null,
+                                        Icons.Rounded.Add,
+                                        contentDescription = stringResource(R.string.pdf_split_to_page_increase),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }

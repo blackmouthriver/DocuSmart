@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="onboarding_page_position_a11y">第 %1$d 页,共 %2$d 页</string>
+</resources>

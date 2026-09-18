@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="pdf_watermark_unsupported_chars_error">Ur-markak oraingoz oinarrizko letrak, zenbakiak eta ikurrak soilik onartzen ditu</string>
+    <string name="pdf_split_from_page_decrease">Hasierako orrialdea gutxitu</string>
+    <string name="pdf_split_from_page_increase">Hasierako orrialdea handitu</string>
+    <string name="pdf_split_to_page_decrease">Amaierako orrialdea gutxitu</string>
+    <string name="pdf_split_to_page_increase">Amaierako orrialdea handitu</string>
+</resources>

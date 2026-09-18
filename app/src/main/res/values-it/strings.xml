@@ -41,7 +41,10 @@
     <string name="search_bar_icon_desc">Cerca</string>
     <string name="search_bar_clear_desc">Cancella</string>
     <string name="library_documents">documenti</string>
-    <string name="library_document_count">%1$d documenti</string>
+    <plurals name="library_document_count_plural">
+        <item quantity="one">%1$d documento</item>
+        <item quantity="other">%1$d documenti</item>
+    </plurals>
     <string name="library_search_results_count">%1$d risultati per \"%2$s\"</string>
     <string name="library_no_results_title">Nessun risultato</string>
     <string name="library_empty_category">Non ci sono documenti in questa categoria</string>

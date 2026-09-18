@@ -24,6 +24,11 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.spotless)
     alias(libs.plugins.kover)
+    // Dependency Analysis Gradle Plugin -- aplicado también acá (no solo en
+    // el build.gradle.kts raíz) porque el proyecto raíz no tiene ningún
+    // plugin Android/Java propio (todo el código vive en :app); sin esto el
+    // plugin no encuentra ningún subproyecto con salida JVM que analizar.
+    alias(libs.plugins.dependency.analysis)
     jacoco
     // Bug real corregido 2026-09-03: google-services.json ya estaba en el
     // repo y las dependencias de Firebase Analytics/Crashlytics ya estaban
@@ -359,6 +364,34 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     )
 }
 
+// Snyk (pedido explícito del usuario, 2026-09-18): a diferencia del resto de
+// herramientas de este gauntlet, Snyk no es un plugin de Gradle -- es un CLI
+// que escanea el árbol de dependencias resuelto y lo compara contra la base
+// de datos de vulnerabilidades de Snyk, autenticándose contra su servicio en
+// la nube. Requiere `SNYK_TOKEN` en el entorno (mismo patrón ya establecido
+// en este proyecto para SonarCloud/SONAR_TOKEN, ver build.gradle.kts raíz) o
+// haber corrido `snyk auth` una vez en esta máquina -- ninguna de las dos
+// cosas es algo que se pueda configurar sin la cuenta real del usuario, así
+// que esta tarea solo hace de wrapper: si falta la autenticación, falla con
+// un mensaje claro en vez de un error críptico del CLI.
+tasks.register<Exec>("snykTest") {
+    group = "verification"
+    description = "Escanea las dependencias resueltas en busca de vulnerabilidades conocidas (requiere SNYK_TOKEN)."
+    workingDir = rootDir
+    commandLine("cmd", "/c", "snyk", "test", "--all-projects")
+    isIgnoreExitValue = true
+    doFirst {
+        if (System.getenv("SNYK_TOKEN").isNullOrBlank()) {
+            logger.warn(
+                "snykTest: no se encontró SNYK_TOKEN en el entorno -- " +
+                    "el escaneo real de vulnerabilidades no puede autenticarse contra Snyk. " +
+                    "Corré 'snyk auth' una vez en esta máquina, o seteá SNYK_TOKEN " +
+                    "(mismo patrón que SONAR_TOKEN para SonarCloud)."
+            )
+        }
+    }
+}
+
 dependencies {
     // ── Core Android ──────────────────────────────────────────────────────────
     implementation(libs.androidx.core.ktx)
@@ -499,6 +532,20 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("app.cash.turbine:turbine:1.2.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    // Kotest (pedido explícito del usuario, 2026-09-18) -- corre sobre el
+    // mismo motor JUnit Platform que ya usa el resto de la suite
+    // (testOptions.unitTests.all { useJUnitPlatform() } más abajo), así que
+    // convive con los tests JUnit5 existentes sin migrarlos. Pensado para
+    // specs nuevas que se beneficien de sus estilos de test (FunSpec,
+    // BehaviorSpec, etc.) o de matchers más expresivos -- no reemplaza
+    // JUnit5+MockK en los tests ya escritos.
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.property)
+    // ArchUnit (pedido explícito del usuario, 2026-09-18) -- reglas de
+    // arquitectura ejecutables como tests JUnit5 normales, ver
+    // ArchitectureTest.kt.
+    testImplementation(libs.archunit.junit5)
     // El stub de Android para unit tests deja org.json.* sin implementar
     // ("not mocked") — esta dependencia real (mismo paquete org.json) la
     // sustituye solo para los tests, sin afectar el runtime de la app.

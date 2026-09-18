@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="pdf_watermark_unsupported_chars_error">Das Wasserzeichen unterstützt vorerst nur einfache Buchstaben, Zahlen und Symbole</string>
+    <string name="pdf_split_from_page_decrease">Startseite verringern</string>
+    <string name="pdf_split_from_page_increase">Startseite erhöhen</string>
+    <string name="pdf_split_to_page_decrease">Endseite verringern</string>
+    <string name="pdf_split_to_page_increase">Endseite erhöhen</string>
+</resources>

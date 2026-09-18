@@ -11,6 +11,7 @@ import com.docsmart.core.data.db.TrashEntry
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.util.elapsedRealtimeMillisSafe
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -105,8 +106,14 @@ class TrashRepository @Inject constructor(
             // la papelera antes, no debe heredar un firstSeenElapsed viejo.
             clearPurgeCandidate(documentId)
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.e(e, "Error moviendo a la papelera: $documentId")
+            // Revisión adversarial de seguridad (ronda 13): mismo criterio
+            // de redacción ya aplicado a la línea de abajo y en
+            // DownloadsAccessManager -- documentId es la ruta/URI real,
+            // CrashlyticsTree la reenviaría a Crashlytics.
+            Timber.e(e, "Error moviendo a la papelera")
             false
         }
     }
@@ -140,8 +147,12 @@ class TrashRepository @Inject constructor(
             trashDao.remove(documentId)
             clearPurgeCandidate(documentId)
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.e(e, "Error restaurando de la papelera: $documentId")
+            // Revisión adversarial de seguridad (ronda 13): mismo criterio
+            // de redacción que la línea 138 de esta misma función.
+            Timber.e(e, "Error restaurando de la papelera")
             false
         }
     }

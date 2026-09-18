@@ -41,7 +41,9 @@
     <string name="search_bar_icon_desc">검색</string>
     <string name="search_bar_clear_desc">지우기</string>
     <string name="library_documents">문서</string>
-    <string name="library_document_count">문서 %1$d개</string>
+    <plurals name="library_document_count_plural">
+        <item quantity="other">문서 %1$d개</item>
+    </plurals>
     <string name="library_search_results_count">\"%2$s\"에 대한 결과 %1$d개</string>
     <string name="library_no_results_title">결과 없음</string>
     <string name="library_empty_category">이 카테고리에 문서가 없습니다</string>

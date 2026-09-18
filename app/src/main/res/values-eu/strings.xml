@@ -41,7 +41,10 @@
     <string name="search_bar_icon_desc">Bilatu</string>
     <string name="search_bar_clear_desc">Garbitu</string>
     <string name="library_documents">dokumentu</string>
-    <string name="library_document_count">%1$d dokumentu</string>
+    <plurals name="library_document_count_plural">
+        <item quantity="one">%1$d dokumentu</item>
+        <item quantity="other">%1$d dokumentu</item>
+    </plurals>
     <string name="library_search_results_count">\"%2$s\"(r)en %1$d emaitza</string>
     <string name="library_no_results_title">Emaitzarik ez</string>
     <string name="library_empty_category">Ez dago dokumenturik kategoria honetan</string>

@@ -210,6 +210,12 @@ fun StudyScreen(
     val ttsRef = remember { mutableStateOf<TextToSpeech?>(null) }
     val isSpeaking = remember { mutableStateOf(false) }
     val ttsReady = remember { mutableStateOf(false) }
+    // Hallazgo H2/H3 de la auditoría (ronda 13, Modo Estudio 2026-09-18):
+    // antes, si el motor TTS no inicializaba en absoluto o si tanto el
+    // idioma del dispositivo como el fallback a español fallaban, el botón
+    // "Leer todo" quedaba deshabilitado para siempre sin ninguna
+    // explicación visible. Null = sin error.
+    val ttsErrorMessage = remember { mutableStateOf<String?>(null) }
     val currentSpeakingIndex = remember { mutableIntStateOf(-1) }
     // Selector de voz (pedido explícito de testers 2026-09-12): solo voces
     // instaladas en el dispositivo para el idioma actual, nunca las que
@@ -241,6 +247,10 @@ fun StudyScreen(
           la notificación mientras la app está en segundo plano. */ }
 
     // ── Inicializar TTS ───────────────────────────────
+    // Resuelto en scope de composable (no con context.getString() dentro del
+    // callback -- mismo motivo que voiceSampleTemplate más abajo,
+    // LocalContextGetResourceValueCall de lint marca ese patrón como error).
+    val ttsUnavailableMessage = stringResource(R.string.study_tts_unavailable)
     DisposableEffect(Unit) {
         var ttsInstance: TextToSpeech? = null
         ttsInstance = TextToSpeech(context) { status ->
@@ -248,40 +258,65 @@ fun StudyScreen(
                 // Antes forzaba español (Locale("es","ES")) sin importar el idioma
                 // configurado — mismo bug que ya se corrigió para el reconocimiento
                 // de voz, pero solo del lado de entrada, no de lectura en voz alta.
-                val result = ttsInstance?.setLanguage(Locale.getDefault())
+                var languageInUse = Locale.getDefault()
+                val result = ttsInstance?.setLanguage(languageInUse)
+                var fallbackFailed = false
                 if (result == TextToSpeech.LANG_MISSING_DATA ||
                     result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    ttsInstance?.language = Locale("es", "ES")
+                    // Hallazgo H2 de la auditoría (ronda 13, 2026-09-18): antes
+                    // este fallback no comprobaba su PROPIO resultado -- si
+                    // "es-ES" tampoco estaba disponible en el dispositivo,
+                    // seguía de largo como si hubiera funcionado, dejando
+                    // ttsReady=true con un idioma que en realidad nunca se
+                    // pudo setear.
+                    languageInUse = Locale("es", "ES")
+                    val fallbackResult = ttsInstance?.setLanguage(languageInUse)
+                    fallbackFailed = fallbackResult == TextToSpeech.LANG_MISSING_DATA ||
+                        fallbackResult == TextToSpeech.LANG_NOT_SUPPORTED
                 }
-                ttsInstance?.setSpeechRate(0.85f)
-                ttsInstance?.setPitch(1.05f)
+                if (fallbackFailed) {
+                    ttsErrorMessage.value = ttsUnavailableMessage
+                } else {
+                    ttsInstance?.setSpeechRate(0.85f)
+                    ttsInstance?.setPitch(1.05f)
 
-                // Bug real encontrado al verificar en dispositivo (2026-09-12):
-                // ttsInstance.language.language puede devolver el código ISO
-                // de 3 letras ("spa") mientras que voice.locale.language usa
-                // 2 letras ("es") para el mismo idioma -- comparados directo,
-                // ninguna voz coincidía nunca (0 voces encontradas en la
-                // prueba real). Se normalizan ambos lados a ISO3 antes de
-                // comparar.
-                val currentIso3Language = runCatching { Locale.getDefault().isO3Language }.getOrNull()
-                val voices = ttsInstance?.voices
-                    ?.filter { voice ->
-                        !voice.isNetworkConnectionRequired &&
-                            runCatching { voice.locale.isO3Language }.getOrNull() == currentIso3Language
+                    // Bug real encontrado al verificar en dispositivo (2026-09-12):
+                    // ttsInstance.language.language puede devolver el código ISO
+                    // de 3 letras ("spa") mientras que voice.locale.language usa
+                    // 2 letras ("es") para el mismo idioma -- comparados directo,
+                    // ninguna voz coincidía nunca (0 voces encontradas en la
+                    // prueba real). Se normalizan ambos lados a ISO3 antes de
+                    // comparar.
+                    // Hallazgo H2: se filtra por `languageInUse` (el idioma
+                    // que REALMENTE quedó activo, sea el del dispositivo o el
+                    // fallback a español), no por Locale.getDefault() -- antes
+                    // quedaba desincronizado si hubo fallback.
+                    val currentIso3Language = runCatching { languageInUse.isO3Language }.getOrNull()
+                    val voices = ttsInstance?.voices
+                        ?.filter { voice ->
+                            !voice.isNetworkConnectionRequired &&
+                                runCatching { voice.locale.isO3Language }.getOrNull() == currentIso3Language
+                        }
+                        ?.sortedByDescending { it.quality }
+                        .orEmpty()
+                    availableVoices.value = voices
+                    val savedVoiceName = StudyVoicePreference.load(context)
+                    val matchedVoice = voices.find { it.name == savedVoiceName }
+                    if (matchedVoice != null) {
+                        ttsInstance?.voice = matchedVoice
                     }
-                    ?.sortedByDescending { it.quality }
-                    .orEmpty()
-                availableVoices.value = voices
-                val savedVoiceName = StudyVoicePreference.load(context)
-                val matchedVoice = voices.find { it.name == savedVoiceName }
-                if (matchedVoice != null) {
-                    ttsInstance?.voice = matchedVoice
-                }
-                selectedVoice.value = matchedVoice ?: ttsInstance?.voice
+                    selectedVoice.value = matchedVoice ?: ttsInstance?.voice
 
-                ttsRef.value = ttsInstance
-                ttsReady.value = true
-                Timber.d("TTS listo, ${voices.size} voces disponibles para $currentIso3Language")
+                    ttsRef.value = ttsInstance
+                    ttsReady.value = true
+                    Timber.d("TTS listo, ${voices.size} voces disponibles para $currentIso3Language")
+                }
+            } else {
+                // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): el motor
+                // TTS no inicializó en absoluto -- antes no había ninguna rama
+                // para este caso, así que "Leer todo" quedaba deshabilitado
+                // para siempre sin ningún aviso visible.
+                ttsErrorMessage.value = ttsUnavailableMessage
             }
         }
         onDispose {
@@ -358,6 +393,12 @@ fun StudyScreen(
         documentText = emptyList()
         pageBoundaries = emptyList()
         summarySentences = null // documento nuevo -- el resumen anterior ya no aplica
+        // Hallazgo H4 de la auditoría (ronda 13, 2026-09-18): `highlights` es
+        // un Set<Int> de índices de párrafo sin atadura al documento -- si no
+        // se reinicia acá, los índices resaltados del documento ANTERIOR se
+        // siguen aplicando al nuevo (falso resaltado) cuando este tiene
+        // suficientes párrafos.
+        highlights = emptySet()
         // Pedido explícito del usuario 2026-09-08: no esperar a que el PDF
         // completo termine de procesarse para poder empezar a leer -- cada
         // vez que una página nueva termina de extraerse (`onPageExtracted`)
@@ -739,6 +780,7 @@ fun StudyScreen(
                     isCurrentHighlighted = highlights.contains(currentSpeakingIndex.intValue),
                     isSpeaking = isSpeaking.value,
                     ttsReady = ttsReady.value,
+                    ttsErrorMessage = ttsErrorMessage.value,
                     isExtractingMore = !extractionComplete,
                     onToggleHighlightCurrent = {
                         val index = currentSpeakingIndex.intValue
@@ -1025,6 +1067,10 @@ private fun ReadingTab(
     isCurrentHighlighted: Boolean,
     isSpeaking: Boolean,
     ttsReady: Boolean,
+    // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): null = sin error,
+    // no-null = el motor TTS no pudo inicializarse -- se muestra cerca del
+    // botón "Leer todo" en vez de dejarlo deshabilitado sin explicación.
+    ttsErrorMessage: String?,
     isExtractingMore: Boolean,
     currentPage: Int,
     totalPages: Int,
@@ -1171,6 +1217,18 @@ private fun ReadingTab(
                                 Text(speakButtonLabel)
                             }
                         }
+                    }
+                    // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): aviso
+                    // visible cerca del botón "Leer todo" cuando el motor TTS
+                    // no pudo inicializarse -- antes el botón quedaba
+                    // deshabilitado para siempre sin ninguna explicación.
+                    if (!ttsReady && ttsErrorMessage != null) {
+                        Text(
+                            text = ttsErrorMessage,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
                     }
 
                     // ── PDF real, la voz lee de fondo ─
@@ -1366,11 +1424,32 @@ private fun StudyPdfViewer(uri: Uri, currentPage: Int, modifier: Modifier = Modi
         pages = withContext(Dispatchers.IO) {
             try {
                 renderPdfPagesToBitmaps(uri, context, cachePrefix = "study")
+            } catch (e: CancellationException) {
+                // Hallazgo H5 de la auditoría (ronda 13, 2026-09-18): si `uri`
+                // cambia mientras el render está en curso, la cancelación no
+                // debe quedar atrapada por el catch genérico de abajo --
+                // mismo mecanismo ya aplicado en otros puntos de este mismo
+                // archivo (ver líneas ~2764, ~3503, ~3576).
+                throw e
             } catch (e: Exception) {
                 Timber.e(e, "Estudio: error renderizando PDF")
                 loadError = true
                 emptyList()
             }
+        }
+    }
+
+    // Hallazgo H6 de la auditoría (ronda 13, 2026-09-18): mismo fix ya
+    // aplicado en ViewerScreen.kt (R11, riesgo real de OOM) -- cada bitmap
+    // ARGB_8888 de página es 2x el tamaño de la página, hasta 240-400MB
+    // nativos residentes para un documento de 30-50 páginas si nunca se
+    // reciclan. `remember(uri)` arriba ya fuerza una lista nueva de `pages`
+    // por documento, así que este DisposableEffect(uri) libera la lista
+    // ANTERIOR de forma determinista, tanto al cambiar de documento como al
+    // salir de Estudio.
+    DisposableEffect(uri) {
+        onDispose {
+            pages.forEach { it.bitmap.recycle() }
         }
     }
 

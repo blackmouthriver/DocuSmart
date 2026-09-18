@@ -108,6 +108,41 @@ class NumberPagesUseCaseTest {
         assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
     }
 
+    // Revisión adversarial de correctitud (ronda 13): sin este test, un PDF
+    // con /Rotate 90 o /Rotate 270 nunca se ejercitaba -- el bug real
+    // encontrado en esta misma ronda (anchors de 90/270 cruzados entre sí,
+    // más el signo del ángulo de rotación del texto invertido) pasaba
+    // 100% de los tests existentes porque ninguno usaba una página
+    // rotada. Se verifica la posición X del primer glifo dibujado: para
+    // 90° debe caer cerca del borde DERECHO del MediaBox (x > width/2),
+    // para 270° cerca del borde IZQUIERDO (x < width/2) -- exactamente lo
+    // que quedaba invertido en el bug real.
+    @Test
+    fun `numerar una pagina rotada 90 grados ancla el numero cerca del borde derecho`() = runTest {
+        stubResolver(createTestPdf(pages = 1, rotation = 90))
+
+        val result = useCase(mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages)
+
+        assertTrue(result is PdfToolResult.Success)
+        val file = (result as PdfToolResult.Success).outputFile
+        val x = firstGlyphX(file, pageNumber = 1)
+        val width = pageWidthOf(file)
+        assertTrue(x > width / 2f, "esperaba x=$x cerca del borde derecho (width=$width)")
+    }
+
+    @Test
+    fun `numerar una pagina rotada 270 grados ancla el numero cerca del borde izquierdo`() = runTest {
+        stubResolver(createTestPdf(pages = 1, rotation = 270))
+
+        val result = useCase(mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages)
+
+        assertTrue(result is PdfToolResult.Success)
+        val file = (result as PdfToolResult.Success).outputFile
+        val x = firstGlyphX(file, pageNumber = 1)
+        val width = pageWidthOf(file)
+        assertTrue(x < width / 2f, "esperaba x=$x cerca del borde izquierdo (width=$width)")
+    }
+
     @Test
     fun `numerar un archivo que no es un PDF valido devuelve Error`() = runTest {
         stubResolver("esto no es un pdf".toByteArray())
@@ -125,12 +160,37 @@ class NumberPagesUseCaseTest {
         every { context.contentResolver } returns resolver
     }
 
-    private fun createTestPdf(pages: Int): ByteArray {
+    private fun createTestPdf(pages: Int, rotation: Int = 0): ByteArray {
         val out = ByteArrayOutputStream()
         val pdfDoc = PdfDocument(PdfWriter(out))
-        repeat(pages) { pdfDoc.addNewPage() }
+        repeat(pages) { pdfDoc.addNewPage().setRotation(rotation) }
         pdfDoc.close()
         return out.toByteArray()
+    }
+
+    private fun pageWidthOf(file: File): Float {
+        val reader = PdfReader(file)
+        val pdf = PdfDocument(reader)
+        val width = pdf.getPage(1).pageSize.width
+        pdf.close()
+        return width
+    }
+
+    // Posición X (coordenadas raw del MediaBox) del punto de anclaje del
+    // texto dibujado en la página -- se lee directo del operador de matriz
+    // de texto (`a b c d e f Tm`) en el content stream ya descomprimido,
+    // en vez de un listener de eventos de iText (API más frágil, dio
+    // NullPointerException en la primera versión de este test).
+    private fun firstGlyphX(file: File, pageNumber: Int): Float {
+        val reader = PdfReader(file)
+        val pdf = PdfDocument(reader)
+        val content = String(pdf.getPage(pageNumber).contentBytes, Charsets.ISO_8859_1)
+        pdf.close()
+        val number = """[-+]?[0-9]*\.?[0-9]+"""
+        val tmPattern = Regex("($number)\\s+($number)\\s+($number)\\s+($number)\\s+($number)\\s+($number)\\s+Tm")
+        val match = tmPattern.find(content)
+            ?: error("No se encontró el operador Tm en el content stream: $content")
+        return match.groupValues[5].toFloat()
     }
 
     private fun pageCountOf(file: File): Int {

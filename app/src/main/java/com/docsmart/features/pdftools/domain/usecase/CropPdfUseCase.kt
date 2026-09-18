@@ -8,7 +8,9 @@ import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.PdfWriter
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -16,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 data class CropPdfMessages(
     val readError    : String,
@@ -69,6 +72,11 @@ class CropPdfUseCase @Inject constructor(
                     return@withContext PdfToolResult.Error(messages.noPages)
                 }
                 for (pageNumber in 1..pdf.numberOfPages) {
+                    // Hallazgo real de la auditoría r13 (Alta): sin este
+                    // ensureActive() la cancelación cooperativa no se
+                    // notaba hasta terminar de recortar todas las páginas
+                    // en segundo plano -- mismo patrón que CompressPdfUseCase.
+                    coroutineContext.ensureActive()
                     val page = pdf.getPage(pageNumber)
                     val size = page.pageSize
                     val marginX = size.width * percent / 100f
@@ -94,6 +102,20 @@ class CropPdfUseCase @Inject constructor(
                 outputFile = outputFile,
                 message = String.format(messages.success, percent)
             )
+        } catch (e: CancellationException) {
+            // Hallazgo real de la auditoría r13 (Media): CancellationException
+            // hereda de Exception, así que sin este catch específico antes
+            // del genérico de abajo cada cancelación real se registraba
+            // como error. Se relanza tal cual, mismo patrón que
+            // CompressPdfUseCase.
+            outputFile?.delete()
+            throw e
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la auditoría r13 (Media): OutOfMemoryError no
+            // hereda de Exception en Kotlin/Java, así que el catch genérico
+            // de abajo nunca lo atrapaba y outputFile quedaba huérfano.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al recortar PDF")
             outputFile?.delete()

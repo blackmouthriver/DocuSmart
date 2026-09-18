@@ -80,7 +80,27 @@ class DownloadsAccessManager @Inject constructor(
     // Nombre real de la carpeta que el usuario eligió (ej. "DMSS"), para
     // mostrarlo en el atajo de Biblioteca en vez de un genérico "Carpeta" --
     // pedido explícito del usuario 2026-09-03.
-    fun folderDisplayName(uri: Uri): String? = DocumentFile.fromTreeUri(context, uri)?.name
+    //
+    // Hallazgo real de la auditoría general 2026-09-18 (Alta): a diferencia
+    // de onFolderPicked()/unlink() en este mismo archivo, esta función no
+    // tenía try/catch. fromTreeUri()/.name puede lanzar SecurityException
+    // (permiso SAF revocado desde Ajustes del sistema) o
+    // IllegalArgumentException/NullPointerException (carpeta borrada, Uri de
+    // árbol ya inválida) -- se invoca desde un remember{} síncrono en
+    // OnboardingScreen.kt sin su propio try/catch, así que sin esto podía
+    // crashear al llegar a la última slide. Mismo criterio de redacción que
+    // el resto del archivo: solo el tipo de excepción, nunca su mensaje
+    // (que en SAF suele incluir la Uri).
+    @Suppress("TooGenericExceptionCaught")
+    fun folderDisplayName(uri: Uri): String? = try {
+        DocumentFile.fromTreeUri(context, uri)?.name
+    } catch (e: Exception) {
+        Timber.w(
+            "DownloadsAccessManager: no se pudo leer el nombre de la carpeta vinculada " +
+                "(${e.javaClass.simpleName})"
+        )
+        null
+    }
 
     fun unlink() {
         val uri = _linkedFolderUri.value ?: return

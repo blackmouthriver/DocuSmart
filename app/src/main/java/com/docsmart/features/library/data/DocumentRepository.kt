@@ -15,6 +15,7 @@ import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -173,6 +174,8 @@ class DocumentRepository @Inject constructor(
             }
 
             withFavorites.sortedByDescending { it.date }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error cargando documentos")
             emptyList()
@@ -224,6 +227,17 @@ class DocumentRepository @Inject constructor(
                 DeleteOutcome.Failed
             }
         }
+        deleteLegacyDocument(documentId)
+    }
+
+    // Hallazgo real de la auditoría de la capa de persistencia (Media, catch
+    // de CancellationException agregado): extraída de deleteDocument() para
+    // no subir su complejidad ciclomática por encima del umbral de detekt --
+    // mismo criterio ya usado para deleteSafDocument() (fila 22 del backlog
+    // UX). Cubre el borrado real de un archivo de la app o una fila de
+    // MediaStore/content:// que no requiere el diálogo de confirmación de
+    // API 30+ (esa rama ya devolvió antes de llegar acá).
+    private suspend fun deleteLegacyDocument(documentId: String): DeleteOutcome =
         try {
             val deleted = if (documentId.startsWith("content://")) {
                 context.contentResolver.delete(Uri.parse(documentId), null, null) > 0
@@ -233,16 +247,21 @@ class DocumentRepository @Inject constructor(
             }
             if (deleted) documentHistoryDao.remove(documentId)
             if (deleted) DeleteOutcome.Deleted else DeleteOutcome.Failed
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                mediaDeletePermission.recoverableIntentSenderOrNull(e)?.let {
-                    return@withContext DeleteOutcome.NeedsPermission(it)
-                }
+            val recoverable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                mediaDeletePermission.recoverableIntentSenderOrNull(e)
+            } else {
+                null
             }
-            Timber.e(e, "Error eliminando documento: $documentId")
-            DeleteOutcome.Failed
+            if (recoverable != null) {
+                DeleteOutcome.NeedsPermission(recoverable)
+            } else {
+                Timber.e(e, "Error eliminando documento")
+                DeleteOutcome.Failed
+            }
         }
-    }
 
     // Fila 22 del backlog UX: borra un documento de la carpeta vinculada por
     // SAF vía DocumentsContract -- extraída de deleteDocument() para no subir
@@ -252,8 +271,10 @@ class DocumentRepository @Inject constructor(
             val deleted = DocumentsContract.deleteDocument(context.contentResolver, uri)
             if (deleted) documentHistoryDao.remove(documentId)
             if (deleted) DeleteOutcome.Deleted else DeleteOutcome.Failed
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.e(e, "Error eliminando documento de la carpeta vinculada: $documentId")
+            Timber.e(e, "Error eliminando documento de la carpeta vinculada")
             DeleteOutcome.Failed
         }
 
@@ -301,8 +322,10 @@ class DocumentRepository @Inject constructor(
             }
             favoritesRepository.saveAlias(documentId, newName)
             documentId
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Timber.e(e, "Error renombrando documento: $documentId")
+            Timber.e(e, "Error renombrando documento")
             favoritesRepository.saveAlias(documentId, newName)
             documentId
         }

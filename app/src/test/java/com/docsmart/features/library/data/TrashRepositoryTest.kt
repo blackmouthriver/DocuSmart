@@ -2,9 +2,11 @@ package com.docsmart.features.library.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.room.withTransaction
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
+import com.docsmart.core.data.db.DocuSmartDatabase
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.data.db.TrashEntry
 import io.mockk.Runs
@@ -13,6 +15,8 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -56,6 +60,22 @@ class TrashRepositoryTest {
         // flag de favorito, no solo el alias.
         coEvery { favorites.removeFavorite(any()) } just Runs
         val mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
+        // Hallazgo real de la auditoría de la capa de persistencia (Alta):
+        // onIdChanged()/onPermanentlyDeleted() ahora envuelven su cuerpo en
+        // `database.withTransaction {}` -- sobre una base mockeada, la
+        // implementación real de esa función de extensión dependería del
+        // transactionExecutor real de Room y colgaría la corutina. Se
+        // mockea la función de extensión en sí (mismo criterio que
+        // DocumentIdentityMaintenanceTest) para que ejecute el bloque
+        // recibido directo, sin pasar por la maquinaria real de Room.
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        val database = mockk<DocuSmartDatabase>()
+        // Ver el comentario equivalente en DocumentIdentityMaintenanceTest:
+        // el bloque es el SEGUNDO argumento de la llamada estática
+        // subyacente (el primero es el receptor `database`).
+        coEvery { database.withTransaction<Any?>(any()) } coAnswers {
+            secondArg<suspend () -> Any?>().invoke()
+        }
         // Instancia real (no mock): así los coVerify sobre `favorites` de
         // abajo siguen viendo las mismas llamadas que antes de consolidar
         // el borrado/la migración en DocumentIdentityMaintenance -- solo se
@@ -67,7 +87,8 @@ class TrashRepositoryTest {
             mockk<com.docsmart.core.data.db.LastViewedPageDao>(relaxed = true),
             mockk<com.docsmart.core.data.db.NoteDao>(relaxed = true),
             mockk<com.docsmart.core.data.db.AgendaEventDao>(relaxed = true),
-            historyDao
+            historyDao,
+            database
         )
         documentRepository = DocumentRepository(
             context, favorites, historyDao, trashDao, mediaDeletePermission,
@@ -80,6 +101,7 @@ class TrashRepositoryTest {
 
     @AfterEach
     fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
         filesDir.deleteRecursively()
     }
 

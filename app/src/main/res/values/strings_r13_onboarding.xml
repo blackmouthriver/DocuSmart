@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Ronda 13 de accesibilidad TalkBack (2026-09-18): contentDescription
+         con posición para el indicador de página del carrusel de
+         Onboarding (Hallazgo 3), mismo patrón ya usado en el Convertidor
+         (converter_image_position_a11y, strings_r12_a11y.xml). -->
+    <string name="onboarding_page_position_a11y">Página %1$d de %2$d</string>
+</resources>

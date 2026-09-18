@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.kover) apply false
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.sonarqube)
     id("com.google.gms.google-services")    version "4.4.2" apply false
     // Bug real corregido 2026-09-03: 2.9.9 fallaba `assembleRelease` con

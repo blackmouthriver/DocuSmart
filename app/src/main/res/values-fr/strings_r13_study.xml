@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="study_tts_unavailable">Impossible de démarrer la lecture à voix haute sur cet appareil</string>
+</resources>

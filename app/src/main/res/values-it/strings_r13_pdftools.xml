@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="pdf_watermark_unsupported_chars_error">La filigrana supporta per ora solo lettere, numeri e simboli di base</string>
+    <string name="pdf_split_from_page_decrease">Diminuisci pagina iniziale</string>
+    <string name="pdf_split_from_page_increase">Aumenta pagina iniziale</string>
+    <string name="pdf_split_to_page_decrease">Diminuisci pagina finale</string>
+    <string name="pdf_split_to_page_increase">Aumenta pagina finale</string>
+</resources>

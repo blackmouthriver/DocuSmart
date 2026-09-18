@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="pdf_watermark_unsupported_chars_error">워터마크는 현재 기본 문자, 숫자, 기호만 지원합니다</string>
+    <string name="pdf_split_from_page_decrease">시작 페이지 줄이기</string>
+    <string name="pdf_split_from_page_increase">시작 페이지 늘리기</string>
+    <string name="pdf_split_to_page_decrease">종료 페이지 줄이기</string>
+    <string name="pdf_split_to_page_increase">종료 페이지 늘리기</string>
+</resources>

@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
@@ -53,9 +54,14 @@ fun DocumentListSection(
         // Hallazgo real de la revisión general 2026-09-16 (#51): textos
         // hardcodeados en español, fuera de la limpieza de i18n del
         // 2026-09-14.
+        //
+        // Hallazgo real de la auditoría general 2026-09-18 (Media, i18n):
+        // library_document_count era un string simple concatenado a mano
+        // ("%1$d documentos" fijo), sin sistema <plurals> -- "1 documentos"
+        // es gramaticalmente incorrecto. Migrado a library_document_count_plural.
         Text(
             text = if (searchQuery.isBlank())
-                stringResource(R.string.library_document_count, documents.size)
+                pluralStringResource(R.plurals.library_document_count_plural, documents.size, documents.size)
             else
                 stringResource(R.string.library_search_results_count, documents.size, searchQuery),
             style    = MaterialTheme.typography.bodySmall,

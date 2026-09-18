@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Ronda 13 de auditoría de Modo Estudio (2026-09-18): aviso visible
+         cuando el motor de texto a voz no pudo inicializarse en absoluto, o
+         cuando ni el idioma del dispositivo ni el fallback a español
+         funcionaron. Antes el botón "Leer todo" quedaba deshabilitado
+         para siempre sin ninguna explicación (H3/H2). -->
+    <string name="study_tts_unavailable">No se pudo iniciar la lectura en voz alta en este dispositivo</string>
+</resources>

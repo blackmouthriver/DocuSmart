@@ -41,7 +41,12 @@
     <string name="search_bar_icon_desc">Поиск</string>
     <string name="search_bar_clear_desc">Очистить</string>
     <string name="library_documents">документов</string>
-    <string name="library_document_count">%1$d документов</string>
+    <plurals name="library_document_count_plural">
+        <item quantity="one">%1$d документ</item>
+        <item quantity="few">%1$d документа</item>
+        <item quantity="many">%1$d документов</item>
+        <item quantity="other">%1$d документа</item>
+    </plurals>
     <string name="library_search_results_count">Результатов: %1$d по запросу «%2$s»</string>
     <string name="library_no_results_title">Нет результатов</string>
     <string name="library_empty_category">В этой категории нет документов</string>

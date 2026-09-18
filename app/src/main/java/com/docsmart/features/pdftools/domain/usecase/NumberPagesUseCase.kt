@@ -9,10 +9,10 @@ import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas
-import com.itextpdf.layout.Canvas
-import com.itextpdf.layout.properties.TextAlignment
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -20,6 +20,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
+import kotlin.math.cos
+import kotlin.math.sin
 
 enum class PageNumberFormat { NUMBER_ONLY, NUMBER_OF_TOTAL, PAGE_OF_TOTAL }
 
@@ -76,17 +79,15 @@ class NumberPagesUseCase @Inject constructor(
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
                 totalPages = pdf.numberOfPages
                 for (pageNumber in 1..totalPages) {
-                    val page     = pdf.getPage(pageNumber)
-                    val pageSize = page.pageSize
-                    val text     = labelFor(format, pageNumber, totalPages, messages.pageOfTotalTemplate)
-
-                    val pdfCanvas = PdfCanvas(page)
-                    val canvas    = Canvas(pdfCanvas, pageSize)
-                    canvas.setFont(font).setFontSize(FONT_SIZE)
-                    canvas.showTextAligned(
-                        text, pageSize.width / 2, BOTTOM_MARGIN, TextAlignment.CENTER
-                    )
-                    canvas.close()
+                    // Hallazgo real de la auditoría r13 (Alta): sin este
+                    // ensureActive() la cancelación cooperativa (usuario
+                    // navega hacia atrás mientras se numera un PDF largo)
+                    // no se notaba hasta terminar todas las páginas en
+                    // segundo plano -- mismo patrón que CompressPdfUseCase.
+                    coroutineContext.ensureActive()
+                    val page = pdf.getPage(pageNumber)
+                    val text = labelFor(format, pageNumber, totalPages, messages.pageOfTotalTemplate)
+                    drawPageNumber(page, text, font)
                 }
             }
 
@@ -105,6 +106,20 @@ class NumberPagesUseCase @Inject constructor(
                 outputFile = outputFile,
                 message    = String.format(messages.success, totalPages)
             )
+        } catch (e: CancellationException) {
+            // Hallazgo real de la auditoría r13 (Media): CancellationException
+            // hereda de Exception, así que sin este catch específico antes
+            // del genérico de abajo cada cancelación real se registraba
+            // como error. Se relanza tal cual, mismo patrón que
+            // CompressPdfUseCase.
+            outputFile?.delete()
+            throw e
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la auditoría r13 (Media): OutOfMemoryError no
+            // hereda de Exception en Kotlin/Java, así que el catch genérico
+            // de abajo nunca lo atrapaba y outputFile quedaba huérfano.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al numerar páginas")
             outputFile?.delete()
@@ -112,6 +127,61 @@ class NumberPagesUseCase @Inject constructor(
         } finally {
             cacheFile?.delete()
         }
+    }
+
+    // Hallazgo real de la auditoría r13 (Alta): antes se anclaba el texto en
+    // pageSize.width/2 y un margen Y absoluto, tratando las DIMENSIONES del
+    // MediaBox como si fueran sus COORDENADAS -- en un PDF cuyo MediaBox no
+    // arranca en (0,0) (común en escaneos o en un PDF ya recortado/rotado
+    // por esta misma app) el número caía fuera del centro real de la
+    // página. Se usa pageSize.left/pageSize.bottom para el centro real,
+    // mismo criterio ya corregido en WatermarkPdfUseCase.drawWatermark().
+    // Además, page.getRotation() no se consideraba: en una página rotada
+    // 90/180/270 el "pie de página" visual no coincide con el borde inferior
+    // del MediaBox sin rotar -- se elige el punto de anclaje según la
+    // rotación y se dibuja el texto con esa misma orientación (matriz de
+    // texto vía PdfCanvas, igual mecanismo que ya usa drawWatermark()).
+    private fun drawPageNumber(
+        page: com.itextpdf.kernel.pdf.PdfPage,
+        text: String,
+        font: com.itextpdf.kernel.font.PdfFont
+    ) {
+        val pageSize = page.pageSize
+        val rotation = ((page.getRotation() % 360) + 360) % 360
+        val textWidth = font.getWidth(text, FONT_SIZE)
+
+        // Revisión adversarial de correctitud (ronda 13): el signo de
+        // angleRad estaba invertido (-rotation en vez de +rotation) y los
+        // anchors de 90/270 estaban CRUZADOS entre sí -- ambos errores se
+        // cancelaban parcialmente en apariencia para 0°/180° (sin(±0)=0,
+        // sin(±180)=0), por eso solo se notaba en 90°/270°. Verificado con
+        // la matriz de transformación de display estándar de PDF para cada
+        // ángulo de /Rotate: para 90° CW, (x,y)_raw -> (y, W-x)_disp: el
+        // punto raw que cae en el centro-inferior visual es
+        // (right-margin, bottom+height/2), no (left+margin, ...). Para
+        // 270° CW, (x,y)_raw -> (H-y, x)_disp: el punto raw correcto es
+        // (left+margin, bottom+height/2). La dirección del texto (para que
+        // se lea derecha tras la rotación de display) es rotation, no
+        // -rotation.
+        val angleRad = Math.toRadians(rotation.toDouble()).toFloat()
+        val cosA = cos(angleRad)
+        val sinA = sin(angleRad)
+
+        val (anchorX, anchorY) = when (rotation) {
+            90  -> (pageSize.right - BOTTOM_MARGIN) to (pageSize.bottom + pageSize.height / 2)
+            180 -> (pageSize.left + pageSize.width / 2) to (pageSize.top - BOTTOM_MARGIN)
+            270 -> (pageSize.left + BOTTOM_MARGIN) to (pageSize.bottom + pageSize.height / 2)
+            else -> (pageSize.left + pageSize.width / 2) to (pageSize.bottom + BOTTOM_MARGIN)
+        }
+        val startX = anchorX - (textWidth / 2) * cosA
+        val startY = anchorY - (textWidth / 2) * sinA
+
+        val pdfCanvas = PdfCanvas(page)
+        pdfCanvas.beginText()
+        pdfCanvas.setFontAndSize(font, FONT_SIZE)
+        pdfCanvas.setTextMatrix(cosA, sinA, -sinA, cosA, startX, startY)
+        pdfCanvas.showText(text)
+        pdfCanvas.endText()
     }
 
     private fun labelFor(

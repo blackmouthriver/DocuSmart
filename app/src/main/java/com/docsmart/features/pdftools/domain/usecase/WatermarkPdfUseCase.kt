@@ -2,6 +2,7 @@ package com.docsmart.features.pdftools.domain.usecase
 
 import android.content.Context
 import android.net.Uri
+import com.docsmart.R
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import com.itextpdf.io.font.constants.StandardFonts
 import com.itextpdf.kernel.colors.ColorConstants
@@ -12,7 +13,9 @@ import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -20,6 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -52,6 +56,9 @@ class WatermarkPdfUseCase @Inject constructor(
         private const val BASE_FONT_SIZE = 40f
         private const val MIN_FONT_SIZE = 8f
         private const val MAX_WIDTH_FACTOR = 1.3f
+        // Límite del juego de caracteres Latin-1/WinAnsi que cubre la fuente
+        // estándar Helvetica usada acá -- ver Hallazgo 5 de la auditoría r13.
+        private const val MAX_WINANSI_CODE_POINT = 0xFF
     }
 
     /**
@@ -69,6 +76,17 @@ class WatermarkPdfUseCase @Inject constructor(
     ): PdfToolResult = withContext(Dispatchers.IO) {
         if (watermarkText.isBlank()) {
             return@withContext PdfToolResult.Error(messages.emptyTextError)
+        }
+
+        // Hallazgo real de la auditoría r13 (Media): PdfFontFactory.createFont
+        // (StandardFonts.HELVETICA) solo cubre Latin-1/WinAnsi -- un texto en
+        // ruso/chino/con emoji no fallaba con un error claro sino con la
+        // excepción críptica de iText al codificar el glifo. Agregar una
+        // fuente TTF Unicode embebida implicaría tocar assets/build.gradle.kts,
+        // fuera del alcance de este lote -- se valida ANTES de generar el PDF
+        // y se devuelve un mensaje claro en su lugar.
+        if (watermarkText.any { it.code > MAX_WINANSI_CODE_POINT }) {
+            return@withContext PdfToolResult.Error(context.getString(R.string.pdf_watermark_unsupported_chars_error))
         }
 
         var cacheFile: File? = null
@@ -94,6 +112,11 @@ class WatermarkPdfUseCase @Inject constructor(
             PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
                 totalPages = pdf.numberOfPages
                 for (pageNumber in 1..totalPages) {
+                    // Hallazgo real de la auditoría r13 (Alta): sin este
+                    // ensureActive() la cancelación cooperativa no se
+                    // notaba hasta terminar todas las páginas en segundo
+                    // plano -- mismo patrón que CompressPdfUseCase.
+                    coroutineContext.ensureActive()
                     val page = pdf.getPage(pageNumber)
                     drawWatermark(page, watermarkText, font, gState)
                 }
@@ -114,6 +137,20 @@ class WatermarkPdfUseCase @Inject constructor(
                 outputFile = outputFile,
                 message    = String.format(messages.success, totalPages)
             )
+        } catch (e: CancellationException) {
+            // Hallazgo real de la auditoría r13 (Media): CancellationException
+            // hereda de Exception, así que sin este catch específico antes
+            // del genérico de abajo cada cancelación real se registraba
+            // como error. Se relanza tal cual, mismo patrón que
+            // CompressPdfUseCase.
+            outputFile?.delete()
+            throw e
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la auditoría r13 (Media): OutOfMemoryError no
+            // hereda de Exception en Kotlin/Java, así que el catch genérico
+            // de abajo nunca lo atrapaba y outputFile quedaba huérfano.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al aplicar marca de agua")
             outputFile?.delete()

@@ -32,6 +32,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -416,9 +419,22 @@ private fun OnboardingFolderLinkAction(
 }
 
 // ── Indicadores de página ─────────────────────────────────────────────────────
+// Hallazgo real de la auditoría general 2026-09-18 (Media, accesibilidad):
+// ni el HorizontalPager ni este indicador tenían semántica de accesibilidad
+// -- TalkBack no anunciaba en qué slide del onboarding estaba el usuario ni
+// cuántas había en total. Mismo patrón ya usado en el Convertidor
+// (converter_image_position_a11y, ConverterScreen.kt) -- acá se aplica sobre
+// el contenedor del indicador (en vez de sobre cada página del pager) para no
+// pisar la semántica propia del título/descripción de cada slide.
 @Composable
 private fun PageIndicator(pageCount: Int, currentPage: Int) {
+    val positionDescription = stringResource(
+        R.string.onboarding_page_position_a11y, currentPage + 1, pageCount
+    )
     Row(
+        modifier = Modifier.semantics(mergeDescendants = true) {
+            contentDescription = positionDescription
+        },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment     = Alignment.CenterVertically
     ) {
@@ -439,6 +455,7 @@ private fun PageIndicator(pageCount: Int, currentPage: Int) {
                     .width(width)
                     .clip(CircleShape)
                     .background(color)
+                    .clearAndSetSemantics {}
             )
         }
     }

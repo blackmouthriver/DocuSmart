@@ -1,8 +1,10 @@
 package com.docsmart.core.data
 
+import androidx.room.withTransaction
 import com.docsmart.core.data.db.AgendaEventDao
 import com.docsmart.core.data.db.AnnotationDao
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.data.db.DocuSmartDatabase
 import com.docsmart.core.data.db.LastViewedPageDao
 import com.docsmart.core.data.db.NoteDao
 import com.docsmart.core.data.db.PageBookmarkDao
@@ -11,7 +13,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 /**
@@ -31,10 +37,39 @@ class DocumentIdentityMaintenanceTest {
     private val noteDao             = mockk<NoteDao>()
     private val agendaEventDao      = mockk<AgendaEventDao>()
     private val documentHistoryDao  = mockk<DocumentHistoryDao>()
+    private val database            = mockk<DocuSmartDatabase>()
     private val maintenance = DocumentIdentityMaintenance(
         favoritesRepository, annotationDao, pageBookmarkDao, lastViewedPageDao, noteDao, agendaEventDao,
-        documentHistoryDao
+        documentHistoryDao, database
     )
+
+    // Hallazgo real de la auditoría de la capa de persistencia (Alta):
+    // onIdChanged()/onPermanentlyDeleted() ahora envuelven su cuerpo en
+    // `database.withTransaction {}`. La implementación real de esa función
+    // de extensión (androidx.room.withTransaction) depende del
+    // transactionExecutor real de Room -- sobre un `database` mockeado ese
+    // executor nunca ejecuta nada de verdad y la corutina quedaría colgada
+    // esperando un resultado que nunca llega. Se mockea la función de
+    // extensión en sí (mismo criterio que Uri.parse/Uri.withAppendedPath en
+    // DocumentRepositoryTest) para que simplemente ejecute el bloque
+    // recibido, sin pasar por la maquinaria real de transacciones de Room.
+    @BeforeEach
+    fun setUp() {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        // `withTransaction` es una función de extensión -- al mockearla vía
+        // mockkStatic, la llamada real subyacente es un método estático
+        // (receptor, bloque, Continuation), así que el bloque a ejecutar es
+        // el SEGUNDO argumento (secondArg), no el primero (ese es
+        // `database`, el receptor).
+        coEvery { database.withTransaction<Any?>(any()) } coAnswers {
+            secondArg<suspend () -> Any?>().invoke()
+        }
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
+    }
 
     @Test
     fun `onIdChanged migra favorito, anotaciones, marcadores, notas, agenda e historial`() = runTest {

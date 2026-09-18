@@ -9,14 +9,18 @@ import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.features.study.domain.NoteReminderScheduler
 import com.docsmart.features.study.domain.StudyNotesStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,6 +48,18 @@ class NoteRepository @Inject constructor(
     // parsearlo no depende del idioma activo en el momento de la migración.
     private val legacyDateFormatter = SimpleDateFormat("dd/MM/yyyy · HH:mm", Locale.getDefault())
 
+    // Hallazgo real de la auditoría de la capa de persistencia (Media):
+    // updateNote()/linkDocument() hacían lectura-modificación-escritura
+    // (getById + update(copy(...))) sin ningún lock -- dos escrituras casi
+    // simultáneas sobre la MISMA nota podían pisarse en silencio ("lost
+    // update"). Mismo mecanismo ya usado en AgendaRepository (ronda 12):
+    // Mutex por id en un ConcurrentHashMap, con `computeIfAbsent` (NO
+    // `getOrPut` de Kotlin, que no es atómico sobre ConcurrentHashMap).
+    private val noteMutexes = ConcurrentHashMap<String, Mutex>()
+
+    private suspend fun <T> withNoteLock(noteId: String, block: suspend () -> T): T =
+        noteMutexes.computeIfAbsent(noteId) { Mutex() }.withLock { block() }
+
     @Suppress("TooGenericExceptionCaught")
     suspend fun migrateLegacyNotesIfNeeded() = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
@@ -62,6 +78,8 @@ class NoteRepository @Inject constructor(
                 noteDao.insert(migrated)
             }
             prefs.edit().putBoolean(KEY_MIGRATED_TO_ROOM, true).apply()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error migrando notas legadas a Room")
         }
@@ -151,25 +169,28 @@ class NoteRepository @Inject constructor(
         removedImages: List<NoteImageEntity>,
         newImageUris : List<Uri>
     ): Unit = withContext(Dispatchers.IO) {
-        val existing = noteDao.getById(noteId) ?: return@withContext
-        noteDao.update(existing.copy(title = title, text = text, reminderAt = reminderAt))
+        withNoteLock(noteId) {
+            val existing = noteDao.getById(noteId) ?: return@withNoteLock
+            noteDao.update(existing.copy(title = title, text = text, reminderAt = reminderAt))
 
-        removedImages.forEach { image ->
-            File(image.filePath).delete()
-            noteDao.deleteImage(image.id)
-        }
-        val nextPosition = (keptImages.maxOfOrNull { it.position } ?: -1) + 1
-        newImageUris.forEachIndexed { offset, uri ->
-            val position = nextPosition + offset
-            val filePath = copyImageToNoteStorage(noteId, position, uri) ?: return@forEachIndexed
-            noteDao.insertImage(NoteImageEntity(noteId = noteId, filePath = filePath, position = position))
-        }
+            removedImages.forEach { image ->
+                File(image.filePath).delete()
+                noteDao.deleteImage(image.id)
+            }
+            val nextPosition = (keptImages.maxOfOrNull { it.position } ?: -1) + 1
+            newImageUris.forEachIndexed { offset, uri ->
+                val position = nextPosition + offset
+                val filePath = copyImageToNoteStorage(noteId, position, uri) ?: return@forEachIndexed
+                noteDao.insertImage(NoteImageEntity(noteId = noteId, filePath = filePath, position = position))
+            }
 
-        // Mismo criterio que createNote(): reprograma/cancela el
-        // recordatorio real en vez de dejar la alarma vieja viva apuntando
-        // a un título desactualizado, o una nueva sin cancelar la anterior.
-        if (existing.reminderAt != null) noteReminderScheduler.cancel(noteId)
-        if (reminderAt != null) noteReminderScheduler.schedule(noteId, title, reminderAt)
+            // Mismo criterio que createNote(): reprograma/cancela el
+            // recordatorio real en vez de dejar la alarma vieja viva
+            // apuntando a un título desactualizado, o una nueva sin
+            // cancelar la anterior.
+            if (existing.reminderAt != null) noteReminderScheduler.cancel(noteId)
+            if (reminderAt != null) noteReminderScheduler.schedule(noteId, title, reminderAt)
+        }
     }
 
     // Hallazgo real de la auditoría general 2026-09-17 (B22, descubierto de
@@ -179,8 +200,10 @@ class NoteRepository @Inject constructor(
     // de note_images por el CASCADE de SQLite (el archivo en disco quedaba
     // huérfano, la nota se veía sin sus imágenes al volver a abrirla).
     suspend fun linkDocument(noteId: String, documentId: String?) = withContext(Dispatchers.IO) {
-        val note = noteDao.getById(noteId) ?: return@withContext
-        noteDao.update(note.copy(documentId = documentId))
+        withNoteLock(noteId) {
+            val note = noteDao.getById(noteId) ?: return@withNoteLock
+            noteDao.update(note.copy(documentId = documentId))
+        }
     }
 
     // Borra las copias de imagen en disco antes de la fila -- Room solo
@@ -188,16 +211,27 @@ class NoteRepository @Inject constructor(
     // (backlog UX #49, AC2: "no deja archivos huérfanos"). Backlog UX #52:
     // cancela también el recordatorio pendiente -- sin esto, la alarma ya
     // programada seguiría sonando y abriría una nota que ya no existe.
+    // Revisión adversarial de correctitud (ronda 13, Media): a diferencia
+    // de updateNote()/linkDocument(), deleteNote()/deleteAll() no tomaban
+    // withNoteLock -- un autoguardado (updateNote: getById -> copy ->
+    // insertImage) intercalado con un delete sin lock podía violar el
+    // ForeignKey(onDelete=CASCADE) de note_images sobre una fila notes ya
+    // borrada (SQLiteConstraintException real, no solo teórica). Mismo
+    // criterio que AgendaRepository.deleteEvent(), que sí toma el lock.
     suspend fun deleteNote(note: NoteWithImages) = withContext(Dispatchers.IO) {
-        note.images.forEach { File(it.filePath).delete() }
-        if (note.note.reminderAt != null) noteReminderScheduler.cancel(note.note.id)
-        noteDao.delete(note.note.id)
+        withNoteLock(note.note.id) {
+            note.images.forEach { File(it.filePath).delete() }
+            if (note.note.reminderAt != null) noteReminderScheduler.cancel(note.note.id)
+            noteDao.delete(note.note.id)
+        }
     }
 
     suspend fun deleteAll(notes: List<NoteWithImages>) = withContext(Dispatchers.IO) {
         notes.forEach { note ->
-            note.images.forEach { File(it.filePath).delete() }
-            if (note.note.reminderAt != null) noteReminderScheduler.cancel(note.note.id)
+            withNoteLock(note.note.id) {
+                note.images.forEach { File(it.filePath).delete() }
+                if (note.note.reminderAt != null) noteReminderScheduler.cancel(note.note.id)
+            }
         }
         noteDao.deleteAll()
     }

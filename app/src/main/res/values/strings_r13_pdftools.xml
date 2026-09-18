@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Ronda 13 de auditoría de Herramientas PDF (2026-09-18). Hallazgo 5:
+         mensaje claro cuando el texto de marca de agua tiene caracteres
+         fuera de Latin-1/WinAnsi (la fuente Helvetica estándar de iText7
+         no los soporta). -->
+    <string name="pdf_watermark_unsupported_chars_error">La marca de agua solo admite letras, números y símbolos básicos por ahora</string>
+
+    <!-- Hallazgo 7: contentDescription de los botones +/- de rango en
+         Dividir PDF (antes null, sin descripción para TalkBack). -->
+    <string name="pdf_split_from_page_decrease">Disminuir número de página inicial</string>
+    <string name="pdf_split_from_page_increase">Aumentar número de página inicial</string>
+    <string name="pdf_split_to_page_decrease">Disminuir número de página final</string>
+    <string name="pdf_split_to_page_increase">Aumentar número de página final</string>
+</resources>

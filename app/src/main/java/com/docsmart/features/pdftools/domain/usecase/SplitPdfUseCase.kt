@@ -7,6 +7,7 @@ import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.PdfWriter
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -94,6 +95,20 @@ class SplitPdfUseCase @Inject constructor(
                 outputFile = outputFile,
                 message    = String.format(messages.success, pagesExtracted, sizeKb)
             )
+        } catch (e: CancellationException) {
+            // Hallazgo real de la auditoría r13 (Media): CancellationException
+            // hereda de Exception, así que sin este catch específico antes
+            // del genérico de abajo cada cancelación real se registraba
+            // como error. Se relanza tal cual, mismo patrón que
+            // CompressPdfUseCase.
+            outputFile?.delete()
+            throw e
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la auditoría r13 (Media): OutOfMemoryError no
+            // hereda de Exception en Kotlin/Java, así que el catch genérico
+            // de abajo nunca lo atrapaba y outputFile quedaba huérfano.
+            outputFile?.delete()
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "$TAG: error al dividir PDF")
             outputFile?.delete()

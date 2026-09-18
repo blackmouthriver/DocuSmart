@@ -41,7 +41,9 @@
     <string name="search_bar_icon_desc">検索</string>
     <string name="search_bar_clear_desc">クリア</string>
     <string name="library_documents">ドキュメント</string>
-    <string name="library_document_count">%1$d件のドキュメント</string>
+    <plurals name="library_document_count_plural">
+        <item quantity="other">%1$d件のドキュメント</item>
+    </plurals>
     <string name="library_search_results_count">\"%2$s\" の検索結果 %1$d 件</string>
     <string name="library_no_results_title">結果なし</string>
     <string name="library_empty_category">このカテゴリにはドキュメントがありません</string>
