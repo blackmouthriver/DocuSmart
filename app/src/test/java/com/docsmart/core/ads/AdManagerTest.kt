@@ -1,5 +1,8 @@
 package com.docsmart.core.ads
 
+import android.app.Activity
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -59,5 +62,39 @@ class AdManagerTest {
     @Test
     fun `no muestra el interstitial sin conversiones ni tiempo transcurrido`() {
         assertFalse(shouldShowInterstitial(conversionCount = 0, timeSinceLastMs = 0L))
+    }
+
+    // ── canShowFullScreenAd (ronda 14) ──────────────────────────────────────
+    // Hallazgo real de la auditoría general 2026-09-18: ni
+    // onConversionCompleted() ni showRewardedAd() validaban que la Activity
+    // recibida siguiera viva antes de show() -- crash real conocido de
+    // AdMob (BadTokenException) si el usuario ya la abandonó. Extraída a
+    // canShowFullScreenAd() por el mismo motivo que shouldShowInterstitial().
+
+    @Test
+    fun `canShowFullScreenAd es true para una activity viva`() {
+        val activity = mockk<Activity>()
+        every { activity.isFinishing } returns false
+        every { activity.isDestroyed } returns false
+
+        assertTrue(canShowFullScreenAd(activity))
+    }
+
+    @Test
+    fun `canShowFullScreenAd es false si la activity ya esta terminando`() {
+        val activity = mockk<Activity>()
+        every { activity.isFinishing } returns true
+        every { activity.isDestroyed } returns false
+
+        assertFalse(canShowFullScreenAd(activity))
+    }
+
+    @Test
+    fun `canShowFullScreenAd es false si la activity ya fue destruida`() {
+        val activity = mockk<Activity>()
+        every { activity.isFinishing } returns false
+        every { activity.isDestroyed } returns true
+
+        assertFalse(canShowFullScreenAd(activity))
     }
 }

@@ -39,16 +39,7 @@ class BootRescheduleReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val events = agendaEventDao.getAllWithReminder()
-                events.forEach { reminderScheduler.schedule(it) }
-                val notes = noteDao.getAllWithReminder()
-                notes.forEach { note ->
-                    note.reminderAt?.let { noteReminderScheduler.schedule(note.id, note.title, it) }
-                }
-                Timber.d(
-                    "BootRescheduleReceiver: ${events.size} recordatorios de Agenda + " +
-                        "${notes.size} de Notas reprogramados"
-                )
+                rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -58,4 +49,31 @@ class BootRescheduleReceiver : BroadcastReceiver() {
             }
         }
     }
+}
+
+// Extraído de onReceive() para poder testearlo sin Robolectric: goAsync() es
+// un stub del SDK de Android que no puede invocarse desde un test JVM puro
+// como los que usa este proyecto (sin runtime real de Android), así que
+// onReceive() en sí queda fuera del alcance de un test unitario -- pero la
+// lógica de negocio real (qué se reprograma y con qué datos, que es donde
+// vivían los bugs de esta clase de componente en rondas anteriores) sí es
+// una función suspend común, testeable con DAOs/schedulers mockeados. Mismo
+// criterio ya usado en PomodoroEngine para separar tickPomodoro() (lógica
+// pura) del código atado a la plataforma.
+internal suspend fun rescheduleAllReminders(
+    agendaEventDao: AgendaEventDao,
+    reminderScheduler: ReminderScheduler,
+    noteDao: NoteDao,
+    noteReminderScheduler: NoteReminderScheduler
+) {
+    val events = agendaEventDao.getAllWithReminder()
+    events.forEach { reminderScheduler.schedule(it) }
+    val notes = noteDao.getAllWithReminder()
+    notes.forEach { note ->
+        note.reminderAt?.let { noteReminderScheduler.schedule(note.id, note.title, it) }
+    }
+    Timber.d(
+        "BootRescheduleReceiver: ${events.size} recordatorios de Agenda + " +
+            "${notes.size} de Notas reprogramados"
+    )
 }

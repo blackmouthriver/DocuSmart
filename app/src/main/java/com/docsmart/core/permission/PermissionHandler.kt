@@ -23,7 +23,16 @@ class PermissionHandler @Inject constructor() {
             Timber.d("PermissionHandler: permiso persistido para $uri")
             true
         } catch (e: Exception) {
-            Timber.e(e, "PermissionHandler: error persistiendo permiso — ${e.message}")
+            // Hallazgo real de la auditoría general 2026-09-18 (ronda 14):
+            // este catch pasaba `e` (el Throwable completo, que
+            // `CrashlyticsTree` sí reenvía a Firebase vía
+            // `recordException()`) y además incrustaba `e.message` en el
+            // texto del log -- una `SecurityException`/`FileNotFoundException`
+            // de `takePersistableUriPermission()` casi siempre incluye la
+            // Uri real del documento en su propio mensaje. Mismo tipo de
+            // fuga ya corregido en `DownloadsAccessManager`/`SecurityManager`/
+            // `PdfPasswordUseCase`: se redacta a solo el tipo de excepción.
+            Timber.e(redactedForLog(e), "PermissionHandler: error persistiendo permiso de URI")
             false
         }
     }
@@ -53,7 +62,13 @@ class PermissionHandler @Inject constructor() {
             )
             Timber.d("PermissionHandler: permiso revocado para $uri")
         } catch (e: Exception) {
-            Timber.e(e, "PermissionHandler: error revocando permiso — ${e.message}")
+            Timber.e(redactedForLog(e), "PermissionHandler: error revocando permiso de URI")
         }
     }
+
+    // Mismo criterio ya usado en DownloadsAccessManager/SecurityManager para
+    // no perder el tipo real de la excepción (útil para diagnosticar en
+    // Crashlytics) sin arrastrar su mensaje original, que en excepciones de
+    // permisos de URI suele incluir la Uri real del documento del usuario.
+    private fun redactedForLog(e: Exception) = RuntimeException("PermissionHandler: ${e.javaClass.simpleName}")
 }

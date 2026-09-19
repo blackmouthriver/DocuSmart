@@ -56,6 +56,15 @@ private fun copyFileSchemeToCache(uri: Uri, cacheFile: File): Boolean {
     return valid
 }
 
+// Hallazgo real de la auditoría general 2026-09-18 (ronda 14): este catch
+// interpolaba `e.message` en el texto del log -- `Timber.e` sube ese texto
+// tal cual como breadcrumb a Crashlytics (`CrashlyticsTree.log()`, sin
+// filtrar por si trae o no un Throwable), y `openInputStream()` sobre un
+// `content://` suele fallar con una excepción cuyo mensaje incluye la Uri
+// real del documento del usuario (SecurityException/FileNotFoundException
+// de content resolvers). Mismo criterio de redacción que
+// DownloadsAccessManager/SecurityManager/PermissionHandler: solo el tipo de
+// excepción, nunca su mensaje original.
 @Suppress("TooGenericExceptionCaught")
 private fun copyContentUriToCache(uri: Uri, context: Context, cacheFile: File): Boolean = try {
     context.contentResolver.openInputStream(uri)?.use { input ->
@@ -63,7 +72,7 @@ private fun copyContentUriToCache(uri: Uri, context: Context, cacheFile: File): 
         true
     } ?: false
 } catch (e: Exception) {
-    Timber.e("PdfPageRenderer: error openInputStream → ${e.message}")
+    Timber.e("PdfPageRenderer: error abriendo el content:// de origen (${e.javaClass.simpleName})")
     false
 }
 

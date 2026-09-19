@@ -61,6 +61,17 @@ class ConvertImageToPdfUseCase @Inject constructor(
         fileName: String = generateFileName(),
         highResolution: Boolean = false
     ): ConversionResult = withContext(Dispatchers.IO) {
+        // Hallazgo real de la auditoría del Convertidor (ronda 14):
+        // outputFile se creaba como `val` DENTRO de writePdfDocumentToFile()
+        // -- si `pdfDocument.writeTo(stream)` fallaba a mitad de escritura
+        // (ej. disco lleno, o un OutOfMemoryError al volcar a bytes un PDF
+        // ya renderizado en memoria con muchas páginas de alta resolución),
+        // ningún catch de acá abajo tenía forma de referenciar ese File
+        // para borrar el .pdf parcial/corrupto que FileOutputStream ya
+        // había creado en disco. Mismo patrón ya corregido en
+        // PdfToWordUseCase.kt/ExcelToPdfUseCase.kt/PptToPdfUseCase.kt/
+        // WordToPdfUseCase.kt: outputFile se declara `var` afuera del try.
+        var outputFile: File? = null
         try {
             if (imageUris.isEmpty()) {
                 return@withContext ConversionResult.Error(
@@ -70,7 +81,10 @@ class ConvertImageToPdfUseCase @Inject constructor(
 
             Timber.d("Convirtiendo ${imageUris.size} imágenes a PDF (highResolution=$highResolution)")
 
-            buildPdfFromImages(imageUris, fileName, highResolution)
+            val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
+            outputFile = File(outputDir, "$fileName.pdf")
+
+            buildPdfFromImages(imageUris, outputFile, highResolution)
         } catch (e: CancellationException) {
             // Hallazgo 1 (auditoría del Convertidor): CancellationException
             // hereda de Exception -- sin este catch específico antes del
@@ -78,9 +92,11 @@ class ConvertImageToPdfUseCase @Inject constructor(
             // conversión se registraba como un error de conversión en vez
             // de propagarse como cancelación real (mismo criterio que
             // CompressPdfUseCase.kt).
+            outputFile?.delete()
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Error en conversión: ${e.message}")
+            outputFile?.delete()
             ConversionResult.Error(
                 message = String.format(
                     context.getString(R.string.converter_error_generic_format),
@@ -93,6 +109,7 @@ class ConvertImageToPdfUseCase @Inject constructor(
             // también pueden agotar la memoria con imágenes de alta
             // resolución -- OutOfMemoryError no hereda de Exception.
             Timber.e(e, "Sin memoria durante la conversión")
+            outputFile?.delete()
             ConversionResult.Error(
                 context.getString(R.string.converter_error_generic_format)
                     .let { String.format(it, context.getString(R.string.converter_error_unknown)) }
@@ -112,7 +129,7 @@ class ConvertImageToPdfUseCase @Inject constructor(
     // el resto de Herramientas PDF/Convertidor.
     private fun buildPdfFromImages(
         imageUris: List<Uri>,
-        fileName: String,
+        outputFile: File,
         highResolution: Boolean
     ): ConversionResult {
         val pdfDocument = PdfDocument()
@@ -150,7 +167,7 @@ class ConvertImageToPdfUseCase @Inject constructor(
             return if (pageCount == 0) {
                 ConversionResult.Error(context.getString(R.string.converter_error_no_images_loaded))
             } else {
-                writePdfDocumentToFile(pdfDocument, fileName, pageCount)
+                writePdfDocumentToFile(pdfDocument, outputFile, pageCount)
             }
         } finally {
             pdfDocument.close()
@@ -159,12 +176,10 @@ class ConvertImageToPdfUseCase @Inject constructor(
 
     // Extraído de buildPdfFromImages() para bajar ReturnCount/complejidad --
     // escribe el PdfDocument ya renderizado a disco y arma el resultado.
-    private fun writePdfDocumentToFile(pdfDocument: PdfDocument, fileName: String, pageCount: Int): ConversionResult {
-        val outputDir = File(context.filesDir, "converted").apply {
-            if (!exists()) mkdirs()
-        }
-        val outputFile = File(outputDir, "$fileName.pdf")
-
+    // outputFile ya viene creado (File object) desde invoke() -- ver el
+    // hallazgo de la ronda 14 ahí, que necesita poder referenciarlo para
+    // borrarlo si esta escritura falla a mitad de camino.
+    private fun writePdfDocumentToFile(pdfDocument: PdfDocument, outputFile: File, pageCount: Int): ConversionResult {
         FileOutputStream(outputFile).use { stream ->
             pdfDocument.writeTo(stream)
             stream.flush()
@@ -224,7 +239,13 @@ class ConvertImageToPdfUseCase @Inject constructor(
     // la orientación real en el tag EXIF -- sin leerlo, BitmapFactory
     // entrega el bitmap tal cual vino del sensor. Se corrige rotando el
     // bitmap decodificado según ese tag antes de incrustarlo en la página.
-    private fun loadBitmapFromUri(uri: Uri): Bitmap? {
+    // internal (no private) para poder testear directamente el fix de
+    // CancellationException de la ronda 14 sin pasar por buildPdfFromImages()
+    // -- ese método construye un android.graphics.pdf.PdfDocument real, que
+    // no se puede cerrar en un test JVM puro sin Robolectric ("Method close
+    // ... not mocked"), y ese error de infraestructura enmascararía la
+    // CancellationException real que se está verificando acá.
+    internal fun loadBitmapFromUri(uri: Uri): Bitmap? {
         return try {
             val rawBitmap = context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream)
@@ -238,6 +259,18 @@ class ConvertImageToPdfUseCase @Inject constructor(
             } ?: ExifInterface.ORIENTATION_NORMAL
 
             rotateBitmapForOrientation(rawBitmap, orientation)
+        } catch (e: CancellationException) {
+            // Hallazgo real de la auditoría del Convertidor (ronda 14): el
+            // fix de "Hallazgo 1" (CancellationException hereda de
+            // Exception, hay que relanzarla antes del catch genérico) se
+            // aplicó en invoke(), pero NO se propagó a este método anidado
+            // -- si la corrutina se cancelaba (ej. el usuario sale de la
+            // pantalla) justo mientras se leía/decodificaba una imagen del
+            // lote, este catch(Exception) de abajo la atrapaba primero y la
+            // trataba como "esta imagen no se pudo cargar, se salta",
+            // dejando que el loop siguiera procesando el resto de
+            // imágenes de un trabajo que ya debería haberse detenido.
+            throw e
         } catch (e: Exception) {
             Timber.e("Error cargando imagen: ${e.message}")
             null

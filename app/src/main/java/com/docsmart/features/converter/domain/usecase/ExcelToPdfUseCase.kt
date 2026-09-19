@@ -55,9 +55,23 @@ class ExcelToPdfUseCase @Inject constructor(
             // (creció al agregar el catch de EncryptedDocumentException,
             // hallazgo C1 de la décima ronda), agrupa toda la escritura en
             // un solo lugar.
-            val wrote = writeWorkbookToPdf(excelUri, outputFile!!)
-            if (!wrote) {
+            val outcome = writeWorkbookToPdf(excelUri, outputFile!!)
+            if (!outcome.wrote) {
                 return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_excel))
+            }
+
+            // Hallazgo real de la auditoría del Convertidor (ronda 14):
+            // writeWorkbookToPdf() siempre devolvía wrote=true si el
+            // Workbook se pudo abrir, sin importar si alguna fila tenía
+            // contenido real -- un .xlsx con todas las celdas en blanco (o
+            // sin filas) "convertía" con éxito a un PDF que solo contiene
+            // los encabezados "=== NombreHoja ===" de cada hoja, sin avisar
+            // nada al usuario, a diferencia de ExcelToCsvUseCase/
+            // ExcelToHtmlUseCase (mismo escenario), que sí devuelven
+            // converter_error_empty_spreadsheet.
+            if (!outcome.hasContent) {
+                outputFile?.delete()
+                return@withContext ConversionResult.Error(context.getString(R.string.converter_error_empty_spreadsheet))
             }
 
             ConversionResult.Success(
@@ -99,30 +113,39 @@ class ExcelToPdfUseCase @Inject constructor(
         }
     }
 
-    private fun writeWorkbookToPdf(excelUri: Uri, outputFile: File): Boolean {
-        var wrote = false
+    // hasContent: al menos una fila con texto no vacío se escribió en
+    // alguna hoja -- ver el hallazgo de la ronda 14 en invoke().
+    private data class WriteOutcome(val wrote: Boolean, val hasContent: Boolean)
+
+    private fun writeWorkbookToPdf(excelUri: Uri, outputFile: File): WriteOutcome {
+        var outcome = WriteOutcome(wrote = false, hasContent = false)
         context.contentResolver.openInputStream(excelUri)?.use { input ->
-            WorkbookFactory.create(input).use { workbook -> writeWorkbookContent(workbook, outputFile) }
-            wrote = true
+            WorkbookFactory.create(input).use { workbook ->
+                outcome = WriteOutcome(wrote = true, hasContent = writeWorkbookContent(workbook, outputFile))
+            }
         }
-        return wrote
+        return outcome
     }
 
     // Extraído de writeWorkbookToPdf() -- detekt: NestedBlockDepth, disparado
     // al agrupar toda la escritura para bajar la complejidad ciclomática de
     // invoke() (hallazgo C1, décima ronda).
-    private fun writeWorkbookContent(workbook: org.apache.poi.ss.usermodel.Workbook, outputFile: File) {
+    private fun writeWorkbookContent(workbook: org.apache.poi.ss.usermodel.Workbook, outputFile: File): Boolean {
         val pdfDoc = PdfDocument(PdfWriter(outputFile))
         // Hallazgo real de la revisión general 2026-09-16: cell.toString()
         // en una celda de fórmula devuelve el texto de la fórmula, no el
         // resultado calculado -- mismo bug que en ExcelToCsvUseCase.
         val evaluator     = workbook.creationHelper.createFormulaEvaluator()
         val dataFormatter = DataFormatter()
+        var hasContent = false
         Document(pdfDoc).use { document ->
             for (sheetIndex in 0 until workbook.numberOfSheets) {
-                appendSheetToDocument(document, workbook.getSheetAt(sheetIndex), dataFormatter, evaluator)
+                if (appendSheetToDocument(document, workbook.getSheetAt(sheetIndex), dataFormatter, evaluator)) {
+                    hasContent = true
+                }
             }
         }
+        return hasContent
     }
 
     private fun appendSheetToDocument(
@@ -130,8 +153,9 @@ class ExcelToPdfUseCase @Inject constructor(
         sheet: org.apache.poi.ss.usermodel.Sheet,
         dataFormatter: DataFormatter,
         evaluator: FormulaEvaluator
-    ) {
+    ): Boolean {
         document.add(Paragraph("=== ${sheet.sheetName} ==="))
+        var sheetHasContent = false
         sheet.forEach { row ->
             val rowText = buildString {
                 row.forEach { cell ->
@@ -141,9 +165,11 @@ class ExcelToPdfUseCase @Inject constructor(
             }.trim()
             if (rowText.isNotBlank()) {
                 document.add(Paragraph(rowText))
+                sheetHasContent = true
             }
         }
         document.add(Paragraph(""))
+        return sheetHasContent
     }
 
     // Hallazgo real de la revisión de corrección 2026-09-16: evaluator.evaluate()

@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
@@ -56,6 +57,17 @@ class AdManager @Inject constructor(
 
     private val conversionCount       = AtomicInteger(0)
     private val lastInterstitialTime  = AtomicLong(0L)
+
+    // Hallazgo real de la auditoría general 2026-09-18 (ronda 14): ni
+    // onConversionCompleted() ni showRewardedAd() validaban que solo un
+    // anuncio a pantalla completa estuviera en curso -- un doble-toque
+    // real del usuario (dos conversiones casi simultáneas, o tocar "Ver
+    // anuncio" dos veces antes del primer show()) podía llamar `.show()`
+    // dos veces sobre el mismo InterstitialAd/RewardedAd ya en pantalla,
+    // algo que el SDK de Google Ads no soporta. Como Android solo permite
+    // un anuncio a pantalla completa a la vez, un único flag alcanza para
+    // ambos tipos.
+    private val isFullScreenAdShowing = AtomicBoolean(false)
 
     // Doble fuente de verdad corregida 2026-09-09: acá vivía un
     // MutableStateFlow propio, sincronizado a mano desde PremiumManager
@@ -144,22 +156,37 @@ class AdManager @Inject constructor(
         val timeSinceLast = now - lastInterstitialTime.get()
         val shouldShow   = shouldShowInterstitial(count, timeSinceLast)
 
-        if (shouldShow && interstitialAd != null) {
-            interstitialAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
-                override fun onAdDismissedFullScreenContent() {
-                    interstitialAd = null
-                    conversionCount.set(0)
-                    lastInterstitialTime.set(System.currentTimeMillis())
-                    loadInterstitial()
-                }
-                override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                    Timber.e("Interstitial show error: ${error.message}")
-                    interstitialAd = null
-                    loadInterstitial()
-                }
+        val ad = interstitialAd
+
+        // Hallazgo real de la auditoría general 2026-09-18 (ronda 14): sin
+        // el guard de canShowFullScreenAd, `.show(activity)` podía lanzarse
+        // sobre una Activity que el usuario ya abandonó (back rápido justo
+        // tras disparar la conversión) -- crash real conocido de AdMob:
+        // "IllegalStateException/BadTokenException: Unable to add window
+        // -- token null is not valid; is your activity running?". El
+        // `compareAndSet` además evita mostrar dos veces el mismo anuncio
+        // ante un doble-toque (ver `isFullScreenAdShowing`). Combinado en
+        // una sola condición (detekt: ReturnCount).
+        val readyToShow = shouldShow && ad != null &&
+            canShowFullScreenAd(activity) && isFullScreenAdShowing.compareAndSet(false, true)
+        if (!readyToShow || ad == null) return
+
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+            override fun onAdDismissedFullScreenContent() {
+                isFullScreenAdShowing.set(false)
+                interstitialAd = null
+                conversionCount.set(0)
+                lastInterstitialTime.set(System.currentTimeMillis())
+                loadInterstitial()
             }
-            interstitialAd?.show(activity)
+            override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                Timber.e("Interstitial show error: ${error.message}")
+                isFullScreenAdShowing.set(false)
+                interstitialAd = null
+                loadInterstitial()
+            }
         }
+        ad.show(activity)
     }
 
     // ── Rewarded Ad ───────────────────────────────────────────────────────────
@@ -208,21 +235,34 @@ class AdManager @Inject constructor(
             return
         }
         val ad = rewardedAd
-        if (ad == null) {
-            Timber.w("AdManager: no hay Rewarded disponible")
+
+        // Mismo hallazgo que onConversionCompleted() (ronda 14, auditoría
+        // general 2026-09-18): sin este guard, un doble-toque en "Ver
+        // anuncio" o una Activity ya finalizando/destruida podían disparar
+        // `.show()` dos veces o sobre una Activity inválida. Combinado con
+        // el chequeo de `ad == null` en una sola condición (detekt:
+        // ReturnCount).
+        val readyToShow = ad != null &&
+            canShowFullScreenAd(activity) && isFullScreenAdShowing.compareAndSet(false, true)
+        if (!readyToShow || ad == null) {
+            if (ad == null) {
+                Timber.w("AdManager: no hay Rewarded disponible")
+                loadRewarded()
+            }
             onFailed()
-            loadRewarded()
             return
         }
 
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
+                isFullScreenAdShowing.set(false)
                 rewardedAd             = null
                 _isRewardedReady.value = false
                 loadRewarded() // precargar el siguiente
             }
             override fun onAdFailedToShowFullScreenContent(error: AdError) {
                 Timber.e("Rewarded show error: ${error.message}")
+                isFullScreenAdShowing.set(false)
                 rewardedAd             = null
                 _isRewardedReady.value = false
                 onFailed()
@@ -248,3 +288,15 @@ class AdManager @Inject constructor(
 internal fun shouldShowInterstitial(conversionCount: Int, timeSinceLastMs: Long): Boolean =
     conversionCount >= AdConstants.INTERSTITIAL_MIN_CONVERSIONS &&
         timeSinceLastMs >= AdConstants.INTERSTITIAL_MIN_INTERVAL_MS
+
+/**
+ * Extraída para poder testearla sin construir `AdManager` (mismo motivo que
+ * `shouldShowInterstitial()`). Hallazgo real de la auditoría general
+ * 2026-09-18 (ronda 14): ni `InterstitialAd.show()` ni `RewardedAd.show()`
+ * validan por su cuenta que la `Activity` recibida siga viva -- si el
+ * usuario ya la abandonó (back rápido, o el callback de carga corre tarde)
+ * cuando se intenta mostrar el anuncio, esto puede crashear con
+ * `BadTokenException` ("Unable to add window -- token null is not valid").
+ */
+internal fun canShowFullScreenAd(activity: Activity): Boolean =
+    !activity.isFinishing && !activity.isDestroyed

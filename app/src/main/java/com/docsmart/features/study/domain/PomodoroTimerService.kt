@@ -17,6 +17,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 // Hallazgo real de la auditoría general 2026-09-18 (Alta -- fin de sesión
 // totalmente silencioso): el canal de la notificación en curso (CHANNEL_ID
@@ -41,6 +43,17 @@ class PomodoroTimerService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
 
+    // Revisión adversarial (ronda 14, seguridad + correctitud, encontrado por
+    // los 2 agentes de forma independiente): sin este mutex, el colector de
+    // completionEvents (hilo de Dispatchers.Default) y flushPendingCompletionAlert()
+    // (hilo principal, vía onDestroy()) podían correr en paralelo sobre el
+    // mismo evento -- si el colector ya había llamado postCompletionAlert()
+    // pero todavía no a consumeCompletionEvent() justo cuando onDestroy()
+    // leía replayCache (todavía no vaciado), la alerta de "bloque terminado"
+    // se publicaba DOS veces. El mutex serializa ambos caminos: solo uno a
+    // la vez puede publicar+consumir el evento pendiente.
+    private val alertMutex = Mutex()
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannelIfNeeded()
@@ -63,14 +76,17 @@ class PomodoroTimerService : Service() {
         // TERMINA -- ver postCompletionAlert().
         PomodoroEngine.completionEvents
             .onEach { wasBreak ->
-                postCompletionAlert(wasBreak)
-                // Revisión adversarial de correctitud (ronda 11): consume el
-                // evento tras procesarlo -- el replay=1 de completionEvents
-                // existe para que este collector no se pierda un evento
-                // emitido justo antes de que onCreate() terminara de
-                // suscribirse, no para re-notificar el mismo bloque
-                // terminado a una futura recreación del servicio.
-                PomodoroEngine.consumeCompletionEvent()
+                alertMutex.withLock {
+                    postCompletionAlert(wasBreak)
+                    // Revisión adversarial de correctitud (ronda 11): consume
+                    // el evento tras procesarlo -- el replay=1 de
+                    // completionEvents existe para que este collector no se
+                    // pierda un evento emitido justo antes de que onCreate()
+                    // terminara de suscribirse, no para re-notificar el
+                    // mismo bloque terminado a una futura recreación del
+                    // servicio.
+                    PomodoroEngine.consumeCompletionEvent()
+                }
             }
             .launchIn(serviceScope)
     }
@@ -79,9 +95,42 @@ class PomodoroTimerService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    // Hallazgo real (ronda 14, revisión de correctitud): PomodoroEngine.tick()
+    // llama context.stopService() de forma SÍNCRONA apenas un bloque termina
+    // (ver PomodoroEngine.tick(), última línea), un Binder call directo a
+    // ActivityManager -- independiente y más rápido que el colector interno
+    // de completionEvents de arriba, que solo se ejecuta cuando la corrutina
+    // lanzada vía launchIn(serviceScope) llega a ser despachada sobre
+    // Dispatchers.Default. Si stopService() gana esa carrera, Android llama
+    // a onDestroy() (y acá se cancelaba serviceScope) ANTES de que el
+    // colector alcance a correr postCompletionAlert()/consumeCompletionEvent(),
+    // perdiendo en silencio el aviso de "bloque terminado" -- exactamente el
+    // bug de "fin de sesión silenciosa" que este archivo ya había corregido,
+    // reintroducido acá por una carrera en vez de por falta de la función.
+    // `replayCache` es una lectura síncrona del SharedFlow (no requiere
+    // colectarlo ni una corrutina), así que el evento pendiente puede
+    // vaciarse acá de forma determinística antes de cancelar el scope.
     override fun onDestroy() {
+        flushPendingCompletionAlert()
         serviceScope.cancel()
         super.onDestroy()
+    }
+
+    private fun flushPendingCompletionAlert() {
+        // tryLock() (no-suspend): si el colector ya tiene el mutex, está en
+        // medio de procesar este mismo evento y va a terminar de
+        // publicarlo+consumirlo él solo -- no hace falta (ni es seguro)
+        // esperar acá, onDestroy() no es una función suspend.
+        if (!alertMutex.tryLock()) return
+        try {
+            flushPendingCompletionEvent(
+                replayCache = PomodoroEngine.completionEvents.replayCache,
+                postAlert = ::postCompletionAlert,
+                consume = PomodoroEngine::consumeCompletionEvent
+            )
+        } finally {
+            alertMutex.unlock()
+        }
     }
 
     private fun updateNotification(state: PomodoroState) {
@@ -180,4 +229,26 @@ class PomodoroTimerService : Service() {
         private const val NOTIFICATION_ID = 4821
         private const val NOTIFICATION_ID_ALERT = 4822
     }
+}
+
+// Lógica pura de la corrección de la ronda 14 (ver comentario en
+// PomodoroTimerService.onDestroy()), separada de la propia clase Service
+// para poder testearla sin instanciar un Service real -- este proyecto no
+// usa Robolectric, y un Service real necesita attachBaseContext()/el ciclo
+// de vida de ActivityThread para responder a getSystemService()/getString(),
+// nada de lo cual existe en un test JVM puro. `postAlert`/`consume` quedan
+// como parámetros para poder verificar en el test, sin mocks de Android,
+// que: (a) con un evento pendiente en replayCache, se llama a postAlert con
+// ESE valor y después a consume, en ese orden; (b) sin evento pendiente
+// (replayCache vacío, el camino feliz de siempre: el colector normal ya lo
+// consumió a tiempo) no se llama a ninguno de los dos -- evita volver a
+// postear una alerta ya entregada.
+internal fun flushPendingCompletionEvent(
+    replayCache: List<Boolean>,
+    postAlert: (Boolean) -> Unit,
+    consume: () -> Unit
+) {
+    val pending = replayCache.firstOrNull() ?: return
+    postAlert(pending)
+    consume()
 }
