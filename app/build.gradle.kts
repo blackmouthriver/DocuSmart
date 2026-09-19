@@ -190,6 +190,22 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
+// sonar.coverage.jacoco.xmlReportPaths vive ACÁ (no en el build.gradle.kts
+// raíz) a propósito -- ver el comentario extenso en el bloque `sonar {}` de
+// la raíz (causa raíz encontrada 2026-09-18): rootProject.name = "DocuSmart"
+// crea DOS módulos de Sonar (raíz "DocuSmart" + este subproyecto "app"), y
+// esta property necesita evaluarse en EL MÓDULO QUE TIENE EL CÓDIGO
+// ANALIZADO (este), con una ruta relativa A ESTE MÓDULO (sin el prefijo
+// "app/" que sí hacía falta cuando la property vivía en la raíz).
+sonar {
+    properties {
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            "build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+        )
+    }
+}
+
 // ktlint (estilo de código Kotlin) -- agregado al gauntlet por pedido
 // explícito del usuario (2026-09-18), en paralelo a detekt (que cubre
 // reglas de calidad/complejidad, no de formato). `ktlintCheck` no

@@ -30,10 +30,6 @@ sonar {
         property("sonar.projectKey", "blackmouthriver_DocuSmart")
         property("sonar.organization", "blackmouthriver")
         property("sonar.host.url", "https://sonarcloud.io")
-        property(
-            "sonar.coverage.jacoco.xmlReportPaths",
-            "app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
-        )
         // Intento revertido 2026-09-09: fijar sonar.sources/sonar.tests acá
         // de forma explícita ("app/src/main/java,build.gradle.kts,..." /
         // "app/src/test/java,app/src/androidTest/java") rompió el análisis
@@ -41,10 +37,21 @@ sonar {
         // twice", porque choca con la auto-detección de fuentes/tests que
         // el plugin org.sonarqube ya hace sola para proyectos Android vía
         // AGP (las dos listas terminan solapándose, no reemplazándose).
-        // El problema real que se intentaba resolver (0% de cobertura,
-        // "None of the 186 files in coverage report could be matched to
-        // the analysed sources") sigue sin causa raíz confirmada -- queda
-        // pendiente investigar el mecanismo exacto de integración AGP del
-        // plugin antes de tocar sonar.sources/sonar.tests de nuevo.
+        //
+        // Causa raíz real del "0% de cobertura" encontrada el 2026-09-18
+        // (con logs verbose de Sonar, `--info -Dsonar.verbose=true`):
+        // rootProject.name = "DocuSmart" hace que este build tenga DOS
+        // módulos de Sonar -- "DocuSmart" (raíz) y "app" (subproyecto,
+        // donde vive TODO el código Kotlin real). Esta property, puesta
+        // acá en la raíz, se evaluaba en AMBOS módulos con la MISMA ruta
+        // relativa: el módulo "app" la buscaba mal (relativo a app/, o sea
+        // app/app/build/... -- "No coverage report can be found") y el
+        // módulo raíz SÍ encontraba el archivo (base dir correcto) pero
+        // sus "fuentes analizadas" son las del módulo raíz, vacío de
+        // código real -- de ahí "None of the N files... could be matched
+        // to the analysed sources" pese a que el reporte era válido.
+        // Movida a app/build.gradle.kts (con ruta relativa a `app/`, sin
+        // el prefijo) para que se evalúe en el módulo que de verdad tiene
+        // el código analizado.
     }
 }

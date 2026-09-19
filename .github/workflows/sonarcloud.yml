@@ -145,11 +145,7 @@ jobs:
           emulator-boot-timeout: 600
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -camera-back none
-          # -Dsonar.verbose=true es TEMPORAL (diagnóstico 2026-09-18 del
-          # bug "None of the N files... could be matched to the analysed
-          # sources", ver project_sonarcloud_coverage_quality_gate_broken
-          # en memoria) -- retirar una vez encontrada la causa raíz real.
-          script: ./gradlew jacocoTestReport sonar --no-daemon --continue --info -Dsonar.verbose=true
+          script: ./gradlew jacocoTestReport sonar --no-daemon --continue
 
       - name: Publicar reporte de pruebas instrumentadas
         if: always()
