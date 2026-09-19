@@ -329,7 +329,7 @@ tasks.withType<com.android.build.gradle.internal.tasks.DeviceProviderInstrumentT
 // (ver .github/workflows/sonarcloud.yml) -- localmente, corre contra
 // cualquier dispositivo ya conectado por adb.
 tasks.register<JacocoReport>("jacocoTestReport") {
-    dependsOn("testDebugUnitTest", "connectedDebugAndroidTest")
+    dependsOn("testDebugUnitTest", "connectedDebugAndroidTest", "transformDebugClassesWithAsm")
 
     reports {
         xml.required.set(true)
@@ -343,9 +343,28 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         "**/*Module_*Factory.*", "**/dagger/**", "**/*_HiltModules*.*",
         "**/di/**",
     )
-    val debugTree = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
-        exclude(fileFilter)
-    }
+    // Causa raíz encontrada 2026-09-18 (investigación explícita pedida por el
+    // usuario tras meses con "0% cobertura en código nuevo" en SonarCloud,
+    // ver el intento revertido de 2026-09-09 más abajo en el historial de
+    // este archivo): classDirectories apuntaba a la salida CRUDA de kotlinc
+    // (tmp/kotlin-classes/debug), pero ni testDebugUnitTest ni
+    // connectedDebugAndroidTest corren contra ese bytecode -- ambos corren
+    // contra la salida YA TRANSFORMADA por el plugin compilador de Compose
+    // (inyección de @StabilityInferred, ver transformDebugClassesWithAsm),
+    // y connectedDebugAndroidTest además contra una copia de esa misma
+    // salida con sondas de JaCoCo inyectadas encima (tarea jacocoDebug).
+    // Confirmado con sha1sum: las 3 versiones de DocuSmartApplication.class
+    // tienen tamaños distintos (6948 / 7002 / 7602 bytes). JaCoCo detecta el
+    // desajuste de bytecode y lo descarta ("Classes in bundle 'app' do not
+    // match with execution data"), dejando el XML con archivos listados
+    // pero sin datos de línea coherentes -- de ahí que SonarCloud no pueda
+    // emparejar NINGUNO de los archivos del reporte contra las fuentes
+    // analizadas. Corregido usando la salida de transformDebugClassesWithAsm
+    // (el mismo bytecode que ambos tipos de test ejecutan) en vez de la
+    // salida cruda de kotlinc.
+    val debugClassesDir =
+        "${layout.buildDirectory.get()}/intermediates/classes/debug/transformDebugClassesWithAsm/dirs"
+    val debugTree = fileTree(debugClassesDir) { exclude(fileFilter) }
     val mainSrc = "$projectDir/src/main/java"
 
     sourceDirectories.setFrom(files(mainSrc))
