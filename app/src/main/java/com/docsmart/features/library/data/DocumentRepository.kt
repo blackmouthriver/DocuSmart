@@ -66,6 +66,29 @@ private val SUPPORTED_DOWNLOAD_MIME_TYPES =
         "image/png",
     )
 
+// Hallazgo real de la ronda 15: loadAllDocumentsRaw() ordenaba por
+// `DocumentUiModel.date`, que es el texto ya formateado "dd/MM/yyyy" -- un
+// orden lexicografico compara primero el DIA, asi que "15/01/2026" quedaba
+// ANTES que "14/09/2026" (Biblioteca "Todos" y el relleno de Recientes de
+// Inicio salian desordenados entre meses/anios). Cada fuente ahora devuelve el
+// timestamp real junto al modelo para ordenar por el.
+internal data class DatedDocument(
+    val document: DocumentUiModel,
+    val sortKeyMillis: Long,
+)
+
+// Logica pura, sin I/O: conserva la PRIMERA aparicion de cada id (la fuente
+// mas especifica va antes: MediaStore/carpeta vinculada/app, luego historial)
+// y ordena del mas reciente al mas antiguo por timestamp real. El orden es
+// estable: a igual timestamp se conserva el orden de entrada.
+internal fun dedupeAndSortByRecency(documents: List<DatedDocument>): List<DocumentUiModel> {
+    val seen = mutableSetOf<String>()
+    return documents
+        .filter { seen.add(it.document.id) }
+        .sortedByDescending { it.sortKeyMillis }
+        .map { it.document }
+}
+
 // Tope de profundidad al recorrer subcarpetas de una carpeta vinculada por
 // SAF -- solo para evitar un recorrido descontrolado en árboles anormalmente
 // profundos, no un límite real esperado en uso normal (Descargas/Documentos
@@ -141,7 +164,7 @@ class DocumentRepository
         // real de documentos para saber cuáles de ellos están en la papelera.
         internal suspend fun loadAllDocumentsRaw(): List<DocumentUiModel> =
             try {
-                val documents = mutableListOf<DocumentUiModel>()
+                val documents = mutableListOf<DatedDocument>()
                 // Fila 22 del backlog UX: si el usuario vinculó la carpeta
                 // Descargas por SAF, esa fuente reemplaza la consulta a
                 // MediaStore.Downloads -- ve TODO lo que hay en la carpeta real
@@ -166,8 +189,7 @@ class DocumentRepository
                 // carpeta vinculada/app si el mismo id vino de una fuente previa.
                 documents.addAll(loadDocumentsFromHistory())
 
-                val seen = mutableSetOf<String>()
-                val unique = documents.filter { seen.add(it.id) }
+                val unique = dedupeAndSortByRecency(documents)
 
                 // ── Aplica favoritos persistidos al cargar ─────────────────
                 val favoriteIds = favoritesRepository.getAllFavoriteIds()
@@ -181,11 +203,13 @@ class DocumentRepository
                         )
                     }
 
-                withFavorites.sortedByDescending { it.date }
+                withFavorites
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.e(e, "Error cargando documentos")
+                // Solo el tipo: el mensaje puede traer rutas/URIs reales y
+                // CrashlyticsTree reenvia todo Timber.w/e a Firebase.
+                Timber.e("Error cargando documentos: ${e.javaClass.simpleName}")
                 emptyList()
             }
 
@@ -272,7 +296,7 @@ class DocumentRepository
                 if (recoverable != null) {
                     DeleteOutcome.NeedsPermission(recoverable)
                 } else {
-                    Timber.e(e, "Error eliminando documento")
+                    Timber.e("Error eliminando documento: ${e.javaClass.simpleName}")
                     DeleteOutcome.Failed
                 }
             }
@@ -291,7 +315,7 @@ class DocumentRepository
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.e(e, "Error eliminando documento de la carpeta vinculada")
+                Timber.e("Error eliminando documento de la carpeta vinculada: ${e.javaClass.simpleName}")
                 DeleteOutcome.Failed
             }
 
@@ -326,21 +350,49 @@ class DocumentRepository
                                 .sanitizeOutputFileName(newName)
                                 .ifBlank { file.name }
                         val newFile = File(file.parent, safeName)
-                        if (file.renameTo(newFile)) {
-                            // El alias se descarta a propósito (no se migra): tras
-                            // un rename físico exitoso, el nombre de archivo YA
-                            // refleja el nombre elegido, así que un alias aparte ya
-                            // no hace falta -- mismo criterio que antes.
+                        if (newFile.absolutePath == file.absolutePath) {
+                            // Hallazgo real de la ronda 15: renombrar al mismo
+                            // nombre que ya tiene el archivo hacia renameTo()
+                            // == true y luego onIdChanged(id, id) sobre el mismo
+                            // id. No hay nada que mover: solo se descarta un
+                            // alias viejo (el nombre real ya es el elegido).
                             favoritesRepository.removeAlias(documentId)
-                            // Hallazgo real de la revisión general 2026-09-16 (#50):
-                            // a diferencia del alias, el estado de favorito, las
-                            // anotaciones del Visor (HU-46), y luego marcadores de
-                            // página/última página vista SÍ deben migrar -- sin
-                            // esto, renombrar un documento con cualquiera de estos
-                            // le hacía perder la marca en silencio porque el id
-                            // (ruta) cambia. onIdChanged() no toca el alias de nuevo
-                            // (ya se limpió arriba).
-                            documentIdentityMaintenance.onIdChanged(documentId, newFile.absolutePath)
+                            return@withContext documentId
+                        }
+                        // Hallazgo real de la ronda 15: File.renameTo() en
+                        // Android/Linux REEMPLAZA en silencio un destino que ya
+                        // existe -- renombrar "a.pdf" a "b.pdf" con un "b.pdf"
+                        // distinto en la misma carpeta destruia ese otro
+                        // documento sin aviso. Si el destino existe se cae al
+                        // alias (mismo camino que un rename fallido).
+                        if (!newFile.exists() && file.renameTo(newFile)) {
+                            // Hallazgo real de la ronda 15: si la migracion de ids
+                            // fallaba DESPUES de mover el archivo (Room), el catch de
+                            // abajo devolvia el id VIEJO y guardaba un alias sobre una
+                            // ruta que ya no existe -- el llamador quedaba apuntando a
+                            // un archivo inexistente aunque el rename fisico si
+                            // ocurrio. El archivo ya se movio: se devuelve SIEMPRE la
+                            // ruta nueva, y un fallo de migracion solo se registra.
+                            try {
+                                // El alias se descarta a propósito (no se migra): tras
+                                // un rename físico exitoso, el nombre de archivo YA
+                                // refleja el nombre elegido, así que un alias aparte ya
+                                // no hace falta -- mismo criterio que antes.
+                                favoritesRepository.removeAlias(documentId)
+                                // Hallazgo real de la revisión general 2026-09-16 (#50):
+                                // a diferencia del alias, el estado de favorito, las
+                                // anotaciones del Visor (HU-46), y luego marcadores de
+                                // página/última página vista SÍ deben migrar -- sin
+                                // esto, renombrar un documento con cualquiera de estos
+                                // le hacía perder la marca en silencio porque el id
+                                // (ruta) cambia. onIdChanged() no toca el alias de nuevo
+                                // (ya se limpió arriba).
+                                documentIdentityMaintenance.onIdChanged(documentId, newFile.absolutePath)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Timber.e("Error migrando el id tras renombrar: ${e.javaClass.simpleName}")
+                            }
                             return@withContext newFile.absolutePath
                         }
                     }
@@ -349,7 +401,7 @@ class DocumentRepository
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error renombrando documento")
+                    Timber.e("Error renombrando documento: ${e.javaClass.simpleName}")
                     favoritesRepository.saveAlias(documentId, newName)
                     documentId
                 }
@@ -364,8 +416,8 @@ class DocumentRepository
         // relacionado con el permiso). mimeToDocumentType() ya sabía mapear
         // texto a DocumentType.TEXT -- ese código era inalcanzable para
         // archivos reales de Descargas por esta omisión.
-        private fun loadDocumentsFromDownloads(): List<DocumentUiModel> {
-            val documents = mutableListOf<DocumentUiModel>()
+        private fun loadDocumentsFromDownloads(): List<DatedDocument> {
+            val documents = mutableListOf<DatedDocument>()
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return documents
 
             val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
@@ -411,24 +463,27 @@ class DocumentRepository
                                         Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id.toString()),
                                     )
                                 documents.add(
-                                    DocumentUiModel(
-                                        id = uri.toString(),
-                                        name = name,
-                                        type = mimeToDocumentType(mime, name),
-                                        size = formatSize(size),
-                                        date = formatDate(dateMs),
-                                        // se aplica luego en loadAllDocuments
-                                        isFavorite = false,
-                                        sizeBytes = size,
+                                    DatedDocument(
+                                        DocumentUiModel(
+                                            id = uri.toString(),
+                                            name = name,
+                                            type = mimeToDocumentType(mime, name),
+                                            size = formatSize(size),
+                                            date = formatDate(dateMs),
+                                            // se aplica luego en loadAllDocuments
+                                            isFavorite = false,
+                                            sizeBytes = size,
+                                        ),
+                                        dateMs,
                                     ),
                                 )
                             } catch (e: Exception) {
-                                Timber.w("Error leyendo fila Downloads: ${e.message}")
+                                Timber.w("Error leyendo fila Downloads: ${e.javaClass.simpleName}")
                             }
                         }
                     }
             } catch (e: Exception) {
-                Timber.e(e, "Error consultando Downloads")
+                Timber.e("Error consultando Downloads: ${e.javaClass.simpleName}")
             }
             Timber.d("Downloads: ${documents.size} documentos")
             return documents
@@ -449,13 +504,13 @@ class DocumentRepository
          * documentos estaban organizados en subcarpetas, así que la Biblioteca
          * seguía mostrando 0 archivos aunque la carpeta sí tenía contenido.
          */
-        private fun loadDocumentsFromLinkedFolder(treeUri: Uri): List<DocumentUiModel> {
-            val documents = mutableListOf<DocumentUiModel>()
+        private fun loadDocumentsFromLinkedFolder(treeUri: Uri): List<DatedDocument> {
+            val documents = mutableListOf<DatedDocument>()
             try {
                 val root = DocumentFile.fromTreeUri(context, treeUri) ?: return documents
                 collectLinkedFolderDocuments(root, depth = 0, into = documents)
             } catch (e: Exception) {
-                Timber.e(e, "Error consultando la carpeta vinculada")
+                Timber.e("Error consultando la carpeta vinculada: ${e.javaClass.simpleName}")
             }
             Timber.d("Carpeta vinculada: ${documents.size} documentos")
             return documents
@@ -464,7 +519,7 @@ class DocumentRepository
         private fun collectLinkedFolderDocuments(
             folder: DocumentFile,
             depth: Int,
-            into: MutableList<DocumentUiModel>,
+            into: MutableList<DatedDocument>,
         ) {
             if (depth > LINKED_FOLDER_MAX_DEPTH) return
             folder.listFiles().forEach { child ->
@@ -475,21 +530,25 @@ class DocumentRepository
                         documentFromLinkedFile(child)?.let { into.add(it) }
                     }
                 } catch (e: Exception) {
-                    Timber.w("Error leyendo archivo de la carpeta vinculada: ${e.message}")
+                    Timber.w("Error leyendo archivo de la carpeta vinculada: ${e.javaClass.simpleName}")
                 }
             }
         }
 
-        private fun documentFromLinkedFile(file: DocumentFile): DocumentUiModel? {
+        private fun documentFromLinkedFile(file: DocumentFile): DatedDocument? {
             val (name, mime) = eligibleNameAndMime(file) ?: return null
-            return DocumentUiModel(
-                id = file.uri.toString(),
-                name = name,
-                type = mimeToDocumentType(mime, name),
-                size = formatSize(file.length()),
-                date = formatDate(file.lastModified()),
-                isFavorite = false,
-                sizeBytes = file.length(),
+            val modified = file.lastModified()
+            return DatedDocument(
+                DocumentUiModel(
+                    id = file.uri.toString(),
+                    name = name,
+                    type = mimeToDocumentType(mime, name),
+                    size = formatSize(file.length()),
+                    date = formatDate(modified),
+                    isFavorite = false,
+                    sizeBytes = file.length(),
+                ),
+                modified,
             )
         }
 
@@ -503,8 +562,8 @@ class DocumentRepository
 
         private fun isSupportedDownloadMime(mime: String): Boolean = mime in SUPPORTED_DOWNLOAD_MIME_TYPES
 
-        private fun loadImagesFromMediaStore(): List<DocumentUiModel> {
-            val documents = mutableListOf<DocumentUiModel>()
+        private fun loadImagesFromMediaStore(): List<DatedDocument> {
+            val documents = mutableListOf<DatedDocument>()
             val projection =
                 arrayOf(
                     MediaStore.Images.Media._ID,
@@ -543,31 +602,34 @@ class DocumentRepository
                                         Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()),
                                     )
                                 documents.add(
-                                    DocumentUiModel(
-                                        id = uri.toString(),
-                                        name = name,
-                                        type = DocumentType.IMAGE,
-                                        size = formatSize(size),
-                                        date = formatDate(dateMs),
-                                        isFavorite = false,
-                                        sizeBytes = size,
+                                    DatedDocument(
+                                        DocumentUiModel(
+                                            id = uri.toString(),
+                                            name = name,
+                                            type = DocumentType.IMAGE,
+                                            size = formatSize(size),
+                                            date = formatDate(dateMs),
+                                            isFavorite = false,
+                                            sizeBytes = size,
+                                        ),
+                                        dateMs,
                                     ),
                                 )
                                 count++
                             } catch (e: Exception) {
-                                Timber.w("Error leyendo imagen: ${e.message}")
+                                Timber.w("Error leyendo imagen: ${e.javaClass.simpleName}")
                             }
                         }
                     }
             } catch (e: Exception) {
-                Timber.e(e, "Error consultando imágenes")
+                Timber.e("Error consultando imágenes: ${e.javaClass.simpleName}")
             }
             Timber.d("Imágenes: ${documents.size}")
             return documents
         }
 
-        private fun loadAppGeneratedFiles(): List<DocumentUiModel> {
-            val documents = mutableListOf<DocumentUiModel>()
+        private fun loadAppGeneratedFiles(): List<DatedDocument> {
+            val documents = mutableListOf<DatedDocument>()
             val dirs =
                 listOf(
                     File(context.filesDir, "converted"),
@@ -591,18 +653,21 @@ class DocumentRepository
                     ?.forEach { file ->
                         try {
                             documents.add(
-                                DocumentUiModel(
-                                    id = file.absolutePath,
-                                    name = file.name,
-                                    type = extensionToDocumentType(file.extension),
-                                    size = formatSize(file.length()),
-                                    date = formatDate(file.lastModified()),
-                                    isFavorite = false,
-                                    sizeBytes = file.length(),
+                                DatedDocument(
+                                    DocumentUiModel(
+                                        id = file.absolutePath,
+                                        name = file.name,
+                                        type = extensionToDocumentType(file.extension),
+                                        size = formatSize(file.length()),
+                                        date = formatDate(file.lastModified()),
+                                        isFavorite = false,
+                                        sizeBytes = file.length(),
+                                    ),
+                                    file.lastModified(),
                                 ),
                             )
                         } catch (e: Exception) {
-                            Timber.w("Error leyendo archivo app: ${e.message}")
+                            Timber.w("Error leyendo archivo app: ${e.javaClass.simpleName}")
                         }
                     }
             }
@@ -619,13 +684,14 @@ class DocumentRepository
          * (`ViewerViewModel.recordHistoryOpen`) para "Recientes" en Inicio; acá
          * se usa el historial COMPLETO, no solo los últimos N.
          */
-        private suspend fun loadDocumentsFromHistory(): List<DocumentUiModel> {
-            val documents = mutableListOf<DocumentUiModel>()
+        private suspend fun loadDocumentsFromHistory(): List<DatedDocument> {
+            val documents = mutableListOf<DatedDocument>()
             documentHistoryDao.allEntries().forEach { entry ->
                 try {
-                    documentFromHistoryId(entry.documentId, entry.lastOpenedAt)?.let { documents.add(it) }
+                    documentFromHistoryId(entry.documentId, entry.lastOpenedAt)
+                        ?.let { documents.add(DatedDocument(it, entry.lastOpenedAt)) }
                 } catch (e: Exception) {
-                    Timber.w("Error leyendo documento del historial: ${e.message}")
+                    Timber.w("Error leyendo documento del historial: ${e.javaClass.simpleName}")
                 }
             }
             Timber.d("Historial: ${documents.size} documentos")
@@ -650,7 +716,7 @@ class DocumentRepository
                 try {
                     context.contentResolver.query(uri, null, null, null, null)
                 } catch (e: Exception) {
-                    Timber.w("documentFromHistoryUri: no se pudo consultar $uri -- ${e.message}")
+                    Timber.w("documentFromHistoryUri: no se pudo consultar un documento: ${e.javaClass.simpleName}")
                     null
                 } ?: return null
             return cursor.use {
@@ -664,7 +730,7 @@ class DocumentRepository
                     try {
                         context.contentResolver.getType(uri)
                     } catch (e: Exception) {
-                        Timber.w(e, "documentFromHistoryUri: no se pudo leer el mimeType de $uri")
+                        Timber.w("documentFromHistoryUri: no se pudo leer el mimeType: ${e.javaClass.simpleName}")
                         null
                     } ?: ""
                 DocumentUiModel(

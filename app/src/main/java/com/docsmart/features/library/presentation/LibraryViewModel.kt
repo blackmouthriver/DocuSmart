@@ -15,6 +15,8 @@ import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,41 +90,55 @@ class LibraryViewModel
             loadDocuments()
         }
 
+        // Hallazgo real de la ronda 15: cada llamada a loadDocuments() lanzaba
+        // una corrutina independiente -- al vincular/desvincular la carpeta o
+        // refrescar dos veces seguidas, una carga VIEJA (mas lenta) podia
+        // terminar despues de la nueva y pisar el estado con datos obsoletos.
+        // Se cancela la carga anterior antes de lanzar la siguiente.
+        private var loadJob: Job? = null
+
         init {
             loadDocuments()
             loadTrashCount()
         }
 
         fun loadDocuments() {
-            viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true) }
-                try {
-                    val docs = repository.loadAllDocuments()
-
-                    // Separar documentos del dispositivo vs generados por la app
-                    val deviceDocs = docs.filter { isDeviceDocument(it) }
-                    val appDocs = docs.filter { !isDeviceDocument(it) }
-
-                    _uiState.update { state ->
-                        state.copy(
-                            allDocuments = docs,
-                            deviceDocuments = deviceDocs,
-                            appDocuments = appDocs,
-                            filteredDocuments =
-                                applyCurrentFilters(
-                                    if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                                    state,
-                                ),
-                            favorites = docs.filter { it.isFavorite },
-                            isLoading = false,
-                        )
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true) }
+                    try {
+                        val docs = repository.loadAllDocuments()
+                        _uiState.update { state -> state.withDocuments(docs).copy(isLoading = false) }
+                        Timber.d("LibraryViewModel: ${docs.size} docs cargados")
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // Solo el tipo: CrashlyticsTree reenvia todo Timber.e a Firebase.
+                        Timber.e("LibraryViewModel: error cargando documentos: ${e.javaClass.simpleName}")
+                        _uiState.update { it.copy(isLoading = false) }
                     }
-                    Timber.d("LibraryViewModel: ${docs.size} docs (${deviceDocs.size} dispositivo, ${appDocs.size} app)")
-                } catch (e: Exception) {
-                    Timber.e(e, "LibraryViewModel: error cargando documentos")
-                    _uiState.update { it.copy(isLoading = false) }
                 }
-            }
+        }
+
+        // Recalcula TODAS las listas derivadas a partir de la lista completa y
+        // del estado ACTUAL (filtros, pestana). Se usa siempre dentro de
+        // `_uiState.update {}` para que una escritura concurrente no pise una
+        // lista calculada a partir de un estado ya viejo.
+        private fun LibraryUiState.withDocuments(docs: List<DocumentUiModel>): LibraryUiState {
+            val deviceDocs = docs.filter { isDeviceDocument(it) }
+            val appDocs = docs.filterNot { isDeviceDocument(it) }
+            return copy(
+                allDocuments = docs,
+                deviceDocuments = deviceDocs,
+                appDocuments = appDocs,
+                filteredDocuments =
+                    applyCurrentFilters(
+                        if (selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                        this,
+                    ),
+                favorites = docs.filter { it.isFavorite },
+            )
         }
 
         // Ampliado 2026-09-03 (fila 22 backlog UX): un documento del historial
@@ -160,23 +176,16 @@ class LibraryViewModel
         fun toggleFavorite(documentId: String) {
             viewModelScope.launch {
                 val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
-                val updated =
-                    _uiState.value.allDocuments.map { doc ->
-                        if (doc.id == documentId) doc.copy(isFavorite = isNowFavorite) else doc
-                    }
-                val deviceDocs = updated.filter { isDeviceDocument(it) }
-                val appDocs = updated.filter { !isDeviceDocument(it) }
+                // Hallazgo real de la ronda 15: la lista se calculaba FUERA de
+                // update{} a partir de un snapshot -- si una recarga terminaba
+                // mientras tanto, esta escritura pisaba la lista nueva con una
+                // vieja. Ahora se recalcula dentro del update, sobre el estado
+                // vigente.
                 _uiState.update { state ->
-                    state.copy(
-                        allDocuments = updated,
-                        deviceDocuments = deviceDocs,
-                        appDocuments = appDocs,
-                        filteredDocuments =
-                            applyCurrentFilters(
-                                if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                                state,
-                            ),
-                        favorites = updated.filter { it.isFavorite },
+                    state.withDocuments(
+                        state.allDocuments.map { doc ->
+                            if (doc.id == documentId) doc.copy(isFavorite = isNowFavorite) else doc
+                        },
                     )
                 }
             }
@@ -249,23 +258,11 @@ class LibraryViewModel
             documentId: String,
             newName: String,
         ) {
-            val updated =
-                _uiState.value.allDocuments.map { doc ->
-                    if (doc.id == documentId) doc.copy(name = newName) else doc
-                }
-            val deviceDocs = updated.filter { isDeviceDocument(it) }
-            val appDocs = updated.filter { !isDeviceDocument(it) }
             _uiState.update { state ->
-                state.copy(
-                    allDocuments = updated,
-                    deviceDocuments = deviceDocs,
-                    appDocuments = appDocs,
-                    filteredDocuments =
-                        applyCurrentFilters(
-                            if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                            state,
-                        ),
-                    favorites = updated.filter { it.isFavorite },
+                state.withDocuments(
+                    state.allDocuments.map { doc ->
+                        if (doc.id == documentId) doc.copy(name = newName) else doc
+                    },
                 )
             }
         }
@@ -281,22 +278,14 @@ class LibraryViewModel
                 }
                 soundEffectPlayer.playDelete()
 
-                val updated = _uiState.value.allDocuments.filter { it.id != documentId }
-                val deviceDocs = updated.filter { isDeviceDocument(it) }
-                val appDocs = updated.filter { !isDeviceDocument(it) }
                 _uiState.update { state ->
-                    state.copy(
-                        allDocuments = updated,
-                        deviceDocuments = deviceDocs,
-                        appDocuments = appDocs,
-                        filteredDocuments =
-                            applyCurrentFilters(
-                                if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                                state,
-                            ),
-                        favorites = updated.filter { it.isFavorite },
-                    )
+                    state.withDocuments(state.allDocuments.filter { it.id != documentId })
                 }
+                // Hallazgo real de la ronda 15: una carga iniciada ANTES de mover
+                // a la papelera pudo haber leido trash_entries sin este id y
+                // "resucitar" el documento al terminar. Se reinicia esa carga
+                // en vuelo (loadDocuments() cancela la anterior).
+                if (loadJob?.isActive == true) loadDocuments()
                 loadTrashCount()
             }
         }
@@ -307,8 +296,17 @@ class LibraryViewModel
 
         fun loadTrashCount() {
             viewModelScope.launch {
-                val count = trashRepository.loadTrashedDocuments().size
-                _uiState.update { it.copy(trashCount = count) }
+                // Hallazgo real de la ronda 15: una excepcion aqui (BD, purga)
+                // escapaba de la corrutina del ViewModelScope y tumbaba la app
+                // solo por no poder mostrar el contador de Papelera.
+                try {
+                    val count = trashRepository.loadTrashedDocuments().size
+                    _uiState.update { it.copy(trashCount = count) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.w("LibraryViewModel: no se pudo contar la papelera: ${e.javaClass.simpleName}")
+                }
             }
         }
     }

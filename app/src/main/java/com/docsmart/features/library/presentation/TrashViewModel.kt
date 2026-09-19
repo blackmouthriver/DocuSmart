@@ -9,8 +9,11 @@ import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
+import com.docsmart.features.library.data.TrashedDocumentUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -19,6 +22,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class TrashedItemUi(
@@ -79,30 +83,53 @@ class TrashViewModel
         // mismo patrón ya usado para AgendaViewModel.saveDraft()).
         private var isBusy = false
 
+        // Hallazgo real de la ronda 15: load() se dispara tras cada accion
+        // (restaurar, borrar, confirmar permiso) y tambien desde init -- dos
+        // cargas solapadas podian terminar en desorden y dejar en pantalla la
+        // lista anterior a un borrado. Se cancela la carga previa.
+        private var loadJob: Job? = null
+
         init {
             load()
         }
 
         fun load() {
-            viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true) }
-                val now = System.currentTimeMillis()
-                val trashed = repository.loadTrashedDocuments()
-                val items =
-                    trashed.map { entry ->
-                        val elapsedDays = (now - entry.deletedAt) / DAY_MILLIS
-                        val daysRemaining =
-                            (TrashRepository.TRASH_RETENTION_DAYS - elapsedDays)
-                                // Hallazgo real de la auditoría general 2026-09-17/18
-                                // (décima ronda, Baja -- P4): sin coerceAtMost(30), un
-                                // reloj atrasado producía elapsedDays negativo y
-                                // mostraba p. ej. "35 días restantes".
-                                .toInt()
-                                .coerceIn(0, TrashRepository.TRASH_RETENTION_DAYS)
-                        TrashedItemUi(entry.document, daysRemaining)
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true) }
+                    try {
+                        val now = System.currentTimeMillis()
+                        val trashed = repository.loadTrashedDocuments()
+                        val items = trashed.map { entry -> TrashedItemUi(entry.document, daysRemaining(now, entry)) }
+                        _uiState.update { it.copy(items = items, isLoading = false) }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // Hallazgo real de la ronda 15: sin este catch, un fallo de
+                        // lectura (Room/almacenamiento) dejaba isLoading en true
+                        // para siempre (spinner infinito) y tumbaba la app por la
+                        // excepcion no capturada de la corrutina.
+                        Timber.e("TrashViewModel: error cargando la papelera: ${e.javaClass.simpleName}")
+                        _uiState.update {
+                            it.copy(isLoading = false, actionError = context.getString(R.string.general_delete_error))
+                        }
                     }
-                _uiState.update { it.copy(items = items, isLoading = false) }
-            }
+                }
+        }
+
+        private fun daysRemaining(
+            now: Long,
+            entry: TrashedDocumentUiModel,
+        ): Int {
+            val elapsedDays = (now - entry.deletedAt) / DAY_MILLIS
+            // Hallazgo real de la auditoría general 2026-09-17/18
+            // (décima ronda, Baja -- P4): sin coerceAtMost(30), un
+            // reloj atrasado producía elapsedDays negativo y
+            // mostraba p. ej. "35 días restantes".
+            return (TrashRepository.TRASH_RETENTION_DAYS - elapsedDays)
+                .toInt()
+                .coerceIn(0, TrashRepository.TRASH_RETENTION_DAYS)
         }
 
         fun restore(documentId: String) {
@@ -112,7 +139,15 @@ class TrashViewModel
                 // restoreFromTrash() -- si el archivo real ya no existía
                 // (borrado por fuera de la app), el documento desaparecía sin
                 // ningún aviso.
-                val restored = repository.restoreFromTrash(documentId)
+                val restored =
+                    try {
+                        repository.restoreFromTrash(documentId)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.e("TrashViewModel: error restaurando: ${e.javaClass.simpleName}")
+                        false
+                    }
                 if (!restored) {
                     _uiState.update { it.copy(actionError = context.getString(R.string.trash_restore_error)) }
                 }
@@ -135,6 +170,11 @@ class TrashViewModel
                         is DocumentRepository.DeleteOutcome.NeedsPermission ->
                             _pendingDeleteRequest.emit(PendingDeleteRequest.Single(outcome.intentSender, documentId))
                     }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e("TrashViewModel: error eliminando definitivamente: ${e.javaClass.simpleName}")
+                    _uiState.update { it.copy(actionError = context.getString(R.string.general_delete_error)) }
                 } finally {
                     isBusy = false
                 }
@@ -174,6 +214,12 @@ class TrashViewModel
                             load()
                         }
                     }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e("TrashViewModel: error vaciando la papelera: ${e.javaClass.simpleName}")
+                    _uiState.update { it.copy(actionError = context.getString(R.string.general_delete_error)) }
+                    load()
                 } finally {
                     isBusy = false
                 }

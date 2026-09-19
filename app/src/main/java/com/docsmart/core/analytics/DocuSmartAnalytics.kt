@@ -27,7 +27,9 @@ object DocuSmartAnalytics {
         try {
             block()
         } catch (e: Exception) {
-            Timber.w(e, "DocuSmartAnalytics: no se pudo registrar el evento")
+            // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase y el
+            // mensaje/stack de una falla de Firebase/Bundle no aporta nada más.
+            Timber.w("DocuSmartAnalytics: no se pudo registrar el evento (${e.javaClass.simpleName})")
         }
     }
 
@@ -74,7 +76,7 @@ object DocuSmartAnalytics {
         val bundle =
             Bundle().apply {
                 putString("conversion_type", conversionType)
-                putString("error_message", error.take(100))
+                putString("error_message", sanitizeAnalyticsText(error))
             }
         analytics.logEvent("conversion_error", bundle)
         Timber.d("Analytics: conversion_error → $conversionType: $error")
@@ -188,9 +190,26 @@ object DocuSmartAnalytics {
         val bundle =
             Bundle().apply {
                 putString("error_context", context)
-                putString("error_message", message.take(100))
+                putString("error_message", sanitizeAnalyticsText(message))
             }
         analytics.logEvent("app_error", bundle)
         Timber.d("Analytics: app_error → $context: $message")
     }
 }
+
+// Firebase Analytics muestra estos textos a cualquiera con acceso a la consola
+// y los mensajes de error pueden traer URIs o rutas con nombres de archivo del
+// usuario: se enmascaran antes de enviar. Límite de 100 caracteres = tope de
+// Firebase para el valor de un parámetro.
+private val ANALYTICS_URI_REGEX = Regex("[A-Za-z][A-Za-z0-9+.-]*://\\S+")
+
+// Los segmentos admiten espacios (nombres como "Mi Contrato Juan.pdf"): se enmascara
+// hasta el próximo ":" o fin de línea. Prefiere enmascarar de más antes que filtrar un nombre.
+private val ANALYTICS_PATH_REGEX = Regex("(?:[A-Za-z]:)?[\\\\/][^\\\\/\\n:]+(?:[\\\\/][^\\\\/\\n:]+)+")
+private const val ANALYTICS_MAX_TEXT_LENGTH = 100
+
+internal fun sanitizeAnalyticsText(text: String): String =
+    text
+        .replace(ANALYTICS_URI_REGEX, "<uri>")
+        .replace(ANALYTICS_PATH_REGEX, "<path>")
+        .take(ANALYTICS_MAX_TEXT_LENGTH)

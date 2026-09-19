@@ -121,6 +121,10 @@ class ConverterViewModel
                     selectedType = type,
                     selectedFiles = preloaded?.let { listOf(it) } ?: emptyList(),
                     conversionResult = null,
+                    outputFile = null,
+                    batchResults = emptyList(),
+                    savedToDownloads = false,
+                    batchSavedToDownloads = false,
                     errorMessage = null,
                 )
             }
@@ -132,8 +136,11 @@ class ConverterViewModel
                     selectedFiles = uris,
                     selectedImages = uris,
                     conversionResult = null,
+                    outputFile = null,
+                    batchResults = emptyList(),
                     errorMessage = null,
                     savedToDownloads = false,
+                    batchSavedToDownloads = false,
                 )
             }
         }
@@ -216,7 +223,21 @@ class ConverterViewModel
             // lote nuevo no arranque mezclado con los restos incrementales de
             // un intento anterior cancelado a mitad de camino (ver
             // runBatchConversion()).
-            _uiState.update { it.copy(isConverting = true, errorMessage = null, batchResults = emptyList()) }
+            // Ronda 15: savedToDownloads/batchSavedToDownloads/conversionResult/
+            // outputFile de una conversión anterior NO se limpiaban acá -- tras
+            // guardar un lote y volver a convertir, la pantalla seguía mostrando
+            // "Guardado en Descargas" para un resultado que nunca se guardó.
+            _uiState.update {
+                it.copy(
+                    isConverting = true,
+                    errorMessage = null,
+                    batchResults = emptyList(),
+                    conversionResult = null,
+                    outputFile = null,
+                    savedToDownloads = false,
+                    batchSavedToDownloads = false,
+                )
+            }
 
             // "Alta resolución" (backlog UX #33) es Premium -- se revalida acá,
             // no solo en la UI, para que el estado de la pantalla nunca pueda
@@ -257,7 +278,9 @@ class ConverterViewModel
                     // pantalla de la que el usuario ya se fue.
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "ConverterViewModel: error inesperado convirtiendo $type")
+                    // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase
+                    // y e.message puede contener rutas/URIs reales.
+                    Timber.e("ConverterViewModel: error inesperado convirtiendo $type: ${e.javaClass.simpleName}")
                     val message = context.getString(R.string.general_error_format, e.message ?: "")
                     _uiState.update { it.copy(isConverting = false, errorMessage = message) }
                 }
@@ -302,6 +325,12 @@ class ConverterViewModel
             logConversionOutcome(type, result)
             if (result is ConversionResult.Success) soundEffectPlayer.playConvert()
 
+            // Ronda 15: registerConversion() vivía dentro de la lambda de
+            // update{} (applySingleConversionResult) -- MutableStateFlow.update
+            // reintenta la lambda si hay contención en el CAS, así que un
+            // reintento contaba la conversión dos veces contra el límite diario.
+            // Los efectos secundarios van fuera de update{}.
+            if (result is ConversionResult.Success) dailyLimitManager.registerConversion()
             _uiState.update { state -> applySingleConversionResult(state, result) }
         }
 
@@ -328,7 +357,6 @@ class ConverterViewModel
         ): ConverterUiState =
             when (result) {
                 is ConversionResult.Success -> {
-                    dailyLimitManager.registerConversion()
                     state.copy(
                         isConverting = false,
                         conversionResult = result,
@@ -409,7 +437,7 @@ class ConverterViewModel
                     if (!premiumManager.canPerform { dailyLimitManager.canConvert() }) {
                         ConversionResult.Error(context.getString(R.string.converter_daily_limit_reached_error))
                     } else {
-                        runConversionForUri(type, uri, baseName).also {
+                        convertBatchItem(context, type, uri, baseName).also {
                             if (it is ConversionResult.Success) dailyLimitManager.registerConversion()
                         }
                     }
@@ -425,6 +453,28 @@ class ConverterViewModel
                 }
             }
         }
+
+        // Ronda 15: una excepción no atrapada por el use case de UN archivo
+        // abortaba todo el lote (los archivos restantes ni se intentaban, y los
+        // ya convertidos quedaban sin resumen). Se aísla por ítem; la
+        // cancelación sí se relanza.
+        private suspend fun convertBatchItem(
+            context: Context,
+            type: ConversionType,
+            uri: Uri,
+            baseName: String,
+        ): ConversionResult =
+            try {
+                runConversionForUri(type, uri, baseName)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: OutOfMemoryError) {
+                Timber.e("ConverterViewModel: sin memoria convirtiendo un archivo del lote")
+                ConversionResult.Error(context.getString(R.string.converter_error_unknown))
+            } catch (e: Exception) {
+                Timber.e("ConverterViewModel: error en un archivo del lote: ${e.javaClass.simpleName}")
+                ConversionResult.Error(context.getString(R.string.general_error_format, e.message ?: ""))
+            }
 
         private fun uniqueBaseName(
             baseName: String,
@@ -454,7 +504,7 @@ class ConverterViewModel
                 )?.use { cursor -> if (cursor.moveToFirst()) name = cursor.getString(0) }
                 name ?: uri.lastPathSegment ?: generateDefaultName()
             } catch (e: Exception) {
-                Timber.w(e, "ConverterViewModel: no se pudo resolver el nombre original para el lote")
+                Timber.w("ConverterViewModel: no se pudo resolver el nombre original: ${e.javaClass.simpleName}")
                 uri.lastPathSegment ?: generateDefaultName()
             }
 

@@ -1,6 +1,8 @@
 package com.docsmart.features.security.presentation
 
 import android.content.Context
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.docsmart.core.security.SecureMoveResult
@@ -13,9 +15,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -24,6 +28,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -587,5 +592,250 @@ class SecurityViewModelTest {
 
         assertTrue(viewModel.uiState.value.isBiometricEnabled)
         verify { securityManager.setBiometricEnabled(true) }
+    }
+
+    // ── protectPdfWithPassword / removePdfPassword: guard de doble toque ──────
+
+    @Test
+    fun `protectPdfWithPassword ignora un segundo toque mientras la primera operacion sigue en curso`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            coEvery { pdfPasswordUseCase.protect(any(), any(), any(), any(), any()) } coAnswers { awaitCancellation() }
+            val viewModel = buildViewModel()
+
+            viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "incorrecta")
+            viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "incorrecta")
+
+            assertTrue(viewModel.uiState.value.isPdfProcessing)
+            coVerify(exactly = 1) { pdfPasswordUseCase.protect(any(), any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `removePdfPassword ignora un segundo toque mientras la primera operacion sigue en curso`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            coEvery { pdfPasswordUseCase.removePassword(any(), any(), any(), any(), any()) } coAnswers
+                { awaitCancellation() }
+            val viewModel = buildViewModel()
+
+            viewModel.removePdfPassword(context, uri, "1234", "doc", testMessages, "incorrecta")
+            viewModel.removePdfPassword(context, uri, "1234", "doc", testMessages, "incorrecta")
+
+            coVerify(exactly = 1) { pdfPasswordUseCase.removePassword(any(), any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `una nueva operacion PDF vuelve a estar permitida tras terminar la anterior`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            coEvery { pdfPasswordUseCase.protect(any(), any(), any(), any(), any()) } returns
+                PdfPasswordResult.WrongPassword
+            val viewModel = buildViewModel()
+
+            viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "incorrecta")
+            assertFalse(viewModel.uiState.value.isPdfProcessing)
+            viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "incorrecta")
+
+            coVerify(exactly = 2) { pdfPasswordUseCase.protect(any(), any(), any(), any(), any()) }
+            assertEquals("incorrecta", viewModel.uiState.value.pdfPasswordError)
+        }
+
+    @Test
+    fun `dismissPdfResult limpia el archivo de salida y el error`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            coEvery { pdfPasswordUseCase.protect(any(), any(), any(), any(), any()) } returns
+                PdfPasswordResult.Success(File(secureFolder, "p.pdf"), "ok")
+            val viewModel = buildViewModel()
+            viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "incorrecta")
+            assertTrue(viewModel.uiState.value.pdfOutputFile != null)
+
+            viewModel.dismissPdfResult()
+
+            assertNull(viewModel.uiState.value.pdfOutputFile)
+            assertNull(viewModel.uiState.value.pdfPasswordError)
+        }
+
+    // ── previewFile ───────────────────────────────────────────────────────────
+
+    @Test
+    fun `previewFile emite la ruta de la copia efimera`() =
+        runTest {
+            val file = File(secureFolder, "a.pdf")
+            val preview = File(secureFolder.parentFile, "secure_preview/a.pdf")
+            every { securityManager.copyForPreview(file) } returns preview
+            val viewModel = buildViewModel()
+
+            viewModel.previewRequest.test {
+                viewModel.previewFile(file, "no se pudo abrir")
+                assertEquals(preview.absolutePath, awaitItem())
+            }
+        }
+
+    @Test
+    fun `previewFile muestra error si no se pudo crear la copia`() =
+        runTest {
+            val file = File(secureFolder, "a.pdf")
+            every { securityManager.copyForPreview(file) } returns null
+            val viewModel = buildViewModel()
+
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.previewFile(file, "no se pudo abrir")
+                assertEquals("no se pudo abrir", awaitItem().error)
+            }
+        }
+
+    // ── RF-SEC-08: observer del proceso ───────────────────────────────────────
+
+    @Test
+    fun `ON_STOP del proceso bloquea la carpeta y borra la vista previa sin cifrar`() =
+        runTest {
+            every { securityManager.verifyPin("1234") } returns true
+            val observerSlot = slot<LifecycleEventObserver>()
+            val tracker = mockk<com.docsmart.core.util.AppLifecycleTracker>(relaxed = true)
+            every { tracker.addObserver(capture(observerSlot)) } returns Unit
+            val viewModel =
+                SecurityViewModel(
+                    securityManager,
+                    pdfPasswordUseCase,
+                    mediaDeletePermission,
+                    documentIdentityMaintenance,
+                    tracker,
+                )
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
+                assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
+
+                observerSlot.captured.onStateChanged(mockk(relaxed = true), Lifecycle.Event.ON_STOP)
+
+                assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
+            }
+            verify { securityManager.clearPreviewCache() }
+        }
+
+    @Test
+    fun `otros eventos del proceso no bloquean ni borran la vista previa`() {
+        val observerSlot = slot<LifecycleEventObserver>()
+        val tracker = mockk<com.docsmart.core.util.AppLifecycleTracker>(relaxed = true)
+        every { tracker.addObserver(capture(observerSlot)) } returns Unit
+        SecurityViewModel(securityManager, pdfPasswordUseCase, mediaDeletePermission, documentIdentityMaintenance, tracker)
+
+        observerSlot.captured.onStateChanged(mockk(relaxed = true), Lifecycle.Event.ON_START)
+
+        verify(exactly = 0) { securityManager.clearPreviewCache() }
+    }
+
+    // ── importLocalFile / deleteFile / avisos ─────────────────────────────────
+
+    @Test
+    fun `dismissOriginalNotDeletedWarning limpia el aviso`() =
+        runTest {
+            val file =
+                File(secureFolder.parentFile, "converted/foo.pdf").apply {
+                    parentFile?.mkdirs()
+                    writeText("x")
+                }
+            every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = false)
+            val viewModel = buildViewModel()
+
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.importLocalFile(file, "ok", "error", "original conservado")
+                assertEquals("original conservado", awaitItem().originalNotDeletedWarning)
+
+                viewModel.dismissOriginalNotDeletedWarning()
+
+                assertNull(awaitItem().originalNotDeletedWarning)
+            }
+        }
+
+    @Test
+    fun `importLocalFile migra la identidad del documento a la ruta real elegida por SecurityManager`() =
+        runTest {
+            val file =
+                File(secureFolder.parentFile, "converted/foo.pdf").apply {
+                    parentFile?.mkdirs()
+                    writeText("x")
+                }
+            val dest = File(secureFolder, "foo (1).pdf")
+            every { securityManager.moveToSecure(file) } returns
+                SecureMoveResult(success = true, originalDeleted = true, destFile = dest)
+            val viewModel = buildViewModel()
+
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.importLocalFile(file, "ok", "error", "conservado")
+                awaitItem()
+            }
+
+            coVerify { documentIdentityMaintenance.onIdChanged(file.absolutePath, dest.absolutePath) }
+        }
+
+    @Test
+    fun `deleteFile exitoso limpia la metadata del documento borrado`() =
+        runTest {
+            val file = File(secureFolder, "a.pdf")
+            every { securityManager.deleteSecureFile(file) } returns true
+            every { securityManager.getSecureFiles() } returns emptyList()
+            val viewModel = buildViewModel()
+
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.deleteFile(file, "no se pudo eliminar")
+                // Sin cambio visible en el estado (lista vacia -> vacia): se espera a que el
+                // hilo de IO termine verificando la llamada con un timeout.
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            coVerify(timeout = 2_000) { documentIdentityMaintenance.onPermanentlyDeleted(file.absolutePath) }
+        }
+
+    // ── copyStreamToSecureFile() ──────────────────────────────────────────────
+
+    // Bug real corregido: openInputStream() devuelve null si el proveedor no
+    // puede abrir el Uri -- antes la copia se saltaba en silencio y el flujo
+    // seguia hasta borrar el ORIGINAL sin que existiera copia protegida.
+    @Test
+    fun `copyStreamToSecureFile con origen ilegible lanza y no deja archivo`() {
+        val dest = File(secureFolder, "x.pdf")
+
+        assertThrows(IllegalStateException::class.java) { copyStreamToSecureFile(null, dest) }
+
+        assertFalse(dest.exists())
+    }
+
+    @Test
+    fun `copyStreamToSecureFile copia todos los bytes`() {
+        val dest = File(secureFolder, "x.pdf")
+        val bytes = ByteArray(10_000) { (it % 251).toByte() }
+
+        copyStreamToSecureFile(java.io.ByteArrayInputStream(bytes), dest)
+
+        assertTrue(bytes.contentEquals(dest.readBytes()))
+    }
+
+    @Test
+    fun `copyStreamToSecureFile elimina la copia parcial si la lectura falla a mitad`() {
+        val dest = File(secureFolder, "x.pdf")
+        val failing =
+            object : java.io.InputStream() {
+                private var sent = 0
+
+                override fun read(): Int {
+                    if (sent >= 5) throw java.io.IOException("se cayo la lectura")
+                    sent++
+                    return 1
+                }
+            }
+
+        assertThrows(java.io.IOException::class.java) { copyStreamToSecureFile(failing, dest) }
+
+        assertFalse(dest.exists(), "una copia a medias no debe quedar en Carpeta Segura")
     }
 }

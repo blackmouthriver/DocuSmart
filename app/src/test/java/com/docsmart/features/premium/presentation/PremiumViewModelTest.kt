@@ -1,7 +1,9 @@
 package com.docsmart.features.premium.presentation
 
+import android.app.Activity
 import app.cash.turbine.test
 import com.docsmart.core.billing.BillingManager
+import com.docsmart.core.billing.PlanOffer
 import com.docsmart.core.billing.PurchaseResult
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.features.premium.data.repository.PremiumRepository
@@ -10,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -21,6 +24,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -68,6 +73,9 @@ class PremiumViewModelTest {
         billingManager = mockk(relaxed = true)
         every { billingManager.planOffers } returns MutableStateFlow(emptyMap())
         every { billingManager.purchaseResult } returns purchaseResultFlow
+        // restorePurchases() ahora devuelve el desenlace: un relaxed mock devolvería
+        // un mock de PurchaseResult que no coincide con ninguna rama del `when`.
+        coEvery { billingManager.restorePurchases() } returns PurchaseResult.NoPurchasesToRestore
     }
 
     @AfterEach
@@ -118,5 +126,207 @@ class PremiumViewModelTest {
                 assertTrue(afterError.isPurchasing.not())
                 cancelAndIgnoreRemainingEvents()
             }
+        }
+
+    // ── restorePurchases(): el desenlace devuelto define el estado final ──────
+
+    // Bug real corregido: antes el ViewModel decidía el mensaje final por
+    // isPaidPremium, sin mirar el resultado -- un Error o Pending real quedaba
+    // pisado por "sin compras" según el orden de llegada de la emisión
+    // asíncrona de purchaseResult.
+    @Test
+    fun `restorePurchases con desenlace Error muestra el mensaje localizado sin depender de la emision`() =
+        runTest {
+            coEvery { billingManager.restorePurchases() } returns PurchaseResult.Error("raw debug")
+            val viewModel = buildViewModel()
+
+            viewModel.restorePurchases("sin compras", "restaurado", "error localizado")
+
+            val state = viewModel.uiState.value
+            assertEquals("error localizado", state.errorMessage)
+            assertFalse(state.isPurchasing)
+            assertFalse(state.purchaseSuccess)
+        }
+
+    @Test
+    fun `restorePurchases con compra restaurada marca exito y muestra el mensaje de restaurado`() =
+        runTest {
+            coEvery { billingManager.restorePurchases() } returns PurchaseResult.Success
+            val viewModel = buildViewModel()
+
+            viewModel.restorePurchases("sin compras", "restaurado", "error")
+
+            val state = viewModel.uiState.value
+            assertTrue(state.purchaseSuccess)
+            assertEquals("restaurado", state.errorMessage)
+            assertFalse(state.isPurchasing)
+        }
+
+    @Test
+    fun `restorePurchases sin compras reales no se muestra como restaurado aunque haya trial automatico`() =
+        runTest {
+            every { premiumManager.isPremium } returns MutableStateFlow(true)
+            every { premiumManager.isPaidPremium } returns MutableStateFlow(false)
+            coEvery { billingManager.restorePurchases() } returns PurchaseResult.NoPurchasesToRestore
+            val viewModel = buildViewModel()
+
+            viewModel.restorePurchases("sin compras", "restaurado", "error")
+
+            val state = viewModel.uiState.value
+            assertFalse(state.purchaseSuccess)
+            assertEquals("sin compras", state.errorMessage)
+        }
+
+    // Bug real corregido: la pantalla no pasa un mensaje de "pendiente" al
+    // restaurar, así que errorMessage quedaba en "" (snackbar en blanco).
+    @Test
+    fun `restorePurchases con compra pendiente activa el aviso persistente sin mensaje en blanco`() =
+        runTest {
+            coEvery { billingManager.restorePurchases() } returns PurchaseResult.Pending
+            val viewModel = buildViewModel()
+
+            viewModel.restorePurchases("sin compras", "restaurado", "error")
+
+            val state = viewModel.uiState.value
+            assertTrue(state.isPendingPurchase)
+            assertNull(state.errorMessage)
+            assertFalse(state.isPurchasing)
+        }
+
+    @Test
+    fun `restorePurchases sin compras apaga el aviso de compra pendiente previo`() =
+        runTest {
+            val viewModel = buildViewModel()
+            purchaseResultFlow.emit(PurchaseResult.Pending)
+            assertTrue(viewModel.uiState.value.isPendingPurchase)
+
+            viewModel.restorePurchases("sin compras", "restaurado", "error")
+
+            assertFalse(viewModel.uiState.value.isPendingPurchase)
+        }
+
+    // ── purchase() ────────────────────────────────────────────────────────────
+
+    @Test
+    fun `purchase con launchPurchase fallido muestra el mensaje de error y libera el estado`() =
+        runTest {
+            every { billingManager.launchPurchase(any(), plan.productId) } returns false
+            val viewModel = buildViewModel()
+
+            viewModel.purchase(mockk<Activity>(), "no se pudo comprar", "pendiente")
+
+            val state = viewModel.uiState.value
+            assertEquals("no se pudo comprar", state.errorMessage)
+            assertFalse(state.isPurchasing)
+        }
+
+    @Test
+    fun `purchase ignora un segundo toque mientras el flujo de compra sigue en curso`() =
+        runTest {
+            every { billingManager.launchPurchase(any(), any()) } returns true
+            val viewModel = buildViewModel()
+            val activity = mockk<Activity>()
+
+            viewModel.purchase(activity, "error", "pendiente")
+            viewModel.purchase(activity, "error", "pendiente")
+
+            assertTrue(viewModel.uiState.value.isPurchasing)
+            verify(exactly = 1) { billingManager.launchPurchase(any(), any()) }
+        }
+
+    @Test
+    fun `resultado Success de Play Billing marca compra exitosa y sale de isPurchasing`() =
+        runTest {
+            every { billingManager.launchPurchase(any(), any()) } returns true
+            val viewModel = buildViewModel()
+            viewModel.purchase(mockk<Activity>(), "error", "pendiente")
+
+            purchaseResultFlow.emit(PurchaseResult.Success)
+
+            val state = viewModel.uiState.value
+            assertTrue(state.purchaseSuccess)
+            assertFalse(state.isPurchasing)
+            assertNull(state.errorMessage)
+        }
+
+    @Test
+    fun `resultado Pending muestra el mensaje capturado y el aviso persistente`() =
+        runTest {
+            every { billingManager.launchPurchase(any(), any()) } returns true
+            val viewModel = buildViewModel()
+            viewModel.purchase(mockk<Activity>(), "error", "pago pendiente")
+
+            purchaseResultFlow.emit(PurchaseResult.Pending)
+
+            val state = viewModel.uiState.value
+            assertEquals("pago pendiente", state.errorMessage)
+            assertTrue(state.isPendingPurchase)
+            assertFalse(state.isPurchasing)
+        }
+
+    @Test
+    fun `resultado Cancelled libera isPurchasing sin mostrar error`() =
+        runTest {
+            every { billingManager.launchPurchase(any(), any()) } returns true
+            val viewModel = buildViewModel()
+            viewModel.purchase(mockk<Activity>(), "error", "pendiente")
+
+            purchaseResultFlow.emit(PurchaseResult.Cancelled)
+
+            val state = viewModel.uiState.value
+            assertFalse(state.isPurchasing)
+            assertNull(state.errorMessage)
+            assertFalse(state.purchaseSuccess)
+        }
+
+    @Test
+    fun `resultado Error sin mensaje localizado cae al debugMessage`() =
+        runTest {
+            val viewModel = buildViewModel()
+
+            purchaseResultFlow.emit(PurchaseResult.Error("debug crudo"))
+
+            assertEquals("debug crudo", viewModel.uiState.value.errorMessage)
+        }
+
+    // ── ofertas de Play Billing ───────────────────────────────────────────────
+
+    @Test
+    fun `las ofertas de Play Billing reemplazan el precio y los dias de prueba del plan`() =
+        runTest {
+            val offers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+            every { billingManager.planOffers } returns offers
+            val viewModel = buildViewModel()
+            assertEquals("$99", viewModel.uiState.value.plans.single().price)
+
+            offers.value = mapOf(plan.productId to PlanOffer(price = "$2.99", trialDays = 7))
+
+            val updated = viewModel.uiState.value.plans.single()
+            assertEquals("$2.99", updated.price)
+            assertEquals(7, updated.trialDays)
+        }
+
+    @Test
+    fun `una oferta con precio en blanco conserva el precio de respaldo`() =
+        runTest {
+            val offers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+            every { billingManager.planOffers } returns offers
+            val viewModel = buildViewModel()
+
+            offers.value = mapOf(plan.productId to PlanOffer(price = "  ", trialDays = null))
+
+            assertEquals("$99", viewModel.uiState.value.plans.single().price)
+        }
+
+    @Test
+    fun `dismissError limpia el mensaje de error`() =
+        runTest {
+            every { billingManager.launchPurchase(any(), any()) } returns false
+            val viewModel = buildViewModel()
+            viewModel.purchase(mockk<Activity>(), "no se pudo comprar", "pendiente")
+
+            viewModel.dismissError()
+
+            assertNull(viewModel.uiState.value.errorMessage)
         }
 }

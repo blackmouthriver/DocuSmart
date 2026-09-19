@@ -10,6 +10,7 @@ import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.scanner.domain.ScanSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -78,18 +79,36 @@ class ScanSessionViewModel
         fun clearSession() = sessionManager.clear()
 
         fun toggleFavorite(documentId: String) {
-            viewModelScope.launch { sessionManager.toggleFavorite(documentId) }
+            launchLogged("marcar favorito") { sessionManager.toggleFavorite(documentId) }
         }
 
         fun renameDocument(
             documentId: String,
             newName: String,
         ) {
-            viewModelScope.launch { sessionManager.renameDocument(documentId, newName) }
+            launchLogged("renombrar") { sessionManager.renameDocument(documentId, newName) }
         }
 
         fun deleteDocument(documentId: String) {
-            viewModelScope.launch { sessionManager.deleteDocument(documentId) }
+            launchLogged("eliminar") { sessionManager.deleteDocument(documentId) }
+        }
+
+        // Una excepción de E/S (renombrar/mover a papelera un archivo que ya no
+        // existe) dentro de viewModelScope.launch sin manejador tumba la app.
+        // Solo se registra el tipo (CrashlyticsTree reenvía todo >= WARN).
+        private fun launchLogged(
+            action: String,
+            block: suspend () -> Unit,
+        ) {
+            viewModelScope.launch {
+                try {
+                    block()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e("ScanSessionViewModel: falló $action (${e.javaClass.simpleName})")
+                }
+            }
         }
 
         // ── Límite diario de escaneos guardados (8/día) ───────────────────────────

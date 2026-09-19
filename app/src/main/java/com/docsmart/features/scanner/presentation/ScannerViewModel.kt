@@ -50,6 +50,9 @@ class ScannerViewModel
                     scannedPages = pages,
                     isPdf = isPdf,
                     isProcessing = false,
+                    // Un escaneo exitoso invalida el error anterior: sin esto un
+                    // "no se pudo escanear" viejo seguia visible junto al resultado nuevo.
+                    error = null,
                 )
             }
         }

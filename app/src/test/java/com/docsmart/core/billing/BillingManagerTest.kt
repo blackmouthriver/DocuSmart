@@ -1,10 +1,12 @@
 package com.docsmart.core.billing
 
 import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -148,5 +150,132 @@ class BillingManagerTest {
         // No debería pasar en la práctica (Play Console no permite un trial
         // de 0 días), pero si pasara, no debe tratarse como "hay trial".
         assertEquals(null, iso8601PeriodToDays("P0D"))
+    }
+
+    // ── planOfferFor(): precio recurrente y días de prueba (HU-54) ─────────────
+
+    private fun phase(
+        micros: Long,
+        price: String,
+        period: String,
+    ): ProductDetails.PricingPhase =
+        mockk {
+            every { priceAmountMicros } returns micros
+            every { formattedPrice } returns price
+            every { billingPeriod } returns period
+        }
+
+    private fun detailsWith(phases: List<ProductDetails.PricingPhase>?): ProductDetails {
+        val holder = mockk<ProductDetails.PricingPhases>()
+        every { holder.pricingPhaseList } returns phases.orEmpty()
+        val offer = mockk<ProductDetails.SubscriptionOfferDetails>()
+        every { offer.pricingPhases } returns holder
+        val details = mockk<ProductDetails>()
+        every { details.subscriptionOfferDetails } returns if (phases == null) null else listOf(offer)
+        return details
+    }
+
+    @Test
+    fun `planOfferFor separa la fase de prueba gratis del precio recurrente`() {
+        val details =
+            detailsWith(
+                listOf(
+                    phase(0L, "Gratis", "P7D"),
+                    phase(2_990_000L, "2,99 US$", "P1M"),
+                ),
+            )
+
+        assertEquals(PlanOffer(price = "2,99 US$", trialDays = 7), planOfferFor(details))
+    }
+
+    @Test
+    fun `planOfferFor no depende del orden de las fases`() {
+        val details =
+            detailsWith(
+                listOf(
+                    phase(29_990_000L, "29,99 US$", "P1Y"),
+                    phase(0L, "Gratis", "P1W"),
+                ),
+            )
+
+        assertEquals(PlanOffer(price = "29,99 US$", trialDays = 7), planOfferFor(details))
+    }
+
+    @Test
+    fun `planOfferFor sin fase de prueba deja trialDays en null`() {
+        val details = detailsWith(listOf(phase(2_990_000L, "2,99 US$", "P1M")))
+
+        assertEquals(PlanOffer(price = "2,99 US$", trialDays = null), planOfferFor(details))
+    }
+
+    @Test
+    fun `planOfferFor sin ofertas devuelve precio vacio para que la UI use el de respaldo`() {
+        assertEquals(PlanOffer(price = "", trialDays = null), planOfferFor(detailsWith(null)))
+    }
+
+    // ── trialEndsAtMillisOf(): fin de la prueba de una compra ─────────────────
+
+    private fun purchaseAt(timeMillis: Long): Purchase =
+        mockk {
+            every { purchaseTime } returns timeMillis
+        }
+
+    @Test
+    fun `trialEndsAtMillisOf suma los dias de prueba al momento de compra`() {
+        val details =
+            detailsWith(
+                listOf(
+                    phase(0L, "Gratis", "P7D"),
+                    phase(2_990_000L, "2,99 US$", "P1M"),
+                ),
+            )
+
+        val endsAt = trialEndsAtMillisOf(purchaseAt(1_000L), details)
+
+        assertEquals(1_000L + 7L * 24 * 60 * 60 * 1000, endsAt)
+    }
+
+    @Test
+    fun `trialEndsAtMillisOf devuelve null si el producto no tiene prueba gratis`() {
+        val details = detailsWith(listOf(phase(2_990_000L, "2,99 US$", "P1M")))
+
+        assertNull(trialEndsAtMillisOf(purchaseAt(1_000L), details))
+    }
+
+    @Test
+    fun `trialEndsAtMillisOf devuelve null si los detalles del producto aun no se cargaron`() {
+        // Ocurre si restorePurchases() corre antes de que queryProductDetails() termine.
+        assertNull(trialEndsAtMillisOf(purchaseAt(1_000L), null))
+    }
+
+    @Test
+    fun `trialEndsAtMillisOf devuelve null si el periodo de prueba no es interpretable`() {
+        val details = detailsWith(listOf(phase(0L, "Gratis", "raro")))
+
+        assertNull(trialEndsAtMillisOf(purchaseAt(1_000L), details))
+    }
+
+    @Test
+    fun `iso8601PeriodToDays combina componentes`() {
+        assertEquals(1 * 30 + 2 * 7 + 3, iso8601PeriodToDays("P1M2W3D"))
+    }
+
+    @Test
+    fun `evaluateRestoreOutcome con varias compras compradas las devuelve todas`() {
+        val first = purchaseOf(Purchase.PurchaseState.PURCHASED)
+        val second = purchaseOf(Purchase.PurchaseState.PURCHASED)
+
+        val outcome = evaluateRestoreOutcome(BillingClient.BillingResponseCode.OK, listOf(first, second))
+
+        assertEquals(RestoreOutcome.Owned(listOf(first, second)), outcome)
+    }
+
+    @Test
+    fun `evaluateRestoreOutcome ignora compras en estado no especificado`() {
+        val unspecified = purchaseOf(Purchase.PurchaseState.UNSPECIFIED_STATE)
+
+        val outcome = evaluateRestoreOutcome(BillingClient.BillingResponseCode.OK, listOf(unspecified))
+
+        assertEquals(RestoreOutcome.NothingOwned, outcome)
     }
 }

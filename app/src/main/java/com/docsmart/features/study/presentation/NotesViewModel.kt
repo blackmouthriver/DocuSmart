@@ -8,11 +8,13 @@ import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.features.study.data.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 // Hallazgo real de la auditoría general 2026-09-17/18 (décima ronda, Baja
@@ -50,7 +52,17 @@ class NotesViewModel
 
         init {
             viewModelScope.launch {
-                noteRepository.migrateLegacyNotesIfNeeded()
+                // Bug real: si la migración de notas legadas lanzaba (JSON corrupto,
+                // Room ocupado), la excepción cancelaba esta corrutina ANTES de
+                // observeAll() -- la pantalla de notas quedaba vacía para siempre
+                // (o tumbaba la app). La migración es opcional: se sigue observando.
+                try {
+                    noteRepository.migrateLegacyNotesIfNeeded()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e("NotesViewModel: falló la migración de notas legadas (${e.javaClass.simpleName})")
+                }
                 noteRepository.observeAll().collect { notes ->
                     _uiState.update { it.copy(notes = notes) }
                 }
@@ -63,18 +75,19 @@ class NotesViewModel
             imageUris: List<Uri> = emptyList(),
             reminderAt: Long? = null,
         ) {
-            viewModelScope.launch {
+            launchLogged("crear nota") {
                 noteRepository.createNote(title, text.take(MAX_NOTE_LENGTH), imageUris = imageUris, reminderAt = reminderAt)
+                // Solo si la nota realmente se creó.
                 DocuSmartAnalytics.logNoteCreated()
             }
         }
 
         fun deleteNote(note: NoteWithImages) {
-            viewModelScope.launch { noteRepository.deleteNote(note) }
+            launchLogged("eliminar nota") { noteRepository.deleteNote(note) }
         }
 
         fun deleteAllNotes() {
-            viewModelScope.launch { noteRepository.deleteAll(_uiState.value.notes) }
+            launchLogged("eliminar todas las notas") { noteRepository.deleteAll(_uiState.value.notes) }
         }
 
         fun showLinkDialog(noteId: String) {
@@ -89,7 +102,7 @@ class NotesViewModel
             noteId: String,
             documentId: String?,
         ) {
-            viewModelScope.launch {
+            launchLogged("vincular documento") {
                 noteRepository.linkDocument(noteId, documentId)
                 _uiState.update { it.copy(linkDocumentDialogForNoteId = null) }
             }
@@ -126,7 +139,7 @@ class NotesViewModel
             // llamar a esta función (ver NoteEditDialog).
             if (_uiState.value.editingNoteId != noteId) return
             _uiState.update { it.copy(editingNoteId = null) }
-            viewModelScope.launch {
+            launchLogged("actualizar nota") {
                 noteRepository.updateNote(
                     noteId,
                     title,
@@ -136,6 +149,24 @@ class NotesViewModel
                     removedImages,
                     newImageUris,
                 )
+            }
+        }
+
+        // Una excepción de Room/E-S dentro de viewModelScope.launch sin manejador
+        // tumba el proceso entero. Se registra solo el tipo de excepción
+        // (CrashlyticsTree reenvía todo >= WARN a Firebase: sin contenido de notas).
+        private fun launchLogged(
+            action: String,
+            block: suspend () -> Unit,
+        ) {
+            viewModelScope.launch {
+                try {
+                    block()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e("NotesViewModel: falló $action (${e.javaClass.simpleName})")
+                }
             }
         }
     }

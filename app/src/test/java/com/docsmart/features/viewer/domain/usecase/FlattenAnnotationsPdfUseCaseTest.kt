@@ -14,7 +14,10 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
@@ -124,7 +127,149 @@ class FlattenAnnotationsPdfUseCaseTest {
             assertEquals(30f, rect[3], EPS)
         }
 
+    @Test
+    fun `sin anotaciones devuelve null sin tocar el origen`() =
+        runTest {
+            // contentResolver no esta stubeado: si se intentara copiar, mockk lanzaria.
+            assertNull(useCase(mockk<Uri>(relaxed = true), emptyList()))
+        }
+
+    @Test
+    fun `el resaltado usa el color de la anotacion`() =
+        runTest {
+            stubResolver(createRotatedPdf(rawWidth = 200f, rawHeight = 300f, rotation = 0))
+
+            val result = useCase(mockk<Uri>(relaxed = true), listOf(highlight(10f, 20f, 30f, 40f)))
+
+            assertNotNull(result)
+            val pdfDoc = PdfDocument(PdfReader(result!!))
+            val content = String(pdfDoc.getPage(1).contentBytes, Charsets.ISO_8859_1)
+            pdfDoc.close()
+            // 0xFFFFEB3B -> r=255, g=235 (0.92), b=59 (0.23)
+            assertTrue(Regex("""1\s+0\.92\d*\s+0\.23\d*\s+rg""").containsMatchIn(content), content)
+        }
+
+    @Test
+    fun `una nota agrega un comentario nativo con su texto en el punto de anclaje`() =
+        runTest {
+            stubResolver(createRotatedPdf(rawWidth = 200f, rawHeight = 300f, rotation = 0))
+
+            val result = useCase(mockk<Uri>(relaxed = true), listOf(note(xPts = 50f, yPts = 60f, text = "revisar")))
+
+            assertNotNull(result)
+            val pdfDoc = PdfDocument(PdfReader(result!!))
+            val annotations = pdfDoc.getPage(1).annotations
+            pdfDoc.close()
+            assertEquals(1, annotations.size)
+            assertEquals("revisar", annotations[0].contents.toUnicodeString())
+            val rect = annotations[0].rectangle.toRectangle()
+            // Centro (50,60), lado 16 -> esquina inferior izquierda (42,52).
+            assertEquals(42f, rect.x, EPS)
+            assertEquals(52f, rect.y, EPS)
+            assertEquals(16f, rect.width, EPS)
+        }
+
+    @Test
+    fun `una nota en pagina rotada 90 grados se ancla en el punto crudo transformado`() =
+        runTest {
+            // visual (10,180) en pagina cruda 200x300 rotada 90 -> centro crudo (200-180, 10) = (20, 10).
+            stubResolver(createRotatedPdf(rawWidth = 200f, rawHeight = 300f, rotation = 90))
+
+            val result = useCase(mockk<Uri>(relaxed = true), listOf(note(xPts = 10f, yPts = 180f, text = "n")))
+
+            assertNotNull(result)
+            val pdfDoc = PdfDocument(PdfReader(result!!))
+            val rect = pdfDoc.getPage(1).annotations[0].rectangle.toRectangle()
+            pdfDoc.close()
+            assertEquals(12f, rect.x, EPS)
+            assertEquals(2f, rect.y, EPS)
+        }
+
+    @Test
+    fun `anotaciones de paginas fuera de rango se ignoran sin fallar`() =
+        runTest {
+            stubResolver(createRotatedPdf(rawWidth = 200f, rawHeight = 300f, rotation = 0))
+            val outOfRange = highlight(1f, 2f, 3f, 4f).copy(page = 5)
+            val zeroPage = highlight(1f, 2f, 3f, 4f).copy(page = 0)
+
+            val result = useCase(mockk<Uri>(relaxed = true), listOf(outOfRange, zeroPage))
+
+            assertNotNull(result)
+            val pdfDoc = PdfDocument(PdfReader(result!!))
+            val content = String(pdfDoc.getPage(1).contentBytes, Charsets.ISO_8859_1)
+            pdfDoc.close()
+            assertFalse(content.contains(" re"), content)
+        }
+
+    @Test
+    fun `no deja archivos temporales en cacheDir tras aplanar`() =
+        runTest {
+            stubResolver(createRotatedPdf(rawWidth = 200f, rawHeight = 300f, rotation = 0))
+
+            val result = useCase(mockk<Uri>(relaxed = true), listOf(highlight(1f, 2f, 3f, 4f)))
+
+            assertNotNull(result)
+            assertTrue(cacheDir.listFiles().orEmpty().isEmpty())
+            assertTrue(result!!.absolutePath.startsWith(filesDir.absolutePath))
+        }
+
+    @Test
+    fun `origen con esquema file inexistente devuelve null`() =
+        runTest {
+            val uri = mockk<Uri>()
+            every { uri.scheme } returns "file"
+            every { uri.path } returns File(cacheDir, "no-existe.pdf").absolutePath
+
+            assertNull(useCase(uri, listOf(highlight(1f, 2f, 3f, 4f))))
+        }
+
+    @Test
+    fun `origen con esquema file legible se aplana desde esa ruta`() =
+        runTest {
+            val source = File(filesDir, "origen.pdf")
+            source.writeBytes(createRotatedPdf(rawWidth = 200f, rawHeight = 300f, rotation = 0))
+            val uri = mockk<Uri>()
+            every { uri.scheme } returns "file"
+            every { uri.path } returns source.absolutePath
+
+            val result = useCase(uri, listOf(highlight(15f, 25f, 40f, 50f)))
+
+            assertNotNull(result)
+            assertEquals(15f, readRectangleOperator(result!!)[0], EPS)
+        }
+
+    @Test
+    fun `un content uri sin flujo legible devuelve null`() =
+        runTest {
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(any()) } returns null
+            every { context.contentResolver } returns resolver
+
+            assertNull(useCase(mockk<Uri>(relaxed = true), listOf(highlight(1f, 2f, 3f, 4f))))
+            assertTrue(cacheDir.listFiles().orEmpty().isEmpty())
+        }
+
+    @Test
+    fun `un PDF corrupto devuelve null y no deja salida parcial ni temporales`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(relaxed = true), listOf(highlight(1f, 2f, 3f, 4f)))
+
+            assertNull(result)
+            assertTrue(cacheDir.listFiles().orEmpty().isEmpty())
+            // Regresion: reader/writer se cerraban solo si PdfDocument() no lanzaba,
+            // dejando el archivo de salida abierto y sin poder borrarse.
+            assertTrue(File(filesDir, "viewer_share").listFiles().orEmpty().isEmpty())
+        }
+
     // ── helpers ────────────────────────────────────────────────────────────
+
+    private fun note(
+        xPts: Float,
+        yPts: Float,
+        text: String,
+    ) = highlight(xPts, yPts, 0f, 0f).copy(type = AnnotationType.NOTE, text = text)
 
     private fun highlight(
         xPts: Float,

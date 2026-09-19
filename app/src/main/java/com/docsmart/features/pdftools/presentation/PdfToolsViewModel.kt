@@ -48,6 +48,7 @@ import com.docsmart.features.pdftools.domain.usecase.SplitPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkPdfUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -170,7 +171,16 @@ class PdfToolsViewModel
         private val _uiState = MutableStateFlow(PdfToolsUiState())
         val uiState: StateFlow<PdfToolsUiState> = _uiState.asStateFlow()
 
+        // Ronda 15: sin guardar el Job de execute(), cambiar de herramienta (o
+        // reset()) mientras una ejecución seguía en curso reemplazaba el estado
+        // por uno nuevo con isProcessing=false, pero la corrutina vieja seguía
+        // viva y al terminar escribía su resultado (y registraba su uso diario)
+        // sobre la pantalla de la OTRA herramienta.
+        private var executeJob: Job? = null
+
         fun selectTool(tool: PdfTool) {
+            executeJob?.cancel()
+            executeJob = null
             if (tool != PdfTool.NONE) DocuSmartAnalytics.logPdfTool(tool.name)
             _uiState.update {
                 PdfToolsUiState(
@@ -389,7 +399,22 @@ class PdfToolsViewModel
             _uiState.update { it.copy(formFieldsDetected = false) }
             detectFormFieldsJob =
                 viewModelScope.launch {
-                    val fields = detectFormFields(uri)
+                    // Ronda 15: cualquier fallo no previsto por el use case
+                    // (p. ej. OutOfMemoryError con un PDF enorme) escapaba de
+                    // esta corrutina sin atrapar y crasheaba la app. Un fallo
+                    // se trata como "PDF sin campos".
+                    val fields =
+                        try {
+                            detectFormFields(uri)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: OutOfMemoryError) {
+                            Timber.e("$TAG: sin memoria detectando campos del formulario")
+                            emptyList()
+                        } catch (e: Exception) {
+                            Timber.e("$TAG: error detectando campos: ${e.javaClass.simpleName}")
+                            emptyList()
+                        }
                     _uiState.update {
                         it.copy(
                             formFields = fields,
@@ -439,64 +464,73 @@ class PdfToolsViewModel
                     .sanitizeOutputFileName(state.outputFileName)
                     .ifBlank { null }
 
-            viewModelScope.launch {
-                _uiState.update {
-                    it.copy(
-                        isProcessing = true,
-                        result = null,
-                        errorMessage = null,
-                    )
-                }
+            executeJob =
+                viewModelScope.launch {
+                    _uiState.update {
+                        it.copy(
+                            isProcessing = true,
+                            result = null,
+                            errorMessage = null,
+                        )
+                    }
 
-                // Hallazgo real de la revisión general 2026-09-16 (#23):
-                // runTool() no tenía ninguna protección propia -- un
-                // OutOfMemoryError (páginas de alta resolución en Comprimir/
-                // Recortar/etc.) u otra excepción no atrapada por el use case
-                // individual colgaba la corrutina para siempre, con
-                // isProcessing=true sin resetear y sin ningún mensaje.
-                val result =
-                    try {
-                        runTool(state, customName, messages)
-                    } catch (e: OutOfMemoryError) {
-                        Timber.e(e, "$TAG: sin memoria ejecutando ${state.selectedTool}")
-                        _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
-                        return@launch
-                    } catch (e: Exception) {
-                        Timber.e(e, "$TAG: error inesperado ejecutando ${state.selectedTool}")
-                        _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
+                    // Hallazgo real de la revisión general 2026-09-16 (#23):
+                    // runTool() no tenía ninguna protección propia -- un
+                    // OutOfMemoryError (páginas de alta resolución en Comprimir/
+                    // Recortar/etc.) u otra excepción no atrapada por el use case
+                    // individual colgaba la corrutina para siempre, con
+                    // isProcessing=true sin resetear y sin ningún mensaje.
+                    val result =
+                        try {
+                            runTool(state, customName, messages)
+                        } catch (e: OutOfMemoryError) {
+                            Timber.e("$TAG: sin memoria ejecutando ${state.selectedTool}")
+                            _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
+                            return@launch
+                        } catch (e: CancellationException) {
+                            // Ronda 15: CancellationException hereda de Exception --
+                            // sin este catch previo se mostraba como error genérico
+                            // y se pisaba el estado de la herramienta ya cambiada.
+                            throw e
+                        } catch (e: Exception) {
+                            // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a
+                            // Firebase y e.message puede contener rutas/URIs reales.
+                            val type = e.javaClass.simpleName
+                            Timber.e("$TAG: error inesperado ejecutando ${state.selectedTool}: $type")
+                            _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
+                            return@launch
+                        }
+                    if (result == null) {
+                        // Bug real encontrado 2026-09-14 (repaso general): antes se
+                        // salía con return@launch sin resetear isProcessing, dejando
+                        // la UI bloqueada en estado de carga para siempre. Hoy solo
+                        // es alcanzable si runAdvancedTool no encuentra una rama
+                        // válida (p. ej. FIRMAR sin firma capturada), pero es un
+                        // hueco real en la máquina de estados.
+                        _uiState.update { it.copy(isProcessing = false) }
                         return@launch
                     }
-                if (result == null) {
-                    // Bug real encontrado 2026-09-14 (repaso general): antes se
-                    // salía con return@launch sin resetear isProcessing, dejando
-                    // la UI bloqueada en estado de carga para siempre. Hoy solo
-                    // es alcanzable si runAdvancedTool no encuentra una rama
-                    // válida (p. ej. FIRMAR sin firma capturada), pero es un
-                    // hueco real en la máquina de estados.
-                    _uiState.update { it.copy(isProcessing = false) }
-                    return@launch
-                }
 
-                Timber.d("Resultado: $result")
+                    Timber.d("Resultado: $result")
 
-                if (result is PdfToolResult.Success || result is PdfToolResult.MultiSuccess) {
-                    dailyLimitManager.registerPdfTool(state.selectedTool.name)
-                }
+                    if (result is PdfToolResult.Success || result is PdfToolResult.MultiSuccess) {
+                        dailyLimitManager.registerPdfTool(state.selectedTool.name)
+                    }
 
-                _uiState.update {
-                    it.copy(
-                        isProcessing = false,
-                        result = result,
-                        toolUseCount = dailyLimitManager.getPdfToolCount(state.selectedTool.name),
-                        errorMessage =
-                            if (result is PdfToolResult.Error) {
-                                result.message
-                            } else {
-                                null
-                            },
-                    )
+                    _uiState.update {
+                        it.copy(
+                            isProcessing = false,
+                            result = result,
+                            toolUseCount = dailyLimitManager.getPdfToolCount(state.selectedTool.name),
+                            errorMessage =
+                                if (result is PdfToolResult.Error) {
+                                    result.message
+                                } else {
+                                    null
+                                },
+                        )
+                    }
                 }
-            }
         }
 
         // Extraído de execute() para mantener su complejidad ciclomática bajo el
@@ -690,7 +724,7 @@ class PdfToolsViewModel
                     Intent.createChooser(intent, chooserTitle),
                 )
             } catch (e: Exception) {
-                Timber.e("Error compartiendo: ${e.message}")
+                Timber.e("Error compartiendo: ${e.javaClass.simpleName}")
                 _uiState.update {
                     it.copy(errorMessage = errorMessage)
                 }
@@ -720,7 +754,7 @@ class PdfToolsViewModel
                     Intent.createChooser(intent, chooserTitle),
                 )
             } catch (e: Exception) {
-                Timber.e("Error compartiendo varios archivos: ${e.message}")
+                Timber.e("Error compartiendo varios archivos: ${e.javaClass.simpleName}")
                 _uiState.update {
                     it.copy(errorMessage = errorMessage)
                 }
@@ -732,40 +766,48 @@ class PdfToolsViewModel
             errorMessage: String,
         ) {
             if (_uiState.value.isSaving) return
-            when (val result = _uiState.value.result) {
-                is PdfToolResult.Success ->
-                    viewModelScope.launch {
-                        _uiState.update { it.copy(isSaving = true) }
-                        val saved = DownloadsSaver.saveFile(context, result.outputFile, "application/pdf")
-                        _uiState.update { state ->
-                            if (saved) {
-                                state.copy(savedToDownloads = true, isSaving = false)
-                            } else {
-                                state.copy(errorMessage = errorMessage, isSaving = false)
-                            }
-                        }
+            val targets =
+                when (val result = _uiState.value.result) {
+                    is PdfToolResult.Success -> listOf(result.outputFile to "application/pdf")
+                    is PdfToolResult.MultiSuccess ->
+                        result.outputFiles.map { it to DownloadsSaver.mimeTypeForExtension(it.extension) }
+                    else -> return
+                }
+            // MultiSuccess sin archivos: .all{} sobre una lista vacía da true y
+            // marcaría "guardado" sin haber guardado nada.
+            if (targets.isEmpty()) return
+
+            _uiState.update { it.copy(isSaving = true) }
+            viewModelScope.launch {
+                // Ronda 15: sin try/catch, una excepción (o un OutOfMemoryError
+                // copiando un archivo grande a MediaStore) dejaba isSaving=true
+                // para siempre (botón bloqueado) o crasheaba la app. .map{} (no
+                // .all{}) para intentar todos aunque uno falle.
+                val saved =
+                    try {
+                        targets.map { (file, mime) -> DownloadsSaver.saveFile(context, file, mime) }.all { it }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: OutOfMemoryError) {
+                        Timber.e("$TAG: sin memoria guardando en Descargas")
+                        false
+                    } catch (e: Exception) {
+                        Timber.e("$TAG: error guardando en Descargas: ${e.javaClass.simpleName}")
+                        false
                     }
-                is PdfToolResult.MultiSuccess ->
-                    viewModelScope.launch {
-                        _uiState.update { it.copy(isSaving = true) }
-                        val allSaved =
-                            result.outputFiles
-                                .map { file ->
-                                    DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
-                                }.all { it }
-                        _uiState.update { state ->
-                            if (allSaved) {
-                                state.copy(savedToDownloads = true, isSaving = false)
-                            } else {
-                                state.copy(errorMessage = errorMessage, isSaving = false)
-                            }
-                        }
+                _uiState.update { state ->
+                    if (saved) {
+                        state.copy(savedToDownloads = true, isSaving = false)
+                    } else {
+                        state.copy(errorMessage = errorMessage, isSaving = false)
                     }
-                else -> Unit
+                }
             }
         }
 
         fun reset() {
+            executeJob?.cancel()
+            executeJob = null
             _uiState.update { PdfToolsUiState() }
         }
 

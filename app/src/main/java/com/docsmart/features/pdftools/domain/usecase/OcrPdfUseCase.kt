@@ -191,6 +191,7 @@ class OcrPdfUseCase
                     }
 
                     if (output.length() == 0L) {
+                        output.delete()
                         return@withContext PdfToolResult.Error(messages.generateError)
                     }
                     if (processedPages == 0) {
@@ -220,8 +221,17 @@ class OcrPdfUseCase
                     // finally).
                     outputFile?.delete()
                     throw e
+                } catch (e: OutOfMemoryError) {
+                    // Ronda 15: renderizar páginas a 3x es el punto más propenso a
+                    // OutOfMemoryError de todas las herramientas PDF, y no hereda
+                    // de Exception -- el .pdf de salida (ya abierto por PdfWriter)
+                    // quedaba huérfano. Se relanza para que el ViewModel lo reporte.
+                    outputFile?.delete()
+                    throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error al aplicar OCR")
+                    // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase
+                    // y e.message puede contener rutas/URIs reales.
+                    Timber.e("$TAG: error al aplicar OCR: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
                 } finally {
@@ -280,26 +290,31 @@ class OcrPdfUseCase
             if (PdfTextExtractor.getTextFromPage(page).isNotBlank()) return null
 
             val bitmap = renderPageBitmap(renderer, pageNumber - 1, RENDER_SCALE)
-            val recognized = recognizeText(recognizer, bitmap)
-            val words = drawInvisibleTextLayer(page, pdf, recognized, font, RENDER_SCALE)
-            bitmap.recycle()
-            return words
+            // Ronda 15: si el reconocimiento de ML Kit fallaba, el bitmap de
+            // ~216 dpi (decenas de MB) no se reciclaba.
+            return try {
+                val recognized = recognizeText(recognizer, bitmap)
+                drawInvisibleTextLayer(page, pdf, recognized, font, RENDER_SCALE)
+            } finally {
+                bitmap.recycle()
+            }
         }
 
         private fun renderPageBitmap(
             renderer: PdfRenderer,
             index: Int,
             scale: Float,
-        ): Bitmap {
-            val page = renderer.openPage(index)
-            val width = (page.width * scale).toInt().coerceAtLeast(1)
-            val height = (page.height * scale).toInt().coerceAtLeast(1)
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            bitmap.eraseColor(Color.WHITE)
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            page.close()
-            return bitmap
-        }
+        ): Bitmap =
+            // .use{}: page.close() manual se salteaba si createBitmap/render
+            // lanzaban (OOM), dejando la página del renderer abierta.
+            renderer.openPage(index).use { page ->
+                val width = (page.width * scale).toInt().coerceAtLeast(1)
+                val height = (page.height * scale).toInt().coerceAtLeast(1)
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                bitmap.eraseColor(Color.WHITE)
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                bitmap
+            }
 
         private fun recognizeText(
             recognizer: TextRecognizer,
@@ -355,18 +370,29 @@ class OcrPdfUseCase
             canvas.restoreState()
         }
 
-        private fun copyUriToCache(uri: Uri): File? {
+        // internal para poder testear el borrado del archivo de cache parcial.
+        internal fun copyUriToCache(uri: Uri): File? {
+            val file = File(context.cacheDir, "ocr_${System.currentTimeMillis()}.pdf")
             return try {
-                val file = File(context.cacheDir, "ocr_${System.currentTimeMillis()}.pdf")
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    file.outputStream().use { output ->
-                        val bytes = input.copyTo(output)
-                        if (bytes == 0L) return null
+                val bytes =
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        file.outputStream().use { output -> input.copyTo(output) }
                     }
-                } ?: return null
-                file
+                // Ronda 15: con 0 bytes o stream nulo se devolvía null dejando el
+                // archivo (vacío o parcial) huérfano en cacheDir -- cacheFile del
+                // llamador todavía era null, así que su finally nunca lo borraba.
+                if (bytes == null || bytes == 0L) {
+                    file.delete()
+                    null
+                } else {
+                    file
+                }
+            } catch (e: CancellationException) {
+                file.delete()
+                throw e
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
+                file.delete()
                 null
             }
         }

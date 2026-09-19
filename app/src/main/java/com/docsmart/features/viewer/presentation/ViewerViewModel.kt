@@ -40,6 +40,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -204,6 +205,8 @@ class ViewerViewModel
         private var saveLastPageJob: Job? = null
         private var linkedNotesJob: Job? = null
         private var searchJob: Job? = null
+        private var unlockJob: Job? = null
+        private var loadJob: Job? = null
 
         // HU-46: se re-suscribe cada vez que cambia el documento cargado --
         // Flow, no una sola carga, para que altas/bajas hechas en esta misma
@@ -279,33 +282,36 @@ class ViewerViewModel
             pendingDocumentId = documentId
             pendingContext = context.applicationContext
             Timber.d("$TAG: loadDocument START → id=$documentId")
-            viewModelScope.launch {
-                _uiState.update {
-                    it.copy(
-                        isLoading = true,
-                        error = null,
-                        requiresPassword = false,
-                        passwordError = null,
-                    )
-                }
-                try {
-                    loadDocumentOrMock(documentId, context)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error inesperado → ${e.javaClass.name}: ${e.message}")
-                    // Bug real encontrado 2026-09-14: este mensaje estaba
-                    // hardcodeado en español, saltándose el sistema de 12
-                    // idiomas -- reusa viewer_error, el mismo texto que la UI ya
-                    // mostraba como fallback cuando error era null.
+            loadJob?.cancel()
+            unlockJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            error = context.getString(R.string.viewer_error),
+                            isLoading = true,
+                            error = null,
+                            requiresPassword = false,
+                            passwordError = null,
                         )
                     }
+                    try {
+                        loadDocumentOrMock(documentId, context)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.e("$TAG: error inesperado → ${e.javaClass.simpleName}")
+                        // Bug real encontrado 2026-09-14: este mensaje estaba
+                        // hardcodeado en español, saltándose el sistema de 12
+                        // idiomas -- reusa viewer_error, el mismo texto que la UI ya
+                        // mostraba como fallback cuando error era null.
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = context.getString(R.string.viewer_error),
+                            )
+                        }
+                    }
                 }
-            }
         }
 
         private fun isRealUri(documentId: String) =
@@ -408,6 +414,10 @@ class ViewerViewModel
                     isLoading = false,
                     requiresPassword = true,
                     error = null,
+                    // Un PDF protegido dentro de secure_preview/ tambien es solo
+                    // lectura: sin esto, tras desbloquearlo se registraba en el
+                    // historial y se habilitaban anotaciones/favoritos.
+                    isReadOnlyPreview = isPreviewCacheDocument(uriString),
                 )
             }
         }
@@ -486,14 +496,18 @@ class ViewerViewModel
             readerProps: ReaderProperties,
         ): Boolean =
             try {
-                val r1 = PdfReader(cacheIn.absolutePath, readerProps)
-                r1.setUnethicalReading(true)
-                r1.setMemorySavingMode(true)
-                val srcDoc = PdfDocument(r1)
-                val destDoc = PdfDocument(PdfWriter(cacheOut.absolutePath, WriterProperties()))
-                srcDoc.copyPagesTo(1, srcDoc.numberOfPages, destDoc)
-                srcDoc.close()
-                destDoc.close()
+                // `use` en el reader: si copyPagesTo lanza, el descriptor del
+                // archivo de entrada no debe quedar abierto (fuga de fd, y en
+                // sistemas que bloquean archivos abiertos no se podria borrar).
+                PdfReader(cacheIn.absolutePath, readerProps).use { r1 ->
+                    r1.setUnethicalReading(true)
+                    r1.setMemorySavingMode(true)
+                    val srcDoc = PdfDocument(r1)
+                    val destDoc = PdfDocument(PdfWriter(cacheOut.absolutePath, WriterProperties()))
+                    srcDoc.copyPagesTo(1, srcDoc.numberOfPages, destDoc)
+                    srcDoc.close()
+                    destDoc.close()
+                }
                 Timber.d("$TAG: Intento 1 copyPagesTo → ${cacheOut.length()}b")
 
                 // ── Verificar que el output NO está encriptado ────────
@@ -503,7 +517,7 @@ class ViewerViewModel
             } catch (e1: CancellationException) {
                 throw e1
             } catch (e1: Exception) {
-                Timber.w("$TAG: Intento 1 falló → ${e1.message}")
+                Timber.w("$TAG: Intento 1 falló → ${e1.javaClass.simpleName}")
                 false
             }
 
@@ -517,11 +531,11 @@ class ViewerViewModel
         ): Boolean {
             if (cacheOut.exists()) cacheOut.delete()
             return try {
-                val r2 = PdfReader(cacheIn.absolutePath, readerProps)
-                r2.setUnethicalReading(true)
-                r2.setMemorySavingMode(true)
-                val doc = PdfDocument(r2, PdfWriter(cacheOut.absolutePath, WriterProperties()))
-                doc.close()
+                PdfReader(cacheIn.absolutePath, readerProps).use { r2 ->
+                    r2.setUnethicalReading(true)
+                    r2.setMemorySavingMode(true)
+                    PdfDocument(r2, PdfWriter(cacheOut.absolutePath, WriterProperties())).close()
+                }
                 Timber.d("$TAG: Intento 2 PdfDocument directo → ${cacheOut.length()}b")
 
                 val stillEncrypted2 = isStillEncrypted(cacheOut)
@@ -530,7 +544,7 @@ class ViewerViewModel
             } catch (e2: CancellationException) {
                 throw e2
             } catch (e2: Exception) {
-                Timber.w("$TAG: Intento 2 falló → ${e2.message}")
+                Timber.w("$TAG: Intento 2 falló → ${e2.javaClass.simpleName}")
                 false
             }
         }
@@ -544,13 +558,13 @@ class ViewerViewModel
         ): Boolean =
             try {
                 if (cacheOut.exists()) cacheOut.delete()
-                val r3 = PdfReader(cacheIn.absolutePath, readerProps)
-                r3.setUnethicalReading(true)
-                val stamps =
-                    com.itextpdf.kernel.pdf
-                        .StampingProperties()
-                val doc3 = PdfDocument(r3, PdfWriter(cacheOut.absolutePath, WriterProperties()), stamps)
-                doc3.close()
+                PdfReader(cacheIn.absolutePath, readerProps).use { r3 ->
+                    r3.setUnethicalReading(true)
+                    val stamps =
+                        com.itextpdf.kernel.pdf
+                            .StampingProperties()
+                    PdfDocument(r3, PdfWriter(cacheOut.absolutePath, WriterProperties()), stamps).close()
+                }
                 Timber.d("$TAG: Intento 3 StampingProperties → ${cacheOut.length()}b")
                 // Bug real encontrado 2026-09-14 (repaso general): a diferencia
                 // de los Intentos 1 y 2, este nunca verificaba que el archivo
@@ -563,21 +577,46 @@ class ViewerViewModel
                 // silencio más adelante al intentar renderizarlo.
                 cacheOut.exists() && cacheOut.length() > 100L && !isStillEncrypted(cacheOut)
             } catch (e3: Exception) {
-                Timber.w("$TAG: Intento 3 falló → ${e3.message}")
+                Timber.w("$TAG: Intento 3 falló → ${e3.javaClass.simpleName}")
                 false
             }
+
+        // true si iText acepta la contrasena; false solo ante BadPasswordException
+        // (comparada por nombre: su paquete cambio entre versiones de iText).
+        // Cualquier otro error (PDF corrupto) se relanza al catch general.
+        @Suppress("TooGenericExceptionCaught")
+        private fun isPasswordAccepted(
+            file: File,
+            readerProps: ReaderProperties,
+        ): Boolean {
+            val reader = PdfReader(file.absolutePath, readerProps)
+            return try {
+                reader.setUnethicalReading(true)
+                PdfDocument(reader).close()
+                true
+            } catch (e: Exception) {
+                if (e.javaClass.simpleName == "BadPasswordException") false else throw e
+            } finally {
+                try {
+                    reader.close()
+                } catch (ignored: Exception) {
+                    // ya cerrado por PdfDocument.close()
+                }
+            }
+        }
 
         // Compartido entre los 3 intentos de unlockPdfWithPassword -- confirma
         // que el archivo de salida realmente ya no requiere contraseña.
         private fun isStillEncrypted(file: File): Boolean =
             try {
-                val vr = PdfReader(file.absolutePath)
-                val enc = vr.isEncrypted
-                PdfDocument(vr).close()
-                enc
+                PdfReader(file.absolutePath).use { vr ->
+                    val enc = vr.isEncrypted
+                    PdfDocument(vr).close()
+                    enc
+                }
             } catch (ve: Exception) {
                 val msg = ve.message?.lowercase() ?: ""
-                Timber.e("$TAG: verificación output → ${ve.message}")
+                Timber.e("$TAG: verificación output → ${ve.javaClass.simpleName}")
                 msg.contains("password") || msg.contains("encrypt")
             }
 
@@ -621,9 +660,9 @@ class ViewerViewModel
                 Timber.d("$TAG: cacheFile size=${cacheFile.length()} — abriendo con PdfReader")
                 var isEncrypted = false
                 try {
-                    val reader = PdfReader(cacheFile.absolutePath)
-                    val doc = PdfDocument(reader)
-                    doc.close()
+                    // `use`: si PdfDocument lanza (PDF cifrado), el reader debe
+                    // cerrarse igual antes de borrar cacheFile en el finally.
+                    PdfReader(cacheFile.absolutePath).use { reader -> PdfDocument(reader).close() }
                     isEncrypted = false
                 } catch (e: Exception) {
                     val msg = e.message?.lowercase() ?: ""
@@ -639,7 +678,7 @@ class ViewerViewModel
                 isEncrypted
             } catch (e: Exception) {
                 val msg = e.message?.lowercase() ?: ""
-                Timber.e("$TAG: isPdfPasswordProtected EXCEPCION → clase=${e.javaClass.name} msg=${e.message}")
+                Timber.e("$TAG: isPdfPasswordProtected EXCEPCION → clase=${e.javaClass.simpleName}")
                 msg.contains("password") ||
                     msg.contains("encrypt") ||
                     msg.contains("decrypt") ||
@@ -655,103 +694,108 @@ class ViewerViewModel
             val context = pendingContext ?: return
             val uri = _uiState.value.fileUri ?: return
             val originalId = pendingDocumentId
+            // Doble toque en "Desbloquear": dos desbloqueos concurrentes
+            // compartirian nombres de archivo temporales (currentTimeMillis).
+            if (unlockJob?.isActive == true) return
 
-            viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, passwordError = null) }
+            unlockJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true, passwordError = null) }
 
-                withContext(Dispatchers.IO) {
-                    // Revisión adversarial de correctitud (ronda 11): cacheIn/
-                    // cacheOut declarados fuera del try -- si la corrutina se
-                    // cancela (el usuario navega fuera del Visor mientras el
-                    // desbloqueo, potencialmente lento para un PDF grande, sigue
-                    // en curso), el finally de abajo los borra igual que un
-                    // catch de Exception, en vez de quedar huérfanos para
-                    // siempre en cacheDir. `committed` protege el único caso
-                    // donde cacheOut SÍ debe sobrevivir: cuando ya quedó
-                    // publicado en el estado como el PDF desbloqueado en uso.
-                    var cacheIn: File? = null
-                    var cacheOut: File? = null
-                    var committed = false
-                    try {
-                        val localCacheIn = File(context.cacheDir, "temp_locked_${System.currentTimeMillis()}.pdf")
-                        cacheIn = localCacheIn
+                    withContext(Dispatchers.IO) {
+                        // Revisión adversarial de correctitud (ronda 11): cacheIn/
+                        // cacheOut declarados fuera del try -- si la corrutina se
+                        // cancela (el usuario navega fuera del Visor mientras el
+                        // desbloqueo, potencialmente lento para un PDF grande, sigue
+                        // en curso), el finally de abajo los borra igual que un
+                        // catch de Exception, en vez de quedar huérfanos para
+                        // siempre en cacheDir. `committed` protege el único caso
+                        // donde cacheOut SÍ debe sobrevivir: cuando ya quedó
+                        // publicado en el estado como el PDF desbloqueado en uso.
+                        var cacheIn: File? = null
+                        var cacheOut: File? = null
+                        var committed = false
+                        try {
+                            val localCacheIn = File(context.cacheDir, "temp_locked_${System.currentTimeMillis()}.pdf")
+                            cacheIn = localCacheIn
 
-                        // ── Copiar archivo original al caché ──────────────────────
-                        when {
-                            originalId.startsWith("/") -> {
-                                val src = File(originalId)
-                                Timber.d("$TAG: unlock ruta absoluta path=$originalId existe=${src.exists()}")
-                                if (!src.exists()) {
-                                    // Bug real encontrado 2026-09-14: hardcodeado
-                                    // en español -- reusa pdf_pw_read_error
-                                    // (mismo mensaje que ya usa PdfPasswordScreen
-                                    // para este mismo escenario).
-                                    val readError = context.getString(R.string.pdf_pw_read_error)
-                                    _uiState.update { it.copy(isLoading = false, passwordError = readError) }
-                                    return@withContext
+                            // ── Copiar archivo original al caché ──────────────────────
+                            when {
+                                originalId.startsWith("/") -> {
+                                    val src = File(originalId)
+                                    Timber.d("$TAG: unlock ruta absoluta path=$originalId existe=${src.exists()}")
+                                    if (!src.exists()) {
+                                        // Bug real encontrado 2026-09-14: hardcodeado
+                                        // en español -- reusa pdf_pw_read_error
+                                        // (mismo mensaje que ya usa PdfPasswordScreen
+                                        // para este mismo escenario).
+                                        val readError = context.getString(R.string.pdf_pw_read_error)
+                                        _uiState.update { it.copy(isLoading = false, passwordError = readError) }
+                                        return@withContext
+                                    }
+                                    src.copyTo(localCacheIn, overwrite = true)
                                 }
-                                src.copyTo(localCacheIn, overwrite = true)
+                                uri.scheme == "file" -> {
+                                    val path = uri.path
+                                    if (path == null) {
+                                        val readError = context.getString(R.string.pdf_pw_read_error)
+                                        _uiState.update { it.copy(isLoading = false, passwordError = readError) }
+                                        return@withContext
+                                    }
+                                    val src = File(path)
+                                    Timber.d("$TAG: unlock file:// path=$path existe=${src.exists()}")
+                                    if (!src.exists()) {
+                                        // Bug real encontrado 2026-09-14: hardcodeado
+                                        // en español -- reusa pdf_pw_read_error
+                                        // (mismo mensaje que ya usa PdfPasswordScreen
+                                        // para este mismo escenario).
+                                        val readError = context.getString(R.string.pdf_pw_read_error)
+                                        _uiState.update { it.copy(isLoading = false, passwordError = readError) }
+                                        return@withContext
+                                    }
+                                    src.copyTo(localCacheIn, overwrite = true)
+                                }
+                                else -> {
+                                    val opened = context.contentResolver.openInputStream(uri)
+                                    if (opened == null) {
+                                        // Hallazgo real de la auditoría general
+                                        // 2026-09-17 (quinta pasada): a diferencia de
+                                        // las otras 2 ramas, esta no comprobaba si el
+                                        // archivo era legible -- un permiso SAF
+                                        // revocado o un proveedor caído hacía que
+                                        // openInputStream() devolviera null, cacheIn
+                                        // quedaba vacío/inexistente, y el intento de
+                                        // PdfReader de más abajo fallaba con la misma
+                                        // excepción que "contraseña incorrecta" --
+                                        // el usuario reintentaba la contraseña
+                                        // correcta sin poder resolver el problema
+                                        // real.
+                                        val readError = context.getString(R.string.pdf_pw_read_error)
+                                        _uiState.update { it.copy(isLoading = false, passwordError = readError) }
+                                        return@withContext
+                                    }
+                                    opened.use { input ->
+                                        localCacheIn.outputStream().use { output -> input.copyTo(output) }
+                                    }
+                                }
                             }
-                            uri.scheme == "file" -> {
-                                val path = uri.path ?: return@withContext
-                                val src = File(path)
-                                Timber.d("$TAG: unlock file:// path=$path existe=${src.exists()}")
-                                if (!src.exists()) {
-                                    // Bug real encontrado 2026-09-14: hardcodeado
-                                    // en español -- reusa pdf_pw_read_error
-                                    // (mismo mensaje que ya usa PdfPasswordScreen
-                                    // para este mismo escenario).
-                                    val readError = context.getString(R.string.pdf_pw_read_error)
-                                    _uiState.update { it.copy(isLoading = false, passwordError = readError) }
-                                    return@withContext
-                                }
-                                src.copyTo(localCacheIn, overwrite = true)
-                            }
-                            else -> {
-                                val opened = context.contentResolver.openInputStream(uri)
-                                if (opened == null) {
-                                    // Hallazgo real de la auditoría general
-                                    // 2026-09-17 (quinta pasada): a diferencia de
-                                    // las otras 2 ramas, esta no comprobaba si el
-                                    // archivo era legible -- un permiso SAF
-                                    // revocado o un proveedor caído hacía que
-                                    // openInputStream() devolviera null, cacheIn
-                                    // quedaba vacío/inexistente, y el intento de
-                                    // PdfReader de más abajo fallaba con la misma
-                                    // excepción que "contraseña incorrecta" --
-                                    // el usuario reintentaba la contraseña
-                                    // correcta sin poder resolver el problema
-                                    // real.
-                                    val readError = context.getString(R.string.pdf_pw_read_error)
-                                    _uiState.update { it.copy(isLoading = false, passwordError = readError) }
-                                    return@withContext
-                                }
-                                opened.use { input ->
-                                    localCacheIn.outputStream().use { output -> input.copyTo(output) }
-                                }
-                            }
-                        }
 
-                        Timber.d("$TAG: cacheIn copiado → ${localCacheIn.length()}b")
+                            Timber.d("$TAG: cacheIn copiado → ${localCacheIn.length()}b")
 
-                        val userPass = password.toByteArray()
-                        val readerProps = ReaderProperties().setPassword(userPass)
+                            val userPass = password.toByteArray()
+                            val readerProps = ReaderProperties().setPassword(userPass)
 
-                        // ── Verificar contraseña ──────────────────────────────────
-                        val testReader =
-                            try {
-                                val r = PdfReader(localCacheIn.absolutePath, readerProps)
-                                r.setUnethicalReading(true)
-                                r
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
+                            // ── Verificar contraseña ──────────────────────────────────
+                            // Hallazgo real de la ronda 15: antes solo se construia el
+                            // PdfReader -- en iText7 esa construccion NO valida la
+                            // contrasena (la validacion ocurre al abrir el PdfDocument),
+                            // asi que una contrasena incorrecta nunca llegaba a este
+                            // mensaje: caia mas abajo en los 3 intentos de desbloqueo y
+                            // terminaba mostrando "no se pudo desbloquear" en vez de
+                            // "contrasena incorrecta, reintenta".
+                            if (!isPasswordAccepted(localCacheIn, readerProps)) {
                                 localCacheIn.delete()
-                                Timber.w("$TAG: contraseña incorrecta → ${e.message}")
-                                // Bug real encontrado 2026-09-14 (repaso general):
-                                // hardcodeado en español -- reusa
-                                // pdf_pw_wrong_password_retry (mismo texto que ya
-                                // usa PdfPasswordScreen para este mismo escenario).
+                                Timber.w("$TAG: contraseña incorrecta")
                                 _uiState.update {
                                     it.copy(
                                         isLoading = false,
@@ -760,101 +804,115 @@ class ViewerViewModel
                                 }
                                 return@withContext
                             }
-                        testReader.close()
 
-                        val localCacheOut = File(context.cacheDir, "unlocked_${System.currentTimeMillis()}.pdf")
-                        cacheOut = localCacheOut
+                            val localCacheOut = File(context.cacheDir, "unlocked_${System.currentTimeMillis()}.pdf")
+                            cacheOut = localCacheOut
 
-                        // ── Intento 1: copyPagesTo (sin encriptación) ─────────────
-                        var success = tryDirectCopyUnlock(localCacheIn, localCacheOut, readerProps)
+                            // ── Intento 1: copyPagesTo (sin encriptación) ─────────────
+                            var success = tryDirectCopyUnlock(localCacheIn, localCacheOut, readerProps)
 
-                        // ── Intento 2: PdfDocument directo si copyPagesTo falla ───
-                        if (!success) success = tryDirectDocumentUnlock(localCacheIn, localCacheOut, readerProps)
+                            // ── Intento 2: PdfDocument directo si copyPagesTo falla ───
+                            if (!success) success = tryDirectDocumentUnlock(localCacheIn, localCacheOut, readerProps)
 
-                        // ── Intento 3: StampingProperties sin appendMode ──────────
-                        if (!success) success = tryStampingUnlock(localCacheIn, localCacheOut, readerProps)
+                            // ── Intento 3: StampingProperties sin appendMode ──────────
+                            if (!success) success = tryStampingUnlock(localCacheIn, localCacheOut, readerProps)
 
-                        localCacheIn.delete()
+                            localCacheIn.delete()
 
-                        if (!success || !localCacheOut.exists() || localCacheOut.length() < 100L) {
-                            // Bug real encontrado 2026-09-14 (repaso general): si
-                            // los 3 intentos fallan, cacheOut (creado/reescrito
-                            // por cada intento) quedaba huérfano en cacheDir para
-                            // siempre -- nada barre ese directorio.
-                            if (localCacheOut.exists()) localCacheOut.delete()
-                            Timber.e("$TAG: todos los intentos fallaron")
+                            if (!success || !localCacheOut.exists() || localCacheOut.length() < 100L) {
+                                // Bug real encontrado 2026-09-14 (repaso general): si
+                                // los 3 intentos fallan, cacheOut (creado/reescrito
+                                // por cada intento) quedaba huérfano en cacheDir para
+                                // siempre -- nada barre ese directorio.
+                                if (localCacheOut.exists()) localCacheOut.delete()
+                                Timber.e("$TAG: todos los intentos fallaron")
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        passwordError = context.getString(R.string.viewer_decrypt_failed),
+                                    )
+                                }
+                                return@withContext
+                            }
+
+                            Timber.d("$TAG: PDF desbloqueado exitosamente → ${localCacheOut.length()}b")
+                            // Id ya publicado en el estado, no originalId crudo (pueden diferir)
+                            val unlockedDocumentId = _uiState.value.document?.id ?: originalId
+                            val readOnly = _uiState.value.isReadOnlyPreview
+                            // Revisión adversarial ronda 15: todo el cuerpo de este
+                            // withContext es bloqueante (copia + intentos de iText), sin
+                            // puntos de suspensión -- cerrar el diálogo (unlockJob.cancel())
+                            // no se notaba y igual se publicaba el PDF desbloqueado.
+                            ensureActive()
+                            if (!readOnly) recordHistoryOpen(unlockedDocumentId)
+                            // Bug real encontrado por la revisión de seguridad HU-46: para un PDF
+                            // protegido con contraseña, observeAnnotations() nunca se llamaba (solo
+                            // publishLoadedDocument() la dispara, y ese camino no se usa para PDFs
+                            // que piden contraseña) -- las anotaciones creadas tras desbloquear
+                            // quedaban invisibles y shareDocument() tomaba siempre el camino "sin
+                            // anotaciones" en silencio, aunque el usuario ya hubiera resaltado/anotado.
+                            observeAnnotations(unlockedDocumentId)
+                            // Mismo criterio que publishLoadedDocument(): sin esto un PDF
+                            // protegido nunca mostraba marcadores ni saltaba a la ultima
+                            // pagina vista tras desbloquearse.
+                            if (!readOnly) {
+                                observeBookmarks(unlockedDocumentId)
+                                loadLastViewedPage(unlockedDocumentId)
+                                observeLinkedNotes(unlockedDocumentId)
+                            }
+                            // Marcado ANTES de publicar el estado: MutableStateFlow.update
+                            // es una operación atómica, así que si se cancela justo acá,
+                            // o ya se aplicó por completo (cacheOut correctamente en uso,
+                            // no debe borrarse) o no se aplicó en absoluto (y el catch de
+                            // CancellationException de abajo relanza sin publicar nada) --
+                            // no hay estado intermedio a proteger.
+                            committed = true
+                            _uiState.update { state ->
+                                state.copy(
+                                    isLoading = false,
+                                    requiresPassword = false,
+                                    passwordError = null,
+                                    decryptedFile = localCacheOut,
+                                    fileUri = Uri.fromFile(localCacheOut),
+                                    mimeType = MIME_PDF,
+                                    error = null,
+                                    document = state.document?.copy(),
+                                )
+                            }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.e("$TAG: error desbloqueando PDF → ${e.javaClass.simpleName}")
                             _uiState.update {
                                 it.copy(
                                     isLoading = false,
-                                    passwordError = context.getString(R.string.viewer_decrypt_failed),
+                                    passwordError =
+                                        String.format(
+                                            context.getString(R.string.viewer_open_error_format),
+                                            e.message ?: "",
+                                        ),
                                 )
                             }
-                            return@withContext
-                        }
-
-                        Timber.d("$TAG: PDF desbloqueado exitosamente → ${localCacheOut.length()}b")
-                        // Id ya publicado en el estado, no originalId crudo (pueden diferir)
-                        val unlockedDocumentId = _uiState.value.document?.id ?: originalId
-                        recordHistoryOpen(unlockedDocumentId)
-                        // Bug real encontrado por la revisión de seguridad HU-46: para un PDF
-                        // protegido con contraseña, observeAnnotations() nunca se llamaba (solo
-                        // publishLoadedDocument() la dispara, y ese camino no se usa para PDFs
-                        // que piden contraseña) -- las anotaciones creadas tras desbloquear
-                        // quedaban invisibles y shareDocument() tomaba siempre el camino "sin
-                        // anotaciones" en silencio, aunque el usuario ya hubiera resaltado/anotado.
-                        observeAnnotations(unlockedDocumentId)
-                        // Marcado ANTES de publicar el estado: MutableStateFlow.update
-                        // es una operación atómica, así que si se cancela justo acá,
-                        // o ya se aplicó por completo (cacheOut correctamente en uso,
-                        // no debe borrarse) o no se aplicó en absoluto (y el catch de
-                        // CancellationException de abajo relanza sin publicar nada) --
-                        // no hay estado intermedio a proteger.
-                        committed = true
-                        _uiState.update { state ->
-                            state.copy(
-                                isLoading = false,
-                                requiresPassword = false,
-                                passwordError = null,
-                                decryptedFile = localCacheOut,
-                                fileUri = Uri.fromFile(localCacheOut),
-                                mimeType = MIME_PDF,
-                                error = null,
-                                document = state.document?.copy(),
-                            )
-                        }
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Timber.e(e, "$TAG: error desbloqueando PDF → ${e.message}")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                passwordError =
-                                    String.format(
-                                        context.getString(R.string.viewer_open_error_format),
-                                        e.message ?: "",
-                                    ),
-                            )
-                        }
-                    } finally {
-                        // Revisión adversarial de correctitud (ronda 11): si la
-                        // corrutina se cancela mientras el desbloqueo (potencialmente
-                        // lento) está en curso, la CancellationException relanzada
-                        // arriba salta directo acá sin pasar por ningún catch que
-                        // limpie -- antes dejaba cacheIn/cacheOut huérfanos en
-                        // cacheDir para siempre. `committed` protege el único caso
-                        // donde cacheOut debe sobrevivir (ya en uso como el PDF
-                        // desbloqueado).
-                        if (!committed) {
-                            cacheIn?.let { if (it.exists()) it.delete() }
-                            cacheOut?.let { if (it.exists()) it.delete() }
+                        } finally {
+                            // Revisión adversarial de correctitud (ronda 11): si la
+                            // corrutina se cancela mientras el desbloqueo (potencialmente
+                            // lento) está en curso, la CancellationException relanzada
+                            // arriba salta directo acá sin pasar por ningún catch que
+                            // limpie -- antes dejaba cacheIn/cacheOut huérfanos en
+                            // cacheDir para siempre. `committed` protege el único caso
+                            // donde cacheOut debe sobrevivir (ya en uso como el PDF
+                            // desbloqueado).
+                            if (!committed) {
+                                cacheIn?.let { if (it.exists()) it.delete() }
+                                cacheOut?.let { if (it.exists()) it.delete() }
+                            }
                         }
                     }
                 }
-            }
         }
 
         fun dismissPasswordDialog() {
+            unlockJob?.cancel()
             pendingDocumentId = ""
             pendingContext = null
             _uiState.update {
@@ -930,7 +988,7 @@ class ViewerViewModel
                 }
                 name
             } catch (e: Exception) {
-                Timber.w("$TAG: no se pudo resolver nombre — ${e.message}")
+                Timber.w("$TAG: no se pudo resolver nombre — ${e.javaClass.simpleName}")
                 if (uriString.startsWith("/")) {
                     File(uriString).name
                 } else {
@@ -1158,6 +1216,9 @@ class ViewerViewModel
         fun searchInPdf(query: String) {
             val uri = _uiState.value.fileUri
             if (uri == null || query.isBlank()) {
+                // Una busqueda en vuelo no debe repoblar resultados que el usuario
+                // acaba de limpiar.
+                searchJob?.cancel()
                 _uiState.update {
                     it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1, pdfSearchHighlights = emptyMap())
                 }
@@ -1202,6 +1263,7 @@ class ViewerViewModel
         }
 
         fun clearPdfSearch() {
+            searchJob?.cancel()
             _uiState.update {
                 it.copy(pdfSearchMatches = emptyList(), pdfSearchIndex = -1, pdfSearchHighlights = emptyMap())
             }
@@ -1279,7 +1341,7 @@ class ViewerViewModel
                     )
                 context.startActivity(Intent.createChooser(shareIntent, chooserTitle))
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error compartiendo documento")
+                Timber.e("$TAG: error compartiendo documento → ${e.javaClass.simpleName}")
                 // Bug real encontrado 2026-09-14: hardcodeado en español --
                 // reusa pdf_tools_share_error (mismo mensaje que Herramientas PDF
                 // para este mismo escenario).
@@ -1296,6 +1358,8 @@ class ViewerViewModel
         // toca ni se sobrescribe.
         fun shareWithAnnotations(context: Context) {
             val state = _uiState.value
+            // Doble toque: evita aplanar y abrir dos selectores en paralelo.
+            if (state.isFlatteningForShare) return
             // Mismo guard que shareOriginal()/shareDocument() -- se llama
             // directo desde el diálogo "Original/Con anotaciones".
             if (state.isReadOnlyPreview) {
@@ -1335,7 +1399,7 @@ class ViewerViewModel
                         )
                     context.startActivity(Intent.createChooser(shareIntent, chooserTitle))
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error compartiendo documento anotado")
+                    Timber.e("$TAG: error compartiendo documento anotado → ${e.javaClass.simpleName}")
                     _uiState.update { it.copy(shareError = context.getString(R.string.pdf_tools_share_error)) }
                 }
             }
@@ -1377,6 +1441,7 @@ class ViewerViewModel
             page: Int,
             rect: PdfRectPts,
         ) {
+            if (_uiState.value.isReadOnlyPreview) return
             val documentId = _uiState.value.document?.id ?: return
             val color = _uiState.value.selectedHighlightColor
             viewModelScope.launch {
@@ -1417,6 +1482,10 @@ class ViewerViewModel
                 return
             }
             val state = _uiState.value
+            if (state.isReadOnlyPreview) {
+                cancelPendingNote()
+                return
+            }
             val documentId = state.document?.id
             val anchor = state.pendingNoteAnchor
             val page = state.pendingNotePage

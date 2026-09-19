@@ -13,6 +13,8 @@ import com.docsmart.core.util.elapsedRealtimeMillisSafe
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -75,6 +77,13 @@ class TrashRepository
             ): Boolean = now - deletedAt >= TRASH_RETENTION_MILLIS
         }
 
+        // Hallazgo real de la ronda 15: LibraryViewModel.loadTrashCount() y
+        // TrashViewModel.load() pueden disparar loadTrashedDocuments() (y con
+        // el la purga) casi a la vez -- dos purgas concurrentes sobre la misma
+        // entrada vencida intentaban borrar el mismo archivo dos veces y
+        // pisaban el mismo candidato en SharedPreferences.
+        private val purgeMutex = Mutex()
+
         private val purgeCandidatePrefs by lazy {
             context.getSharedPreferences(PURGE_CANDIDATES_PREFS, Context.MODE_PRIVATE)
         }
@@ -88,7 +97,17 @@ class TrashRepository
          */
         suspend fun loadTrashedDocuments(): List<TrashedDocumentUiModel> =
             withContext(Dispatchers.IO) {
-                purgeExpiredTrash()
+                // Hallazgo real de la ronda 15: un fallo de la purga (Room,
+                // borrado real) escapaba y dejaba a Papelera sin poder listar
+                // NADA (y a Biblioteca sin contador) -- la purga es
+                // oportunista, no debe bloquear la lectura.
+                try {
+                    purgeExpiredTrash()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.w("TrashRepository: fallo la purga automatica: ${e.javaClass.simpleName}")
+                }
                 val trashById = trashDao.getAll().associateBy { it.documentId }
                 documentRepository
                     .loadAllDocumentsRaw()
@@ -108,7 +127,19 @@ class TrashRepository
             withContext(Dispatchers.IO) {
                 try {
                     trashDao.insert(TrashEntry(documentId, System.currentTimeMillis()))
-                    documentHistoryDao.remove(documentId)
+                    // Hallazgo real de la ronda 15: si remove() del historial
+                    // fallaba, el documento YA estaba en trash_entries (oculto de
+                    // Biblioteca) pero se devolvia false -- la UI mostraba "no se
+                    // pudo eliminar" con el archivo ya desaparecido. Limpiar el
+                    // historial es secundario (loadAllDocuments() ya filtra por
+                    // trash_entries), asi que su fallo no invalida el movimiento.
+                    try {
+                        documentHistoryDao.remove(documentId)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.w("TrashRepository: no se pudo limpiar el historial: ${e.javaClass.simpleName}")
+                    }
                     // Arranca un ciclo de vencimiento nuevo y limpio (ver P1 en
                     // purgeExpiredTrash()) -- si este mismo id ya había pasado por
                     // la papelera antes, no debe heredar un firstSeenElapsed viejo.
@@ -121,7 +152,7 @@ class TrashRepository
                     // de redacción ya aplicado a la línea de abajo y en
                     // DownloadsAccessManager -- documentId es la ruta/URI real,
                     // CrashlyticsTree la reenviaría a Crashlytics.
-                    Timber.e(e, "Error moviendo a la papelera")
+                    Timber.e("Error moviendo a la papelera: ${e.javaClass.simpleName}")
                     false
                 }
             }
@@ -161,7 +192,7 @@ class TrashRepository
                 } catch (e: Exception) {
                     // Revisión adversarial de seguridad (ronda 13): mismo criterio
                     // de redacción que la línea 138 de esta misma función.
-                    Timber.e(e, "Error restaurando de la papelera")
+                    Timber.e("Error restaurando de la papelera: ${e.javaClass.simpleName}")
                     false
                 }
             }
@@ -239,8 +270,15 @@ class TrashRepository
          */
         suspend fun deleteAllForever(documentIds: List<String>): BulkDeleteOutcome =
             withContext(Dispatchers.IO) {
-                val plainFiles = documentIds.filterNot { it.startsWith("content://") }
-                val mediaFiles = documentIds.filter { it.startsWith("content://") }
+                // Hallazgo real de la ronda 15: antes TODO content:// iba al
+                // pedido masivo de MediaStore.createDeleteRequest(), incluidos los
+                // documentos de la carpeta vinculada por SAF (autoridad distinta
+                // de "media") -- un solo Uri SAF hacia fallar el pedido entero
+                // (el mismo IllegalArgumentException del crash del 2026-09-11) y
+                // se perdia el borrado en lote de las fotos validas. Los Uri que
+                // no son de MediaStore se borran uno por uno (DocumentsContract).
+                val plainFiles = documentIds.filterNot { isMediaStoreId(it) }
+                val mediaFiles = documentIds.filter { isMediaStoreId(it) }
 
                 plainFiles.forEach { id ->
                     if (documentRepository.deleteDocument(id) is DocumentRepository.DeleteOutcome.Deleted) {
@@ -284,54 +322,74 @@ class TrashRepository
         internal suspend fun purgeExpiredTrash(
             now: Long = System.currentTimeMillis(),
             nowElapsed: Long = elapsedRealtimeMillisSafe(),
-        ) {
+        ) = purgeMutex.withLock {
             trashDao
                 .getAll()
                 .filter { isTrashEntryExpired(it.deletedAt, now) }
                 .forEach { entry ->
-                    val key = "candidate_${entry.documentId}"
-                    val firstSeenElapsed = purgeCandidatePrefs.getLong(key, 0L)
-                    // Ver el comentario de MIN_REAL_MS_BEFORE_PURGE arriba (P1).
-                    // Primera vez que esta entrada se ve vencida: se anota el
-                    // momento (reloj real, inmune al de pared) pero TODAVÍA no
-                    // se borra -- recién se confirma en una purga posterior,
-                    // una vez que pasó tiempo real de verdad desde esa primera
-                    // detección.
-                    if (firstSeenElapsed == 0L) {
-                        purgeCandidatePrefs.edit().putLong(key, nowElapsed).apply()
-                        return@forEach
-                    }
-                    val realElapsedSinceFirstSeen = nowElapsed - firstSeenElapsed
-                    if (realElapsedSinceFirstSeen < MIN_REAL_MS_BEFORE_PURGE) {
-                        // Se omite entry.documentId (ruta/URI real) del mensaje
-                        // -- ver la nota de arriba en restoreFromTrash().
-                        Timber.w(
-                            "TrashRepository: un documento figura vencido pero no pasó " +
-                                "suficiente tiempo real desde que se detectó -- se ignora (posible " +
-                                "manipulación del reloj)",
-                        )
-                        return@forEach
-                    }
-                    // Solo se quita la entrada si el borrado real se confirmó --
-                    // si Android pidió permiso (NeedsPermission) no hay Activity
-                    // disponible acá para mostrar el diálogo, así que el archivo
-                    // se queda en la papelera (vencido, pero visible) hasta que
-                    // el usuario lo borre manualmente desde la UI.
-                    if (documentRepository.deleteDocument(entry.documentId)
-                            is DocumentRepository.DeleteOutcome.Deleted
-                    ) {
-                        trashDao.remove(entry.documentId)
-                        purgeCandidatePrefs.edit().remove(key).apply()
-                        // Hallazgo real #50: esta rama (purga automática a los
-                        // 30 días) no limpiaba ni el alias ni el favorito --
-                        // a diferencia de las otras 4 vías de borrado
-                        // definitivo de este archivo, que ya limpiaban el
-                        // alias (aunque tampoco el favorito, hasta este mismo
-                        // hallazgo).
-                        documentIdentityMaintenance.onPermanentlyDeleted(entry.documentId)
+                    // Un fallo con UNA entrada no debe impedir purgar las demas.
+                    try {
+                        purgeEntry(entry, nowElapsed)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.w("TrashRepository: fallo purgando una entrada: ${e.javaClass.simpleName}")
                     }
                 }
         }
+
+        private suspend fun purgeEntry(
+            entry: TrashEntry,
+            nowElapsed: Long,
+        ) {
+            val key = "candidate_${entry.documentId}"
+            val firstSeenElapsed = purgeCandidatePrefs.getLong(key, 0L)
+            // Ver el comentario de MIN_REAL_MS_BEFORE_PURGE arriba (P1).
+            // Primera vez que esta entrada se ve vencida: se anota el
+            // momento (reloj real, inmune al de pared) pero TODAVÍA no
+            // se borra -- recién se confirma en una purga posterior,
+            // una vez que pasó tiempo real de verdad desde esa primera
+            // detección.
+            //
+            // Hallazgo real de la ronda 15: elapsedRealtime se reinicia en
+            // cada arranque del dispositivo. Si el candidato se anoto
+            // antes de un reinicio, nowElapsed < firstSeenElapsed y la
+            // diferencia negativa nunca alcanzaba MIN_REAL_MS_BEFORE_PURGE
+            // hasta que el uptime nuevo superara al viejo + 20 h -- la
+            // entrada vencida quedaba sin purgarse indefinidamente. Se
+            // re-ancla el candidato al reloj del arranque actual.
+            if (firstSeenElapsed == 0L || nowElapsed < firstSeenElapsed) {
+                purgeCandidatePrefs.edit().putLong(key, nowElapsed).apply()
+                return
+            }
+            val realElapsedSinceFirstSeen = nowElapsed - firstSeenElapsed
+            if (realElapsedSinceFirstSeen < MIN_REAL_MS_BEFORE_PURGE) {
+                // Se omite entry.documentId (ruta/URI real) del mensaje
+                // -- ver la nota de arriba en restoreFromTrash().
+                Timber.w(
+                    "TrashRepository: un documento figura vencido pero no pasó " +
+                        "suficiente tiempo real desde que se detectó -- se ignora (posible " +
+                        "manipulación del reloj)",
+                )
+                return
+            }
+            // Solo se quita la entrada si el borrado real se confirmó --
+            // si Android pidió permiso (NeedsPermission) no hay Activity
+            // disponible acá para mostrar el diálogo, así que el archivo
+            // se queda en la papelera (vencido, pero visible) hasta que
+            // el usuario lo borre manualmente desde la UI.
+            if (documentRepository.deleteDocument(entry.documentId) is DocumentRepository.DeleteOutcome.Deleted) {
+                trashDao.remove(entry.documentId)
+                purgeCandidatePrefs.edit().remove(key).apply()
+                // Hallazgo real #50: esta rama (purga automática a los
+                // 30 días) no limpiaba ni el alias ni el favorito.
+                documentIdentityMaintenance.onPermanentlyDeleted(entry.documentId)
+            }
+        }
+
+        // Los ids de MediaStore real siempre son content://media/...; cualquier
+        // otro content:// es un documento SAF (ver DocumentRepository).
+        private fun isMediaStoreId(documentId: String): Boolean = documentId.startsWith("content://media/")
 
         private fun clearPurgeCandidate(documentId: String) {
             purgeCandidatePrefs.edit().remove("candidate_$documentId").apply()
@@ -346,7 +404,7 @@ class TrashRepository
                         .query(Uri.parse(documentId), null, null, null, null)
                         ?.use { it.moveToFirst() } ?: false
                 } catch (e: Exception) {
-                    Timber.w(e, "TrashRepository: no se pudo confirmar si un documento sigue existiendo")
+                    Timber.w("TrashRepository: no se pudo confirmar si un documento sigue existiendo: ${e.javaClass.simpleName}")
                     false
                 }
             }

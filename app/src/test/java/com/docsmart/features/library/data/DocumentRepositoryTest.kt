@@ -3,6 +3,7 @@ package com.docsmart.features.library.data
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.provider.DocumentsContract
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.data.db.DocumentHistoryEntry
@@ -18,6 +19,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -283,6 +285,306 @@ class DocumentRepositoryTest {
 
         assertEquals(listOf("a", "b"), result.map { it.id })
     }
+
+    // ── helpers de construccion ───────────────────────────────────────────────
+
+    private fun repoWith(
+        favorites: FavoritesRepository,
+        identity: com.docsmart.core.data.DocumentIdentityMaintenance =
+            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true),
+    ) = DocumentRepository(
+        context,
+        favorites,
+        historyDao,
+        trashDao,
+        mockk<MediaDeletePermission>(relaxed = true),
+        mockk<DownloadsAccessManager>(relaxed = true),
+        identity,
+    )
+
+    // ── renameDocument: casos borde (ronda 15) ────────────────────────────────
+
+    @Test
+    fun `renameDocument no pisa un archivo existente con el nombre elegido`() =
+        runTest {
+            // File.renameTo() reemplaza en silencio el destino en Linux/Android:
+            // antes, renombrar "a.pdf" a "b.pdf" destruia el otro "b.pdf".
+            val favorites = mockk<FavoritesRepository>(relaxed = true)
+            val identity = mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
+            val repo = repoWith(favorites, identity)
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val source = File(dir, "a.pdf").apply { writeText("contenido A") }
+            val other = File(dir, "b.pdf").apply { writeText("contenido B") }
+
+            val newId = repo.renameDocument(source.absolutePath, "b.pdf")
+
+            assertEquals("contenido B", other.readText(), "el otro documento no debe sobrescribirse")
+            assertTrue(source.exists(), "el origen sigue en su lugar")
+            assertEquals(source.absolutePath, newId, "el id no cambia: solo se guardo un alias")
+            coVerify { favorites.saveAlias(source.absolutePath, "b.pdf") }
+            coVerify(exactly = 0) { identity.onIdChanged(any(), any()) }
+        }
+
+    @Test
+    fun `renameDocument al mismo nombre no migra ids y limpia el alias`() =
+        runTest {
+            val favorites = mockk<FavoritesRepository>(relaxed = true)
+            val identity = mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
+            val repo = repoWith(favorites, identity)
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "igual.pdf").apply { writeText("contenido") }
+
+            val newId = repo.renameDocument(file.absolutePath, "igual.pdf")
+
+            assertEquals(file.absolutePath, newId)
+            assertTrue(file.exists())
+            coVerify { favorites.removeAlias(file.absolutePath) }
+            coVerify(exactly = 0) { identity.onIdChanged(any(), any()) }
+            coVerify(exactly = 0) { favorites.saveAlias(any(), any()) }
+        }
+
+    @Test
+    fun `renameDocument con nombre en blanco conserva el nombre real del archivo`() =
+        runTest {
+            val favorites = mockk<FavoritesRepository>(relaxed = true)
+            val repo = repoWith(favorites)
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "real.pdf").apply { writeText("contenido") }
+
+            val newId = repo.renameDocument(file.absolutePath, "   ")
+
+            assertEquals(file.absolutePath, newId)
+            assertTrue(file.exists())
+        }
+
+    @Test
+    fun `renameDocument neutraliza path traversal y deja el archivo en su carpeta`() =
+        runTest {
+            val repo = repoWith(mockk<FavoritesRepository>(relaxed = true))
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "original.pdf").apply { writeText("contenido") }
+
+            val newId = repo.renameDocument(file.absolutePath, "../../evil.pdf")
+
+            assertEquals(File(dir, "evil.pdf").absolutePath, newId)
+            assertTrue(File(dir, "evil.pdf").exists())
+            assertFalse(File(filesDir, "evil.pdf").exists())
+        }
+
+    @Test
+    fun `renameDocument devuelve la ruta nueva aunque falle la migracion de ids`() =
+        runTest {
+            // El archivo YA se movio: devolver el id viejo dejaba al llamador
+            // apuntando a una ruta inexistente y guardaba un alias huerfano.
+            val favorites = mockk<FavoritesRepository>(relaxed = true)
+            val identity = mockk<com.docsmart.core.data.DocumentIdentityMaintenance>()
+            coEvery { identity.onIdChanged(any(), any()) } throws IllegalStateException("room caido")
+            val repo = repoWith(favorites, identity)
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "original.pdf").apply { writeText("contenido") }
+
+            val newId = repo.renameDocument(file.absolutePath, "nuevo.pdf")
+
+            assertEquals(File(dir, "nuevo.pdf").absolutePath, newId)
+            assertTrue(File(dir, "nuevo.pdf").exists())
+            coVerify(exactly = 0) { favorites.saveAlias(any(), any()) }
+        }
+
+    @Test
+    fun `renameDocument propaga la cancelacion en vez de tragarla`() =
+        runTest {
+            val favorites = mockk<FavoritesRepository>()
+            coEvery { favorites.saveAlias(any(), any()) } throws CancellationException("cancelado")
+            val repo = repoWith(favorites)
+
+            val result = runCatching { repo.renameDocument("content://media/external/downloads/1", "x.pdf") }
+
+            assertTrue(result.exceptionOrNull() is CancellationException)
+        }
+
+    @Test
+    fun `renameDocument reintenta el alias en el catch si el primer guardado lanza`() =
+        runTest {
+            val favorites = mockk<FavoritesRepository>()
+            // Primer intento lanza, el del catch (segundo) funciona.
+            coEvery { favorites.saveAlias(any(), any()) } throws IllegalStateException("una vez") andThen Unit
+            val repo = repoWith(favorites)
+            val uriString = "content://media/external/downloads/1"
+
+            val newId = repo.renameDocument(uriString, "x.pdf")
+
+            assertEquals(uriString, newId)
+            coVerify(exactly = 2) { favorites.saveAlias(uriString, "x.pdf") }
+        }
+
+    // ── deleteDocument sobre documentos SAF (carpeta vinculada) ───────────────
+
+    private fun stubSafUri(uriString: String): Uri {
+        val mockUri = mockk<Uri>()
+        every { Uri.parse(uriString) } returns mockUri
+        every { mockUri.authority } returns "com.android.externalstorage.documents"
+        every { context.contentResolver } returns mockk<ContentResolver>()
+        return mockUri
+    }
+
+    @Test
+    fun `deleteDocument de un documento SAF usa DocumentsContract y limpia el historial`() =
+        runTest {
+            val uriString = "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fa.pdf"
+            val mockUri = stubSafUri(uriString)
+            mockkStatic(DocumentsContract::class)
+            try {
+                every { DocumentsContract.deleteDocument(any(), mockUri) } returns true
+                historyDao.recordOpen(DocumentHistoryEntry(uriString, 1000L))
+
+                val outcome = repository.deleteDocument(uriString)
+
+                assertTrue(outcome is DocumentRepository.DeleteOutcome.Deleted)
+                assertTrue(historyDao.allEntries().isEmpty())
+            } finally {
+                unmockkStatic(DocumentsContract::class)
+            }
+        }
+
+    @Test
+    fun `deleteDocument SAF devuelve Failed y conserva el historial si no se pudo borrar`() =
+        runTest {
+            val uriString = "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fb.pdf"
+            val mockUri = stubSafUri(uriString)
+            mockkStatic(DocumentsContract::class)
+            try {
+                every { DocumentsContract.deleteDocument(any(), mockUri) } returns false
+                historyDao.recordOpen(DocumentHistoryEntry(uriString, 1000L))
+
+                val outcome = repository.deleteDocument(uriString)
+
+                assertTrue(outcome is DocumentRepository.DeleteOutcome.Failed)
+                assertEquals(1, historyDao.allEntries().size)
+            } finally {
+                unmockkStatic(DocumentsContract::class)
+            }
+        }
+
+    @Test
+    fun `deleteDocument SAF devuelve Failed si DocumentsContract lanza una excepcion`() =
+        runTest {
+            val uriString = "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fc.pdf"
+            val mockUri = stubSafUri(uriString)
+            mockkStatic(DocumentsContract::class)
+            try {
+                every { DocumentsContract.deleteDocument(any(), mockUri) } throws SecurityException("sin permiso")
+
+                val outcome = repository.deleteDocument(uriString)
+
+                assertTrue(outcome is DocumentRepository.DeleteOutcome.Failed)
+            } finally {
+                unmockkStatic(DocumentsContract::class)
+            }
+        }
+
+    @Test
+    fun `deleteDocument SAF propaga la cancelacion`() =
+        runTest {
+            val uriString = "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fd.pdf"
+            val mockUri = stubSafUri(uriString)
+            mockkStatic(DocumentsContract::class)
+            try {
+                every { DocumentsContract.deleteDocument(any(), mockUri) } throws CancellationException("cancelado")
+
+                val result = runCatching { repository.deleteDocument(uriString) }
+
+                assertTrue(result.exceptionOrNull() is CancellationException)
+            } finally {
+                unmockkStatic(DocumentsContract::class)
+            }
+        }
+
+    @Test
+    fun `deleteDocument de MediaStore propaga la cancelacion en vez de devolver Failed`() =
+        runTest {
+            val uriString = "content://media/external/images/7"
+            val mockUri = mockk<Uri>()
+            every { Uri.parse(uriString) } returns mockUri
+            every { mockUri.authority } returns "media"
+            val resolver = mockk<ContentResolver>()
+            every { resolver.delete(mockUri, null, null) } throws CancellationException("cancelado")
+            every { context.contentResolver } returns resolver
+
+            val result = runCatching { repository.deleteDocument(uriString) }
+
+            assertTrue(result.exceptionOrNull() is CancellationException)
+        }
+
+    @Test
+    fun `deleteDocument fallido de un archivo no toca el historial`() =
+        runTest {
+            val missing = File(filesDir, "fantasma.pdf")
+            historyDao.recordOpen(DocumentHistoryEntry(missing.absolutePath, 1000L))
+
+            val outcome = repository.deleteDocument(missing.absolutePath)
+
+            assertTrue(outcome is DocumentRepository.DeleteOutcome.Failed)
+            assertEquals(1, historyDao.allEntries().size)
+        }
+
+    // ── dedupeAndSortByRecency (orden real por timestamp, ronda 15) ───────────
+
+    private fun dated(
+        id: String,
+        millis: Long,
+        date: String = "01/01/2026",
+        name: String = id,
+    ) = DatedDocument(doc(id).copy(date = date, name = name), millis)
+
+    @Test
+    fun `dedupeAndSortByRecency ordena por timestamp real y no por el texto de la fecha`() {
+        // Como texto, "15/01/2026" > "14/09/2026" (compara el dia primero):
+        // el orden viejo ponia enero ANTES que septiembre.
+        val january = dated("enero", millis = 1_768_435_200_000L, date = "15/01/2026")
+        val september = dated("septiembre", millis = 1_789_344_000_000L, date = "14/09/2026")
+
+        val result = dedupeAndSortByRecency(listOf(january, september))
+
+        assertEquals(listOf("septiembre", "enero"), result.map { it.id })
+    }
+
+    @Test
+    fun `dedupeAndSortByRecency conserva la primera aparicion de un id repetido`() {
+        val fromMediaStore = dated("mismo", millis = 100L, name = "MediaStore")
+        val fromHistory = dated("mismo", millis = 999L, name = "Historial")
+
+        val result = dedupeAndSortByRecency(listOf(fromMediaStore, fromHistory))
+
+        assertEquals(1, result.size)
+        assertEquals("MediaStore", result.single().name)
+    }
+
+    @Test
+    fun `dedupeAndSortByRecency es estable con timestamps iguales`() {
+        val result = dedupeAndSortByRecency(listOf(dated("a", 5L), dated("b", 5L), dated("c", 5L)))
+
+        assertEquals(listOf("a", "b", "c"), result.map { it.id })
+    }
+
+    @Test
+    fun `dedupeAndSortByRecency con lista vacia devuelve vacia`() {
+        assertTrue(dedupeAndSortByRecency(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `mergeHistoryWithDocuments con limite cero no devuelve nada`() {
+        val result = repository.mergeHistoryWithDocuments(listOf(doc("a")), listOf("a"), limit = 0)
+
+        assertTrue(result.isEmpty())
+    }
+
+    // `loadAllDocuments()`/`loadRecentlyOpened()`/`loadDocumentsFrom*()` NO se
+    // cubren con tests directos: `loadImagesFromMediaStore()` toca
+    // `MediaStore.Images.Media.EXTERNAL_CONTENT_URI`, cuyo inicializador
+    // estatico llama a metodos del framework que en el android.jar de tests
+    // (sin Robolectric) lanzan -- ExceptionInInitializerError, un Error que ni
+    // siquiera atrapa el `catch (Exception)`. Lo puro (orden/dedupe/merge) ya
+    // esta extraido y cubierto arriba.
 
     // ── fake de DocumentHistoryDao respaldado por un mapa en memoria ──────────
 

@@ -5,7 +5,10 @@ import android.net.Uri
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 
 /**
  * RF-SCAN-06/RF-SCAN-07: solo cubre la lógica pura (matriz de color y
@@ -113,5 +116,93 @@ class ScanImageEditorTest {
         val uriDesconocida = mockk<Uri>()
 
         assertDoesNotThrow { editor.deleteCachedFile(uriDesconocida) }
+    }
+
+    // ── deleteCachedFile(): solo borra lo que esta instancia creo (B9) ────────
+
+    @Test
+    fun `deleteCachedFile borra el archivo de una edicion propia y solo una vez`() {
+        val dir = Files.createTempDirectory("scan_editor_test_").toFile()
+        val owned = java.io.File(dir, "edit_1.jpg").apply { writeText("x") }
+        val editor = ScanImageEditor(mockk<Context>(relaxed = true))
+        val uri = mockk<Uri>()
+        editor.trackOwnedFile(uri, owned)
+
+        editor.deleteCachedFile(uri)
+
+        assertFalse(owned.exists())
+        // Un segundo borrado del mismo URI ya no lo reconoce: no-op seguro.
+        assertDoesNotThrow { editor.deleteCachedFile(uri) }
+        dir.deleteRecursively()
+    }
+
+    @Test
+    fun `deleteCachedFile no toca el archivo de otro URI`() {
+        val dir = Files.createTempDirectory("scan_editor_test_").toFile()
+        val ownedA = java.io.File(dir, "edit_a.jpg").apply { writeText("a") }
+        val ownedB = java.io.File(dir, "edit_b.jpg").apply { writeText("b") }
+        val editor = ScanImageEditor(mockk<Context>(relaxed = true))
+        val uriA = mockk<Uri>()
+        val uriB = mockk<Uri>()
+        editor.trackOwnedFile(uriA, ownedA)
+        editor.trackOwnedFile(uriB, ownedB)
+
+        editor.deleteCachedFile(uriA)
+
+        assertFalse(ownedA.exists())
+        assertTrue(ownedB.exists(), "la edicion de otra pagina no debe borrarse")
+        dir.deleteRecursively()
+    }
+
+    @Test
+    fun `deleteCachedFile con un URI desconocido no borra ninguna edicion registrada`() {
+        val dir = Files.createTempDirectory("scan_editor_test_").toFile()
+        val owned = java.io.File(dir, "edit_a.jpg").apply { writeText("a") }
+        val editor = ScanImageEditor(mockk<Context>(relaxed = true))
+        editor.trackOwnedFile(mockk<Uri>(), owned)
+
+        editor.deleteCachedFile(mockk<Uri>())
+
+        assertTrue(owned.exists())
+        dir.deleteRecursively()
+    }
+
+    // ── buildColorMatrix() / scaledDimensions(): mas casos ────────────────────
+
+    @Test
+    fun `el contraste ancla el gris medio 128 y el brillo lo desplaza`() {
+        // v' = factor * v + traslacion: con contraste solo, 128 debe quedar en 128.
+        val contrastOnly = buildColorMatrix(brightness = 0, contrast = 50)
+        assertEquals(128f, contrastOnly[0] * 128f + contrastOnly[4], 0.001f)
+
+        // Con brillo +10 el mismo gris sube 25.5 (10 * 2.55).
+        val withBrightness = buildColorMatrix(brightness = 10, contrast = 50)
+        assertEquals(128f + 25.5f, withBrightness[0] * 128f + withBrightness[4], 0.001f)
+    }
+
+    @Test
+    fun `brillo y contraste nunca alteran el canal alfa ni mezclan canales`() {
+        val matrix = buildColorMatrix(brightness = 37, contrast = -42)
+
+        // Fila alfa: 0,0,0,1,0
+        assertEquals(listOf(0f, 0f, 0f, 1f, 0f), matrix.slice(15..19))
+        // Sin mezcla entre R/G/B: solo la diagonal es distinta de cero.
+        assertTrue(listOf(1, 2, 3, 5, 7, 8, 10, 11, 13).all { matrix[it] == 0f })
+    }
+
+    @Test
+    fun `la matriz siempre tiene 20 valores`() {
+        assertEquals(20, buildColorMatrix(-100, 100).size)
+    }
+
+    @Test
+    fun `scaledDimensions escala anchos y altos distintos de forma independiente`() {
+        assertEquals(1000 to 750, scaledDimensions(4000, 3000, 25))
+    }
+
+    @Test
+    fun `scaledDimensions nunca devuelve una dimension menor a 1`() {
+        assertEquals(1 to 1, scaledDimensions(1, 1, 1))
+        assertEquals(1 to 1, scaledDimensions(10, 10, 0))
     }
 }

@@ -19,6 +19,7 @@ import com.docsmart.features.security.domain.PdfPasswordMessages
 import com.docsmart.features.security.domain.PdfPasswordResult
 import com.docsmart.features.security.domain.PdfPasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
+import java.io.InputStream
 import javax.inject.Inject
 
 /**
@@ -241,7 +243,8 @@ class SecurityViewModel
                 // este es el lugar para agregar el CryptoObject correspondiente.
                 prompt.authenticate(promptInfo) // NOSONAR
             } catch (e: Exception) {
-                Timber.e(e, "Error biometría: ${e.message}")
+                // Solo el tipo de excepción: CrashlyticsTree reenvía todo >= WARN a Firebase.
+                Timber.e("Error biometría (${e.javaClass.simpleName})")
                 _uiState.update { it.copy(error = String.format(errorTemplate, e.message ?: "")) }
             }
         }
@@ -346,9 +349,12 @@ class SecurityViewModel
                     // directo, sin pasar por esa función, pero tiene la misma
                     // colisión posible si el nombre ya existe en Carpeta Segura.
                     val destFile = securityManager.uniqueSecureDestination(fileName)
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        destFile.outputStream().use { output -> input.copyTo(output) }
-                    }
+                    // Bug real: openInputStream() devuelve null si el proveedor no
+                    // puede abrir el Uri -- antes el `?.use` se saltaba la copia en
+                    // silencio y el flujo seguía: borraba el ORIGINAL sin que existiera
+                    // copia en Carpeta Segura (pérdida de datos). Ahora falla antes de
+                    // tocar el original, y una copia a medias se elimina.
+                    copyStreamToSecureFile(context.contentResolver.openInputStream(uri), destFile)
                     // Mismo criterio que importLocalFile(): migrar anotaciones/
                     // favoritos/alias existentes (documentId = el propio
                     // content:// del origen) a la ruta nueva dentro de Carpeta
@@ -360,7 +366,8 @@ class SecurityViewModel
                             val deleted = android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)
                             if (deleted) OriginalDeleteResult.Deleted else OriginalDeleteResult.Failed
                         } catch (e: Exception) {
-                            Timber.w(e, "No se pudo eliminar directamente el archivo original: $uri")
+                            // Sin URI ni Throwable: la ruta/nombre del usuario no debe ir a Firebase.
+                            Timber.w("No se pudo eliminar directamente el archivo original (${e.javaClass.simpleName})")
                             intentSenderForFailedDelete(e, uri)
                                 ?.let { OriginalDeleteResult.NeedsPermission(it) }
                                 ?: OriginalDeleteResult.Failed
@@ -382,8 +389,10 @@ class SecurityViewModel
                             _pendingOriginalDelete.emit(PendingOriginalDeleteRequest(deleteResult.intentSender, uri))
                         }
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error importando archivo: ${e.message}")
+                    Timber.e("Error importando archivo (${e.javaClass.simpleName})")
                     _uiState.update { it.copy(error = errorMessage) }
                 }
             }
@@ -436,8 +445,10 @@ class SecurityViewModel
             messages: PdfPasswordMessages,
             wrongPasswordMessage: String,
         ) {
+            // Guard de doble toque: dos operaciones simultáneas escribirían dos PDFs.
+            if (_uiState.value.isPdfProcessing) return
+            _uiState.update { it.copy(isPdfProcessing = true, pdfPasswordError = null, pdfOutputFile = null) }
             viewModelScope.launch {
-                _uiState.update { it.copy(isPdfProcessing = true, pdfPasswordError = null, pdfOutputFile = null) }
                 val result = pdfPasswordUseCase.protect(context, uri, password, fileName, messages)
                 _uiState.update { state ->
                     when (result) {
@@ -471,8 +482,9 @@ class SecurityViewModel
             messages: PdfPasswordMessages,
             wrongPasswordMessage: String,
         ) {
+            if (_uiState.value.isPdfProcessing) return
+            _uiState.update { it.copy(isPdfProcessing = true, pdfPasswordError = null, pdfOutputFile = null) }
             viewModelScope.launch {
-                _uiState.update { it.copy(isPdfProcessing = true, pdfPasswordError = null, pdfOutputFile = null) }
                 val result = pdfPasswordUseCase.removePassword(context, uri, password, fileName, messages)
                 _uiState.update { state ->
                     when (result) {
@@ -716,3 +728,21 @@ class SecurityViewModel
             }
         }
     }
+
+/**
+ * Copia [input] a [dest]. Falla (sin dejar archivo) si el proveedor no pudo
+ * abrir el Uri ([input] null) o si la copia se interrumpe a la mitad --
+ * quien la llama solo debe borrar el original tras un retorno normal.
+ */
+internal fun copyStreamToSecureFile(
+    input: InputStream?,
+    dest: File,
+) {
+    checkNotNull(input) { "No se pudo abrir el archivo de origen" }
+    try {
+        input.use { source -> dest.outputStream().use { output -> source.copyTo(output) } }
+    } catch (e: Exception) {
+        dest.delete()
+        throw e
+    }
+}

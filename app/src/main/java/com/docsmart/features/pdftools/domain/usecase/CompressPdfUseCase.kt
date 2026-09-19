@@ -98,13 +98,21 @@ class CompressPdfUseCase
                     val name = outputFileName ?: "Compressed_q$quality"
                     outputFile = createOutputFile(name)
 
-                    FileOutputStream(outputFile!!).use { stream ->
-                        pdfDocument.writeTo(stream)
-                        stream.flush()
+                    // Ronda 15: pdfDocument.close() estaba después de writeTo() sin
+                    // finally -- si escribir fallaba (disco lleno, OOM al volcar
+                    // las páginas), el PdfDocument quedaba abierto con todos los
+                    // bitmaps de página retenidos.
+                    try {
+                        FileOutputStream(outputFile!!).use { stream ->
+                            pdfDocument.writeTo(stream)
+                            stream.flush()
+                        }
+                    } finally {
+                        pdfDocument.close()
                     }
-                    pdfDocument.close()
 
                     if (outputFile!!.length() == 0L) {
+                        outputFile!!.delete()
                         return@withContext PdfToolResult.Error(messages.generateError)
                     }
 
@@ -158,8 +166,17 @@ class CompressPdfUseCase
                     // falso en cualquier reporte de fallos. Se relanza tal cual.
                     outputFile?.delete()
                     throw e
+                } catch (e: OutOfMemoryError) {
+                    // Ronda 15: OutOfMemoryError no hereda de Exception -- si
+                    // ocurría al volcar el PDF a disco, el .pdf parcial quedaba
+                    // huérfano (el ViewModel solo atrapa el error, no conoce el
+                    // archivo). Se relanza para que el ViewModel lo reporte.
+                    outputFile?.delete()
+                    throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error al comprimir: ${e.message}")
+                    // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase
+                    // y e.message puede contener rutas/URIs reales.
+                    Timber.e("$TAG: error al comprimir: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     PdfToolResult.Error(
                         message = String.format(messages.genericError, e.message ?: ""),
@@ -198,39 +215,60 @@ class CompressPdfUseCase
             quality: Int,
         ): android.graphics.pdf.PdfDocument {
             val pdfDocument = android.graphics.pdf.PdfDocument()
+            // Ronda 15: si una página fallaba a mitad del bucle (OOM,
+            // cancelación), el PdfDocument ya creado (con las páginas previas en
+            // memoria) se perdía sin cerrar -- solo el llamador lo cerraba en el
+            // camino feliz.
+            var completed = false
+            try {
+                for (i in 0 until renderer.pageCount) {
+                    // Hallazgo real de la auditoría general 2026-09-17 (quinta
+                    // pasada): sin ningún punto de suspensión en este bucle,
+                    // cancelar la corrutina (ej. el usuario navega hacia atrás
+                    // mientras comprime) nunca se notaba hasta que todas las
+                    // páginas terminaban solas en segundo plano.
+                    coroutineContext.ensureActive()
+                    addCompressedPage(pdfDocument, renderer, i, scaleFactor, quality)
+                    Timber.d("$TAG: página ${i + 1} procesada")
+                }
+                completed = true
+            } finally {
+                if (!completed) pdfDocument.close()
+            }
+            return pdfDocument
+        }
 
-            for (i in 0 until renderer.pageCount) {
-                // Hallazgo real de la auditoría general 2026-09-17 (quinta
-                // pasada): sin ningún punto de suspensión en este bucle,
-                // cancelar la corrutina (ej. el usuario navega hacia atrás
-                // mientras comprime) nunca se notaba hasta que todas las
-                // páginas terminaban solas en segundo plano.
-                coroutineContext.ensureActive()
-                val page = renderer.openPage(i)
-                val width = (page.width * scaleFactor).toInt().coerceAtLeast(1)
-                val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)
-
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                page.close()
-
-                val compressed = recompressBitmap(bitmap, quality)
-
+        private fun addCompressedPage(
+            pdfDocument: android.graphics.pdf.PdfDocument,
+            renderer: PdfRenderer,
+            index: Int,
+            scaleFactor: Float,
+            quality: Int,
+        ) {
+            // .use{}: page.close() manual se salteaba si createBitmap/render
+            // lanzaban (OOM), dejando la página del renderer abierta.
+            val bitmap =
+                renderer.openPage(index).use { page ->
+                    val width = (page.width * scaleFactor).toInt().coerceAtLeast(1)
+                    val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)
+                    val rendered = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    rendered.eraseColor(android.graphics.Color.WHITE)
+                    page.render(rendered, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    rendered
+                }
+            var compressed: Bitmap = bitmap
+            try {
+                compressed = recompressBitmap(bitmap, quality)
                 val pageInfo =
                     android.graphics.pdf.PdfDocument.PageInfo
-                        .Builder(width, height, i + 1).create()
+                        .Builder(bitmap.width, bitmap.height, index + 1).create()
                 val docPage = pdfDocument.startPage(pageInfo)
                 docPage.canvas.drawBitmap(compressed, 0f, 0f, null)
                 pdfDocument.finishPage(docPage)
-
+            } finally {
                 bitmap.recycle()
                 if (compressed !== bitmap) compressed.recycle()
-
-                Timber.d("$TAG: página ${i + 1} procesada")
             }
-
-            return pdfDocument
         }
 
         private fun recompressBitmap(
@@ -243,24 +281,35 @@ class CompressPdfUseCase
                 val bytes = stream.toByteArray()
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: bitmap
             } catch (e: Exception) {
-                Timber.e("$TAG: error recomprimiendo: ${e.message}")
+                Timber.e("$TAG: error recomprimiendo: ${e.javaClass.simpleName}")
                 bitmap
             }
         }
 
-        private fun copyUriToCache(uri: Uri): File? {
+        // internal para poder testear el borrado del archivo de cache parcial.
+        internal fun copyUriToCache(uri: Uri): File? {
+            val file = File(context.cacheDir, "compress_${System.currentTimeMillis()}.pdf")
             return try {
-                val file = File(context.cacheDir, "compress_${System.currentTimeMillis()}.pdf")
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    file.outputStream().use { output ->
-                        val bytes = input.copyTo(output)
-                        Timber.d("$TAG: copiados $bytes bytes al cache")
-                        if (bytes == 0L) return null
+                val bytes =
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        file.outputStream().use { output -> input.copyTo(output) }
                     }
-                } ?: return null
-                file
+                Timber.d("$TAG: copiados $bytes bytes al cache")
+                // Ronda 15: con 0 bytes o stream nulo se devolvía null dejando el
+                // archivo (vacío o parcial) huérfano en cacheDir -- cacheFile del
+                // llamador todavía era null, así que su finally nunca lo borraba.
+                if (bytes == null || bytes == 0L) {
+                    file.delete()
+                    null
+                } else {
+                    file
+                }
+            } catch (e: CancellationException) {
+                file.delete()
+                throw e
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
+                file.delete()
                 null
             }
         }

@@ -75,24 +75,29 @@ object StudyNotesExporter {
     ): File {
         val file = createOutputFile(context, "pdf")
         val document = Document(PdfDocument(PdfWriter(file)))
-        notes.forEach { noteWithImages ->
-            val note = noteWithImages.note
-            document.add(Paragraph(note.title).setBold().setFontSize(14f))
-            document.add(
-                Paragraph(displayDate(note.createdAt))
-                    .setFontSize(9f)
-                    .setFontColor(ColorConstants.GRAY),
-            )
-            document.add(Paragraph(note.text).setFontSize(11f))
-            addImagesToPdf(document, noteWithImages.images)
-            document.add(
-                Paragraph(SEPARATOR)
-                    .setFontSize(9f)
-                    .setFontColor(ColorConstants.LIGHT_GRAY)
-                    .setTextAlignment(TextAlignment.CENTER),
-            )
+        // try/finally: si agregar una nota lanza, el PdfWriter (descriptor de
+        // archivo) quedaba abierto y el PDF a medio escribir sin cerrar.
+        try {
+            notes.forEach { noteWithImages ->
+                val note = noteWithImages.note
+                document.add(Paragraph(note.title).setBold().setFontSize(14f))
+                document.add(
+                    Paragraph(displayDate(note.createdAt))
+                        .setFontSize(9f)
+                        .setFontColor(ColorConstants.GRAY),
+                )
+                document.add(Paragraph(note.text).setFontSize(11f))
+                addImagesToPdf(document, noteWithImages.images)
+                document.add(
+                    Paragraph(SEPARATOR)
+                        .setFontSize(9f)
+                        .setFontColor(ColorConstants.LIGHT_GRAY)
+                        .setTextAlignment(TextAlignment.CENTER),
+                )
+            }
+        } finally {
+            document.close()
         }
-        document.close()
         return file
     }
 
@@ -111,7 +116,8 @@ object StudyNotesExporter {
                 val imageData = ImageDataFactory.create(image.filePath)
                 document.add(PdfImage(imageData).setWidth(PDF_IMAGE_WIDTH_POINTS).setAutoScaleHeight(true))
             } catch (e: Exception) {
-                Timber.e(e, "StudyNotesExporter: no se pudo incluir la imagen ${image.filePath}")
+                // Sin la ruta ni el Throwable: CrashlyticsTree reenvía todo >= WARN a Firebase.
+                Timber.e("StudyNotesExporter: no se pudo incluir una imagen en el PDF (${e.javaClass.simpleName})")
             }
         }
     }
@@ -192,7 +198,7 @@ object StudyNotesExporter {
                     run.addPicture(stream, poiPictureType(bounds.outMimeType), file.name, widthEmu, heightEmu)
                 }
             } catch (e: Exception) {
-                Timber.e(e, "StudyNotesExporter: no se pudo incluir la imagen ${image.filePath}")
+                Timber.e("StudyNotesExporter: no se pudo incluir una imagen en el Word (${e.javaClass.simpleName})")
             }
         }
     }

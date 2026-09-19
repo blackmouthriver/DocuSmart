@@ -16,6 +16,7 @@ import com.docsmart.features.converter.domain.model.ConversionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -24,7 +25,76 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 import kotlin.math.roundToInt
+
+/**
+ * Transformación a aplicar a un bitmap para "enderezarlo" según su tag EXIF de
+ * orientación: primero se rota `rotationDegrees` (horario) y después se refleja
+ * horizontal y/o verticalmente. Función de decisión pura -- se puede testear en
+ * JVM, a diferencia de aplicarla (necesita `Matrix`/`Bitmap` reales).
+ */
+internal data class ExifTransform(
+    val rotationDegrees: Float,
+    val flipHorizontal: Boolean,
+    val flipVertical: Boolean,
+)
+
+/**
+ * Ronda 15: las orientaciones EXIF 5 (TRANSPOSE) y 7 (TRANSVERSE) caían en el
+ * `else` y se ignoraban (la imagen salía espejada/rotada). Devuelve `null` si
+ * no hay nada que transformar (NORMAL/UNDEFINED/valor desconocido).
+ */
+internal fun exifTransformFor(orientation: Int): ExifTransform? =
+    when (orientation) {
+        ExifInterface.ORIENTATION_ROTATE_90 -> ExifTransform(90f, flipHorizontal = false, flipVertical = false)
+        ExifInterface.ORIENTATION_ROTATE_180 -> ExifTransform(180f, flipHorizontal = false, flipVertical = false)
+        ExifInterface.ORIENTATION_ROTATE_270 -> ExifTransform(270f, flipHorizontal = false, flipVertical = false)
+        ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> ExifTransform(0f, flipHorizontal = true, flipVertical = false)
+        ExifInterface.ORIENTATION_FLIP_VERTICAL -> ExifTransform(0f, flipHorizontal = false, flipVertical = true)
+        ExifInterface.ORIENTATION_TRANSPOSE -> ExifTransform(90f, flipHorizontal = true, flipVertical = false)
+        ExifInterface.ORIENTATION_TRANSVERSE -> ExifTransform(270f, flipHorizontal = true, flipVertical = false)
+        else -> null
+    }
+
+/** Aplica [exifTransformFor] a [bitmap]; recicla el original si crea uno nuevo. */
+internal fun applyExifOrientation(
+    bitmap: Bitmap,
+    orientation: Int,
+): Bitmap {
+    val transform = exifTransformFor(orientation) ?: return bitmap
+    val matrix = Matrix()
+    if (transform.rotationDegrees != 0f) matrix.postRotate(transform.rotationDegrees)
+    if (transform.flipHorizontal) matrix.postScale(-1f, 1f)
+    if (transform.flipVertical) matrix.postScale(1f, -1f)
+    val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    bitmap.recycle()
+    return rotated
+}
+
+/**
+ * Lee el tag EXIF de orientación de [uri]. Ronda 15: un fallo leyendo el EXIF
+ * (stream sin metadatos, formato raro) hacía que la imagen completa se
+ * descartara como "no se pudo cargar" -- el EXIF es opcional, ante un fallo se
+ * usa NORMAL. La cancelación sí se propaga.
+ */
+internal fun readExifOrientation(
+    context: Context,
+    uri: Uri,
+): Int =
+    try {
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            ExifInterface(stream).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL,
+            )
+        } ?: ExifInterface.ORIENTATION_NORMAL
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Timber.w("Sin orientación EXIF legible: ${e.javaClass.simpleName}")
+        ExifInterface.ORIENTATION_NORMAL
+    }
 
 class ConvertImageToPdfUseCase
     @Inject
@@ -98,7 +168,9 @@ class ConvertImageToPdfUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error en conversión: ${e.message}")
+                    // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase
+                    // y e.message puede contener rutas/URIs reales.
+                    Timber.e("Error en conversión: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     ConversionResult.Error(
                         message =
@@ -132,7 +204,12 @@ class ConvertImageToPdfUseCase
         // lanzaba entre medio (ej. FileOutputStream falla por disco lleno), el
         // catch de invoke() no lo cerraba, mismo patrón de fuga ya corregido en
         // el resto de Herramientas PDF/Convertidor.
-        private fun buildPdfFromImages(
+        //
+        // Ronda 15: ahora suspend con ensureActive() por imagen -- sin ningún
+        // punto de suspensión, cancelar a mitad del lote no se notaba hasta que
+        // TODAS las imágenes terminaban; withContext entonces descartaba el
+        // Success ya calculado y el .pdf recién escrito quedaba huérfano.
+        private suspend fun buildPdfFromImages(
             imageUris: List<Uri>,
             outputFile: File,
             highResolution: Boolean,
@@ -154,6 +231,7 @@ class ConvertImageToPdfUseCase
                 // abajo tampoco lo detectaba).
                 var pageCount = 0
                 imageUris.forEachIndexed { index, uri ->
+                    coroutineContext.ensureActive()
                     val bitmap = loadBitmapFromUri(uri)
                     if (bitmap == null) {
                         Timber.w("No se pudo cargar imagen $index")
@@ -198,6 +276,7 @@ class ConvertImageToPdfUseCase
             Timber.d("PDF guardado: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
 
             return if (outputFile.length() == 0L) {
+                outputFile.delete()
                 ConversionResult.Error(context.getString(R.string.converter_error_generate_pdf_failed))
             } else {
                 ConversionResult.Success(
@@ -263,15 +342,7 @@ class ConvertImageToPdfUseCase
                         BitmapFactory.decodeStream(stream)
                     } ?: return null
 
-                val orientation =
-                    context.contentResolver.openInputStream(uri)?.use { stream ->
-                        ExifInterface(stream).getAttributeInt(
-                            ExifInterface.TAG_ORIENTATION,
-                            ExifInterface.ORIENTATION_NORMAL,
-                        )
-                    } ?: ExifInterface.ORIENTATION_NORMAL
-
-                rotateBitmapForOrientation(rawBitmap, orientation)
+                applyExifOrientation(rawBitmap, readExifOrientation(context, uri))
             } catch (e: CancellationException) {
                 // Hallazgo real de la auditoría del Convertidor (ronda 14): el
                 // fix de "Hallazgo 1" (CancellationException hereda de
@@ -285,7 +356,7 @@ class ConvertImageToPdfUseCase
                 // imágenes de un trabajo que ya debería haberse detenido.
                 throw e
             } catch (e: Exception) {
-                Timber.e("Error cargando imagen: ${e.message}")
+                Timber.e("Error cargando imagen: ${e.javaClass.simpleName}")
                 null
             } catch (e: OutOfMemoryError) {
                 // Hallazgo real de la revisión general 2026-09-16: una sola
@@ -296,24 +367,6 @@ class ConvertImageToPdfUseCase
                 Timber.e(e, "Sin memoria decodificando imagen, se salta")
                 null
             }
-        }
-
-        private fun rotateBitmapForOrientation(
-            bitmap: Bitmap,
-            orientation: Int,
-        ): Bitmap {
-            val matrix = Matrix()
-            when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
-                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
-                else -> return bitmap
-            }
-            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-            bitmap.recycle()
-            return rotated
         }
 
         /** Recuadro (en puntos, centrado) donde se dibuja la imagen en la

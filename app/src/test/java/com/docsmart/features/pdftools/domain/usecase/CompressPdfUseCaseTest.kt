@@ -6,14 +6,19 @@ import android.net.Uri
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import java.nio.file.Files
 
 /**
@@ -138,4 +143,85 @@ class CompressPdfUseCaseTest {
             assertTrue(result is PdfToolResult.Error)
             assertEquals(messages.readError, (result as PdfToolResult.Error).message)
         }
+
+    // Bug real corregido en la ronda 15: copyUriToCache() devolvia null dejando
+    // el archivo (vacio o parcial) huerfano en cacheDir -- el `finally` de
+    // invoke() solo borra cacheFile cuando la copia ya devolvio un File.
+    @Test
+    fun `copyUriToCache con un stream vacio devuelve null y no deja archivo en cache`() {
+        val uri = mockk<Uri>()
+        val resolver = mockk<ContentResolver>()
+        every { resolver.openInputStream(uri) } answers { ByteArrayInputStream(ByteArray(0)) }
+        every { context.contentResolver } returns resolver
+
+        assertNull(useCase.copyUriToCache(uri))
+
+        assertTrue(cacheDir.listFiles().isNullOrEmpty(), "cache huerfano: ${cacheDir.listFiles()?.toList()}")
+    }
+
+    @Test
+    fun `copyUriToCache con stream nulo devuelve null y no deja archivo en cache`() {
+        val uri = mockk<Uri>()
+        val resolver = mockk<ContentResolver>()
+        every { resolver.openInputStream(uri) } returns null
+        every { context.contentResolver } returns resolver
+
+        assertNull(useCase.copyUriToCache(uri))
+
+        assertTrue(cacheDir.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `copyUriToCache borra la copia parcial si el stream falla a mitad de lectura`() {
+        val uri = mockk<Uri>()
+        val resolver = mockk<ContentResolver>()
+        every { resolver.openInputStream(uri) } answers { FailingAfterBytesStream(1024) }
+        every { context.contentResolver } returns resolver
+
+        assertNull(useCase.copyUriToCache(uri))
+
+        assertTrue(cacheDir.listFiles().isNullOrEmpty(), "cache parcial huerfano: ${cacheDir.listFiles()?.toList()}")
+    }
+
+    @Test
+    fun `copyUriToCache copia el contenido completo cuando el stream es valido`() {
+        val uri = mockk<Uri>()
+        val resolver = mockk<ContentResolver>()
+        val content = ByteArray(5000) { (it % 251).toByte() }
+        every { resolver.openInputStream(uri) } answers { ByteArrayInputStream(content) }
+        every { context.contentResolver } returns resolver
+
+        val copied = useCase.copyUriToCache(uri)
+
+        assertNotNull(copied)
+        assertTrue(content.contentEquals(copied!!.readBytes()))
+    }
+
+    @Test
+    fun `una cancelacion leyendo el origen se propaga y no deja archivo en cache`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } throws CancellationException("cancelado")
+            every { context.contentResolver } returns resolver
+
+            var cancelled = false
+            try {
+                useCase(uri, messages = messages)
+            } catch (e: CancellationException) {
+                cancelled = true
+            }
+
+            assertTrue(cancelled, "la CancellationException debia propagarse")
+            assertTrue(cacheDir.listFiles().isNullOrEmpty())
+        }
+
+    /** Entrega `remaining` bytes y despues lanza IOException, como un stream de red/SAF que se corta. */
+    private class FailingAfterBytesStream(private var remaining: Int) : InputStream() {
+        override fun read(): Int {
+            if (remaining <= 0) throw IOException("stream cortado")
+            remaining--
+            return 7
+        }
+    }
 }

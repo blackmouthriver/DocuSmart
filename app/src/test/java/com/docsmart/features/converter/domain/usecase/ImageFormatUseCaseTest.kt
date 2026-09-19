@@ -1,11 +1,22 @@
 package com.docsmart.features.converter.domain.usecase
 
+import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
+import com.docsmart.R
+import com.docsmart.features.converter.domain.model.ConversionResult
+import com.docsmart.features.converter.domain.model.ConversionType
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.file.Files
 
 /**
  * Hallazgo real de la revisión general 2026-09-16 (cuarta pasada, #24):
@@ -102,4 +113,107 @@ class ImageFormatUseCaseTest {
         assertEquals(expected.size, pixelData.size)
         assertEquals(expected.toList(), pixelData.toList())
     }
+
+    // ── argbPixelsToBmp: padding y canal alfa ───────────────────────────────
+
+    @Test
+    fun `argbPixelsToBmp rellena cada fila a multiplo de 4 para todos los anchos`() {
+        // (ancho -> padding esperado por fila): 1->1, 2->2, 3->3, 4->0, 5->1
+        val expectedPadding = mapOf(1 to 1, 2 to 2, 3 to 3, 4 to 0, 5 to 1)
+        expectedPadding.forEach { (width, padding) ->
+            val height = 3
+            val bytes = useCase().argbPixelsToBmp(width, height, IntArray(width * height) { 0xFF123456.toInt() })
+
+            val rowSize = width * 3 + padding
+            assertEquals(54 + rowSize * height, bytes.size, "tamano total para ancho $width")
+            assertEquals(rowSize * height, ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt(34))
+            assertEquals(0, rowSize % 4, "la fila debe ser multiplo de 4 para ancho $width")
+        }
+    }
+
+    @Test
+    fun `argbPixelsToBmp ignora el canal alfa y escribe solo BGR`() {
+        // 0x80 de alfa (semitransparente): los bytes de color no deben cambiar.
+        val bytes = useCase().argbPixelsToBmp(width = 1, height = 1, pixels = intArrayOf(0x80102030.toInt()))
+
+        assertEquals(0x30.toByte(), bytes[54])
+        assertEquals(0x20.toByte(), bytes[55])
+        assertEquals(0x10.toByte(), bytes[56])
+        // 1 pixel = 3 bytes + 1 de padding.
+        assertEquals(58, bytes.size)
+    }
+
+    @Test
+    fun `argbPixelsToBmp de una imagen de un solo pixel de alto conserva el orden de las columnas`() {
+        val red = 0xFFFF0000.toInt()
+        val blue = 0xFF0000FF.toInt()
+        val bytes = useCase().argbPixelsToBmp(width = 2, height = 1, pixels = intArrayOf(red, blue))
+
+        // rojo -> B=00 G=00 R=FF ; azul -> B=FF G=00 R=00
+        val expected = byteArrayOf(0x00, 0x00, 0xFF.toByte(), 0xFF.toByte(), 0x00, 0x00)
+        assertEquals(expected.toList(), bytes.copyOfRange(54, 60).toList())
+    }
+
+    // ── invoke(): caminos alcanzables sin Bitmap real ───────────────────────
+
+    private fun contextWithFiles(): Pair<Context, java.io.File> {
+        val filesDir = Files.createTempDirectory("docsmart_imgfmt_").toFile()
+        val context = mockk<Context>()
+        every { context.filesDir } returns filesDir
+        every { context.getString(R.string.converter_error_read_image) } returns "no se pudo leer"
+        every { context.getString(R.string.converter_error_generic_format) } returns "generico %1\$s"
+        return context to filesDir
+    }
+
+    @Test
+    fun `invoke devuelve Error de lectura sin dejar archivos si la imagen no se puede abrir`() =
+        runTest {
+            val (context, filesDir) = contextWithFiles()
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = ImageFormatUseCase(context)(uri, ConversionType.IMAGE_TO_PNG, "salida")
+
+            assertEquals(ConversionResult.Error("no se pudo leer"), result)
+            assertTrue(File(filesDir, "converted").listFiles().isNullOrEmpty())
+            filesDir.deleteRecursively()
+        }
+
+    @Test
+    fun `invoke propaga la cancelacion en vez de convertirla en un Error`() =
+        runTest {
+            val (context, filesDir) = contextWithFiles()
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } throws CancellationException("cancelado")
+            every { context.contentResolver } returns resolver
+
+            var cancelled = false
+            try {
+                ImageFormatUseCase(context)(uri, ConversionType.IMAGE_TO_JPG, "salida")
+            } catch (e: CancellationException) {
+                cancelled = true
+            }
+
+            assertTrue(cancelled, "la CancellationException debia propagarse")
+            filesDir.deleteRecursively()
+        }
+
+    @Test
+    fun `invoke con una excepcion de lectura devuelve Error generico sin archivos huerfanos`() =
+        runTest {
+            val (context, filesDir) = contextWithFiles()
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } throws SecurityException("permiso")
+            every { context.contentResolver } returns resolver
+
+            val result = ImageFormatUseCase(context)(uri, ConversionType.IMAGE_TO_WEBP, "salida")
+
+            assertEquals(ConversionResult.Error("generico permiso"), result)
+            assertTrue(File(filesDir, "converted").listFiles().isNullOrEmpty())
+            filesDir.deleteRecursively()
+        }
 }

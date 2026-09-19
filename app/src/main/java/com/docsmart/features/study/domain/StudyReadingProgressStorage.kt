@@ -41,20 +41,30 @@ object StudyReadingProgressStorage {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val json = prefs.getString(KEY_LIST, "[]") ?: "[]"
             val array = JSONArray(json)
-            (0 until array.length()).map { i ->
-                val obj = array.getJSONObject(i)
-                ReadingProgress(
-                    uri = obj.getString("uri"),
-                    documentName = obj.optString("name", ""),
-                    paragraphIndex = obj.optInt("paragraphIndex", 0),
-                    totalParagraphs = obj.optInt("totalParagraphs", 0),
-                    currentPage = obj.optInt("currentPage", 1),
-                    totalPages = obj.optInt("totalPages", 1),
-                    lastReadAtMillis = obj.optLong("lastReadAt", 0L),
-                )
+            // Una entrada dañada (sin "uri", no-objeto) se salta sin descartar
+            // las demás: como save() reescribe la lista completa a partir de
+            // esto, antes una sola entrada mala borraba el progreso de TODOS
+            // los documentos en el siguiente guardado.
+            (0 until array.length()).mapNotNull { i ->
+                val obj = array.optJSONObject(i)
+                val uri = obj?.optString("uri", "").orEmpty()
+                if (obj == null || uri.isEmpty()) {
+                    null
+                } else {
+                    ReadingProgress(
+                        uri = uri,
+                        documentName = obj.optString("name", ""),
+                        paragraphIndex = obj.optInt("paragraphIndex", 0),
+                        totalParagraphs = obj.optInt("totalParagraphs", 0),
+                        currentPage = obj.optInt("currentPage", 1),
+                        totalPages = obj.optInt("totalPages", 1),
+                        lastReadAtMillis = obj.optLong("lastReadAt", 0L),
+                    )
+                }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error cargando progreso de lectura")
+            // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase.
+            Timber.e("Error cargando progreso de lectura (${e.javaClass.simpleName})")
             emptyList()
         }
 
@@ -66,6 +76,9 @@ object StudyReadingProgressStorage {
     // Guarda/actualiza el progreso de un documento -- si ya existía, se
     // reemplaza y sube al principio (más reciente primero). Lo que se cae
     // del tope libera su permiso persistente sobre el archivo.
+    // @Synchronized: leer-modificar-escribir sobre el mismo JSON; dos guardados
+    // concurrentes (autoguardado + parada de lectura) se pisaban entre sí.
+    @Synchronized
     @Suppress("TooGenericExceptionCaught")
     fun save(
         context: Context,
@@ -76,12 +89,13 @@ object StudyReadingProgressStorage {
             combined.drop(MAX_ENTRIES).forEach { releasePermission(context, it.uri) }
             persist(context, combined.take(MAX_ENTRIES))
         } catch (e: Exception) {
-            Timber.e(e, "Error guardando progreso de lectura")
+            Timber.e("Error guardando progreso de lectura (${e.javaClass.simpleName})")
         }
     }
 
     // Se llama cuando la lectura llega al final del documento -- ya no hay
     // nada que retomar.
+    @Synchronized
     @Suppress("TooGenericExceptionCaught")
     fun remove(
         context: Context,
@@ -91,7 +105,7 @@ object StudyReadingProgressStorage {
             releasePermission(context, uri)
             persist(context, loadAll(context).filterNot { it.uri == uri })
         } catch (e: Exception) {
-            Timber.e(e, "Error quitando progreso de lectura")
+            Timber.e("Error quitando progreso de lectura (${e.javaClass.simpleName})")
         }
     }
 
@@ -128,7 +142,8 @@ object StudyReadingProgressStorage {
                 Intent.FLAG_GRANT_READ_URI_PERMISSION,
             )
         } catch (e: Exception) {
-            Timber.w(e, "No se pudo liberar el permiso persistente de $uriString")
+            // Sin la URI (nombre de archivo del usuario) ni el Throwable en el log.
+            Timber.w("No se pudo liberar el permiso persistente (${e.javaClass.simpleName})")
         }
     }
 }

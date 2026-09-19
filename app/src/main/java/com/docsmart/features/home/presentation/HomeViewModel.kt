@@ -11,6 +11,8 @@ import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,6 +47,10 @@ class HomeViewModel
         // español, saltándose el sistema de 12 idiomas.
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
+        private companion object {
+            const val RECENT_LIMIT = 5
+        }
+
         private val _uiState = MutableStateFlow(HomeUiState())
         val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -68,28 +74,41 @@ class HomeViewModel
         // sin reabrir el hueco de refresco que encontró la revisión
         // adversarial.
 
+        // Hallazgo real de la ronda 15: cada llamada a loadRecentDocuments()
+        // (LaunchedEffect + ReloadOnScreenResume + rename) lanzaba una
+        // corrutina independiente -- una carga vieja y lenta podia terminar
+        // DESPUES de la nueva y pisar "Recientes" con datos obsoletos
+        // (p. ej. un documento ya enviado a la papelera). Se cancela la
+        // anterior al lanzar la siguiente.
+        private var loadJob: Job? = null
+
         fun loadRecentDocuments() {
-            viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, loadError = null) }
-                try {
-                    // DocumentRepository ya aplica isFavorite desde FavoritesRepository.
-                    // loadRecentlyOpened refleja uso real (RF-VIS/HOME), no solo la
-                    // fecha de modificación del archivo.
-                    val docs = repository.loadRecentlyOpened(limit = 5)
-                    _uiState.update { state ->
-                        state.copy(
-                            recentDocuments = docs,
-                            isLoading = false,
-                        )
-                    }
-                    Timber.d("HomeViewModel: ${docs.size} documentos recientes")
-                } catch (e: Exception) {
-                    Timber.e(e, "HomeViewModel: error cargando recientes")
-                    _uiState.update {
-                        it.copy(isLoading = false, loadError = context.getString(R.string.home_load_recent_error))
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true, loadError = null) }
+                    try {
+                        // DocumentRepository ya aplica isFavorite desde FavoritesRepository.
+                        // loadRecentlyOpened refleja uso real (RF-VIS/HOME), no solo la
+                        // fecha de modificación del archivo.
+                        val docs = repository.loadRecentlyOpened(limit = RECENT_LIMIT)
+                        _uiState.update { state ->
+                            state.copy(
+                                recentDocuments = docs,
+                                isLoading = false,
+                            )
+                        }
+                        Timber.d("HomeViewModel: ${docs.size} documentos recientes")
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // Solo el tipo: CrashlyticsTree reenvia todo Timber.e a Firebase.
+                        Timber.e("HomeViewModel: error cargando recientes: ${e.javaClass.simpleName}")
+                        _uiState.update {
+                            it.copy(isLoading = false, loadError = context.getString(R.string.home_load_recent_error))
+                        }
                     }
                 }
-            }
         }
 
         fun dismissLoadError() {
@@ -110,7 +129,7 @@ class HomeViewModel
                             },
                     )
                 }
-                Timber.d("HomeViewModel: toggleFavorite $documentId → $isNowFavorite")
+                Timber.d("HomeViewModel: toggleFavorite -> $isNowFavorite")
             }
         }
 
@@ -128,6 +147,10 @@ class HomeViewModel
                         recentDocuments = state.recentDocuments.filter { it.id != documentId },
                     )
                 }
+                // Hallazgo real de la ronda 15: una carga en vuelo iniciada antes
+                // de mover a la papelera puede traer el documento de vuelta al
+                // terminar; se reinicia (loadRecentDocuments() cancela la anterior).
+                if (loadJob?.isActive == true) loadRecentDocuments()
             }
         }
 

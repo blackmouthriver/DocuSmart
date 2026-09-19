@@ -165,7 +165,7 @@ class PremiumViewModel
                             is PurchaseResult.Pending ->
                                 state.copy(
                                     isPurchasing = false,
-                                    errorMessage = pendingMessage,
+                                    errorMessage = pendingMessage.ifBlank { null },
                                     isPendingPurchase = true,
                                 )
                             // NoPurchasesToRestore ahora solo llega cuando de verdad no
@@ -235,25 +235,50 @@ class PremiumViewModel
             this.purchaseErrorMessage = restoreErrorMessage
             _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
             viewModelScope.launch {
-                billingManager.restorePurchases()
-                // premiumManager.isPaidPremium.value, no isPremium.value: con el
-                // trial automático sin tarjeta, isPremium ya puede ser true sin
-                // que se haya restaurado nada real -- usar isPremium acá le
-                // mostraría "compra restaurada" a alguien que solo está en el
-                // trial. Se lee directo del StateFlow (no _uiState.value) para
-                // evitar una carrera con el colector de observeAutoTrialState(),
-                // que corre en otra corrutina y podría no haber procesado la
-                // actualización todavía.
-                val wasRestored = premiumManager.isPaidPremium.value
-                _uiState.update { state ->
-                    state.copy(
-                        isPurchasing = false,
-                        errorMessage = if (wasRestored) restoreSuccessMessage else noPurchasesFoundMessage,
-                        purchaseSuccess = wasRestored,
-                    )
-                }
+                // Bug real: antes se ignoraba el desenlace y se decidía el mensaje
+                // por isPaidPremium, sobrescribiendo un Error/Pending real con
+                // "sin compras" (la emisión asíncrona de purchaseResult podía
+                // llegar antes o después de este update). Ahora el desenlace viene
+                // como valor de retorno y define el estado final.
+                val outcome = billingManager.restorePurchases()
+                _uiState.update { state -> applyRestoreOutcome(state, outcome) }
             }
         }
+
+        private fun applyRestoreOutcome(
+            state: PremiumUiState,
+            outcome: PurchaseResult,
+        ): PremiumUiState =
+            when (outcome) {
+                is PurchaseResult.Success ->
+                    state.copy(
+                        isPurchasing = false,
+                        errorMessage = restoreSuccessMessage,
+                        purchaseSuccess = true,
+                        isPendingPurchase = false,
+                    )
+                // La pantalla no pasa un mensaje de "pendiente" al restaurar: sin
+                // texto se deja solo el aviso persistente (isPendingPurchase), en
+                // vez de un snackbar en blanco.
+                is PurchaseResult.Pending ->
+                    state.copy(
+                        isPurchasing = false,
+                        errorMessage = pendingMessage.ifBlank { null },
+                        isPendingPurchase = true,
+                    )
+                is PurchaseResult.NoPurchasesToRestore ->
+                    state.copy(
+                        isPurchasing = false,
+                        errorMessage = noPurchasesFoundMessage,
+                        isPendingPurchase = false,
+                    )
+                is PurchaseResult.Error ->
+                    state.copy(
+                        isPurchasing = false,
+                        errorMessage = purchaseErrorMessage.ifBlank { outcome.debugMessage },
+                    )
+                is PurchaseResult.Cancelled -> state.copy(isPurchasing = false)
+            }
 
         fun dismissError() {
             _uiState.update { it.copy(errorMessage = null) }

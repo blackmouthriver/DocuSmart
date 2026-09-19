@@ -82,9 +82,7 @@ class FlattenAnnotationsPdfUseCase
                     cacheFile = copyUriToCache(sourceUri) ?: return@withContext null
                     outputFile = createOutputFile()
 
-                    PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
-                        flattenAnnotationsOntoDocument(pdf, annotations)
-                    }
+                    flattenInto(cacheFile, outputFile, annotations)
 
                     if (outputFile.length() == 0L) {
                         return@withContext null
@@ -94,13 +92,45 @@ class FlattenAnnotationsPdfUseCase
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error aplanando anotaciones")
+                    Timber.e("$TAG: error aplanando anotaciones → ${e.javaClass.simpleName}")
                     null
                 } finally {
                     cacheFile?.delete()
                     if (!committed) outputFile?.delete()
                 }
             }
+
+        // Hallazgo real de la ronda 15: reader/writer se construian inline como
+        // argumentos de PdfDocument(...) -- si el constructor lanzaba (PDF
+        // corrupto o no-PDF), el FileOutputStream del PdfWriter (ya abierto,
+        // creando el archivo de salida) y el reader nunca se cerraban: fuga de
+        // descriptores de archivo, y el archivo parcial no se podia borrar en
+        // sistemas que bloquean archivos abiertos. Ahora se cierran siempre.
+        @Suppress("TooGenericExceptionCaught")
+        private fun flattenInto(
+            source: File,
+            output: File,
+            annotations: List<AnnotationEntity>,
+        ) {
+            val reader = PdfReader(source)
+            val writer = PdfWriter(output)
+            try {
+                PdfDocument(reader, writer).use { pdf ->
+                    flattenAnnotationsOntoDocument(pdf, annotations)
+                }
+            } finally {
+                try {
+                    reader.close()
+                } catch (ignored: Exception) {
+                    // ya cerrado por PdfDocument.close()
+                }
+                try {
+                    writer.close()
+                } catch (ignored: Exception) {
+                    // ya cerrado por PdfDocument.close()
+                }
+            }
+        }
 
         // Extraído de invoke() (revisión adversarial de correctitud, ronda 11)
         // para bajar su complejidad ciclomática por debajo del límite de detekt
@@ -201,7 +231,7 @@ class FlattenAnnotationsPdfUseCase
                 val copied = if (uri.scheme == "file") copyFileUriToCache(uri, file) else copyContentUriToCache(uri, file)
                 if (copied) file else null
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache → ${e.javaClass.simpleName}")
                 // Bug real encontrado por la revisión de seguridad HU-46: una
                 // excepción a mitad de la copia podía dejar un archivo parcial
                 // huérfano en cacheDir -- a diferencia del resto del método (que

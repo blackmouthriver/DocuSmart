@@ -51,49 +51,54 @@ class ImageFormatUseCase
             fileName: String? = null,
         ): ConversionResult =
             withContext(Dispatchers.IO) {
+                // Ronda 15: outputFile se declara afuera del try para poder
+                // borrar el archivo parcial si escribir/comprimir falla a mitad
+                // (disco lleno, OOM) -- antes quedaba huérfano en filesDir/converted.
+                var outputFile: File? = null
                 try {
-                    val bitmap =
-                        context.contentResolver.openInputStream(imageUri)?.use {
-                            BitmapFactory.decodeStream(it)
-                        } ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_image))
+                    val bitmap = decodeOriented(imageUri)
+                    if (bitmap == null) {
+                        return@withContext ConversionResult.Error(
+                            context.getString(R.string.converter_error_read_image),
+                        )
+                    }
 
                     val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
                     val baseName = fileName ?: generateTimestamp()
                     val target = resolveTargetFormat(targetType)
 
-                    // Hallazgo real de la revisión general 2026-09-16 (cuarta
-                    // pasada): ni JPEG ni el BMP de 24 bits sin comprimir
-                    // (resolveTargetFormat/bitmapToBmp) soportan canal alfa --
-                    // comprimir un PNG/WebP con transparencia directo a
-                    // cualquiera de los dos deja las zonas transparentes/
-                    // semitransparentes NEGRAS en el resultado (Android
-                    // premultiplica el alfa) en vez de blancas. Se compone sobre
-                    // un fondo blanco antes de comprimir/escribir.
-                    val bitmapToCompress =
-                        if (target.needsWhiteBackground && bitmap.hasAlpha()) {
-                            flattenOnWhite(bitmap)
-                        } else {
-                            bitmap
-                        }
+                    val file = File(outputDir, "$baseName.${target.extension}")
+                    outputFile = file
+                    if (!encodeToFile(bitmap, file, target)) {
+                        // Bitmap.compress() devuelve false (sin lanzar) si no pudo
+                        // codificar -- antes se reportaba Success con un archivo
+                        // vacío/truncado.
+                        file.delete()
+                        return@withContext ConversionResult.Error(
+                            String.format(
+                                context.getString(R.string.converter_error_generic_format),
+                                context.getString(R.string.converter_error_unknown),
+                            ),
+                        )
+                    }
 
-                    val outputFile = File(outputDir, "$baseName.${target.extension}")
-                    outputFile.outputStream().use { out -> writeImage(out, bitmapToCompress, target) }
-                    bitmap.recycle()
-                    if (bitmapToCompress !== bitmap) bitmapToCompress.recycle()
-
-                    Timber.d("ImageFormatUseCase: convertido a ${target.extension} — ${outputFile.length() / 1024} KB")
+                    Timber.d("ImageFormatUseCase: convertido a ${target.extension} — ${file.length() / 1024} KB")
 
                     ConversionResult.Success(
-                        outputFile = outputFile,
+                        outputFile = file,
                         pageCount = 1,
-                        fileSizeKb = (outputFile.length() / 1024).toInt(),
+                        fileSizeKb = (file.length() / 1024).toInt(),
                     )
                 } catch (e: CancellationException) {
                     // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
                     // en ConvertImageToPdfUseCase.kt.
+                    outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "ImageFormatUseCase: error")
+                    // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase
+                    // y e.message puede contener rutas/URIs reales.
+                    Timber.e("ImageFormatUseCase: error: ${e.javaClass.simpleName}")
+                    outputFile?.delete()
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
                     )
@@ -104,6 +109,7 @@ class ImageFormatUseCase
                     // -- OutOfMemoryError no hereda de Exception, así que el catch
                     // de arriba nunca la atrapaba.
                     Timber.e(e, "ImageFormatUseCase: sin memoria decodificando la imagen")
+                    outputFile?.delete()
                     ConversionResult.Error(
                         String.format(
                             context.getString(R.string.converter_error_generic_format),
@@ -112,6 +118,45 @@ class ImageFormatUseCase
                     )
                 }
             }
+
+        // Ronda 15: BitmapFactory ignora el tag EXIF -- una foto vertical de
+        // cámara se convertía a JPG/PNG/WebP/BMP "acostada" (la re-codificación
+        // descarta el EXIF, así que la rotación se perdía para siempre). Mismo
+        // bug ya corregido en ConvertImageToPdfUseCase (2026-09-11).
+        private fun decodeOriented(uri: Uri): Bitmap? {
+            val decoded =
+                context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+                    ?: return null
+            return applyExifOrientation(decoded, readExifOrientation(context, uri))
+        }
+
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): ni
+        // JPEG ni el BMP de 24 bits sin comprimir soportan canal alfa --
+        // comprimir un PNG/WebP con transparencia directo a cualquiera de los
+        // dos deja las zonas transparentes NEGRAS (Android premultiplica el
+        // alfa) en vez de blancas. Se compone sobre un fondo blanco antes de
+        // escribir. Ronda 15: los bitmaps (original y aplanado) se reciclan en
+        // finally -- antes solo si la escritura terminaba bien. Devuelve el
+        // resultado de la codificación (false = no se pudo codificar).
+        private fun encodeToFile(
+            bitmap: Bitmap,
+            file: File,
+            target: TargetFormat,
+        ): Boolean {
+            var flattened: Bitmap? = null
+            try {
+                val source =
+                    if (target.needsWhiteBackground && bitmap.hasAlpha()) {
+                        flattenOnWhite(bitmap).also { flattened = it }
+                    } else {
+                        bitmap
+                    }
+                return file.outputStream().use { out -> writeImage(out, source, target) }
+            } finally {
+                bitmap.recycle()
+                flattened?.recycle()
+            }
+        }
 
         // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
         // codificador BMP de 24 bits sin comprimir (BITMAPFILEHEADER de 14
@@ -201,13 +246,13 @@ class ImageFormatUseCase
             out: java.io.OutputStream,
             bitmap: Bitmap,
             target: TargetFormat,
-        ) {
+        ): Boolean =
             if (target.isBmp) {
                 out.write(bitmapToBmp(bitmap))
+                true
             } else {
                 bitmap.compress(target.compressFormat, target.quality, out)
             }
-        }
 
         private fun flattenOnWhite(source: Bitmap): Bitmap {
             val flattened = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)

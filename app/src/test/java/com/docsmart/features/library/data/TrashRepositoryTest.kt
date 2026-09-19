@@ -1,7 +1,11 @@
 package com.docsmart.features.library.data
 
+import android.content.ContentResolver
 import android.content.Context
 import android.content.SharedPreferences
+import android.database.Cursor
+import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.room.withTransaction
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocuSmartDatabase
@@ -17,6 +21,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -251,6 +256,278 @@ class TrashRepositoryTest {
             assertEquals(1, trashDao.getAll().size)
         }
 
+    // ── ronda 15: moveToTrash/restoreFromTrash/deleteAllForever/purga ─────────
+
+    @Test
+    fun `moveToTrash devuelve false y no oculta nada si falla el insert`() =
+        runTest {
+            trashDao.failInsert = true
+
+            val moved = repository.moveToTrash("/ruta/cualquiera.pdf")
+
+            assertFalse(moved)
+            assertTrue(trashDao.getAll().isEmpty())
+        }
+
+    @Test
+    fun `moveToTrash sigue siendo exitoso si solo falla la limpieza del historial`() =
+        runTest {
+            // Antes: el fallo de historyDao.remove() devolvia false con el
+            // documento YA en trash_entries (oculto de Biblioteca), y la UI
+            // mostraba "no se pudo eliminar" con el archivo ya desaparecido.
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "documento.pdf").apply { writeText("contenido") }
+            historyDao.failRemove = true
+
+            val moved = repository.moveToTrash(file.absolutePath)
+
+            assertTrue(moved)
+            assertEquals(listOf(file.absolutePath), trashDao.getAll().map { it.documentId })
+        }
+
+    @Test
+    fun `restoreFromTrash de un archivo que ya no existe devuelve false y limpia la entrada`() =
+        runTest {
+            val missing = File(filesDir, "borrado_por_fuera.pdf")
+            trashDao.insert(TrashEntry(missing.absolutePath, 1000L))
+
+            val restored = repository.restoreFromTrash(missing.absolutePath)
+
+            assertFalse(restored)
+            assertTrue(trashDao.getAll().isEmpty(), "no debe quedar una entrada huerfana apuntando a la nada")
+        }
+
+    @Test
+    fun `restoreFromTrash devuelve false si Room falla al quitar la entrada`() =
+        runTest {
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "documento.pdf").apply { writeText("contenido") }
+            trashDao.insert(TrashEntry(file.absolutePath, 1000L))
+            trashDao.failRemoveFor = file.absolutePath
+
+            val restored = repository.restoreFromTrash(file.absolutePath)
+
+            assertFalse(restored)
+            assertTrue(file.exists())
+        }
+
+    @Test
+    fun `restoreFromTrash de un content Uri existente cierra el cursor y restaura`() =
+        runTest {
+            val uriString = "content://media/external/images/media/55"
+            val mockUri = mockk<Uri>()
+            mockkStatic(Uri::class)
+            try {
+                every { Uri.parse(uriString) } returns mockUri
+                val cursor = mockk<Cursor>(relaxed = true)
+                every { cursor.moveToFirst() } returns true
+                val resolver = mockk<ContentResolver>()
+                every { resolver.query(mockUri, null, null, null, null) } returns cursor
+                every { context.contentResolver } returns resolver
+                trashDao.insert(TrashEntry(uriString, 1000L))
+
+                val restored = repository.restoreFromTrash(uriString)
+
+                assertTrue(restored)
+                assertTrue(trashDao.getAll().isEmpty())
+                verify { cursor.close() }
+            } finally {
+                unmockkStatic(Uri::class)
+            }
+        }
+
+    @Test
+    fun `restoreFromTrash de un content Uri sin filas devuelve false`() =
+        runTest {
+            val uriString = "content://media/external/images/media/56"
+            val mockUri = mockk<Uri>()
+            mockkStatic(Uri::class)
+            try {
+                every { Uri.parse(uriString) } returns mockUri
+                val cursor = mockk<Cursor>(relaxed = true)
+                every { cursor.moveToFirst() } returns false
+                val resolver = mockk<ContentResolver>()
+                every { resolver.query(mockUri, null, null, null, null) } returns cursor
+                every { context.contentResolver } returns resolver
+                trashDao.insert(TrashEntry(uriString, 1000L))
+
+                val restored = repository.restoreFromTrash(uriString)
+
+                assertFalse(restored)
+                verify { cursor.close() }
+            } finally {
+                unmockkStatic(Uri::class)
+            }
+        }
+
+    @Test
+    fun `restoreFromTrash de un content Uri cuyo proveedor lanza devuelve false sin crashear`() =
+        runTest {
+            val uriString = "content://media/external/images/media/57"
+            val mockUri = mockk<Uri>()
+            mockkStatic(Uri::class)
+            try {
+                every { Uri.parse(uriString) } returns mockUri
+                val resolver = mockk<ContentResolver>()
+                every { resolver.query(mockUri, null, null, null, null) } throws SecurityException("sin permiso")
+                every { context.contentResolver } returns resolver
+                trashDao.insert(TrashEntry(uriString, 1000L))
+
+                val restored = repository.restoreFromTrash(uriString)
+
+                assertFalse(restored)
+            } finally {
+                unmockkStatic(Uri::class)
+            }
+        }
+
+    @Test
+    fun `deleteAllForever borra los archivos de la app y limpia entradas, alias y favoritos`() =
+        runTest {
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val first = File(dir, "uno.pdf").apply { writeText("1") }
+            val second = File(dir, "dos.pdf").apply { writeText("2") }
+            trashDao.insert(TrashEntry(first.absolutePath, 1000L))
+            trashDao.insert(TrashEntry(second.absolutePath, 2000L))
+
+            val outcome = repository.deleteAllForever(listOf(first.absolutePath, second.absolutePath))
+
+            assertTrue(outcome is TrashRepository.BulkDeleteOutcome.Done)
+            assertFalse(first.exists())
+            assertFalse(second.exists())
+            assertTrue(trashDao.getAll().isEmpty())
+            coVerify { favorites.removeFavorite(first.absolutePath) }
+            coVerify { favorites.removeFavorite(second.absolutePath) }
+        }
+
+    @Test
+    fun `deleteAllForever conserva en la papelera lo que no se pudo borrar`() =
+        runTest {
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val deletable = File(dir, "borrable.pdf").apply { writeText("1") }
+            val missing = File(dir, "fantasma.pdf")
+            trashDao.insert(TrashEntry(deletable.absolutePath, 1000L))
+            trashDao.insert(TrashEntry(missing.absolutePath, 2000L))
+
+            repository.deleteAllForever(listOf(deletable.absolutePath, missing.absolutePath))
+
+            assertEquals(listOf(missing.absolutePath), trashDao.getAll().map { it.documentId })
+            coVerify(exactly = 0) { favorites.removeFavorite(missing.absolutePath) }
+        }
+
+    @Test
+    fun `deleteAllForever con lista vacia no hace nada y devuelve Done`() =
+        runTest {
+            val outcome = repository.deleteAllForever(emptyList())
+
+            assertTrue(outcome is TrashRepository.BulkDeleteOutcome.Done)
+        }
+
+    @Test
+    fun `deleteAllForever borra un documento SAF individualmente via DocumentsContract`() =
+        runTest {
+            // Antes todo content:// iba al pedido masivo de MediaStore (que
+            // rechaza URIs SAF y tumbaba el lote entero en API 30+). Nota: en
+            // JVM Build.VERSION.SDK_INT == 0, asi que la rama del pedido masivo
+            // en si no es alcanzable; esto cubre el borrado individual SAF.
+            val safId = "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fx.pdf"
+            val safUri = mockk<Uri>()
+            every { safUri.authority } returns "com.android.externalstorage.documents"
+            mockkStatic(Uri::class)
+            mockkStatic(DocumentsContract::class)
+            try {
+                every { Uri.parse(safId) } returns safUri
+                every { context.contentResolver } returns mockk<ContentResolver>()
+                every { DocumentsContract.deleteDocument(any(), safUri) } returns true
+                trashDao.insert(TrashEntry(safId, 1000L))
+
+                val outcome = repository.deleteAllForever(listOf(safId))
+
+                assertTrue(outcome is TrashRepository.BulkDeleteOutcome.Done)
+                assertTrue(trashDao.getAll().isEmpty())
+                coVerify { favorites.removeFavorite(safId) }
+            } finally {
+                unmockkStatic(DocumentsContract::class)
+                unmockkStatic(Uri::class)
+            }
+        }
+
+    @Test
+    fun `finalizeDeleteForever en lote limpia cada entrada y su identidad`() =
+        runTest {
+            trashDao.insert(TrashEntry("/a.pdf", 1L))
+            trashDao.insert(TrashEntry("/b.pdf", 2L))
+            trashDao.insert(TrashEntry("/c.pdf", 3L))
+
+            repository.finalizeDeleteForever(listOf("/a.pdf", "/b.pdf"))
+
+            assertEquals(listOf("/c.pdf"), trashDao.getAll().map { it.documentId })
+            coVerify { favorites.removeFavorite("/a.pdf") }
+            coVerify { favorites.removeFavorite("/b.pdf") }
+            coVerify(exactly = 0) { favorites.removeFavorite("/c.pdf") }
+        }
+
+    @Test
+    fun `purgeExpiredTrash se re-ancla tras un reinicio del dispositivo y termina purgando`() =
+        runTest {
+            // elapsedRealtime se reinicia al arrancar: si el candidato se anoto
+            // con un uptime enorme, tras reiniciar nowElapsed < firstSeen y la
+            // diferencia negativa nunca alcanzaba el minimo -- la entrada
+            // vencida no se purgaba jamas (hasta superar el uptime viejo).
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val old = File(dir, "viejo.pdf").apply { writeText("contenido") }
+            val now = 100_000_000_000L
+            val retentionMillis = TrashRepository.TRASH_RETENTION_DAYS * 24L * 60 * 60 * 1000
+            trashDao.insert(TrashEntry(old.absolutePath, now - retentionMillis - 1))
+
+            // Primera deteccion con un uptime de ~578 dias.
+            repository.purgeExpiredTrash(now, nowElapsed = 50_000_000_000L)
+            // Reinicio: el reloj real vuelve a valores chicos -- re-ancla.
+            repository.purgeExpiredTrash(now, nowElapsed = 1_000L)
+            assertTrue(old.exists(), "el re-anclaje no purga: falta tiempo real desde el nuevo arranque")
+
+            repository.purgeExpiredTrash(now, nowElapsed = 1_000L + TrashRepository.MIN_REAL_MS_BEFORE_PURGE + 1)
+
+            assertFalse(old.exists())
+            assertTrue(trashDao.getAll().isEmpty())
+        }
+
+    @Test
+    fun `purgeExpiredTrash sigue con las demas entradas si una falla`() =
+        runTest {
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val broken = File(dir, "roto.pdf").apply { writeText("1") }
+            val healthy = File(dir, "sano.pdf").apply { writeText("2") }
+            val now = 100_000_000_000L
+            val retentionMillis = TrashRepository.TRASH_RETENTION_DAYS * 24L * 60 * 60 * 1000
+            val expiredAt = now - retentionMillis - 1
+            // `broken` va primero (el fake conserva el orden de insercion).
+            trashDao.insert(TrashEntry(broken.absolutePath, expiredAt))
+            trashDao.insert(TrashEntry(healthy.absolutePath, expiredAt))
+            trashDao.failRemoveFor = broken.absolutePath
+
+            repository.purgeExpiredTrash(now, nowElapsed = 1_000_000L)
+            repository.purgeExpiredTrash(now, nowElapsed = 1_000_000L + TrashRepository.MIN_REAL_MS_BEFORE_PURGE + 1)
+
+            assertFalse(healthy.exists(), "la entrada sana debe purgarse aunque la anterior haya fallado")
+            assertEquals(listOf(broken.absolutePath), trashDao.getAll().map { it.documentId })
+        }
+
+    @Test
+    fun `purgeExpiredTrash no purga una entrada dentro del plazo aunque pase mucho tiempo real`() =
+        runTest {
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val fresh = File(dir, "fresco.pdf").apply { writeText("contenido") }
+            val now = 100_000_000_000L
+            trashDao.insert(TrashEntry(fresh.absolutePath, now - 1000L))
+
+            repository.purgeExpiredTrash(now, nowElapsed = 1_000_000L)
+            repository.purgeExpiredTrash(now, nowElapsed = 1_000_000L + TrashRepository.MIN_REAL_MS_BEFORE_PURGE * 3)
+
+            assertTrue(fresh.exists())
+            assertEquals(1, trashDao.getAll().size)
+        }
+
     // `loadTrashedDocuments()` no está cubierto por un test directo: depende
     // de `DocumentRepository.loadAllDocumentsRaw()`, que llama a
     // `loadImagesFromMediaStore()` (ContentResolver real), mismo límite ya
@@ -278,7 +555,10 @@ class TrashRepositoryTest {
         override suspend fun allEntries(): List<DocumentHistoryEntry> =
             store.entries.sortedByDescending { it.value }.map { DocumentHistoryEntry(it.key, it.value) }
 
+        var failRemove = false
+
         override suspend fun remove(documentId: String) {
+            if (failRemove) throw IllegalStateException("fallo simulado de Room")
             store.remove(documentId)
         }
 
@@ -292,12 +572,16 @@ class TrashRepositoryTest {
 
     private class FakeTrashDao : TrashDao {
         private val store = mutableMapOf<String, TrashEntry>()
+        var failInsert = false
+        var failRemoveFor: String? = null
 
         override suspend fun insert(entry: TrashEntry) {
+            if (failInsert) throw IllegalStateException("fallo simulado de Room")
             store[entry.documentId] = entry
         }
 
         override suspend fun remove(documentId: String) {
+            if (documentId == failRemoveFor) throw IllegalStateException("fallo simulado de Room")
             store.remove(documentId)
         }
 

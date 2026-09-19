@@ -13,6 +13,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 /**
@@ -38,7 +41,19 @@ class ScanImageEditor
         // `ScanImageEditor` vive tanto como `ScanImageEditorViewModel`
         // (@HiltViewModel, una instancia por visita a ScanResultScreen), así
         // que el mapa cubre exactamente la sesión de edición del usuario.
-        private val ownedCacheFiles = mutableMapOf<Uri, File>()
+        // ConcurrentHashMap: applyAdjustments()/applyColorMode() escriben desde
+        // hilos de Dispatchers.IO mientras deleteCachedFile() corre desde el hilo
+        // principal -- un mutableMapOf() (LinkedHashMap) no es seguro así.
+        private val ownedCacheFiles = ConcurrentHashMap<Uri, File>()
+
+        // Punto único de registro (y costura de test: el resto del pipeline usa
+        // Bitmap/FileProvider reales, no disponibles en un test JVM).
+        internal fun trackOwnedFile(
+            uri: Uri,
+            file: File,
+        ) {
+            ownedCacheFiles[uri] = file
+        }
 
         @Suppress("TooGenericExceptionCaught")
         suspend fun applyAdjustments(
@@ -59,17 +74,18 @@ class ScanImageEditor
                     val outputFile = writeToCache(adjusted)
 
                     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", outputFile)
-                    ownedCacheFiles[uri] = outputFile
+                    trackOwnedFile(uri, outputFile)
                     uri
                 } catch (e: OutOfMemoryError) {
                     // H4: en Kotlin/JVM, Error no es subclase de Exception -- un OOM
                     // real decodificando/escalando el bitmap (dispositivo con poca
                     // RAM) no lo capturaba el catch genérico de abajo y tumbaba la
                     // app en vez de devolver null con gracia.
-                    Timber.e(e, "Sin memoria aplicando ajustes a la imagen escaneada")
+                    // Solo el tipo: CrashlyticsTree reenvía todo >= WARN a Firebase.
+                    Timber.e("Sin memoria aplicando ajustes a la imagen escaneada (${e.javaClass.simpleName})")
                     null
                 } catch (e: Exception) {
-                    Timber.e(e, "Error aplicando ajustes a la imagen escaneada")
+                    Timber.e("Error aplicando ajustes a la imagen escaneada (${e.javaClass.simpleName})")
                     null
                 } finally {
                     // Revisión adversarial de seguridad (ronda 11): el catch de OOM
@@ -124,16 +140,16 @@ class ScanImageEditor
                     // registraba su archivo en ownedCacheFiles -- deleteCachedFile()
                     // nunca podía encontrarlo, así que cada cambio de modo de color
                     // quedaba huérfano para siempre en cacheDir/scanner_edits/.
-                    ownedCacheFiles[uri] = outputFile
+                    trackOwnedFile(uri, outputFile)
                     uri
                 } catch (e: OutOfMemoryError) {
                     // H4: mismo motivo que en applyAdjustments() -- Error no es
                     // subclase de Exception, así que un OOM real acá también
                     // necesita su propio catch para no tumbar la app.
-                    Timber.e(e, "Sin memoria aplicando modo de color a la imagen escaneada")
+                    Timber.e("Sin memoria aplicando modo de color a la imagen escaneada (${e.javaClass.simpleName})")
                     null
                 } catch (e: Exception) {
-                    Timber.e(e, "Error aplicando modo de color a la imagen escaneada")
+                    Timber.e("Error aplicando modo de color a la imagen escaneada (${e.javaClass.simpleName})")
                     null
                 } finally {
                     // Revisión adversarial de seguridad (ronda 11): recicla en TODOS
@@ -184,11 +200,20 @@ class ScanImageEditor
 
         private fun writeToCache(bitmap: Bitmap): File {
             val dir = File(context.cacheDir, "scanner_edits").apply { mkdirs() }
-            val file = File(dir, "edit_${System.currentTimeMillis()}.jpg")
+            // UUID además del timestamp: dos ediciones dentro del mismo milisegundo
+            // (páginas distintas en paralelo) compartían archivo y URI de FileProvider.
+            val file = File(dir, "edit_${System.currentTimeMillis()}_${UUID.randomUUID()}.jpg")
             try {
-                file.outputStream().use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
-                }
+                val compressed =
+                    file.outputStream().use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+                    }
+                // compress() devuelve false (sin lanzar) si falla: antes se
+                // devolvía un archivo vacío/truncado como si fuera un éxito.
+                if (!compressed) throw IOException("No se pudo comprimir la imagen editada")
+            } catch (e: IOException) {
+                file.delete()
+                throw e
             } catch (e: OutOfMemoryError) {
                 // Revisión adversarial de seguridad (ronda 11): bitmap.compress()
                 // es la asignación de buffers más grande del pipeline -- un OOM

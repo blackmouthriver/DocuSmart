@@ -11,6 +11,7 @@ import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
@@ -97,7 +98,6 @@ class BillingManager
             const val PRODUCT_MONTHLY = "com.docsmart.premium.monthly"
             const val PRODUCT_ANNUAL = "com.docsmart.premium.annual"
             private val SUBSCRIPTION_PRODUCT_IDS = listOf(PRODUCT_MONTHLY, PRODUCT_ANNUAL)
-            private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
 
             // Hallazgo real de la auditoría general 2026-09-17 (séptima
             // ronda, Alta -- M1): restorePurchases() antes solo corría en la
@@ -148,7 +148,8 @@ class BillingManager
         private val _planOffers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
         val planOffers: StateFlow<Map<String, PlanOffer>> = _planOffers.asStateFlow()
 
-        private var productDetailsCache: Map<String, com.android.billingclient.api.ProductDetails> = emptyMap()
+        @Volatile
+        private var productDetailsCache: Map<String, ProductDetails> = emptyMap()
 
         // Hallazgo real de la revisión adversarial de esta misma ronda: al
         // principio se fijaba en `init{}` de forma incondicional, antes de
@@ -158,6 +159,7 @@ class BillingManager
         // el mecanismo de respaldo de ON_START hasta por 4h. `null` significa
         // "todavía nunca se completó un intento real", y en ese estado el
         // throttle no bloquea nada.
+        @Volatile
         private var lastRestoreCheckElapsedMs: Long? = null
 
         // Hallazgo 6 (auditoría monetización 2026-09-18, Baja): en una carrera
@@ -180,6 +182,9 @@ class BillingManager
                         }
                     }
                     BillingClient.BillingResponseCode.USER_CANCELED -> emitResult(PurchaseResult.Cancelled)
+                    // Ya es dueño de la suscripción (Premium local perdido o
+                    // desincronizado): no es un error real, se resincroniza.
+                    BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> recoverAlreadyOwned()
                     else -> emitResult(PurchaseResult.Error(billingResult.debugMessage))
                 }
             }
@@ -281,7 +286,9 @@ class BillingManager
                 // excepción real de Play Billing acá (no solo un
                 // BillingResponseCode de error) tumbaba el proceso entero para
                 // cualquier usuario, no solo en la pantalla Premium.
-                Timber.e(e, "BillingManager: excepción al consultar productos de Play Billing")
+                Timber.e(
+                    "BillingManager: excepción al consultar productos de Play Billing (${e.javaClass.simpleName})",
+                )
             }
         }
 
@@ -291,20 +298,7 @@ class BillingManager
         // así en vez de por posición, porque Play Billing no garantiza que sea
         // siempre la primera. La fase recurrente real (lo que se le muestra al
         // usuario como precio) es la de mayor precio.
-        private fun planOfferOf(details: com.android.billingclient.api.ProductDetails): PlanOffer {
-            val phases =
-                details.subscriptionOfferDetails
-                    ?.firstOrNull()
-                    ?.pricingPhases
-                    ?.pricingPhaseList
-                    .orEmpty()
-            val trialPhase = phases.firstOrNull { it.priceAmountMicros == 0L }
-            val recurringPhase = phases.maxByOrNull { it.priceAmountMicros } ?: phases.firstOrNull()
-            return PlanOffer(
-                price = recurringPhase?.formattedPrice ?: "",
-                trialDays = trialPhase?.billingPeriod?.let(::iso8601PeriodToDays),
-            )
-        }
+        private fun planOfferOf(details: ProductDetails): PlanOffer = planOfferFor(details)
 
         /** Devuelve false si Play Billing no está listo o el producto no se encontró. */
         fun launchPurchase(
@@ -313,7 +307,25 @@ class BillingManager
         ): Boolean {
             val billingFlowParams = buildPurchaseParams(productId) ?: return false
             val result = billingClient.launchBillingFlow(activity, billingFlowParams)
-            return result.responseCode == BillingClient.BillingResponseCode.OK
+            return when (result.responseCode) {
+                BillingClient.BillingResponseCode.OK -> true
+                // El usuario ya tiene la suscripción: en vez de un error, se
+                // resincroniza el estado y se resuelve como compra exitosa.
+                BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+                    recoverAlreadyOwned()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // Si la restauración encontró la compra (Success), se emite Success para
+        // que la pantalla salga del estado "comprando"; los demás desenlaces ya
+        // los emite restorePurchases() por su cuenta.
+        private fun recoverAlreadyOwned() {
+            scope.launch {
+                if (restorePurchases() is PurchaseResult.Success) emitResult(PurchaseResult.Success)
+            }
         }
 
         private fun buildPurchaseParams(productId: String): BillingFlowParams? {
@@ -343,78 +355,77 @@ class BillingManager
                 .build()
         }
 
+        /**
+         * Devuelve el desenlace además de emitirlo por [purchaseResult]: quien
+         * espera la restauración (PremiumViewModel) no puede depender del orden
+         * de llegada de la emisión asíncrona. Una restauración que encuentra
+         * compras devuelve [PurchaseResult.Success] SIN emitirlo (no es una
+         * conversión ni una compra nueva).
+         */
         @Suppress("TooGenericExceptionCaught")
-        suspend fun restorePurchases() {
+        suspend fun restorePurchases(): PurchaseResult {
             // Bug real corregido 2026-09-08: antes se llamaba a
             // queryPurchasesAsync() sin esperar a que la conexión con Play
-            // Billing quedara lista (`readyDeferred` se completaba pero nunca se
-            // esperaba en ningún lado) -- si esta función corría antes de que la
-            // conexión terminara de establecerse, la consulta podía fallar o
-            // devolver una lista vacía sin haber consultado nada de verdad.
+            // Billing quedara lista -- ver completeReady().
             val ready = readyDeferred.await()
             if (!ready) {
                 Timber.w("BillingManager: restorePurchases() -- la conexión con Play Billing nunca quedó lista")
-                emitResult(PurchaseResult.Error("No se pudo conectar con Google Play"))
-                return
+                return emitAndReturn(PurchaseResult.Error("No se pudo conectar con Google Play"))
             }
-
-            try {
-                val subs =
-                    billingClient.queryPurchasesAsync(
-                        QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build(),
-                    )
-
-                // Bug real corregido 2026-09-08: antes no se revisaba si la consulta
-                // en sí había fallado (sin red, servicio de Play Store caído, etc.)
-                // -- una consulta fallida devuelve `purchasesList` vacía, exactamente
-                // igual que "el usuario genuinamente no tiene compras", así que esta
-                // función desactivaba Premium a un usuario que sí había pagado, cada
-                // vez que la app arranca (esto corre automáticamente en cada inicio,
-                // no solo al tocar "Restaurar compras"). `evaluateRestoreOutcome()`
-                // deja esa decisión como función pura testeable (ver BillingManagerTest)
-                // para que este bug no pueda reaparecer sin que un test lo detecte.
-                when (val outcome = evaluateRestoreOutcome(subs.billingResult.responseCode, subs.purchasesList)) {
-                    RestoreOutcome.QueryFailed -> {
-                        Timber.w(
-                            "BillingManager: restorePurchases() -- la consulta falló, no se toca el estado " +
-                                "Premium actual (${subs.billingResult.debugMessage})",
-                        )
-                        emitResult(PurchaseResult.Error(subs.billingResult.debugMessage))
-                    }
-                    RestoreOutcome.NothingOwned -> {
-                        premiumManager.deactivatePremium()
-                        emitResult(PurchaseResult.NoPurchasesToRestore)
-                    }
-                    is RestoreOutcome.Owned -> {
-                        outcome.purchases.forEach { handlePurchase(it, isRestore = true) }
-                    }
-                    is RestoreOutcome.Pending -> {
-                        // Hallazgo 3 (auditoría monetización 2026-09-18, Media):
-                        // antes evaluateRestoreOutcome() no distinguía "pendiente"
-                        // de "sin compras" -- cualquier apertura posterior de la
-                        // app con la compra todavía PENDING (pago en efectivo o
-                        // transferencia, método común en Latinoamérica que tarda
-                        // en confirmarse) la descartaba como NothingOwned,
-                        // desactivando Premium innecesariamente y mostrándole al
-                        // usuario "no se encontraron compras" en vez de indicar
-                        // que su pago sigue en trámite. No se llama a
-                        // deactivatePremium() acá: una compra pendiente nunca
-                        // activó Premium (ver handlePurchase, rama PENDING), así
-                        // que no hay nada que desactivar -- solo se evita el
-                        // mensaje engañoso de "sin compras".
-                        Timber.d("BillingManager: restorePurchases() -- compra(s) pendiente(s) de confirmación")
-                        emitResult(PurchaseResult.Pending)
-                    }
-                }
+            return try {
+                queryAndApplyRestore()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                // Hallazgo 2 (auditoría monetización 2026-09-18, Media): ver
-                // mismo razonamiento en queryProductDetails() -- una excepción
-                // real acá corría el riesgo de tumbar el proceso completo.
-                Timber.e(e, "BillingManager: excepción al restaurar compras")
-                emitResult(PurchaseResult.Error(e.message ?: "Error al restaurar compras"))
+                // Hallazgo 2 (auditoría monetización 2026-09-18): una excepción
+                // real acá no debe tumbar el proceso. Solo se registra el tipo
+                // (CrashlyticsTree reenvía todo >= WARN a Firebase).
+                Timber.e("BillingManager: excepción al restaurar compras (${e.javaClass.simpleName})")
+                // Deja de contar como revalidación hecha: el próximo ON_START reintenta.
+                lastRestoreCheckElapsedMs = null
+                emitAndReturn(PurchaseResult.Error("Error al restaurar compras"))
             }
+        }
+
+        private suspend fun queryAndApplyRestore(): PurchaseResult {
+            val subs =
+                billingClient.queryPurchasesAsync(
+                    QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build(),
+                )
+            // Bug real corregido 2026-09-08: una consulta fallida devuelve
+            // `purchasesList` vacía igual que "no tiene compras" y desactivaba
+            // Premium a un usuario que sí pagó. Ver evaluateRestoreOutcome().
+            return when (val outcome = evaluateRestoreOutcome(subs.billingResult.responseCode, subs.purchasesList)) {
+                RestoreOutcome.QueryFailed -> {
+                    Timber.w(
+                        "BillingManager: restorePurchases() -- la consulta falló, no se toca el estado " +
+                            "Premium actual (${subs.billingResult.debugMessage})",
+                    )
+                    // Una consulta fallida no cuenta como revalidación: sin esto el
+                    // throttle de 4h bloqueaba el reintento de ON_START.
+                    lastRestoreCheckElapsedMs = null
+                    emitAndReturn(PurchaseResult.Error(subs.billingResult.debugMessage))
+                }
+                RestoreOutcome.NothingOwned -> {
+                    premiumManager.deactivatePremium()
+                    emitAndReturn(PurchaseResult.NoPurchasesToRestore)
+                }
+                is RestoreOutcome.Owned -> {
+                    outcome.purchases.forEach { handlePurchase(it, isRestore = true) }
+                    PurchaseResult.Success
+                }
+                is RestoreOutcome.Pending -> {
+                    // Hallazgo 3: una compra pendiente nunca activó Premium, no hay
+                    // nada que desactivar; solo se evita el mensaje de "sin compras".
+                    Timber.d("BillingManager: restorePurchases() -- compra(s) pendiente(s) de confirmación")
+                    emitAndReturn(PurchaseResult.Pending)
+                }
+            }
+        }
+
+        private fun emitAndReturn(result: PurchaseResult): PurchaseResult {
+            emitResult(result)
+            return result
         }
 
         @Suppress("TooGenericExceptionCaught")
@@ -466,7 +477,7 @@ class BillingManager
                                 throw e
                             } catch (e: Exception) {
                                 // Hallazgo 2: idem queryProductDetails()/restorePurchases().
-                                Timber.e(e, "BillingManager: excepción al confirmar la compra")
+                                Timber.e("BillingManager: excepción al confirmar la compra (${e.javaClass.simpleName})")
                             }
                         }
                     }
@@ -511,24 +522,50 @@ class BillingManager
         // tiene trial configurado, o la compra es vieja (restaurada mucho
         // después de que el trial terminó), el resultado ya queda en el pasado y
         // la UI simplemente no muestra nada -- no hace falta un flag aparte.
-        private fun trialEndsAtMillisFor(purchase: Purchase): Long? {
-            val productId = purchase.products.firstOrNull()
-            val details = productId?.let { productDetailsCache[it] }
-            val phases =
-                details
-                    ?.subscriptionOfferDetails
-                    ?.firstOrNull()
-                    ?.pricingPhases
-                    ?.pricingPhaseList
-                    .orEmpty()
-            val trialDays =
-                phases
-                    .firstOrNull { it.priceAmountMicros == 0L }
-                    ?.billingPeriod
-                    ?.let(::iso8601PeriodToDays)
-            return trialDays?.let { purchase.purchaseTime + it * MILLIS_PER_DAY }
-        }
+        private fun trialEndsAtMillisFor(purchase: Purchase): Long? =
+            trialEndsAtMillisOf(purchase, purchase.products.firstOrNull()?.let { productDetailsCache[it] })
     }
+
+// Funciones puras extraídas de BillingManager (su constructor arma un
+// BillingClient real y no se puede instanciar en un test JVM).
+//
+// HU-54: la fase de prueba gratuita aparece como una fase más de
+// pricingPhaseList con priceAmountMicros = 0 (se distingue así, no por
+// posición); la fase recurrente real (el precio mostrado) es la de mayor precio.
+internal fun planOfferFor(details: ProductDetails): PlanOffer {
+    val phases = pricingPhasesOf(details)
+    val trialPhase = phases.firstOrNull { it.priceAmountMicros == 0L }
+    val recurringPhase = phases.maxByOrNull { it.priceAmountMicros } ?: phases.firstOrNull()
+    return PlanOffer(
+        price = recurringPhase?.formattedPrice ?: "",
+        trialDays = trialPhase?.billingPeriod?.let(::iso8601PeriodToDays),
+    )
+}
+
+// Purchase no expone si la compra arrancó con prueba gratuita: se deduce de la
+// fase de prueba cacheada del producto. Sin detalles o sin trial -> null.
+internal fun trialEndsAtMillisOf(
+    purchase: Purchase,
+    details: ProductDetails?,
+): Long? {
+    val trialDays =
+        details
+            ?.let(::pricingPhasesOf)
+            .orEmpty()
+            .firstOrNull { it.priceAmountMicros == 0L }
+            ?.billingPeriod
+            ?.let(::iso8601PeriodToDays)
+    return trialDays?.let { purchase.purchaseTime + it * MILLIS_PER_DAY }
+}
+
+private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
+
+private fun pricingPhasesOf(details: ProductDetails): List<ProductDetails.PricingPhase> =
+    details.subscriptionOfferDetails
+        ?.firstOrNull()
+        ?.pricingPhases
+        ?.pricingPhaseList
+        .orEmpty()
 
 // HU-54: Play Billing describe la duración de cada fase de precio (incluida
 // la de prueba gratuita) como una duración ISO-8601 simple -- "P7D", "P1W",

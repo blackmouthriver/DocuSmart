@@ -8,6 +8,7 @@ import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.features.agenda.data.AgendaRepository
 import com.docsmart.features.agenda.domain.ReminderPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -156,7 +158,9 @@ class AgendaViewModel
         }
 
         fun updateDraft(transform: (AgendaEventDraft) -> AgendaEventDraft) {
-            draftFlow.value = draftFlow.value?.let(transform)
+            // update{} atómico: get+set separados perdían una edición si dos
+            // cambios (ej. título y fecha) llegaban casi a la vez.
+            draftFlow.update { it?.let(transform) }
         }
 
         fun showLinkDocumentDialog() {
@@ -197,34 +201,61 @@ class AgendaViewModel
             draftFlow.value = null
             viewModelScope.launch {
                 val description = draft.description.trim().ifBlank { null }
-                if (draft.id == null) {
-                    repository.createEvent(
+                try {
+                    persistDraft(draft, title, description)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Bug real: una excepción de Room/AlarmManager en esta corrutina
+                    // (sin manejador) tumbaba la app, y como el diálogo ya se había
+                    // cerrado el usuario perdía lo escrito. Se registra solo el tipo
+                    // (CrashlyticsTree reenvía todo >= WARN) y se reabre el borrador,
+                    // salvo que el usuario ya haya empezado otro.
+                    Timber.e("AgendaViewModel: no se pudo guardar el evento (${e.javaClass.simpleName})")
+                    draftFlow.compareAndSet(null, draft)
+                }
+            }
+        }
+
+        private suspend fun persistDraft(
+            draft: AgendaEventDraft,
+            title: String,
+            description: String?,
+        ) {
+            if (draft.id == null) {
+                repository.createEvent(
+                    title = title,
+                    description = description,
+                    dateTimeMillis = draft.dateTimeMillis,
+                    documentId = draft.documentId,
+                    reminderMinutesBefore = draft.reminderMinutesBefore,
+                )
+            } else {
+                repository.updateEvent(
+                    AgendaEventEntity(
+                        id = draft.id,
                         title = title,
                         description = description,
                         dateTimeMillis = draft.dateTimeMillis,
                         documentId = draft.documentId,
                         reminderMinutesBefore = draft.reminderMinutesBefore,
-                    )
-                } else {
-                    repository.updateEvent(
-                        AgendaEventEntity(
-                            id = draft.id,
-                            title = title,
-                            description = description,
-                            dateTimeMillis = draft.dateTimeMillis,
-                            documentId = draft.documentId,
-                            reminderMinutesBefore = draft.reminderMinutesBefore,
-                            createdAt = draft.createdAt ?: System.currentTimeMillis(),
-                        ),
-                    )
-                }
+                        createdAt = draft.createdAt ?: System.currentTimeMillis(),
+                    ),
+                )
             }
         }
 
         fun deleteEvent(id: String) {
             viewModelScope.launch {
-                repository.deleteEvent(id)
-                if (draftFlow.value?.id == id) draftFlow.value = null
+                try {
+                    repository.deleteEvent(id)
+                    if (draftFlow.value?.id == id) draftFlow.value = null
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Sin este catch, una falla de Room/AlarmManager tumbaba la app.
+                    Timber.e("AgendaViewModel: no se pudo eliminar el evento (${e.javaClass.simpleName})")
+                }
             }
         }
 

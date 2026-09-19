@@ -1,7 +1,24 @@
 package com.docsmart.features.pdftools.domain.usecase
 
+import android.content.ContentResolver
+import android.content.Context
+import android.net.Uri
+import com.docsmart.features.pdftools.domain.model.PdfToolResult
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.nio.file.Files
 
 /**
  * `OcrPdfUseCase` en sí depende de `android.graphics.pdf.PdfRenderer` y de
@@ -14,6 +31,42 @@ import org.junit.jupiter.api.Test
  * Android/iText, extraídas específicamente para poder testearlas.
  */
 class OcrPdfUseCaseTest {
+    private lateinit var cacheDir: File
+    private lateinit var context: Context
+    private lateinit var useCase: OcrPdfUseCase
+
+    private val messages =
+        OcrPdfMessages(
+            readError = "readError",
+            noPages = "noPages",
+            alreadyHasText = "alreadyHasText",
+            noTextFound = "noTextFound",
+            generateError = "generateError",
+            success = "%1\$d paginas, %2\$d palabras",
+            genericError = "error %1\$s",
+        )
+
+    @BeforeEach
+    fun setUp() {
+        cacheDir = Files.createTempDirectory("docsmart_ocr_cache_").toFile()
+        context = mockk()
+        every { context.cacheDir } returns cacheDir
+        useCase = OcrPdfUseCase(context)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        cacheDir.deleteRecursively()
+    }
+
+    private fun resolverReturning(stream: () -> InputStream?): Uri {
+        val uri = mockk<Uri>()
+        val resolver = mockk<ContentResolver>()
+        every { resolver.openInputStream(uri) } answers { stream() }
+        every { context.contentResolver } returns resolver
+        return uri
+    }
+
     @Test
     fun `mapOcrBoxToPdf convierte un box en la esquina superior izquierda del bitmap`() {
         // Página de 100x200 puntos, renderizada a escala 2x (bitmap de 200x400 px).
@@ -93,5 +146,83 @@ class OcrPdfUseCaseTest {
     fun `horizontalScalingPercent se limita al rango 1 a 500 por ciento`() {
         assertEquals(500f, horizontalScalingPercent(naturalWidthPts = 1f, targetWidthPts = 1000f), 0.001f)
         assertEquals(1f, horizontalScalingPercent(naturalWidthPts = 1000f, targetWidthPts = 1f), 0.001f)
+    }
+
+    // ── copyUriToCache / camino de error de lectura (antes de tocar ML Kit) ──
+
+    // Bug real corregido en la ronda 15: copyUriToCache() devolvia null dejando
+    // el archivo (vacio o parcial) huerfano en cacheDir -- el `finally` de
+    // invoke() solo borra cacheFile cuando la copia ya devolvio un File.
+    @Test
+    fun `copyUriToCache con un stream vacio devuelve null y no deja archivo en cache`() {
+        val uri = resolverReturning { ByteArrayInputStream(ByteArray(0)) }
+
+        assertNull(useCase.copyUriToCache(uri))
+
+        assertTrue(cacheDir.listFiles().isNullOrEmpty(), "cache huerfano: ${cacheDir.listFiles()?.toList()}")
+    }
+
+    @Test
+    fun `copyUriToCache con stream nulo devuelve null y no deja archivo en cache`() {
+        val uri = resolverReturning { null }
+
+        assertNull(useCase.copyUriToCache(uri))
+
+        assertTrue(cacheDir.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `copyUriToCache borra la copia parcial si el stream falla a mitad de lectura`() {
+        val uri = resolverReturning { FailingAfterBytesStream(1024) }
+
+        assertNull(useCase.copyUriToCache(uri))
+
+        assertTrue(cacheDir.listFiles().isNullOrEmpty(), "cache parcial huerfano: ${cacheDir.listFiles()?.toList()}")
+    }
+
+    @Test
+    fun `copyUriToCache copia el contenido completo cuando el stream es valido`() {
+        val content = ByteArray(4000) { (it % 199).toByte() }
+        val uri = resolverReturning { ByteArrayInputStream(content) }
+
+        val copied = useCase.copyUriToCache(uri)
+
+        assertTrue(copied != null && content.contentEquals(copied.readBytes()))
+    }
+
+    @Test
+    fun `invoke devuelve Error de lectura y no deja cache si el PDF no se puede abrir`() =
+        runTest {
+            val uri = resolverReturning { ByteArrayInputStream(ByteArray(0)) }
+
+            val result = useCase(uri, messages = messages)
+
+            assertEquals(PdfToolResult.Error("readError"), result)
+            assertTrue(cacheDir.listFiles().isNullOrEmpty())
+        }
+
+    @Test
+    fun `una cancelacion leyendo el origen se propaga en vez de devolver Error`() =
+        runTest {
+            val uri = resolverReturning { throw CancellationException("cancelado") }
+
+            var cancelled = false
+            try {
+                useCase(uri, messages = messages)
+            } catch (e: CancellationException) {
+                cancelled = true
+            }
+
+            assertTrue(cancelled, "la CancellationException debia propagarse")
+            assertTrue(cacheDir.listFiles().isNullOrEmpty())
+        }
+
+    /** Entrega `remaining` bytes y despues lanza IOException, como un stream de red/SAF que se corta. */
+    private class FailingAfterBytesStream(private var remaining: Int) : InputStream() {
+        override fun read(): Int {
+            if (remaining <= 0) throw IOException("stream cortado")
+            remaining--
+            return 7
+        }
     }
 }
