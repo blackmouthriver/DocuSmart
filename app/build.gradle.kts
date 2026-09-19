@@ -728,7 +728,7 @@ dependencies {
     // almacenamiento concedido antes de componer la pantalla (LibraryScreen
     // lo verifica con ContextCompat.checkSelfPermission al inicio, no es
     // algo mockeable desde el ViewModel).
-    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.test:rules:1.7.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     // buildHealth (paso 3, removida): ui-test-manifest ya está como
     // debugRuntimeOnly más abajo (única declaración recomendada oficialmente
