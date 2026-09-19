@@ -44,6 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -51,13 +53,14 @@ import com.docsmart.R
 import com.docsmart.core.ui.theme.ErrorRed
 import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.features.agenda.domain.ReminderPreset
+import com.docsmart.features.agenda.domain.agendaDateFormatter
+import com.docsmart.features.agenda.domain.agendaTimeFormatter
 import com.docsmart.features.agenda.domain.reminderTriggerMillis
 import com.docsmart.features.agenda.presentation.AgendaEventDraft
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 // HU-65: editor de un evento de Agenda (crear o editar, según si
 // `draft.id` ya existe). El selector de fecha/hora reutiliza el mismo
@@ -304,9 +307,6 @@ private fun Long.toLocalDateTime(): LocalDateTime = Instant.ofEpochMilli(this).a
 
 private fun LocalDateTime.toEpochMillis(): Long = atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-private val AGENDA_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
-private val AGENDA_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AgendaDateTimeRow(
@@ -316,6 +316,12 @@ private fun AgendaDateTimeRow(
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    // Ronda 16: idioma y preferencia 12/24h del sistema en vez de "d MMM yyyy"/
+    // "HH:mm" fijos (el TimePicker también usaba is24Hour = true siempre).
+    val locale = LocalConfiguration.current.locales[0]
+    val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
+    val dateFormat = remember(locale) { agendaDateFormatter(locale) }
+    val timeFormat = remember(locale, is24Hour) { agendaTimeFormatter(locale, is24Hour) }
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -326,11 +332,11 @@ private fun AgendaDateTimeRow(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Rounded.CalendarMonth, null, modifier = Modifier.size(16.dp))
-                Text(value.format(AGENDA_DATE_FORMAT), modifier = Modifier.padding(start = 6.dp))
+                Text(value.format(dateFormat), modifier = Modifier.padding(start = 6.dp))
             }
             OutlinedButton(onClick = { showTimePicker = true }, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Rounded.Schedule, null, modifier = Modifier.size(16.dp))
-                Text(value.format(AGENDA_TIME_FORMAT), modifier = Modifier.padding(start = 6.dp))
+                Text(value.format(timeFormat), modifier = Modifier.padding(start = 6.dp))
             }
         }
     }
@@ -356,7 +362,7 @@ private fun AgendaDateTimeRow(
     }
 
     if (showTimePicker) {
-        val state = rememberTimePickerState(initialHour = value.hour, initialMinute = value.minute, is24Hour = true)
+        val state = rememberTimePickerState(initialHour = value.hour, initialMinute = value.minute, is24Hour = is24Hour)
         Dialog(onDismissRequest = { showTimePicker = false }) {
             Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
                 Column(

@@ -52,12 +52,13 @@ import com.docsmart.core.ui.theme.ThemeManager
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.util.findActivity
-import com.docsmart.features.onboarding.presentation.resetOnboarding
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.UserMessagingPlatform
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.IllegalFormatException
 
 @Composable
 fun SettingsScreen(
@@ -529,8 +530,12 @@ fun SettingsScreen(
                         try {
                             clearGeneratedFilesCache()
                             languageManager.setLanguage(languageManager.deviceDefaultLanguage())
+                        } catch (e: CancellationException) {
+                            // La composición salió (rotación, cambio de
+                            // idioma): no es un fallo, no se avisa de error.
+                            throw e
                         } catch (e: Exception) {
-                            Timber.e(e, "SettingsScreen: fallo al restablecer configuración")
+                            Timber.e("SettingsScreen: fallo al restablecer configuración (${e.javaClass.simpleName})")
                             Toast.makeText(context, resetErrorMessage, Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -1083,7 +1088,10 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_tutorial),
                 subtitle = stringResource(R.string.settings_tutorial_subtitle),
                 onClick = {
-                    resetOnboarding(context)
+                    // Ya no se reinicia el flag "completado": el tutorial se
+                    // muestra navegando directo, y si el usuario salía con
+                    // Atrás sin terminarlo, el próximo arranque en frío
+                    // volvía a mostrar el onboarding completo.
                     onShowOnboarding()
                 },
             )
@@ -1277,8 +1285,8 @@ private fun openAppSettings(context: Context) {
                 data = Uri.fromParts("package", context.packageName, null)
             }
         context.startActivity(intent)
-    } catch (e: Exception) {
-        e.printStackTrace()
+    } catch (e: ActivityNotFoundException) {
+        Timber.w("openAppSettings: sin pantalla de ajustes de app")
     }
 }
 
@@ -1304,7 +1312,7 @@ private fun shareApp(
             }
         context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) {
-        Timber.e(e, "shareApp: error")
+        Timber.w("shareApp: error (${e.javaClass.simpleName})")
     }
 }
 
@@ -1317,12 +1325,19 @@ private fun openPlayStore(context: Context) {
             ),
         )
     } catch (e: ActivityNotFoundException) {
-        context.startActivity(
-            Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse("https://play.google.com/store/apps/details?id=${context.packageName}"),
-            ),
-        )
+        // Sin Play Store: se intenta el navegador; si tampoco hay ninguno el
+        // segundo startActivity() lanzaba ActivityNotFoundException sin
+        // atrapar y cerraba la app.
+        try {
+            context.startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://play.google.com/store/apps/details?id=${context.packageName}"),
+                ),
+            )
+        } catch (e2: ActivityNotFoundException) {
+            Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
+        }
     }
 }
 
@@ -1351,7 +1366,10 @@ private fun sendSupportEmail(
                 )
             }
         context.startActivity(intent)
-    } catch (e: Exception) {
-        Timber.e(e, "sendSupportEmail: error")
+    } catch (e: ActivityNotFoundException) {
+        // Sin app de correo el botón "Contactar soporte" no hacía nada visible.
+        Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
+    } catch (e: IllegalFormatException) {
+        Timber.w("sendSupportEmail: plantilla de cuerpo inválida")
     }
 }

@@ -59,4 +59,21 @@ class FileNameSanitizerKotestSpec :
                 result shouldNotContain "\\"
             }
         }
+
+        test("limita el largo para no superar NAME_MAX del sistema de archivos") {
+            sanitizeOutputFileName("a".repeat(500)).length shouldBe MAX_OUTPUT_NAME_LENGTH
+        }
+
+        test("no deja un surrogate partido al truncar caracteres fuera del BMP") {
+            val result = sanitizeOutputFileName("𝐀".repeat(100))
+
+            (result.length <= MAX_OUTPUT_NAME_LENGTH) shouldBe true
+            (result.lastOrNull()?.isHighSurrogate() ?: false) shouldBe false
+        }
+
+        test("el resultado nunca supera el largo maximo para ninguna entrada arbitraria") {
+            checkAll(Arb.string(0..300)) { input ->
+                (sanitizeOutputFileName(input).length <= MAX_OUTPUT_NAME_LENGTH) shouldBe true
+            }
+        }
     })

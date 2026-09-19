@@ -22,6 +22,7 @@ object QrCrypto {
     private const val SALT_LENGTH_BYTES = 16
     private const val IV_LENGTH_BYTES = 12
     private const val GCM_TAG_LENGTH_BITS = 128
+    private const val GCM_TAG_LENGTH_BYTES = GCM_TAG_LENGTH_BITS / 8
 
     fun encrypt(
         content: String,
@@ -40,6 +41,25 @@ object QrCrypto {
     }
 
     /**
+     * Ronda 16: ¿este texto leído de un QR es realmente un payload cifrado por
+     * [encrypt]? Antes bastaba con empezar por `PROTECTED:` -- un QR de texto
+     * de terceros como "PROTECTED: no pasar" pedía una contraseña que jamás
+     * iba a descifrar y el usuario nunca podía ver su contenido. Ahora además
+     * el resto debe ser Base64 válido y lo bastante largo para contener
+     * salt + IV + tag GCM.
+     */
+    fun isProtectedPayload(value: String): Boolean {
+        val trimmed = value.trim()
+        val decoded =
+            if (trimmed.startsWith(PREFIX)) {
+                runCatching { Base64.getDecoder().decode(trimmed.removePrefix(PREFIX)) }.getOrNull()
+            } else {
+                null
+            }
+        return decoded != null && decoded.size >= SALT_LENGTH_BYTES + IV_LENGTH_BYTES + GCM_TAG_LENGTH_BYTES
+    }
+
+    /**
      * Devuelve el contenido original, o null si la contraseña es incorrecta o los datos están corruptos.
      *
      * Contraseña incorrecta o datos corruptos deben verse igual para quien llama:
@@ -52,7 +72,7 @@ object QrCrypto {
     ): String? {
         return try {
             val combined = Base64.getDecoder().decode(encoded)
-            if (combined.size < SALT_LENGTH_BYTES + IV_LENGTH_BYTES) return null
+            if (combined.size < SALT_LENGTH_BYTES + IV_LENGTH_BYTES + GCM_TAG_LENGTH_BYTES) return null
 
             val salt = combined.copyOfRange(0, SALT_LENGTH_BYTES)
             val iv = combined.copyOfRange(SALT_LENGTH_BYTES, SALT_LENGTH_BYTES + IV_LENGTH_BYTES)
@@ -73,7 +93,13 @@ object QrCrypto {
     ): SecretKeySpec {
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val spec = PBEKeySpec(password.toCharArray(), salt, ITERATIONS, KEY_LENGTH_BITS)
-        val keyBytes = factory.generateSecret(spec).encoded
-        return SecretKeySpec(keyBytes, "AES")
+        try {
+            val keyBytes = factory.generateSecret(spec).encoded
+            return SecretKeySpec(keyBytes, "AES")
+        } finally {
+            // La copia de la contraseña dentro de PBEKeySpec no debe seguir en
+            // memoria más de lo necesario.
+            spec.clearPassword()
+        }
     }
 }

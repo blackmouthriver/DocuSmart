@@ -45,7 +45,9 @@ object StudyNotesStorage {
                 )
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error cargando notas de estudio")
+            // Solo el tipo: el mensaje de un JSONException cita un fragmento del
+            // JSON (texto real de las notas) y CrashlyticsTree lo reenvía a Firebase.
+            Timber.e("Error cargando notas de estudio (${e.javaClass.simpleName})")
             emptyList()
         }
 
@@ -71,7 +73,7 @@ object StudyNotesStorage {
             }
             prefs.edit().putString(KEY_NOTES_LIST, array.toString()).apply()
         } catch (e: Exception) {
-            Timber.e(e, "Error guardando notas de estudio")
+            Timber.e("Error guardando notas de estudio (${e.javaClass.simpleName})")
         }
     }
 }

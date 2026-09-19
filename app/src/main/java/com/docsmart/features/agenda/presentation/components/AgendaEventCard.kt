@@ -26,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -36,18 +38,18 @@ import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.features.agenda.domain.AgendaEventStatus
 import com.docsmart.features.agenda.domain.classifyAgendaEvent
+import com.docsmart.features.agenda.domain.formatAgendaDateTime
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 // Extraída de AgendaScreen.kt (backlog UX 2026-09-16, seguimiento de HU-65)
 // para reutilizarla también en el detalle del día seleccionado de
 // AgendaCalendarView -- antes era privada y solo la usaba la vista de lista.
-private val AGENDA_CARD_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm")
-
+// Ronda 16: la fecha/hora ya no usa un patrón fijo "d MMM yyyy · HH:mm" (24h,
+// idioma capturado una sola vez al cargar la clase), ver formatAgendaDateTime.
 @Composable
 fun AgendaEventCard(
     event: AgendaEventEntity,
@@ -85,9 +87,11 @@ fun AgendaEventCard(
             AgendaEventStatus.TODAY -> stringResource(R.string.agenda_status_today)
             AgendaEventStatus.UPCOMING -> stringResource(R.string.agenda_status_upcoming)
         }
-    val dateTime =
-        remember(event.dateTimeMillis) {
-            Instant.ofEpochMilli(event.dateTimeMillis).atZone(ZoneId.systemDefault())
+    val locale = LocalConfiguration.current.locales[0]
+    val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
+    val dateTimeLabel =
+        remember(event.dateTimeMillis, locale, is24Hour) {
+            formatAgendaDateTime(event.dateTimeMillis, locale, is24Hour)
         }
 
     Surface(
@@ -121,7 +125,7 @@ fun AgendaEventCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = dateTime.format(AGENDA_CARD_DATE_FORMAT),
+                    text = dateTimeLabel,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

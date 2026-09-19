@@ -42,7 +42,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.data.db.AgendaEventEntity
+import com.docsmart.features.agenda.domain.agendaDayDetailFormatter
 import com.docsmart.features.agenda.domain.agendaEventLocalDate
+import com.docsmart.features.agenda.domain.agendaMonthYearFormatter
+import com.docsmart.features.agenda.domain.agendaWeekStart
+import com.docsmart.features.agenda.domain.calendarLeadingBlanks
 import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.Duration
@@ -58,7 +62,8 @@ import java.util.Locale
 // real -- se descartó a propósito por ser mucho más compleja de operar en
 // una pantalla de celular) con un punto en los días que tienen eventos, y
 // el detalle del día elegido debajo del grid.
-private val WEEK_START = DayOfWeek.MONDAY
+// Ronda 16: el primer día de la semana ya no está fijo en lunes, sale de la
+// región del usuario (agendaWeekStart).
 
 @Composable
 fun AgendaCalendarView(
@@ -77,7 +82,8 @@ fun AgendaCalendarView(
     // LocalConfiguration.current sí lo es (mismo fix ya usado en
     // PremiumScreen.kt/SettingsScreen.kt).
     val locale = LocalConfiguration.current.locales[0]
-    val dayDetailFormat = remember(locale) { DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", locale) }
+    val dayDetailFormat = remember(locale) { agendaDayDetailFormatter(locale) }
+    val weekStart = remember(locale) { agendaWeekStart(locale) }
     val eventDatesInMonth =
         remember(events, month) {
             events.map { agendaEventLocalDate(it.dateTimeMillis) }.toSet()
@@ -96,10 +102,11 @@ fun AgendaCalendarView(
             onNextMonth = onNextMonth,
         )
         Spacer(Modifier.height(12.dp))
-        WeekdayHeaderRow(locale = locale)
+        WeekdayHeaderRow(locale = locale, weekStart = weekStart)
         Spacer(Modifier.height(4.dp))
         MonthGrid(
             month = month,
+            weekStart = weekStart,
             selectedDate = selectedDate,
             eventDatesInMonth = eventDatesInMonth,
             dayDetailFormat = dayDetailFormat,
@@ -139,7 +146,7 @@ private fun MonthHeader(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
 ) {
-    val monthYearFormat = remember(locale) { DateTimeFormatter.ofPattern("MMMM yyyy", locale) }
+    val monthYearFormat = remember(locale) { agendaMonthYearFormatter(locale) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -166,10 +173,13 @@ private fun MonthHeader(
 }
 
 @Composable
-private fun WeekdayHeaderRow(locale: Locale) {
+private fun WeekdayHeaderRow(
+    locale: Locale,
+    weekStart: DayOfWeek,
+) {
     Row(modifier = Modifier.fillMaxWidth()) {
         for (offset in 0 until DAYS_IN_WEEK) {
-            val dayOfWeek = DayOfWeek.of(((WEEK_START.value - 1 + offset) % DAYS_IN_WEEK) + 1)
+            val dayOfWeek = DayOfWeek.of(((weekStart.value - 1 + offset) % DAYS_IN_WEEK) + 1)
             Text(
                 text = dayOfWeek.getDisplayName(TextStyle.NARROW, locale),
                 modifier = Modifier.weight(1f),
@@ -184,13 +194,13 @@ private fun WeekdayHeaderRow(locale: Locale) {
 @Composable
 private fun MonthGrid(
     month: YearMonth,
+    weekStart: DayOfWeek,
     selectedDate: LocalDate,
     eventDatesInMonth: Set<LocalDate>,
     dayDetailFormat: DateTimeFormatter,
     onSelectDate: (LocalDate) -> Unit,
 ) {
-    val firstDayOfMonth = month.atDay(1)
-    val leadingBlanks = (firstDayOfMonth.dayOfWeek.value - WEEK_START.value + DAYS_IN_WEEK) % DAYS_IN_WEEK
+    val leadingBlanks = calendarLeadingBlanks(month, weekStart)
     val daysInMonth = month.lengthOfMonth()
     val totalCells = leadingBlanks + daysInMonth
     val rows = (totalCells + DAYS_IN_WEEK - 1) / DAYS_IN_WEEK

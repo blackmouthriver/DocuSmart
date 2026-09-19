@@ -7,6 +7,7 @@ import com.docsmart.core.data.db.NoteEntity
 import com.docsmart.features.study.domain.NoteReminderScheduler
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
@@ -106,5 +107,24 @@ class BootRescheduleReceiverTest {
 
             coVerify(exactly = 0) { reminderScheduler.schedule(any()) }
             coVerify(exactly = 0) { noteReminderScheduler.schedule(any(), any(), any()) }
+        }
+
+    // Ronda 16: antes un solo schedule() que lanzara abortaba el forEach y los
+    // recordatorios siguientes (y todas las notas) quedaban sin reprogramar
+    // tras el reinicio.
+    @Test
+    fun `un evento que falla al reprogramarse no impide reprogramar los demas ni las notas`() =
+        runTest {
+            val failing = agendaEvent("evt-falla")
+            val healthy = agendaEvent("evt-sano")
+            coEvery { agendaEventDao.getAllWithReminder() } returns listOf(failing, healthy)
+            val reminderAt = System.currentTimeMillis() + 60_000
+            coEvery { noteDao.getAllWithReminder() } returns listOf(note("note-1", reminderAt))
+            every { reminderScheduler.schedule(failing) } throws IllegalStateException("AlarmManager rechazo la alarma")
+
+            rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+
+            coVerify(exactly = 1) { reminderScheduler.schedule(healthy) }
+            coVerify(exactly = 1) { noteReminderScheduler.schedule("note-1", "Nota note-1", reminderAt) }
         }
 }

@@ -91,7 +91,9 @@ class NoteRepository
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error migrando notas legadas a Room")
+                    // Solo el tipo (ver StudyNotesStorage.loadNotes): el mensaje puede citar
+                    // texto real de las notas y CrashlyticsTree lo reenvía a Firebase.
+                    Timber.e("Error migrando notas legadas a Room (${e.javaClass.simpleName})")
                 }
             }
 
@@ -155,14 +157,19 @@ class NoteRepository
             position: Int,
             uri: Uri,
         ): String? {
+            val dir = File(context.filesDir, NOTE_IMAGES_DIR).apply { mkdirs() }
+            val outFile = File(dir, "${noteId}_$position.jpg")
             return try {
-                val dir = File(context.filesDir, NOTE_IMAGES_DIR).apply { mkdirs() }
-                val outFile = File(dir, "${noteId}_$position.jpg")
                 val input = context.contentResolver.openInputStream(uri) ?: return null
                 input.use { stream -> outFile.outputStream().use { output -> stream.copyTo(output) } }
                 outFile.absolutePath
             } catch (e: Exception) {
-                Timber.e(e, "Error copiando imagen adjunta a la nota $noteId")
+                // Solo el tipo: antes se pasaba el Throwable y el noteId real, y
+                // CrashlyticsTree los reenvía a Firebase. Además una copia cortada a
+                // mitad (disco lleno, proveedor caído) dejaba un .jpg truncado huérfano
+                // en filesDir que ninguna fila de note_images referenciaba.
+                Timber.e("Error copiando imagen adjunta a una nota (${e.javaClass.simpleName})")
+                outFile.delete()
                 null
             }
         }

@@ -66,6 +66,9 @@ import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
 import com.docsmart.features.scanner.domain.QrWifiContent
 import com.docsmart.features.scanner.domain.QrWifiSecurity
+import com.docsmart.features.scanner.domain.buildEmailQrPayload
+import com.docsmart.features.scanner.domain.buildPhoneQrPayload
+import com.docsmart.features.scanner.domain.buildUrlQrPayload
 import com.docsmart.features.scanner.domain.hasSufficientContrast
 import com.docsmart.features.scanner.domain.toQrPayload
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -442,7 +445,8 @@ fun QrReaderScreen(
                                                             // HU-44: se guarda el valor CRUDO leído (con el
                                                             // prefijo `PROTECTED:` intacto si estaba cifrado)
                                                             // -- RNF2, nunca el texto plano de un QR protegido.
-                                                            val isProtectedScan = value.startsWith(QrCrypto.PREFIX)
+                                                            val isProtectedScan = QrCrypto.isProtectedPayload(value)
+                                                            val scannedValue = value.trim()
                                                             // Bug real encontrado en la revisión pre-fusión:
                                                             // addOnSuccessListener sin Executor propio corre en
                                                             // el hilo principal (no en el `executor` de
@@ -469,7 +473,7 @@ fun QrReaderScreen(
                                                             }
                                                             if (isProtectedScan) {
                                                                 pendingProtectedContent =
-                                                                    value.removePrefix(QrCrypto.PREFIX)
+                                                                    scannedValue.removePrefix(QrCrypto.PREFIX)
                                                             } else {
                                                                 qrResult = value
                                                                 qrType = detectQrContentType(value)
@@ -1693,9 +1697,9 @@ fun QrCreatorScreen(
                                 // (B11): startsWith("http") sensible a mayúsculas
                                 // -- "HTTP://ejemplo.com" no matcheaba y quedaba
                                 // "https://HTTP://ejemplo.com", una URL rota.
-                                0 -> if (!content.startsWith("http", ignoreCase = true)) "https://$content" else content
-                                2 -> "mailto:$content"
-                                3 -> "tel:$content"
+                                0 -> buildUrlQrPayload(content)
+                                2 -> buildEmailQrPayload(content)
+                                3 -> buildPhoneQrPayload(content)
                                 6 -> QrWifiContent(wifiSsid, wifiPassword, wifiSecurity).toQrPayload()
                                 7 -> QrContactContent(contactName, contactPhone, contactEmail).toQrPayload()
                                 8 -> QrEventContent(eventTitle, eventLocation, eventStart, eventEnd).toQrPayload()
@@ -1935,8 +1939,10 @@ fun QrCreatorScreen(
 
 private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
     withContext(Dispatchers.IO) {
+        // Solo http/https: un QR de tercero con file:// o ftp:// no debe abrirse desde aquí.
+        if (!isRemoteHttpUrl(url)) return@withContext null
         try {
-            val connection = java.net.URL(url).openConnection()
+            val connection = java.net.URL(url.trim()).openConnection()
             connection.connectTimeout = 5000
             connection.readTimeout = 5000
             // Bug real encontrado 2026-09-14 (repaso general): el
@@ -1944,7 +1950,7 @@ private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
             // tipo Imagen escaneado dejaba un socket/stream filtrado.
             connection.getInputStream().use { BitmapFactory.decodeStream(it) }
         } catch (e: Exception) {
-            Timber.e(e, "loadBitmapFromUrl: error")
+            Timber.w("loadBitmapFromUrl: error ${e.javaClass.simpleName}")
             null
         }
     }
@@ -1956,15 +1962,20 @@ internal fun openDocumentExternally(
     uriString: String,
     chooserTitle: String,
 ) {
+    if (isOwnContentUri(uriString, context.packageName)) {
+        // Un QR de tercero no puede hacer que se conceda lectura sobre datos propios de la app.
+        Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
+        return
+    }
     try {
         val intent =
             Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse(uriString)
+                data = Uri.parse(uriString.trim())
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
         context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) {
-        Timber.e(e, "openDocumentExternally: error")
+        Timber.w("openDocumentExternally: error ${e.javaClass.simpleName}")
         Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }
 }
@@ -2162,10 +2173,14 @@ internal fun openUrl(
     context: Context,
     url: String,
 ) {
+    if (!isOpenableScheme(url)) {
+        Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
+        return
+    }
     try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(normalizeUriScheme(url))))
     } catch (e: Exception) {
-        Timber.e(e, "openUrl")
+        Timber.w("openUrl: ${e.javaClass.simpleName}")
         Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }
 }

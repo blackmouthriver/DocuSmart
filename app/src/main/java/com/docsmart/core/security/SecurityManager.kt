@@ -179,16 +179,21 @@ class SecurityManager
             val matches =
                 canAttempt &&
                     run {
+                        val stored = storedHash ?: return@run false
                         val saltB64 = prefs.getString("pin_salt", null)
                         if (saltB64 != null) {
-                            val salt = Base64.getDecoder().decode(saltB64)
-                            hashPinWithSalt(pin, salt) == storedHash
+                            // Hallazgo real de la ronda 16: un pin_salt corrupto
+                            // (Base64 inválido) lanzaba IllegalArgumentException
+                            // desde verifyPin() y tumbaba la pantalla de
+                            // desbloqueo; ahora cuenta como PIN incorrecto.
+                            val salt = decodeSaltOrNull(saltB64)
+                            salt != null && constantTimeEquals(hashPinWithSalt(pin, salt), stored)
                         } else {
                             // Formato legado (SHA-256 de una sola pasada, sin salt, de
                             // instalaciones previas a este fix) -- se migra en silencio
                             // al esquema salteado en el primer login correcto, sin
                             // forzar al usuario a restablecer su PIN.
-                            val legacyMatches = hashPinLegacy(pin) == storedHash
+                            val legacyMatches = constantTimeEquals(hashPinLegacy(pin), stored)
                             if (legacyMatches) setPin(pin)
                             legacyMatches
                         }
@@ -238,9 +243,29 @@ class SecurityManager
         // una decisión de seguridad deliberada, no hay recuperación sin pérdida).
         fun resetPinAndWipeFiles() {
             secureFolder.listFiles()?.forEach { it.delete() }
+            // Hallazgo real de la ronda 16: la copia en claro de la vista previa
+            // (cacheDir/secure_preview) sobrevivía al restablecimiento del PIN,
+            // dejando legible justo el archivo que se quería destruir.
+            clearPreviewCache()
             clearPin()
             Timber.d("SecurityManager: PIN restablecido y carpeta segura vaciada")
         }
+
+        private fun decodeSaltOrNull(saltB64: String): ByteArray? =
+            try {
+                Base64.getDecoder().decode(saltB64)
+            } catch (e: IllegalArgumentException) {
+                Timber.w("SecurityManager: pin_salt corrupto (${e.javaClass.simpleName})")
+                null
+            }
+
+        // Comparación en tiempo constante: `==` sobre String corta en el primer
+        // carácter distinto y filtra por timing cuántos caracteres del hash
+        // coinciden.
+        private fun constantTimeEquals(
+            a: String,
+            b: String,
+        ): Boolean = MessageDigest.isEqual(a.toByteArray(), b.toByteArray())
 
         private fun generateSalt(): ByteArray {
             val salt = ByteArray(16)
@@ -292,46 +317,49 @@ class SecurityManager
         // aunque el original hubiera quedado accesible en su ubicación. Ahora se
         // propaga para que el llamador pueda avisar en vez de fallar en silencio,
         // igual que ya hacía importFileToSecure() para Uris de SAF.
-        fun moveToSecure(file: File): SecureMoveResult =
-            try {
-                val dest = uniqueDestination(secureFolder, file.name)
-                file.copyTo(dest, overwrite = false)
-                val originalDeleted = file.delete()
-                if (originalDeleted) {
-                    Timber.d("SecurityManager: archivo movido a carpeta segura: ${dest.name}")
-                } else {
-                    Timber.w("SecurityManager: archivo copiado pero no se pudo eliminar el original: ${dest.name}")
-                }
-                SecureMoveResult(success = true, originalDeleted = originalDeleted, destFile = dest)
-            } catch (e: Exception) {
-                Timber.e(redactedForLog(e), "Error moviendo archivo a carpeta segura")
-                SecureMoveResult(success = false, originalDeleted = false)
-            }
+        fun moveToSecure(file: File): SecureMoveResult = moveFile(file, secureFolder, toSecure = true)
 
-        // Hallazgo real de la auditoría general 2026-09-17 (M1): mismo problema
-        // que moveToSecure() antes de RNF-SEC-01 -- file.delete() puede fallar
-        // sin lanzar excepción, y el resultado se ignoraba. Si falla, el
-        // archivo queda duplicado (restaurado en `destDir` Y todavía protegido
-        // en `secure/`), sin ningún aviso. Reutiliza SecureMoveResult (mismo
-        // shape que ya usa moveToSecure) para que el llamador pueda avisar.
         fun moveFromSecure(
             file: File,
             destDir: File,
-        ): SecureMoveResult =
-            try {
-                val dest = uniqueDestination(destDir, file.name)
-                file.copyTo(dest, overwrite = false)
+        ): SecureMoveResult = moveFile(file, destDir, toSecure = false)
+
+        // Si el destino ya existía (carrera de nombres) no es nuestro: no se borra.
+        private fun deletePartialCopy(
+            partial: File?,
+            cause: Exception,
+        ) {
+            if (partial != null && cause !is FileAlreadyExistsException && partial.exists()) partial.delete()
+        }
+
+        private fun moveFile(
+            file: File,
+            destDir: File,
+            toSecure: Boolean,
+        ): SecureMoveResult {
+            var dest: File? = null
+            return try {
+                val target = uniqueDestination(destDir, file.name)
+                dest = target
+                file.copyTo(target, overwrite = false)
                 val originalDeleted = file.delete()
                 if (originalDeleted) {
-                    Timber.d("SecurityManager: archivo restaurado: ${dest.name}")
+                    Timber.d("SecurityManager: archivo movido: ${target.name}")
                 } else {
-                    Timber.w("SecurityManager: archivo restaurado pero no se pudo eliminar de Carpeta Segura: ${dest.name}")
+                    Timber.w("SecurityManager: archivo copiado pero no se pudo eliminar el original")
                 }
-                SecureMoveResult(success = true, originalDeleted = originalDeleted, destFile = dest)
+                SecureMoveResult(success = true, originalDeleted = originalDeleted, destFile = target)
             } catch (e: Exception) {
-                Timber.e(redactedForLog(e), "Error restaurando archivo")
+                // Hallazgo real de la ronda 16: una copia interrumpida (disco
+                // lleno, IOException a mitad) dejaba el destino parcial en
+                // disco -- en Carpeta Segura aparecía como un archivo corrupto
+                // más, y al restaurar quedaba un PDF truncado junto al original.
+                deletePartialCopy(dest, e)
+                val label = if (toSecure) "moviendo archivo a carpeta segura" else "restaurando archivo"
+                Timber.e(redactedForLog(e), "Error $label")
                 SecureMoveResult(success = false, originalDeleted = false)
             }
+        }
 
         // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
         // IOException/FileNotFoundException reales de Java traen la ruta

@@ -76,7 +76,6 @@
     <ID>MaxLineLength:QrScreen.kt$if (qrPasswordVisible) R.string.password_hide else R.string.password_show</ID>
     <ID>MaxLineLength:ReminderScheduler.kt$ReminderScheduler$private fun redactedForLog(e: SecurityException)</ID>
     <ID>MaxLineLength:ScanImageEditor.kt$ScanImageEditor$private fun loadBitmap(uri: Uri): Bitmap?</ID>
-    <ID>MaxLineLength:SecurityManager.kt$SecurityManager$Timber.w("SecurityManager: archivo restaurado pero no se pudo eliminar de Carpeta Segura: ${dest.name}")</ID>
     <ID>MaxLineLength:SecurityScreen.kt$text = stringResource(if (isConfirming) R.string.security_confirm_pin else R.string.security_create_pin)</ID>
     <ID>MaxLineLength:SecurityScreen.kt$text = { Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error) }</ID>
     <ID>MaxLineLength:SecurityViewModel.kt$SecurityViewModel$val deleted = android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri)</ID>
@@ -85,7 +84,6 @@
     <ID>MaxLineLength:SecurityViewModelTest.kt$SecurityViewModelTest$every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = false)</ID>
     <ID>MaxLineLength:SecurityViewModelTest.kt$SecurityViewModelTest$every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = true)</ID>
     <ID>MaxLineLength:SecurityViewModelTest.kt$SecurityViewModelTest$private suspend</ID>
-    <ID>MaxLineLength:StudyScreen.kt$documentText.withIndex().drop(startIndex)</ID>
     <ID>MaxLineLength:StudyScreen.kt$text = if (isBreak) stringResource(R.string.study_break_label) else stringResource(R.string.study_study_label)</ID>
     <ID>MaxLineLength:StudyScreen.kt$text = if (isRunning) stringResource(R.string.study_in_progress) else stringResource(R.string.study_paused)</ID>
     <ID>MaxLineLength:StudyStatsStorage.kt$StudyStatsStorage$private fun prefs(context: Context): SharedPreferences</ID>
@@ -124,7 +122,6 @@
     <ID>NestedBlockDepth:ViewerScreen.kt$internal fun extractOoxmlWordBlocks(stream: java.io.InputStream): List&lt;WordBlock&gt;</ID>
     <ID>NestedBlockDepth:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri: Uri, context: Context, originalId: String = "", ): Boolean</ID>
     <ID>NestedBlockDepth:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
-    <ID>PrintStackTrace:SettingsScreen.kt$e</ID>
     <ID>ReturnCount:ComparePdfUseCase.kt$ComparePdfUseCase$private fun copyUriToCache( uri: Uri, prefix: String, ): File?</ID>
     <ID>ReturnCount:CropPdfUseCase.kt$CropPdfUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
     <ID>ReturnCount:DetectFormFieldsUseCase.kt$DetectFormFieldsUseCase$private fun copyUriToCache(uri: Uri): File?</ID>
@@ -152,8 +149,11 @@
     <ID>SwallowedException:OcrPdfUseCaseTest.kt$OcrPdfUseCaseTest$e: CancellationException</ID>
     <ID>SwallowedException:PdfToImageUseCaseTest.kt$PdfToImageUseCaseTest$e: CancellationException</ID>
     <ID>SwallowedException:PremiumManager.kt$PremiumManager$e: PackageManager.NameNotFoundException</ID>
+    <ID>SwallowedException:QrContentFormat.kt$e: WriterException</ID>
     <ID>SwallowedException:SecurityViewModel.kt$SecurityViewModel$e: Exception</ID>
+    <ID>SwallowedException:SettingsScreen.kt$e2: ActivityNotFoundException</ID>
     <ID>SwallowedException:SettingsScreen.kt$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:SettingsScreen.kt$e: IllegalFormatException</ID>
     <ID>SwallowedException:StudyScreen.kt$e: Exception</ID>
     <ID>SwallowedException:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
     <ID>ThrowsCount:ScanImageEditor.kt$ScanImageEditor$private fun writeToCache(bitmap: Bitmap): File</ID>
@@ -179,7 +179,6 @@
     <ID>TooGenericExceptionCaught:HomeViewModel.kt$HomeViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageFormatUseCase.kt$ImageFormatUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:LibraryViewModel.kt$LibraryViewModel$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:MainActivity.kt$MainActivity$e: Exception</ID>
     <ID>TooGenericExceptionCaught:MergePdfUseCase.kt$MergePdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NotesViewModel.kt$NotesViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:NumberPagesUseCase.kt$NumberPagesUseCase$e: Exception</ID>
@@ -222,6 +221,7 @@
     <ID>TooManyFunctions:ConverterViewModel.kt$ConverterViewModel : ViewModel</ID>
     <ID>TooManyFunctions:DocuSmartAnalytics.kt$DocuSmartAnalytics</ID>
     <ID>TooManyFunctions:PdfToolsViewModel.kt$PdfToolsViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:SecurityManager.kt$SecurityManager</ID>
     <ID>TooManyFunctions:SecurityViewModel.kt$SecurityViewModel : ViewModel</ID>
     <ID>TooManyFunctions:StudyScreen.kt$com.docsmart.features.study.presentation.StudyScreen.kt</ID>
     <ID>TooManyFunctions:ViewerViewModel.kt$ViewerViewModel : ViewModel</ID>

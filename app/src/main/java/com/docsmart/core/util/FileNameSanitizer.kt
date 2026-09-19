@@ -31,5 +31,14 @@ fun sanitizeOutputFileName(name: String): String {
     while (collapsed.contains("..")) {
         collapsed = collapsed.replace("..", "_")
     }
-    return collapsed
+    // Hallazgo real de la ronda 16: sin tope de largo, un nombre pegado muy
+    // largo (los UseCase le suman sufijo y timestamp) superaba los 255 bytes
+    // de NAME_MAX del sistema de archivos y la operación fallaba con
+    // FileNotFoundException recién al escribir. Truncar un texto que ya no
+    // contiene ".." no puede volver a crearlo.
+    var truncated = collapsed.take(MAX_OUTPUT_NAME_LENGTH)
+    if (truncated.isNotEmpty() && truncated.last().isHighSurrogate()) truncated = truncated.dropLast(1)
+    return truncated.trim()
 }
+
+internal const val MAX_OUTPUT_NAME_LENGTH = 60

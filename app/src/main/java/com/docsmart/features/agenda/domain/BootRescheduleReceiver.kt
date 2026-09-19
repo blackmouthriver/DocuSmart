@@ -48,7 +48,9 @@ class BootRescheduleReceiver : BroadcastReceiver() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.e(e, "BootRescheduleReceiver: error al reprogramar recordatorios tras reinicio")
+                // Solo el tipo: CrashlyticsTree reenvía a Firebase el mensaje y el
+                // Throwable completos, y un error de Room puede incluir datos reales.
+                Timber.e("BootRescheduleReceiver: error reprogramando tras reinicio (${e.javaClass.simpleName})")
             } finally {
                 pendingResult.finish()
             }
@@ -72,13 +74,29 @@ internal suspend fun rescheduleAllReminders(
     noteReminderScheduler: NoteReminderScheduler,
 ) {
     val events = agendaEventDao.getAllWithReminder()
-    events.forEach { reminderScheduler.schedule(it) }
+    events.forEach { event -> rescheduleGuarded { reminderScheduler.schedule(event) } }
     val notes = noteDao.getAllWithReminder()
     notes.forEach { note ->
-        note.reminderAt?.let { noteReminderScheduler.schedule(note.id, note.title, it) }
+        note.reminderAt?.let { rescheduleGuarded { noteReminderScheduler.schedule(note.id, note.title, it) } }
     }
     Timber.d(
         "BootRescheduleReceiver: ${events.size} recordatorios de Agenda + " +
             "${notes.size} de Notas reprogramados",
     )
+}
+
+// Ronda 16: antes un solo schedule() que lanzara (ej. AlarmManager rechazando
+// una alarma) abortaba el forEach entero -- todos los recordatorios que
+// quedaban después de ese en la lista no se reprogramaban tras el reinicio y
+// el usuario los perdía en silencio. Se aísla cada uno; solo se registra el
+// tipo de excepción (CrashlyticsTree reenvía el resto a Firebase).
+@Suppress("TooGenericExceptionCaught")
+private inline fun rescheduleGuarded(block: () -> Unit) {
+    try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Timber.e("BootRescheduleReceiver: un recordatorio no se pudo reprogramar (${e.javaClass.simpleName})")
+    }
 }

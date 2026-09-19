@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -80,6 +81,9 @@ import com.docsmart.core.ui.theme.rememberAccentGradient
 import com.docsmart.core.ui.util.ReloadOnScreenResume
 import com.docsmart.core.ui.util.findActivity
 import com.docsmart.core.util.DownloadsSaver
+import com.docsmart.features.agenda.domain.agendaDateFormatter
+import com.docsmart.features.agenda.domain.agendaTimeFormatter
+import com.docsmart.features.agenda.domain.formatAgendaDateTime
 import com.docsmart.features.scanner.presentation.ScannerMode
 import com.docsmart.features.scanner.presentation.rememberDocumentScannerAction
 import com.docsmart.features.study.domain.PomodoroEngine
@@ -106,6 +110,7 @@ import com.itextpdf.kernel.pdf.canvas.parser.data.TextRenderInfo
 import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -116,7 +121,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 
@@ -233,6 +237,25 @@ fun StudyScreen(
     // en segundo plano, esto queda en true hasta que aparezcan más párrafos
     // (o termine la extracción) en vez de dar la lectura por terminada.
     val waitingForMoreText = remember { mutableStateOf(false) }
+    // Ronda 16: último índice de párrafo ya encolado en el motor TTS (ver
+    // ttsQueueStepAfterUtterance) y "sesión" de lectura -- se incrementa cada
+    // vez que la lectura se detiene o se reinicia, para que un callback de
+    // UtteranceProgressListener ya encolado en el Handler (onDone/onStart de un
+    // párrafo que terminó justo antes de tocar "Detener") no reanude ni
+    // re-marque como "leyendo" una lectura que el usuario ya detuvo.
+    val ttsQueuedUpTo = remember { mutableIntStateOf(-1) }
+    val ttsSession = remember { mutableIntStateOf(0) }
+    // Extracción en curso: al elegir otro documento mientras el anterior
+    // seguía extrayéndose, las dos corrutinas escribían a la vez sobre el mismo
+    // `documentText` (párrafos de un documento mezclados con los del otro).
+    var loadJob by remember { mutableStateOf<Job?>(null) }
+
+    fun stopReading() {
+        ttsSession.intValue += 1
+        ttsRef.value?.stop()
+        isSpeaking.value = false
+        waitingForMoreText.value = false
+    }
 
     // ── Pomodoro (RF-STU-10: vive en PomodoroEngine, no en remember{},
     // para que siga corriendo al salir de esta pantalla) ─────────────
@@ -255,8 +278,13 @@ fun StudyScreen(
     val ttsUnavailableMessage = stringResource(R.string.study_tts_unavailable)
     DisposableEffect(Unit) {
         var ttsInstance: TextToSpeech? = null
+        // El callback de inicialización es asíncrono: si la pantalla se destruye
+        // antes de que llegue (rotación rápida, salir enseguida), no debe
+        // publicar ni configurar un motor que onDispose ya apagó.
+        var disposed = false
         ttsInstance =
             TextToSpeech(context) { status ->
+                if (disposed) return@TextToSpeech
                 if (status == TextToSpeech.SUCCESS) {
                     // Antes forzaba español (Locale("es","ES")) sin importar el idioma
                     // configurado — mismo bug que ya se corrigió para el reconocimiento
@@ -325,6 +353,7 @@ fun StudyScreen(
                 }
             }
         onDispose {
+            disposed = true
             ttsInstance?.stop()
             ttsInstance?.shutdown()
             ttsRef.value = null
@@ -357,19 +386,30 @@ fun StudyScreen(
     LaunchedEffect(documentText.size, extractionComplete) {
         if (!waitingForMoreText.value) return@LaunchedEffect
         val tts = ttsRef.value ?: return@LaunchedEffect
-        val resumeFrom = currentSpeakingIndex.intValue + 1
         val uriString = documentUri?.toString()
-        if (resumeFrom <= documentText.lastIndex) {
-            waitingForMoreText.value = false
-            for (idx in resumeFrom..documentText.lastIndex) {
-                tts.speak(documentText[idx], TextToSpeech.QUEUE_ADD, null, "study_all_$idx")
+        val step =
+            ttsQueueStepAfterUtterance(
+                finishedIndex = currentSpeakingIndex.intValue,
+                queuedUpTo = ttsQueuedUpTo.intValue,
+                lastIndex = documentText.lastIndex,
+                extractionComplete = extractionComplete,
+            )
+        when (step.outcome) {
+            TtsQueueOutcome.KEEP_PLAYING -> {
+                waitingForMoreText.value = false
+                ttsQueuedUpTo.intValue = step.newQueuedUpTo
+                for (idx in step.toEnqueue) {
+                    tts.speak(documentText[idx], TextToSpeech.QUEUE_ADD, null, "study_all_$idx")
+                }
             }
-        } else if (extractionComplete) {
-            // Terminó de extraer y no quedó nada más por leer.
-            waitingForMoreText.value = false
-            isSpeaking.value = false
-            currentSpeakingIndex.intValue = -1
-            if (uriString != null) StudyReadingProgressStorage.remove(context, uriString)
+            TtsQueueOutcome.WAIT_FOR_MORE_TEXT -> Unit
+            TtsQueueOutcome.FINISHED -> {
+                // Terminó de extraer y no quedó nada más por leer.
+                waitingForMoreText.value = false
+                isSpeaking.value = false
+                currentSpeakingIndex.intValue = -1
+                if (uriString != null) StudyReadingProgressStorage.remove(context, uriString)
+            }
         }
     }
 
@@ -394,6 +434,13 @@ fun StudyScreen(
         uri: Uri,
         resumeFromParagraph: Int?,
     ) {
+        // Ronda 16: elegir otro documento con una lectura en curso dejaba al motor
+        // TTS leyendo la cola del documento anterior (y onDone encolaba después
+        // los párrafos del nuevo), y una extracción previa todavía viva escribía
+        // sobre el mismo estado -- se detiene ambas antes de empezar.
+        loadJob?.cancel()
+        stopReading()
+        ttsQueuedUpTo.intValue = -1
         isLoadingDoc = true
         extractionComplete = false
         documentUri = uri
@@ -474,7 +521,7 @@ fun StudyScreen(
             }
             isLoadingDoc = false
             extractionComplete = true
-        }
+        }.also { loadJob = it }
     }
 
     // ── Selector de documento (solo PDF) ──────────────
@@ -497,7 +544,9 @@ fun StudyScreen(
                         android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     )
                 } catch (e: Exception) {
-                    Timber.w(e, "No se pudo tomar permiso persistente sobre $uri")
+                    // Solo el tipo: antes se pasaba el Throwable y el Uri real (incluye el
+                    // nombre del archivo del usuario) y CrashlyticsTree lo reenvía a Firebase.
+                    Timber.w("No se pudo tomar permiso persistente sobre el documento (${e.javaClass.simpleName})")
                 }
                 val saved = StudyReadingProgressStorage.findFor(context, uri.toString())
                 loadDocument(uri, resumeFromParagraph = saved?.paragraphIndex)
@@ -654,8 +703,7 @@ fun StudyScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier =
                                 Modifier.clickable(role = Role.Button) {
-                                    ttsRef.value?.stop()
-                                    isSpeaking.value = false
+                                    stopReading()
                                     onBack()
                                 },
                         ) {
@@ -830,9 +878,7 @@ fun StudyScreen(
                                 // misma sesión o en una futura) siempre empezaba
                                 // desde el principio. Ahora se deja tal cual --
                                 // "Leer todo" retoma desde ahí la próxima vez.
-                                ttsRef.value?.stop()
-                                isSpeaking.value = false
-                                waitingForMoreText.value = false
+                                stopReading()
                             } else {
                                 val currentTts = ttsRef.value
                                 if (currentTts == null || !ttsReady.value || documentText.isEmpty()) {
@@ -859,6 +905,14 @@ fun StudyScreen(
                                     currentSpeakingIndex.intValue
                                         .takeIf { it in documentText.indices } ?: 0
                                 val uriString = documentUri?.toString()
+                                // Ronda 16: se congela la lista que se encola ahora y se
+                                // recuerda hasta dónde llegó la cola (ver
+                                // ttsQueueStepAfterUtterance), y se invalida cualquier
+                                // callback pendiente de una lectura anterior.
+                                val queuedParagraphs = documentText
+                                ttsQueuedUpTo.intValue = queuedParagraphs.lastIndex
+                                ttsSession.intValue += 1
+                                val session = ttsSession.intValue
                                 // Hallazgo real de la auditoría general
                                 // 2026-09-17 (B19, resto): UtteranceProgressListener
                                 // corre en un hilo interno del motor TTS, no
@@ -877,6 +931,7 @@ fun StudyScreen(
                                     object : UtteranceProgressListener() {
                                         override fun onStart(utteranceId: String?) {
                                             mainHandler.post {
+                                                if (ttsSession.intValue != session) return@post
                                                 val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
                                                 isSpeaking.value = true
                                                 if (index != null) {
@@ -901,41 +956,44 @@ fun StudyScreen(
 
                                         override fun onDone(utteranceId: String?) {
                                             mainHandler.post {
+                                                if (ttsSession.intValue != session) return@post
                                                 val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
                                                 if (index == null) return@post
-                                                // "Procesamiento incremental": `lastIndex`
-                                                // se calculó al tocar "Leer todo", pero
-                                                // si el PDF seguía extrayéndose de
-                                                // fondo puede que ya haya más párrafos
-                                                // ahora que cuando se armó la cola --
-                                                // se revisa el tamaño ACTUAL de
-                                                // `documentText`, no el de entonces.
-                                                val newLastIndex = documentText.lastIndex
-                                                when {
-                                                    index < newLastIndex -> {
-                                                        ttsRef.value?.let { tts ->
-                                                            for (nextIndex in index + 1..newLastIndex) {
-                                                                tts.speak(
-                                                                    documentText[nextIndex],
-                                                                    TextToSpeech.QUEUE_ADD,
-                                                                    null,
-                                                                    "study_all_$nextIndex",
-                                                                )
-                                                            }
-                                                        }
+                                                // "Procesamiento incremental": si el PDF seguía
+                                                // extrayéndose de fondo puede haber párrafos nuevos
+                                                // que todavía NO están en la cola -- solo esos se
+                                                // agregan (antes se re-encolaba todo lo posterior
+                                                // al párrafo terminado y el texto se repetía).
+                                                val step =
+                                                    ttsQueueStepAfterUtterance(
+                                                        finishedIndex = index,
+                                                        queuedUpTo = ttsQueuedUpTo.intValue,
+                                                        lastIndex = documentText.lastIndex,
+                                                        extractionComplete = extractionComplete,
+                                                    )
+                                                ttsQueuedUpTo.intValue = step.newQueuedUpTo
+                                                ttsRef.value?.let { tts ->
+                                                    for (nextIndex in step.toEnqueue) {
+                                                        tts.speak(
+                                                            documentText[nextIndex],
+                                                            TextToSpeech.QUEUE_ADD,
+                                                            null,
+                                                            "study_all_$nextIndex",
+                                                        )
                                                     }
-                                                    !extractionComplete -> {
-                                                        // No hay más texto disponible
-                                                        // TODAVÍA, pero el PDF sigue
-                                                        // procesándose -- esperar en
-                                                        // vez de dar la lectura por
-                                                        // terminada (ver LaunchedEffect
-                                                        // que retoma cuando llegue más).
+                                                }
+                                                when (step.outcome) {
+                                                    TtsQueueOutcome.KEEP_PLAYING -> Unit
+                                                    // No hay más texto TODAVÍA, pero el PDF sigue
+                                                    // procesándose -- esperar en vez de dar la
+                                                    // lectura por terminada (ver LaunchedEffect
+                                                    // que retoma cuando llegue más).
+                                                    TtsQueueOutcome.WAIT_FOR_MORE_TEXT -> {
                                                         waitingForMoreText.value = true
                                                     }
-                                                    else -> {
-                                                        // Terminó todo el documento --
-                                                        // ya no hay nada que retomar.
+                                                    // Terminó todo el documento -- ya no hay nada
+                                                    // que retomar.
+                                                    TtsQueueOutcome.FINISHED -> {
                                                         isSpeaking.value = false
                                                         currentSpeakingIndex.intValue = -1
                                                         if (uriString != null) {
@@ -951,11 +1009,14 @@ fun StudyScreen(
                                             // a mitad de un documento largo, "Leer
                                             // todo" debe poder reintentar desde
                                             // ahí, no desde el principio.
-                                            mainHandler.post { isSpeaking.value = false }
+                                            mainHandler.post {
+                                                if (ttsSession.intValue == session) isSpeaking.value = false
+                                            }
                                         }
                                     },
                                 )
-                                documentText.withIndex().drop(startIndex).forEachIndexed { queuePos, (index, paragraph) ->
+                                queuedParagraphs.withIndex().drop(startIndex).forEachIndexed { queuePos, indexed ->
+                                    val (index, paragraph) = indexed
                                     currentTts.speak(
                                         paragraph,
                                         if (queuePos == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
@@ -982,10 +1043,7 @@ fun StudyScreen(
                             // leyendo con la actual -- se pausa antes de abrir
                             // el selector, mismo patrón ya usado para el botón
                             // "Detener" de más arriba.
-                            if (isSpeaking.value) {
-                                ttsRef.value?.stop()
-                                isSpeaking.value = false
-                            }
+                            if (isSpeaking.value) stopReading()
                             showVoicePicker = true
                         },
                     )
@@ -1502,7 +1560,7 @@ private fun StudyPdfViewer(
                     // archivo (ver líneas ~2764, ~3503, ~3576).
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Estudio: error renderizando PDF")
+                    Timber.e("Estudio: error renderizando PDF (${e.javaClass.simpleName})")
                     loadError = true
                     emptyList()
                 }
@@ -1665,9 +1723,16 @@ private fun NotesTab(
             onScanError = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() },
         )
 
+    // Ronda 16: "dd/MM/yyyy · HH:mm" fijo mostraba día/mes en el orden equivocado
+    // para usuarios de EE.UU./Japón/China y forzaba 24h -- ahora sigue el idioma.
+    val notesLocale = LocalConfiguration.current.locales[0]
     val dateFormatter =
-        remember {
-            java.text.SimpleDateFormat("dd/MM/yyyy · HH:mm", java.util.Locale.getDefault())
+        remember(notesLocale) {
+            java.text.DateFormat.getDateTimeInstance(
+                java.text.DateFormat.MEDIUM,
+                java.text.DateFormat.SHORT,
+                notesLocale,
+            )
         }
 
     // ── Reconocimiento de voz ─────────────────────────────────────────────────
@@ -1711,7 +1776,7 @@ private fun NotesTab(
             speechLauncher.launch(intent)
         } catch (e: Exception) {
             isListening = false
-            Timber.e(e, "Error iniciando reconocimiento de voz")
+            Timber.e("Error iniciando reconocimiento de voz (${e.javaClass.simpleName})")
         }
     }
 
@@ -2271,13 +2336,6 @@ private fun noteReminderPresetMillis(daysFromNow: Long): Long =
         .toInstant()
         .toEpochMilli()
 
-private val NOTE_REMINDER_DATETIME_FORMAT: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm")
-
-private fun formatNoteReminderDateTime(millis: Long): String =
-    Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime()
-        .format(NOTE_REMINDER_DATETIME_FORMAT)
-
 // Backlog UX #52: "Recordarme repasar esto" -- presets absolutos (mañana/
 // 3 días/1 semana, siempre a las 9:00, hora de estudio típica) o fecha/hora
 // personalizada. RNF2: si el usuario negó POST_NOTIFICATIONS, la sección
@@ -2292,6 +2350,8 @@ private fun NoteReminderSection(
     onRequestNotifications: () -> Unit,
 ) {
     var showCustomPicker by remember { mutableStateOf(false) }
+    val reminderLocale = LocalConfiguration.current.locales[0]
+    val reminderIs24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
@@ -2365,7 +2425,7 @@ private fun NoteReminderSection(
                 text =
                     stringResource(
                         R.string.study_note_reminder_scheduled_desc,
-                        formatNoteReminderDateTime(reminderAt),
+                        formatAgendaDateTime(reminderAt, reminderLocale, reminderIs24Hour),
                     ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
@@ -2429,8 +2489,10 @@ private fun NoteReminderDateTimeDialog(
     }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
-    val dateFormat = remember { DateTimeFormatter.ofPattern("d MMM yyyy") }
-    val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    val locale = LocalConfiguration.current.locales[0]
+    val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
+    val dateFormat = remember(locale) { agendaDateFormatter(locale) }
+    val timeFormat = remember(locale, is24Hour) { agendaTimeFormatter(locale, is24Hour) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
@@ -2481,7 +2543,7 @@ private fun NoteReminderDateTimeDialog(
     }
 
     if (showTimePicker) {
-        val state = rememberTimePickerState(initialHour = value.hour, initialMinute = value.minute, is24Hour = true)
+        val state = rememberTimePickerState(initialHour = value.hour, initialMinute = value.minute, is24Hour = is24Hour)
         Dialog(onDismissRequest = { showTimePicker = false }) {
             Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
                 Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -2510,7 +2572,7 @@ private fun NoteReminderDateTimeDialog(
 @Composable
 private fun NoteListItem(
     noteWithImages: NoteWithImages,
-    dateFormatter: java.text.SimpleDateFormat,
+    dateFormatter: java.text.DateFormat,
     // Backlog UX #52, AC2: true si esta es la nota a la que apuntaba la
     // notificación de recordatorio recién tocada -- fondo tintado para que
     // sea fácil de encontrar en la lista tras el scroll automático.
@@ -3006,7 +3068,7 @@ private suspend fun shareStudyNotes(
         // relanzarla siempre, nunca tragarla.
         throw e
     } catch (e: Exception) {
-        Timber.e(e, "Error exportando notas de estudio")
+        Timber.e("Error exportando notas de estudio (${e.javaClass.simpleName})")
     }
 }
 
@@ -3724,7 +3786,7 @@ private fun shareSummary(
             }
         context.startActivity(android.content.Intent.createChooser(intent, shareTitle))
     } catch (e: Exception) {
-        Timber.e(e, "Error compartiendo resumen de estudio")
+        Timber.e("Error compartiendo resumen de estudio (${e.javaClass.simpleName})")
     }
 }
 
@@ -3738,7 +3800,7 @@ private suspend fun saveSummaryToDownloads(
         val file = StudySummaryExporter.exportAsTextFile(context, documentName, sentences)
         DownloadsSaver.saveFile(context, file, "text/plain")
     } catch (e: Exception) {
-        Timber.e(e, "Error guardando resumen en Descargas")
+        Timber.e("Error guardando resumen en Descargas (${e.javaClass.simpleName})")
         false
     }
 }
@@ -3809,7 +3871,7 @@ private suspend fun extractTextFromUri(
             // tragarla.
             throw e
         } catch (e: Exception) {
-            Timber.e(e, "Error extrayendo texto")
+            Timber.e("Error extrayendo texto (${e.javaClass.simpleName})")
             StudyExtractionResult(
                 emptyList(),
                 String.format(messages.genericErrorTemplate, e.message ?: ""),
@@ -3821,7 +3883,7 @@ private suspend fun extractTextFromUri(
             // mismo patrón ya corregido en 11 conversores del Convertidor
             // (P1, quinta ronda), nunca extendido a Lectura, que acumula
             // todos los párrafos de un PDF grande en memoria.
-            Timber.e(e, "StudyScreen: sin memoria extrayendo el documento")
+            Timber.e("StudyScreen: sin memoria extrayendo el documento (${e.javaClass.simpleName})")
             StudyExtractionResult(
                 emptyList(),
                 String.format(messages.genericErrorTemplate, messages.outOfMemoryMessage),
@@ -3877,7 +3939,7 @@ private suspend fun extractPdfText(
         // extracción real.
         throw e
     } catch (e: Exception) {
-        Timber.e(e, "Error extrayendo texto PDF")
+        Timber.e("Error extrayendo texto PDF (${e.javaClass.simpleName})")
         Triple(listOf(String.format(messages.pdfErrorTemplate, e.message ?: "")), emptyList(), true)
     } finally {
         cacheFile?.delete()
@@ -3941,7 +4003,9 @@ internal fun groupPdfChunksIntoParagraphs(chunks: List<StudyPdfChunk>): List<Str
         previousY = chunk.y
     }
     paragraphs.add(current)
-    return paragraphs.map { it.toString().trim() }.filter { it.length > 5 }
+    // Ronda 16: un párrafo más largo que el límite del motor TTS se parte en
+    // trozos (ver splitForSpeech) en vez de perderse en silencio al leerlo.
+    return paragraphs.map { it.toString().trim() }.filter { it.length > 5 }.flatMap { splitForSpeech(it) }
 }
 
 private fun resolveFileName(

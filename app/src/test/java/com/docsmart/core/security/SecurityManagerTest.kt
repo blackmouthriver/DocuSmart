@@ -23,6 +23,7 @@ import java.nio.file.Files
  */
 class SecurityManagerTest {
     private lateinit var filesDir: File
+    private lateinit var cacheDir: File
     private lateinit var securityManager: SecurityManager
     private lateinit var prefsStore: MutableMap<String, Any?>
 
@@ -31,13 +32,16 @@ class SecurityManagerTest {
         filesDir = Files.createTempDirectory("docsmart_security_test_").toFile()
         val context = mockk<Context>()
         every { context.getSharedPreferences(any(), any()) } returns fakeSharedPreferences()
+        cacheDir = Files.createTempDirectory("docsmart_security_cache_").toFile()
         every { context.filesDir } returns filesDir
+        every { context.cacheDir } returns cacheDir
         securityManager = SecurityManager(context)
     }
 
     @AfterEach
     fun tearDown() {
         filesDir.deleteRecursively()
+        cacheDir.deleteRecursively()
     }
 
     // ── PIN (RF-SEC-01/02, RNF-SEC-04) ────────────────────────────────────────
@@ -145,6 +149,68 @@ class SecurityManagerTest {
         assertFalse(securityManager.hasPin())
         assertFalse(securityManager.verifyPin("1234"))
         assertTrue(securityManager.getSecureFiles().isEmpty())
+    }
+
+    @Test
+    fun `resetPinAndWipeFiles tambien borra la copia en claro de la vista previa`() {
+        // Ronda 16: cacheDir/secure_preview sobrevivia al restablecer el PIN.
+        val secured = File(filesDir, "doc.pdf").apply { writeText("secreto") }
+        val moved = securityManager.moveToSecure(secured).destFile!!
+        val preview = securityManager.copyForPreview(moved)!!
+        assertTrue(preview.exists())
+
+        securityManager.resetPinAndWipeFiles()
+
+        assertFalse(preview.exists())
+    }
+
+    @Test
+    fun `verifyPin con pin_salt corrupto devuelve false sin lanzar y cuenta como intento fallido`() {
+        // Ronda 16: Base64 invalido lanzaba IllegalArgumentException.
+        securityManager.setPin("1234")
+        prefsStore["pin_salt"] = "!!!no es base64!!!"
+
+        assertFalse(securityManager.verifyPin("1234"))
+        assertEquals(1, prefsStore["pin_fail_count"])
+    }
+
+    @Test
+    fun `el bloqueo se duplica en cada fallo tras los intentos libres`() {
+        securityManager.setPin("1234")
+        repeat(5) { securityManager.verifyPin("0000") }
+        val first = securityManager.pinLockoutRemainingMillis()
+        assertTrue(first in 1..30_000L)
+
+        // Expira el bloqueo y falla otra vez: el siguiente bloqueo es de 60 s.
+        prefsStore["pin_lockout_until"] = 0L
+        assertFalse(securityManager.verifyPin("0000"))
+
+        assertTrue(securityManager.pinLockoutRemainingMillis() > 30_000L)
+    }
+
+    @Test
+    fun `tras expirar el bloqueo el PIN correcto entra y limpia el estado`() {
+        securityManager.setPin("1234")
+        repeat(5) { securityManager.verifyPin("0000") }
+        prefsStore["pin_lockout_until"] = 0L
+
+        assertTrue(securityManager.verifyPin("1234"))
+
+        assertEquals(0, prefsStore["pin_fail_count"])
+        assertFalse(prefsStore.containsKey("pin_lockout_until"))
+    }
+
+    @Test
+    fun `moveToSecure con un destino ocupado no pisa y devuelve el destino real`() {
+        val first = File(filesDir, "Scan.pdf").apply { writeText("uno") }
+        val second = File(filesDir, "sub").apply { mkdirs() }.let { File(it, "Scan.pdf").apply { writeText("dos") } }
+
+        val r1 = securityManager.moveToSecure(first)
+        val r2 = securityManager.moveToSecure(second)
+
+        assertEquals("uno", r1.destFile!!.readText())
+        assertEquals("dos", r2.destFile!!.readText())
+        assertEquals("Scan (1).pdf", r2.destFile!!.name)
     }
 
     // ── Biometría (preferencia, no disponibilidad del sensor) ────────────────

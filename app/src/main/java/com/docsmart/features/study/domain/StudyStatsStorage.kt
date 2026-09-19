@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import org.json.JSONArray
 import timber.log.Timber
 import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 data class StudyStats(
     val totalReadingMillis: Long,
@@ -70,7 +72,8 @@ object StudyStatsStorage {
             val array = JSONArray(json)
             (0 until array.length()).map { array.getLong(it) }
         } catch (e: Exception) {
-            Timber.e(e, "Error cargando historial de pomodoros")
+            // Solo el tipo: CrashlyticsTree reenvía el Throwable completo a Firebase.
+            Timber.e("Error cargando historial de pomodoros (${e.javaClass.simpleName})")
             emptyList()
         }
 
@@ -79,34 +82,48 @@ object StudyStatsStorage {
 
 /**
  * Cuántos pomodoros caen en cada día de la semana calendario actual
- * (domingo=índice 0 .. sábado=índice 6, orden de `Calendar.DAY_OF_WEEK`),
- * para dibujar una barra por día. Función pura -- recibe `now` en vez de
- * usar `System.currentTimeMillis()` internamente para poder testear semanas
- * fijas sin depender del reloj real.
+ * (índice 0 = primer día de la semana según la región, ver
+ * `Calendar.firstDayOfWeek`), para dibujar una barra por día. Función pura --
+ * recibe `now`, `timeZone` y `locale` en vez de leerlos del entorno para
+ * poder testear semanas fijas sin depender del reloj ni de la región reales.
+ *
+ * Ronda 16: antes el índice del día salía de `(ts - inicioSemana) / 24h` y el
+ * fin de la semana era `inicio + 7 * 24h`. En la semana de un cambio de hora
+ * (días de 23 o 25 horas) eso ponía un pomodoro del viernes por la noche en
+ * la barra del sábado, y descartaba de la semana la última hora del sábado.
+ * Ahora se calculan los 8 límites de día reales con `Calendar.add(DAY)`.
  */
 internal fun pomodoroCountsByWeekday(
     timestamps: List<Long>,
     now: Long,
+    timeZone: TimeZone = TimeZone.getDefault(),
+    locale: Locale = Locale.getDefault(),
 ): IntArray {
-    val calendar = Calendar.getInstance()
+    val calendar = Calendar.getInstance(timeZone, locale)
     calendar.timeInMillis = now
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
     calendar.set(Calendar.SECOND, 0)
     calendar.set(Calendar.MILLISECOND, 0)
     calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
-    val startOfWeek = calendar.timeInMillis
-    val endOfWeek = startOfWeek + 7L * 24 * 60 * 60 * 1000
+    val boundaries =
+        LongArray(DAYS_IN_WEEK + 1) {
+            val boundary = calendar.timeInMillis
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            boundary
+        }
 
-    val counts = IntArray(7)
+    val counts = IntArray(DAYS_IN_WEEK)
     timestamps.forEach { ts ->
-        if (ts in startOfWeek until endOfWeek) {
-            val dayIndex = ((ts - startOfWeek) / (24L * 60 * 60 * 1000)).toInt().coerceIn(0, 6)
+        if (ts >= boundaries.first() && ts < boundaries.last()) {
+            val dayIndex = (0 until DAYS_IN_WEEK).first { ts < boundaries[it + 1] }
             counts[dayIndex]++
         }
     }
     return counts
 }
+
+private const val DAYS_IN_WEEK = 7
 
 /** Total de pomodoros dentro de la semana calendario actual. */
 internal fun pomodoroCountThisWeek(
@@ -121,20 +138,23 @@ internal fun pomodoroCountThisWeek(
  * proceso nuevo (hallazgo real de la auditoría general 2026-09-17, quinta
  * pasada: ese contador vivía solo en memoria y se reiniciaba a 0 si el
  * proceso moría entre bloques, aunque el historial real ya llevara varios
- * pomodoros completados hoy).
+ * pomodoros completados hoy). El fin del día se calcula con
+ * `Calendar.add(DAY)` (no `+ 24h`) para respetar días de 23/25 horas.
  */
 internal fun pomodoroCountToday(
     timestamps: List<Long>,
     now: Long,
+    timeZone: TimeZone = TimeZone.getDefault(),
 ): Int {
-    val calendar = Calendar.getInstance()
+    val calendar = Calendar.getInstance(timeZone)
     calendar.timeInMillis = now
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
     calendar.set(Calendar.SECOND, 0)
     calendar.set(Calendar.MILLISECOND, 0)
     val startOfDay = calendar.timeInMillis
-    val endOfDay = startOfDay + 24L * 60 * 60 * 1000
+    calendar.add(Calendar.DAY_OF_YEAR, 1)
+    val endOfDay = calendar.timeInMillis
     return timestamps.count { it in startOfDay until endOfDay }
 }
 

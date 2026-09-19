@@ -311,7 +311,7 @@ fun DocuSmartNavGraph(
 // "converter?initialType={initialType}&...", "viewer/{documentId}"), nunca
 // los valores reales -- se recorta antes del primer "?"/"/" para agrupar
 // todas las variantes de una misma pantalla bajo un solo nombre en Firebase.
-private val SCREEN_NAMES_BY_ROUTE =
+internal val SCREEN_NAMES_BY_ROUTE =
     mapOf(
         "splash_mouthblack" to "SplashMouthBlack",
         "splash_docusmart" to "SplashDocuSmart",
@@ -329,18 +329,21 @@ private val SCREEN_NAMES_BY_ROUTE =
         "secure_folder" to "SecureFolder",
         "pdf_password" to "PdfPassword",
         "study" to "Study",
+        // Faltaba: sin esta entrada, Firebase recibia la plantilla cruda
+        // "agenda?openEventId={openEventId}" como nombre de pantalla.
+        "agenda" to "Agenda",
         "qr_reader" to "QrReader",
         "qr_creator" to "QrCreator",
         "qr_history" to "QrHistory",
         "trash" to "Trash",
     )
 
-private fun screenNameForRoute(route: String): String {
+internal fun screenNameForRoute(route: String): String {
     val base = route.substringBefore("?").substringBefore("/")
     return SCREEN_NAMES_BY_ROUTE[base] ?: route
 }
 
-private fun DocumentType.toConverterCategoryOrNull(): String? =
+internal fun DocumentType.toConverterCategoryOrNull(): String? =
     when (this) {
         DocumentType.IMAGE -> "Imagen"
         DocumentType.PDF, DocumentType.OCR -> "PDF" // OCR es un PDF escaneado
@@ -350,7 +353,19 @@ private fun DocumentType.toConverterCategoryOrNull(): String? =
         DocumentType.TEXT, DocumentType.ZIP -> null
     }
 
-private fun DocumentType.toQrFileType(): String = if (this == DocumentType.IMAGE) "image" else "document"
+internal fun DocumentType.toQrFileType(): String = if (this == DocumentType.IMAGE) "image" else "document"
+
+// Primera vez -> Onboarding / ya visto -> Home. Extraída para testearla sin
+// Context ni NavController.
+internal fun startDestinationAfterSplash(onboardingCompleted: Boolean): String =
+    if (onboardingCompleted) NavRoutes.Home.route else NavRoutes.Onboarding.route
+
+// "Atrás" en el Visor: si no hay pantalla previa propia (archivo abierto desde
+// otra app en arranque en frío) o la previa es otro Visor, cierra la Activity
+// en vez de dejar un back stack vacío/duplicado.
+internal fun shouldFinishActivityOnViewerBack(previousRoute: String?): Boolean {
+    return previousRoute == null || previousRoute.startsWith("viewer")
+}
 
 private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
     // Hallazgo real de la revisión adversarial de la octava ronda (Alta):
@@ -399,7 +414,7 @@ private fun safeShareableUriOrNull(
         // Ruta fuera de las carpetas declaradas en file_provider_paths.xml
         // (ej. un archivo de Carpeta Segura) -- no hay forma segura de
         // compartirlo por QR.
-        Timber.w(e, "safeShareableUriOrNull: sin Uri compartible para ${document.name}")
+        Timber.w("safeShareableUriOrNull: sin Uri compartible (${e.javaClass.simpleName})")
         null
     }
 }
@@ -469,12 +484,7 @@ private fun NavGraphBuilder.splashDocuSmartComposable(navController: NavHostCont
         SplashDocuSmartScreen(
             onFinished = {
                 // Primera vez → Onboarding / Ya visto → Home
-                val destination =
-                    if (!hasCompletedOnboarding(context)) {
-                        NavRoutes.Onboarding.route
-                    } else {
-                        NavRoutes.Home.route
-                    }
+                val destination = startDestinationAfterSplash(hasCompletedOnboarding(context))
 
                 navController.navigate(destination) {
                     popUpTo(NavRoutes.SplashDocuSmart.route) { inclusive = true }
@@ -525,7 +535,7 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                             android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     context.contentResolver.takePersistableUriPermission(pickedUri, flags)
                 } catch (e: Exception) {
-                    Timber.e("Error permiso: ${e.message}")
+                    Timber.w("Error permiso: ${e.javaClass.simpleName}")
                 }
                 // Bug real reportado 2026-09-11: un documento abierto con
                 // "Abrir" (picker de documentos, autoridad
@@ -552,7 +562,7 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                         try {
                             MediaStore.getMediaUri(context, pickedUri) ?: pickedUri
                         } catch (e: Exception) {
-                            Timber.w("No se pudo resolver a Uri de MediaStore: ${e.message}")
+                            Timber.w("No se pudo resolver a Uri de MediaStore: ${e.javaClass.simpleName}")
                             pickedUri
                         }
                     } else {
@@ -633,7 +643,7 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
                             android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
                         )
                     } catch (e: Exception) {
-                        Timber.w("No se pudo persistir permiso: ${e.message}")
+                        Timber.w("No se pudo persistir permiso: ${e.javaClass.simpleName}")
                     }
                 }
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
@@ -678,7 +688,7 @@ private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
                 // Siempre intentar finish si el previous destination también es Viewer
                 val prevRoute = navController.previousBackStackEntry?.destination?.route
                 Timber.d("Viewer onBack: prevRoute=$prevRoute")
-                if (prevRoute == null || prevRoute.startsWith("viewer")) {
+                if (shouldFinishActivityOnViewerBack(prevRoute)) {
                     (context as? android.app.Activity)?.finish()
                 } else {
                     navController.popBackStack()

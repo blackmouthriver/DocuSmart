@@ -3,11 +3,13 @@ package com.docsmart.features.agenda.data
 import com.docsmart.core.data.db.AgendaEventDao
 import com.docsmart.core.data.db.AgendaEventEntity
 import com.docsmart.features.agenda.domain.ReminderScheduler
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -116,8 +118,20 @@ class AgendaRepository
         // degrada con elegancia a una alarma inexacta si el permiso sigue sin
         // concederse) para poder invocarlo también cuando la Agenda detecta
         // el permiso recién revocado, no solo tras un reinicio.
+        @Suppress("TooGenericExceptionCaught")
         suspend fun rescheduleAllReminders() =
             withContext(Dispatchers.IO) {
-                agendaEventDao.getAllWithReminder().forEach { reminderScheduler.schedule(it) }
+                agendaEventDao.getAllWithReminder().forEach { event ->
+                    // Un evento que falle al reprogramarse no debe impedir que se
+                    // reprogramen los demás (mismo criterio que
+                    // rescheduleAllReminders() de BootRescheduleReceiver).
+                    try {
+                        reminderScheduler.schedule(event)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.e("AgendaRepository: no se pudo reprogramar un recordatorio (${e.javaClass.simpleName})")
+                    }
+                }
             }
     }

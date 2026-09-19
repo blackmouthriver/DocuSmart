@@ -71,6 +71,8 @@ class DailyLimitManager
             private const val KEY_ANCHOR_WALL = "reset_anchor_wall"
             private const val KEY_ANCHOR_ELAPSED = "reset_anchor_elapsed"
             private const val KEY_LAST_RESET_TRUSTED = "last_reset_trusted"
+            private const val KEY_CLOCK_VERSION = "reset_clock_version"
+            private const val CLOCK_VERSION = 2
             private const val MIN_REAL_MS_BETWEEN_RESETS = 20L * 60 * 60 * 1000
 
             // ── Límites diarios ───────────────────────────────────────────────────
@@ -111,6 +113,7 @@ class DailyLimitManager
         }
 
         // ── Verificar y resetear si cambió el día ─────────────────────────────────
+        @Synchronized
         private fun checkAndResetIfNewDay() {
             // Hallazgo real de la auditoría general 2026-09-17 (B7): antes era
             // una instancia compartida a nivel de clase -- `SimpleDateFormat` no
@@ -120,11 +123,14 @@ class DailyLimitManager
             // la vez). Una instancia nueva por llamada es igual de barata que el
             // resto de timestamps de la app (ver createOutputFile() en cada
             // UseCase) y elimina el problema de raíz.
+            // El ancla del reloj de confianza debe avanzar en CADA uso, no solo al
+            // cambiar de día: si no, tras un reinicio entre dos resets quedaba
+            // días atrasada y bloqueaba el reseteo.
+            val trustedNow = trustedNowMillis()
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val savedDate = prefs.getString(KEY_DATE, "")
             if (savedDate == today) return
 
-            val trustedNow = trustedNowMillis()
             val lastResetTrusted = prefs.getLong(KEY_LAST_RESET_TRUSTED, 0L)
             // lastResetTrusted==0L cubre la primera vez que se llama (nunca
             // hubo un reset registrado) -- se permite el reset y queda fijado
@@ -163,6 +169,10 @@ class DailyLimitManager
                 .putInt(KEY_SIGN, 0)
                 .putInt(KEY_FILL_FORM, 0)
                 .putInt(KEY_OCR, 0)
+                // Hallazgo real de la ronda 16: faltaba acá -- el contador de
+                // "Extraer imágenes" nunca se reseteaba al cambiar de día, así
+                // que un usuario free lo agotaba para siempre.
+                .putInt(KEY_EXTRACT_IMAGES, 0)
                 .putInt(KEY_EXTRA_CONVERSIONS, 0)
                 .putInt(KEY_EXTRA_PDF_TOOLS, 0)
                 .putInt(KEY_SCANS_SAVED, 0)
@@ -187,27 +197,49 @@ class DailyLimitManager
         // el ataque: ante un reloj adelantado, siempre gana el valor más
         // conservador (el que diga que pasó MENOS tiempo), nunca el que el
         // usuario pueda inflar a su favor.
+        //
+        // Hallazgo real de la ronda 16: el ancla solo se persistía UNA vez (la
+        // primera llamada) y nunca avanzaba. Tras cualquier reinicio normal del
+        // teléfono, el "ahora de confianza" arrancaba de esa ancla vieja (días
+        // atrás) + tiempo desde el arranque, quedando MUY por detrás de
+        // `lastResetTrusted` (que se registró antes del reinicio): la resta
+        // `trustedNow - lastResetTrusted` daba negativa y los contadores diarios
+        // dejaban de resetearse hasta acumular tantas horas de uptime como
+        // habían pasado desde la instalación. Ahora el ancla avanza y se
+        // persiste en cada lectura (igual que SecurityManager), así que un
+        // reinicio solo pierde el tramo desde la última lectura.
         private fun trustedNowMillis(): Long {
             val currentWall = System.currentTimeMillis()
             val currentElapsed = elapsedRealtimeMillisSafe()
-            val anchorWall = prefs.getLong(KEY_ANCHOR_WALL, 0L)
-            val anchorElapsed = prefs.getLong(KEY_ANCHOR_ELAPSED, 0L)
-
-            return when {
-                anchorWall == 0L -> {
-                    prefs
-                        .edit()
-                        .putLong(KEY_ANCHOR_WALL, currentWall)
-                        .putLong(KEY_ANCHOR_ELAPSED, currentElapsed)
-                        .apply()
-                    currentWall
+            val raw =
+                computeTrustedClock(
+                    anchorWall = prefs.getLong(KEY_ANCHOR_WALL, 0L),
+                    anchorElapsed = prefs.getLong(KEY_ANCHOR_ELAPSED, 0L),
+                    currentWall = currentWall,
+                    currentElapsed = currentElapsed,
+                )
+            // Migración única desde el ancla defectuosa: en instalaciones ya
+            // desfasadas por un reinicio previo, el ancla queda como mínimo en
+            // el último reseteo registrado (costo: una espera de hasta 20 h).
+            val migrating = prefs.getInt(KEY_CLOCK_VERSION, 0) < CLOCK_VERSION
+            val state =
+                if (migrating) {
+                    val base = maxOf(raw.anchorWall, prefs.getLong(KEY_LAST_RESET_TRUSTED, 0L))
+                    TrustedClock(minOf(currentWall, base), base, currentElapsed)
+                } else {
+                    raw
                 }
-                currentElapsed < anchorElapsed -> {
-                    prefs.edit().putLong(KEY_ANCHOR_ELAPSED, currentElapsed).apply()
-                    minOf(currentWall, anchorWall)
-                }
-                else -> minOf(currentWall, anchorWall + (currentElapsed - anchorElapsed))
+            if (migrating || state.anchorWall != prefs.getLong(KEY_ANCHOR_WALL, 0L) ||
+                state.anchorElapsed != prefs.getLong(KEY_ANCHOR_ELAPSED, 0L)
+            ) {
+                prefs
+                    .edit()
+                    .putLong(KEY_ANCHOR_WALL, state.anchorWall)
+                    .putLong(KEY_ANCHOR_ELAPSED, state.anchorElapsed)
+                    .putInt(KEY_CLOCK_VERSION, CLOCK_VERSION)
+                    .apply()
             }
+            return state.trustedNow
         }
 
         // ── Verificar si puede realizar la operación ──────────────────────────────
@@ -240,6 +272,7 @@ class DailyLimitManager
         }
 
         // ── Registrar uso ─────────────────────────────────────────────────────────
+        @Synchronized
         fun registerConversion() {
             checkAndResetIfNewDay()
             val current = prefs.getInt(KEY_CONVERSIONS, 0)
@@ -247,6 +280,7 @@ class DailyLimitManager
             Timber.d("DailyLimitManager: conversión registrada → ${current + 1}")
         }
 
+        @Synchronized
         fun registerScanSaved() {
             checkAndResetIfNewDay()
             val current = prefs.getInt(KEY_SCANS_SAVED, 0)
@@ -254,6 +288,7 @@ class DailyLimitManager
             Timber.d("DailyLimitManager: escaneo guardado registrado → ${current + 1}")
         }
 
+        @Synchronized
         fun registerPdfTool(toolKey: String) {
             checkAndResetIfNewDay()
             val key = getPdfToolKey(toolKey)
@@ -263,6 +298,7 @@ class DailyLimitManager
         }
 
         // ── Agregar conversión extra (reward por ver anuncio) ─────────────────────
+        @Synchronized
         fun addRewardedConversion() {
             checkAndResetIfNewDay()
             val current = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
@@ -271,6 +307,7 @@ class DailyLimitManager
         }
 
         // ── Agregar uso extra de herramienta PDF (reward por ver anuncio) ─────────
+        @Synchronized
         fun addRewardedPdfTool() {
             checkAndResetIfNewDay()
             val current = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
@@ -279,6 +316,7 @@ class DailyLimitManager
         }
 
         // ── Agregar escaneo guardado extra (reward por ver anuncio) ───────────────
+        @Synchronized
         fun addRewardedScanSave() {
             checkAndResetIfNewDay()
             val current = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
@@ -321,4 +359,35 @@ class DailyLimitManager
         }
 
         private fun getPdfToolKey(toolKey: String): String = PDF_TOOL_KEYS[toolKey] ?: KEY_CONVERSIONS
+    }
+
+internal data class TrustedClock(
+    val trustedNow: Long,
+    val anchorWall: Long,
+    val anchorElapsed: Long,
+)
+
+// Lógica pura del "reloj de confianza" (ver DailyLimitManager.trustedNowMillis()),
+// extraída para poder probarla sin SystemClock. Nunca retrocede el ancla y
+// nunca confía en un reloj de pared adelantado: siempre gana el valor que
+// indica que pasó MENOS tiempo.
+internal fun computeTrustedClock(
+    anchorWall: Long,
+    anchorElapsed: Long,
+    currentWall: Long,
+    currentElapsed: Long,
+): TrustedClock =
+    when {
+        anchorWall == 0L -> TrustedClock(currentWall, currentWall, currentElapsed)
+        // Reinicio: elapsedRealtime volvió a empezar. Se congela en el ancla
+        // (no en el reloj de pared, potencialmente manipulado) y se re-basa.
+        currentElapsed < anchorElapsed -> TrustedClock(minOf(currentWall, anchorWall), anchorWall, currentElapsed)
+        else -> {
+            val trusted = minOf(currentWall, anchorWall + (currentElapsed - anchorElapsed))
+            if (trusted > anchorWall) {
+                TrustedClock(trusted, trusted, currentElapsed)
+            } else {
+                TrustedClock(trusted, anchorWall, anchorElapsed)
+            }
+        }
     }

@@ -111,7 +111,13 @@ internal fun QrContentActionButtons(
             }
             QrContentType.IMAGE -> {
                 Button(
-                    onClick = { openUrl(context, content) },
+                    onClick = {
+                        if (isRemoteHttpUrl(content)) {
+                            openUrl(context, content)
+                        } else {
+                            openDocumentExternally(context, content, openDocumentLabel)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
                     shape = MaterialTheme.shapes.medium,
                 ) {

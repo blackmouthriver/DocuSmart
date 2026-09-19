@@ -72,7 +72,8 @@ class QrContentFormatTest {
         val payload = QrContactContent("Ana Pérez", "+573000000", "ana@ejemplo.com").toQrPayload()
 
         assertEquals(
-            "BEGIN:VCARD\nVERSION:3.0\nN:Ana Pérez;;;;\nFN:Ana Pérez\nTEL:+573000000\nEMAIL:ana@ejemplo.com\nEND:VCARD",
+            "BEGIN:VCARD\r\nVERSION:3.0\r\nN:Ana Pérez;;;;\r\nFN:Ana Pérez\r\n" +
+                "TEL:+573000000\r\nEMAIL:ana@ejemplo.com\r\nEND:VCARD",
             payload,
         )
     }
@@ -81,7 +82,7 @@ class QrContentFormatTest {
     fun `Contacto sin telefono ni email omite esos campos`() {
         val payload = QrContactContent("Solo Nombre", "", "").toQrPayload()
 
-        assertEquals("BEGIN:VCARD\nVERSION:3.0\nN:Solo Nombre;;;;\nFN:Solo Nombre\nEND:VCARD", payload)
+        assertEquals("BEGIN:VCARD\r\nVERSION:3.0\r\nN:Solo Nombre;;;;\r\nFN:Solo Nombre\r\nEND:VCARD", payload)
     }
 
     @Test
@@ -100,9 +101,9 @@ class QrContentFormatTest {
         val payload = QrEventContent("Reunión", "Oficina", start, end).toQrPayload()
 
         assertEquals(
-            "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Reunión\n" +
-                "DTSTART:20261225T090000\nDTEND:20261225T103000\nLOCATION:Oficina\n" +
-                "END:VEVENT\nEND:VCALENDAR",
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Reunión\r\n" +
+                "DTSTART:20261225T090000\r\nDTEND:20261225T103000\r\nLOCATION:Oficina\r\n" +
+                "END:VEVENT\r\nEND:VCALENDAR",
             payload,
         )
     }
@@ -114,8 +115,8 @@ class QrContentFormatTest {
         val payload = QrEventContent("Año nuevo", "", start, end).toQrPayload()
 
         assertEquals(
-            "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Año nuevo\n" +
-                "DTSTART:20260101T000000\nDTEND:20260101T010000\nEND:VEVENT\nEND:VCALENDAR",
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Año nuevo\r\n" +
+                "DTSTART:20260101T000000\r\nDTEND:20260101T010000\r\nEND:VEVENT\r\nEND:VCALENDAR",
             payload,
         )
     }

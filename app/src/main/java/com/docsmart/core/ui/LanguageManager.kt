@@ -44,6 +44,20 @@ enum class AppLanguage(
     BASQUE("eu", "Euskera", "Euskara", "🇪🇸", "Espainia"),
 }
 
+/**
+ * Código de idioma a aplicar: el guardado si es soportado; si no (instalación
+ * nueva o valor corrupto), el del dispositivo si es soportado; si no, español.
+ * Compartido con MainActivity.attachBaseContext() para que la Activity y el
+ * selector de Ajustes nunca muestren idiomas distintos.
+ */
+internal fun resolveLanguageCode(
+    saved: String?,
+    deviceLanguage: String?,
+): String =
+    AppLanguage.entries.firstOrNull { it.code == saved }?.code
+        ?: AppLanguage.entries.firstOrNull { it.code == deviceLanguage }?.code
+        ?: AppLanguage.SPANISH.code
+
 @Singleton
 class LanguageManager
     @Inject

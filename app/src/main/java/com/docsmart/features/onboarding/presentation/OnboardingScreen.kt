@@ -121,11 +121,6 @@ fun markOnboardingCompleted(context: Context) {
         .edit().putBoolean("completed", true).apply()
 }
 
-fun resetOnboarding(context: Context) {
-    context.getSharedPreferences("docusmart_onboarding", Context.MODE_PRIVATE)
-        .edit().putBoolean("completed", false).apply()
-}
-
 // ── Pantalla principal ────────────────────────────────────────────────────────
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable

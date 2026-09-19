@@ -30,6 +30,7 @@ import com.docsmart.core.navegation.NavRoutes
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.components.DocuSmartAnimatedBackground
 import com.docsmart.core.ui.components.DocuSmartBottomBar
+import com.docsmart.core.ui.resolveLanguageCode
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.DocuSmartTheme
 import com.docsmart.core.ui.theme.ThemeManager
@@ -87,8 +88,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         // ── Aplicar idioma guardado antes de crear la Activity ──
+        // Sin idioma guardado (instalación nueva) se usa el del dispositivo si
+        // está soportado (RF-SET-06) -- antes caía siempre en "es" aquí mientras
+        // LanguageManager mostraba otro en el selector.
         val prefs = newBase.getSharedPreferences("docusmart_language", Context.MODE_PRIVATE)
-        val languageCode = prefs.getString("language", "es") ?: "es"
+        val languageCode =
+            resolveLanguageCode(
+                saved = prefs.getString("language", null),
+                deviceLanguage = newBase.resources.configuration.locales[0]?.language,
+            )
         val locale = Locale(languageCode)
         Locale.setDefault(locale)
         val config = Configuration(newBase.resources.configuration)
@@ -100,9 +108,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        externalFileUri = resolveExternalIntent(intent)
-        pendingAgendaEventId = intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)
-        pendingNoteId = intent.getStringExtra(EXTRA_OPEN_NOTE_ID)
+        // Solo en un arranque real: tras rotación/cambio de idioma/proceso
+        // muerto Android re-entrega el mismo Intent y se reabriría el Visor
+        // (o Agenda/Nota) sobre lo que el usuario ya cerró.
+        if (shouldConsumeLaunchIntent(savedInstanceState != null, intent.flags)) {
+            externalFileUri = resolveExternalIntent(intent)
+            pendingAgendaEventId = intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)
+            pendingNoteId = intent.getStringExtra(EXTRA_OPEN_NOTE_ID)
+        }
         // Hallazgo real de la auditoría general 2026-09-17 (séptima
         // ronda, Media -- O2): antes se pedía acá mismo, sincrónicamente,
         // antes de que se pintara cualquier UI propia -- lo primero que
@@ -157,13 +170,11 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(currentLanguage) {
                 if (currentLanguage != previousLanguage) {
                     previousLanguage = currentLanguage
-                    // Reiniciar para aplicar el nuevo idioma
-                    val intent =
-                        Intent(this@MainActivity, MainActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        }
-                    startActivity(intent)
+                    // Recrear (no lanzar una Activity nueva con CLEAR_TASK): el
+                    // NavController restaura su back stack, así que el usuario
+                    // sigue en Ajustes en vez de volver al splash.
+                    // attachBaseContext() vuelve a leer el idioma guardado.
+                    recreate()
                 }
             }
 
@@ -292,6 +303,7 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (!shouldConsumeLaunchIntent(isRestoringState = false, intentFlags = intent.flags)) return
         val uri = resolveExternalIntent(intent)
         if (uri != null) {
             Timber.d("onNewIntent: URI externa = $uri")
@@ -322,20 +334,21 @@ class MainActivity : AppCompatActivity() {
         if (intent == null) return null
         if (intent.action != Intent.ACTION_VIEW) return null
         val uri = intent.data ?: return null
-        if (uri.scheme != "content") {
+        if (!isAllowedExternalViewIntent(intent.action, uri.scheme)) {
             Timber.w("resolveExternalIntent: esquema no permitido desde un Intent externo -> ${uri.scheme}")
             return null
         }
-        return try {
-            contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            )
-            uri
-        } catch (e: Exception) {
-            Timber.w("No se pudo persistir permiso: ${e.message}")
-            uri
+        if (canPersistUriGrant(intent.flags)) {
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            } catch (e: SecurityException) {
+                Timber.w("No se pudo persistir permiso: ${e.javaClass.simpleName}")
+            }
         }
+        return uri
     }
 
     // Permiso de video corregido 2026-09-10 (hallazgo real al preparar la
@@ -412,13 +425,13 @@ class MainActivity : AppCompatActivity() {
             {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) { formError ->
                     if (formError != null) {
-                        Timber.w("UMP: error mostrando formulario de consentimiento — ${formError.message}")
+                        Timber.w("UMP: error mostrando formulario de consentimiento — ${formError.errorCode}")
                     }
                     initializeAdsIfAllowed(consentInformation)
                 }
             },
             { requestConsentError ->
-                Timber.w("UMP: error actualizando info de consentimiento — ${requestConsentError.message}")
+                Timber.w("UMP: error actualizando info de consentimiento — ${requestConsentError.errorCode}")
                 initializeAdsIfAllowed(consentInformation)
             },
         )
@@ -458,11 +471,7 @@ class MainActivity : AppCompatActivity() {
     // Extraída para no duplicar esta misma condición en los 2 LaunchedEffect
     // de arranque en frío (URI externa + notificación de Agenda) -- de paso
     // baja la complejidad ciclomática de onCreate() al sacar la rama de acá.
-    private fun isStillOnSplashOrOnboarding(route: String?): Boolean =
-        route == null ||
-            route == NavRoutes.SplashMouthBlack.route ||
-            route == NavRoutes.SplashDocuSmart.route ||
-            route == NavRoutes.Onboarding.route
+    private fun isStillOnSplashOrOnboarding(route: String?): Boolean = isSplashOrOnboardingRoute(route)
 
     companion object {
         // HU-65: nombre de la extra que AgendaReminderReceiver pone en el
