@@ -106,6 +106,33 @@ internal fun horizontalScalingPercent(
     return (targetWidthPts / naturalWidthPts * 100f).coerceIn(1f, 500f)
 }
 
+/** Desenlace de una corrida de OCR, decidido a partir de lo que quedó escrito en disco. */
+internal enum class OcrOutcome { GENERATE_ERROR, ALREADY_HAS_TEXT, NO_TEXT_FOUND, SUCCESS }
+
+/**
+ * Decide el desenlace del OCR. El orden importa: un archivo vacío es un error
+ * de generación aunque no se haya procesado nada; sin páginas procesadas el PDF
+ * ya tenía texto real; con páginas pero cero palabras, no se reconoció nada.
+ */
+internal fun ocrOutcomeFor(
+    outputLengthBytes: Long,
+    processedPages: Int,
+    totalWords: Int,
+): OcrOutcome =
+    when {
+        outputLengthBytes == 0L -> OcrOutcome.GENERATE_ERROR
+        processedPages == 0 -> OcrOutcome.ALREADY_HAS_TEXT
+        totalWords == 0 -> OcrOutcome.NO_TEXT_FOUND
+        else -> OcrOutcome.SUCCESS
+    }
+
+/** Tamaño de fuente (pt) de la capa invisible: la altura de la palabra, acotada a un rango razonable. */
+internal fun ocrFontSizeFor(
+    heightPts: Float,
+    minSize: Float = 2f,
+    maxSize: Float = 200f,
+): Float = heightPts.coerceIn(minSize, maxSize)
+
 class OcrPdfUseCase
     @Inject
     constructor(
@@ -190,17 +217,20 @@ class OcrPdfUseCase
                         recognizer.close()
                     }
 
-                    if (output.length() == 0L) {
-                        output.delete()
-                        return@withContext PdfToolResult.Error(messages.generateError)
-                    }
-                    if (processedPages == 0) {
-                        output.delete()
-                        return@withContext PdfToolResult.Error(messages.alreadyHasText)
-                    }
-                    if (totalWords == 0) {
-                        output.delete()
-                        return@withContext PdfToolResult.Error(messages.noTextFound)
+                    when (ocrOutcomeFor(output.length(), processedPages, totalWords)) {
+                        OcrOutcome.GENERATE_ERROR -> {
+                            output.delete()
+                            return@withContext PdfToolResult.Error(messages.generateError)
+                        }
+                        OcrOutcome.ALREADY_HAS_TEXT -> {
+                            output.delete()
+                            return@withContext PdfToolResult.Error(messages.alreadyHasText)
+                        }
+                        OcrOutcome.NO_TEXT_FOUND -> {
+                            output.delete()
+                            return@withContext PdfToolResult.Error(messages.noTextFound)
+                        }
+                        OcrOutcome.SUCCESS -> Unit
                     }
 
                     Timber.d("$TAG: OCR exitoso — $processedPages páginas, $totalWords palabras")
@@ -355,7 +385,7 @@ class OcrPdfUseCase
             geometry: PdfPageGeometry,
         ) {
             val placement = mapOcrBoxToPdf(word, box, geometry)
-            val fontSize = placement.heightPts.coerceIn(MIN_FONT_SIZE, MAX_FONT_SIZE)
+            val fontSize = ocrFontSizeFor(placement.heightPts, MIN_FONT_SIZE, MAX_FONT_SIZE)
             val naturalWidth = font.getWidth(word, fontSize)
             val scaling = horizontalScalingPercent(naturalWidth, placement.widthPts)
 

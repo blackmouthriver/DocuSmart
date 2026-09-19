@@ -70,7 +70,7 @@ class SearchPdfTextUseCase
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error buscando en el PDF")
+                    Timber.e("$TAG: error buscando en el PDF: ${e.javaClass.simpleName}")
                     emptyList()
                 } finally {
                     cacheFile.delete()
@@ -108,7 +108,7 @@ class SearchPdfTextUseCase
                 try {
                     if (uri.scheme == "file") copyFileUri(uri, file) else copyContentUri(uri, file)
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error copiando URI al cache")
+                    Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
                     false
                 }
             return if (copied) file else null

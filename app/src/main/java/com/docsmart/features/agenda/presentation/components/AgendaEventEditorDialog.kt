@@ -55,12 +55,8 @@ import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.features.agenda.domain.ReminderPreset
 import com.docsmart.features.agenda.domain.agendaDateFormatter
 import com.docsmart.features.agenda.domain.agendaTimeFormatter
-import com.docsmart.features.agenda.domain.reminderTriggerMillis
 import com.docsmart.features.agenda.presentation.AgendaEventDraft
-import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
 
 // HU-65: editor de un evento de Agenda (crear o editar, según si
 // `draft.id` ya existe). El selector de fecha/hora reutiliza el mismo
@@ -149,8 +145,8 @@ fun AgendaEventEditorDialog(
 
                 AgendaDateTimeRow(
                     label = stringResource(R.string.agenda_field_datetime),
-                    value = draft.dateTimeMillis.toLocalDateTime(),
-                    onValueChange = { onDateTimeChange(it.toEpochMillis()) },
+                    value = draft.dateTimeMillis.toAgendaLocalDateTime(),
+                    onValueChange = { onDateTimeChange(it.toAgendaEpochMillis()) },
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -272,11 +268,7 @@ private fun ReminderPastWarning(
     dateTimeMillis: Long,
     reminderMinutesBefore: Int?,
 ) {
-    if (reminderMinutesBefore == null ||
-        reminderTriggerMillis(dateTimeMillis, reminderMinutesBefore) > System.currentTimeMillis()
-    ) {
-        return
-    }
+    if (!isReminderTriggerPast(dateTimeMillis, reminderMinutesBefore, System.currentTimeMillis())) return
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(
             imageVector = Icons.Rounded.WarningAmber,
@@ -302,10 +294,6 @@ private fun reminderOptionLabel(minutes: Int?): String =
         ReminderPreset.DAY_1 -> stringResource(R.string.agenda_reminder_1_day)
         else -> minutes.toString()
     }
-
-private fun Long.toLocalDateTime(): LocalDateTime = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
-
-private fun LocalDateTime.toEpochMillis(): Long = atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -342,15 +330,14 @@ private fun AgendaDateTimeRow(
     }
 
     if (showDatePicker) {
-        val initialMillis = value.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        val initialMillis = datePickerInitialMillis(value)
         val state = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { millis ->
-                        val newDate = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
-                        onValueChange(LocalDateTime.of(newDate, value.toLocalTime()))
+                        onValueChange(mergePickedDate(value, millis))
                     }
                     showDatePicker = false
                 }) { Text(stringResource(R.string.general_accept)) }
@@ -379,7 +366,7 @@ private fun AgendaDateTimeRow(
                         }
                         Spacer(Modifier.width(8.dp))
                         TextButton(onClick = {
-                            onValueChange(value.withHour(state.hour).withMinute(state.minute))
+                            onValueChange(mergePickedTime(value, state.hour, state.minute))
                             showTimePicker = false
                         }) { Text(stringResource(R.string.general_accept)) }
                     }

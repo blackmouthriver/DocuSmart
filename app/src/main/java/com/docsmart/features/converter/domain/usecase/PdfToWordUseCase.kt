@@ -143,7 +143,7 @@ class PdfToWordUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "PdfToWordUseCase: error — ${e.message}")
+                    Timber.e("PdfToWordUseCase: error: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),

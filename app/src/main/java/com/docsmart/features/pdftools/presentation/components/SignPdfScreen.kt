@@ -113,7 +113,7 @@ fun SignPdfScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = { onPageChange(pageNumber - 1) }, enabled = pageNumber > 1) {
+                IconButton(onClick = { onPageChange(pageNumber - 1) }, enabled = canGoToPreviousPage(pageNumber)) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronLeft,
                         contentDescription = stringResource(R.string.pdf_sign_prev_page),
@@ -124,7 +124,10 @@ fun SignPdfScreen(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                IconButton(onClick = { onPageChange(pageNumber + 1) }, enabled = pageNumber < totalPages) {
+                IconButton(
+                    onClick = { onPageChange(pageNumber + 1) },
+                    enabled = canGoToNextPage(pageNumber, totalPages),
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronRight,
                         contentDescription = stringResource(R.string.pdf_sign_next_page),
@@ -164,7 +167,7 @@ fun SignPdfScreen(
 
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = selectedPdf != null && hasSignature,
+            enabled = canExecuteSign(selectedPdf != null, hasSignature),
             progressText = stringResource(R.string.pdf_sign_progress),
             buttonLabel = stringResource(R.string.pdf_sign_execute),
             buttonIcon = Icons.Rounded.Draw,

@@ -66,11 +66,7 @@ import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
 import com.docsmart.features.scanner.domain.QrWifiContent
 import com.docsmart.features.scanner.domain.QrWifiSecurity
-import com.docsmart.features.scanner.domain.buildEmailQrPayload
-import com.docsmart.features.scanner.domain.buildPhoneQrPayload
-import com.docsmart.features.scanner.domain.buildUrlQrPayload
 import com.docsmart.features.scanner.domain.hasSufficientContrast
-import com.docsmart.features.scanner.domain.toQrPayload
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.google.zxing.BarcodeFormat
@@ -495,7 +491,7 @@ fun QrReaderScreen(
                                                 imageAnalysis,
                                             )
                                         } catch (e: Exception) {
-                                            Timber.e(e, "Error cámara")
+                                            Timber.e("Error cámara (${e.javaClass.simpleName})")
                                         }
                                     }, ContextCompat.getMainExecutor(ctx))
                                     previewView
@@ -1003,7 +999,7 @@ fun QrCreatorScreen(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     )
                 } catch (e: SecurityException) {
-                    Timber.w(e, "imageLauncher: no se pudo persistir el permiso de lectura")
+                    Timber.w("imageLauncher: no se pudo persistir el permiso de lectura (${e.javaClass.simpleName})")
                     errorMsg = persistPermissionFailedMsg
                     return@let
                 }
@@ -1027,7 +1023,7 @@ fun QrCreatorScreen(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     )
                 } catch (e: SecurityException) {
-                    Timber.w(e, "documentLauncher: no se pudo persistir el permiso de lectura")
+                    Timber.w("documentLauncher: no se pudo persistir el permiso de lectura (${e.javaClass.simpleName})")
                     errorMsg = persistPermissionFailedMsg
                     return@let
                 }
@@ -1621,14 +1617,18 @@ fun QrCreatorScreen(
             // HU-43: Wi-Fi exige SSID (y contraseña salvo red abierta);
             // Contacto exige al menos el nombre; Evento exige título y que
             // el fin no sea anterior al inicio.
-            val hasContent =
-                when (selectedType) {
-                    4, 5 -> selectedUri != null
-                    6 -> wifiSsid.isNotBlank() && (wifiSecurity == QrWifiSecurity.NONE || wifiPassword.isNotBlank())
-                    7 -> contactName.isNotBlank()
-                    8 -> eventTitle.isNotBlank() && !eventEnd.isBefore(eventStart)
-                    else -> content.isNotBlank()
-                }
+            // Ronda 17: validación y armado del payload en QrCreatorLogic.kt.
+            fun currentCreatorInput() =
+                QrCreatorInput(
+                    selectedType = selectedType,
+                    content = content,
+                    selectedUri = selectedUri?.toString(),
+                    wifi = QrWifiContent(wifiSsid, wifiPassword, wifiSecurity),
+                    contact = QrContactContent(contactName, contactPhone, contactEmail),
+                    event = QrEventContent(eventTitle, eventLocation, eventStart, eventEnd),
+                )
+            val contentError = qrContentError(currentCreatorInput())
+            val hasContent = contentError == null
 
             val errorSelectImage = stringResource(R.string.qr_error_select_image)
             val errorSelectDocument = stringResource(R.string.qr_error_select_document)
@@ -1652,19 +1652,20 @@ fun QrCreatorScreen(
                     // la entrada en el Historial. Mismo criterio que el
                     // guard de re-entrada ya usado en ConverterViewModel.
                     if (isGenerating) return@Button
-                    if (!hasContent) {
+                    if (contentError != null) {
                         errorMsg =
-                            when (selectedType) {
-                                4 -> errorSelectImage
-                                5 -> errorSelectDocument
-                                6 -> errorWifiIncomplete
-                                7 -> errorContactRequired
-                                8 -> if (eventTitle.isBlank()) errorEventTitle else errorEventEndBefore
-                                else -> errorEmptyContent
+                            when (contentError) {
+                                QrContentError.SELECT_IMAGE -> errorSelectImage
+                                QrContentError.SELECT_DOCUMENT -> errorSelectDocument
+                                QrContentError.WIFI_INCOMPLETE -> errorWifiIncomplete
+                                QrContentError.CONTACT_NAME_REQUIRED -> errorContactRequired
+                                QrContentError.EVENT_TITLE_REQUIRED -> errorEventTitle
+                                QrContentError.EVENT_END_BEFORE_START -> errorEventEndBefore
+                                QrContentError.EMPTY_CONTENT -> errorEmptyContent
                             }
                         return@Button
                     }
-                    if (usePassword && password.length < 4) {
+                    if (isQrPasswordInvalid(usePassword, password)) {
                         errorMsg = errorPasswordShort
                         return@Button
                     }
@@ -1690,21 +1691,12 @@ fun QrCreatorScreen(
                         // los archivos viejos (>1h) al iniciar una nueva
                         // generación.
                         cleanOldQrCacheFiles(context)
-                        val rawContent =
-                            when (selectedType) {
-                                4, 5 -> selectedUri.toString()
-                                // Hallazgo real de la auditoría general 2026-09-17
-                                // (B11): startsWith("http") sensible a mayúsculas
-                                // -- "HTTP://ejemplo.com" no matcheaba y quedaba
-                                // "https://HTTP://ejemplo.com", una URL rota.
-                                0 -> buildUrlQrPayload(content)
-                                2 -> buildEmailQrPayload(content)
-                                3 -> buildPhoneQrPayload(content)
-                                6 -> QrWifiContent(wifiSsid, wifiPassword, wifiSecurity).toQrPayload()
-                                7 -> QrContactContent(contactName, contactPhone, contactEmail).toQrPayload()
-                                8 -> QrEventContent(eventTitle, eventLocation, eventStart, eventEnd).toQrPayload()
-                                else -> content
-                            }
+                        // Hallazgo real de la auditoría general 2026-09-17
+                        // (B11): startsWith("http") sensible a mayúsculas
+                        // -- "HTTP://ejemplo.com" no matcheaba y quedaba
+                        // "https://HTTP://ejemplo.com", una URL rota (ver
+                        // buildUrlQrPayload en buildQrRawContent).
+                        val rawContent = buildQrRawContent(currentCreatorInput())
                         val finalContent =
                             if (usePassword && password.isNotBlank()) {
                                 "${QrCrypto.PREFIX}${QrCrypto.encrypt(rawContent, password)}"
@@ -1731,18 +1723,7 @@ fun QrCreatorScreen(
                         // QrContentType del Lector (namespace distinto, ver
                         // QrContentType.kt) -- alcanza con un literal para
                         // la analítica, que solo necesita el nombre.
-                        val createdContentTypeName =
-                            when (selectedType) {
-                                0 -> QrContentType.URL.name
-                                2 -> QrContentType.EMAIL.name
-                                3 -> QrContentType.PHONE.name
-                                4 -> QrContentType.IMAGE.name
-                                5 -> QrContentType.DOCUMENT.name
-                                6 -> "WIFI"
-                                7 -> "CONTACT"
-                                8 -> "EVENT"
-                                else -> QrContentType.TEXT.name
-                            }
+                        val createdContentTypeName = qrCreatedTypeName(selectedType)
                         DocuSmartAnalytics.logQrCreated(createdContentTypeName, usePassword)
                         // HU-44: se guarda `finalContent` -- ya incluye el
                         // prefijo `PROTECTED:` + cifrado cuando usePassword
@@ -2028,7 +2009,7 @@ internal suspend fun generateQrBitmap(
             logo?.let { overlayQrLogo(bitmap, it) }
             bitmap
         } catch (e: Exception) {
-            Timber.e(e, "generateQrBitmap: error")
+            Timber.e("generateQrBitmap: error ${e.javaClass.simpleName}")
             null
         }
     }
@@ -2082,14 +2063,7 @@ private fun decodeSampledBitmap(
     context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         ?: return null
 
-    var sampleSize = 1
-    var width = bounds.outWidth
-    var height = bounds.outHeight
-    while (width / 2 >= targetSize || height / 2 >= targetSize) {
-        width /= 2
-        height /= 2
-        sampleSize *= 2
-    }
+    val sampleSize = computeSampleSize(bounds.outWidth, bounds.outHeight, targetSize)
 
     val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
     return context.contentResolver.openInputStream(uri)?.use {
@@ -2108,7 +2082,7 @@ internal suspend fun saveQrToFile(
             FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
             file
         } catch (e: Exception) {
-            Timber.e(e, "saveQrToFile")
+            Timber.e("saveQrToFile: ${e.javaClass.simpleName}")
             null
         }
     }
@@ -2119,18 +2093,16 @@ internal suspend fun saveQrToFile(
 // cacheDir. Se borran acá los que tengan más de 1 hora, sin tocar el
 // recién compartido (todavía puede estar siendo leído de forma asíncrona
 // por la app receptora del Intent.ACTION_SEND).
-private const val QR_CACHE_MAX_AGE_MILLIS = 60 * 60 * 1000L
-
 internal suspend fun cleanOldQrCacheFiles(context: Context) {
     withContext(Dispatchers.IO) {
         try {
             val dir = File(context.cacheDir, "qr")
-            val cutoff = System.currentTimeMillis() - QR_CACHE_MAX_AGE_MILLIS
+            val now = System.currentTimeMillis()
             dir.listFiles()?.forEach { file ->
-                if (file.lastModified() < cutoff) file.delete()
+                if (isQrCacheFileStale(file.lastModified(), now)) file.delete()
             }
         } catch (e: Exception) {
-            Timber.e(e, "cleanOldQrCacheFiles")
+            Timber.e("cleanOldQrCacheFiles: ${e.javaClass.simpleName}")
         }
     }
 }
@@ -2155,7 +2127,7 @@ internal fun shareQrImage(
             }
         context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) {
-        Timber.e(e, "shareQrImage")
+        Timber.e("shareQrImage: ${e.javaClass.simpleName}")
     }
 }
 

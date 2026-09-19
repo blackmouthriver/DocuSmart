@@ -80,7 +80,7 @@ fun WatermarkPdfScreen(
         // ── Progreso o botón ──────────────────────────
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = selectedPdf != null && watermarkText.isNotBlank(),
+            enabled = canExecuteWatermark(selectedPdf != null, watermarkText),
             progressText = stringResource(R.string.pdf_watermark_progress),
             buttonLabel = stringResource(R.string.pdf_watermark_execute),
             buttonIcon = Icons.Rounded.BrandingWatermark,

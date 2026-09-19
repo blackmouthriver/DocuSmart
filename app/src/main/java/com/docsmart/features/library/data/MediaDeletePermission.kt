@@ -76,7 +76,7 @@ class MediaDeletePermission
             return try {
                 MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
             } catch (e: Exception) {
-                Timber.w(e, "createDeleteRequest rechazó los Uri sin tipar, se reintenta tipados: $uris")
+                Timber.w("createDeleteRequest rechazó Uri sin tipar, se reintenta tipados: ${e.javaClass.simpleName}")
                 retryWithTypedUris(uris)
             }
         }
@@ -88,7 +88,7 @@ class MediaDeletePermission
                 val typedUris = uris.map { typedMediaUriOrSelf(it) }
                 MediaStore.createDeleteRequest(context.contentResolver, typedUris).intentSender
             } catch (e: Exception) {
-                Timber.w(e, "createDeleteRequest también rechazó los Uri tipados (no son media): $uris")
+                Timber.w("createDeleteRequest rechazó también los Uri tipados: ${e.javaClass.simpleName}")
                 null
             }
 
@@ -126,7 +126,7 @@ class MediaDeletePermission
             try {
                 ContentUris.parseId(uri)
             } catch (e: UnsupportedOperationException) {
-                Timber.w(e, "Uri de MediaStore sin id numérico, se usa sin tipar: $uri")
+                Timber.w("Uri de MediaStore sin id numérico, se usa sin tipar: ${e.javaClass.simpleName}")
                 null
             }
     }

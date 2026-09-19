@@ -27,6 +27,21 @@ data class SplitPdfMessages(
     val genericError: String,
 )
 
+/**
+ * Acota el rango pedido a las páginas reales del PDF: "desde" entre 1 y el
+ * total, "hasta" entre "desde" y el total (un rango invertido se corrige
+ * a una sola página). Requiere totalPages >= 1.
+ */
+internal fun clampSplitRange(
+    fromPage: Int,
+    toPage: Int,
+    totalPages: Int,
+): Pair<Int, Int> {
+    val start = fromPage.coerceIn(1, totalPages)
+    val end = toPage.coerceIn(start, totalPages)
+    return start to end
+}
+
 class SplitPdfUseCase
     @Inject
     constructor(
@@ -77,8 +92,9 @@ class SplitPdfUseCase
                             return@withContext PdfToolResult.Error(messages.noPages)
                         }
 
-                        startPage = fromPage.coerceIn(1, totalPages)
-                        endPage = toPage.coerceIn(startPage, totalPages)
+                        val range = clampSplitRange(fromPage, toPage, totalPages)
+                        startPage = range.first
+                        endPage = range.second
                         Timber.d("$TAG: extrayendo páginas $startPage a $endPage")
 
                         val name = outputFileName ?: "Split_p$startPage-p$endPage"

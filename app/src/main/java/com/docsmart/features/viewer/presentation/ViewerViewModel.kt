@@ -53,7 +53,6 @@ import java.util.UUID
 import javax.inject.Inject
 
 private const val MIME_PDF = "application/pdf"
-private const val MIME_JPEG = "image/jpeg"
 
 // HU-46: modo de anotación activo sobre el PDF -- NONE es el
 // comportamiento normal de siempre (zoom/pan libres, tocar alterna los
@@ -381,12 +380,7 @@ class ViewerViewModel
                     null
                 }
             val fromExtension = resolveMimeTypeByExtension(fileName) ?: resolveMimeType(uriString)
-            return when {
-                fromResolver == null -> fromExtension ?: "application/octet-stream"
-                fromResolver == "application/octet-stream" -> fromExtension ?: fromResolver
-                fromResolver.contains("*") -> fromExtension ?: fromResolver
-                else -> fromResolver
-            }
+            return chooseDisplayMimeType(fromResolver, fromExtension)
         }
 
         private fun publishPasswordProtectedPdf(
@@ -924,21 +918,6 @@ class ViewerViewModel
             }
         }
 
-        private fun detectDocumentType(mimeType: String): DocumentType =
-            when {
-                mimeType.contains("image") -> DocumentType.IMAGE
-                mimeType.contains("pdf") -> DocumentType.PDF
-                mimeType.contains("word") ||
-                    mimeType.contains("msword") ||
-                    mimeType.contains("wordprocessingml") -> DocumentType.WORD
-                mimeType.contains("excel") ||
-                    mimeType.contains("sheet") ||
-                    mimeType.contains("spreadsheet") -> DocumentType.EXCEL
-                mimeType.contains("powerpoint") || mimeType.contains("presentation") -> DocumentType.POWERPOINT
-                mimeType.contains("text") -> DocumentType.TEXT
-                else -> DocumentType.PDF
-            }
-
         private fun loadFromMock(
             id: String,
             context: Context,
@@ -995,42 +974,6 @@ class ViewerViewModel
                     Uri.parse(uriString).lastPathSegment?.substringAfterLast("/") ?: "Documento"
                 }
             }
-
-        private fun resolveMimeType(uriString: String): String? =
-            when {
-                uriString.contains("image") -> MIME_JPEG
-                uriString.endsWith(".pdf", ignoreCase = true) -> MIME_PDF
-                uriString.endsWith(".docx", ignoreCase = true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                uriString.endsWith(".doc", ignoreCase = true) -> "application/msword"
-                uriString.endsWith(".xlsx", ignoreCase = true) -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                uriString.endsWith(".xls", ignoreCase = true) -> "application/vnd.ms-excel"
-                uriString.endsWith(".jpg", ignoreCase = true) ||
-                    uriString.endsWith(".jpeg", ignoreCase = true) -> MIME_JPEG
-                uriString.endsWith(".png", ignoreCase = true) -> "image/png"
-                uriString.endsWith(".txt", ignoreCase = true) -> "text/plain"
-                else -> null
-            }
-
-        private fun resolveMimeTypeByExtension(fileName: String): String? {
-            val ext = fileName.substringAfterLast(".", "").lowercase()
-            return when (ext) {
-                "pdf" -> MIME_PDF
-                "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                "doc" -> "application/msword"
-                "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                "xls" -> "application/vnd.ms-excel"
-                "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                "ppt" -> "application/vnd.ms-powerpoint"
-                "jpg", "jpeg" -> MIME_JPEG
-                "png" -> "image/png"
-                "webp" -> "image/webp"
-                "gif" -> "image/gif"
-                "txt" -> "text/plain"
-                "md" -> "text/markdown"
-                "csv" -> "text/csv"
-                else -> null
-            }
-        }
 
         fun onPageChanged(
             page: Int,

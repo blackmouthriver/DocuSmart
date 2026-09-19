@@ -101,7 +101,7 @@ internal fun extractLegacyDocBlocks(input: InputStream): List<Pair<String, Boole
                 try {
                     styles.getStyleDescription(para.styleIndex.toInt())?.name ?: ""
                 } catch (e: Exception) {
-                    Timber.w("extractLegacyDocBlocks: no se pudo leer el estilo del párrafo $i — ${e.message}")
+                    Timber.w("extractLegacyDocBlocks: estilo del párrafo $i ilegible: ${e.javaClass.simpleName}")
                     ""
                 }
             blocks.add(text to isHeadingStyleName(styleName))

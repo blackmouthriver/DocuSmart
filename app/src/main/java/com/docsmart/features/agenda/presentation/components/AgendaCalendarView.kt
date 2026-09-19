@@ -43,13 +43,10 @@ import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.data.db.AgendaEventEntity
 import com.docsmart.features.agenda.domain.agendaDayDetailFormatter
-import com.docsmart.features.agenda.domain.agendaEventLocalDate
 import com.docsmart.features.agenda.domain.agendaMonthYearFormatter
 import com.docsmart.features.agenda.domain.agendaWeekStart
-import com.docsmart.features.agenda.domain.calendarLeadingBlanks
 import kotlinx.coroutines.delay
 import java.time.DayOfWeek
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -86,12 +83,11 @@ fun AgendaCalendarView(
     val weekStart = remember(locale) { agendaWeekStart(locale) }
     val eventDatesInMonth =
         remember(events, month) {
-            events.map { agendaEventLocalDate(it.dateTimeMillis) }.toSet()
+            eventDates(events)
         }
     val eventsForSelectedDay =
         remember(events, selectedDate) {
-            events.filter { agendaEventLocalDate(it.dateTimeMillis) == selectedDate }
-                .sortedBy { it.dateTimeMillis }
+            eventsForDate(events, selectedDate)
         }
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -179,7 +175,7 @@ private fun WeekdayHeaderRow(
 ) {
     Row(modifier = Modifier.fillMaxWidth()) {
         for (offset in 0 until DAYS_IN_WEEK) {
-            val dayOfWeek = DayOfWeek.of(((weekStart.value - 1 + offset) % DAYS_IN_WEEK) + 1)
+            val dayOfWeek = weekdayForColumn(weekStart, offset)
             Text(
                 text = dayOfWeek.getDisplayName(TextStyle.NARROW, locale),
                 modifier = Modifier.weight(1f),
@@ -200,10 +196,8 @@ private fun MonthGrid(
     dayDetailFormat: DateTimeFormatter,
     onSelectDate: (LocalDate) -> Unit,
 ) {
-    val leadingBlanks = calendarLeadingBlanks(month, weekStart)
-    val daysInMonth = month.lengthOfMonth()
-    val totalCells = leadingBlanks + daysInMonth
-    val rows = (totalCells + DAYS_IN_WEEK - 1) / DAYS_IN_WEEK
+    val cells = monthGridCells(month, weekStart)
+    val rows = cells.size / DAYS_IN_WEEK
     // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
     // Baja-Media -- A4): `remember { LocalDate.now() }` nunca se
     // recalculaba mientras el composable siguiera vivo -- si el usuario
@@ -222,10 +216,7 @@ private fun MonthGrid(
     // de que el valor cambie para volver a programarse.
     LaunchedEffect(Unit) {
         while (true) {
-            val delayMs =
-                Duration.between(LocalDateTime.now(), today.plusDays(1).atStartOfDay())
-                    .toMillis().coerceAtLeast(1000L)
-            delay(delayMs)
+            delay(millisUntilNextMidnight(LocalDateTime.now(), today))
             today = LocalDate.now()
         }
     }
@@ -234,12 +225,10 @@ private fun MonthGrid(
         for (row in 0 until rows) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 for (column in 0 until DAYS_IN_WEEK) {
-                    val cellIndex = row * DAYS_IN_WEEK + column
-                    val dayNumber = cellIndex - leadingBlanks + 1
-                    if (dayNumber in 1..daysInMonth) {
-                        val date = month.atDay(dayNumber)
+                    val date = cells[row * DAYS_IN_WEEK + column]
+                    if (date != null) {
                         CalendarDayCell(
-                            day = dayNumber,
+                            day = date.dayOfMonth,
                             dateLabel = date.format(dayDetailFormat),
                             isToday = date == today,
                             isSelected = date == selectedDate,
@@ -329,4 +318,4 @@ private fun CalendarDayCell(
     }
 }
 
-private const val DAYS_IN_WEEK = 7
+private const val DAYS_IN_WEEK = AGENDA_DAYS_IN_WEEK

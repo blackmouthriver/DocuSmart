@@ -35,6 +35,23 @@ data class CompressPdfMessages(
     val genericError: String,
 )
 
+/** Porcentaje de reducción (entero, truncado) entre el tamaño original y el comprimido. Puede ser negativo. */
+internal fun reductionPercent(
+    originalSize: Long,
+    newSize: Long,
+): Int =
+    if (originalSize > 0) {
+        ((originalSize - newSize) * 100 / originalSize).toInt()
+    } else {
+        0
+    }
+
+/** Si el resultado comprimido no es más chico que el original se conserva el original. */
+internal fun shouldKeepOriginal(
+    originalSize: Long,
+    newSize: Long,
+): Boolean = newSize >= originalSize
+
 class CompressPdfUseCase
     @Inject
     constructor(
@@ -119,16 +136,11 @@ class CompressPdfUseCase
                     val newSize = outputFile!!.length()
                     val originalKb = originalSize / 1024
                     val newKb = newSize / 1024
-                    val reduction =
-                        if (originalSize > 0) {
-                            ((originalSize - newSize) * 100 / originalSize).toInt()
-                        } else {
-                            0
-                        }
+                    val reduction = reductionPercent(originalSize, newSize)
 
                     Timber.d("$TAG: $originalKb KB → $newKb KB ($reduction%)")
 
-                    val keepOriginal = newSize >= originalSize
+                    val keepOriginal = shouldKeepOriginal(originalSize, newSize)
                     val finalFile =
                         if (keepOriginal) {
                             Timber.d("$TAG: comprimido mayor que original — usando original")

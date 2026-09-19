@@ -117,7 +117,7 @@ fun ScannerScreen(
             },
             onError = { message ->
                 val error = String.format(scannerStartErrorTemplate, message)
-                Timber.e("Error escáner: $error")
+                Timber.e("Error al iniciar el escáner")
                 viewModel.onError(error)
             },
         )

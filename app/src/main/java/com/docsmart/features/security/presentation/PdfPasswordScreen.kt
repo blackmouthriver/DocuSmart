@@ -444,9 +444,9 @@ private fun ProtectPdfForm(
             label = { Text(stringResource(R.string.pdf_pw_confirm_password_label)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            isError = confirmPass.isNotEmpty() && password != confirmPass,
+            isError = passwordsMismatch(password, confirmPass),
             supportingText = {
-                if (confirmPass.isNotEmpty() && password != confirmPass) {
+                if (passwordsMismatch(password, confirmPass)) {
                     Text(
                         stringResource(R.string.pdf_pw_passwords_dont_match),
                         color = MaterialTheme.colorScheme.error,
@@ -549,13 +549,13 @@ private fun ProtectPdfForm(
 
             Button(
                 onClick = {
-                    if (selectedUri != null && password.isNotBlank() && password == confirmPass) {
-                        onProtect(selectedUri!!, password, fileName.ifBlank { defaultDocumentName })
+                    val uri = selectedUri
+                    if (uri != null && password.isNotBlank() && password == confirmPass) {
+                        onProtect(uri, password, fileName.ifBlank { defaultDocumentName })
                     }
                 },
                 enabled =
-                    selectedUri != null && password.isNotBlank() &&
-                        password == confirmPass && !uiState.isPdfProcessing,
+                    canProtectPdf(selectedUri != null, password, confirmPass, uiState.isPdfProcessing),
                 modifier = Modifier.weight(1f),
                 shape = MaterialTheme.shapes.medium,
             ) {
@@ -864,11 +864,12 @@ private fun RemovePdfPasswordForm(
 
             Button(
                 onClick = {
-                    if (selectedUri != null && password.isNotBlank()) {
-                        onRemove(selectedUri!!, password, fileName.ifBlank { defaultDocumentName })
+                    val uri = selectedUri
+                    if (uri != null && password.isNotBlank()) {
+                        onRemove(uri, password, fileName.ifBlank { defaultDocumentName })
                     }
                 },
-                enabled = selectedUri != null && password.isNotBlank() && !uiState.isPdfProcessing,
+                enabled = canRemovePdfPassword(selectedUri != null, password, uiState.isPdfProcessing),
                 modifier = Modifier.weight(1f),
                 shape = MaterialTheme.shapes.medium,
                 colors =

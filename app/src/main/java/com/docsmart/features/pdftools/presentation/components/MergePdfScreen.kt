@@ -81,10 +81,10 @@ fun MergePdfScreen(
         val count = selectedPdfs.size
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = count >= 2,
+            enabled = canExecuteMerge(count),
             progressText = stringResource(R.string.pdf_merge_progress, count),
             buttonLabel =
-                if (count < 2) {
+                if (!canExecuteMerge(count)) {
                     stringResource(R.string.pdf_merge_select_at_least_2)
                 } else {
                     stringResource(R.string.pdf_merge_execute, count)

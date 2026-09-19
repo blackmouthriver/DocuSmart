@@ -71,7 +71,7 @@ fun ComparePdfScreen(
         // ── Progreso o botón ──────────────────────────
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = pdfA != null && pdfB != null,
+            enabled = canExecuteCompare(pdfA != null, pdfB != null),
             progressText = stringResource(R.string.pdf_compare_progress),
             buttonLabel = stringResource(R.string.pdf_compare_execute),
             buttonIcon = Icons.Rounded.CompareArrows,

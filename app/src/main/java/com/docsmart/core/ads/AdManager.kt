@@ -18,6 +18,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,6 +62,8 @@ class AdManager
         }
 
         private val conversionCount = AtomicInteger(0)
+        private val interstitialLoadFailures = AtomicInteger(0)
+        private val rewardedLoadFailures = AtomicInteger(0)
         private val lastInterstitialTime = AtomicLong(0L)
 
         // Hallazgo real de la auditoría general 2026-09-18 (ronda 14): ni
@@ -110,13 +113,16 @@ class AdManager
             // sesión (compra o restauración de Play Billing).
             scope.launch {
                 isPremium.drop(1).collect { premium ->
-                    if (premium) {
-                        interstitialAd = null
-                        rewardedAd = null
-                        _isRewardedReady.value = false
-                    } else {
-                        loadInterstitial()
-                        loadRewarded()
+                    when (adCacheActionOnPremiumChange(premium)) {
+                        AdCacheAction.CLEAR -> {
+                            interstitialAd = null
+                            rewardedAd = null
+                            _isRewardedReady.value = false
+                        }
+                        AdCacheAction.RELOAD -> {
+                            loadInterstitial()
+                            loadRewarded()
+                        }
                     }
                 }
             }
@@ -143,12 +149,16 @@ class AdManager
                     object : InterstitialAdLoadCallback() {
                         override fun onAdLoaded(ad: InterstitialAd) {
                             interstitialAd = ad
+                            interstitialLoadFailures.set(0)
                             Timber.d("AdManager: Interstitial cargado")
                         }
 
                         override fun onAdFailedToLoad(error: LoadAdError) {
                             Timber.e("AdManager: Interstitial error — ${error.message}")
                             interstitialAd = null
+                            scheduleRetry(interstitialLoadFailures.incrementAndGet()) {
+                                if (interstitialAd == null) loadInterstitial()
+                            }
                         }
                     },
                 )
@@ -211,6 +221,7 @@ class AdManager
                     object : RewardedAdLoadCallback() {
                         override fun onAdLoaded(ad: RewardedAd) {
                             rewardedAd = ad
+                            rewardedLoadFailures.set(0)
                             _isRewardedReady.value = true
                             Timber.d("AdManager: Rewarded cargado ✅")
                         }
@@ -219,9 +230,32 @@ class AdManager
                             Timber.e("AdManager: Rewarded error — ${error.message}")
                             rewardedAd = null
                             _isRewardedReady.value = false
+                            scheduleRetry(rewardedLoadFailures.incrementAndGet()) {
+                                if (rewardedAd == null) loadRewarded()
+                            }
                         }
                     },
                 )
+            }
+        }
+
+        // Hallazgo real de la auditoría general 2026-09-19 (ronda 17, Media):
+        // si la primera carga fallaba (sin red al arrancar, sin relleno de
+        // anuncios), nada volvía a intentarla hasta el siguiente cierre de un
+        // anuncio -- y DailyLimitDialog deshabilita "Ver anuncio" mientras
+        // isRewardedReady sea false, así que el usuario que llegaba al límite
+        // diario quedaba sin la vía de desbloqueo por anuncio hasta reiniciar
+        // la app. Ahora un fallo de carga reintenta con backoff acotado (ver
+        // adRetryDelayMs); loadRewarded()/loadInterstitial() ya no cargan si
+        // el usuario pasó a Premium entre tanto.
+        private fun scheduleRetry(
+            failures: Int,
+            reload: () -> Unit,
+        ) {
+            val delayMs = adRetryDelayMs(failures) ?: return
+            scope.launch {
+                delay(delayMs)
+                reload()
             }
         }
 
@@ -242,11 +276,11 @@ class AdManager
             // `rewardedAd`, pero si algún llamador futuro ofreciera "ver
             // anuncio" sin revisar antes isPremium, un usuario Premium podría
             // llegar a ver un rewarded si quedara alguno cacheado.
-            if (isPremium.value) {
+            val ad = rewardedAd
+            if (rewardedRequestOutcome(isPremium.value, ad != null) == RewardedRequestOutcome.PREMIUM_BLOCKED) {
                 onFailed()
                 return
             }
-            val ad = rewardedAd
 
             // Mismo hallazgo que onConversionCompleted() (ronda 14, auditoría
             // general 2026-09-18): sin este guard, un doble-toque en "Ver
@@ -318,3 +352,39 @@ internal fun shouldShowInterstitial(
  * `BadTokenException` ("Unable to add window -- token null is not valid").
  */
 internal fun canShowFullScreenAd(activity: Activity): Boolean = !activity.isFinishing && !activity.isDestroyed
+
+/** Qué hacer con los anuncios cacheados cuando cambia el estado Premium. */
+internal enum class AdCacheAction { CLEAR, RELOAD }
+
+internal fun adCacheActionOnPremiumChange(isPremium: Boolean): AdCacheAction {
+    return if (isPremium) AdCacheAction.CLEAR else AdCacheAction.RELOAD
+}
+
+internal enum class RewardedRequestOutcome { PREMIUM_BLOCKED, NO_AD_LOADED, AD_AVAILABLE }
+
+/**
+ * Pre-chequeo de `showRewardedAd()`: un usuario Premium nunca ve un rewarded,
+ * aunque quedara alguno cacheado; sin anuncio cargado hay que precargar otro.
+ */
+internal fun rewardedRequestOutcome(
+    isPremium: Boolean,
+    adLoaded: Boolean,
+): RewardedRequestOutcome =
+    when {
+        isPremium -> RewardedRequestOutcome.PREMIUM_BLOCKED
+        !adLoaded -> RewardedRequestOutcome.NO_AD_LOADED
+        else -> RewardedRequestOutcome.AD_AVAILABLE
+    }
+
+/**
+ * Espera antes del reintento de carga de un anuncio tras el fallo número
+ * [failures] (1, 2, 3...): 15 s, 30 s, 60 s. Devuelve null al agotar los
+ * reintentos, para no martillar la red ni el SDK indefinidamente.
+ */
+internal fun adRetryDelayMs(failures: Int): Long? =
+    when (failures) {
+        1 -> 15_000L
+        2 -> 30_000L
+        3 -> 60_000L
+        else -> null
+    }

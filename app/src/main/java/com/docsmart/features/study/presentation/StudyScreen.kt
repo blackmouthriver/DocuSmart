@@ -117,7 +117,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -932,7 +931,7 @@ fun StudyScreen(
                                         override fun onStart(utteranceId: String?) {
                                             mainHandler.post {
                                                 if (ttsSession.intValue != session) return@post
-                                                val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
+                                                val index = parseUtteranceIndex(utteranceId)
                                                 isSpeaking.value = true
                                                 if (index != null) {
                                                     currentSpeakingIndex.intValue = index
@@ -957,7 +956,7 @@ fun StudyScreen(
                                         override fun onDone(utteranceId: String?) {
                                             mainHandler.post {
                                                 if (ttsSession.intValue != session) return@post
-                                                val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
+                                                val index = parseUtteranceIndex(utteranceId)
                                                 if (index == null) return@post
                                                 // "Procesamiento incremental": si el PDF seguía
                                                 // extrayéndose de fondo puede haber párrafos nuevos
@@ -1543,7 +1542,7 @@ private fun StudyPdfViewer(
     // "Leer todo" avanzaba de página en segundo plano. `currentPage` es
     // 1-based (ver `study_reading_page`).
     LaunchedEffect(currentPage, pages) {
-        val index = (currentPage - 1).coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+        val index = pdfViewerPageIndex(currentPage, pages.size)
         if (pages.isNotEmpty()) listState.animateScrollToItem(index)
     }
 
@@ -1602,12 +1601,18 @@ private fun StudyPdfViewer(
                         .onSizeChanged { containerSize = it }
                         .pointerInput(Unit) {
                             detectTransformGestures { _, pan, zoom, _ ->
-                                val newScale = (scale * zoom).coerceIn(0.5f, 4f)
-                                val maxX = (containerSize.width * (newScale - 1) / 2f).coerceAtLeast(0f)
-                                val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
-                                scale = newScale
-                                offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
-                                offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
+                                val next =
+                                    applyPdfGesture(
+                                        current = PdfTransform(scale, offsetX, offsetY),
+                                        zoom = zoom,
+                                        panX = pan.x,
+                                        panY = pan.y,
+                                        containerWidth = containerSize.width.toFloat(),
+                                        containerHeight = containerSize.height.toFloat(),
+                                    )
+                                scale = next.scale
+                                offsetX = next.offsetX
+                                offsetY = next.offsetY
                             }
                         }
                         .graphicsLayer(
@@ -1813,11 +1818,10 @@ private fun NotesTab(
     LaunchedEffect(openNoteId, savedNotes, highlights, documentText) {
         val targetId = openNoteId ?: return@LaunchedEffect
         val noteIndex = savedNotes.indexOfFirst { it.note.id == targetId }
-        if (noteIndex < 0) return@LaunchedEffect
-        val highlightSectionCount = if (highlights.isEmpty() || documentText.isEmpty()) 0 else highlights.size + 2
-        // NoteEditorCard
-        val fixedItemsBeforeList = highlightSectionCount + 1 + 1 // NotesListHeader
-        notesListState.animateScrollToItem(fixedItemsBeforeList + noteIndex)
+        // Ítems fijos: sección de resaltados (si hay), NoteEditorCard y NotesListHeader.
+        val scrollIndex = notesListScrollIndex(noteIndex, highlights.size, documentText.size)
+        if (scrollIndex == null) return@LaunchedEffect
+        notesListState.animateScrollToItem(scrollIndex)
     }
 
     // Bug real corregido 2026-09-08: todo esto antes vivía en un `Column`
@@ -2324,17 +2328,7 @@ private fun NoteImagesCarousel(
 // NotesTab y se resetean a la vez al guardar la nota.
 private enum class NoteReminderChip { NONE, TOMORROW, DAYS_3, WEEK_1, CUSTOM }
 
-private const val NOTE_REMINDER_DEFAULT_HOUR = 9
-
-// Backlog UX #52: siempre en el futuro (hoy + N días), no hace falta
-// validar contra "ya pasó" como si sumaría a una fecha existente.
-private fun noteReminderPresetMillis(daysFromNow: Long): Long =
-    LocalDate.now()
-        .plusDays(daysFromNow)
-        .atTime(NOTE_REMINDER_DEFAULT_HOUR, 0)
-        .atZone(ZoneId.systemDefault())
-        .toInstant()
-        .toEpochMilli()
+// Ronda 17: noteReminderPresetMillis() vive ahora en StudyScreenLogic.kt.
 
 // Backlog UX #52: "Recordarme repasar esto" -- presets absolutos (mañana/
 // 3 días/1 semana, siempre a las 9:00, hora de estudio típica) o fecha/hora
@@ -2435,7 +2429,7 @@ private fun NoteReminderSection(
             // descarta en silencio una fecha ya pasada, alcanzable acá si
             // se elige "Personalizada" y no se cambia la fecha/hora
             // precargada (o se elige una anterior a "ahora" por error).
-            if (reminderAt <= System.currentTimeMillis()) {
+            if (isReminderInPast(reminderAt, System.currentTimeMillis())) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -2885,16 +2879,14 @@ private fun NoteEditDialog(
                         onClick = {
                             val trimmedText = text.trim()
                             if (trimmedText.isBlank()) return@Button
-                            val keptImages = imageUris.mapNotNull { originalImagesByUri[it] }
-                            val removedImages = originalImagesByUri.values.filterNot { it in keptImages }
-                            val newImageUris = imageUris.filterNot { originalImagesByUri.containsKey(it) }
+                            val diff = diffNoteImages(imageUris, originalImagesByUri)
                             onSave(
                                 title.trim().ifBlank { untitledNoteLabel },
                                 trimmedText,
                                 reminderAt,
-                                keptImages,
-                                removedImages,
-                                newImageUris,
+                                diff.keptImages,
+                                diff.removedImages,
+                                diff.newImageUris,
                             )
                         },
                     ) { Text(stringResource(R.string.general_save)) }
@@ -3262,7 +3254,6 @@ private fun StudyWeekBars(
     labels: List<String>,
     counts: IntArray,
 ) {
-    val maxCount = (counts.maxOrNull() ?: 0).coerceAtLeast(1)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -3277,7 +3268,7 @@ private fun StudyWeekBars(
                     modifier =
                         Modifier
                             .width(18.dp)
-                            .height((32 * counts[index] / maxCount).coerceAtLeast(4).dp)
+                            .height(weekBarHeightDp(counts[index], counts).dp)
                             // Bug real corregido 2026-09-04 (backlog UX §7,
                             // HU-UX-06): fijo en azul, ignorando el "Color de
                             // acento" elegido en Ajustes.
@@ -3399,7 +3390,7 @@ private fun PomodoroClock(
                 // String.format(Locale.getDefault(), ...) porque llamarlo dentro de
                 // un @Composable no es observable ante un cambio de idioma en runtime
                 // (lint: NonObservableLocale).
-                text = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}",
+                text = formatPomodoroClock(minutes, seconds),
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary,

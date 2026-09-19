@@ -82,7 +82,7 @@ fun EditTextPdfScreen(
         // ── Progreso o botón ──────────────────────────
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = selectedPdf != null && searchText.isNotBlank(),
+            enabled = canExecuteEditText(selectedPdf != null, searchText),
             progressText = stringResource(R.string.pdf_edit_text_progress),
             buttonLabel = stringResource(R.string.pdf_edit_text_execute),
             buttonIcon = Icons.Rounded.Edit,

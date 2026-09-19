@@ -761,41 +761,15 @@ class DocumentRepository
             )
         }
 
-        private fun mimeToDocumentType(
-            mime: String,
-            name: String,
-        ): DocumentType =
-            when {
-                mime.contains("pdf") -> DocumentType.PDF
-                mime.contains("word") || mime.contains("msword") -> DocumentType.WORD
-                mime.contains("excel") || mime.contains("sheet") -> DocumentType.EXCEL
-                mime.contains("powerpoint") || mime.contains("presentation") -> DocumentType.POWERPOINT
-                mime.contains("image") -> DocumentType.IMAGE
-                mime.contains("text") -> DocumentType.TEXT
-                else -> extensionToDocumentType(name.substringAfterLast("."))
-            }
-
-        private fun extensionToDocumentType(ext: String): DocumentType =
-            when (ext.lowercase()) {
-                "pdf" -> DocumentType.PDF
-                "doc", "docx" -> DocumentType.WORD
-                "xls", "xlsx" -> DocumentType.EXCEL
-                "ppt", "pptx" -> DocumentType.POWERPOINT
-                "jpg", "jpeg", "png", "webp", "gif" -> DocumentType.IMAGE
-                "txt", "md" -> DocumentType.TEXT
-                "zip", "rar", "7z" -> DocumentType.ZIP
-                else -> DocumentType.PDF
-            }
-
         // Hallazgo real de la auditoría general 2026-09-17 (M2): unidades "B"/
         // "KB"/"MB" hardcodeadas sin stringResource, fuera del sistema de 12
         // idiomas -- mismo patrón ya corregido antes para
         // PdfToolsScreen/ScanSessionManager, nunca extendido acá.
         private fun formatSize(bytes: Long): String =
-            when {
-                bytes < 1024 -> context.getString(R.string.file_size_bytes, bytes)
-                bytes < 1024 * 1024 -> context.getString(R.string.file_size_kb, bytes / 1024)
-                else ->
+            when (sizeUnitFor(bytes)) {
+                SizeUnit.BYTES -> context.getString(R.string.file_size_bytes, bytes)
+                SizeUnit.KB -> context.getString(R.string.file_size_kb, bytes / 1024)
+                SizeUnit.MB ->
                     context.getString(
                         R.string.file_size_mb,
                         String.format(Locale.getDefault(), "%.1f", bytes / (1024.0 * 1024.0)),

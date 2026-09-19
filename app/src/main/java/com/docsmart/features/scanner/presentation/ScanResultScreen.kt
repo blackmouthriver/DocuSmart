@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.docsmart.features.scanner.presentation
 
 import android.app.Activity
@@ -64,7 +66,6 @@ import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.converter.domain.model.BatchConversionItem
 import com.docsmart.features.converter.domain.model.ConversionResult
-import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterUiState
 import com.docsmart.features.converter.presentation.ConverterViewModel
 import com.docsmart.features.converter.presentation.components.BatchConversionSuccess
@@ -86,35 +87,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
-
-private const val MIME_PDF = "application/pdf"
-
-// Backlog UX #33 (pedido explícito del usuario 2026-09-06): antes el
-// Escáner solo podía terminar en PDF -- ahora también puede exportar las
-// páginas como imágenes. "Alta resolución" es exclusivo de PDF (JPG/WebP
-// ya exportan siempre a la resolución nativa de la cámara, sin reducir
-// nada, así que no hay nada que mejorar ahí).
-private enum class ScanExportFormat(val label: String, val extension: String, val mimeType: String) {
-    PDF("PDF", "pdf", MIME_PDF),
-    JPG("JPG", "jpg", "image/jpeg"),
-    WEBP("WebP", "webp", "image/webp"),
-}
-
-private fun ScanExportFormat.toImageConversionType(): ConversionType? =
-    when (this) {
-        ScanExportFormat.PDF -> null
-        ScanExportFormat.JPG -> ConversionType.IMAGE_TO_JPG
-        ScanExportFormat.WEBP -> ConversionType.IMAGE_TO_WEBP
-    }
-
-private fun mimeTypeForExtension(extension: String): String =
-    when (extension.lowercase()) {
-        "pdf" -> MIME_PDF
-        "jpg", "jpeg" -> "image/jpeg"
-        "webp" -> "image/webp"
-        "png" -> "image/png"
-        else -> "application/octet-stream"
-    }
 
 // Backlog UX 2026-08-30/09-10 (HU-42): accesos directos a OCR/Firmar/
 // Carpeta Segura desde el menú "⋮" de la lista de sesión -- agrupados acá
@@ -1155,9 +1127,9 @@ private fun rememberAddPageLauncher(
             onLaunched = { intentSender ->
                 launcher.launch(IntentSenderRequest.Builder(intentSender).build())
             },
-            onError = { message ->
+            onError = { _ ->
                 isLaunching = false
-                Timber.e("Error agregando página: $message")
+                Timber.e("Error agregando página")
             },
         )
     }
@@ -1512,8 +1484,11 @@ private fun ScanResultActions(
                                     // saneo ya aplicado en Herramientas PDF/
                                     // Convertidor/Renombrar.
                                     val name =
-                                        com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
-                                            .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
+                                        resolveScanOutputName(
+                                            com.docsmart.core.util.sanitizeOutputFileName(state.fileName),
+                                            state.defaultNameTemplate,
+                                            generateTimestamp(),
+                                        )
                                     // Hallazgo real de la auditoría general
                                     // 2026-09-17 (B10): esta rama es
                                     // inalcanzable hoy (ML Kit ya no
@@ -1666,8 +1641,11 @@ private suspend fun shareScanResult(
                 copyUriToCache(
                     context,
                     state.scannedUris.first(),
-                    com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
-                        .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) },
+                    resolveScanOutputName(
+                        com.docsmart.core.util.sanitizeOutputFileName(state.fileName),
+                        state.defaultNameTemplate,
+                        generateTimestamp(),
+                    ),
                 )
             if (cacheFile != null) {
                 shareFileAwaitingSelection(context, lifecycleOwner, cacheFile, state.shareChooserTitle)
@@ -1766,10 +1744,6 @@ private val SCAN_EDIT_SCALE_OPTIONS = listOf(100, 75, 50, 25)
 // `buildColorMatrix()` espera un rango simétrico -100..100 (0 = sin
 // cambios), así que el valor mostrado en pantalla (0..100) se convierte
 // a ese rango interno antes de usarlo -- ver `displayToInternal()`.
-private const val SCAN_EDIT_DISPLAY_NEUTRAL = 50f
-
-private fun displayToInternal(display: Float): Int = ((display - SCAN_EDIT_DISPLAY_NEUTRAL) * 2f).roundToInt()
-
 // Extraído de ScanImageEditorDialog -- fila de chips de porcentaje para
 // Escala (Brillo/Contraste usan un Slider, ver arriba). Son porcentajes
 // absolutos de tamaño, no un offset desde un punto neutro -- a diferencia
@@ -1960,7 +1934,7 @@ private suspend fun copyUriToCache(
             }
             if (cacheFile.exists() && cacheFile.length() > 0) cacheFile else null
         } catch (e: Exception) {
-            Timber.e(e, "Error copiando URI al cache: ${e.message}")
+            Timber.e("Error copiando URI al cache (${e.javaClass.simpleName})")
             null
         }
     }
@@ -1986,7 +1960,7 @@ private suspend fun copyUriToConvertedDir(
             }
             if (outputFile.exists() && outputFile.length() > 0) outputFile else null
         } catch (e: Exception) {
-            Timber.e(e, "Error copiando URI a converted/: ${e.message}")
+            Timber.e("Error copiando URI a converted/ (${e.javaClass.simpleName})")
             null
         }
     }
@@ -2022,9 +1996,9 @@ private fun shareFile(
     try {
         val intent = buildShareIntentOrNull(context, file) ?: return
         context.startActivity(Intent.createChooser(intent, chooserTitle))
-        Timber.d("shareFile: compartiendo ${file.name}")
+        Timber.d("shareFile: compartiendo archivo")
     } catch (e: Exception) {
-        Timber.e(e, "Error compartiendo archivo: ${e.message}")
+        Timber.e("Error compartiendo archivo (${e.javaClass.simpleName})")
     }
 }
 
@@ -2114,7 +2088,7 @@ private suspend fun shareFileAwaitingSelection(
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
             context.startActivity(Intent.createChooser(intent, chooserTitle, pendingIntent.intentSender))
-            Timber.d("shareFileAwaitingSelection: compartiendo ${file.name}")
+            Timber.d("shareFileAwaitingSelection: compartiendo archivo")
         }
     } catch (e: CancellationException) {
         // H6: CancellationException hereda de Exception -- sin este catch
@@ -2124,7 +2098,7 @@ private suspend fun shareFileAwaitingSelection(
         // real de "compartir", en vez de propagarse como cancelación.
         throw e
     } catch (e: Exception) {
-        Timber.e(e, "Error compartiendo archivo: ${e.message}")
+        Timber.e("Error compartiendo archivo (${e.javaClass.simpleName})")
         false
     }
 }

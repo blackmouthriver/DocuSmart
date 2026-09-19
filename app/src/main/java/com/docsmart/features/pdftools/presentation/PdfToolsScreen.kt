@@ -397,7 +397,7 @@ fun PdfToolsScreen(
     // fijos para esta instancia de la pantalla -- corre una sola vez.
     LaunchedEffect(initialTool, initialFileUri) {
         if (initialTool == null || initialFileUri == null) return@LaunchedEffect
-        val tool = runCatching { PdfTool.valueOf(initialTool) }.getOrNull() ?: return@LaunchedEffect
+        val tool = parseInitialPdfTool(initialTool) ?: return@LaunchedEffect
         viewModel.selectTool(tool)
         viewModel.onPdfsSelected(listOf(Uri.parse(initialFileUri)))
     }
@@ -487,7 +487,7 @@ fun PdfToolsScreen(
                 }
 
                 // ── Contador de usos diarios (usuarios free) ──
-                if (!isPremium && uiState.toolUseCount > 0) {
+                if (shouldShowUsageCounter(isPremium, uiState.toolUseCount)) {
                     item {
                         Text(
                             text =
@@ -498,7 +498,7 @@ fun PdfToolsScreen(
                                 ),
                             style = MaterialTheme.typography.labelMedium,
                             color =
-                                if (uiState.toolUseCount >= uiState.toolUseLimit) {
+                                if (isUsageLimitReached(uiState.toolUseCount, uiState.toolUseLimit)) {
                                     MaterialTheme.colorScheme.error
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -887,7 +887,7 @@ private fun ToolSuccessCard(
                     text =
                         stringResource(
                             R.string.pdf_tools_result_size_kb,
-                            result.outputFile.length() / 1024,
+                            fileSizeKb(result.outputFile.length()),
                         ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

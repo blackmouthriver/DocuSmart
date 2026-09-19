@@ -72,7 +72,7 @@ fun DailyLimitDialog(
                     textAlign = TextAlign.Center,
                 )
                 LinearProgressIndicator(
-                    progress = { usedCount.toFloat() / limit },
+                    progress = { dailyLimitProgress(usedCount, limit) },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -129,3 +129,13 @@ fun DailyLimitDialog(
         dismissButton = {},
     )
 }
+
+/**
+ * Fracción de la barra de progreso del límite diario, siempre en [0, 1]: con
+ * `limit` en 0 (o negativo) la división daba NaN/Infinity, y si el contador
+ * superaba el límite la barra pasaba de 1.
+ */
+internal fun dailyLimitProgress(
+    usedCount: Int,
+    limit: Int,
+): Float = if (limit <= 0) 1f else (usedCount.toFloat() / limit).coerceIn(0f, 1f)

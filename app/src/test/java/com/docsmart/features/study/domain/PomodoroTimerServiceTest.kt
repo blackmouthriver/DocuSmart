@@ -84,4 +84,31 @@ class PomodoroTimerServiceTest {
         org.junit.jupiter.api.Assertions
             .assertTrue(consumed)
     }
+
+    @Test
+    fun `pomodoroTimeText rellena con ceros a la izquierda`() {
+        org.junit.jupiter.api.Assertions.assertEquals("05:07", pomodoroTimeText(5, 7))
+        org.junit.jupiter.api.Assertions.assertEquals("00:00", pomodoroTimeText(0, 0))
+    }
+
+    @Test
+    fun `pomodoroTimeText no recorta minutos de tres digitos`() {
+        org.junit.jupiter.api.Assertions.assertEquals("125:59", pomodoroTimeText(125, 59))
+    }
+
+    @Test
+    fun `con el Pomodoro corriendo el servicio actualiza la notificacion`() {
+        org.junit.jupiter.api.Assertions.assertEquals(
+            PomodoroServiceAction.UPDATE_NOTIFICATION,
+            pomodoroServiceActionFor(isRunning = true),
+        )
+    }
+
+    @Test
+    fun `con el Pomodoro detenido el servicio se cierra`() {
+        org.junit.jupiter.api.Assertions.assertEquals(
+            PomodoroServiceAction.STOP_SERVICE,
+            pomodoroServiceActionFor(isRunning = false),
+        )
+    }
 }

@@ -329,12 +329,12 @@ private fun ConversionLimitIndicator(
     modifier: Modifier = Modifier,
 ) {
     if (count == 0) return
-    val progress = (count.toFloat() / limit).coerceIn(0f, 1f)
+    val progress = conversionLimitProgress(count, limit)
     val color =
-        when {
-            progress >= 1f -> MaterialTheme.colorScheme.error
-            progress >= 0.6f -> MaterialTheme.colorScheme.tertiary
-            else -> MaterialTheme.colorScheme.primary
+        when (conversionLimitLevel(progress)) {
+            LimitLevel.REACHED -> MaterialTheme.colorScheme.error
+            LimitLevel.WARNING -> MaterialTheme.colorScheme.tertiary
+            LimitLevel.OK -> MaterialTheme.colorScheme.primary
         }
 
     Card(
@@ -788,35 +788,8 @@ private fun applyInitialType(
     currentType: ConversionType?,
     onTypeSelected: (ConversionType) -> Unit,
 ) {
-    if (initialType == null || currentType != null) return
-    ConversionType.entries.find { it.name == initialType }?.let(onTypeSelected)
+    resolveInitialType(initialType, currentType)?.let(onTypeSelected)
 }
-
-private fun ConversionType.getCategoryForUi(): String =
-    when (this) {
-        ConversionType.IMAGE_TO_PDF,
-        ConversionType.IMAGE_TO_JPG,
-        ConversionType.IMAGE_TO_PNG,
-        ConversionType.IMAGE_TO_WEBP,
-        ConversionType.IMAGE_TO_BMP,
-        -> "Imagen"
-        ConversionType.PDF_TO_IMAGE,
-        ConversionType.PDF_TO_TXT,
-        ConversionType.PDF_TO_WORD,
-        ConversionType.PDF_TO_HTML,
-        -> "PDF"
-        ConversionType.WORD_TO_PDF,
-        ConversionType.WORD_TO_TXT,
-        ConversionType.WORD_TO_HTML,
-        -> "Word"
-        ConversionType.EXCEL_TO_PDF,
-        ConversionType.EXCEL_TO_CSV,
-        ConversionType.EXCEL_TO_HTML,
-        -> "Excel"
-        ConversionType.PPT_TO_PDF,
-        ConversionType.PPT_TO_TXT,
-        -> "PowerPoint"
-    }
 
 private fun getFormatStyle(format: String): Pair<Color, ImageVector> =
     when (format.lowercase()) {
@@ -850,37 +823,3 @@ private fun ConversionType.localizedToFormat(): String = localizedFormatName(toF
 
 @Composable
 private fun ConversionType.localizedLabel(): String = "${localizedFromFormat()} → ${localizedToFormat()}"
-
-private fun getMimeForType(type: ConversionType): String =
-    when (type) {
-        ConversionType.IMAGE_TO_PDF,
-        ConversionType.IMAGE_TO_JPG,
-        ConversionType.IMAGE_TO_PNG,
-        ConversionType.IMAGE_TO_WEBP,
-        ConversionType.IMAGE_TO_BMP,
-        -> "image/*"
-        ConversionType.PDF_TO_IMAGE,
-        ConversionType.PDF_TO_TXT,
-        ConversionType.PDF_TO_WORD,
-        ConversionType.PDF_TO_HTML,
-        -> "application/pdf"
-        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada, #25,
-        // latente -- WORD_TO_* está oculto de la grilla hoy): "application/
-        // msword" solo cubre .doc legado -- un .docx real (el formato Word
-        // más común) tiene otro MIME
-        // (application/vnd.openxmlformats-officedocument.wordprocessingml.document),
-        // así que muchos proveedores de documentos lo filtraban fuera del
-        // selector. Excel/PowerPoint ya usan "*/*" para evitar este mismo
-        // problema -- mismo criterio acá.
-        ConversionType.WORD_TO_PDF,
-        ConversionType.WORD_TO_TXT,
-        ConversionType.WORD_TO_HTML,
-        -> "*/*"
-        ConversionType.EXCEL_TO_PDF,
-        ConversionType.EXCEL_TO_CSV,
-        ConversionType.EXCEL_TO_HTML,
-        -> "*/*"
-        ConversionType.PPT_TO_PDF,
-        ConversionType.PPT_TO_TXT,
-        -> "*/*"
-    }

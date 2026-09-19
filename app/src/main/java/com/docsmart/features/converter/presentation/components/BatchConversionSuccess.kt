@@ -41,7 +41,7 @@ fun BatchConversionSuccess(
     modifier: Modifier = Modifier,
 ) {
     val shareLabel = stringResource(R.string.converter_share)
-    val successCount = items.count { it.result is ConversionResult.Success }
+    val successCount = batchSuccessCount(items)
 
     val shape = MaterialTheme.shapes.large
     Box(
@@ -112,7 +112,7 @@ fun BatchConversionSuccess(
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
-                } else if (successCount > 0) {
+                } else if (canSaveBatch(savedToDownloads, successCount)) {
                     Button(
                         onClick = onSaveAllToDownloads,
                         enabled = !isSaving,
@@ -188,12 +188,7 @@ private fun BatchResultRow(
                     maxLines = 1,
                 )
                 Text(
-                    text =
-                        when (result) {
-                            is ConversionResult.Success -> result.outputFile.name
-                            is ConversionResult.Error -> result.message
-                            else -> ""
-                        },
+                    text = batchRowSubtitle(result),
                     style = MaterialTheme.typography.labelSmall,
                     color =
                         if (result is ConversionResult.Error) {

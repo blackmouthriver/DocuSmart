@@ -88,7 +88,7 @@ fun FillFormScreen(
 
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = selectedPdf != null && formFields.isNotEmpty(),
+            enabled = canExecuteFillForm(selectedPdf != null, formFields.size),
             progressText = stringResource(R.string.pdf_fill_form_progress),
             buttonLabel = stringResource(R.string.pdf_fill_form_execute),
             buttonIcon = Icons.Rounded.Checklist,

@@ -358,7 +358,7 @@ private fun addContact(
             }
         context.startActivity(intent)
     } catch (e: Exception) {
-        Timber.e(e, "addContact")
+        Timber.e("addContact: ${e.javaClass.simpleName}")
         Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }
 }
@@ -383,7 +383,7 @@ private fun addCalendarEvent(
             }
         context.startActivity(intent)
     } catch (e: Exception) {
-        Timber.e(e, "addCalendarEvent")
+        Timber.e("addCalendarEvent: ${e.javaClass.simpleName}")
         Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }
 }

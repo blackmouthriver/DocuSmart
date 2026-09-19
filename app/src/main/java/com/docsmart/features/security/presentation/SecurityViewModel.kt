@@ -163,7 +163,7 @@ class SecurityViewModel
         ) {
             val lockoutMs = securityManager.pinLockoutRemainingMillis()
             if (lockoutMs > 0) {
-                val remainingSeconds = ((lockoutMs + 999) / 1000).toInt()
+                val remainingSeconds = lockoutRemainingSeconds(lockoutMs)
                 _uiState.update { it.copy(error = String.format(lockedOutMessageFormat, remainingSeconds)) }
                 return
             }

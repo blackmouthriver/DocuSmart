@@ -79,7 +79,6 @@ import com.docsmart.features.scanner.domain.QrCrypto
 import com.docsmart.features.scanner.domain.QrHistoryEntry
 import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
-import com.docsmart.features.scanner.domain.unescapeReservedField
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -316,26 +315,20 @@ private fun historyTypeIcon(typeName: String): ImageVector =
 // `ignoreCase = true` sincroniza ambos lados.
 @Composable
 private fun historyContentPreview(entry: QrHistoryEntry): String =
-    when {
-        entry.typeName == "PROTECTED" -> stringResource(R.string.qr_history_protected_content)
-        entry.content.startsWith("WIFI:", ignoreCase = true) ->
+    when (val preview = historyPreviewOf(entry.typeName, entry.content)) {
+        HistoryPreview.Protected -> stringResource(R.string.qr_history_protected_content)
+        is HistoryPreview.Wifi ->
             stringResource(
                 R.string.qr_history_wifi_preview,
-                extractWifiSsid(entry.content) ?: stringResource(R.string.qr_history_wifi_unknown_ssid),
+                preview.ssid ?: stringResource(R.string.qr_history_wifi_unknown_ssid),
             )
-        entry.content.startsWith("BEGIN:VCARD", ignoreCase = true) ->
+        is HistoryPreview.Contact ->
             stringResource(
                 R.string.qr_history_contact_preview,
-                extractContactName(entry.content) ?: stringResource(R.string.qr_history_contact_unknown_name),
+                preview.name ?: stringResource(R.string.qr_history_contact_unknown_name),
             )
-        else -> entry.content
+        is HistoryPreview.Plain -> preview.content
     }
-
-private fun extractWifiSsid(content: String): String? =
-    Regex("S:((?:\\\\.|[^;])*);").find(content)?.groupValues?.get(1)?.let(::unescapeReservedField)
-
-private fun extractContactName(content: String): String? =
-    Regex("FN:(.*)").find(content)?.groupValues?.get(1)?.trim()?.let(::unescapeReservedField)
 
 @Composable
 private fun historyTypeLabel(typeName: String): String =

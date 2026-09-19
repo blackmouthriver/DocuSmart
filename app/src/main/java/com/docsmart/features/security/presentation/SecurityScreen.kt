@@ -308,12 +308,12 @@ private fun PendingSecureFolderImport(
             // aplica nunca, así que el original quedaba siempre sin borrar:
             // el usuario creía haber protegido el archivo, pero una copia
             // sin PIN seguía visible en Biblioteca.
-            if (uri.scheme == "file") {
-                uri.path?.let { path ->
-                    viewModel.importLocalFile(File(path), successMessage, errorMessage, originalKeptMessage)
-                }
-            } else {
-                viewModel.importFileToSecure(context, uri, successMessage, errorMessage, originalKeptMessage)
+            when (val route = pendingImportRouteFor(uri.scheme, uri.path)) {
+                is PendingImportRoute.LocalFile ->
+                    viewModel.importLocalFile(File(route.path), successMessage, errorMessage, originalKeptMessage)
+                PendingImportRoute.ContentUri ->
+                    viewModel.importFileToSecure(context, uri, successMessage, errorMessage, originalKeptMessage)
+                PendingImportRoute.Ignore -> Unit
             }
         }
     }
@@ -333,7 +333,7 @@ private fun PinUnlockScreen(
     onBack: () -> Unit,
 ) {
     var pin = remember { mutableStateOf("") }
-    val pinLength = 4
+    val pinLength = PIN_LENGTH
     var showResetConfirm by remember { mutableStateOf(false) }
 
     // RF-SEC-09/HU-SEC-06: única vía de "recuperación" -- restablecer borra
@@ -475,17 +475,11 @@ private fun PinUnlockScreen(
 
                 NumericKeypad(
                     onDigit = { digit ->
-                        if (pin.value.length < pinLength) {
-                            pin.value += digit
-                            if (pin.value.length == pinLength) {
-                                onPinEntered(pin.value)
-                                pin.value = ""
-                            }
-                        }
+                        val step = unlockPinAppendDigit(pin.value, digit, pinLength)
+                        pin.value = step.pin
+                        step.submitted?.let(onPinEntered)
                     },
-                    onDelete = {
-                        if (pin.value.isNotEmpty()) pin.value = pin.value.dropLast(1)
-                    },
+                    onDelete = { pin.value = pinDeleteLast(pin.value) },
                 )
 
                 if (isBiometricAvailable && isBiometricEnabled) {
@@ -585,11 +579,10 @@ private fun SetupPinScreen(
     externalError: String? = null,
     onExternalErrorShown: () -> Unit = {},
 ) {
-    var pin = remember { mutableStateOf("") }
-    var confirmPin = remember { mutableStateOf("") }
-    var isConfirming by remember { mutableStateOf(false) }
+    var setupState by remember { mutableStateOf(SetupPinState()) }
     var error by remember { mutableStateOf<String?>(null) }
-    val pinLength = 4
+    val pinLength = PIN_LENGTH
+    val isConfirming = setupState.isConfirming
     val pinsDontMatchMessage = stringResource(R.string.security_pins_dont_match)
 
     // Hallazgo real corregido (2026-08-26, ver security.md §10): si
@@ -601,7 +594,7 @@ private fun SetupPinScreen(
     LaunchedEffect(externalError) {
         if (externalError != null) {
             error = externalError
-            confirmPin.value = ""
+            setupState = setupState.copy(confirmPin = "")
             onExternalErrorShown()
         }
     }
@@ -660,7 +653,7 @@ private fun SetupPinScreen(
                 textAlign = TextAlign.Center,
             )
 
-            val currentPin = if (isConfirming) confirmPin.value else pin.value
+            val currentPin = if (isConfirming) setupState.confirmPin else setupState.pin
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 repeat(pinLength) { index ->
                     Box(
@@ -689,39 +682,18 @@ private fun SetupPinScreen(
 
             NumericKeypad(
                 onDigit = { digit ->
-                    if (isConfirming) {
-                        if (confirmPin.value.length < pinLength) {
-                            confirmPin.value += digit
-                            if (confirmPin.value.length == pinLength) {
-                                if (confirmPin.value == pin.value) {
-                                    onPinSet(pin.value)
-                                } else {
-                                    error = pinsDontMatchMessage
-                                    confirmPin.value = ""
-                                }
-                            }
-                        }
-                    } else {
-                        if (pin.value.length < pinLength) {
-                            pin.value += digit
-                            if (pin.value.length == pinLength) {
-                                isConfirming = true
-                                error = null
-                            }
-                        }
+                    val step = setupPinAppendDigit(setupState, digit, pinLength)
+                    setupState = step.state
+                    when (step.event) {
+                        SetupPinEvent.COMPLETED -> onPinSet(step.state.pin)
+                        SetupPinEvent.MISMATCH -> error = pinsDontMatchMessage
+                        SetupPinEvent.ADVANCED_TO_CONFIRM -> error = null
+                        SetupPinEvent.NONE -> Unit
                     }
                 },
                 onDelete = {
                     error = null
-                    if (isConfirming) {
-                        if (confirmPin.value.isNotEmpty()) {
-                            confirmPin.value = confirmPin.value.dropLast(1)
-                        }
-                    } else {
-                        if (pin.value.isNotEmpty()) {
-                            pin.value = pin.value.dropLast(1)
-                        }
-                    }
+                    setupState = setupPinDeleteLast(setupState)
                 },
             )
         }
@@ -767,7 +739,7 @@ private fun SecureFolderContent(
             },
             onChooseDocument = { document ->
                 showImportDialog = false
-                if (document.id.startsWith("content://")) {
+                if (isContentDocumentId(document.id)) {
                     onImportFile(document.toContentUri())
                 } else {
                     onImportLocalFile(java.io.File(document.id))
@@ -945,15 +917,15 @@ private fun SecureFolderContent(
 // mismo patrón ya corregido en DocumentRepository/ScanSessionManager.
 @Composable
 private fun formatSecureFileSize(bytes: Long): String =
-    when {
-        bytes < 1024 -> stringResource(R.string.file_size_bytes, bytes)
-        bytes < 1024 * 1024 -> stringResource(R.string.file_size_kb, bytes / 1024)
-        else -> {
+    when (val size = secureFileSizeOf(bytes)) {
+        is SecureFileSize.Bytes -> stringResource(R.string.file_size_bytes, size.value)
+        is SecureFileSize.Kilobytes -> stringResource(R.string.file_size_kb, size.value)
+        is SecureFileSize.Megabytes -> {
             // NonObservableLocale de lint: Locale.getDefault() no es estado
             // observable por Compose -- LocalLocale.current sí, así la UI se
             // actualiza si el usuario cambia el idioma del sistema en caliente.
             val locale = androidx.compose.ui.platform.LocalLocale.current.platformLocale
-            stringResource(R.string.file_size_mb, String.format(locale, "%.1f", bytes / (1024.0 * 1024.0)))
+            stringResource(R.string.file_size_mb, String.format(locale, "%.1f", size.value))
         }
     }
 

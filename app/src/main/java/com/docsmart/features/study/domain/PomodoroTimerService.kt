@@ -61,10 +61,9 @@ class PomodoroTimerService : Service() {
 
         PomodoroEngine.state
             .onEach { state ->
-                if (state.isRunning) {
-                    updateNotification(state)
-                } else {
-                    stopSelf()
+                when (pomodoroServiceActionFor(state.isRunning)) {
+                    PomodoroServiceAction.UPDATE_NOTIFICATION -> updateNotification(state)
+                    PomodoroServiceAction.STOP_SERVICE -> stopSelf()
                 }
             }.launchIn(serviceScope)
 
@@ -144,9 +143,7 @@ class PomodoroTimerService : Service() {
             getString(
                 if (state.isBreak) R.string.study_break_label else R.string.study_study_label,
             )
-        val time =
-            "${state.minutes.toString().padStart(2, '0')}:" +
-                state.seconds.toString().padStart(2, '0')
+        val time = pomodoroTimeText(state.minutes, state.seconds)
 
         return NotificationCompat
             .Builder(this, CHANNEL_ID)
@@ -262,3 +259,15 @@ internal fun flushPendingCompletionEvent(
     postAlert(pending)
     consume()
 }
+
+/** Texto "MM:SS" de la notificación en curso (minutos y segundos con cero a la izquierda). */
+internal fun pomodoroTimeText(
+    minutes: Int,
+    seconds: Int,
+): String = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+
+internal enum class PomodoroServiceAction { UPDATE_NOTIFICATION, STOP_SERVICE }
+
+/** El servicio "tonto" solo refleja el motor: con el Pomodoro detenido debe cerrarse. */
+internal fun pomodoroServiceActionFor(isRunning: Boolean): PomodoroServiceAction =
+    if (isRunning) PomodoroServiceAction.UPDATE_NOTIFICATION else PomodoroServiceAction.STOP_SERVICE

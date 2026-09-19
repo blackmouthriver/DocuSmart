@@ -2,12 +2,11 @@
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
   <CurrentIssues>
-    <ID>CyclomaticComplexMethod:CompressPdfUseCase.kt$CompressPdfUseCase$suspend operator fun invoke( pdfUri: Uri, quality: Int = 60, outputFileName: String? = null, messages: CompressPdfMessages, ): PdfToolResult</ID>
     <ID>CyclomaticComplexMethod:ConverterViewModel.kt$ConverterViewModel$private suspend fun runConversionForUri( type: ConversionType, uri: Uri, fileName: String, ): ConversionResult</ID>
     <ID>CyclomaticComplexMethod:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$suspend operator fun invoke( excelUri: Uri, fileName: String? = null, ): ConversionResult</ID>
+    <ID>CyclomaticComplexMethod:ViewerMimeTypes.kt$internal fun resolveMimeTypeByExtension(fileName: String): String?</ID>
     <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$fun unlockPdfWithPassword(password: String)</ID>
     <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri: Uri, context: Context, originalId: String = "", ): Boolean</ID>
-    <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$private fun resolveMimeTypeByExtension(fileName: String): String?</ID>
     <ID>LongMethod:AgendaEventEditorDialog.kt$@Composable fun AgendaEventEditorDialog( draft: AgendaEventDraft, onTitleChange: (String) -&gt; Unit, onDescriptionChange: (String) -&gt; Unit, onDateTimeChange: (Long) -&gt; Unit, onReminderChange: (Int?) -&gt; Unit, onLinkDocumentClick: () -&gt; Unit, onUnlinkDocument: () -&gt; Unit, onSave: () -&gt; Unit, onDelete: () -&gt; Unit, onDismiss: () -&gt; Unit, )</ID>
     <ID>LongMethod:CompressPdfScreen.kt$@Composable fun CompressPdfScreen( selectedPdf: Uri?, quality: Int, isProcessing: Boolean, fileName: String, onFileNameChange: (String) -&gt; Unit, onSelectPdf: () -&gt; Unit, onQualityChange: (Int) -&gt; Unit, onExecute: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:ConverterScreen.kt$@Composable fun ConverterScreen( initialType: String? = null, initialFileUri: String? = null, initialFileCategory: String? = null, // Pedido explícito del usuario 2026-09-12 (feedback de testers): abre // el visor ya existente para el archivo recién convertido, en vez de // dejar la pantalla de éxito como destino final del flujo. onOpenDocument: (String) -&gt; Unit = {}, viewModel: ConverterViewModel = hiltViewModel(), )</ID>
@@ -35,7 +34,6 @@
     <ID>MatchingDeclarationName:OnboardingScreen.kt$OnboardingSlide</ID>
     <ID>MatchingDeclarationName:PdfToolsMenu.kt$PdfToolItem</ID>
     <ID>MatchingDeclarationName:WordFormatDetection.kt$WordFileFormat</ID>
-    <ID>MaxLineLength:AgendaEventEditorDialog.kt$private fun Long.toLocalDateTime(): LocalDateTime</ID>
     <ID>MaxLineLength:AgendaReminderReceiver.kt$AgendaReminderReceiver$.</ID>
     <ID>MaxLineLength:AnnotationEntity.kt$AnnotationTypeConverter$fun</ID>
     <ID>MaxLineLength:ConvertImageToPdfUseCaseTest.kt$ConvertImageToPdfUseCaseTest$assertTrue(orphanedPdfs.isNullOrEmpty(), "no debería quedar un .pdf huérfano: ${orphanedPdfs?.map { it.name }}")</ID>
@@ -98,8 +96,6 @@
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$Timber.d("$TAG: isPdf file:// path=$path existe=${sourceFile.exists()} size=${sourceFile.length()}")</ID>
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$Timber.d("$TAG: isPdf ruta absoluta path=$originalId existe=${sourceFile.exists()} size=${sourceFile.length()}")</ID>
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$it.copy(showDeleteConfirm = false, deleteError = context.getString(R.string.general_delete_error))</ID>
-    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$uriString.endsWith(".docx", ignoreCase = true) -&gt; "application/vnd.openxmlformats-officedocument.wordprocessingml.document"</ID>
-    <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$uriString.endsWith(".xlsx", ignoreCase = true) -&gt; "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"</ID>
     <ID>MaxLineLength:WatermarkPdfUseCase.kt$WatermarkPdfUseCase$return@withContext PdfToolResult.Error(context.getString(R.string.pdf_watermark_unsupported_chars_error))</ID>
     <ID>MaxLineLength:WordToHtmlUseCase.kt$WordToHtmlUseCase$?:</ID>
     <ID>MaxLineLength:WordToPdfUseCase.kt$WordToPdfUseCase$}</ID>
@@ -224,6 +220,7 @@
     <ID>TooManyFunctions:SecurityManager.kt$SecurityManager</ID>
     <ID>TooManyFunctions:SecurityViewModel.kt$SecurityViewModel : ViewModel</ID>
     <ID>TooManyFunctions:StudyScreen.kt$com.docsmart.features.study.presentation.StudyScreen.kt</ID>
+    <ID>TooManyFunctions:ViewerScreen.kt$com.docsmart.features.viewer.presentation.ViewerScreen.kt</ID>
     <ID>TooManyFunctions:ViewerViewModel.kt$ViewerViewModel : ViewModel</ID>
     <ID>UnusedParameter:SecurityScreen.kt$onPdfPassword: () -&gt; Unit = {}</ID>
     <ID>UnusedPrivateProperty:MainActivity.kt$MainActivity$val isSystemDark = isSystemInDarkTheme()</ID>

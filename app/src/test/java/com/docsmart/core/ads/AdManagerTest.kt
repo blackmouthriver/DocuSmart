@@ -3,6 +3,7 @@ package com.docsmart.core.ads
 import android.app.Activity
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -95,5 +96,60 @@ class AdManagerTest {
         every { activity.isDestroyed } returns true
 
         assertFalse(canShowFullScreenAd(activity))
+    }
+
+    // ── Decisiones extraídas de AdManager (ronda 17) ────────────────────────
+
+    @Test
+    fun `al volverse Premium se vacia la cache de anuncios`() {
+        assertEquals(AdCacheAction.CLEAR, adCacheActionOnPremiumChange(isPremium = true))
+    }
+
+    @Test
+    fun `al dejar de ser Premium se recargan los anuncios`() {
+        assertEquals(AdCacheAction.RELOAD, adCacheActionOnPremiumChange(isPremium = false))
+    }
+
+    @Test
+    fun `un usuario Premium nunca ve un rewarded aunque haya uno cargado`() {
+        assertEquals(
+            RewardedRequestOutcome.PREMIUM_BLOCKED,
+            rewardedRequestOutcome(isPremium = true, adLoaded = true),
+        )
+        assertEquals(
+            RewardedRequestOutcome.PREMIUM_BLOCKED,
+            rewardedRequestOutcome(isPremium = true, adLoaded = false),
+        )
+    }
+
+    @Test
+    fun `un usuario gratis sin rewarded cargado debe precargar`() {
+        assertEquals(
+            RewardedRequestOutcome.NO_AD_LOADED,
+            rewardedRequestOutcome(isPremium = false, adLoaded = false),
+        )
+    }
+
+    @Test
+    fun `un usuario gratis con rewarded cargado puede mostrarlo`() {
+        assertEquals(
+            RewardedRequestOutcome.AD_AVAILABLE,
+            rewardedRequestOutcome(isPremium = false, adLoaded = true),
+        )
+    }
+
+    // Hallazgo ronda 17: un fallo de carga dejaba "Ver anuncio" deshabilitado
+    // para siempre; ahora se reintenta con backoff acotado.
+    @Test
+    fun `adRetryDelayMs escala 15s, 30s y 60s`() {
+        assertEquals(15_000L, adRetryDelayMs(1))
+        assertEquals(30_000L, adRetryDelayMs(2))
+        assertEquals(60_000L, adRetryDelayMs(3))
+    }
+
+    @Test
+    fun `adRetryDelayMs deja de reintentar al agotar los intentos`() {
+        assertEquals(null, adRetryDelayMs(4))
+        assertEquals(null, adRetryDelayMs(0))
     }
 }

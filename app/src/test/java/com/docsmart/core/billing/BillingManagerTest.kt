@@ -278,4 +278,108 @@ class BillingManagerTest {
 
         assertEquals(RestoreOutcome.NothingOwned, outcome)
     }
+
+    // ── purchaseUpdateActionFor(): mapeo del PurchasesUpdatedListener ─────────
+
+    @Test
+    fun `purchaseUpdateActionFor OK con compras las procesa`() {
+        assertEquals(
+            PurchaseUpdateAction.HANDLE_PURCHASES,
+            purchaseUpdateActionFor(BillingClient.BillingResponseCode.OK, purchaseCount = 1),
+        )
+    }
+
+    @Test
+    fun `purchaseUpdateActionFor OK sin compras es un resultado vacio`() {
+        assertEquals(
+            PurchaseUpdateAction.EMPTY_RESULT,
+            purchaseUpdateActionFor(BillingClient.BillingResponseCode.OK, purchaseCount = 0),
+        )
+    }
+
+    @Test
+    fun `purchaseUpdateActionFor distingue cancelado, ya comprado y fallo`() {
+        assertEquals(
+            PurchaseUpdateAction.CANCELLED,
+            purchaseUpdateActionFor(BillingClient.BillingResponseCode.USER_CANCELED, 0),
+        )
+        assertEquals(
+            PurchaseUpdateAction.ALREADY_OWNED,
+            purchaseUpdateActionFor(BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED, 0),
+        )
+        assertEquals(
+            PurchaseUpdateAction.FAILED,
+            purchaseUpdateActionFor(BillingClient.BillingResponseCode.BILLING_UNAVAILABLE, 1),
+        )
+    }
+
+    // ── shouldRevalidateOnStart(): throttle de 4h ─────────────────────────────
+
+    @Test
+    fun `shouldRevalidateOnStart sin intento previo nunca bloquea`() {
+        assertTrue(shouldRevalidateOnStart(nowElapsedMs = 10L, lastElapsedMs = null, throttleMs = 1_000L))
+    }
+
+    @Test
+    fun `shouldRevalidateOnStart bloquea dentro de la ventana y libera al cumplirla`() {
+        assertEquals(false, shouldRevalidateOnStart(1_999L, 1_000L, 1_000L))
+        assertTrue(shouldRevalidateOnStart(2_000L, 1_000L, 1_000L))
+    }
+
+    @Test
+    fun `purchaseUnavailableMessage distingue producto ausente de oferta ausente`() {
+        assertEquals("Producto no disponible todavía", purchaseUnavailableMessage(hasDetails = false))
+        assertEquals("Sin oferta disponible para este plan", purchaseUnavailableMessage(hasDetails = true))
+    }
+
+    // ── purchaseStateDecisionFor(): efecto de cada estado de compra ───────────
+
+    @Test
+    fun `una compra nueva PURCHASED activa Premium y emite Success`() {
+        assertEquals(
+            PurchaseStateDecision(true, PurchaseResult.Success),
+            purchaseStateDecisionFor(Purchase.PurchaseState.PURCHASED, isRestore = false),
+        )
+    }
+
+    @Test
+    fun `una restauracion PURCHASED activa Premium sin emitir nada`() {
+        assertEquals(
+            PurchaseStateDecision(true, null),
+            purchaseStateDecisionFor(Purchase.PurchaseState.PURCHASED, isRestore = true),
+        )
+    }
+
+    @Test
+    fun `una compra PENDING nunca activa Premium y avisa como pendiente`() {
+        assertEquals(
+            PurchaseStateDecision(false, PurchaseResult.Pending),
+            purchaseStateDecisionFor(Purchase.PurchaseState.PENDING, isRestore = false),
+        )
+        assertEquals(
+            PurchaseStateDecision(false, null),
+            purchaseStateDecisionFor(Purchase.PurchaseState.PENDING, isRestore = true),
+        )
+    }
+
+    @Test
+    fun `un estado desconocido nunca activa Premium`() {
+        assertEquals(
+            PurchaseStateDecision(false, PurchaseResult.Error("Estado de compra desconocido")),
+            purchaseStateDecisionFor(Purchase.PurchaseState.UNSPECIFIED_STATE, isRestore = false),
+        )
+        assertEquals(
+            PurchaseStateDecision(false, null),
+            purchaseStateDecisionFor(Purchase.PurchaseState.UNSPECIFIED_STATE, isRestore = true),
+        )
+    }
+
+    // ── shouldLogConversion(): solo compras nuevas y sin confirmar ────────────
+
+    @Test
+    fun `shouldLogConversion solo cuenta una compra nueva sin confirmar`() {
+        assertTrue(shouldLogConversion(isRestore = false, isAcknowledged = false))
+        assertEquals(false, shouldLogConversion(isRestore = true, isAcknowledged = false))
+        assertEquals(false, shouldLogConversion(isRestore = false, isAcknowledged = true))
+    }
 }

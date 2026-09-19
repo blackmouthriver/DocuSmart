@@ -147,7 +147,7 @@ fun RedactPdfScreen(
 
         PdfProcessingFooter(
             isProcessing = isProcessing,
-            enabled = selectedPdf != null && rects.isNotEmpty(),
+            enabled = canExecuteRedact(selectedPdf != null, rects.size),
             progressText = stringResource(R.string.pdf_redact_progress),
             buttonLabel = stringResource(R.string.pdf_redact_execute),
             buttonIcon = Icons.Rounded.VisibilityOff,
@@ -174,7 +174,7 @@ private fun RedactPageEditor(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { onPageChange(currentPage - 1) }, enabled = currentPage > 1) {
+            IconButton(onClick = { onPageChange(currentPage - 1) }, enabled = canGoToPreviousPage(currentPage)) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronLeft,
                     contentDescription = stringResource(R.string.pdf_redact_prev_page),
@@ -185,7 +185,8 @@ private fun RedactPageEditor(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            IconButton(onClick = { onPageChange(currentPage + 1) }, enabled = currentPage < totalPages) {
+            val canGoNext = canGoToNextPage(currentPage, totalPages)
+            IconButton(onClick = { onPageChange(currentPage + 1) }, enabled = canGoNext) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronRight,
                     contentDescription = stringResource(R.string.pdf_redact_next_page),

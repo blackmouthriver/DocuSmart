@@ -150,7 +150,7 @@ fun ReorderPagesScreen(
             // "Quitar" está habilitado), pero el botón seguía habilitado
             // igual -- el usuario podía gastar uno de sus 3 usos diarios
             // y obtener un archivo idéntico al original con otro nombre.
-            enabled = selectedPdf != null && pageOrder.size > 1,
+            enabled = canExecuteReorder(selectedPdf != null, pageOrder.size),
             progressText = stringResource(R.string.pdf_reorder_pages_progress),
             buttonLabel = stringResource(R.string.pdf_reorder_pages_execute),
             buttonIcon = Icons.Rounded.Reorder,
@@ -337,7 +337,7 @@ private fun ReorderableThumbnailList(
 
                     IconButton(
                         onClick = { onRemovePage(pageNumber) },
-                        enabled = pageOrder.size > 1,
+                        enabled = canRemovePage(pageOrder.size),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Delete,

@@ -52,7 +52,7 @@ fun launchDocumentScanner(
         .getStartScanIntent(activity)
         .addOnSuccessListener { onLaunched(it) }
         .addOnFailureListener { e ->
-            Timber.e(e, "Error obteniendo intent del escáner")
+            Timber.e("Error obteniendo intent del escáner (${e.javaClass.simpleName})")
             onError(e.message ?: "")
         }
 }

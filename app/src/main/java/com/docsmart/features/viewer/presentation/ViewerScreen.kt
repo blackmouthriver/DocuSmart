@@ -1169,7 +1169,7 @@ private fun DrawScope.drawPdfPageOverlays(
 // reciente a la más vieja, para que una superposición favorezca la de
 // arriba. NOTE usa un radio táctil (más grande que el marcador visual);
 // HIGHLIGHT usa su rectángulo real.
-private fun hitTestAnnotation(
+internal fun hitTestAnnotation(
     tap: Offset,
     annotations: List<AnnotationEntity>,
     displayScale: Float,
@@ -1244,7 +1244,7 @@ private fun <T> rememberDocumentLoad(
                 try {
                     context.contentResolver.openInputStream(uri)?.use { extract(it) } ?: initial
                 } catch (e: Exception) {
-                    Timber.e(e, "Error leyendo $errorLogTag")
+                    Timber.e("Error leyendo $errorLogTag: ${e.javaClass.simpleName}")
                     hasError = true
                     initial
                 } finally {
@@ -1556,15 +1556,15 @@ private fun WordTableView(
 // cambiar entre ellas.
 private val EXCEL_COLUMN_WIDTH = 120.dp
 
-private data class ExcelRow(val cells: List<String>)
+internal data class ExcelRow(val cells: List<String>)
 
-private data class ExcelSheetModel(val name: String, val rows: List<ExcelRow>)
+internal data class ExcelSheetModel(val name: String, val rows: List<ExcelRow>)
 
 // Hallazgo real de la auditoría general 2026-09-17 (M8): si algo lanzaba
 // una excepción mientras se recorrían las hojas/celdas, `workbook.close()`
 // nunca se ejecutaba y el recurso (y el InputStream que envuelve) quedaba
 // abierto.
-private fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel> {
+internal fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel> {
     val workbook = WorkbookFactory.create(input)
     try {
         val formatter = DataFormatter()
@@ -1572,7 +1572,7 @@ private fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel
             try {
                 workbook.creationHelper.createFormulaEvaluator()
             } catch (e: Exception) {
-                Timber.w(e, "extractExcelSheets: no se pudo crear el evaluador de fórmulas")
+                Timber.w("extractExcelSheets: no se pudo crear el evaluador de fórmulas: ${e.javaClass.simpleName}")
                 null
             }
         return (0 until workbook.numberOfSheets).mapNotNull { sheetIndex ->
@@ -1591,7 +1591,7 @@ private fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel
                                     formatter.formatCellValue(cell)
                                 }
                             } catch (e: Exception) {
-                                Timber.w(e, "extractExcelSheets: no se pudo formatear una celda")
+                                Timber.w("extractExcelSheets: celda no formateable: ${e.javaClass.simpleName}")
                                 ""
                             }
                         }
@@ -1859,7 +1859,7 @@ private fun extractPptShapeContent(shape: XSLFShape): PptShapeContent? {
             try {
                 shape.pictureData?.data
             } catch (e: Exception) {
-                Timber.w(e, "extractPptShapeContent: no se pudo leer una imagen")
+                Timber.w("extractPptShapeContent: no se pudo leer una imagen: ${e.javaClass.simpleName}")
                 null
             }
         return bytes?.let { PptShapeContent(runs = emptyList(), isTitle = false, imageBytes = it) }
@@ -1870,7 +1870,7 @@ private fun extractPptShapeContent(shape: XSLFShape): PptShapeContent? {
         try {
             shape.isPlaceholder && shape.textType?.name?.contains("TITLE", ignoreCase = true) == true
         } catch (e: Exception) {
-            Timber.w(e, "extractPptShapeContent: no se pudo determinar si la forma es un título")
+            Timber.w("extractPptShapeContent: titulo no determinable: ${e.javaClass.simpleName}")
             false
         }
     // Cada `XSLFTextParagraph` es un punto/viñeta separado (RF pedido por el
@@ -2040,6 +2040,23 @@ private fun PptShapeView(shape: PptShapeContent) {
 // visible en vez de fallar en silencio.
 private const val MAX_TEXT_VIEWER_CHARS = 5_000_000
 
+// Logica pura del visor de texto (extraida para testearla en JVM).
+internal fun truncateViewerText(
+    text: String,
+    maxChars: Int,
+    truncatedNotice: String,
+): String =
+    if (text.length > maxChars) {
+        text.take(maxChars) + "\n\n" + truncatedNotice
+    } else {
+        text
+    }
+
+internal fun matchingTextLines(
+    text: String,
+    query: String,
+): List<String> = text.lines().filter { it.contains(query, ignoreCase = true) }
+
 @Composable
 private fun TextViewerContent(
     uri: Uri?,
@@ -2049,12 +2066,7 @@ private fun TextViewerContent(
     val truncatedNotice = stringResource(R.string.viewer_text_truncated_notice)
     val load =
         rememberDocumentLoad(uri, "", "TXT") { input ->
-            val text = input.bufferedReader().readText()
-            if (text.length > MAX_TEXT_VIEWER_CHARS) {
-                text.take(MAX_TEXT_VIEWER_CHARS) + "\n\n" + truncatedNotice
-            } else {
-                text
-            }
+            truncateViewerText(input.bufferedReader().readText(), MAX_TEXT_VIEWER_CHARS, truncatedNotice)
         }
 
     DocumentContentBox(
@@ -2106,7 +2118,7 @@ private fun TextViewerSearchResults(
     text: String,
     searchQuery: String,
 ) {
-    val lines = text.lines().filter { it.contains(searchQuery, ignoreCase = true) }
+    val lines = matchingTextLines(text, searchQuery)
     if (lines.isEmpty()) {
         Text(
             text = stringResource(R.string.viewer_search_no_results),
@@ -2391,7 +2403,7 @@ private fun UnsupportedFormatContent(
                             }
                         context.startActivity(Intent.createChooser(intent, openWithText))
                     } catch (e: Exception) {
-                        Timber.e(e, "No se pudo abrir con otra app: ${e.message}")
+                        Timber.e("No se pudo abrir con otra app: ${e.javaClass.simpleName}")
                         Toast.makeText(context, openErrorText, Toast.LENGTH_SHORT).show()
                     }
                 }) { Text(openWithText) }

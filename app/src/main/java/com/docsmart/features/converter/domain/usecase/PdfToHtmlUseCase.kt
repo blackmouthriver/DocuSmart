@@ -76,7 +76,7 @@ class PdfToHtmlUseCase
                     // corriendo igual vía el `finally` de abajo.
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "PdfToHtmlUseCase: error — ${e.message}")
+                    Timber.e("PdfToHtmlUseCase: error: ${e.javaClass.simpleName}")
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
                     )

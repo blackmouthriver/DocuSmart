@@ -95,7 +95,7 @@ fun SplitPdfScreen(
                             ) {
                                 IconButton(
                                     onClick = {
-                                        if (fromPage > 1) onFromPageChange(fromPage - 1)
+                                        if (canDecreaseSplitFrom(fromPage)) onFromPageChange(fromPage - 1)
                                     },
                                     // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                                     modifier = Modifier.size(48.dp),
@@ -143,7 +143,7 @@ fun SplitPdfScreen(
                             ) {
                                 IconButton(
                                     onClick = {
-                                        if (toPage > fromPage) onToPageChange(toPage - 1)
+                                        if (canDecreaseSplitTo(fromPage, toPage)) onToPageChange(toPage - 1)
                                     },
                                     // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                                     modifier = Modifier.size(48.dp),
@@ -176,13 +176,13 @@ fun SplitPdfScreen(
                         }
                     }
 
-                    val pageCount = (toPage - fromPage + 1).coerceAtLeast(0)
+                    val pageCount = splitPageCount(fromPage, toPage)
                     // Hallazgo real de la revisión general 2026-09-16 (#22):
                     // el color de error usaba ">=" -- un rango válido de una
                     // sola página (fromPage == toPage) se pintaba en rojo
                     // igual que un rango realmente inválido (fromPage >
                     // toPage). Corregido a ">" estricto.
-                    val isInvalidRange = fromPage > toPage
+                    val isInvalidRange = isInvalidSplitRange(fromPage, toPage)
                     Text(
                         text = stringResource(R.string.pdf_split_summary, pageCount, fromPage, toPage),
                         style = MaterialTheme.typography.bodySmall,
@@ -209,7 +209,7 @@ fun SplitPdfScreen(
             // Hallazgo real #22: el botón quedaba habilitado con un rango
             // inválido (Desde > Hasta) -- el use case lo corregía en
             // silencio en vez de avisar. Ahora el botón mismo lo bloquea.
-            enabled = selectedPdf != null && fromPage <= toPage,
+            enabled = canExecuteSplit(selectedPdf != null, fromPage, toPage),
             progressText = stringResource(R.string.pdf_split_progress),
             buttonLabel = stringResource(R.string.pdf_split),
             buttonIcon = Icons.Rounded.CallSplit,

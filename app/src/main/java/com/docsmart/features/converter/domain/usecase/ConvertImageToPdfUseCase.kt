@@ -96,6 +96,62 @@ internal fun readExifOrientation(
         ExifInterface.ORIENTATION_NORMAL
     }
 
+/** Recuadro (en puntos de PDF) donde se dibuja una imagen en la página. */
+internal data class PageDrawRect(
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float,
+) {
+    val width: Float get() = right - left
+    val height: Float get() = bottom - top
+}
+
+/**
+ * Recuadro centrado dentro de la página (menos el margen) que conserva la
+ * proporción de la imagen y nunca la agranda por encima de su tamaño original.
+ * Función pura: se puede testear en JVM, a diferencia de dibujarla.
+ */
+internal fun computePageDrawRect(
+    bitmapWidth: Int,
+    bitmapHeight: Int,
+    pageWidth: Int,
+    pageHeight: Int,
+    margin: Int,
+): PageDrawRect {
+    val maxWidth = pageWidth - margin * 2
+    val maxHeight = pageHeight - margin * 2
+
+    val widthRatio = maxWidth.toFloat() / bitmapWidth
+    val heightRatio = maxHeight.toFloat() / bitmapHeight
+    val ratio = minOf(widthRatio, heightRatio, 1f)
+
+    val drawWidth = bitmapWidth * ratio
+    val drawHeight = bitmapHeight * ratio
+    val left = (pageWidth - drawWidth) / 2f
+    val top = (pageHeight - drawHeight) / 2f
+    return PageDrawRect(left, top, left + drawWidth, top + drawHeight)
+}
+
+/** Tamaño en píxeles (ancho, alto) al que se incrusta la imagen: [multiplier] píxeles por punto del recuadro. */
+internal fun embedTargetSize(
+    drawWidthPts: Float,
+    drawHeightPts: Float,
+    multiplier: Int,
+): Pair<Int, Int> =
+    Pair(
+        (drawWidthPts * multiplier).roundToInt().coerceAtLeast(1),
+        (drawHeightPts * multiplier).roundToInt().coerceAtLeast(1),
+    )
+
+/** Solo se reescala cuando la imagen es más grande que el objetivo en alguna dimensión (nunca se agranda). */
+internal fun needsDownscale(
+    bitmapWidth: Int,
+    bitmapHeight: Int,
+    targetWidth: Int,
+    targetHeight: Int,
+): Boolean = bitmapWidth > targetWidth || bitmapHeight > targetHeight
+
 class ConvertImageToPdfUseCase
     @Inject
     constructor(
@@ -184,7 +240,7 @@ class ConvertImageToPdfUseCase
                     // el reescalado (embedBitmapForDrawRect) o el propio canvas
                     // también pueden agotar la memoria con imágenes de alta
                     // resolución -- OutOfMemoryError no hereda de Exception.
-                    Timber.e(e, "Sin memoria durante la conversión")
+                    Timber.e("Sin memoria durante la conversión")
                     outputFile?.delete()
                     ConversionResult.Error(
                         context
@@ -317,7 +373,7 @@ class ConvertImageToPdfUseCase
                 if (embeddedBitmap != bitmap) embeddedBitmap.recycle()
                 true
             } catch (e: OutOfMemoryError) {
-                Timber.e(e, "Sin memoria procesando imagen $index, se salta")
+                Timber.e("Sin memoria procesando imagen $index, se salta")
                 false
             } finally {
                 bitmap.recycle()
@@ -364,7 +420,7 @@ class ConvertImageToPdfUseCase
                 // conversión -- OutOfMemoryError no hereda de Exception, así
                 // que el catch de arriba nunca la atrapaba. Se trata igual que
                 // cualquier otra imagen que no se pudo cargar: se salta.
-                Timber.e(e, "Sin memoria decodificando imagen, se salta")
+                Timber.e("Sin memoria decodificando imagen, se salta")
                 null
             }
         }
@@ -376,18 +432,8 @@ class ConvertImageToPdfUseCase
             bitmapWidth: Int,
             bitmapHeight: Int,
         ): RectF {
-            val maxWidth = PAGE_WIDTH - MARGIN * 2
-            val maxHeight = PAGE_HEIGHT - MARGIN * 2
-
-            val widthRatio = maxWidth.toFloat() / bitmapWidth
-            val heightRatio = maxHeight.toFloat() / bitmapHeight
-            val ratio = minOf(widthRatio, heightRatio, 1f)
-
-            val drawWidth = bitmapWidth * ratio
-            val drawHeight = bitmapHeight * ratio
-            val left = (PAGE_WIDTH - drawWidth) / 2f
-            val top = (PAGE_HEIGHT - drawHeight) / 2f
-            return RectF(left, top, left + drawWidth, top + drawHeight)
+            val rect = computePageDrawRect(bitmapWidth, bitmapHeight, PAGE_WIDTH, PAGE_HEIGHT, MARGIN)
+            return RectF(rect.left, rect.top, rect.right, rect.bottom)
         }
 
         /** Bitmap que se incrusta dentro de [drawRect]: en modo estándar,
@@ -400,13 +446,12 @@ class ConvertImageToPdfUseCase
             highResolution: Boolean,
         ): Bitmap {
             val multiplier = if (highResolution) HIGH_RES_MULTIPLIER else BASE_MULTIPLIER
-            val targetWidth = (drawRect.width() * multiplier).roundToInt().coerceAtLeast(1)
-            val targetHeight = (drawRect.height() * multiplier).roundToInt().coerceAtLeast(1)
+            val (targetWidth, targetHeight) = embedTargetSize(drawRect.width(), drawRect.height(), multiplier)
 
-            return if (bitmap.width <= targetWidth && bitmap.height <= targetHeight) {
-                bitmap
-            } else {
+            return if (needsDownscale(bitmap.width, bitmap.height, targetWidth, targetHeight)) {
                 Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+            } else {
+                bitmap
             }
         }
 

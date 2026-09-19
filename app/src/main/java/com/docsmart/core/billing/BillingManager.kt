@@ -173,19 +173,14 @@ class BillingManager
 
         private val purchasesUpdatedListener =
             PurchasesUpdatedListener { billingResult, purchases ->
-                when (billingResult.responseCode) {
-                    BillingClient.BillingResponseCode.OK -> {
-                        if (purchases.isNullOrEmpty()) {
-                            emitResult(PurchaseResult.Error("Compra sin resultado"))
-                        } else {
-                            purchases.forEach { handlePurchase(it) }
-                        }
-                    }
-                    BillingClient.BillingResponseCode.USER_CANCELED -> emitResult(PurchaseResult.Cancelled)
+                when (purchaseUpdateActionFor(billingResult.responseCode, purchases?.size ?: 0)) {
+                    PurchaseUpdateAction.HANDLE_PURCHASES -> purchases?.forEach { handlePurchase(it) }
+                    PurchaseUpdateAction.EMPTY_RESULT -> emitResult(PurchaseResult.Error("Compra sin resultado"))
+                    PurchaseUpdateAction.CANCELLED -> emitResult(PurchaseResult.Cancelled)
                     // Ya es dueño de la suscripción (Premium local perdido o
                     // desincronizado): no es un error real, se resincroniza.
-                    BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> recoverAlreadyOwned()
-                    else -> emitResult(PurchaseResult.Error(billingResult.debugMessage))
+                    PurchaseUpdateAction.ALREADY_OWNED -> recoverAlreadyOwned()
+                    PurchaseUpdateAction.FAILED -> emitResult(PurchaseResult.Error(billingResult.debugMessage))
                 }
             }
 
@@ -227,8 +222,9 @@ class BillingManager
                 LifecycleEventObserver { _, event ->
                     if (event != Lifecycle.Event.ON_START) return@LifecycleEventObserver
                     val now = SystemClock.elapsedRealtime()
-                    val last = lastRestoreCheckElapsedMs
-                    if (last != null && now - last < REVALIDATE_THROTTLE_MS) return@LifecycleEventObserver
+                    if (!shouldRevalidateOnStart(now, lastRestoreCheckElapsedMs, REVALIDATE_THROTTLE_MS)) {
+                        return@LifecycleEventObserver
+                    }
                     lastRestoreCheckElapsedMs = now
                     scope.launch { restorePurchases() }
                 },
@@ -333,13 +329,7 @@ class BillingManager
             val offerToken = details?.subscriptionOfferDetails?.firstOrNull()?.offerToken
 
             if (details == null || offerToken == null) {
-                val message =
-                    if (details == null) {
-                        "Producto no disponible todavía"
-                    } else {
-                        "Sin oferta disponible para este plan"
-                    }
-                emitResult(PurchaseResult.Error(message))
+                emitResult(PurchaseResult.Error(purchaseUnavailableMessage(hasDetails = details != null)))
                 return null
             }
 
@@ -433,8 +423,9 @@ class BillingManager
             purchase: Purchase,
             isRestore: Boolean = false,
         ) {
-            when (purchase.purchaseState) {
-                Purchase.PurchaseState.PURCHASED -> {
+            val decision = purchaseStateDecisionFor(purchase.purchaseState, isRestore)
+            if (decision.activatePremium) {
+                run {
                     premiumManager.activatePremium(trialEndsAtMillisFor(purchase))
                     // Hallazgo real de la auditoría general 2026-09-17 (octava
                     // ronda, Alta -- G1): solo existía `logPremiumPurchaseAttempt()`,
@@ -460,7 +451,9 @@ class BillingManager
                     // más abajo -- una vez confirmada la compra, cualquier
                     // reentrega posterior llega con `isAcknowledged=true` y
                     // ya no debe contarse de nuevo.
-                    if (!isRestore && !purchase.isAcknowledged && loggedPurchaseTokens.add(purchase.purchaseToken)) {
+                    if (shouldLogConversion(isRestore, purchase.isAcknowledged) &&
+                        loggedPurchaseTokens.add(purchase.purchaseToken)
+                    ) {
                         DocuSmartAnalytics.logPremiumPurchaseSuccess(purchase.products.firstOrNull().orEmpty())
                     }
                     if (!purchase.isAcknowledged) {
@@ -481,15 +474,9 @@ class BillingManager
                             }
                         }
                     }
-                    if (!isRestore) emitResult(PurchaseResult.Success)
-                }
-                Purchase.PurchaseState.PENDING -> {
-                    if (!isRestore) emitResult(PurchaseResult.Pending)
-                }
-                else -> {
-                    if (!isRestore) emitResult(PurchaseResult.Error("Estado de compra desconocido"))
                 }
             }
+            decision.emit?.let { emitResult(it) }
         }
 
         // Hallazgo 5 (auditoría monetización 2026-09-18, Baja): antes un fallo
@@ -624,3 +611,66 @@ internal fun evaluateRestoreOutcome(
         else -> RestoreOutcome.NothingOwned
     }
 }
+
+/** Qué hacer ante una llamada de `PurchasesUpdatedListener` (lógica pura, testeable sin BillingClient). */
+internal enum class PurchaseUpdateAction { HANDLE_PURCHASES, EMPTY_RESULT, CANCELLED, ALREADY_OWNED, FAILED }
+
+internal fun purchaseUpdateActionFor(
+    responseCode: Int,
+    purchaseCount: Int,
+): PurchaseUpdateAction =
+    when (responseCode) {
+        BillingClient.BillingResponseCode.OK ->
+            if (purchaseCount > 0) PurchaseUpdateAction.HANDLE_PURCHASES else PurchaseUpdateAction.EMPTY_RESULT
+        BillingClient.BillingResponseCode.USER_CANCELED -> PurchaseUpdateAction.CANCELLED
+        BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> PurchaseUpdateAction.ALREADY_OWNED
+        else -> PurchaseUpdateAction.FAILED
+    }
+
+/**
+ * Throttle de la revalidación en ON_START: `last == null` significa que nunca se
+ * completó un intento real, y en ese estado no se bloquea nada.
+ */
+internal fun shouldRevalidateOnStart(
+    nowElapsedMs: Long,
+    lastElapsedMs: Long?,
+    throttleMs: Long,
+): Boolean = lastElapsedMs == null || nowElapsedMs - lastElapsedMs >= throttleMs
+
+internal fun purchaseUnavailableMessage(hasDetails: Boolean): String =
+    if (hasDetails) "Sin oferta disponible para este plan" else "Producto no disponible todavía"
+
+/**
+ * Efecto de una compra según su estado: si activa Premium y qué resultado se
+ * emite. Una restauración (`isRestore`) nunca emite (no es una compra nueva);
+ * solo PURCHASED activa Premium.
+ */
+internal data class PurchaseStateDecision(
+    val activatePremium: Boolean,
+    val emit: PurchaseResult?,
+)
+
+internal fun purchaseStateDecisionFor(
+    purchaseState: Int,
+    isRestore: Boolean,
+): PurchaseStateDecision =
+    when (purchaseState) {
+        Purchase.PurchaseState.PURCHASED ->
+            PurchaseStateDecision(true, if (isRestore) null else PurchaseResult.Success)
+        Purchase.PurchaseState.PENDING ->
+            PurchaseStateDecision(false, if (isRestore) null else PurchaseResult.Pending)
+        else ->
+            PurchaseStateDecision(
+                false,
+                if (isRestore) null else PurchaseResult.Error("Estado de compra desconocido"),
+            )
+    }
+
+/**
+ * El evento de conversión solo cuenta una compra nueva y aún sin confirmar:
+ * una restauración o una reentrega ya confirmada no es una conversión nueva.
+ */
+internal fun shouldLogConversion(
+    isRestore: Boolean,
+    isAcknowledged: Boolean,
+): Boolean = !isRestore && !isAcknowledged

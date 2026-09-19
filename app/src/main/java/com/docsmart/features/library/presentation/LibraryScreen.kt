@@ -666,7 +666,7 @@ private fun openLinkedFolder(
             }
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
-        Timber.w(e, "openLinkedFolder: sin app que maneje ACTION_VIEW para un árbol de documentos")
+        Timber.w("openLinkedFolder: sin app para ACTION_VIEW: ${e.javaClass.simpleName}")
         android.widget.Toast.makeText(
             context,
             context.getString(R.string.library_folder_shortcut_no_app),

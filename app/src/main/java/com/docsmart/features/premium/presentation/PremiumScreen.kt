@@ -257,17 +257,17 @@ private fun PurchaseActionsSection(
         ) {
             Icon(Icons.Rounded.Star, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
+            // HU-54 RF2: si el plan tiene prueba gratuita, el CTA lo dice
+            // explícitamente en vez de mostrar el precio que se cobrará recién
+            // después -- para que el primer cobro real no sea sorpresivo.
             Text(
                 text =
-                    uiState.selectedPlan?.let { plan ->
-                        // HU-54 RF2: si el plan tiene prueba gratuita, el CTA lo
-                        // dice explícitamente en vez de mostrar el precio que se
-                        // cobrará recién después -- para que el primer cobro
-                        // real no sea sorpresivo.
-                        plan.trialDays?.let { days ->
-                            stringResource(R.string.premium_start_trial, days)
-                        } ?: stringResource(R.string.premium_get_plan, stringResource(plan.titleRes), plan.price)
-                    } ?: stringResource(R.string.premium_select_plan),
+                    when (val cta = purchaseCtaFor(uiState.selectedPlan)) {
+                        PurchaseCta.SelectPlan -> stringResource(R.string.premium_select_plan)
+                        is PurchaseCta.StartTrial -> stringResource(R.string.premium_start_trial, cta.days)
+                        is PurchaseCta.GetPlan ->
+                            stringResource(R.string.premium_get_plan, stringResource(cta.plan.titleRes), cta.plan.price)
+                    },
                 style = MaterialTheme.typography.labelLarge,
             )
         }
@@ -309,9 +309,8 @@ private fun PremiumActiveCard(
     // sin recrear la Activity, esta card no se recompondría con la fecha en
     // el formato correcto. LocalConfiguration.current sí lo es.
     val locale = LocalConfiguration.current.locales[0]
-    val isInTrial = trialEndsAtMillis != null && trialEndsAtMillis > System.currentTimeMillis()
     val bodyText =
-        if (isInTrial) {
+        if (trialEndsAtMillis != null && isSubscriptionTrialActive(trialEndsAtMillis, System.currentTimeMillis())) {
             val formattedDate =
                 java.text.SimpleDateFormat("dd/MM/yyyy", locale)
                     .format(java.util.Date(trialEndsAtMillis))
