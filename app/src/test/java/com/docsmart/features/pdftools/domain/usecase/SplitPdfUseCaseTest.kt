@@ -27,17 +27,19 @@ import java.nio.file.Files
  * efectivamente contiene solo el rango pedido.
  */
 class SplitPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: SplitPdfUseCase
 
-    private val messages = SplitPdfMessages(
-        readError = "readError", noPages = "noPages",
-        generateError = "generateError",
-        success = "success %1\$d %2\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        SplitPdfMessages(
+            readError = "readError",
+            noPages = "noPages",
+            generateError = "generateError",
+            success = "success %1\$d %2\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -56,44 +58,48 @@ class SplitPdfUseCaseTest {
     }
 
     @Test
-    fun `split extrae solo el rango pedido, no el documento completo`() = runTest {
-        stubResolver(createTestPdf(pages = 5))
+    fun `split extrae solo el rango pedido, no el documento completo`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 5))
 
-        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 2, toPage = 4)
+            val result = useCase(mockk<Uri>(), messages = messages, fromPage = 2, toPage = 4)
 
-        assertTrue(result is PdfToolResult.Success)
-        val outputFile = (result as PdfToolResult.Success).outputFile
-        assertEquals(3, pageCountOf(outputFile))
-    }
-
-    @Test
-    fun `split con rango completo produce el mismo numero de paginas que el original`() = runTest {
-        stubResolver(createTestPdf(pages = 5))
-
-        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 1, toPage = 5)
-
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val outputFile = (result as PdfToolResult.Success).outputFile
+            assertEquals(3, pageCountOf(outputFile))
+        }
 
     @Test
-    fun `split con rango fuera de limites se ajusta al total de paginas`() = runTest {
-        stubResolver(createTestPdf(pages = 3))
+    fun `split con rango completo produce el mismo numero de paginas que el original`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 5))
 
-        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 2, toPage = 999)
+            val result = useCase(mockk<Uri>(), messages = messages, fromPage = 1, toPage = 5)
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals(2, pageCountOf((result as PdfToolResult.Success).outputFile))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
+        }
 
     @Test
-    fun `split de un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `split con rango fuera de limites se ajusta al total de paginas`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 3))
 
-        val result = useCase(mockk<Uri>(), messages = messages, fromPage = 1, toPage = 2)
+            val result = useCase(mockk<Uri>(), messages = messages, fromPage = 2, toPage = 999)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals(2, pageCountOf((result as PdfToolResult.Success).outputFile))
+        }
+
+    @Test
+    fun `split de un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(), messages = messages, fromPage = 1, toPage = 2)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

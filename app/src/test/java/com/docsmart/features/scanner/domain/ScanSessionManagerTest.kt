@@ -29,7 +29,6 @@ import java.nio.file.Files
  * repositorios reales.
  */
 class ScanSessionManagerTest {
-
     private lateinit var tempDir: File
     private lateinit var context: Context
     private lateinit var favoritesRepository: FavoritesRepository
@@ -54,8 +53,7 @@ class ScanSessionManagerTest {
         tempDir.deleteRecursively()
     }
 
-    private fun scannedFile(name: String): File =
-        File(tempDir, name).apply { writeText("contenido") }
+    private fun scannedFile(name: String): File = File(tempDir, name).apply { writeText("contenido") }
 
     @Test
     fun `addFile agrega el documento a la sesion con sus datos basicos`() {
@@ -86,7 +84,12 @@ class ScanSessionManagerTest {
 
         manager.addFile(file, context)
 
-        assertEquals(DocumentType.IMAGE, manager.scannedFiles.value.first().type)
+        assertEquals(
+            DocumentType.IMAGE,
+            manager.scannedFiles.value
+                .first()
+                .type,
+        )
     }
 
     @Test
@@ -96,7 +99,11 @@ class ScanSessionManagerTest {
 
         manager.addFile(file, context)
 
-        assertTrue(manager.scannedFiles.value.first().isFavorite)
+        assertTrue(
+            manager.scannedFiles.value
+                .first()
+                .isFavorite,
+        )
     }
 
     @Test
@@ -110,66 +117,75 @@ class ScanSessionManagerTest {
     }
 
     @Test
-    fun `toggleFavorite actualiza el estado del documento correspondiente en la sesion`() = runTest {
-        val file = scannedFile("a.pdf")
-        manager.addFile(file, context)
-        coEvery { favoritesRepository.toggleFavorite(file.absolutePath) } returns true
+    fun `toggleFavorite actualiza el estado del documento correspondiente en la sesion`() =
+        runTest {
+            val file = scannedFile("a.pdf")
+            manager.addFile(file, context)
+            coEvery { favoritesRepository.toggleFavorite(file.absolutePath) } returns true
 
-        manager.toggleFavorite(file.absolutePath)
+            manager.toggleFavorite(file.absolutePath)
 
-        assertTrue(manager.scannedFiles.value.first().isFavorite)
-    }
-
-    @Test
-    fun `toggleFavorite no afecta otros documentos de la sesion`() = runTest {
-        val fileA = scannedFile("a.pdf")
-        val fileB = scannedFile("b.pdf")
-        manager.addFile(fileA, context)
-        manager.addFile(fileB, context)
-        coEvery { favoritesRepository.toggleFavorite(fileA.absolutePath) } returns true
-
-        manager.toggleFavorite(fileA.absolutePath)
-
-        val files = manager.scannedFiles.value
-        assertTrue(files.first { it.id == fileA.absolutePath }.isFavorite)
-        assertFalse(files.first { it.id == fileB.absolutePath }.isFavorite)
-    }
+            assertTrue(
+                manager.scannedFiles.value
+                    .first()
+                    .isFavorite,
+            )
+        }
 
     @Test
-    fun `renameDocument actualiza id y nombre con el resultado real del repositorio`() = runTest {
-        val file = scannedFile("viejo.pdf")
-        manager.addFile(file, context)
-        val newPath = File(tempDir, "nuevo.pdf").absolutePath
-        coEvery { documentRepository.renameDocument(file.absolutePath, "nuevo.pdf") } returns newPath
+    fun `toggleFavorite no afecta otros documentos de la sesion`() =
+        runTest {
+            val fileA = scannedFile("a.pdf")
+            val fileB = scannedFile("b.pdf")
+            manager.addFile(fileA, context)
+            manager.addFile(fileB, context)
+            coEvery { favoritesRepository.toggleFavorite(fileA.absolutePath) } returns true
 
-        manager.renameDocument(file.absolutePath, "nuevo.pdf")
+            manager.toggleFavorite(fileA.absolutePath)
 
-        val updated = manager.scannedFiles.value.first()
-        assertEquals(newPath, updated.id)
-        assertEquals("nuevo.pdf", updated.name)
-    }
-
-    @Test
-    fun `deleteDocument quita el archivo de la sesion si se movio a la papelera exitosamente`() = runTest {
-        val file = scannedFile("borrar.pdf")
-        manager.addFile(file, context)
-        coEvery { trashRepository.moveToTrash(file.absolutePath) } returns true
-
-        val result = manager.deleteDocument(file.absolutePath)
-
-        assertTrue(result)
-        assertTrue(manager.scannedFiles.value.isEmpty())
-    }
+            val files = manager.scannedFiles.value
+            assertTrue(files.first { it.id == fileA.absolutePath }.isFavorite)
+            assertFalse(files.first { it.id == fileB.absolutePath }.isFavorite)
+        }
 
     @Test
-    fun `deleteDocument conserva el archivo en la sesion si no se pudo mover a la papelera`() = runTest {
-        val file = scannedFile("nose-borra.pdf")
-        manager.addFile(file, context)
-        coEvery { trashRepository.moveToTrash(file.absolutePath) } returns false
+    fun `renameDocument actualiza id y nombre con el resultado real del repositorio`() =
+        runTest {
+            val file = scannedFile("viejo.pdf")
+            manager.addFile(file, context)
+            val newPath = File(tempDir, "nuevo.pdf").absolutePath
+            coEvery { documentRepository.renameDocument(file.absolutePath, "nuevo.pdf") } returns newPath
 
-        val result = manager.deleteDocument(file.absolutePath)
+            manager.renameDocument(file.absolutePath, "nuevo.pdf")
 
-        assertFalse(result)
-        assertEquals(1, manager.scannedFiles.value.size)
-    }
+            val updated = manager.scannedFiles.value.first()
+            assertEquals(newPath, updated.id)
+            assertEquals("nuevo.pdf", updated.name)
+        }
+
+    @Test
+    fun `deleteDocument quita el archivo de la sesion si se movio a la papelera exitosamente`() =
+        runTest {
+            val file = scannedFile("borrar.pdf")
+            manager.addFile(file, context)
+            coEvery { trashRepository.moveToTrash(file.absolutePath) } returns true
+
+            val result = manager.deleteDocument(file.absolutePath)
+
+            assertTrue(result)
+            assertTrue(manager.scannedFiles.value.isEmpty())
+        }
+
+    @Test
+    fun `deleteDocument conserva el archivo en la sesion si no se pudo mover a la papelera`() =
+        runTest {
+            val file = scannedFile("nose-borra.pdf")
+            manager.addFile(file, context)
+            coEvery { trashRepository.moveToTrash(file.absolutePath) } returns false
+
+            val result = manager.deleteDocument(file.absolutePath)
+
+            assertFalse(result)
+            assertEquals(1, manager.scannedFiles.value.size)
+        }
 }

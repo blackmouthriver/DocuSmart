@@ -27,25 +27,25 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TooltipIconButton(
-    onClick           : () -> Unit,
-    tooltipText       : String,
-    icon              : ImageVector,
-    modifier          : Modifier = Modifier,
+    onClick: () -> Unit,
+    tooltipText: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
     contentDescription: String? = tooltipText,
-    tint              : Color = LocalContentColor.current,
-    iconSize          : Dp = 24.dp
+    tint: Color = LocalContentColor.current,
+    iconSize: Dp = 24.dp,
 ) {
     TooltipBox(
         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip          = { PlainTooltip { Text(tooltipText) } },
-        state            = rememberTooltipState()
+        tooltip = { PlainTooltip { Text(tooltipText) } },
+        state = rememberTooltipState(),
     ) {
         IconButton(onClick = onClick, modifier = modifier) {
             Icon(
-                imageVector        = icon,
+                imageVector = icon,
                 contentDescription = contentDescription,
-                tint               = tint,
-                modifier           = Modifier.size(iconSize)
+                tint = tint,
+                modifier = Modifier.size(iconSize),
             )
         }
     }

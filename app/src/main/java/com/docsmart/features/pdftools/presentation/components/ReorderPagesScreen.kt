@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Reorder
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,7 +72,7 @@ fun ReorderPagesScreen(
     onReorder: (from: Int, to: Int) -> Unit,
     onRemovePage: (pageNumber: Int) -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     var thumbnails by remember { mutableStateOf<Map<Int, Bitmap?>>(emptyMap()) }
@@ -85,26 +84,27 @@ fun ReorderPagesScreen(
             return@LaunchedEffect
         }
         isLoadingThumbnails = true
-        thumbnails = withContext(Dispatchers.IO) {
-            loadThumbnails(context, selectedPdf, onPagesLoaded)
-        }
+        thumbnails =
+            withContext(Dispatchers.IO) {
+                loadThumbnails(context, selectedPdf, onPagesLoaded)
+            }
         isLoadingThumbnails = false
     }
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_reorder_pages),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_reorder_pages_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -112,14 +112,14 @@ fun ReorderPagesScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_reorder_pages_ready),
-            accentColor = SmartBlue
+            accentColor = SmartBlue,
         )
 
         when {
             selectedPdf != null && isLoadingThumbnails -> {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(120.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(color = SmartBlue)
                 }
@@ -129,7 +129,7 @@ fun ReorderPagesScreen(
                     pageOrder = pageOrder,
                     thumbnails = thumbnails,
                     onReorder = onReorder,
-                    onRemovePage = onRemovePage
+                    onRemovePage = onRemovePage,
                 )
             }
             else -> {}
@@ -138,7 +138,7 @@ fun ReorderPagesScreen(
         if (selectedPdf != null) {
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -155,7 +155,7 @@ fun ReorderPagesScreen(
             buttonLabel = stringResource(R.string.pdf_reorder_pages_execute),
             buttonIcon = Icons.Rounded.Reorder,
             onExecute = onExecute,
-            accentColor = SmartBlue
+            accentColor = SmartBlue,
         )
     }
 }
@@ -170,7 +170,7 @@ fun ReorderPagesScreen(
 private suspend fun loadThumbnails(
     context: android.content.Context,
     pdfUri: Uri,
-    onPagesLoaded: (Int) -> Unit
+    onPagesLoaded: (Int) -> Unit,
 ): Map<Int, Bitmap?> {
     val file = File(context.cacheDir, "reorder_preview_${System.currentTimeMillis()}.pdf")
     return try {
@@ -181,15 +181,16 @@ private suspend fun loadThumbnails(
             PdfRenderer(fd).use { renderer ->
                 onPagesLoaded(renderer.pageCount)
                 (0 until renderer.pageCount).associate { index ->
-                    val bmp = renderer.openPage(index).use { page ->
-                        val scale = THUMBNAIL_TARGET_WIDTH_PX.toFloat() / page.width
-                        val width = THUMBNAIL_TARGET_WIDTH_PX
-                        val height = (page.height * scale).roundToInt().coerceAtLeast(1)
-                        val pageBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                        pageBmp.eraseColor(android.graphics.Color.WHITE)
-                        page.render(pageBmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        pageBmp
-                    }
+                    val bmp =
+                        renderer.openPage(index).use { page ->
+                            val scale = THUMBNAIL_TARGET_WIDTH_PX.toFloat() / page.width
+                            val width = THUMBNAIL_TARGET_WIDTH_PX
+                            val height = (page.height * scale).roundToInt().coerceAtLeast(1)
+                            val pageBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                            pageBmp.eraseColor(android.graphics.Color.WHITE)
+                            page.render(pageBmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            pageBmp
+                        }
                     (index + 1) to bmp
                 }
             }
@@ -207,7 +208,7 @@ private fun ReorderableThumbnailList(
     pageOrder: List<Int>,
     thumbnails: Map<Int, Bitmap?>,
     onReorder: (from: Int, to: Int) -> Unit,
-    onRemovePage: (Int) -> Unit
+    onRemovePage: (Int) -> Unit,
 ) {
     val density = LocalDensity.current
     val itemHeightDp = 88.dp
@@ -220,36 +221,37 @@ private fun ReorderableThumbnailList(
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(R.string.pdf_reorder_pages_hint),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         LazyColumn(
             modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             itemsIndexed(pageOrder, key = { _, page -> page }) { _, pageNumber ->
                 val isDragging = draggingPage == pageNumber
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(itemHeightDp)
-                        .graphicsLayer {
-                            translationY = if (isDragging) dragOffset else 0f
-                            shadowElevation = if (isDragging) 8f else 0f
-                        }
-                        .zIndex(if (isDragging) 1f else 0f)
-                        .background(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.shapes.medium
-                        )
-                        .padding(8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(itemHeightDp)
+                            .graphicsLayer {
+                                translationY = if (isDragging) dragOffset else 0f
+                                shadowElevation = if (isDragging) 8f else 0f
+                            }
+                            .zIndex(if (isDragging) 1f else 0f)
+                            .background(
+                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.shapes.medium,
+                            )
+                            .padding(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Auditoría de testers 2026-09-12 ("botones pequeños"): el
                     // detector de arrastre vivía directo sobre el ícono de
@@ -258,63 +260,66 @@ private fun ReorderableThumbnailList(
                     // el `pointerInput` a un Box de 48dp que envuelve el
                     // ícono, que se mantiene visualmente en 28dp.
                     Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .pointerInput(pageNumber) {
-                                detectDragGestures(
-                                    onDragStart = {
-                                        draggingPage = pageNumber
-                                        dragOffset = 0f
-                                    },
-                                    onDragEnd = {
-                                        draggingPage = null
-                                        dragOffset = 0f
-                                    },
-                                    onDragCancel = {
-                                        draggingPage = null
-                                        dragOffset = 0f
-                                    },
-                                    onDrag = { change, dragAmount ->
-                                        change.consume()
-                                        dragOffset += dragAmount.y
-                                        val order = currentPageOrder
-                                        val fromIndex = order.indexOf(pageNumber)
-                                        if (fromIndex >= 0) {
-                                            val targetIndex = (fromIndex + (dragOffset / itemHeightPx).roundToInt())
-                                                .coerceIn(0, order.lastIndex)
-                                            if (targetIndex != fromIndex) {
-                                                onReorder(fromIndex, targetIndex)
-                                                dragOffset -= (targetIndex - fromIndex) * itemHeightPx
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .pointerInput(pageNumber) {
+                                    detectDragGestures(
+                                        onDragStart = {
+                                            draggingPage = pageNumber
+                                            dragOffset = 0f
+                                        },
+                                        onDragEnd = {
+                                            draggingPage = null
+                                            dragOffset = 0f
+                                        },
+                                        onDragCancel = {
+                                            draggingPage = null
+                                            dragOffset = 0f
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            dragOffset += dragAmount.y
+                                            val order = currentPageOrder
+                                            val fromIndex = order.indexOf(pageNumber)
+                                            if (fromIndex >= 0) {
+                                                val targetIndex =
+                                                    (fromIndex + (dragOffset / itemHeightPx).roundToInt())
+                                                        .coerceIn(0, order.lastIndex)
+                                                if (targetIndex != fromIndex) {
+                                                    onReorder(fromIndex, targetIndex)
+                                                    dragOffset -= (targetIndex - fromIndex) * itemHeightPx
+                                                }
                                             }
-                                        }
-                                    }
-                                )
-                            },
-                        contentAlignment = Alignment.Center
+                                        },
+                                    )
+                                },
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.DragHandle,
                             contentDescription = stringResource(R.string.pdf_reorder_pages_drag_handle_desc),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(28.dp),
                         )
                     }
 
                     val bmp = thumbnails[pageNumber]
                     Box(
-                        modifier = Modifier
-                            .width(52.dp)
-                            .height(68.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .width(52.dp)
+                                .height(68.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
                     ) {
                         if (bmp != null) {
                             Image(
                                 bitmap = bmp.asImageBitmap(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         } else {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp))
@@ -327,20 +332,22 @@ private fun ReorderableThumbnailList(
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
 
                     IconButton(
                         onClick = { onRemovePage(pageNumber) },
-                        enabled = pageOrder.size > 1
+                        enabled = pageOrder.size > 1,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Delete,
                             contentDescription = stringResource(R.string.general_delete),
-                            tint = if (pageOrder.size > 1)
-                                ErrorRed
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            tint =
+                                if (pageOrder.size > 1) {
+                                    ErrorRed
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                },
                         )
                     }
                 }

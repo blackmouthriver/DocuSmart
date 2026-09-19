@@ -7,10 +7,12 @@ sealed class ConversionResult {
         val outputFile: File,
         val pageCount: Int,
         val fileSizeKb: Int,
-        val extraFiles: List<File> = emptyList() // ← para PDF→Imágenes múltiples
+        // ← para PDF→Imágenes múltiples
+        val extraFiles: List<File> = emptyList(),
     ) : ConversionResult()
 
     data class Error(val message: String) : ConversionResult()
+
     data object Loading : ConversionResult()
 }
 
@@ -19,5 +21,5 @@ sealed class ConversionResult {
 // aunque la conversión haya fallado (en ese caso no hay outputFile que lo diga).
 data class BatchConversionItem(
     val originalFileName: String,
-    val result: ConversionResult
+    val result: ConversionResult,
 )

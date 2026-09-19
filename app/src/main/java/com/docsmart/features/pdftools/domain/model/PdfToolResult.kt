@@ -5,7 +5,7 @@ import java.io.File
 sealed class PdfToolResult {
     data class Success(
         val outputFile: File,
-        val message: String
+        val message: String,
     ) : PdfToolResult()
 
     // HU-53 (extraer imágenes embebidas): la única herramienta de las 15 que
@@ -14,12 +14,12 @@ sealed class PdfToolResult {
     // sites existentes que asumen un único archivo).
     data class MultiSuccess(
         val outputFiles: List<File>,
-        val message: String
+        val message: String,
     ) : PdfToolResult()
 
     data class Error(
         val message: String,
-        val cause: Throwable? = null
+        val cause: Throwable? = null,
     ) : PdfToolResult()
 
     data object Loading : PdfToolResult()

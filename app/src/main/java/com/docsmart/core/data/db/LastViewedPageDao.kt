@@ -7,7 +7,6 @@ import androidx.room.Query
 
 @Dao
 interface LastViewedPageDao {
-
     // INSERT OR REPLACE -- mismo criterio que DocumentHistoryDao.recordOpen()
     // para esta entidad de 3 columnas con documentId como clave primaria.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -20,5 +19,8 @@ interface LastViewedPageDao {
     suspend fun deleteByDocument(documentId: String)
 
     @Query("UPDATE last_viewed_page SET documentId = :newDocumentId WHERE documentId = :oldDocumentId")
-    suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String)
+    suspend fun updateDocumentId(
+        oldDocumentId: String,
+        newDocumentId: String,
+    )
 }

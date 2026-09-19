@@ -18,128 +18,134 @@ import java.util.Locale
 import javax.inject.Inject
 
 data class SplitPdfMessages(
-    val readError    : String,
-    val noPages      : String,
+    val readError: String,
+    val noPages: String,
     val generateError: String,
-    val success       : String, // formato: %1$d páginas, %2$d KB
-    val genericError  : String  // formato: %1$s mensaje de excepción
+    // formato: %1$d páginas, %2$d KB
+    val success: String,
+    // formato: %1$s mensaje de excepción
+    val genericError: String,
 )
 
-class SplitPdfUseCase @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    companion object {
-        private const val TAG = "SplitPdfUseCase"
-    }
+class SplitPdfUseCase
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        companion object {
+            private const val TAG = "SplitPdfUseCase"
+        }
 
-    suspend operator fun invoke(
-        pdfUri        : Uri,
-        fromPage      : Int,
-        toPage        : Int,
-        outputFileName: String? = null,
-        messages      : SplitPdfMessages
-    ): PdfToolResult = withContext(Dispatchers.IO) {
-        var cacheFile: File? = null
-        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
-        // outputFile era un `lateinit var` dentro del try -- el catch de
-        // abajo ni siquiera podía referenciarlo para borrarlo si
-        // copyPagesTo() lanzaba a mitad de camino, mismo patrón ya
-        // corregido en Compare/Compress/OCR (hallazgos #25-27). `File?` en
-        // vez de `lateinit` porque `::localVar.isInitialized` no está
-        // soportado para variables locales (solo propiedades).
-        var outputFile: File? = null
-        try {
-            cacheFile = copyUriToCache(pdfUri)
-                ?: return@withContext PdfToolResult.Error(messages.readError)
+        suspend operator fun invoke(
+            pdfUri: Uri,
+            fromPage: Int,
+            toPage: Int,
+            outputFileName: String? = null,
+            messages: SplitPdfMessages,
+        ): PdfToolResult =
+            withContext(Dispatchers.IO) {
+                var cacheFile: File? = null
+                // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+                // outputFile era un `lateinit var` dentro del try -- el catch de
+                // abajo ni siquiera podía referenciarlo para borrarlo si
+                // copyPagesTo() lanzaba a mitad de camino, mismo patrón ya
+                // corregido en Compare/Compress/OCR (hallazgos #25-27). `File?` en
+                // vez de `lateinit` porque `::localVar.isInitialized` no está
+                // soportado para variables locales (solo propiedades).
+                var outputFile: File? = null
+                try {
+                    cacheFile = copyUriToCache(pdfUri)
+                        ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            // Bug real corregido 2026-09-08: rechazaba extraer exactamente
-            // UNA página de un PDF de más de una página ("rango muy
-            // pequeño"), aunque la interfaz sí permite dejar "desde" y
-            // "hasta" en el mismo número y no bloquea el botón -- el
-            // usuario terminaba con un error en vez de su PDF de una sola
-            // página, un caso de uso normal (ej. "extraer solo la página 3").
-            // De paso, `sourcePdf`/`destPdf` antes se cerraban a mano solo
-            // en el camino feliz -- `.use{}` los cierra pase lo que pase,
-            // mismo patrón ya usado en `RotatePdfUseCase`.
-            var startPage = 0
-            var endPage = 0
+                    // Bug real corregido 2026-09-08: rechazaba extraer exactamente
+                    // UNA página de un PDF de más de una página ("rango muy
+                    // pequeño"), aunque la interfaz sí permite dejar "desde" y
+                    // "hasta" en el mismo número y no bloquea el botón -- el
+                    // usuario terminaba con un error en vez de su PDF de una sola
+                    // página, un caso de uso normal (ej. "extraer solo la página 3").
+                    // De paso, `sourcePdf`/`destPdf` antes se cerraban a mano solo
+                    // en el camino feliz -- `.use{}` los cierra pase lo que pase,
+                    // mismo patrón ya usado en `RotatePdfUseCase`.
+                    var startPage = 0
+                    var endPage = 0
 
-            PdfDocument(PdfReader(cacheFile)).use { sourcePdf ->
-                val totalPages = sourcePdf.numberOfPages
-                Timber.d("$TAG: PDF abierto — $totalPages páginas totales")
+                    PdfDocument(PdfReader(cacheFile)).use { sourcePdf ->
+                        val totalPages = sourcePdf.numberOfPages
+                        Timber.d("$TAG: PDF abierto — $totalPages páginas totales")
 
-                if (totalPages == 0) {
-                    return@withContext PdfToolResult.Error(messages.noPages)
-                }
+                        if (totalPages == 0) {
+                            return@withContext PdfToolResult.Error(messages.noPages)
+                        }
 
-                startPage = fromPage.coerceIn(1, totalPages)
-                endPage   = toPage.coerceIn(startPage, totalPages)
-                Timber.d("$TAG: extrayendo páginas $startPage a $endPage")
+                        startPage = fromPage.coerceIn(1, totalPages)
+                        endPage = toPage.coerceIn(startPage, totalPages)
+                        Timber.d("$TAG: extrayendo páginas $startPage a $endPage")
 
-                val name = outputFileName ?: "Split_p${startPage}-p${endPage}"
-                outputFile = createOutputFile(name)
+                        val name = outputFileName ?: "Split_p$startPage-p$endPage"
+                        outputFile = createOutputFile(name)
 
-                PdfDocument(PdfWriter(outputFile)).use { destPdf ->
-                    sourcePdf.copyPagesTo(startPage, endPage, destPdf)
+                        PdfDocument(PdfWriter(outputFile)).use { destPdf ->
+                            sourcePdf.copyPagesTo(startPage, endPage, destPdf)
+                        }
+                    }
+
+                    if (outputFile!!.length() == 0L) {
+                        return@withContext PdfToolResult.Error(messages.generateError)
+                    }
+
+                    val pagesExtracted = endPage - startPage + 1
+                    val sizeKb = outputFile.length() / 1024
+                    Timber.d("$TAG: split exitoso — $pagesExtracted páginas, $sizeKb KB")
+
+                    PdfToolResult.Success(
+                        outputFile = outputFile,
+                        message = String.format(messages.success, pagesExtracted, sizeKb),
+                    )
+                } catch (e: CancellationException) {
+                    // Hallazgo real de la auditoría r13 (Media): CancellationException
+                    // hereda de Exception, así que sin este catch específico antes
+                    // del genérico de abajo cada cancelación real se registraba
+                    // como error. Se relanza tal cual, mismo patrón que
+                    // CompressPdfUseCase.
+                    outputFile?.delete()
+                    throw e
+                } catch (e: OutOfMemoryError) {
+                    // Hallazgo real de la auditoría r13 (Media): OutOfMemoryError no
+                    // hereda de Exception en Kotlin/Java, así que el catch genérico
+                    // de abajo nunca lo atrapaba y outputFile quedaba huérfano.
+                    outputFile?.delete()
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "$TAG: error al dividir PDF")
+                    outputFile?.delete()
+                    PdfToolResult.Error(
+                        message = String.format(messages.genericError, e.message ?: ""),
+                        cause = e,
+                    )
+                } finally {
+                    cacheFile?.delete()
                 }
             }
 
-            if (outputFile!!.length() == 0L)
-                return@withContext PdfToolResult.Error(messages.generateError)
+        private fun copyUriToCache(uri: Uri): File? {
+            return try {
+                val file = File(context.cacheDir, "split_${System.currentTimeMillis()}.pdf")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output ->
+                        val bytes = input.copyTo(output)
+                        if (bytes == 0L) return null
+                    }
+                } ?: return null
+                file
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: error copiando URI al cache")
+                null
+            }
+        }
 
-            val pagesExtracted = endPage - startPage + 1
-            val sizeKb = outputFile.length() / 1024
-            Timber.d("$TAG: split exitoso — $pagesExtracted páginas, $sizeKb KB")
-
-            PdfToolResult.Success(
-                outputFile = outputFile,
-                message    = String.format(messages.success, pagesExtracted, sizeKb)
-            )
-        } catch (e: CancellationException) {
-            // Hallazgo real de la auditoría r13 (Media): CancellationException
-            // hereda de Exception, así que sin este catch específico antes
-            // del genérico de abajo cada cancelación real se registraba
-            // como error. Se relanza tal cual, mismo patrón que
-            // CompressPdfUseCase.
-            outputFile?.delete()
-            throw e
-        } catch (e: OutOfMemoryError) {
-            // Hallazgo real de la auditoría r13 (Media): OutOfMemoryError no
-            // hereda de Exception en Kotlin/Java, así que el catch genérico
-            // de abajo nunca lo atrapaba y outputFile quedaba huérfano.
-            outputFile?.delete()
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "$TAG: error al dividir PDF")
-            outputFile?.delete()
-            PdfToolResult.Error(
-                message = String.format(messages.genericError, e.message ?: ""),
-                cause   = e
-            )
-        } finally {
-            cacheFile?.delete()
+        private fun createOutputFile(name: String): File {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
+            return File(dir, "DocuSmart_${name}_$timestamp.pdf")
         }
     }
-
-    private fun copyUriToCache(uri: Uri): File? {
-        return try {
-            val file = File(context.cacheDir, "split_${System.currentTimeMillis()}.pdf")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output ->
-                    val bytes = input.copyTo(output)
-                    if (bytes == 0L) return null
-                }
-            } ?: return null
-            file
-        } catch (e: Exception) {
-            Timber.e(e, "$TAG: error copiando URI al cache")
-            null
-        }
-    }
-
-    private fun createOutputFile(name: String): File {
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val dir       = File(context.filesDir, "pdftools").apply { mkdirs() }
-        return File(dir, "DocuSmart_${name}_$timestamp.pdf")
-    }
-}

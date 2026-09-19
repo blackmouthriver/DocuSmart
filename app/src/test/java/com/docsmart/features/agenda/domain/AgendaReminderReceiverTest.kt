@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test
  * inexistente.
  */
 class AgendaReminderReceiverTest {
-
     @Test
     fun `onReceive sin el extra de EVENT_ID no toca el Context en absoluto`() {
         val context = mockk<Context>()

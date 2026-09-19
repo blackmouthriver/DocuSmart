@@ -14,6 +14,8 @@ import javax.inject.Inject
  * cada una recibe su propia instancia (scope por NavBackStackEntry).
  */
 @HiltViewModel
-class QrViewModel @Inject constructor(
-    val adManager: AdManager
-) : ViewModel()
+class QrViewModel
+    @Inject
+    constructor(
+        val adManager: AdManager,
+    ) : ViewModel()

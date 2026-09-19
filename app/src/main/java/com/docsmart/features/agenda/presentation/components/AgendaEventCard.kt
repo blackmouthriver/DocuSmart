@@ -36,12 +36,12 @@ import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.features.agenda.domain.AgendaEventStatus
 import com.docsmart.features.agenda.domain.classifyAgendaEvent
+import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.delay
 
 // Extraída de AgendaScreen.kt (backlog UX 2026-09-16, seguimiento de HU-65)
 // para reutilizarla también en el detalle del día seleccionado de
@@ -49,7 +49,10 @@ import kotlinx.coroutines.delay
 private val AGENDA_CARD_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm")
 
 @Composable
-fun AgendaEventCard(event: AgendaEventEntity, onClick: () -> Unit) {
+fun AgendaEventCard(
+    event: AgendaEventEntity,
+    onClick: () -> Unit,
+) {
     // Hallazgo real de la auditoría de Agenda 2026-09-18 (Media): antes
     // `classifyAgendaEvent()` se evaluaba una sola vez en la composición
     // inicial (System.currentTimeMillis() no es observable por Compose) --
@@ -62,59 +65,65 @@ fun AgendaEventCard(event: AgendaEventEntity, onClick: () -> Unit) {
     LaunchedEffect(Unit) {
         while (true) {
             val today = Instant.ofEpochMilli(nowMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-            val delayMs = Duration.between(LocalDateTime.now(), today.plusDays(1).atStartOfDay())
-                .toMillis().coerceAtLeast(1000L)
+            val delayMs =
+                Duration.between(LocalDateTime.now(), today.plusDays(1).atStartOfDay())
+                    .toMillis().coerceAtLeast(1000L)
             delay(delayMs)
             nowMillis = System.currentTimeMillis()
         }
     }
     val status = classifyAgendaEvent(event.dateTimeMillis, nowMillis = nowMillis)
-    val accentColor = when (status) {
-        AgendaEventStatus.OVERDUE -> WarningAmber
-        AgendaEventStatus.TODAY -> SuccessGreen
-        AgendaEventStatus.UPCOMING -> MaterialTheme.colorScheme.primary
-    }
-    val statusLabel = when (status) {
-        AgendaEventStatus.OVERDUE -> stringResource(R.string.agenda_status_overdue)
-        AgendaEventStatus.TODAY -> stringResource(R.string.agenda_status_today)
-        AgendaEventStatus.UPCOMING -> stringResource(R.string.agenda_status_upcoming)
-    }
-    val dateTime = remember(event.dateTimeMillis) {
-        Instant.ofEpochMilli(event.dateTimeMillis).atZone(ZoneId.systemDefault())
-    }
+    val accentColor =
+        when (status) {
+            AgendaEventStatus.OVERDUE -> WarningAmber
+            AgendaEventStatus.TODAY -> SuccessGreen
+            AgendaEventStatus.UPCOMING -> MaterialTheme.colorScheme.primary
+        }
+    val statusLabel =
+        when (status) {
+            AgendaEventStatus.OVERDUE -> stringResource(R.string.agenda_status_overdue)
+            AgendaEventStatus.TODAY -> stringResource(R.string.agenda_status_today)
+            AgendaEventStatus.UPCOMING -> stringResource(R.string.agenda_status_upcoming)
+        }
+    val dateTime =
+        remember(event.dateTimeMillis) {
+            Instant.ofEpochMilli(event.dateTimeMillis).atZone(ZoneId.systemDefault())
+        }
 
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            // Hallazgo real de la auditoría de Agenda 2026-09-18 (Media):
-            // sin `role`, TalkBack no anunciaba la tarjeta como botón.
-            .clickable(role = Role.Button, onClick = onClick),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.large)
+                // Hallazgo real de la auditoría de Agenda 2026-09-18 (Media):
+                // sin `role`, TalkBack no anunciaba la tarjeta como botón.
+                .clickable(role = Role.Button, onClick = onClick),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 1.dp
+        shadowElevation = 1.dp,
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(accentColor)
+                modifier =
+                    Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(accentColor),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = event.title,
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = dateTime.format(AGENDA_CARD_DATE_FORMAT),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (event.documentId != null) {
@@ -122,18 +131,18 @@ fun AgendaEventCard(event: AgendaEventEntity, onClick: () -> Unit) {
                     imageVector = Icons.Rounded.Link,
                     contentDescription = stringResource(R.string.agenda_document_linked),
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
                 )
             }
             Surface(
                 shape = RoundedCornerShape(50),
-                color = accentColor.copy(alpha = 0.15f)
+                color = accentColor.copy(alpha = 0.15f),
             ) {
                 Text(
                     text = statusLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = accentColor,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                 )
             }
         }

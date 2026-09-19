@@ -14,5 +14,5 @@ import androidx.room.PrimaryKey
 data class LastViewedPageEntity(
     @PrimaryKey val documentId: String,
     val page: Int,
-    val updatedAt: Long
+    val updatedAt: Long,
 )

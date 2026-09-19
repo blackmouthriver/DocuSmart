@@ -17,7 +17,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,22 +42,22 @@ fun NumberPagesScreen(
     onSelectPdf: () -> Unit,
     onFormatChange: (PageNumberFormat) -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_number_pages),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_number_pages_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -67,7 +66,7 @@ fun NumberPagesScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_number_pages_ready),
-            accentColor = IndigoAccent
+            accentColor = IndigoAccent,
         )
 
         // ── Formato de numeración ──────────────────────
@@ -77,7 +76,7 @@ fun NumberPagesScreen(
         if (selectedPdf != null) {
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -89,7 +88,7 @@ fun NumberPagesScreen(
             buttonLabel = stringResource(R.string.pdf_number_pages_execute),
             buttonIcon = Icons.Rounded.FormatListNumbered,
             onExecute = onExecute,
-            accentColor = IndigoAccent
+            accentColor = IndigoAccent,
         )
     }
 }
@@ -97,71 +96,73 @@ fun NumberPagesScreen(
 @Composable
 private fun NumberPagesFormatCard(
     format: PageNumberFormat,
-    onFormatChange: (PageNumberFormat) -> Unit
+    onFormatChange: (PageNumberFormat) -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 text = stringResource(R.string.pdf_number_pages_format_title),
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FormatChip(
                     selected = format == PageNumberFormat.NUMBER_ONLY,
                     label = stringResource(R.string.pdf_number_pages_format_number_only),
                     onClick = { onFormatChange(PageNumberFormat.NUMBER_ONLY) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 FormatChip(
                     selected = format == PageNumberFormat.NUMBER_OF_TOTAL,
                     label = stringResource(R.string.pdf_number_pages_format_number_of_total),
                     onClick = { onFormatChange(PageNumberFormat.NUMBER_OF_TOTAL) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 FormatChip(
                     selected = format == PageNumberFormat.PAGE_OF_TOTAL,
                     label = stringResource(R.string.pdf_number_pages_format_page_of_total),
                     onClick = { onFormatChange(PageNumberFormat.PAGE_OF_TOTAL) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
 
             HorizontalDivider(thickness = 0.5.dp)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(14.dp),
                 )
                 Text(
-                    text = stringResource(
-                        when (format) {
-                            PageNumberFormat.NUMBER_ONLY     -> R.string.pdf_number_pages_example_number_only
-                            PageNumberFormat.NUMBER_OF_TOTAL -> R.string.pdf_number_pages_example_number_of_total
-                            PageNumberFormat.PAGE_OF_TOTAL   -> R.string.pdf_number_pages_example_page_of_total
-                        }
-                    ),
+                    text =
+                        stringResource(
+                            when (format) {
+                                PageNumberFormat.NUMBER_ONLY -> R.string.pdf_number_pages_example_number_only
+                                PageNumberFormat.NUMBER_OF_TOTAL -> R.string.pdf_number_pages_example_number_of_total
+                                PageNumberFormat.PAGE_OF_TOTAL -> R.string.pdf_number_pages_example_page_of_total
+                            },
+                        ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -173,7 +174,7 @@ private fun FormatChip(
     selected: Boolean,
     label: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     FilterChip(
         selected = selected,
@@ -187,16 +188,20 @@ private fun FormatChip(
                 // con traducciones más largas (de/fr/ru) se veía cortado a
                 // la mitad de una palabra en vez de terminar en "…".
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         modifier = modifier,
-        leadingIcon = if (selected) {
-            { Icon(Icons.Rounded.Check, null, modifier = Modifier.size(14.dp)) }
-        } else null,
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = IndigoAccent.copy(alpha = 0.2f),
-            selectedLabelColor = IndigoAccent
-        )
+        leadingIcon =
+            if (selected) {
+                { Icon(Icons.Rounded.Check, null, modifier = Modifier.size(14.dp)) }
+            } else {
+                null
+            },
+        colors =
+            FilterChipDefaults.filterChipColors(
+                selectedContainerColor = IndigoAccent.copy(alpha = 0.2f),
+                selectedLabelColor = IndigoAccent,
+            ),
     )
 }

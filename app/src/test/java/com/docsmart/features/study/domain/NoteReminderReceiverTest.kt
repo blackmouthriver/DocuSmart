@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test
  * `NotificationCompat.Builder` reales que revientan sin Robolectric.
  */
 class NoteReminderReceiverTest {
-
     @Test
     fun `onReceive sin el extra de NOTE_ID no toca el Context en absoluto`() {
         val context = mockk<Context>()

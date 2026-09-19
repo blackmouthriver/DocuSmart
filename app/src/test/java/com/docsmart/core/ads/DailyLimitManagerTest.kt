@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test
  * `DailyLimitManager` como base para esa integración.
  */
 class DailyLimitManagerTest {
-
     private lateinit var context: Context
     private lateinit var manager: DailyLimitManager
 

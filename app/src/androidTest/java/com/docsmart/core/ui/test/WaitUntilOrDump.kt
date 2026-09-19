@@ -18,7 +18,11 @@ import androidx.compose.ui.test.printToLog
  * estado de error, o directamente nada?) -- algo que un log de Gradle no
  * muestra. Quitar una vez encontrada la causa raíz.
  */
-fun ComposeTestRule.waitUntilOrDump(tag: String, timeoutMillis: Long = 20_000, condition: () -> Boolean) {
+fun ComposeTestRule.waitUntilOrDump(
+    tag: String,
+    timeoutMillis: Long = 20_000,
+    condition: () -> Boolean,
+) {
     try {
         waitUntil(timeoutMillis = timeoutMillis, condition = condition)
     } catch (e: ComposeTimeoutException) {

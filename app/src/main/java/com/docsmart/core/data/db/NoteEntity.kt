@@ -28,7 +28,7 @@ data class NoteEntity(
     val text: String,
     val createdAt: Long,
     val documentId: String? = null,
-    val reminderAt: Long? = null
+    val reminderAt: Long? = null,
 )
 
 /**
@@ -46,20 +46,20 @@ data class NoteEntity(
             entity = NoteEntity::class,
             parentColumns = ["id"],
             childColumns = ["noteId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
-    indices = [Index("noteId")]
+    indices = [Index("noteId")],
 )
 data class NoteImageEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val noteId: String,
     val filePath: String,
-    val position: Int
+    val position: Int,
 )
 
 data class NoteWithImages(
     @Embedded val note: NoteEntity,
     @Relation(parentColumn = "id", entityColumn = "noteId")
-    val images: List<NoteImageEntity>
+    val images: List<NoteImageEntity>,
 )

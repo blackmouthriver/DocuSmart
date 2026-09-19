@@ -30,7 +30,7 @@ fun rememberAccentGradient(): List<Color> {
         listOf(
             lerp(primary, Color.White, 0.12f),
             primary,
-            lerp(primary, Color.Black, 0.22f)
+            lerp(primary, Color.Black, 0.22f),
         )
     }
 }
@@ -51,16 +51,16 @@ fun rememberAccentGradient(): List<Color> {
  */
 @Composable
 fun Modifier.accentShadow(
-    shape     : Shape,
-    elevation : Dp = 2.dp,
-    alpha     : Float = 0.35f
+    shape: Shape,
+    elevation: Dp = 2.dp,
+    alpha: Float = 0.35f,
 ): Modifier {
     val color = MaterialTheme.colorScheme.primary.copy(alpha = alpha)
     return this.shadow(
-        elevation  = elevation,
-        shape      = shape,
+        elevation = elevation,
+        shape = shape,
         ambientColor = color,
-        spotColor    = color
+        spotColor = color,
     )
 }
 
@@ -77,10 +77,10 @@ fun Modifier.accentShadow(
  */
 @Composable
 fun Modifier.accentBorder(
-    shape  : Shape,
-    width  : Dp = 1.dp,
-    darken : Float = 0.3f,
-    alpha  : Float = 0.4f
+    shape: Shape,
+    width: Dp = 1.dp,
+    darken: Float = 0.3f,
+    alpha: Float = 0.4f,
 ): Modifier {
     val color = lerp(MaterialTheme.colorScheme.primary, Color.Black, darken).copy(alpha = alpha)
     return this.border(width = width, color = color, shape = shape)
@@ -98,8 +98,9 @@ fun Modifier.accentBorder(
  * que ya usan las tarjetas de acceso rápido y los banners.
  */
 @Composable
-fun accentFilterChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
-    selectedContainerColor    = MaterialTheme.colorScheme.primaryContainer,
-    selectedLabelColor        = MaterialTheme.colorScheme.onPrimaryContainer,
-    selectedLeadingIconColor  = MaterialTheme.colorScheme.onPrimaryContainer
-)
+fun accentFilterChipColors(): SelectableChipColors =
+    FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    )

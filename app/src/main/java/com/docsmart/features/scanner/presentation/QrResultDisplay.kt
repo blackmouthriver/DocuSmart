@@ -1,10 +1,10 @@
 package com.docsmart.features.scanner.presentation
 
 import android.content.Context
-import android.widget.Toast
 import android.content.Intent
 import android.provider.CalendarContract
 import android.provider.ContactsContract
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -79,7 +79,7 @@ internal fun qrContentTypeVisuals(qrType: QrContentType): Triple<ImageVector, Co
 internal fun QrContentActionButtons(
     qrType: QrContentType,
     content: String,
-    onCopied: () -> Unit
+    onCopied: () -> Unit,
 ) {
     val context = LocalContext.current
     val openDocumentLabel = stringResource(R.string.qr_open_document)
@@ -90,16 +90,19 @@ internal fun QrContentActionButtons(
                 Button(
                     onClick = { openUrl(context, content) },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.OpenInBrowser, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.qr_open_browser))
                 }
                 OutlinedButton(
-                    onClick = { copyToClipboard(context, content); onCopied() },
+                    onClick = {
+                        copyToClipboard(context, content)
+                        onCopied()
+                    },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
@@ -110,16 +113,19 @@ internal fun QrContentActionButtons(
                 Button(
                     onClick = { openUrl(context, content) },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.OpenInBrowser, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.qr_open_image))
                 }
                 OutlinedButton(
-                    onClick = { copyToClipboard(context, content); onCopied() },
+                    onClick = {
+                        copyToClipboard(context, content)
+                        onCopied()
+                    },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
@@ -130,16 +136,19 @@ internal fun QrContentActionButtons(
                 Button(
                     onClick = { openDocumentExternally(context, content, openDocumentLabel) },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.qr_open_document))
                 }
                 OutlinedButton(
-                    onClick = { copyToClipboard(context, content); onCopied() },
+                    onClick = {
+                        copyToClipboard(context, content)
+                        onCopied()
+                    },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
@@ -150,16 +159,19 @@ internal fun QrContentActionButtons(
                 Button(
                     onClick = { openUrl(context, content) },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.Email, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.qr_send_email))
                 }
                 OutlinedButton(
-                    onClick = { copyToClipboard(context, content); onCopied() },
+                    onClick = {
+                        copyToClipboard(context, content)
+                        onCopied()
+                    },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
@@ -170,16 +182,19 @@ internal fun QrContentActionButtons(
                 Button(
                     onClick = { openUrl(context, content) },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.Phone, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.qr_call))
                 }
                 OutlinedButton(
-                    onClick = { copyToClipboard(context, content); onCopied() },
+                    onClick = {
+                        copyToClipboard(context, content)
+                        onCopied()
+                    },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
@@ -188,9 +203,12 @@ internal fun QrContentActionButtons(
             }
             QrContentType.TEXT -> {
                 Button(
-                    onClick = { copyToClipboard(context, content); onCopied() },
+                    onClick = {
+                        copyToClipboard(context, content)
+                        onCopied()
+                    },
                     modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
@@ -202,21 +220,28 @@ internal fun QrContentActionButtons(
             // la acción real (conectar/agregar), igual que ya hace la
             // cámara nativa de Android/iOS con estos mismos formatos.
             // Extraídas a composables propios (detekt: LongMethod).
-            QrContentType.WIFI    -> WifiActionButtons(context, content, onCopied)
+            QrContentType.WIFI -> WifiActionButtons(context, content, onCopied)
             QrContentType.CONTACT -> ContactActionButtons(context, content, onCopied)
-            QrContentType.EVENT   -> EventActionButtons(context, content, onCopied)
+            QrContentType.EVENT -> EventActionButtons(context, content, onCopied)
         }
     }
 }
 
 @Composable
-private fun WifiActionButtons(context: Context, content: String, onCopied: () -> Unit) {
+private fun WifiActionButtons(
+    context: Context,
+    content: String,
+    onCopied: () -> Unit,
+) {
     val wifi = parseWifiPayload(content)
     if (wifi != null && wifi.password.isNotBlank()) {
         Button(
-            onClick = { copyToClipboard(context, wifi.password); onCopied() },
+            onClick = {
+                copyToClipboard(context, wifi.password)
+                onCopied()
+            },
             modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         ) {
             Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(8.dp))
@@ -224,9 +249,12 @@ private fun WifiActionButtons(context: Context, content: String, onCopied: () ->
         }
     }
     OutlinedButton(
-        onClick = { copyToClipboard(context, wifi?.ssid ?: content); onCopied() },
+        onClick = {
+            copyToClipboard(context, wifi?.ssid ?: content)
+            onCopied()
+        },
         modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.medium,
     ) {
         Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
@@ -235,7 +263,11 @@ private fun WifiActionButtons(context: Context, content: String, onCopied: () ->
 }
 
 @Composable
-private fun ContactActionButtons(context: Context, content: String, onCopied: () -> Unit) {
+private fun ContactActionButtons(
+    context: Context,
+    content: String,
+    onCopied: () -> Unit,
+) {
     val contact = parseVCardPayload(content)
     // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): el
     // botón quedaba clickeable pero sin hacer nada si el payload no se
@@ -245,16 +277,19 @@ private fun ContactActionButtons(context: Context, content: String, onCopied: ()
         onClick = { if (contact != null) addContact(context, contact.name, contact.phone, contact.email) },
         enabled = contact != null,
         modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.medium,
     ) {
         Icon(Icons.Rounded.PersonAdd, null, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
         Text(stringResource(R.string.qr_add_contact))
     }
     OutlinedButton(
-        onClick = { copyToClipboard(context, content); onCopied() },
+        onClick = {
+            copyToClipboard(context, content)
+            onCopied()
+        },
         modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.medium,
     ) {
         Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
@@ -263,7 +298,11 @@ private fun ContactActionButtons(context: Context, content: String, onCopied: ()
 }
 
 @Composable
-private fun EventActionButtons(context: Context, content: String, onCopied: () -> Unit) {
+private fun EventActionButtons(
+    context: Context,
+    content: String,
+    onCopied: () -> Unit,
+) {
     val event = parseVEventPayload(content)
     // Ver el comentario equivalente en ContactActionButtons más arriba.
     Button(
@@ -272,16 +311,19 @@ private fun EventActionButtons(context: Context, content: String, onCopied: () -
         },
         enabled = event != null,
         modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.medium,
     ) {
         Icon(Icons.Rounded.CalendarMonth, null, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
         Text(stringResource(R.string.qr_add_calendar_event))
     }
     OutlinedButton(
-        onClick = { copyToClipboard(context, content); onCopied() },
+        onClick = {
+            copyToClipboard(context, content)
+            onCopied()
+        },
         modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.medium,
     ) {
         Icon(Icons.Rounded.ContentCopy, null, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
@@ -294,14 +336,20 @@ private fun EventActionButtons(context: Context, content: String, onCopied: () -
 // el dispositivo), antes no pasaba absolutamente nada visible -- el
 // usuario no tenía forma de saber si funcionó o falló.
 @Suppress("TooGenericExceptionCaught")
-private fun addContact(context: Context, name: String, phone: String, email: String) {
+private fun addContact(
+    context: Context,
+    name: String,
+    phone: String,
+    email: String,
+) {
     try {
-        val intent = Intent(Intent.ACTION_INSERT).apply {
-            type = ContactsContract.Contacts.CONTENT_TYPE
-            if (name.isNotBlank())  putExtra(ContactsContract.Intents.Insert.NAME, name)
-            if (phone.isNotBlank()) putExtra(ContactsContract.Intents.Insert.PHONE, phone)
-            if (email.isNotBlank()) putExtra(ContactsContract.Intents.Insert.EMAIL, email)
-        }
+        val intent =
+            Intent(Intent.ACTION_INSERT).apply {
+                type = ContactsContract.Contacts.CONTENT_TYPE
+                if (name.isNotBlank()) putExtra(ContactsContract.Intents.Insert.NAME, name)
+                if (phone.isNotBlank()) putExtra(ContactsContract.Intents.Insert.PHONE, phone)
+                if (email.isNotBlank()) putExtra(ContactsContract.Intents.Insert.EMAIL, email)
+            }
         context.startActivity(intent)
     } catch (e: Exception) {
         Timber.e(e, "addContact")
@@ -315,17 +363,18 @@ private fun addCalendarEvent(
     title: String,
     location: String,
     start: java.time.LocalDateTime,
-    end: java.time.LocalDateTime
+    end: java.time.LocalDateTime,
 ) {
     try {
         val zone = java.time.ZoneId.systemDefault()
-        val intent = Intent(Intent.ACTION_INSERT).apply {
-            data = CalendarContract.Events.CONTENT_URI
-            if (title.isNotBlank())    putExtra(CalendarContract.Events.TITLE, title)
-            if (location.isNotBlank()) putExtra(CalendarContract.Events.EVENT_LOCATION, location)
-            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start.atZone(zone).toInstant().toEpochMilli())
-            putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end.atZone(zone).toInstant().toEpochMilli())
-        }
+        val intent =
+            Intent(Intent.ACTION_INSERT).apply {
+                data = CalendarContract.Events.CONTENT_URI
+                if (title.isNotBlank()) putExtra(CalendarContract.Events.TITLE, title)
+                if (location.isNotBlank()) putExtra(CalendarContract.Events.EVENT_LOCATION, location)
+                putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start.atZone(zone).toInstant().toEpochMilli())
+                putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end.atZone(zone).toInstant().toEpochMilli())
+            }
         context.startActivity(intent)
     } catch (e: Exception) {
         Timber.e(e, "addCalendarEvent")

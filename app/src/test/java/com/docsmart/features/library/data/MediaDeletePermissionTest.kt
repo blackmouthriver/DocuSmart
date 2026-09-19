@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test
  * vería una excepción (solo `null`).
  */
 class MediaDeletePermissionTest {
-
     private lateinit var context: Context
     private lateinit var resolver: ContentResolver
     private lateinit var permission: MediaDeletePermission

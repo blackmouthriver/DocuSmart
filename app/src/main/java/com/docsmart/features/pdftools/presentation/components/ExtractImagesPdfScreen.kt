@@ -23,22 +23,22 @@ fun ExtractImagesPdfScreen(
     onFileNameChange: (String) -> Unit,
     onSelectPdf: () -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_extract_images),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_extract_images_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -46,14 +46,14 @@ fun ExtractImagesPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_extract_images_ready),
-            accentColor = ColorImage
+            accentColor = ColorImage,
         )
 
         if (selectedPdf != null) {
             OutputFileNameField(
                 fileName = fileName,
                 onFileNameChange = onFileNameChange,
-                showPdfSuffix = false
+                showPdfSuffix = false,
             )
         }
 
@@ -64,7 +64,7 @@ fun ExtractImagesPdfScreen(
             buttonLabel = stringResource(R.string.pdf_extract_images),
             buttonIcon = Icons.Rounded.Image,
             onExecute = onExecute,
-            accentColor = ColorImage
+            accentColor = ColorImage,
         )
     }
 }

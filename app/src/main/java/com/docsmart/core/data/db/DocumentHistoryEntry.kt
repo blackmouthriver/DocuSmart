@@ -13,5 +13,5 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "document_history")
 data class DocumentHistoryEntry(
     @PrimaryKey val documentId: String,
-    val lastOpenedAt: Long
+    val lastOpenedAt: Long,
 )

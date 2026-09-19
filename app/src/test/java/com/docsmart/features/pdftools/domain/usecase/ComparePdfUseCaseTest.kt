@@ -31,24 +31,26 @@ import java.nio.file.Files
  * PDFs se marca como tal en vez de comparar texto contra "nada".
  */
 class ComparePdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: ComparePdfUseCase
 
-    private val messages = ComparePdfMessages(
-        readErrorA = "readErrorA", readErrorB = "readErrorB",
-        generateError = "generateError", identical = "identical",
-        differencesFound = "differencesFound %1\$d %2\$d",
-        genericError = "genericError %1\$s",
-        reportTitle = "reportTitle",
-        reportPageHeader = "reportPageHeader %1\$d",
-        reportPageOnlyInA = "reportPageOnlyInA",
-        reportPageOnlyInB = "reportPageOnlyInB",
-        reportOnlyInALine = "reportOnlyInALine %1\$s",
-        reportOnlyInBLine = "reportOnlyInBLine %1\$s"
-    )
+    private val messages =
+        ComparePdfMessages(
+            readErrorA = "readErrorA",
+            readErrorB = "readErrorB",
+            generateError = "generateError",
+            identical = "identical",
+            differencesFound = "differencesFound %1\$d %2\$d",
+            genericError = "genericError %1\$s",
+            reportTitle = "reportTitle",
+            reportPageHeader = "reportPageHeader %1\$d",
+            reportPageOnlyInA = "reportPageOnlyInA",
+            reportPageOnlyInB = "reportPageOnlyInB",
+            reportOnlyInALine = "reportOnlyInALine %1\$s",
+            reportOnlyInBLine = "reportOnlyInBLine %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -67,86 +69,100 @@ class ComparePdfUseCaseTest {
     }
 
     @Test
-    fun `documentos identicos producen el mensaje de identicos`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        val bytes = createPdf(listOf(listOf("Hola mundo"), listOf("Segunda pagina")))
-        stubResolver(uriA, bytes, uriB, bytes)
+    fun `documentos identicos producen el mensaje de identicos`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            val bytes = createPdf(listOf(listOf("Hola mundo"), listOf("Segunda pagina")))
+            stubResolver(uriA, bytes, uriB, bytes)
 
-        val result = useCase(uriA, uriB, messages = messages)
+            val result = useCase(uriA, uriB, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("identical", (result as PdfToolResult.Success).message)
-    }
-
-    @Test
-    fun `una linea distinta en una pagina compartida aparece en el reporte y en el conteo`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        stubResolver(
-            uriA, createPdf(listOf(listOf("TextoUnicoEnA"))),
-            uriB, createPdf(listOf(listOf("TextoUnicoEnB")))
-        )
-
-        val result = useCase(uriA, uriB, messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("differencesFound 1 1", (result as PdfToolResult.Success).message)
-        val reportText = pageTextsOf(result.outputFile).joinToString(" ")
-        assertTrue(reportText.contains("TextoUnicoEnA"))
-        assertTrue(reportText.contains("TextoUnicoEnB"))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("identical", (result as PdfToolResult.Success).message)
+        }
 
     @Test
-    fun `una pagina que solo existe en un documento se marca como tal, sin contarse como identica`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        stubResolver(
-            uriA, createPdf(listOf(listOf("Igual"), listOf("SoloEnA"))),
-            uriB, createPdf(listOf(listOf("Igual")))
-        )
+    fun `una linea distinta en una pagina compartida aparece en el reporte y en el conteo`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            stubResolver(
+                uriA,
+                createPdf(listOf(listOf("TextoUnicoEnA"))),
+                uriB,
+                createPdf(listOf(listOf("TextoUnicoEnB"))),
+            )
 
-        val result = useCase(uriA, uriB, messages = messages)
+            val result = useCase(uriA, uriB, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("differencesFound 1 2", (result as PdfToolResult.Success).message)
-        val reportText = pageTextsOf(result.outputFile).joinToString(" ")
-        assertTrue(reportText.contains("reportPageOnlyInA"))
-    }
-
-    @Test
-    fun `stream nulo al leer el documento A devuelve Error de lectura A`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uriA) } returns null
-        every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createPdf(listOf(listOf("x")))) }
-        every { context.contentResolver } returns resolver
-
-        val result = useCase(uriA, uriB, messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("readErrorA", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("differencesFound 1 1", (result as PdfToolResult.Success).message)
+            val reportText = pageTextsOf(result.outputFile).joinToString(" ")
+            assertTrue(reportText.contains("TextoUnicoEnA"))
+            assertTrue(reportText.contains("TextoUnicoEnB"))
+        }
 
     @Test
-    fun `stream nulo al leer el documento B devuelve Error de lectura B`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createPdf(listOf(listOf("x")))) }
-        every { resolver.openInputStream(uriB) } returns null
-        every { context.contentResolver } returns resolver
+    fun `una pagina que solo existe en un documento se marca como tal, sin contarse como identica`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            stubResolver(
+                uriA,
+                createPdf(listOf(listOf("Igual"), listOf("SoloEnA"))),
+                uriB,
+                createPdf(listOf(listOf("Igual"))),
+            )
 
-        val result = useCase(uriA, uriB, messages = messages)
+            val result = useCase(uriA, uriB, messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("readErrorB", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("differencesFound 1 2", (result as PdfToolResult.Success).message)
+            val reportText = pageTextsOf(result.outputFile).joinToString(" ")
+            assertTrue(reportText.contains("reportPageOnlyInA"))
+        }
+
+    @Test
+    fun `stream nulo al leer el documento A devuelve Error de lectura A`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uriA) } returns null
+            every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createPdf(listOf(listOf("x")))) }
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uriA, uriB, messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("readErrorA", (result as PdfToolResult.Error).message)
+        }
+
+    @Test
+    fun `stream nulo al leer el documento B devuelve Error de lectura B`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createPdf(listOf(listOf("x")))) }
+            every { resolver.openInputStream(uriB) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uriA, uriB, messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("readErrorB", (result as PdfToolResult.Error).message)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
-    private fun stubResolver(uriA: Uri, bytesA: ByteArray, uriB: Uri, bytesB: ByteArray) {
+    private fun stubResolver(
+        uriA: Uri,
+        bytesA: ByteArray,
+        uriB: Uri,
+        bytesB: ByteArray,
+    ) {
         val resolver = mockk<ContentResolver>()
         every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(bytesA) }
         every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(bytesB) }
@@ -174,9 +190,10 @@ class ComparePdfUseCaseTest {
     private fun pageTextsOf(file: File): List<String> {
         val reader = PdfReader(file)
         val pdf = PdfDocument(reader)
-        val texts = (1..pdf.numberOfPages).map {
-            PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
-        }
+        val texts =
+            (1..pdf.numberOfPages).map {
+                PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
+            }
         pdf.close()
         return texts
     }

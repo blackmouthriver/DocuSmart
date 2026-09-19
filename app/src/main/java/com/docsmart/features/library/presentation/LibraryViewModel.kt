@@ -27,250 +27,288 @@ import javax.inject.Inject
 enum class LibraryTab { DEVICE, APP_FILES }
 
 data class LibraryUiState(
-    val allDocuments      : List<DocumentUiModel> = emptyList(),
-    val filteredDocuments : List<DocumentUiModel> = emptyList(),
-    val deviceDocuments   : List<DocumentUiModel> = emptyList(), // ← NUEVO
-    val appDocuments      : List<DocumentUiModel> = emptyList(), // ← NUEVO
-    val favorites         : List<DocumentUiModel> = emptyList(),
-    val searchQuery       : String                = "",
-    val selectedCategory  : DocumentType?         = null,
-    val selectedTab       : LibraryTab            = LibraryTab.DEVICE, // ← NUEVO
-    val isLoading         : Boolean               = false,
-    val deleteError       : String?               = null,
-    val linkFolderError   : String?               = null,
-    val trashCount        : Int                   = 0 // RF-VIS-07
+    val allDocuments: List<DocumentUiModel> = emptyList(),
+    val filteredDocuments: List<DocumentUiModel> = emptyList(),
+    // ← NUEVO
+    val deviceDocuments: List<DocumentUiModel> = emptyList(),
+    // ← NUEVO
+    val appDocuments: List<DocumentUiModel> = emptyList(),
+    val favorites: List<DocumentUiModel> = emptyList(),
+    val searchQuery: String = "",
+    val selectedCategory: DocumentType? = null,
+    // ← NUEVO
+    val selectedTab: LibraryTab = LibraryTab.DEVICE,
+    val isLoading: Boolean = false,
+    val deleteError: String? = null,
+    val linkFolderError: String? = null,
+    // RF-VIS-07
+    val trashCount: Int = 0,
 )
 
 @HiltViewModel
-class LibraryViewModel @Inject constructor(
-    val adManager          : AdManager,
-    private val repository : DocumentRepository,
-    private val trashRepository: TrashRepository,
-    private val favoritesRepository: FavoritesRepository,
-    private val downloadsAccessManager: DownloadsAccessManager,
-    private val soundEffectPlayer: SoundEffectPlayer,
-    // Bug real encontrado 2026-09-14: deleteError estaba hardcodeado en
-    // español, saltándose el sistema de 12 idiomas.
-    @ApplicationContext private val context: Context
-) : ViewModel() {
+class LibraryViewModel
+    @Inject
+    constructor(
+        val adManager: AdManager,
+        private val repository: DocumentRepository,
+        private val trashRepository: TrashRepository,
+        private val favoritesRepository: FavoritesRepository,
+        private val downloadsAccessManager: DownloadsAccessManager,
+        private val soundEffectPlayer: SoundEffectPlayer,
+        // Bug real encontrado 2026-09-14: deleteError estaba hardcodeado en
+        // español, saltándose el sistema de 12 idiomas.
+        @ApplicationContext private val context: Context,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow(LibraryUiState())
+        val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(LibraryUiState())
-    val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
+        // Fila 22 del backlog UX: si el usuario vinculó Descargas por SAF, la
+        // Biblioteca ve todos los PDF/Word/Excel/PowerPoint/Texto de esa
+        // carpeta, no solo los que la app misma generó (ver DownloadsAccessManager).
+        val linkedDownloadsFolderUri: StateFlow<Uri?> = downloadsAccessManager.linkedFolderUri
 
-    // Fila 22 del backlog UX: si el usuario vinculó Descargas por SAF, la
-    // Biblioteca ve todos los PDF/Word/Excel/PowerPoint/Texto de esa
-    // carpeta, no solo los que la app misma generó (ver DownloadsAccessManager).
-    val linkedDownloadsFolderUri: StateFlow<Uri?> = downloadsAccessManager.linkedFolderUri
+        fun downloadsFolderPickerInitialUri(): Uri? = downloadsAccessManager.initialUriHint()
 
-    fun downloadsFolderPickerInitialUri(): Uri? = downloadsAccessManager.initialUriHint()
+        fun linkedFolderDisplayName(uri: Uri): String? = downloadsAccessManager.folderDisplayName(uri)
 
-    fun linkedFolderDisplayName(uri: Uri): String? = downloadsAccessManager.folderDisplayName(uri)
-
-    fun onDownloadsFolderPicked(uri: Uri) {
-        val linked = downloadsAccessManager.onFolderPicked(uri)
-        if (!linked) {
-            _uiState.update { it.copy(linkFolderError = context.getString(R.string.library_link_folder_error)) }
-        }
-        loadDocuments()
-    }
-
-    fun dismissLinkFolderError() {
-        _uiState.update { it.copy(linkFolderError = null) }
-    }
-
-    fun unlinkDownloadsFolder() {
-        downloadsAccessManager.unlink()
-        loadDocuments()
-    }
-
-    init {
-        loadDocuments()
-        loadTrashCount()
-    }
-
-    fun loadDocuments() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                val docs = repository.loadAllDocuments()
-
-                // Separar documentos del dispositivo vs generados por la app
-                val deviceDocs = docs.filter { isDeviceDocument(it) }
-                val appDocs    = docs.filter { !isDeviceDocument(it) }
-
-                _uiState.update { state ->
-                    state.copy(
-                        allDocuments      = docs,
-                        deviceDocuments   = deviceDocs,
-                        appDocuments      = appDocs,
-                        filteredDocuments = applyCurrentFilters(
-                            if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                            state
-                        ),
-                        favorites         = docs.filter { it.isFavorite },
-                        isLoading         = false
-                    )
-                }
-                Timber.d("LibraryViewModel: ${docs.size} docs (${deviceDocs.size} dispositivo, ${appDocs.size} app)")
-            } catch (e: Exception) {
-                Timber.e(e, "LibraryViewModel: error cargando documentos")
-                _uiState.update { it.copy(isLoading = false) }
+        fun onDownloadsFolderPicked(uri: Uri) {
+            val linked = downloadsAccessManager.onFolderPicked(uri)
+            if (!linked) {
+                _uiState.update { it.copy(linkFolderError = context.getString(R.string.library_link_folder_error)) }
             }
+            loadDocuments()
         }
-    }
 
-    // Ampliado 2026-09-03 (fila 22 backlog UX): un documento del historial
-    // puede venir de CUALQUIER proveedor de contenido externo (WhatsApp,
-    // Gmail, otro gestor de archivos), no solo MediaStore/SAF de Android --
-    // la lista fija anterior (content://media, content://com.android,
-    // content://downloads) clasificaba esos casos como "Mis archivos" por
-    // defecto, lo cual es incorrecto: no los creó la app. Los documentos que
-    // sí genera la app (loadAppGeneratedFiles()) siempre usan una ruta
-    // absoluta como id, nunca un content:// -- por eso "cualquier content://"
-    // es del dispositivo es una regla más simple y más correcta que una
-    // lista de prefijos conocidos.
-    private fun isDeviceDocument(doc: DocumentUiModel): Boolean =
-        doc.id.startsWith("content://")
-
-    // ── Tab seleccionado ──────────────────────────────────────────────────────
-    fun onTabSelected(tab: LibraryTab) {
-        _uiState.update { state ->
-            val sourceDocs = if (tab == LibraryTab.DEVICE)
-                state.deviceDocuments else state.appDocuments
-            state.copy(
-                selectedTab       = tab,
-                selectedCategory  = null,   // reset filtro al cambiar tab
-                searchQuery       = "",     // reset búsqueda al cambiar tab
-                filteredDocuments = sourceDocs
-            )
+        fun dismissLinkFolderError() {
+            _uiState.update { it.copy(linkFolderError = null) }
         }
-    }
 
-    fun toggleFavorite(documentId: String) {
-        viewModelScope.launch {
-            val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
-            val updated = _uiState.value.allDocuments.map { doc ->
-                if (doc.id == documentId) doc.copy(isFavorite = isNowFavorite) else doc
-            }
-            val deviceDocs = updated.filter { isDeviceDocument(it) }
-            val appDocs    = updated.filter { !isDeviceDocument(it) }
-            _uiState.update { state ->
-                state.copy(
-                    allDocuments      = updated,
-                    deviceDocuments   = deviceDocs,
-                    appDocuments      = appDocs,
-                    filteredDocuments = applyCurrentFilters(
-                        if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                        state
-                    ),
-                    favorites         = updated.filter { it.isFavorite }
-                )
-            }
+        fun unlinkDownloadsFolder() {
+            downloadsAccessManager.unlink()
+            loadDocuments()
         }
-    }
 
-    fun onSearchQueryChange(query: String) {
-        _uiState.update { state ->
-            val sourceDocs = if (state.selectedTab == LibraryTab.DEVICE)
-                state.deviceDocuments else state.appDocuments
-            val filtered = applyCurrentFilters(sourceDocs, state.copy(searchQuery = query))
-            state.copy(searchQuery = query, filteredDocuments = filtered)
-        }
-    }
-
-    fun onCategorySelected(type: DocumentType?) {
-        _uiState.update { state ->
-            val newCategory = if (state.selectedCategory == type) null else type
-            val sourceDocs  = if (state.selectedTab == LibraryTab.DEVICE)
-                state.deviceDocuments else state.appDocuments
-            val filtered = applyCurrentFilters(sourceDocs, state.copy(selectedCategory = newCategory))
-            state.copy(selectedCategory = newCategory, filteredDocuments = filtered)
-        }
-    }
-
-    fun clearSearch() { onSearchQueryChange("") }
-    fun refresh()     { loadDocuments() }
-
-    private fun applyCurrentFilters(
-        docs : List<DocumentUiModel>,
-        state: LibraryUiState
-    ): List<DocumentUiModel> = docs.filter { doc ->
-        val matchesQuery    = state.searchQuery.isBlank() ||
-                doc.name.contains(state.searchQuery, ignoreCase = true)
-        val matchesCategory = state.selectedCategory == null ||
-                doc.type == state.selectedCategory
-        matchesQuery && matchesCategory
-    }
-
-    fun renameDocument(documentId: String, newName: String) {
-        viewModelScope.launch {
-            val newId = repository.renameDocument(documentId, newName)
-            if (newId != documentId) {
-                loadDocuments()
-            } else {
-                updateNameInState(documentId, newName)
-            }
-        }
-    }
-
-    private fun updateNameInState(documentId: String, newName: String) {
-        val updated    = _uiState.value.allDocuments.map { doc ->
-            if (doc.id == documentId) doc.copy(name = newName) else doc
-        }
-        val deviceDocs = updated.filter { isDeviceDocument(it) }
-        val appDocs    = updated.filter { !isDeviceDocument(it) }
-        _uiState.update { state ->
-            state.copy(
-                allDocuments      = updated,
-                deviceDocuments   = deviceDocs,
-                appDocuments      = appDocs,
-                filteredDocuments = applyCurrentFilters(
-                    if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                    state
-                ),
-                favorites         = updated.filter { it.isFavorite }
-            )
-        }
-    }
-
-    // RF-VIS-07: "eliminar" mueve a la papelera, no borra de inmediato -- ver
-    // DocumentRepository.moveToTrash().
-    fun removeDocument(documentId: String) {
-        viewModelScope.launch {
-            val movedToTrash = trashRepository.moveToTrash(documentId)
-            if (!movedToTrash) {
-                _uiState.update { it.copy(deleteError = context.getString(R.string.general_delete_error)) }
-                return@launch
-            }
-            soundEffectPlayer.playDelete()
-
-            val updated    = _uiState.value.allDocuments.filter { it.id != documentId }
-            val deviceDocs = updated.filter { isDeviceDocument(it) }
-            val appDocs    = updated.filter { !isDeviceDocument(it) }
-            _uiState.update { state ->
-                state.copy(
-                    allDocuments      = updated,
-                    deviceDocuments   = deviceDocs,
-                    appDocuments      = appDocs,
-                    filteredDocuments = applyCurrentFilters(
-                        if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
-                        state
-                    ),
-                    favorites         = updated.filter { it.isFavorite }
-                )
-            }
+        init {
+            loadDocuments()
             loadTrashCount()
         }
-    }
 
-    fun dismissDeleteError() {
-        _uiState.update { it.copy(deleteError = null) }
-    }
+        fun loadDocuments() {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true) }
+                try {
+                    val docs = repository.loadAllDocuments()
 
-    fun loadTrashCount() {
-        viewModelScope.launch {
-            val count = trashRepository.loadTrashedDocuments().size
-            _uiState.update { it.copy(trashCount = count) }
+                    // Separar documentos del dispositivo vs generados por la app
+                    val deviceDocs = docs.filter { isDeviceDocument(it) }
+                    val appDocs = docs.filter { !isDeviceDocument(it) }
+
+                    _uiState.update { state ->
+                        state.copy(
+                            allDocuments = docs,
+                            deviceDocuments = deviceDocs,
+                            appDocuments = appDocs,
+                            filteredDocuments =
+                                applyCurrentFilters(
+                                    if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                                    state,
+                                ),
+                            favorites = docs.filter { it.isFavorite },
+                            isLoading = false,
+                        )
+                    }
+                    Timber.d("LibraryViewModel: ${docs.size} docs (${deviceDocs.size} dispositivo, ${appDocs.size} app)")
+                } catch (e: Exception) {
+                    Timber.e(e, "LibraryViewModel: error cargando documentos")
+                    _uiState.update { it.copy(isLoading = false) }
+                }
+            }
+        }
+
+        // Ampliado 2026-09-03 (fila 22 backlog UX): un documento del historial
+        // puede venir de CUALQUIER proveedor de contenido externo (WhatsApp,
+        // Gmail, otro gestor de archivos), no solo MediaStore/SAF de Android --
+        // la lista fija anterior (content://media, content://com.android,
+        // content://downloads) clasificaba esos casos como "Mis archivos" por
+        // defecto, lo cual es incorrecto: no los creó la app. Los documentos que
+        // sí genera la app (loadAppGeneratedFiles()) siempre usan una ruta
+        // absoluta como id, nunca un content:// -- por eso "cualquier content://"
+        // es del dispositivo es una regla más simple y más correcta que una
+        // lista de prefijos conocidos.
+        private fun isDeviceDocument(doc: DocumentUiModel): Boolean = doc.id.startsWith("content://")
+
+        // ── Tab seleccionado ──────────────────────────────────────────────────────
+        fun onTabSelected(tab: LibraryTab) {
+            _uiState.update { state ->
+                val sourceDocs =
+                    if (tab == LibraryTab.DEVICE) {
+                        state.deviceDocuments
+                    } else {
+                        state.appDocuments
+                    }
+                state.copy(
+                    selectedTab = tab,
+                    // reset filtro al cambiar tab
+                    selectedCategory = null,
+                    // reset búsqueda al cambiar tab
+                    searchQuery = "",
+                    filteredDocuments = sourceDocs,
+                )
+            }
+        }
+
+        fun toggleFavorite(documentId: String) {
+            viewModelScope.launch {
+                val isNowFavorite = favoritesRepository.toggleFavorite(documentId)
+                val updated =
+                    _uiState.value.allDocuments.map { doc ->
+                        if (doc.id == documentId) doc.copy(isFavorite = isNowFavorite) else doc
+                    }
+                val deviceDocs = updated.filter { isDeviceDocument(it) }
+                val appDocs = updated.filter { !isDeviceDocument(it) }
+                _uiState.update { state ->
+                    state.copy(
+                        allDocuments = updated,
+                        deviceDocuments = deviceDocs,
+                        appDocuments = appDocs,
+                        filteredDocuments =
+                            applyCurrentFilters(
+                                if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                                state,
+                            ),
+                        favorites = updated.filter { it.isFavorite },
+                    )
+                }
+            }
+        }
+
+        fun onSearchQueryChange(query: String) {
+            _uiState.update { state ->
+                val sourceDocs =
+                    if (state.selectedTab == LibraryTab.DEVICE) {
+                        state.deviceDocuments
+                    } else {
+                        state.appDocuments
+                    }
+                val filtered = applyCurrentFilters(sourceDocs, state.copy(searchQuery = query))
+                state.copy(searchQuery = query, filteredDocuments = filtered)
+            }
+        }
+
+        fun onCategorySelected(type: DocumentType?) {
+            _uiState.update { state ->
+                val newCategory = if (state.selectedCategory == type) null else type
+                val sourceDocs =
+                    if (state.selectedTab == LibraryTab.DEVICE) {
+                        state.deviceDocuments
+                    } else {
+                        state.appDocuments
+                    }
+                val filtered = applyCurrentFilters(sourceDocs, state.copy(selectedCategory = newCategory))
+                state.copy(selectedCategory = newCategory, filteredDocuments = filtered)
+            }
+        }
+
+        fun clearSearch() {
+            onSearchQueryChange("")
+        }
+
+        fun refresh() {
+            loadDocuments()
+        }
+
+        private fun applyCurrentFilters(
+            docs: List<DocumentUiModel>,
+            state: LibraryUiState,
+        ): List<DocumentUiModel> =
+            docs.filter { doc ->
+                val matchesQuery =
+                    state.searchQuery.isBlank() ||
+                        doc.name.contains(state.searchQuery, ignoreCase = true)
+                val matchesCategory =
+                    state.selectedCategory == null ||
+                        doc.type == state.selectedCategory
+                matchesQuery && matchesCategory
+            }
+
+        fun renameDocument(
+            documentId: String,
+            newName: String,
+        ) {
+            viewModelScope.launch {
+                val newId = repository.renameDocument(documentId, newName)
+                if (newId != documentId) {
+                    loadDocuments()
+                } else {
+                    updateNameInState(documentId, newName)
+                }
+            }
+        }
+
+        private fun updateNameInState(
+            documentId: String,
+            newName: String,
+        ) {
+            val updated =
+                _uiState.value.allDocuments.map { doc ->
+                    if (doc.id == documentId) doc.copy(name = newName) else doc
+                }
+            val deviceDocs = updated.filter { isDeviceDocument(it) }
+            val appDocs = updated.filter { !isDeviceDocument(it) }
+            _uiState.update { state ->
+                state.copy(
+                    allDocuments = updated,
+                    deviceDocuments = deviceDocs,
+                    appDocuments = appDocs,
+                    filteredDocuments =
+                        applyCurrentFilters(
+                            if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                            state,
+                        ),
+                    favorites = updated.filter { it.isFavorite },
+                )
+            }
+        }
+
+        // RF-VIS-07: "eliminar" mueve a la papelera, no borra de inmediato -- ver
+        // DocumentRepository.moveToTrash().
+        fun removeDocument(documentId: String) {
+            viewModelScope.launch {
+                val movedToTrash = trashRepository.moveToTrash(documentId)
+                if (!movedToTrash) {
+                    _uiState.update { it.copy(deleteError = context.getString(R.string.general_delete_error)) }
+                    return@launch
+                }
+                soundEffectPlayer.playDelete()
+
+                val updated = _uiState.value.allDocuments.filter { it.id != documentId }
+                val deviceDocs = updated.filter { isDeviceDocument(it) }
+                val appDocs = updated.filter { !isDeviceDocument(it) }
+                _uiState.update { state ->
+                    state.copy(
+                        allDocuments = updated,
+                        deviceDocuments = deviceDocs,
+                        appDocuments = appDocs,
+                        filteredDocuments =
+                            applyCurrentFilters(
+                                if (state.selectedTab == LibraryTab.DEVICE) deviceDocs else appDocs,
+                                state,
+                            ),
+                        favorites = updated.filter { it.isFavorite },
+                    )
+                }
+                loadTrashCount()
+            }
+        }
+
+        fun dismissDeleteError() {
+            _uiState.update { it.copy(deleteError = null) }
+        }
+
+        fun loadTrashCount() {
+            viewModelScope.launch {
+                val count = trashRepository.loadTrashedDocuments().size
+                _uiState.update { it.copy(trashCount = count) }
+            }
         }
     }
-}

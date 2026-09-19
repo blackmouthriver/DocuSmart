@@ -11,5 +11,5 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "trash_entries")
 data class TrashEntry(
     @PrimaryKey val documentId: String,
-    val deletedAt: Long
+    val deletedAt: Long,
 )

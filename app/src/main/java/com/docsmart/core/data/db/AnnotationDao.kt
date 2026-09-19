@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AnnotationDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: AnnotationEntity)
 
@@ -24,7 +23,10 @@ interface AnnotationDao {
     suspend fun deleteByDocument(documentId: String)
 
     @Query("UPDATE annotations SET documentId = :newDocumentId WHERE documentId = :oldDocumentId")
-    suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String)
+    suspend fun updateDocumentId(
+        oldDocumentId: String,
+        newDocumentId: String,
+    )
 
     // Flow: la UI del Visor refleja altas/bajas sin recargar manualmente
     // (mismo criterio de observación reactiva que ya usa el resto del

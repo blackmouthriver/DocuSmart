@@ -19,19 +19,19 @@ import com.docsmart.core.ui.components.LinkDocumentDialog
 @Composable
 fun NoteLinkDocumentDialog(
     currentDocumentId: String?,
-    onDismiss        : () -> Unit,
-    onSelect         : (DocumentUiModel) -> Unit,
-    onUnlink         : () -> Unit,
-    viewModel        : AppLibraryPickerViewModel = hiltViewModel()
+    onDismiss: () -> Unit,
+    onSelect: (DocumentUiModel) -> Unit,
+    onUnlink: () -> Unit,
+    viewModel: AppLibraryPickerViewModel = hiltViewModel(),
 ) {
     LinkDocumentDialog(
         currentDocumentId = currentDocumentId,
-        title             = stringResource(R.string.note_link_document_title),
-        emptyMessage      = stringResource(R.string.note_link_document_empty),
-        unlinkLabel       = stringResource(R.string.note_unlink_document),
-        onDismiss         = onDismiss,
-        onSelect          = onSelect,
-        onUnlink          = onUnlink,
-        viewModel         = viewModel
+        title = stringResource(R.string.note_link_document_title),
+        emptyMessage = stringResource(R.string.note_link_document_empty),
+        unlinkLabel = stringResource(R.string.note_unlink_document),
+        onDismiss = onDismiss,
+        onSelect = onSelect,
+        onUnlink = onUnlink,
+        viewModel = viewModel,
     )
 }

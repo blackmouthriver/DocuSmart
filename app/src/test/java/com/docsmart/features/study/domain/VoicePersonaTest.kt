@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
  * silencio si alguien reordena o reemplaza la lista curada.
  */
 class VoicePersonaTest {
-
     @Test
     fun `la misma voz tecnica siempre devuelve el mismo personaje`() {
         val first = personaForVoice("es-es-x-eef-local")
@@ -22,10 +21,15 @@ class VoicePersonaTest {
 
     @Test
     fun `voces tecnicas distintas pueden devolver personajes distintos`() {
-        val names = listOf(
-            "es-es-x-eef-local", "es-es-x-eed-local", "es-us-x-sfb-local",
-            "en-us-x-tpf-local", "en-us-x-tpd-local", "pt-br-x-ptd-local"
-        )
+        val names =
+            listOf(
+                "es-es-x-eef-local",
+                "es-es-x-eed-local",
+                "es-us-x-sfb-local",
+                "en-us-x-tpf-local",
+                "en-us-x-tpd-local",
+                "pt-br-x-ptd-local",
+            )
         val personas = names.map { personaForVoice(it) }.toSet()
 
         assertTrue(personas.size > 1)

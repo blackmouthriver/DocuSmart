@@ -36,7 +36,7 @@ import com.docsmart.features.scanner.domain.buildColorModeMatrix
 fun ScanColorModeChipRow(
     previewUri: Uri?,
     selected: ScanColorMode,
-    onSelect: (ScanColorMode) -> Unit
+    onSelect: (ScanColorMode) -> Unit,
 ) {
     // Bug real encontrado 2026-09-14 (verificación en dispositivo real):
     // con 4 chips (miniatura + etiqueta larga en varios idiomas, ej.
@@ -46,38 +46,41 @@ fun ScanColorModeChipRow(
     // PercentChipRow, cuyas etiquetas son cortas y sí entran siempre.
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.horizontalScroll(rememberScrollState())
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
     ) {
         ScanColorMode.entries.forEach { mode ->
             FilterChip(
                 selected = selected == mode,
                 onClick = { onSelect(mode) },
                 label = { Text(stringResource(mode.labelRes())) },
-                leadingIcon = previewUri?.let { uri ->
-                    {
-                        AsyncImage(
-                            model = uri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            colorFilter = ColorFilter.colorMatrix(ColorMatrix(buildColorModeMatrix(mode))),
-                            modifier = Modifier
-                                .size(20.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                        )
-                    }
-                },
-                colors = accentFilterChipColors()
+                leadingIcon =
+                    previewUri?.let { uri ->
+                        {
+                            AsyncImage(
+                                model = uri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                colorFilter = ColorFilter.colorMatrix(ColorMatrix(buildColorModeMatrix(mode))),
+                                modifier =
+                                    Modifier
+                                        .size(20.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                            )
+                        }
+                    },
+                colors = accentFilterChipColors(),
             )
         }
     }
 }
 
-private fun ScanColorMode.labelRes(): Int = when (this) {
-    ScanColorMode.COLOR -> R.string.scan_color_mode_color
-    ScanColorMode.BLACK_AND_WHITE -> R.string.scan_color_mode_bw
-    ScanColorMode.GRAYSCALE -> R.string.scan_color_mode_grayscale
-    ScanColorMode.HIGHLIGHT_TEXT -> R.string.scan_color_mode_highlight
-}
+private fun ScanColorMode.labelRes(): Int =
+    when (this) {
+        ScanColorMode.COLOR -> R.string.scan_color_mode_color
+        ScanColorMode.BLACK_AND_WHITE -> R.string.scan_color_mode_bw
+        ScanColorMode.GRAYSCALE -> R.string.scan_color_mode_grayscale
+        ScanColorMode.HIGHLIGHT_TEXT -> R.string.scan_color_mode_highlight
+    }
 
 // RF1/RF2: título + fila de chips para el modo de color "por defecto" del
 // documento -- ScanResultScreen aplica el modo elegido acá a todas las
@@ -87,13 +90,13 @@ private fun ScanColorMode.labelRes(): Int = when (this) {
 fun ScanColorModeSection(
     previewUri: Uri?,
     selected: ScanColorMode,
-    onSelect: (ScanColorMode) -> Unit
+    onSelect: (ScanColorMode) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             text = stringResource(R.string.scan_color_mode_label),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         ScanColorModeChipRow(previewUri = previewUri, selected = selected, onSelect = onSelect)
     }

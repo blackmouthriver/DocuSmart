@@ -1,8 +1,6 @@
 package com.docsmart.features.pdftools.presentation.components
 
 import android.graphics.Bitmap
-import android.graphics.Canvas as AndroidCanvas
-import android.graphics.Color as AndroidColor
 import android.graphics.Paint
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
@@ -55,6 +53,8 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
+import android.graphics.Canvas as AndroidCanvas
+import android.graphics.Color as AndroidColor
 
 private const val SIGNATURE_STROKE_WIDTH_PX = 6f
 private const val TYPED_SIGNATURE_TEXT_SIZE_PX = 64f
@@ -74,7 +74,7 @@ fun SignPdfScreen(
     onSignatureCaptured: (ByteArray) -> Unit,
     onClearSignature: () -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
 
@@ -85,18 +85,18 @@ fun SignPdfScreen(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_sign),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_sign_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -104,30 +104,30 @@ fun SignPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_sign_ready),
-            accentColor = NavyDark
+            accentColor = NavyDark,
         )
 
         if (selectedPdf != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = { onPageChange(pageNumber - 1) }, enabled = pageNumber > 1) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronLeft,
-                        contentDescription = stringResource(R.string.pdf_sign_prev_page)
+                        contentDescription = stringResource(R.string.pdf_sign_prev_page),
                     )
                 }
                 Text(
                     text = stringResource(R.string.pdf_sign_page_indicator, pageNumber, totalPages),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 IconButton(onClick = { onPageChange(pageNumber + 1) }, enabled = pageNumber < totalPages) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = stringResource(R.string.pdf_sign_next_page)
+                        contentDescription = stringResource(R.string.pdf_sign_next_page),
                     )
                 }
             }
@@ -135,20 +135,21 @@ fun SignPdfScreen(
             SignatureCanvas(
                 hasSignature = hasSignature,
                 onSignatureCaptured = onSignatureCaptured,
-                onClearSignature = onClearSignature
+                onClearSignature = onClearSignature,
             )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(
-                        if (hasSignature) R.string.pdf_sign_captured else R.string.pdf_sign_hint
-                    ),
+                    text =
+                        stringResource(
+                            if (hasSignature) R.string.pdf_sign_captured else R.string.pdf_sign_hint,
+                        ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (hasSignature) NavyDark else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (hasSignature) NavyDark else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 TextButton(onClick = onClearSignature, enabled = hasSignature) {
                     Text(text = stringResource(R.string.pdf_sign_clear), style = MaterialTheme.typography.labelMedium)
@@ -157,7 +158,7 @@ fun SignPdfScreen(
 
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -168,7 +169,7 @@ fun SignPdfScreen(
             buttonLabel = stringResource(R.string.pdf_sign_execute),
             buttonIcon = Icons.Rounded.Draw,
             onExecute = onExecute,
-            accentColor = NavyDark
+            accentColor = NavyDark,
         )
     }
 }
@@ -177,7 +178,7 @@ fun SignPdfScreen(
 private fun SignatureCanvas(
     hasSignature: Boolean,
     onSignatureCaptured: (ByteArray) -> Unit,
-    onClearSignature: () -> Unit
+    onClearSignature: () -> Unit,
 ) {
     var strokes by remember { mutableStateOf<List<List<Offset>>>(emptyList()) }
     var currentStroke by remember { mutableStateOf<List<Offset>>(emptyList()) }
@@ -221,30 +222,31 @@ private fun SignatureCanvas(
         Text(
             text = stringResource(R.string.pdf_sign_draw_label),
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .background(Color.White)
-                .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
-                .onSizeChanged { canvasSize = it }
-                .semantics { contentDescription = canvasDescription }
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { offset -> currentStroke = listOf(offset) },
-                        onDrag = { change, _ -> currentStroke = currentStroke + change.position },
-                        onDragEnd = {
-                            val updated = strokes + listOf(currentStroke)
-                            strokes = updated
-                            currentStroke = emptyList()
-                            publishSignature(updated)
-                        },
-                        onDragCancel = { currentStroke = emptyList() }
-                    )
-                }
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(Color.White)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
+                    .onSizeChanged { canvasSize = it }
+                    .semantics { contentDescription = canvasDescription }
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { offset -> currentStroke = listOf(offset) },
+                            onDrag = { change, _ -> currentStroke = currentStroke + change.position },
+                            onDragEnd = {
+                                val updated = strokes + listOf(currentStroke)
+                                strokes = updated
+                                currentStroke = emptyList()
+                                publishSignature(updated)
+                            },
+                            onDragCancel = { currentStroke = emptyList() },
+                        )
+                    },
         ) {
             Canvas(modifier = Modifier.fillMaxWidth().height(180.dp)) {
                 (strokes + listOf(currentStroke)).forEach { stroke ->
@@ -253,7 +255,7 @@ private fun SignatureCanvas(
                             color = Color.Black,
                             start = stroke[i],
                             end = stroke[i + 1],
-                            strokeWidth = SIGNATURE_STROKE_WIDTH_PX
+                            strokeWidth = SIGNATURE_STROKE_WIDTH_PX,
                         )
                     }
                 }
@@ -264,7 +266,7 @@ private fun SignatureCanvas(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = typedSignature,
@@ -297,7 +299,7 @@ private fun SignatureCanvas(
             },
             label = { Text(stringResource(R.string.pdf_sign_type_label)) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -308,12 +310,13 @@ private fun SignatureCanvas(
 // strokesToPngBytes(), para que PdfPasswordUseCase/SignPdfUseCase reciban
 // exactamente el mismo tipo de dato sin importar el origen.
 private fun typedSignatureToPngBytes(text: String): ByteArray {
-    val paint = Paint().apply {
-        color = AndroidColor.BLACK
-        textSize = TYPED_SIGNATURE_TEXT_SIZE_PX
-        isAntiAlias = true
-        isFakeBoldText = true
-    }
+    val paint =
+        Paint().apply {
+            color = AndroidColor.BLACK
+            textSize = TYPED_SIGNATURE_TEXT_SIZE_PX
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
     val padding = 24
     val textWidth = paint.measureText(text).toInt()
     val metrics = paint.fontMetrics
@@ -329,17 +332,22 @@ private fun typedSignatureToPngBytes(text: String): ByteArray {
     return out.toByteArray()
 }
 
-private fun strokesToPngBytes(strokes: List<List<Offset>>, width: Int, height: Int): ByteArray {
+private fun strokesToPngBytes(
+    strokes: List<List<Offset>>,
+    width: Int,
+    height: Int,
+): ByteArray {
     val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     val canvas = AndroidCanvas(bitmap)
     canvas.drawColor(AndroidColor.WHITE)
-    val paint = Paint().apply {
-        color = AndroidColor.BLACK
-        strokeWidth = SIGNATURE_STROKE_WIDTH_PX
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-        isAntiAlias = true
-    }
+    val paint =
+        Paint().apply {
+            color = AndroidColor.BLACK
+            strokeWidth = SIGNATURE_STROKE_WIDTH_PX
+            style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
+            isAntiAlias = true
+        }
     strokes.forEach { stroke ->
         for (i in 0 until stroke.size - 1) {
             canvas.drawLine(stroke[i].x, stroke[i].y, stroke[i + 1].x, stroke[i + 1].y, paint)
@@ -355,7 +363,11 @@ private fun strokesToPngBytes(strokes: List<List<Offset>>, width: Int, height: I
 // -- un PDF con contraseña de propietario (PdfRenderer(fd) lanza) dejaba
 // los dos sin cerrar y el archivo temporal huérfano en cacheDir en cada
 // intento. `.use{}` anidado + `finally { file.delete() }`.
-private fun loadTotalPages(context: android.content.Context, pdfUri: Uri, onTotalPagesLoaded: (Int) -> Unit) {
+private fun loadTotalPages(
+    context: android.content.Context,
+    pdfUri: Uri,
+    onTotalPagesLoaded: (Int) -> Unit,
+) {
     val file = File(context.cacheDir, "sign_pages_${System.currentTimeMillis()}.pdf")
     try {
         context.contentResolver.openInputStream(pdfUri)?.use { input ->

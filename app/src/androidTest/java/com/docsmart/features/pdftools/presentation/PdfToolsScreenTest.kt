@@ -50,7 +50,6 @@ import java.io.File
  * `onPdfsSelected()` directo, mismo principio que `ConverterScreenTest`.
  */
 class PdfToolsScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -74,25 +73,26 @@ class PdfToolsScreenTest {
         every { premiumManager.canPerform(any()) } answers { firstArg<() -> Boolean>().invoke() }
 
         return PdfToolsViewModel(
-            mergePdf         = mockk(relaxed = true),
-            splitPdf         = mockk(relaxed = true),
-            compressPdf      = mockk(relaxed = true),
-            rotatePdf        = RotatePdfUseCase(appContext), // real, no mock
-            numberPagesPdf   = mockk(relaxed = true),
-            watermarkPdf     = mockk(relaxed = true),
-            reorderPagesPdf  = mockk(relaxed = true),
-            comparePdf       = mockk(relaxed = true),
-            redactPdf        = mockk(relaxed = true),
-            cropPdf          = mockk(relaxed = true),
-            editTextPdf      = mockk(relaxed = true),
-            signPdf          = mockk(relaxed = true),
+            mergePdf = mockk(relaxed = true),
+            splitPdf = mockk(relaxed = true),
+            compressPdf = mockk(relaxed = true),
+            // real, no mock
+            rotatePdf = RotatePdfUseCase(appContext),
+            numberPagesPdf = mockk(relaxed = true),
+            watermarkPdf = mockk(relaxed = true),
+            reorderPagesPdf = mockk(relaxed = true),
+            comparePdf = mockk(relaxed = true),
+            redactPdf = mockk(relaxed = true),
+            cropPdf = mockk(relaxed = true),
+            editTextPdf = mockk(relaxed = true),
+            signPdf = mockk(relaxed = true),
             detectFormFields = mockk(relaxed = true),
-            fillForm         = mockk(relaxed = true),
-            ocrPdf           = mockk(relaxed = true),
+            fillForm = mockk(relaxed = true),
+            ocrPdf = mockk(relaxed = true),
             extractImagesFromPdf = mockk(relaxed = true),
             dailyLimitManager = dailyLimitManager,
-            premiumManager    = premiumManager,
-            adManager         = adManager
+            premiumManager = premiumManager,
+            adManager = adManager,
         )
     }
 
@@ -122,7 +122,7 @@ class PdfToolsScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
         }
     }
@@ -136,7 +136,7 @@ class PdfToolsScreenTest {
     @Test
     fun elegirRotarPdf_ejecutarSobreUnPdfReal_muestraResultadoExitoso() {
         val viewModel = buildViewModel()
-        val pdfFile   = createTestPdf()
+        val pdfFile = createTestPdf()
 
         setContentWithLocale { PdfToolsScreen(viewModel = viewModel) }
         waitForText("Rotar PDF")

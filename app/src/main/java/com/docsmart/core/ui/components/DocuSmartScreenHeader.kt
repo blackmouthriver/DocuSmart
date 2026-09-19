@@ -21,6 +21,7 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 // Un solo lugar para estos 3 números evita que vuelvan a divergir.
 private val SCREEN_HEADER_HORIZONTAL_MARGIN = 16.dp
 private val SCREEN_HEADER_AD_TO_BANNER_GAP = 8.dp
+
 // Pedido explícito del usuario 2026-09-07 (seguimiento): con 0dp de margen
 // superior el primer elemento quedaba demasiado pegado al borde/barra de
 // estado del dispositivo -- 12dp es un espacio pequeño, apenas perceptible,
@@ -43,13 +44,14 @@ fun DocuSmartScreenHeader(
     adManager: AdManager,
     modifier: Modifier = Modifier,
     bannerBottomSpacing: Dp = 0.dp,
-    banner: @Composable () -> Unit
+    banner: @Composable () -> Unit,
 ) {
     val isPremium by adManager.isPremium.collectAsState()
     Column(
-        modifier = modifier
-            .padding(horizontal = SCREEN_HEADER_HORIZONTAL_MARGIN)
-            .padding(top = SCREEN_HEADER_TOP_MARGIN)
+        modifier =
+            modifier
+                .padding(horizontal = SCREEN_HEADER_HORIZONTAL_MARGIN)
+                .padding(top = SCREEN_HEADER_TOP_MARGIN),
     ) {
         if (!isPremium) {
             DocuSmartBannerAd(adUnitId = adUnitId, adManager = adManager)

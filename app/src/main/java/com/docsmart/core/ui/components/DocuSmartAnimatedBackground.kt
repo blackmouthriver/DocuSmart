@@ -1,6 +1,5 @@
 package com.docsmart.core.ui.components
 
-import android.provider.Settings as AndroidSettings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.InfiniteTransition
 import androidx.compose.animation.core.RepeatMode
@@ -33,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.docsmart.core.ui.theme.rememberAccentGradient
+import android.provider.Settings as AndroidSettings
 
 /**
  * Fondo animado de la app (pedido por el usuario 2026-09-06, adaptado de un
@@ -58,13 +58,14 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
     val base = MaterialTheme.colorScheme.background
 
     val context = LocalContext.current
-    val reduceMotion = remember {
-        AndroidSettings.Global.getFloat(
-            context.contentResolver,
-            AndroidSettings.Global.ANIMATOR_DURATION_SCALE,
-            1f
-        ) == 0f
-    }
+    val reduceMotion =
+        remember {
+            AndroidSettings.Global.getFloat(
+                context.contentResolver,
+                AndroidSettings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            ) == 0f
+        }
 
     val transition = rememberInfiniteTransition(label = "docuSmartBg")
     // HU-63: ciclos acortados de 26/30/23/12s a 11/13.5/10/8s -- se
@@ -77,7 +78,7 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
     val pulse by drift(transition, 8_000, "bgPulse", reduceMotion)
 
     BoxWithConstraints(
-        modifier = modifier.fillMaxSize().background(base)
+        modifier = modifier.fillMaxSize().background(base),
     ) {
         val w = maxWidth
         val h = maxHeight
@@ -90,7 +91,7 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
             alpha = 0.16f,
             x = (-24).dp + (30.dp * a),
             y = (-30).dp - (40.dp * a),
-            rotation = 14f * a
+            rotation = 14f * a,
         )
 
         // Acento → oscuro, a media altura a la derecha
@@ -101,7 +102,7 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
             alpha = 0.14f,
             x = w - 144.dp - (36.dp * b),
             y = 90.dp + (32.dp * b),
-            rotation = -10f + 20f * b
+            rotation = -10f + 20f * b,
         )
 
         // Claro → oscuro, abajo a la izquierda, respira con escala
@@ -113,7 +114,7 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
             x = 40.dp + (24.dp * c),
             y = h - 216.dp + (30.dp * c),
             rotation = 16f - 28f * c,
-            scale = 1f + 0.14f * c
+            scale = 1f + 0.14f * c,
         )
 
         // Destello claro que respira, arriba al centro
@@ -127,7 +128,7 @@ fun DocuSmartAnimatedBackground(modifier: Modifier = Modifier) {
             rotation = 0f,
             shadowColor = accent[1],
             shadowAlpha = 0.25f,
-            elevation = 8.dp
+            elevation = 8.dp,
         )
     }
 }
@@ -137,20 +138,22 @@ private fun drift(
     transition: InfiniteTransition,
     durationMillis: Int,
     label: String,
-    reduceMotion: Boolean
-): State<Float> = if (reduceMotion) {
-    remember { mutableFloatStateOf(0.5f) }
-} else {
-    transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = label
-    )
-}
+    reduceMotion: Boolean,
+): State<Float> =
+    if (reduceMotion) {
+        remember { mutableFloatStateOf(0.5f) }
+    } else {
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = label,
+        )
+    }
 
 @Composable
 private fun AccentSquare(
@@ -164,7 +167,7 @@ private fun AccentSquare(
     scale: Float = 1f,
     shadowColor: Color = colors.last(),
     shadowAlpha: Float = 0.35f,
-    elevation: Dp = 20.dp
+    elevation: Dp = 20.dp,
 ) {
     Box(
         Modifier
@@ -177,9 +180,9 @@ private fun AccentSquare(
                 elevation = elevation,
                 shape = RoundedCornerShape(corner),
                 ambientColor = shadowColor.copy(alpha = shadowAlpha),
-                spotColor = shadowColor.copy(alpha = shadowAlpha)
+                spotColor = shadowColor.copy(alpha = shadowAlpha),
             )
             .clip(RoundedCornerShape(corner))
-            .background(Brush.linearGradient(colors))
+            .background(Brush.linearGradient(colors)),
     )
 }

@@ -35,63 +35,65 @@ import com.docsmart.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewerBookmarksSheet(
-    bookmarkedPages: List<Int>, // 0-based, ya ordenadas
+    // 0-based, ya ordenadas
+    bookmarkedPages: List<Int>,
     onNavigate: (Int) -> Unit,
-    onRemove  : (Int) -> Unit,
-    onDismiss : () -> Unit
+    onRemove: (Int) -> Unit,
+    onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor   = MaterialTheme.colorScheme.surface,
-        tonalElevation   = 0.dp
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
             Text(
-                text     = stringResource(R.string.viewer_bookmarks_title),
-                style    = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                text = stringResource(R.string.viewer_bookmarks_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             )
             HorizontalDivider(
-                modifier  = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                 thickness = 0.5.dp,
-                color     = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.outlineVariant,
             )
             if (bookmarkedPages.isEmpty()) {
                 Text(
-                    text     = stringResource(R.string.viewer_bookmarks_empty),
-                    style    = MaterialTheme.typography.bodyMedium,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                    text = stringResource(R.string.viewer_bookmarks_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 )
             } else {
                 LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
                     items(bookmarkedPages, key = { it }) { page ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onNavigate(page) }
-                                .padding(horizontal = 20.dp, vertical = 8.dp),
-                            verticalAlignment     = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onNavigate(page) }
+                                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Row(
-                                verticalAlignment     = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Bookmark,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary,
                                 )
                                 Text(
                                     stringResource(R.string.viewer_bookmarks_page_format, page + 1),
-                                    style = MaterialTheme.typography.bodyLarge
+                                    style = MaterialTheme.typography.bodyLarge,
                                 )
                             }
                             IconButton(onClick = { onRemove(page) }) {
                                 Icon(
-                                    imageVector        = Icons.Rounded.Delete,
-                                    contentDescription = stringResource(R.string.general_delete)
+                                    imageVector = Icons.Rounded.Delete,
+                                    contentDescription = stringResource(R.string.general_delete),
                                 )
                             }
                         }

@@ -11,15 +11,16 @@ import javax.inject.Inject
 // onboarding, no solo desde el banner de Biblioteca -- pedido explícito
 // del usuario 2026-09-03 para reducir la fricción de descubrir la función.
 @HiltViewModel
-class OnboardingViewModel @Inject constructor(
-    private val downloadsAccessManager: DownloadsAccessManager
-) : ViewModel() {
+class OnboardingViewModel
+    @Inject
+    constructor(
+        private val downloadsAccessManager: DownloadsAccessManager,
+    ) : ViewModel() {
+        val linkedFolderUri: StateFlow<Uri?> = downloadsAccessManager.linkedFolderUri
 
-    val linkedFolderUri: StateFlow<Uri?> = downloadsAccessManager.linkedFolderUri
+        fun downloadsFolderPickerInitialUri(): Uri = downloadsAccessManager.initialUriHint()
 
-    fun downloadsFolderPickerInitialUri(): Uri = downloadsAccessManager.initialUriHint()
+        fun linkedFolderDisplayName(uri: Uri): String? = downloadsAccessManager.folderDisplayName(uri)
 
-    fun linkedFolderDisplayName(uri: Uri): String? = downloadsAccessManager.folderDisplayName(uri)
-
-    fun onDownloadsFolderPicked(uri: Uri) = downloadsAccessManager.onFolderPicked(uri)
-}
+        fun onDownloadsFolderPicked(uri: Uri) = downloadsAccessManager.onFolderPicked(uri)
+    }

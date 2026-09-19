@@ -1,123 +1,123 @@
 package com.docsmart.features.converter.domain.model
 
 enum class ConversionType(
-    val fromFormat     : String,
-    val toFormat       : String,
-    val fromExtensions : List<String>,
+    val fromFormat: String,
+    val toFormat: String,
+    val fromExtensions: List<String>,
     val outputExtension: String,
-    val isPremium      : Boolean = false
+    val isPremium: Boolean = false,
 ) {
     // ── Imagen ────────────────────────────────────────
     IMAGE_TO_PDF(
-        fromFormat      = "Imagen",
-        toFormat        = "PDF",
-        fromExtensions  = listOf("jpg", "jpeg", "png", "webp", "bmp"),
-        outputExtension = "pdf"
+        fromFormat = "Imagen",
+        toFormat = "PDF",
+        fromExtensions = listOf("jpg", "jpeg", "png", "webp", "bmp"),
+        outputExtension = "pdf",
     ),
     IMAGE_TO_JPG(
-        fromFormat      = "Imagen",
-        toFormat        = "JPG",
-        fromExtensions  = listOf("png", "webp", "bmp"),
-        outputExtension = "jpg"
+        fromFormat = "Imagen",
+        toFormat = "JPG",
+        fromExtensions = listOf("png", "webp", "bmp"),
+        outputExtension = "jpg",
     ),
     IMAGE_TO_PNG(
-        fromFormat      = "Imagen",
-        toFormat        = "PNG",
-        fromExtensions  = listOf("jpg", "jpeg", "webp", "bmp"),
-        outputExtension = "png"
+        fromFormat = "Imagen",
+        toFormat = "PNG",
+        fromExtensions = listOf("jpg", "jpeg", "webp", "bmp"),
+        outputExtension = "png",
     ),
     IMAGE_TO_WEBP(
-        fromFormat      = "Imagen",
-        toFormat        = "WebP",
-        fromExtensions  = listOf("jpg", "jpeg", "png", "bmp"),
-        outputExtension = "webp"
+        fromFormat = "Imagen",
+        toFormat = "WebP",
+        fromExtensions = listOf("jpg", "jpeg", "png", "bmp"),
+        outputExtension = "webp",
     ),
     IMAGE_TO_BMP(
-        fromFormat      = "Imagen",
-        toFormat        = "BMP",
-        fromExtensions  = listOf("jpg", "jpeg", "png", "webp"),
-        outputExtension = "bmp"
+        fromFormat = "Imagen",
+        toFormat = "BMP",
+        fromExtensions = listOf("jpg", "jpeg", "png", "webp"),
+        outputExtension = "bmp",
     ),
 
     // ── PDF ───────────────────────────────────────────
     PDF_TO_IMAGE(
-        fromFormat      = "PDF",
-        toFormat        = "Imagen",
-        fromExtensions  = listOf("pdf"),
-        outputExtension = "jpg"
+        fromFormat = "PDF",
+        toFormat = "Imagen",
+        fromExtensions = listOf("pdf"),
+        outputExtension = "jpg",
     ),
     PDF_TO_TXT(
-        fromFormat      = "PDF",
-        toFormat        = "TXT",
-        fromExtensions  = listOf("pdf"),
-        outputExtension = "txt"
+        fromFormat = "PDF",
+        toFormat = "TXT",
+        fromExtensions = listOf("pdf"),
+        outputExtension = "txt",
     ),
     PDF_TO_WORD(
-        fromFormat      = "PDF",
-        toFormat        = "Word",
-        fromExtensions  = listOf("pdf"),
-        outputExtension = "docx"
+        fromFormat = "PDF",
+        toFormat = "Word",
+        fromExtensions = listOf("pdf"),
+        outputExtension = "docx",
     ),
     PDF_TO_HTML(
-        fromFormat      = "PDF",
-        toFormat        = "HTML",
-        fromExtensions  = listOf("pdf"),
-        outputExtension = "html"
+        fromFormat = "PDF",
+        toFormat = "HTML",
+        fromExtensions = listOf("pdf"),
+        outputExtension = "html",
     ),
 
     // ── Word ──────────────────────────────────────────
     WORD_TO_PDF(
-        fromFormat      = "Word",
-        toFormat        = "PDF",
-        fromExtensions  = listOf("doc", "docx"),
-        outputExtension = "pdf"
+        fromFormat = "Word",
+        toFormat = "PDF",
+        fromExtensions = listOf("doc", "docx"),
+        outputExtension = "pdf",
     ),
     WORD_TO_TXT(
-        fromFormat      = "Word",
-        toFormat        = "TXT",
-        fromExtensions  = listOf("doc", "docx"),
-        outputExtension = "txt"
+        fromFormat = "Word",
+        toFormat = "TXT",
+        fromExtensions = listOf("doc", "docx"),
+        outputExtension = "txt",
     ),
     WORD_TO_HTML(
-        fromFormat      = "Word",
-        toFormat        = "HTML",
-        fromExtensions  = listOf("doc", "docx"),
-        outputExtension = "html"
+        fromFormat = "Word",
+        toFormat = "HTML",
+        fromExtensions = listOf("doc", "docx"),
+        outputExtension = "html",
     ),
 
     // ── Excel ─────────────────────────────────────────
     EXCEL_TO_PDF(
-        fromFormat      = "Excel",
-        toFormat        = "PDF",
-        fromExtensions  = listOf("xls", "xlsx"),
-        outputExtension = "pdf"
+        fromFormat = "Excel",
+        toFormat = "PDF",
+        fromExtensions = listOf("xls", "xlsx"),
+        outputExtension = "pdf",
     ),
     EXCEL_TO_CSV(
-        fromFormat      = "Excel",
-        toFormat        = "CSV",
-        fromExtensions  = listOf("xls", "xlsx"),
-        outputExtension = "csv"
+        fromFormat = "Excel",
+        toFormat = "CSV",
+        fromExtensions = listOf("xls", "xlsx"),
+        outputExtension = "csv",
     ),
     EXCEL_TO_HTML(
-        fromFormat      = "Excel",
-        toFormat        = "HTML",
-        fromExtensions  = listOf("xls", "xlsx"),
-        outputExtension = "html"
+        fromFormat = "Excel",
+        toFormat = "HTML",
+        fromExtensions = listOf("xls", "xlsx"),
+        outputExtension = "html",
     ),
 
     // ── PowerPoint ────────────────────────────────────
     PPT_TO_PDF(
-        fromFormat      = "PowerPoint",
-        toFormat        = "PDF",
-        fromExtensions  = listOf("ppt", "pptx"),
-        outputExtension = "pdf"
+        fromFormat = "PowerPoint",
+        toFormat = "PDF",
+        fromExtensions = listOf("ppt", "pptx"),
+        outputExtension = "pdf",
     ),
     PPT_TO_TXT(
-        fromFormat      = "PowerPoint",
-        toFormat        = "TXT",
-        fromExtensions  = listOf("ppt", "pptx"),
-        outputExtension = "txt"
-    )
+        fromFormat = "PowerPoint",
+        toFormat = "TXT",
+        fromExtensions = listOf("ppt", "pptx"),
+        outputExtension = "txt",
+    ),
 }
 
 // Lanzamiento inicial 2026-09-10: PDF→Word y las categorías Word/Excel/
@@ -135,14 +135,15 @@ enum class ConversionType(
 // rigurosidad. No confundir con el fix ya aplicado a PptToPdfUseCase: el
 // código se deja corregido, pero la función sigue oculta hasta verificar
 // que el fix realmente resuelve lo que reportó el usuario.
-val HIDDEN_FROM_UI: Set<ConversionType> = setOf(
-    ConversionType.PDF_TO_WORD,
-    ConversionType.WORD_TO_PDF,
-    ConversionType.WORD_TO_TXT,
-    ConversionType.WORD_TO_HTML,
-    ConversionType.EXCEL_TO_PDF,
-    ConversionType.EXCEL_TO_CSV,
-    ConversionType.EXCEL_TO_HTML,
-    ConversionType.PPT_TO_PDF,
-    ConversionType.PPT_TO_TXT
-)
+val HIDDEN_FROM_UI: Set<ConversionType> =
+    setOf(
+        ConversionType.PDF_TO_WORD,
+        ConversionType.WORD_TO_PDF,
+        ConversionType.WORD_TO_TXT,
+        ConversionType.WORD_TO_HTML,
+        ConversionType.EXCEL_TO_PDF,
+        ConversionType.EXCEL_TO_CSV,
+        ConversionType.EXCEL_TO_HTML,
+        ConversionType.PPT_TO_PDF,
+        ConversionType.PPT_TO_TXT,
+    )

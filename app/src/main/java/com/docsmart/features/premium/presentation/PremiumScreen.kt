@@ -46,17 +46,18 @@ private fun onPurchaseClick(
     activity: Activity?,
     viewModel: PremiumViewModel,
     purchaseErrorMessage: String,
-    purchasePendingMessage: String
-): () -> Unit = {
-    activity?.let {
-        viewModel.purchase(it, purchaseErrorMessage, purchasePendingMessage)
-    } ?: Timber.e("PremiumScreen: Activity es null, no se puede iniciar la compra")
-}
+    purchasePendingMessage: String,
+): () -> Unit =
+    {
+        activity?.let {
+            viewModel.purchase(it, purchaseErrorMessage, purchasePendingMessage)
+        } ?: Timber.e("PremiumScreen: Activity es null, no se puede iniciar la compra")
+    }
 
 @Composable
 fun PremiumScreen(
     onClose: () -> Unit = {},
-    viewModel: PremiumViewModel = hiltViewModel()
+    viewModel: PremiumViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -83,18 +84,19 @@ fun PremiumScreen(
         // Scaffold lo reservaba por duplicado sobre el que ya reserva
         // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
         // detalle completo).
-        contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-        ),
-        containerColor = Color.Transparent
+        contentWindowInsets =
+            WindowInsets.systemBars.only(
+                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+            ),
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 32.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            contentPadding = PaddingValues(bottom = 32.dp),
         ) {
-
             // ── Banner ────────────────────────────────
             item {
                 Box {
@@ -108,14 +110,15 @@ fun PremiumScreen(
                     // Botón cerrar
                     IconButton(
                         onClick = onClose,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
                             contentDescription = stringResource(R.string.settings_close),
-                            tint = androidx.compose.ui.graphics.Color.White
+                            tint = androidx.compose.ui.graphics.Color.White,
                         )
                     }
                 }
@@ -162,10 +165,11 @@ fun PremiumScreen(
                 PremiumFeatureList(
                     features = uiState.features,
                     isPremium = uiState.isPremium,
-                    modifier = Modifier.padding(
-                        horizontal = 20.dp,
-                        vertical = 24.dp
-                    )
+                    modifier =
+                        Modifier.padding(
+                            horizontal = 20.dp,
+                            vertical = 24.dp,
+                        ),
                 )
             }
 
@@ -177,7 +181,7 @@ fun PremiumScreen(
                         plans = uiState.plans,
                         selectedPlan = uiState.selectedPlan,
                         onPlanSelected = { viewModel.selectPlan(it) },
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        modifier = Modifier.padding(horizontal = 20.dp),
                     )
                 }
 
@@ -191,9 +195,10 @@ fun PremiumScreen(
                     Text(
                         text = stringResource(R.string.premium_terms),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                            .copy(alpha = 0.5f),
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                                .copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 20.dp),
                     )
                 }
             }
@@ -208,25 +213,26 @@ private fun PurchaseActionsSection(
     uiState: PremiumUiState,
     viewModel: PremiumViewModel,
     activity: Activity?,
-    onClose: () -> Unit
+    onClose: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (uiState.isPurchasing) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 Text(
                     text = stringResource(R.string.premium_processing_purchase),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             return
@@ -247,21 +253,22 @@ private fun PurchaseActionsSection(
             onClick = onPurchaseClick(activity, viewModel, purchaseErrorMessage, purchasePendingMessage),
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = MaterialTheme.shapes.medium,
-            enabled = uiState.selectedPlan != null
+            enabled = uiState.selectedPlan != null,
         ) {
             Icon(Icons.Rounded.Star, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = uiState.selectedPlan?.let { plan ->
-                    // HU-54 RF2: si el plan tiene prueba gratuita, el CTA lo
-                    // dice explícitamente en vez de mostrar el precio que se
-                    // cobrará recién después -- para que el primer cobro
-                    // real no sea sorpresivo.
-                    plan.trialDays?.let { days ->
-                        stringResource(R.string.premium_start_trial, days)
-                    } ?: stringResource(R.string.premium_get_plan, stringResource(plan.titleRes), plan.price)
-                } ?: stringResource(R.string.premium_select_plan),
-                style = MaterialTheme.typography.labelLarge
+                text =
+                    uiState.selectedPlan?.let { plan ->
+                        // HU-54 RF2: si el plan tiene prueba gratuita, el CTA lo
+                        // dice explícitamente en vez de mostrar el precio que se
+                        // cobrará recién después -- para que el primer cobro
+                        // real no sea sorpresivo.
+                        plan.trialDays?.let { days ->
+                            stringResource(R.string.premium_start_trial, days)
+                        } ?: stringResource(R.string.premium_get_plan, stringResource(plan.titleRes), plan.price)
+                    } ?: stringResource(R.string.premium_select_plan),
+                style = MaterialTheme.typography.labelLarge,
             )
         }
 
@@ -269,12 +276,12 @@ private fun PurchaseActionsSection(
             onClick = {
                 viewModel.restorePurchases(noPurchasesFoundMessage, restoreSuccessMessage, restoreErrorMessage)
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
                 text = stringResource(R.string.premium_restore_purchases),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -282,7 +289,7 @@ private fun PurchaseActionsSection(
             Text(
                 text = stringResource(R.string.premium_continue_free),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             )
         }
     }
@@ -290,7 +297,10 @@ private fun PurchaseActionsSection(
 
 // ── Card de Premium activo ────────────────────────────
 @Composable
-private fun PremiumActiveCard(onClose: () -> Unit, trialEndsAtMillis: Long? = null) {
+private fun PremiumActiveCard(
+    onClose: () -> Unit,
+    trialEndsAtMillis: Long? = null,
+) {
     // HU-54, AC1: mientras la prueba siga vigente, se reemplaza el texto
     // genérico por la fecha real de cobro -- una vez pasada esa fecha (el
     // usuario ya paga, o restauró una compra vieja), vuelve al texto normal.
@@ -300,49 +310,54 @@ private fun PremiumActiveCard(onClose: () -> Unit, trialEndsAtMillis: Long? = nu
     // el formato correcto. LocalConfiguration.current sí lo es.
     val locale = LocalConfiguration.current.locales[0]
     val isInTrial = trialEndsAtMillis != null && trialEndsAtMillis > System.currentTimeMillis()
-    val bodyText = if (isInTrial) {
-        val formattedDate = java.text.SimpleDateFormat("dd/MM/yyyy", locale)
-            .format(java.util.Date(trialEndsAtMillis))
-        stringResource(R.string.premium_trial_active_message, formattedDate)
-    } else {
-        stringResource(R.string.premium_active_body)
-    }
+    val bodyText =
+        if (isInTrial) {
+            val formattedDate =
+                java.text.SimpleDateFormat("dd/MM/yyyy", locale)
+                    .format(java.util.Date(trialEndsAtMillis))
+            stringResource(R.string.premium_trial_active_message, formattedDate)
+        } else {
+            stringResource(R.string.premium_active_body)
+        }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(0.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+            ),
+        elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 text = stringResource(R.string.premium_active_title),
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             Text(
                 text = bodyText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
             )
             Button(
                 onClick = onClose,
                 shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     text = stringResource(R.string.premium_continue),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
         }
@@ -357,37 +372,40 @@ private fun PremiumActiveCard(onClose: () -> Unit, trialEndsAtMillis: Long? = nu
 @Composable
 private fun PremiumPendingCard() {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(0.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            ),
+        elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Icon(
                 imageVector = Icons.Rounded.Schedule,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
             )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.premium_pending_title),
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
                 Text(
                     text = stringResource(R.string.premium_pending_body),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
                 )
             }
         }
@@ -420,67 +438,73 @@ private fun PremiumAutoTrialCard(daysRemaining: Int) {
     val imageScale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.12f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 9000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "premiumTrialBgScale"
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = 9000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "premiumTrialBgScale",
     )
-    val textShadow = Shadow(
-        color = Color.Black.copy(alpha = 0.6f),
-        offset = Offset(0f, 2f),
-        blurRadius = 6f
-    )
+    val textShadow =
+        Shadow(
+            color = Color.Black.copy(alpha = 0.6f),
+            offset = Offset(0f, 2f),
+            blurRadius = 6f,
+        )
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(elevation = 10.dp, clip = false)
-            // El zoom animado de la foto (scale > 1) se dibuja más grande
-            // que la card -- sin este clip (van DESPUÉS del shadow a
-            // propósito, para que la sombra sí pueda salirse de los bordes
-            // y la foto no) se veía "salir" de la tarjeta hacia el banner
-            // de arriba y el contenido de abajo. Bug real reportado por el
-            // usuario 2026-09-12 al ver la animación en el dispositivo.
-            .clip(RectangleShape)
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .shadow(elevation = 10.dp, clip = false)
+                // El zoom animado de la foto (scale > 1) se dibuja más grande
+                // que la card -- sin este clip (van DESPUÉS del shadow a
+                // propósito, para que la sombra sí pueda salirse de los bordes
+                // y la foto no) se veía "salir" de la tarjeta hacia el banner
+                // de arriba y el contenido de abajo. Bug real reportado por el
+                // usuario 2026-09-12 al ver la animación en el dispositivo.
+                .clip(RectangleShape)
+                .background(MaterialTheme.colorScheme.tertiaryContainer),
     ) {
         Image(
             painter = painterResource(R.drawable.premium_trial_bg),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alpha = 0.55f,
-            modifier = Modifier
-                .matchParentSize()
-                .scale(imageScale)
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .scale(imageScale),
         )
         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Black.copy(alpha = 0.15f), Color.Black.copy(alpha = 0.55f))
-                    )
-                )
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Black.copy(alpha = 0.15f), Color.Black.copy(alpha = 0.55f)),
+                        ),
+                    ),
         )
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 28.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = stringResource(R.string.premium_auto_trial_title),
                 style = MaterialTheme.typography.titleLarge.copy(shadow = textShadow),
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
             )
             Text(
                 text = stringResource(R.string.premium_auto_trial_body, daysRemaining),
                 style = MaterialTheme.typography.bodyMedium.copy(shadow = textShadow),
                 color = Color.White.copy(alpha = 0.95f),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }

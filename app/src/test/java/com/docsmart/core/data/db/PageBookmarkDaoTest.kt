@@ -19,15 +19,16 @@ import org.junit.jupiter.api.Test
  * real), no solo la firma del DAO.
  */
 class PageBookmarkDaoTest {
-
     private lateinit var db: DocuSmartDatabase
     private lateinit var dao: PageBookmarkDao
 
     @BeforeEach
     fun setUp() {
-        db = Room.inMemoryDatabaseBuilder(mockk<Context>(relaxed = true), DocuSmartDatabase::class.java)
-            .setDriver(BundledSQLiteDriver())
-            .build()
+        db =
+            Room
+                .inMemoryDatabaseBuilder(mockk<Context>(relaxed = true), DocuSmartDatabase::class.java)
+                .setDriver(BundledSQLiteDriver())
+                .build()
         dao = db.pageBookmarkDao()
     }
 
@@ -37,67 +38,74 @@ class PageBookmarkDaoTest {
     }
 
     @Test
-    fun `insert agrega un marcador nuevo`() = runTest {
-        dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 1000L))
+    fun `insert agrega un marcador nuevo`() =
+        runTest {
+            dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 1000L))
 
-        assertEquals(listOf(3), dao.observeByDocument("doc-1").first().map { it.page })
-    }
-
-    @Test
-    fun `insert de la misma pagina dos veces no duplica (clave primaria compuesta)`() = runTest {
-        dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 1000L))
-        dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 2000L))
-
-        assertEquals(1, dao.observeByDocument("doc-1").first().size)
-    }
+            assertEquals(listOf(3), dao.observeByDocument("doc-1").first().map { it.page })
+        }
 
     @Test
-    fun `observeByDocument ordena las paginas ascendente`() = runTest {
-        dao.insert(PageBookmarkEntity("doc-1", page = 5, createdAt = 1000L))
-        dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 2000L))
-        dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 3000L))
+    fun `insert de la misma pagina dos veces no duplica (clave primaria compuesta)`() =
+        runTest {
+            dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 1000L))
+            dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 2000L))
 
-        assertEquals(listOf(1, 3, 5), dao.observeByDocument("doc-1").first().map { it.page })
-    }
-
-    @Test
-    fun `observeByDocument no mezcla marcadores de otro documento`() = runTest {
-        dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 1000L))
-        dao.insert(PageBookmarkEntity("doc-2", page = 2, createdAt = 1000L))
-
-        assertEquals(listOf(1), dao.observeByDocument("doc-1").first().map { it.page })
-    }
+            assertEquals(1, dao.observeByDocument("doc-1").first().size)
+        }
 
     @Test
-    fun `delete quita solo la pagina indicada`() = runTest {
-        dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 1000L))
-        dao.insert(PageBookmarkEntity("doc-1", page = 2, createdAt = 1000L))
+    fun `observeByDocument ordena las paginas ascendente`() =
+        runTest {
+            dao.insert(PageBookmarkEntity("doc-1", page = 5, createdAt = 1000L))
+            dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 2000L))
+            dao.insert(PageBookmarkEntity("doc-1", page = 3, createdAt = 3000L))
 
-        dao.delete("doc-1", page = 1)
-
-        assertEquals(listOf(2), dao.observeByDocument("doc-1").first().map { it.page })
-    }
-
-    @Test
-    fun `deleteByDocument borra todos los marcadores del documento`() = runTest {
-        dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 1000L))
-        dao.insert(PageBookmarkEntity("doc-1", page = 2, createdAt = 1000L))
-        dao.insert(PageBookmarkEntity("doc-2", page = 1, createdAt = 1000L))
-
-        dao.deleteByDocument("doc-1")
-
-        assertTrue(dao.observeByDocument("doc-1").first().isEmpty())
-        assertEquals(1, dao.observeByDocument("doc-2").first().size)
-    }
+            assertEquals(listOf(1, 3, 5), dao.observeByDocument("doc-1").first().map { it.page })
+        }
 
     @Test
-    fun `updateDocumentId migra los marcadores al id nuevo`() = runTest {
-        dao.insert(PageBookmarkEntity("doc-viejo", page = 1, createdAt = 1000L))
-        dao.insert(PageBookmarkEntity("doc-viejo", page = 4, createdAt = 2000L))
+    fun `observeByDocument no mezcla marcadores de otro documento`() =
+        runTest {
+            dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 1000L))
+            dao.insert(PageBookmarkEntity("doc-2", page = 2, createdAt = 1000L))
 
-        dao.updateDocumentId("doc-viejo", "doc-nuevo")
+            assertEquals(listOf(1), dao.observeByDocument("doc-1").first().map { it.page })
+        }
 
-        assertTrue(dao.observeByDocument("doc-viejo").first().isEmpty())
-        assertEquals(listOf(1, 4), dao.observeByDocument("doc-nuevo").first().map { it.page })
-    }
+    @Test
+    fun `delete quita solo la pagina indicada`() =
+        runTest {
+            dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 1000L))
+            dao.insert(PageBookmarkEntity("doc-1", page = 2, createdAt = 1000L))
+
+            dao.delete("doc-1", page = 1)
+
+            assertEquals(listOf(2), dao.observeByDocument("doc-1").first().map { it.page })
+        }
+
+    @Test
+    fun `deleteByDocument borra todos los marcadores del documento`() =
+        runTest {
+            dao.insert(PageBookmarkEntity("doc-1", page = 1, createdAt = 1000L))
+            dao.insert(PageBookmarkEntity("doc-1", page = 2, createdAt = 1000L))
+            dao.insert(PageBookmarkEntity("doc-2", page = 1, createdAt = 1000L))
+
+            dao.deleteByDocument("doc-1")
+
+            assertTrue(dao.observeByDocument("doc-1").first().isEmpty())
+            assertEquals(1, dao.observeByDocument("doc-2").first().size)
+        }
+
+    @Test
+    fun `updateDocumentId migra los marcadores al id nuevo`() =
+        runTest {
+            dao.insert(PageBookmarkEntity("doc-viejo", page = 1, createdAt = 1000L))
+            dao.insert(PageBookmarkEntity("doc-viejo", page = 4, createdAt = 2000L))
+
+            dao.updateDocumentId("doc-viejo", "doc-nuevo")
+
+            assertTrue(dao.observeByDocument("doc-viejo").first().isEmpty())
+            assertEquals(listOf(1, 4), dao.observeByDocument("doc-nuevo").first().map { it.page })
+        }
 }

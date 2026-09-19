@@ -41,58 +41,63 @@ import com.docsmart.R
 @Composable
 fun LinkDocumentDialog(
     currentDocumentId: String?,
-    title            : String,
-    emptyMessage     : String,
-    unlinkLabel      : String,
-    onDismiss        : () -> Unit,
-    onSelect         : (DocumentUiModel) -> Unit,
-    onUnlink         : () -> Unit,
-    viewModel        : AppLibraryPickerViewModel = hiltViewModel()
+    title: String,
+    emptyMessage: String,
+    unlinkLabel: String,
+    onDismiss: () -> Unit,
+    onSelect: (DocumentUiModel) -> Unit,
+    onUnlink: () -> Unit,
+    viewModel: AppLibraryPickerViewModel = hiltViewModel(),
 ) {
     val documents by viewModel.documents.collectAsStateWithLifecycle()
-    val isLoading  by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape            = MaterialTheme.shapes.large,
-        title            = { Text(title) },
+        shape = MaterialTheme.shapes.large,
+        title = { Text(title) },
         text = {
             if (isLoading) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
                 ) { CircularProgressIndicator(modifier = Modifier.size(28.dp)) }
             } else if (documents.isEmpty()) {
                 Text(
-                    text  = emptyMessage,
+                    text = emptyMessage,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
                     items(documents, key = { it.id }) { doc ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                // H23 (auditoría de accesibilidad TalkBack
-                                // 2026-09-18): sin role, TalkBack no
-                                // anunciaba esta fila como accionable.
-                                .clickable(role = Role.Button) { onSelect(doc) }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment     = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    // H23 (auditoría de accesibilidad TalkBack
+                                    // 2026-09-18): sin role, TalkBack no
+                                    // anunciaba esta fila como accionable.
+                                    .clickable(role = Role.Button) { onSelect(doc) }
+                                    .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.InsertDriveFile,
                                 contentDescription = null,
-                                tint = if (doc.id == currentDocumentId) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
+                                tint =
+                                    if (doc.id == currentDocumentId) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                             )
                             Text(
-                                text     = doc.name,
-                                style    = MaterialTheme.typography.bodyMedium,
+                                text = doc.name,
+                                style = MaterialTheme.typography.bodyMedium,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
@@ -111,6 +116,6 @@ fun LinkDocumentDialog(
                     Text(unlinkLabel, color = MaterialTheme.colorScheme.error)
                 }
             }
-        }
+        },
     )
 }

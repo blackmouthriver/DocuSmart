@@ -20,7 +20,6 @@ import java.util.Locale
  * por defecto de una instalación nueva debe seguir la misma señal.
  */
 class LanguageManagerTest {
-
     private lateinit var originalLocale: Locale
     private lateinit var manager: LanguageManager
 
@@ -106,7 +105,7 @@ class LanguageManagerTest {
     fun `un idioma ya guardado no se pisa con el idioma del dispositivo`() {
         Locale.setDefault(Locale("de"))
         val context = mockk<Context>()
-        val prefs   = fakeSharedPreferences()
+        val prefs = fakeSharedPreferences()
         prefs.edit().putString("language", AppLanguage.RUSSIAN.code).apply()
         every { context.getSharedPreferences(any(), any()) } returns prefs
 

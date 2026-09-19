@@ -19,7 +19,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,6 +31,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -54,11 +54,10 @@ import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.ui.components.DocuSmartTopBanner
-import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.accentBorder
-import com.docsmart.core.ui.theme.accentFilterChipColors
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.scanner.domain.QrContactContent
 import com.docsmart.features.scanner.domain.QrCrypto
 import com.docsmart.features.scanner.domain.QrEventContent
@@ -100,17 +99,17 @@ fun QrReaderScreen(
     onBack: () -> Unit = {},
     // HU-44: acceso al Historial de QR desde el banner.
     onHistoryClick: () -> Unit = {},
-    viewModel: QrViewModel = hiltViewModel()
+    viewModel: QrViewModel = hiltViewModel(),
 ) {
-    val context        = LocalContext.current
+    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     var hasCameraPermission by remember {
         mutableStateOf(
             androidx.core.content.ContextCompat.checkSelfPermission(
-                context, android.Manifest.permission.CAMERA
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                context, android.Manifest.permission.CAMERA,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED,
         )
     }
 
@@ -123,13 +122,14 @@ fun QrReaderScreen(
     // vuelve a consultar el permiso real cada vez que la pantalla vuelve a
     // primer plano.
     DisposableEffect(lifecycleOwner) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-                    context, android.Manifest.permission.CAMERA
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val observer =
+            androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                        context, android.Manifest.permission.CAMERA,
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -145,16 +145,18 @@ fun QrReaderScreen(
     var permissionPermanentlyDenied by rememberSaveable { mutableStateOf(false) }
     val activity = context as? android.app.Activity
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasCameraPermission = granted
-        if (!granted && permissionRequestedOnce && activity != null) {
-            permissionPermanentlyDenied = !androidx.core.app.ActivityCompat
-                .shouldShowRequestPermissionRationale(activity, android.Manifest.permission.CAMERA)
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            hasCameraPermission = granted
+            if (!granted && permissionRequestedOnce && activity != null) {
+                permissionPermanentlyDenied =
+                    !androidx.core.app.ActivityCompat
+                        .shouldShowRequestPermissionRationale(activity, android.Manifest.permission.CAMERA)
+            }
+            permissionRequestedOnce = true
         }
-        permissionRequestedOnce = true
-    }
 
     LaunchedEffect(Unit) {
         // Hallazgo real de la auditoría (Media/Alta): `permissionRequestedOnce`
@@ -175,11 +177,11 @@ fun QrReaderScreen(
     // pantalla con un QR ya escaneado perdía el resultado completo y volvía
     // a mostrar la vista de cámara -- mismo criterio ya usado arriba para
     // `permissionRequestedOnce`/`permissionPermanentlyDenied`.
-    var qrResult     by rememberSaveable { mutableStateOf<String?>(null) }
-    var qrType       by rememberSaveable { mutableStateOf(QrContentType.TEXT) }
-    var isScanning   by remember { mutableStateOf(true) }
-    var copiedMsg    by remember { mutableStateOf(false) }
-    var imageBitmap  by remember { mutableStateOf<Bitmap?>(null) }
+    var qrResult by rememberSaveable { mutableStateOf<String?>(null) }
+    var qrType by rememberSaveable { mutableStateOf(QrContentType.TEXT) }
+    var isScanning by remember { mutableStateOf(true) }
+    var copiedMsg by remember { mutableStateOf(false) }
+    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
     // Hallazgo real de la revisión general 2026-09-16 (#2): antes se
     // disparaba una petición HTTP automática apenas se detectaba un QR de
     // Imagen, sin que el usuario lo pidiera -- expone su IP y el momento
@@ -194,13 +196,13 @@ fun QrReaderScreen(
     // persistir tras restaurar el proceso, y en algunos fabricantes llega a
     // tocar disco) -- se acepta perderla en rotación, a diferencia del
     // resto del formulario.
-    var qrPassword              by remember { mutableStateOf("") }
-    var qrPasswordVisible       by remember { mutableStateOf(false) }
-    var qrPasswordError         by remember { mutableStateOf<String?>(null) }
+    var qrPassword by remember { mutableStateOf("") }
+    var qrPasswordVisible by remember { mutableStateOf(false) }
+    var qrPasswordError by remember { mutableStateOf<String?>(null) }
 
     val executor = remember { Executors.newSingleThreadExecutor() }
-    val scanner  = remember { BarcodeScanning.getClient() }
-    val scope    = rememberCoroutineScope()
+    val scanner = remember { BarcodeScanning.getClient() }
+    val scope = rememberCoroutineScope()
 
     // Bug real encontrado 2026-09-14 (repaso general): ni el executor de
     // CameraX ni el detector de ML Kit se cerraban nunca -- CameraX
@@ -240,7 +242,7 @@ fun QrReaderScreen(
         val decrypted = QrCrypto.decrypt(protectedContent, qrPassword)
         if (decrypted != null) {
             qrResult = decrypted
-            qrType   = detectQrContentType(decrypted)
+            qrType = detectQrContentType(decrypted)
             pendingProtectedContent = null
             qrPassword = ""
             qrPasswordError = null
@@ -254,52 +256,66 @@ fun QrReaderScreen(
         // blanca": este Scaffold lo reservaba por duplicado sobre el que ya
         // reserva MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt
         // para el detalle completo).
-        contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-        ),
-        containerColor = Color.Transparent // fondo animado global (backlog UX 2026-09-06)
+        contentWindowInsets =
+            WindowInsets.systemBars.only(
+                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+            ),
+        // fondo animado global (backlog UX 2026-09-06)
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         // ── Diálogo: QR protegido con contraseña ──────────────────────────────
         pendingProtectedContent?.let {
             AlertDialog(
                 onDismissRequest = { resumeScanning() },
                 shape = MaterialTheme.shapes.large,
-                icon  = { Icon(Icons.Rounded.Lock, null, tint = MaterialTheme.colorScheme.primary) },
+                icon = { Icon(Icons.Rounded.Lock, null, tint = MaterialTheme.colorScheme.primary) },
                 title = { Text(stringResource(R.string.qr_protected_title)) },
-                text  = {
+                text = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
                             stringResource(R.string.qr_protected_desc),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         OutlinedTextField(
                             value = qrPassword,
-                            onValueChange = { qrPassword = it; qrPasswordError = null },
+                            onValueChange = {
+                                qrPassword = it
+                                qrPasswordError = null
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text(stringResource(R.string.qr_password_label)) },
-                            visualTransformation = if (qrPasswordVisible) VisualTransformation.None
-                            else PasswordVisualTransformation(),
+                            visualTransformation =
+                                if (qrPasswordVisible) {
+                                    VisualTransformation.None
+                                } else {
+                                    PasswordVisualTransformation()
+                                },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             trailingIcon = {
                                 // Hallazgo real de la auditoría general
                                 // 2026-09-17 (séptima ronda, Alta -- A1).
                                 IconButton(onClick = { qrPasswordVisible = !qrPasswordVisible }) {
                                     Icon(
-                                        if (qrPasswordVisible) Icons.Rounded.VisibilityOff
-                                        else Icons.Rounded.Visibility,
-                                        contentDescription = stringResource(
-                                            if (qrPasswordVisible) R.string.password_hide else R.string.password_show
-                                        )
+                                        if (qrPasswordVisible) {
+                                            Icons.Rounded.VisibilityOff
+                                        } else {
+                                            Icons.Rounded.Visibility
+                                        },
+                                        contentDescription =
+                                            stringResource(
+                                                if (qrPasswordVisible) R.string.password_hide else R.string.password_show,
+                                            ),
                                     )
                                 }
                             },
                             isError = qrPasswordError != null,
-                            supportingText = qrPasswordError?.let { msg ->
-                                { Text(msg, color = MaterialTheme.colorScheme.error) }
-                            },
+                            supportingText =
+                                qrPasswordError?.let { msg ->
+                                    { Text(msg, color = MaterialTheme.colorScheme.error) }
+                                },
                             singleLine = true,
-                            shape = MaterialTheme.shapes.medium
+                            shape = MaterialTheme.shapes.medium,
                         )
                     }
                 },
@@ -312,388 +328,438 @@ fun QrReaderScreen(
                     TextButton(onClick = { resumeScanning() }) {
                         Text(stringResource(R.string.general_cancel))
                     }
-                }
+                },
             )
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
             // Banner azul con degradado de acento (2026-09-08, pedido
             // explícito del usuario) -- reemplaza el TopAppBar plano de
             // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
             DocuSmartTopBanner(
-                screenTitle    = stringResource(R.string.qr_reader_title),
+                screenTitle = stringResource(R.string.qr_reader_title),
                 screenSubtitle = stringResource(R.string.qr_reader_subtitle),
-                onBack         = onBack,
+                onBack = onBack,
                 actions = {
                     IconButton(onClick = onHistoryClick) {
                         Icon(
                             Icons.Rounded.History,
                             contentDescription = stringResource(R.string.qr_history_title),
-                            tint = Color.White
+                            tint = Color.White,
                         )
                     }
                 },
-                modifier       = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             )
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            if (qrResult == null) {
-                if (!hasCameraPermission) {
-                    // ── Sin permiso ───────────────────────────────────────────
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Rounded.CameraAlt, null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(64.dp))
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            if (permissionPermanentlyDenied) {
-                                stringResource(R.string.qr_camera_permission_denied_permanently)
-                            } else {
-                                stringResource(R.string.qr_camera_permission_needed)
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                if (permissionPermanentlyDenied) {
-                                    val intent = Intent(
-                                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.fromParts("package", context.packageName, null)
-                                    )
-                                    context.startActivity(intent)
-                                } else {
-                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
-                                }
-                            },
-                            modifier = Modifier.accentBorder(MaterialTheme.shapes.medium),
-                            shape = MaterialTheme.shapes.medium
+                if (qrResult == null) {
+                    if (!hasCameraPermission) {
+                        // ── Sin permiso ───────────────────────────────────────────
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
                         ) {
+                            Icon(
+                                Icons.Rounded.CameraAlt,
+                                null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(64.dp),
+                            )
+                            Spacer(Modifier.height(16.dp))
                             Text(
                                 if (permissionPermanentlyDenied) {
-                                    stringResource(R.string.qr_open_app_settings)
+                                    stringResource(R.string.qr_camera_permission_denied_permanently)
                                 } else {
-                                    stringResource(R.string.qr_allow_camera_access)
-                                }
+                                    stringResource(R.string.qr_camera_permission_needed)
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
                             )
+                            Spacer(Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    if (permissionPermanentlyDenied) {
+                                        val intent =
+                                            Intent(
+                                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                Uri.fromParts("package", context.packageName, null),
+                                            )
+                                        context.startActivity(intent)
+                                    } else {
+                                        permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                                    }
+                                },
+                                modifier = Modifier.accentBorder(MaterialTheme.shapes.medium),
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                Text(
+                                    if (permissionPermanentlyDenied) {
+                                        stringResource(R.string.qr_open_app_settings)
+                                    } else {
+                                        stringResource(R.string.qr_allow_camera_access)
+                                    },
+                                )
+                            }
+                        }
+                    } else {
+                        // ── Vista de cámara ───────────────────────────────────────
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                            AndroidView(
+                                factory = { ctx ->
+                                    val previewView = PreviewView(ctx)
+                                    val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                                    cameraProviderFuture.addListener({
+                                        val cameraProvider = cameraProviderFuture.get()
+                                        val preview =
+                                            Preview.Builder().build().also {
+                                                it.setSurfaceProvider(previewView.surfaceProvider)
+                                            }
+                                        val imageAnalysis =
+                                            ImageAnalysis.Builder()
+                                                .setTargetResolution(Size(1280, 720))
+                                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                                .build()
+                                        imageAnalysis.setAnalyzer(executor) { imageProxy ->
+                                            if (!isScanning) {
+                                                imageProxy.close()
+                                                return@setAnalyzer
+                                            }
+                                            val mediaImage = imageProxy.toMediaImageOrNull()
+                                            if (mediaImage != null) {
+                                                val image =
+                                                    InputImage.fromMediaImage(
+                                                        mediaImage,
+                                                        imageProxy.imageInfo.rotationDegrees,
+                                                    )
+                                                scanner.process(image)
+                                                    .addOnSuccessListener { barcodes ->
+                                                        barcodes.firstOrNull()?.rawValue?.let { value ->
+                                                            isScanning = false
+                                                            // HU-44: se guarda el valor CRUDO leído (con el
+                                                            // prefijo `PROTECTED:` intacto si estaba cifrado)
+                                                            // -- RNF2, nunca el texto plano de un QR protegido.
+                                                            val isProtectedScan = value.startsWith(QrCrypto.PREFIX)
+                                                            // Bug real encontrado en la revisión pre-fusión:
+                                                            // addOnSuccessListener sin Executor propio corre en
+                                                            // el hilo principal (no en el `executor` de
+                                                            // CameraX) -- el I/O de SharedPreferences de
+                                                            // QrHistoryStorage.save() se saca de ahí con
+                                                            // Dispatchers.IO para no sumarle jitter al
+                                                            // callback de detección de cada frame escaneado.
+                                                            scope.launch(Dispatchers.IO) {
+                                                                QrHistoryStorage.save(
+                                                                    context,
+                                                                    QrHistoryEntry(
+                                                                        id = java.util.UUID.randomUUID().toString(),
+                                                                        content = value,
+                                                                        typeName =
+                                                                            if (isProtectedScan) {
+                                                                                "PROTECTED"
+                                                                            } else {
+                                                                                detectQrContentType(value).name
+                                                                            },
+                                                                        source = QrHistorySource.SCANNED,
+                                                                        createdAtMillis = System.currentTimeMillis(),
+                                                                    ),
+                                                                )
+                                                            }
+                                                            if (isProtectedScan) {
+                                                                pendingProtectedContent =
+                                                                    value.removePrefix(QrCrypto.PREFIX)
+                                                            } else {
+                                                                qrResult = value
+                                                                qrType = detectQrContentType(value)
+                                                                DocuSmartAnalytics.logQrScanned(qrType.name)
+                                                            }
+                                                        }
+                                                    }
+                                                    .addOnCompleteListener { imageProxy.close() }
+                                            } else {
+                                                imageProxy.close()
+                                            }
+                                        }
+                                        try {
+                                            cameraProvider.unbindAll()
+                                            cameraProvider.bindToLifecycle(
+                                                lifecycleOwner,
+                                                CameraSelector.DEFAULT_BACK_CAMERA,
+                                                preview,
+                                                imageAnalysis,
+                                            )
+                                        } catch (e: Exception) {
+                                            Timber.e(e, "Error cámara")
+                                        }
+                                    }, ContextCompat.getMainExecutor(ctx))
+                                    previewView
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                            // Marco
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Box(
+                                    modifier =
+                                        Modifier.size(240.dp).border(
+                                            2.dp,
+                                            Color.White.copy(alpha = 0.3f),
+                                            RoundedCornerShape(16.dp),
+                                        ),
+                                )
+                                QrCornerDecoration()
+                            }
+                            // Guía
+                            Surface(
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.Black.copy(alpha = 0.65f),
+                            ) {
+                                Text(
+                                    stringResource(R.string.qr_center_in_frame),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                )
+                            }
                         }
                     }
                 } else {
-                    // ── Vista de cámara ───────────────────────────────────────
-                    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                        AndroidView(
-                            factory = { ctx ->
-                                val previewView = PreviewView(ctx)
-                                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                                cameraProviderFuture.addListener({
-                                    val cameraProvider = cameraProviderFuture.get()
-                                    val preview = Preview.Builder().build().also {
-                                        it.setSurfaceProvider(previewView.surfaceProvider)
-                                    }
-                                    val imageAnalysis = ImageAnalysis.Builder()
-                                        .setTargetResolution(Size(1280, 720))
-                                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                                        .build()
-                                    imageAnalysis.setAnalyzer(executor) { imageProxy ->
-                                        if (!isScanning) { imageProxy.close(); return@setAnalyzer }
-                                        val mediaImage = imageProxy.toMediaImageOrNull()
-                                        if (mediaImage != null) {
-                                            val image = InputImage.fromMediaImage(
-                                                mediaImage, imageProxy.imageInfo.rotationDegrees
-                                            )
-                                            scanner.process(image)
-                                                .addOnSuccessListener { barcodes ->
-                                                    barcodes.firstOrNull()?.rawValue?.let { value ->
-                                                        isScanning = false
-                                                        // HU-44: se guarda el valor CRUDO leído (con el
-                                                        // prefijo `PROTECTED:` intacto si estaba cifrado)
-                                                        // -- RNF2, nunca el texto plano de un QR protegido.
-                                                        val isProtectedScan = value.startsWith(QrCrypto.PREFIX)
-                                                        // Bug real encontrado en la revisión pre-fusión:
-                                                        // addOnSuccessListener sin Executor propio corre en
-                                                        // el hilo principal (no en el `executor` de
-                                                        // CameraX) -- el I/O de SharedPreferences de
-                                                        // QrHistoryStorage.save() se saca de ahí con
-                                                        // Dispatchers.IO para no sumarle jitter al
-                                                        // callback de detección de cada frame escaneado.
-                                                        scope.launch(Dispatchers.IO) {
-                                                            QrHistoryStorage.save(
-                                                                context,
-                                                                QrHistoryEntry(
-                                                                    id = java.util.UUID.randomUUID().toString(),
-                                                                    content = value,
-                                                                    typeName = if (isProtectedScan) {
-                                                                        "PROTECTED"
-                                                                    } else {
-                                                                        detectQrContentType(value).name
-                                                                    },
-                                                                    source = QrHistorySource.SCANNED,
-                                                                    createdAtMillis = System.currentTimeMillis()
-                                                                )
-                                                            )
-                                                        }
-                                                        if (isProtectedScan) {
-                                                            pendingProtectedContent =
-                                                                value.removePrefix(QrCrypto.PREFIX)
-                                                        } else {
-                                                            qrResult = value
-                                                            qrType   = detectQrContentType(value)
-                                                            DocuSmartAnalytics.logQrScanned(qrType.name)
-                                                        }
-                                                    }
-                                                }
-                                                .addOnCompleteListener { imageProxy.close() }
-                                        } else imageProxy.close()
-                                    }
-                                    try {
-                                        cameraProvider.unbindAll()
-                                        cameraProvider.bindToLifecycle(
-                                            lifecycleOwner,
-                                            CameraSelector.DEFAULT_BACK_CAMERA,
-                                            preview, imageAnalysis
-                                        )
-                                    } catch (e: Exception) { Timber.e(e, "Error cámara") }
-                                }, ContextCompat.getMainExecutor(ctx))
-                                previewView
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        // Marco
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Box(modifier = Modifier.size(240.dp).border(
-                                2.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(16.dp)
-                            ))
-                            QrCornerDecoration()
-                        }
-                        // Guía
-                        Surface(
-                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color.Black.copy(alpha = 0.65f)
-                        ) {
-                            Text(stringResource(R.string.qr_center_in_frame),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                        }
-                    }
-                }
-            } else {
-                // ── Resultado según tipo ──────────────────────────────────────
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        // Hallazgo real de la auditoría general 2026-09-17
-                        // (octava ronda, Media -- G3): el padding uniforme de
-                        // 20dp hacía que el banner de anuncios se viera más
-                        // angosto que en el resto de la app (16dp laterales,
-                        // ver DocuSmartScreenHeader). Se separa en
-                        // horizontal/vertical para unificar el margen lateral
-                        // sin tocar el espaciado vertical ya establecido acá.
-                        .padding(horizontal = 16.dp, vertical = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // ── AdMob — solo para usuarios free (backlog UX §8),
-                    // solo en el resultado detectado, nunca sobre la vista
-                    // de cámara en vivo (taparía el área de escaneo) ──────
-                    if (!isPremium) {
-                        DocuSmartBannerAd(
-                            adUnitId  = AdConstants.BANNER_QR_ID,
-                            adManager = viewModel.adManager
-                        )
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // Ícono según tipo -- bug real corregido 2026-09-08: URL/
-                    // Documento/Email/Texto usaban `DocuBlue`, un azul fijo que
-                    // ignoraba el Color de acento elegido en Ajustes (mismo
-                    // patrón de bug ya corregido antes en banners y sombras --
-                    // ver `AccentGradient.kt`). Imagen/Teléfono se quedan en
-                    // verde a propósito, como diferenciación semántica.
-                    // Extraído a QrResultDisplay.kt (HU-44): el Historial
-                    // reutiliza el mismo mapeo tipo->ícono/color/etiqueta.
-                    val (typeIcon, typeColor, typeLabel) = qrContentTypeVisuals(qrType)
-
-                    Box(
-                        modifier = Modifier.size(80.dp).background(
-                            typeColor.copy(alpha = 0.12f), RoundedCornerShape(20.dp)
-                        ),
-                        contentAlignment = Alignment.Center
+                    // ── Resultado según tipo ──────────────────────────────────────
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                // Hallazgo real de la auditoría general 2026-09-17
+                                // (octava ronda, Media -- G3): el padding uniforme de
+                                // 20dp hacía que el banner de anuncios se viera más
+                                // angosto que en el resto de la app (16dp laterales,
+                                // ver DocuSmartScreenHeader). Se separa en
+                                // horizontal/vertical para unificar el margen lateral
+                                // sin tocar el espaciado vertical ya establecido acá.
+                                .padding(horizontal = 16.dp, vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Icon(typeIcon, null, tint = typeColor, modifier = Modifier.size(44.dp))
-                    }
+                        // ── AdMob — solo para usuarios free (backlog UX §8),
+                        // solo en el resultado detectado, nunca sobre la vista
+                        // de cámara en vivo (taparía el área de escaneo) ──────
+                        if (!isPremium) {
+                            DocuSmartBannerAd(
+                                adUnitId = AdConstants.BANNER_QR_ID,
+                                adManager = viewModel.adManager,
+                            )
+                        }
 
-                    Text(stringResource(R.string.qr_detected_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface)
+                        Spacer(Modifier.height(8.dp))
 
-                    // ── Imagen inline si es tipo imagen ───────────────────────
-                    if (qrType == QrContentType.IMAGE) {
-                        val imagePreviewShape = MaterialTheme.shapes.large
+                        // Ícono según tipo -- bug real corregido 2026-09-08: URL/
+                        // Documento/Email/Texto usaban `DocuBlue`, un azul fijo que
+                        // ignoraba el Color de acento elegido en Ajustes (mismo
+                        // patrón de bug ya corregido antes en banners y sombras --
+                        // ver `AccentGradient.kt`). Imagen/Teléfono se quedan en
+                        // verde a propósito, como diferenciación semántica.
+                        // Extraído a QrResultDisplay.kt (HU-44): el Historial
+                        // reutiliza el mismo mapeo tipo->ícono/color/etiqueta.
+                        val (typeIcon, typeColor, typeLabel) = qrContentTypeVisuals(qrType)
+
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .accentShadow(imagePreviewShape)
-                                .clip(imagePreviewShape)
-                                .background(MaterialTheme.colorScheme.surface)
-                                .accentBorder(imagePreviewShape)
+                            modifier =
+                                Modifier.size(80.dp).background(
+                                    typeColor.copy(alpha = 0.12f),
+                                    RoundedCornerShape(20.dp),
+                                ),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            if (imageBitmap != null) {
-                                Image(
-                                    bitmap = imageBitmap!!.asImageBitmap(),
-                                    contentDescription = stringResource(R.string.qr_image_content_desc),
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier
+                            Icon(typeIcon, null, tint = typeColor, modifier = Modifier.size(44.dp))
+                        }
+
+                        Text(
+                            stringResource(R.string.qr_detected_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+
+                        // ── Imagen inline si es tipo imagen ───────────────────────
+                        if (qrType == QrContentType.IMAGE) {
+                            val imagePreviewShape = MaterialTheme.shapes.large
+                            Box(
+                                modifier =
+                                    Modifier
                                         .fillMaxWidth()
-                                        .heightIn(max = 300.dp)
-                                )
-                            } else if (imageLoading) {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().height(120.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        CircularProgressIndicator(
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(32.dp)
-                                        )
-                                        Spacer(Modifier.height(8.dp))
-                                        Text(stringResource(R.string.qr_loading_image),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            } else {
-                                // Hallazgo real #2: sin confirmación explícita acá,
-                                // la sola presencia de este QR en cámara ya disparaba
-                                // la petición HTTP -- ahora requiere este toque.
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        .accentShadow(imagePreviewShape)
+                                        .clip(imagePreviewShape)
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .accentBorder(imagePreviewShape),
+                            ) {
+                                if (imageBitmap != null) {
+                                    Image(
+                                        bitmap = imageBitmap!!.asImageBitmap(),
+                                        contentDescription = stringResource(R.string.qr_image_content_desc),
+                                        contentScale = ContentScale.Fit,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .heightIn(max = 300.dp),
+                                    )
+                                } else if (imageLoading) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                                        contentAlignment = Alignment.Center,
                                     ) {
-                                        Text(
-                                            stringResource(R.string.qr_image_privacy_warning),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Button(
-                                            onClick = {
-                                                val url = qrResult
-                                                if (url != null) {
-                                                    imageLoading = true
-                                                    scope.launch {
-                                                        imageBitmap = loadBitmapFromUrl(url)
-                                                        imageLoading = false
-                                                    }
-                                                }
-                                            },
-                                            shape = MaterialTheme.shapes.medium
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            CircularProgressIndicator(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(32.dp),
+                                            )
+                                            Spacer(Modifier.height(8.dp))
+                                            Text(
+                                                stringResource(R.string.qr_loading_image),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    // Hallazgo real #2: sin confirmación explícita acá,
+                                    // la sola presencia de este QR en cámara ya disparaba
+                                    // la petición HTTP -- ahora requiere este toque.
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(10.dp),
                                         ) {
-                                            Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.qr_load_image))
+                                            Text(
+                                                stringResource(R.string.qr_image_privacy_warning),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                            )
+                                            Button(
+                                                onClick = {
+                                                    val url = qrResult
+                                                    if (url != null) {
+                                                        imageLoading = true
+                                                        scope.launch {
+                                                            imageBitmap = loadBitmapFromUrl(url)
+                                                            imageLoading = false
+                                                        }
+                                                    }
+                                                },
+                                                shape = MaterialTheme.shapes.medium,
+                                            ) {
+                                                Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(stringResource(R.string.qr_load_image))
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    // ── Card con contenido y acciones ─────────────────────────
-                    val resultCardShape = MaterialTheme.shapes.large
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .accentShadow(resultCardShape)
-                            .clip(resultCardShape)
-                            .background(MaterialTheme.colorScheme.surface)
-                            .accentBorder(resultCardShape)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        // ── Card con contenido y acciones ─────────────────────────
+                        val resultCardShape = MaterialTheme.shapes.large
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .accentShadow(resultCardShape)
+                                    .clip(resultCardShape)
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .accentBorder(resultCardShape),
                         ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
-                                Icon(typeIcon, null,
-                                    tint = typeColor, modifier = Modifier.size(20.dp))
-                                Text(typeLabel,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface)
-                            }
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        typeIcon,
+                                        null,
+                                        tint = typeColor,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Text(
+                                        typeLabel,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
 
-                            Surface(
-                                shape = MaterialTheme.shapes.medium,
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            ) {
-                                Text(
-                                    text = qrResult ?: "",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(12.dp),
-                                    maxLines = 3
+                                Surface(
+                                    shape = MaterialTheme.shapes.medium,
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                ) {
+                                    Text(
+                                        text = qrResult ?: "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(12.dp),
+                                        maxLines = 3,
+                                    )
+                                }
+
+                                if (copiedMsg) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            null,
+                                            tint = SuccessGreen,
+                                            modifier = Modifier.size(14.dp),
+                                        )
+                                        Text(
+                                            stringResource(R.string.qr_copied_clipboard),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = SuccessGreen,
+                                        )
+                                    }
+                                }
+
+                                // ── Botones según tipo ────────────────────────────
+                                // Extraído a QrResultDisplay.kt (HU-44): el
+                                // Historial reutiliza los mismos botones para una
+                                // entrada leída.
+                                QrContentActionButtons(
+                                    qrType = qrType,
+                                    content = qrResult ?: "",
+                                    onCopied = { copiedMsg = true },
                                 )
                             }
+                        }
 
-                            if (copiedMsg) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Rounded.CheckCircle, null,
-                                        tint = SuccessGreen, modifier = Modifier.size(14.dp))
-                                    Text(stringResource(R.string.qr_copied_clipboard),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = SuccessGreen)
-                                }
-                            }
-
-                            // ── Botones según tipo ────────────────────────────
-                            // Extraído a QrResultDisplay.kt (HU-44): el
-                            // Historial reutiliza los mismos botones para una
-                            // entrada leída.
-                            QrContentActionButtons(
-                                qrType = qrType,
-                                content = qrResult ?: "",
-                                onCopied = { copiedMsg = true }
-                            )
+                        OutlinedButton(
+                            onClick = {
+                                qrResult = null
+                                isScanning = true
+                                copiedMsg = false
+                                imageBitmap = null
+                                imageLoading = false
+                            },
+                            modifier =
+                                Modifier.fillMaxWidth().height(48.dp)
+                                    .accentBorder(MaterialTheme.shapes.medium),
+                            shape = MaterialTheme.shapes.medium,
+                        ) {
+                            Icon(Icons.Rounded.QrCodeScanner, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.qr_scan_another))
                         }
                     }
-
-                    OutlinedButton(
-                        onClick = {
-                            qrResult = null; isScanning = true; copiedMsg = false
-                            imageBitmap = null; imageLoading = false
-                        },
-                        modifier = Modifier.fillMaxWidth().height(48.dp)
-                            .accentBorder(MaterialTheme.shapes.medium),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Icon(Icons.Rounded.QrCodeScanner, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.qr_scan_another))
-                    }
                 }
-            }
             }
         }
     }
@@ -702,20 +768,60 @@ fun QrReaderScreen(
 // ── Esquinas decorativas ──────────────────────────────────────────────────────
 @Composable
 private fun QrCornerDecoration() {
-    val color      = MaterialTheme.colorScheme.primary
-    val frameSize  = 240.dp
+    val color = MaterialTheme.colorScheme.primary
+    val frameSize = 240.dp
     val cornerSize = 28.dp
-    val stroke     = 4.dp
+    val stroke = 4.dp
 
     Box(modifier = Modifier.size(frameSize)) {
-        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)))
-        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)))
-        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)))
-        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)))
-        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)))
-        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)))
-        Box(modifier = Modifier.width(cornerSize).height(stroke).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)))
-        Box(modifier = Modifier.width(stroke).height(cornerSize).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)))
+        Box(
+            modifier =
+                Modifier.width(
+                    cornerSize,
+                ).height(stroke).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)),
+        )
+        Box(
+            modifier =
+                Modifier.width(
+                    stroke,
+                ).height(cornerSize).align(Alignment.TopStart).background(color, RoundedCornerShape(topStart = 4.dp)),
+        )
+        Box(
+            modifier =
+                Modifier.width(
+                    cornerSize,
+                ).height(stroke).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)),
+        )
+        Box(
+            modifier =
+                Modifier.width(
+                    stroke,
+                ).height(cornerSize).align(Alignment.TopEnd).background(color, RoundedCornerShape(topEnd = 4.dp)),
+        )
+        Box(
+            modifier =
+                Modifier.width(
+                    cornerSize,
+                ).height(stroke).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)),
+        )
+        Box(
+            modifier =
+                Modifier.width(
+                    stroke,
+                ).height(cornerSize).align(Alignment.BottomStart).background(color, RoundedCornerShape(bottomStart = 4.dp)),
+        )
+        Box(
+            modifier =
+                Modifier.width(
+                    cornerSize,
+                ).height(stroke).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)),
+        )
+        Box(
+            modifier =
+                Modifier.width(
+                    stroke,
+                ).height(cornerSize).align(Alignment.BottomEnd).background(color, RoundedCornerShape(bottomEnd = 4.dp)),
+        )
     }
 }
 
@@ -724,41 +830,45 @@ private fun QrCornerDecoration() {
 // acento siempre visibles, no solo el contorno neutro por defecto de
 // Material3, más marcado cuando el chip está seleccionado.
 @Composable
-internal fun qrTypeChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
-    containerColor           = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-    labelColor               = MaterialTheme.colorScheme.onSurface,
-    iconColor                = MaterialTheme.colorScheme.primary,
-    selectedContainerColor   = MaterialTheme.colorScheme.primaryContainer,
-    selectedLabelColor       = MaterialTheme.colorScheme.onPrimaryContainer,
-    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-)
+internal fun qrTypeChipColors(): SelectableChipColors =
+    FilterChipDefaults.filterChipColors(
+        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+        labelColor = MaterialTheme.colorScheme.onSurface,
+        iconColor = MaterialTheme.colorScheme.primary,
+        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    )
 
 @Composable
-internal fun qrTypeChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
-    enabled             = true,
-    selected            = selected,
-    borderColor         = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-    selectedBorderColor = MaterialTheme.colorScheme.primary,
-    borderWidth         = 1.dp,
-    selectedBorderWidth = 1.5.dp
-)
+internal fun qrTypeChipBorder(selected: Boolean) =
+    FilterChipDefaults.filterChipBorder(
+        enabled = true,
+        selected = selected,
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+        selectedBorderColor = MaterialTheme.colorScheme.primary,
+        borderWidth = 1.dp,
+        selectedBorderWidth = 1.5.dp,
+    )
 
 // Hallazgo real de la auditoría (Alta, QrCreatorScreen): Uri no es
 // Parcelable-friendly de forma trivial para rememberSaveable -- se persiste
 // como String (mismo criterio sugerido para este caso: Saver simple
 // toString()/Uri.parse()).
-private val QrUriSaver = Saver<Uri?, String>(
-    save = { it?.toString() ?: "" },
-    restore = { if (it.isEmpty()) null else Uri.parse(it) }
-)
+private val QrUriSaver =
+    Saver<Uri?, String>(
+        save = { it?.toString() ?: "" },
+        restore = { if (it.isEmpty()) null else Uri.parse(it) },
+    )
 
 // LocalDateTime no es directamente Bundle-Saveable de forma confiable con
 // autoSaver() -- se persiste como String ISO-8601 (formato que el propio
 // LocalDateTime.toString()/parse() ya usan).
-private val QrLocalDateTimeSaver = Saver<LocalDateTime, String>(
-    save = { it.toString() },
-    restore = { LocalDateTime.parse(it) }
-)
+private val QrLocalDateTimeSaver =
+    Saver<LocalDateTime, String>(
+        save = { it.toString() },
+        restore = { LocalDateTime.parse(it) },
+    )
 
 // ── Pantalla: Crear QR ────────────────────────────────────────────────────────
 // HU-43: ExperimentalLayoutApi por el FlowRow del selector de tipo.
@@ -770,15 +880,15 @@ fun QrCreatorScreen(
     // UX 2026-08-30, HU-UX-01) -- `initialFileType` es "image" o "document",
     // decide qué chip preseleccionar ya que ambos comparten el mismo
     // mecanismo de adjuntar un archivo.
-    initialFileUri : String? = null,
+    initialFileUri: String? = null,
     initialFileType: String? = null,
     initialFileName: String? = null,
     // HU-44: acceso al Historial de QR desde el banner.
     onHistoryClick: () -> Unit = {},
-    viewModel: QrViewModel = hiltViewModel()
+    viewModel: QrViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    val scope   = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     // Hallazgo real de la auditoría (Alta): QrCreatorScreen perdía TODO el
@@ -788,47 +898,47 @@ fun QrCreatorScreen(
     // normal más abajo (se regenera, aceptable perder solo el logo visual).
     // 0=URL, 1=Texto, 2=Email, 3=Teléfono, 4=Imagen, 5=Documento
     var selectedType by rememberSaveable { mutableIntStateOf(0) }
-    var content      by rememberSaveable { mutableStateOf("") }
-    var selectedUri  by rememberSaveable(stateSaver = QrUriSaver) { mutableStateOf<Uri?>(null) }
+    var content by rememberSaveable { mutableStateOf("") }
+    var selectedUri by rememberSaveable(stateSaver = QrUriSaver) { mutableStateOf<Uri?>(null) }
     var selectedName by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(initialFileUri) {
         if (initialFileUri != null) {
             selectedType = if (initialFileType == "image") 4 else 5
-            selectedUri  = Uri.parse(initialFileUri)
+            selectedUri = Uri.parse(initialFileUri)
             selectedName = initialFileName ?: ""
-            content      = initialFileUri
+            content = initialFileUri
         }
     }
     // Revisión adversarial de seguridad (ronda 11): no persistir la
     // contraseña en texto plano en el Bundle de onSaveInstanceState.
-    var password     by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var usePassword  by rememberSaveable { mutableStateOf(false) }
-    var qrBitmap     by remember { mutableStateOf<Bitmap?>(null) }
+    var usePassword by rememberSaveable { mutableStateOf(false) }
+    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
-    var savedMsg     by remember { mutableStateOf<String?>(null) }
-    var errorMsg     by remember { mutableStateOf<String?>(null) }
+    var savedMsg by remember { mutableStateOf<String?>(null) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
 
     // HU-43 (backlog UX 2026-08-30/09-14): estado de los 3 tipos nuevos --
     // cada uno con sus propios campos (no comparten `content` como URL/
     // Texto/Email/Teléfono), así que cambiar de tipo y volver conserva lo
     // ya escrito sin necesitar lógica extra de reset.
-    var wifiSsid       by rememberSaveable { mutableStateOf("") }
+    var wifiSsid by rememberSaveable { mutableStateOf("") }
     // Revisión adversarial de seguridad (ronda 11): no persistir la
     // contraseña de Wi-Fi en texto plano en el Bundle de onSaveInstanceState.
-    var wifiPassword   by remember { mutableStateOf("") }
-    var wifiShowPass   by remember { mutableStateOf(false) }
-    var wifiSecurity   by rememberSaveable { mutableStateOf(QrWifiSecurity.WPA) }
-    var contactName    by rememberSaveable { mutableStateOf("") }
-    var contactPhone   by rememberSaveable { mutableStateOf("") }
-    var contactEmail   by rememberSaveable { mutableStateOf("") }
-    var eventTitle     by rememberSaveable { mutableStateOf("") }
-    var eventLocation  by rememberSaveable { mutableStateOf("") }
-    var eventStart     by rememberSaveable(stateSaver = QrLocalDateTimeSaver) {
+    var wifiPassword by remember { mutableStateOf("") }
+    var wifiShowPass by remember { mutableStateOf(false) }
+    var wifiSecurity by rememberSaveable { mutableStateOf(QrWifiSecurity.WPA) }
+    var contactName by rememberSaveable { mutableStateOf("") }
+    var contactPhone by rememberSaveable { mutableStateOf("") }
+    var contactEmail by rememberSaveable { mutableStateOf("") }
+    var eventTitle by rememberSaveable { mutableStateOf("") }
+    var eventLocation by rememberSaveable { mutableStateOf("") }
+    var eventStart by rememberSaveable(stateSaver = QrLocalDateTimeSaver) {
         mutableStateOf(LocalDateTime.now().plusHours(1).withMinute(0).withSecond(0).withNano(0))
     }
-    var eventEnd       by rememberSaveable(stateSaver = QrLocalDateTimeSaver) {
+    var eventEnd by rememberSaveable(stateSaver = QrLocalDateTimeSaver) {
         mutableStateOf(eventStart.plusHours(1))
     }
 
@@ -836,32 +946,34 @@ fun QrCreatorScreen(
     // Negro por defecto -- AC3 de HU-43/mismo criterio de "sin cambios
     // para quien no toca la opción") y logo opcional (RF2).
     var moduleColor by rememberSaveable { mutableStateOf(QR_DEFAULT_MODULE_COLOR) }
-    var logoBitmap  by remember { mutableStateOf<Bitmap?>(null) }
+    var logoBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    val types = listOf(
-        stringResource(R.string.qr_chip_url),
-        stringResource(R.string.qr_chip_text),
-        stringResource(R.string.qr_chip_email),
-        stringResource(R.string.qr_chip_phone),
-        stringResource(R.string.qr_chip_image),
-        stringResource(R.string.qr_chip_document),
-        stringResource(R.string.qr_chip_wifi),
-        stringResource(R.string.qr_chip_contact),
-        stringResource(R.string.qr_chip_event)
-    )
-    val typeIcons = listOf(
-        Icons.Rounded.Link,
-        Icons.Rounded.TextFields,
-        Icons.Rounded.Email,
-        Icons.Rounded.Phone,
-        Icons.Rounded.Image,
-        Icons.Rounded.Description,
-        Icons.Rounded.Wifi,
-        Icons.Rounded.ContactPage,
-        Icons.Rounded.Event
-    )
+    val types =
+        listOf(
+            stringResource(R.string.qr_chip_url),
+            stringResource(R.string.qr_chip_text),
+            stringResource(R.string.qr_chip_email),
+            stringResource(R.string.qr_chip_phone),
+            stringResource(R.string.qr_chip_image),
+            stringResource(R.string.qr_chip_document),
+            stringResource(R.string.qr_chip_wifi),
+            stringResource(R.string.qr_chip_contact),
+            stringResource(R.string.qr_chip_event),
+        )
+    val typeIcons =
+        listOf(
+            Icons.Rounded.Link,
+            Icons.Rounded.TextFields,
+            Icons.Rounded.Email,
+            Icons.Rounded.Phone,
+            Icons.Rounded.Image,
+            Icons.Rounded.Description,
+            Icons.Rounded.Wifi,
+            Icons.Rounded.ContactPage,
+            Icons.Rounded.Event,
+        )
 
-    val defaultImageName    = stringResource(R.string.qr_chip_image)
+    val defaultImageName = stringResource(R.string.qr_chip_image)
     val defaultDocumentName = stringResource(R.string.pdf_pw_default_document_name)
     val persistPermissionFailedMsg = stringResource(R.string.qr_persist_permission_failed)
 
@@ -871,54 +983,58 @@ fun QrCreatorScreen(
     // permiso de lectura moría con el proceso y escanear el QR más tarde
     // (incluso en este mismo dispositivo) fallaba. OpenDocument() sí está
     // pensado para esto y permite persistir el permiso entre reinicios.
-    val imageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let {
-            // Hallazgo real de la revisión de seguridad 2026-09-16 (#60): si
-            // este permiso no se pudo persistir, el QR se generaba igual con
-            // una URI que después no se podía leer -- reproduce el bug
-            // original (#3) por un camino distinto. Se avisa y no se deja
-            // seleccionar el archivo, en vez de fallar en silencio más tarde.
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (e: SecurityException) {
-                Timber.w(e, "imageLauncher: no se pudo persistir el permiso de lectura")
-                errorMsg = persistPermissionFailedMsg
-                return@let
+    val imageLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri?.let {
+                // Hallazgo real de la revisión de seguridad 2026-09-16 (#60): si
+                // este permiso no se pudo persistir, el QR se generaba igual con
+                // una URI que después no se podía leer -- reproduce el bug
+                // original (#3) por un camino distinto. Se avisa y no se deja
+                // seleccionar el archivo, en vez de fallar en silencio más tarde.
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        it,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (e: SecurityException) {
+                    Timber.w(e, "imageLauncher: no se pudo persistir el permiso de lectura")
+                    errorMsg = persistPermissionFailedMsg
+                    return@let
+                }
+                selectedUri = it
+                selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultImageName
+                content = it.toString()
+                qrBitmap = null
+                savedMsg = null
+                errorMsg = null
             }
-            selectedUri  = it
-            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultImageName
-            content      = it.toString()
-            qrBitmap     = null
-            savedMsg     = null
-            errorMsg     = null
         }
-    }
 
-    val documentLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let {
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (e: SecurityException) {
-                Timber.w(e, "documentLauncher: no se pudo persistir el permiso de lectura")
-                errorMsg = persistPermissionFailedMsg
-                return@let
+    val documentLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri?.let {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        it,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (e: SecurityException) {
+                    Timber.w(e, "documentLauncher: no se pudo persistir el permiso de lectura")
+                    errorMsg = persistPermissionFailedMsg
+                    return@let
+                }
+                selectedUri = it
+                selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultDocumentName
+                content = it.toString()
+                qrBitmap = null
+                savedMsg = null
+                errorMsg = null
             }
-            selectedUri  = it
-            selectedName = it.lastPathSegment?.substringAfterLast("/") ?: defaultDocumentName
-            content      = it.toString()
-            qrBitmap     = null
-            savedMsg     = null
-            errorMsg     = null
         }
-    }
 
     // HU-45 (RF2): selector de logo -- mismo patrón GetContent()/"image/*"
     // que ya usa el chip "Imagen" de arriba, pero acá se decodifica el
@@ -926,54 +1042,59 @@ fun QrCreatorScreen(
     // cual a generateQrBitmap) en vez de guardar la Uri como contenido del
     // QR.
     val errorLogoLoad = stringResource(R.string.qr_error_logo_load)
-    val logoLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                val decoded = withContext(Dispatchers.IO) {
-                    runCatching { decodeSampledBitmap(context, uri, LOGO_TARGET_SIZE) }.getOrNull()
-                }
-                if (decoded != null) {
-                    logoBitmap = decoded
-                    qrBitmap = null
-                    savedMsg = null
-                    errorMsg = null
-                } else {
-                    // Bug real encontrado en la revisión pre-fusión: un
-                    // fallo de decodificación (imagen corrupta/formato no
-                    // soportado) dejaba `logoBitmap` en null sin ningún
-                    // aviso -- la opción de logo simplemente desaparecía
-                    // sin explicación.
-                    errorMsg = errorLogoLoad
+    val logoLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent(),
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    val decoded =
+                        withContext(Dispatchers.IO) {
+                            runCatching { decodeSampledBitmap(context, uri, LOGO_TARGET_SIZE) }.getOrNull()
+                        }
+                    if (decoded != null) {
+                        logoBitmap = decoded
+                        qrBitmap = null
+                        savedMsg = null
+                        errorMsg = null
+                    } else {
+                        // Bug real encontrado en la revisión pre-fusión: un
+                        // fallo de decodificación (imagen corrupta/formato no
+                        // soportado) dejaba `logoBitmap` en null sin ningún
+                        // aviso -- la opción de logo simplemente desaparecía
+                        // sin explicación.
+                        errorMsg = errorLogoLoad
+                    }
                 }
             }
         }
-    }
 
     Scaffold(
         // Se excluye el inset inferior de systemBars (bug real "línea
         // blanca": este Scaffold lo reservaba por duplicado sobre el que ya
         // reserva MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt
         // para el detalle completo).
-        contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-        ),
-        containerColor = Color.Transparent // fondo animado global (backlog UX 2026-09-06)
+        contentWindowInsets =
+            WindowInsets.systemBars.only(
+                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+            ),
+        // fondo animado global (backlog UX 2026-09-06)
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                // Hallazgo real de la auditoría general 2026-09-17 (octava
-                // ronda, Media -- G3, cierra el pendiente de la quinta
-                // pasada): mismo motivo que en la Column de arriba --
-                // separar horizontal/vertical unifica el margen lateral
-                // del banner con el resto de la app (16dp) sin tocar el
-                // espaciado vertical.
-                .padding(horizontal = 16.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    // Hallazgo real de la auditoría general 2026-09-17 (octava
+                    // ronda, Media -- G3, cierra el pendiente de la quinta
+                    // pasada): mismo motivo que en la Column de arriba --
+                    // separar horizontal/vertical unifica el margen lateral
+                    // del banner con el resto de la app (16dp) sin tocar el
+                    // espaciado vertical.
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Hallazgo real de la auditoría general 2026-09-17 (quinta
             // pasada, A5): el resto de la app (DocuSmartScreenHeader) pone
@@ -984,8 +1105,8 @@ fun QrCreatorScreen(
             // ── AdMob — solo para usuarios free (backlog UX §8) ───────────────
             if (!isPremium) {
                 DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_QR_ID,
-                    adManager = viewModel.adManager
+                    adUnitId = AdConstants.BANNER_QR_ID,
+                    adManager = viewModel.adManager,
                 )
             }
 
@@ -993,18 +1114,18 @@ fun QrCreatorScreen(
             // explícito del usuario) -- reemplaza el TopAppBar plano de
             // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
             DocuSmartTopBanner(
-                screenTitle    = stringResource(R.string.qr_creator_title),
+                screenTitle = stringResource(R.string.qr_creator_title),
                 screenSubtitle = stringResource(R.string.qr_creator_subtitle),
-                onBack         = onBack,
+                onBack = onBack,
                 actions = {
                     IconButton(onClick = onHistoryClick) {
                         Icon(
                             Icons.Rounded.History,
                             contentDescription = stringResource(R.string.qr_history_title),
-                            tint = Color.White
+                            tint = Color.White,
                         )
                     }
-                }
+                },
             )
 
             Spacer(Modifier.height(4.dp))
@@ -1025,31 +1146,31 @@ fun QrCreatorScreen(
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 types.indices.forEach { index ->
                     FilterChip(
-                        selected  = selectedType == index,
-                        onClick   = {
+                        selected = selectedType == index,
+                        onClick = {
                             selectedType = index
-                            content      = ""
-                            selectedUri  = null
+                            content = ""
+                            selectedUri = null
                             selectedName = ""
-                            qrBitmap     = null
-                            savedMsg     = null
-                            errorMsg     = null
+                            qrBitmap = null
+                            savedMsg = null
+                            errorMsg = null
                         },
-                        label     = {
+                        label = {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment     = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(typeIcons[index], null, modifier = Modifier.size(14.dp))
                                 Text(types[index], style = MaterialTheme.typography.labelSmall)
                             }
                         },
-                        colors    = qrTypeChipColors(),
-                        border    = qrTypeChipBorder(selectedType == index)
+                        colors = qrTypeChipColors(),
+                        border = qrTypeChipBorder(selectedType == index),
                     )
                 }
             }
@@ -1060,46 +1181,65 @@ fun QrCreatorScreen(
                     // Imagen
                     val imagePickerShape = MaterialTheme.shapes.large
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .accentShadow(imagePickerShape)
-                            .clip(imagePickerShape)
-                            .background(
-                                if (selectedUri != null)
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                else MaterialTheme.colorScheme.surface
-                            )
-                            .accentBorder(imagePickerShape)
-                            .clickable { imageLauncher.launch(arrayOf("image/*")) }
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .accentShadow(imagePickerShape)
+                                .clip(imagePickerShape)
+                                .background(
+                                    if (selectedUri != null) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surface
+                                    },
+                                )
+                                .accentBorder(imagePickerShape)
+                                .clickable { imageLauncher.launch(arrayOf("image/*")) },
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(
-                                if (selectedUri != null) Icons.Rounded.CheckCircle
-                                else Icons.Rounded.AddPhotoAlternate,
+                                if (selectedUri != null) {
+                                    Icons.Rounded.CheckCircle
+                                } else {
+                                    Icons.Rounded.AddPhotoAlternate
+                                },
                                 null,
-                                tint = if (selectedUri != null) SuccessGreen
-                                else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
+                                tint =
+                                    if (selectedUri != null) {
+                                        SuccessGreen
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
+                                modifier = Modifier.size(28.dp),
                             )
                             Column {
                                 Text(
-                                    if (selectedUri != null) selectedName
-                                    else stringResource(R.string.qr_select_image),
+                                    if (selectedUri != null) {
+                                        selectedName
+                                    } else {
+                                        stringResource(R.string.qr_select_image)
+                                    },
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (selectedUri != null)
-                                        MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.primary
+                                    color =
+                                        if (selectedUri != null) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.primary
+                                        },
                                 )
                                 Text(
-                                    if (selectedUri != null) stringResource(R.string.qr_image_selected)
-                                    else stringResource(R.string.qr_image_formats_hint),
+                                    if (selectedUri != null) {
+                                        stringResource(R.string.qr_image_selected)
+                                    } else {
+                                        stringResource(R.string.qr_image_formats_hint)
+                                    },
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -1108,53 +1248,72 @@ fun QrCreatorScreen(
                         stringResource(R.string.qr_local_only_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp)
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
                 5 -> {
                     // Documento
                     val documentPickerShape = MaterialTheme.shapes.large
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .accentShadow(documentPickerShape)
-                            .clip(documentPickerShape)
-                            .background(
-                                if (selectedUri != null)
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                else MaterialTheme.colorScheme.surface
-                            )
-                            .accentBorder(documentPickerShape)
-                            .clickable { documentLauncher.launch(arrayOf("*/*")) }
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .accentShadow(documentPickerShape)
+                                .clip(documentPickerShape)
+                                .background(
+                                    if (selectedUri != null) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surface
+                                    },
+                                )
+                                .accentBorder(documentPickerShape)
+                                .clickable { documentLauncher.launch(arrayOf("*/*")) },
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(
-                                if (selectedUri != null) Icons.Rounded.CheckCircle
-                                else Icons.Rounded.FileOpen,
+                                if (selectedUri != null) {
+                                    Icons.Rounded.CheckCircle
+                                } else {
+                                    Icons.Rounded.FileOpen
+                                },
                                 null,
-                                tint = if (selectedUri != null) SuccessGreen
-                                else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
+                                tint =
+                                    if (selectedUri != null) {
+                                        SuccessGreen
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
+                                modifier = Modifier.size(28.dp),
                             )
                             Column {
                                 Text(
-                                    if (selectedUri != null) selectedName
-                                    else stringResource(R.string.qr_select_document),
+                                    if (selectedUri != null) {
+                                        selectedName
+                                    } else {
+                                        stringResource(R.string.qr_select_document)
+                                    },
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (selectedUri != null)
-                                        MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.primary
+                                    color =
+                                        if (selectedUri != null) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.primary
+                                        },
                                 )
                                 Text(
-                                    if (selectedUri != null) stringResource(R.string.qr_document_selected)
-                                    else stringResource(R.string.qr_document_formats_hint),
+                                    if (selectedUri != null) {
+                                        stringResource(R.string.qr_document_selected)
+                                    } else {
+                                        stringResource(R.string.qr_document_formats_hint)
+                                    },
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -1163,61 +1322,107 @@ fun QrCreatorScreen(
                         stringResource(R.string.qr_local_only_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp)
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
                 6 -> {
                     // HU-43: Wi-Fi
                     QrWifiForm(
                         ssid = wifiSsid,
-                        onSsidChange = { wifiSsid = it; qrBitmap = null; savedMsg = null },
+                        onSsidChange = {
+                            wifiSsid = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                         password = wifiPassword,
-                        onPasswordChange = { wifiPassword = it; qrBitmap = null; savedMsg = null },
+                        onPasswordChange = {
+                            wifiPassword = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                         showPassword = wifiShowPass,
                         onShowPasswordToggle = { wifiShowPass = !wifiShowPass },
                         security = wifiSecurity,
-                        onSecurityChange = { wifiSecurity = it; qrBitmap = null; savedMsg = null }
+                        onSecurityChange = {
+                            wifiSecurity = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                     )
                 }
                 7 -> {
                     // HU-43: Contacto
                     QrContactForm(
                         name = contactName,
-                        onNameChange = { contactName = it; qrBitmap = null; savedMsg = null },
+                        onNameChange = {
+                            contactName = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                         phone = contactPhone,
-                        onPhoneChange = { contactPhone = it; qrBitmap = null; savedMsg = null },
+                        onPhoneChange = {
+                            contactPhone = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                         email = contactEmail,
-                        onEmailChange = { contactEmail = it; qrBitmap = null; savedMsg = null }
+                        onEmailChange = {
+                            contactEmail = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                     )
                 }
                 8 -> {
                     // HU-43: Evento de calendario
                     QrEventForm(
                         title = eventTitle,
-                        onTitleChange = { eventTitle = it; qrBitmap = null; savedMsg = null },
+                        onTitleChange = {
+                            eventTitle = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                         location = eventLocation,
-                        onLocationChange = { eventLocation = it; qrBitmap = null; savedMsg = null },
+                        onLocationChange = {
+                            eventLocation = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                         start = eventStart,
-                        onStartChange = { eventStart = it; qrBitmap = null; savedMsg = null },
+                        onStartChange = {
+                            eventStart = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                         end = eventEnd,
-                        onEndChange = { eventEnd = it; qrBitmap = null; savedMsg = null }
+                        onEndChange = {
+                            eventEnd = it
+                            qrBitmap = null
+                            savedMsg = null
+                        },
                     )
                 }
                 else -> {
                     // URL, Texto, Email, Teléfono
                     OutlinedTextField(
-                        value         = content,
-                        onValueChange = { content = it; qrBitmap = null; savedMsg = null },
-                        modifier      = Modifier.fillMaxWidth(),
-                        label         = {
-                            Text(when (selectedType) {
-                                0    -> stringResource(R.string.qr_label_url)
-                                1    -> stringResource(R.string.qr_label_text)
-                                2    -> stringResource(R.string.qr_label_email)
-                                else -> stringResource(R.string.qr_label_phone)
-                            })
+                        value = content,
+                        onValueChange = {
+                            content = it
+                            qrBitmap = null
+                            savedMsg = null
                         },
-                        placeholder   = {
+                        modifier = Modifier.fillMaxWidth(),
+                        label = {
+                            Text(
+                                when (selectedType) {
+                                    0 -> stringResource(R.string.qr_label_url)
+                                    1 -> stringResource(R.string.qr_label_text)
+                                    2 -> stringResource(R.string.qr_label_email)
+                                    else -> stringResource(R.string.qr_label_phone)
+                                },
+                            )
+                        },
+                        placeholder = {
                             Text(
                                 // Bug real encontrado 2026-09-14 (repaso
                                 // general): estos placeholders estaban
@@ -1225,38 +1430,44 @@ fun QrCreatorScreen(
                                 // sin pasar por el sistema de 12 idiomas
                                 // que ya usa el resto de la pantalla.
                                 when (selectedType) {
-                                    0    -> stringResource(R.string.qr_placeholder_url)
-                                    1    -> stringResource(R.string.qr_placeholder_text)
-                                    2    -> stringResource(R.string.qr_placeholder_email)
+                                    0 -> stringResource(R.string.qr_placeholder_url)
+                                    1 -> stringResource(R.string.qr_placeholder_text)
+                                    2 -> stringResource(R.string.qr_placeholder_email)
                                     else -> stringResource(R.string.qr_placeholder_phone)
                                 },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         },
-                        leadingIcon   = {
-                            Icon(typeIcons[selectedType], null,
+                        leadingIcon = {
+                            Icon(
+                                typeIcons[selectedType],
+                                null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp))
+                                modifier = Modifier.size(20.dp),
+                            )
                         },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = when (selectedType) {
-                                0    -> KeyboardType.Uri
-                                2    -> KeyboardType.Email
-                                3    -> KeyboardType.Phone
-                                else -> KeyboardType.Text
-                            }
-                        ),
+                        keyboardOptions =
+                            androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType =
+                                    when (selectedType) {
+                                        0 -> KeyboardType.Uri
+                                        2 -> KeyboardType.Email
+                                        3 -> KeyboardType.Phone
+                                        else -> KeyboardType.Text
+                                    },
+                            ),
                         minLines = if (selectedType == 1) 3 else 1,
                         maxLines = if (selectedType == 1) 5 else 1,
-                        shape    = MaterialTheme.shapes.large,
+                        shape = MaterialTheme.shapes.large,
                         // Pedido explícito del usuario 2026-09-08: borde con
                         // el Color de acento siempre visible (antes solo se
                         // notaba al enfocar el campo, el contorno normal era
                         // el gris neutro por defecto de Material3).
-                        colors   = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            focusedBorderColor   = MaterialTheme.colorScheme.primary
-                        )
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
                     )
                 }
             }
@@ -1264,132 +1475,169 @@ fun QrCreatorScreen(
             // ── Diseño (HU-45: color de módulos + logo) ────────────────────────
             QrDesignSection(
                 selectedColor = moduleColor,
-                onColorSelected = { moduleColor = it; qrBitmap = null; savedMsg = null },
+                onColorSelected = {
+                    moduleColor = it
+                    qrBitmap = null
+                    savedMsg = null
+                },
                 hasSufficientContrast = hasSufficientContrast(moduleColor, android.graphics.Color.WHITE),
                 logoBitmap = logoBitmap,
                 onPickLogo = { logoLauncher.launch("image/*") },
-                onRemoveLogo = { logoBitmap = null; qrBitmap = null; savedMsg = null }
+                onRemoveLogo = {
+                    logoBitmap = null
+                    qrBitmap = null
+                    savedMsg = null
+                },
             )
 
             // ── Contraseña ────────────────────────────────────────────────────
             val passwordCardShape = MaterialTheme.shapes.large
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .accentShadow(passwordCardShape)
-                    .clip(passwordCardShape)
-                    .background(
-                        if (usePassword)
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                        else MaterialTheme.colorScheme.surface
-                    )
-                    .accentBorder(passwordCardShape)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .accentShadow(passwordCardShape)
+                        .clip(passwordCardShape)
+                        .background(
+                            if (usePassword) {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            },
+                        )
+                        .accentBorder(passwordCardShape),
             ) {
                 Column(
-                    modifier            = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(
-                        modifier              = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment     = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalAlignment     = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             // Pedido explícito del usuario 2026-09-08: ícono
                             // y título siempre con el Color de acento (antes
                             // el ícono se apagaba a gris con la contraseña
                             // desactivada).
-                            Icon(Icons.Rounded.Lock, null,
+                            Icon(
+                                Icons.Rounded.Lock,
+                                null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp))
+                                modifier = Modifier.size(20.dp),
+                            )
                             Column {
-                                Text(stringResource(R.string.qr_protect_password),
+                                Text(
+                                    stringResource(R.string.qr_protect_password),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.primary)
-                                Text(stringResource(R.string.qr_protect_password_desc),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Text(
+                                    stringResource(R.string.qr_protect_password_desc),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                         Switch(
-                            checked         = usePassword,
-                            onCheckedChange = { usePassword = it; if (!it) password = "" },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                checkedBorderColor = MaterialTheme.colorScheme.primary
-                            )
+                            checked = usePassword,
+                            onCheckedChange = {
+                                usePassword = it
+                                if (!it) password = ""
+                            },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                    checkedBorderColor = MaterialTheme.colorScheme.primary,
+                                ),
                         )
                     }
                     if (usePassword) {
                         OutlinedTextField(
-                            value         = password,
+                            value = password,
                             onValueChange = { password = it },
-                            modifier      = Modifier.fillMaxWidth(),
-                            label         = { Text(stringResource(R.string.qr_password_label)) },
-                            placeholder   = { Text(stringResource(R.string.qr_password_min_chars)) },
-                            leadingIcon   = {
-                                Icon(Icons.Rounded.Key, null,
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(stringResource(R.string.qr_password_label)) },
+                            placeholder = { Text(stringResource(R.string.qr_password_min_chars)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Key,
+                                    null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp))
+                                    modifier = Modifier.size(18.dp),
+                                )
                             },
                             trailingIcon = {
                                 // Hallazgo real de la auditoría general
                                 // 2026-09-17 (séptima ronda, Alta -- A1).
                                 IconButton(onClick = { showPassword = !showPassword }) {
                                     Icon(
-                                        if (showPassword) Icons.Rounded.VisibilityOff
-                                        else Icons.Rounded.Visibility,
-                                        contentDescription = stringResource(
-                                            if (showPassword) R.string.password_hide else R.string.password_show
-                                        ),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        if (showPassword) {
+                                            Icons.Rounded.VisibilityOff
+                                        } else {
+                                            Icons.Rounded.Visibility
+                                        },
+                                        contentDescription =
+                                            stringResource(
+                                                if (showPassword) R.string.password_hide else R.string.password_show,
+                                            ),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             },
-                            visualTransformation = if (showPassword) VisualTransformation.None
-                            else PasswordVisualTransformation(),
+                            visualTransformation =
+                                if (showPassword) {
+                                    VisualTransformation.None
+                                } else {
+                                    PasswordVisualTransformation()
+                                },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             singleLine = true,
-                            shape      = MaterialTheme.shapes.medium
+                            shape = MaterialTheme.shapes.medium,
                         )
                     }
                 }
             }
 
             errorMsg?.let {
-                Text(it, style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error)
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
 
             // ── Botón generar ─────────────────────────────────────────────────
             // HU-43: Wi-Fi exige SSID (y contraseña salvo red abierta);
             // Contacto exige al menos el nombre; Evento exige título y que
             // el fin no sea anterior al inicio.
-            val hasContent = when (selectedType) {
-                4, 5 -> selectedUri != null
-                6    -> wifiSsid.isNotBlank() && (wifiSecurity == QrWifiSecurity.NONE || wifiPassword.isNotBlank())
-                7    -> contactName.isNotBlank()
-                8    -> eventTitle.isNotBlank() && !eventEnd.isBefore(eventStart)
-                else -> content.isNotBlank()
-            }
+            val hasContent =
+                when (selectedType) {
+                    4, 5 -> selectedUri != null
+                    6 -> wifiSsid.isNotBlank() && (wifiSecurity == QrWifiSecurity.NONE || wifiPassword.isNotBlank())
+                    7 -> contactName.isNotBlank()
+                    8 -> eventTitle.isNotBlank() && !eventEnd.isBefore(eventStart)
+                    else -> content.isNotBlank()
+                }
 
-            val errorSelectImage      = stringResource(R.string.qr_error_select_image)
-            val errorSelectDocument   = stringResource(R.string.qr_error_select_document)
-            val errorEmptyContent     = stringResource(R.string.qr_error_empty_content)
-            val errorPasswordShort    = stringResource(R.string.qr_error_password_short)
-            val errorLowContrast      = stringResource(R.string.qr_error_low_contrast)
+            val errorSelectImage = stringResource(R.string.qr_error_select_image)
+            val errorSelectDocument = stringResource(R.string.qr_error_select_document)
+            val errorEmptyContent = stringResource(R.string.qr_error_empty_content)
+            val errorPasswordShort = stringResource(R.string.qr_error_password_short)
+            val errorLowContrast = stringResource(R.string.qr_error_low_contrast)
             val errorGenerationFailed = stringResource(R.string.qr_error_generation_failed)
-            val errorWifiIncomplete   = stringResource(R.string.qr_error_wifi_incomplete)
-            val errorContactRequired  = stringResource(R.string.qr_error_contact_name_required)
-            val errorEventTitle       = stringResource(R.string.qr_error_event_title_required)
-            val errorEventEndBefore   = stringResource(R.string.qr_error_event_end_before_start)
-            val savedDownloadsMsg     = stringResource(R.string.general_saved_downloads)
-            val shareQrChooserTitle   = stringResource(R.string.qr_share_chooser_title)
+            val errorWifiIncomplete = stringResource(R.string.qr_error_wifi_incomplete)
+            val errorContactRequired = stringResource(R.string.qr_error_contact_name_required)
+            val errorEventTitle = stringResource(R.string.qr_error_event_title_required)
+            val errorEventEndBefore = stringResource(R.string.qr_error_event_end_before_start)
+            val savedDownloadsMsg = stringResource(R.string.general_saved_downloads)
+            val shareQrChooserTitle = stringResource(R.string.qr_share_chooser_title)
 
             Button(
                 onClick = {
@@ -1401,14 +1649,15 @@ fun QrCreatorScreen(
                     // guard de re-entrada ya usado en ConverterViewModel.
                     if (isGenerating) return@Button
                     if (!hasContent) {
-                        errorMsg = when (selectedType) {
-                            4    -> errorSelectImage
-                            5    -> errorSelectDocument
-                            6    -> errorWifiIncomplete
-                            7    -> errorContactRequired
-                            8    -> if (eventTitle.isBlank()) errorEventTitle else errorEventEndBefore
-                            else -> errorEmptyContent
-                        }
+                        errorMsg =
+                            when (selectedType) {
+                                4 -> errorSelectImage
+                                5 -> errorSelectDocument
+                                6 -> errorWifiIncomplete
+                                7 -> errorContactRequired
+                                8 -> if (eventTitle.isBlank()) errorEventTitle else errorEventEndBefore
+                                else -> errorEmptyContent
+                            }
                         return@Button
                     }
                     if (usePassword && password.length < 4) {
@@ -1423,8 +1672,8 @@ fun QrCreatorScreen(
                         errorMsg = errorLowContrast
                         return@Button
                     }
-                    errorMsg     = null
-                    savedMsg     = null
+                    errorMsg = null
+                    savedMsg = null
                     isGenerating = true
                     scope.launch {
                         // Hallazgo real de la auditoría (Media): cada QR
@@ -1437,23 +1686,27 @@ fun QrCreatorScreen(
                         // los archivos viejos (>1h) al iniciar una nueva
                         // generación.
                         cleanOldQrCacheFiles(context)
-                        val rawContent = when (selectedType) {
-                            4, 5 -> selectedUri.toString()
-                            // Hallazgo real de la auditoría general 2026-09-17
-                            // (B11): startsWith("http") sensible a mayúsculas
-                            // -- "HTTP://ejemplo.com" no matcheaba y quedaba
-                            // "https://HTTP://ejemplo.com", una URL rota.
-                            0    -> if (!content.startsWith("http", ignoreCase = true)) "https://$content" else content
-                            2    -> "mailto:$content"
-                            3    -> "tel:$content"
-                            6    -> QrWifiContent(wifiSsid, wifiPassword, wifiSecurity).toQrPayload()
-                            7    -> QrContactContent(contactName, contactPhone, contactEmail).toQrPayload()
-                            8    -> QrEventContent(eventTitle, eventLocation, eventStart, eventEnd).toQrPayload()
-                            else -> content
-                        }
-                        val finalContent = if (usePassword && password.isNotBlank())
-                            "${QrCrypto.PREFIX}${QrCrypto.encrypt(rawContent, password)}"
-                        else rawContent
+                        val rawContent =
+                            when (selectedType) {
+                                4, 5 -> selectedUri.toString()
+                                // Hallazgo real de la auditoría general 2026-09-17
+                                // (B11): startsWith("http") sensible a mayúsculas
+                                // -- "HTTP://ejemplo.com" no matcheaba y quedaba
+                                // "https://HTTP://ejemplo.com", una URL rota.
+                                0 -> if (!content.startsWith("http", ignoreCase = true)) "https://$content" else content
+                                2 -> "mailto:$content"
+                                3 -> "tel:$content"
+                                6 -> QrWifiContent(wifiSsid, wifiPassword, wifiSecurity).toQrPayload()
+                                7 -> QrContactContent(contactName, contactPhone, contactEmail).toQrPayload()
+                                8 -> QrEventContent(eventTitle, eventLocation, eventStart, eventEnd).toQrPayload()
+                                else -> content
+                            }
+                        val finalContent =
+                            if (usePassword && password.isNotBlank()) {
+                                "${QrCrypto.PREFIX}${QrCrypto.encrypt(rawContent, password)}"
+                            } else {
+                                rawContent
+                            }
                         val generated = generateQrBitmap(finalContent, moduleColor = moduleColor, logo = logoBitmap)
                         isGenerating = false
                         // Hallazgo real de la auditoría general 2026-09-17
@@ -1474,17 +1727,18 @@ fun QrCreatorScreen(
                         // QrContentType del Lector (namespace distinto, ver
                         // QrContentType.kt) -- alcanza con un literal para
                         // la analítica, que solo necesita el nombre.
-                        val createdContentTypeName = when (selectedType) {
-                            0    -> QrContentType.URL.name
-                            2    -> QrContentType.EMAIL.name
-                            3    -> QrContentType.PHONE.name
-                            4    -> QrContentType.IMAGE.name
-                            5    -> QrContentType.DOCUMENT.name
-                            6    -> "WIFI"
-                            7    -> "CONTACT"
-                            8    -> "EVENT"
-                            else -> QrContentType.TEXT.name
-                        }
+                        val createdContentTypeName =
+                            when (selectedType) {
+                                0 -> QrContentType.URL.name
+                                2 -> QrContentType.EMAIL.name
+                                3 -> QrContentType.PHONE.name
+                                4 -> QrContentType.IMAGE.name
+                                5 -> QrContentType.DOCUMENT.name
+                                6 -> "WIFI"
+                                7 -> "CONTACT"
+                                8 -> "EVENT"
+                                else -> QrContentType.TEXT.name
+                            }
                         DocuSmartAnalytics.logQrCreated(createdContentTypeName, usePassword)
                         // HU-44: se guarda `finalContent` -- ya incluye el
                         // prefijo `PROTECTED:` + cifrado cuando usePassword
@@ -1502,25 +1756,30 @@ fun QrCreatorScreen(
                             QrHistoryEntry(
                                 id = java.util.UUID.randomUUID().toString(),
                                 content = finalContent,
-                                typeName = if (usePassword && password.isNotBlank()) {
-                                    "PROTECTED"
-                                } else {
-                                    createdContentTypeName
-                                },
+                                typeName =
+                                    if (usePassword && password.isNotBlank()) {
+                                        "PROTECTED"
+                                    } else {
+                                        createdContentTypeName
+                                    },
                                 source = QrHistorySource.CREATED,
-                                createdAtMillis = System.currentTimeMillis()
-                            )
+                                createdAtMillis = System.currentTimeMillis(),
+                            ),
                         )
                     }
                 },
-                enabled  = hasContent && !isGenerating,
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-                    .accentBorder(MaterialTheme.shapes.medium),
-                shape    = MaterialTheme.shapes.medium
+                enabled = hasContent && !isGenerating,
+                modifier =
+                    Modifier.fillMaxWidth().height(52.dp)
+                        .accentBorder(MaterialTheme.shapes.medium),
+                shape = MaterialTheme.shapes.medium,
             ) {
                 if (isGenerating) {
-                    CircularProgressIndicator(color = Color.White,
-                        modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
                 } else {
                     Icon(Icons.Rounded.QrCode, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -1532,56 +1791,74 @@ fun QrCreatorScreen(
             qrBitmap?.let { bitmap ->
                 val qrResultCardShape = MaterialTheme.shapes.large
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .accentShadow(qrResultCardShape)
-                        .clip(qrResultCardShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .accentBorder(qrResultCardShape)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .accentShadow(qrResultCardShape)
+                            .clip(qrResultCardShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .accentBorder(qrResultCardShape),
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Text(stringResource(R.string.qr_your_code),
+                        Text(
+                            stringResource(R.string.qr_your_code),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface)
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
 
                         Box(
-                            modifier = Modifier
-                                .size(220.dp)
-                                .background(Color.White, RoundedCornerShape(12.dp))
-                                .padding(12.dp),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(220.dp)
+                                    .background(Color.White, RoundedCornerShape(12.dp))
+                                    .padding(12.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Image(bitmap = bitmap.asImageBitmap(),
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
                                 contentDescription = stringResource(R.string.qr_generated_content_desc),
-                                modifier = Modifier.fillMaxSize())
+                                modifier = Modifier.fillMaxSize(),
+                            )
                         }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Surface(shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primaryContainer) {
-                                Text(types[selectedType],
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                Text(
+                                    types[selectedType],
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
                             }
                             if (usePassword) {
-                                Surface(shape = MaterialTheme.shapes.small,
-                                    color = SuccessGreen.copy(alpha = 0.15f)) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = SuccessGreen.copy(alpha = 0.15f),
+                                ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Icon(Icons.Rounded.Lock, null,
-                                            tint = SuccessGreen, modifier = Modifier.size(12.dp))
-                                        Text(stringResource(R.string.qr_protected_badge),
+                                        Icon(
+                                            Icons.Rounded.Lock,
+                                            null,
+                                            tint = SuccessGreen,
+                                            modifier = Modifier.size(12.dp),
+                                        )
+                                        Text(
+                                            stringResource(R.string.qr_protected_badge),
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = SuccessGreen)
+                                            color = SuccessGreen,
+                                        )
                                     }
                                 }
                             }
@@ -1590,17 +1867,26 @@ fun QrCreatorScreen(
                         savedMsg?.let { msg ->
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Icon(Icons.Rounded.CheckCircle, null,
-                                    tint = SuccessGreen, modifier = Modifier.size(16.dp))
-                                Text(msg, style = MaterialTheme.typography.labelMedium,
-                                    color = SuccessGreen)
+                                Icon(
+                                    Icons.Rounded.CheckCircle,
+                                    null,
+                                    tint = SuccessGreen,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Text(
+                                    msg,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = SuccessGreen,
+                                )
                             }
                         }
 
-                        Row(modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
                             OutlinedButton(
                                 onClick = {
                                     scope.launch {
@@ -1611,9 +1897,10 @@ fun QrCreatorScreen(
                                         }
                                     }
                                 },
-                                modifier = Modifier.weight(1f)
-                                    .accentBorder(MaterialTheme.shapes.medium),
-                                shape = MaterialTheme.shapes.medium
+                                modifier =
+                                    Modifier.weight(1f)
+                                        .accentBorder(MaterialTheme.shapes.medium),
+                                shape = MaterialTheme.shapes.medium,
                             ) {
                                 Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -1626,9 +1913,10 @@ fun QrCreatorScreen(
                                         if (file != null) shareQrImage(context, file, shareQrChooserTitle)
                                     }
                                 },
-                                modifier = Modifier.weight(1f)
-                                    .accentBorder(MaterialTheme.shapes.medium),
-                                shape = MaterialTheme.shapes.medium
+                                modifier =
+                                    Modifier.weight(1f)
+                                        .accentBorder(MaterialTheme.shapes.medium),
+                                shape = MaterialTheme.shapes.medium,
                             ) {
                                 Icon(Icons.Rounded.Share, null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -1650,7 +1938,7 @@ private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
         try {
             val connection = java.net.URL(url).openConnection()
             connection.connectTimeout = 5000
-            connection.readTimeout    = 5000
+            connection.readTimeout = 5000
             // Bug real encontrado 2026-09-14 (repaso general): el
             // InputStream de la conexión HTTP nunca se cerraba -- cada QR de
             // tipo Imagen escaneado dejaba un socket/stream filtrado.
@@ -1663,12 +1951,17 @@ private suspend fun loadBitmapFromUrl(url: String): Bitmap? =
 
 // Hallazgo real de la auditoría general 2026-09-17 (M6): sin ninguna app
 // que maneje el Intent, antes no pasaba absolutamente nada visible.
-internal fun openDocumentExternally(context: Context, uriString: String, chooserTitle: String) {
+internal fun openDocumentExternally(
+    context: Context,
+    uriString: String,
+    chooserTitle: String,
+) {
     try {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse(uriString)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse(uriString)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) {
         Timber.e(e, "openDocumentExternally: error")
@@ -1686,7 +1979,7 @@ internal fun openDocumentExternally(context: Context, uriString: String, chooser
 internal suspend fun generateQrBitmap(
     content: String,
     moduleColor: Int = QR_DEFAULT_MODULE_COLOR,
-    logo: Bitmap? = null
+    logo: Bitmap? = null,
 ): Bitmap? =
     withContext(Dispatchers.IO) {
         try {
@@ -1698,10 +1991,11 @@ internal suspend fun generateQrBitmap(
             // chino/japonés/coreano) por "?" -- causa raíz real de fallas
             // reportadas por usuarios (ej. contraseñas Wi-Fi con emoji que
             // quedan corruptas sin ningún error visible).
-            val hints = buildMap {
-                put(EncodeHintType.CHARACTER_SET, "UTF-8")
-                if (logo != null) put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
-            }
+            val hints =
+                buildMap {
+                    put(EncodeHintType.CHARACTER_SET, "UTF-8")
+                    if (logo != null) put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
+                }
             val bitMatrix = MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints)
             // ARGB_8888 (antes RGB_565, sin canal alfa) -- necesario para
             // poder dibujar el logo encima con un Canvas normal sin perder
@@ -1709,9 +2003,15 @@ internal suspend fun generateQrBitmap(
             val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
             for (x in 0 until size) {
                 for (y in 0 until size) {
-                    bitmap.setPixel(x, y,
-                        if (bitMatrix[x, y]) moduleColor
-                        else android.graphics.Color.WHITE)
+                    bitmap.setPixel(
+                        x,
+                        y,
+                        if (bitMatrix[x, y]) {
+                            moduleColor
+                        } else {
+                            android.graphics.Color.WHITE
+                        },
+                    )
                 }
             }
             logo?.let { overlayQrLogo(bitmap, it) }
@@ -1725,20 +2025,29 @@ internal suspend fun generateQrBitmap(
 // Logo centrado con su propio fondo blanco (mismo margen de "quiet zone"
 // que usan los generadores de QR con logo estándar) para no perder
 // contraste contra los módulos que quedan justo alrededor.
-private fun overlayQrLogo(bitmap: Bitmap, logo: Bitmap) {
+private fun overlayQrLogo(
+    bitmap: Bitmap,
+    logo: Bitmap,
+) {
     val canvas = Canvas(bitmap)
     val logoSize = (bitmap.width * 0.22f).toInt()
     val scaledLogo = Bitmap.createScaledBitmap(logo, logoSize, logoSize, true)
     val left = (bitmap.width - logoSize) / 2f
     val top = (bitmap.height - logoSize) / 2f
     val padding = logoSize * 0.1f
-    val backgroundPaint = Paint().apply {
-        isAntiAlias = true
-        color = android.graphics.Color.WHITE
-    }
+    val backgroundPaint =
+        Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.WHITE
+        }
     canvas.drawRoundRect(
-        left - padding, top - padding, left + logoSize + padding, top + logoSize + padding,
-        16f, 16f, backgroundPaint
+        left - padding,
+        top - padding,
+        left + logoSize + padding,
+        top + logoSize + padding,
+        16f,
+        16f,
+        backgroundPaint,
     )
     canvas.drawBitmap(scaledLogo, left, top, Paint().apply { isAntiAlias = true })
     if (scaledLogo !== logo) scaledLogo.recycle()
@@ -1753,7 +2062,11 @@ private fun overlayQrLogo(bitmap: Bitmap, logo: Bitmap) {
 // ya reducido) para no cargar más que [targetSize] px de lado.
 private const val LOGO_TARGET_SIZE = 512
 
-private fun decodeSampledBitmap(context: Context, uri: Uri, targetSize: Int): Bitmap? {
+private fun decodeSampledBitmap(
+    context: Context,
+    uri: Uri,
+    targetSize: Int,
+): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         ?: return null
@@ -1773,15 +2086,20 @@ private fun decodeSampledBitmap(context: Context, uri: Uri, targetSize: Int): Bi
     }
 }
 
-
-internal suspend fun saveQrToFile(context: Context, bitmap: Bitmap): File? =
+internal suspend fun saveQrToFile(
+    context: Context,
+    bitmap: Bitmap,
+): File? =
     withContext(Dispatchers.IO) {
         try {
-            val dir  = File(context.cacheDir, "qr").apply { mkdirs() }
+            val dir = File(context.cacheDir, "qr").apply { mkdirs() }
             val file = File(dir, "QR_${System.currentTimeMillis()}.png")
             FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
             file
-        } catch (e: Exception) { Timber.e(e, "saveQrToFile"); null }
+        } catch (e: Exception) {
+            Timber.e(e, "saveQrToFile")
+            null
+        }
     }
 
 // Hallazgo real de la auditoría (Media): los PNG temporales de
@@ -1806,30 +2124,47 @@ internal suspend fun cleanOldQrCacheFiles(context: Context) {
     }
 }
 
-
-internal fun shareQrImage(context: Context, file: File, chooserTitle: String) {
+internal fun shareQrImage(
+    context: Context,
+    file: File,
+    chooserTitle: String,
+) {
     try {
-        val uri = FileProvider.getUriForFile(
-            context, "${context.packageName}.fileprovider", file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/png"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val uri =
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file,
+            )
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         context.startActivity(Intent.createChooser(intent, chooserTitle))
-    } catch (e: Exception) { Timber.e(e, "shareQrImage") }
+    } catch (e: Exception) {
+        Timber.e(e, "shareQrImage")
+    }
 }
 
-internal fun copyToClipboard(context: Context, text: String) {
+internal fun copyToClipboard(
+    context: Context,
+    text: String,
+) {
     val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
     cb.setPrimaryClip(android.content.ClipData.newPlainText("QR", text))
 }
 
 // Hallazgo real de la auditoría general 2026-09-17 (M6): sin ninguna app
 // que maneje el Intent, antes no pasaba absolutamente nada visible.
-internal fun openUrl(context: Context, url: String) {
-    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-    catch (e: Exception) {
+internal fun openUrl(
+    context: Context,
+    url: String,
+) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (e: Exception) {
         Timber.e(e, "openUrl")
         Toast.makeText(context, context.getString(R.string.qr_action_no_app), Toast.LENGTH_SHORT).show()
     }

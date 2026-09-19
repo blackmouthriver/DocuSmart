@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test
  * así que sí se puede testear de punta a punta en JVM puro.
  */
 class PremiumManagerTest {
-
     private lateinit var store: MutableMap<String, Any>
 
     @BeforeEach
@@ -107,7 +106,11 @@ class PremiumManagerTest {
         manager.activatePremium()
         var dailyCheckLlamado = false
 
-        val resultado = manager.canPerform { dailyCheckLlamado = true; false }
+        val resultado =
+            manager.canPerform {
+                dailyCheckLlamado = true
+                false
+            }
 
         assertTrue(resultado)
         assertFalse(dailyCheckLlamado)

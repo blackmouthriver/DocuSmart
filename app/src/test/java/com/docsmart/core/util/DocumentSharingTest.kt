@@ -32,7 +32,6 @@ import java.io.File
  * silencio para todos los documentos generados por la app.
  */
 class DocumentSharingTest {
-
     private lateinit var context: Context
 
     @BeforeEach

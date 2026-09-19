@@ -24,7 +24,6 @@ import java.nio.file.Files
  * opción entregaba un PDF, no un .txt. Este use case reemplaza ese hueco.
  */
 class WordToTextUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: WordToTextUseCase
@@ -47,69 +46,74 @@ class WordToTextUseCaseTest {
     }
 
     @Test
-    fun `extrae el texto de los parrafos del docx a un archivo txt`() = runTest {
-        stubResolver(createTestDocx(listOf("Primer párrafo", "Segundo párrafo")))
+    fun `extrae el texto de los parrafos del docx a un archivo txt`() =
+        runTest {
+            stubResolver(createTestDocx(listOf("Primer párrafo", "Segundo párrafo")))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("txt", outputFile.extension)
-        val text = outputFile.readText()
-        assertTrue(text.contains("Primer párrafo"))
-        assertTrue(text.contains("Segundo párrafo"))
-    }
-
-    @Test
-    fun `docx sin texto extraible devuelve Error`() = runTest {
-        stubResolver(createTestDocx(emptyList()))
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("txt", outputFile.extension)
+            val text = outputFile.readText()
+            assertTrue(text.contains("Primer párrafo"))
+            assertTrue(text.contains("Segundo párrafo"))
+        }
 
     @Test
-    fun `extrae el texto de un doc legado real (OLE2) a un archivo txt`() = runTest {
-        stubResolver(legacyDocBytes())
+    fun `docx sin texto extraible devuelve Error`() =
+        runTest {
+            stubResolver(createTestDocx(emptyList()))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val text = (result as ConversionResult.Success).outputFile.readText()
-        assertTrue(text.contains("Titulo de prueba"))
-        assertTrue(text.contains("Primer parrafo del documento legado."))
-        assertTrue(text.contains("Celda A1"))
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `extrae el texto de un doc legado real (OLE2) a un archivo txt`() =
+        runTest {
+            stubResolver(legacyDocBytes())
 
-        val result = useCase(uri, "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Success)
+            val text = (result as ConversionResult.Success).outputFile.readText()
+            assertTrue(text.contains("Titulo de prueba"))
+            assertTrue(text.contains("Primer parrafo del documento legado."))
+            assertTrue(text.contains("Celda A1"))
+        }
+
+    @Test
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uri, "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // Hallazgo real de la auditoría general 2026-09-17 (B4): mismo problema
     // que WordToPdfUseCaseTest -- ver el comentario ahí.
     @Test
-    fun `conserva el orden real de parrafo, tabla y parrafo del documento original`() = runTest {
-        stubResolver(createInterleavedDocx())
+    fun `conserva el orden real de parrafo, tabla y parrafo del documento original`() =
+        runTest {
+            stubResolver(createInterleavedDocx())
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val text = (result as ConversionResult.Success).outputFile.readText()
-        val introIndex = text.indexOf("Intro")
-        val tableIndex = text.indexOf("CeldaTabla")
-        val conclusionIndex = text.indexOf("Conclusion")
-        assertTrue(introIndex in 0 until tableIndex, "Intro debe aparecer antes que la tabla")
-        assertTrue(tableIndex in 0 until conclusionIndex, "la tabla debe aparecer antes que Conclusion")
-    }
+            assertTrue(result is ConversionResult.Success)
+            val text = (result as ConversionResult.Success).outputFile.readText()
+            val introIndex = text.indexOf("Intro")
+            val tableIndex = text.indexOf("CeldaTabla")
+            val conclusionIndex = text.indexOf("Conclusion")
+            assertTrue(introIndex in 0 until tableIndex, "Intro debe aparecer antes que la tabla")
+            assertTrue(tableIndex in 0 until conclusionIndex, "la tabla debe aparecer antes que Conclusion")
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -58,7 +57,7 @@ fun CropPdfScreen(
     onSelectPdf: () -> Unit,
     onMarginChange: (Int) -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -74,30 +73,31 @@ fun CropPdfScreen(
         isLoadingPreview = false
     }
 
-    val croppedBitmap = remember(originalBitmap, marginPercent) {
-        originalBitmap?.let { bmp ->
-            val marginX = (bmp.width * marginPercent / 100f).toInt()
-            val marginY = (bmp.height * marginPercent / 100f).toInt()
-            val width = (bmp.width - 2 * marginX).coerceAtLeast(1)
-            val height = (bmp.height - 2 * marginY).coerceAtLeast(1)
-            Bitmap.createBitmap(bmp, marginX, marginY, width, height)
+    val croppedBitmap =
+        remember(originalBitmap, marginPercent) {
+            originalBitmap?.let { bmp ->
+                val marginX = (bmp.width * marginPercent / 100f).toInt()
+                val marginY = (bmp.height * marginPercent / 100f).toInt()
+                val width = (bmp.width - 2 * marginX).coerceAtLeast(1)
+                val height = (bmp.height - 2 * marginY).coerceAtLeast(1)
+                Bitmap.createBitmap(bmp, marginX, marginY, width, height)
+            }
         }
-    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_crop),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_crop_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -106,7 +106,7 @@ fun CropPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_crop_ready),
-            accentColor = PremiumGold
+            accentColor = PremiumGold,
         )
 
         // ── Vista previa + control de margen ───────────
@@ -115,14 +115,14 @@ fun CropPdfScreen(
             isLoadingPreview = isLoadingPreview,
             croppedBitmap = croppedBitmap,
             marginPercent = marginPercent,
-            onMarginChange = onMarginChange
+            onMarginChange = onMarginChange,
         )
 
         // ── Nombre del archivo ────────────────────────
         if (selectedPdf != null) {
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -134,7 +134,7 @@ fun CropPdfScreen(
             buttonLabel = stringResource(R.string.pdf_crop_execute),
             buttonIcon = Icons.Rounded.Crop,
             onExecute = onExecute,
-            accentColor = PremiumGold
+            accentColor = PremiumGold,
         )
     }
 }
@@ -145,67 +145,69 @@ private fun CropPreviewCard(
     isLoadingPreview: Boolean,
     croppedBitmap: Bitmap?,
     marginPercent: Int,
-    onMarginChange: (Int) -> Unit
+    onMarginChange: (Int) -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = stringResource(R.string.pdf_crop_preview_title),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
             ) {
                 when {
                     selectedPdf == null -> {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(32.dp)
+                            modifier = Modifier.padding(32.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Crop,
                                 contentDescription = null,
                                 tint = PremiumGold.copy(alpha = 0.5f),
-                                modifier = Modifier.size(48.dp)
+                                modifier = Modifier.size(48.dp),
                             )
                             Text(
                                 text = stringResource(R.string.pdf_crop_preview_placeholder),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }
                     isLoadingPreview || croppedBitmap == null -> {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(32.dp), color = PremiumGold)
                             Text(
                                 text = stringResource(R.string.pdf_crop_loading_preview),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -214,9 +216,10 @@ private fun CropPreviewCard(
                             bitmap = croppedBitmap.asImageBitmap(),
                             contentDescription = stringResource(R.string.pdf_crop_preview_desc),
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
                         )
                     }
                 }
@@ -227,15 +230,16 @@ private fun CropPreviewCard(
                 onValueChange = { onMarginChange(it.toInt()) },
                 valueRange = 0f..MAX_MARGIN_PERCENT.toFloat(),
                 steps = MAX_MARGIN_PERCENT - 1,
-                colors = SliderDefaults.colors(
-                    thumbColor = PremiumGold,
-                    activeTrackColor = PremiumGold
-                )
+                colors =
+                    SliderDefaults.colors(
+                        thumbColor = PremiumGold,
+                        activeTrackColor = PremiumGold,
+                    ),
             )
             Text(
                 text = stringResource(R.string.pdf_crop_margin_label, marginPercent),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -258,7 +262,10 @@ private fun renderFirstPageBitmap(renderer: PdfRenderer): Bitmap? {
     }
 }
 
-private fun loadFirstPage(context: android.content.Context, pdfUri: Uri): Bitmap? {
+private fun loadFirstPage(
+    context: android.content.Context,
+    pdfUri: Uri,
+): Bitmap? {
     val file = File(context.cacheDir, "crop_preview_${System.currentTimeMillis()}.pdf")
     return try {
         context.contentResolver.openInputStream(pdfUri)?.use { input ->

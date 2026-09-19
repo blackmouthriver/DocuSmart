@@ -41,16 +41,18 @@ import org.junit.Test
  * ConverterScreenTest para el picker de archivos.
  */
 class TrashScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private fun documentFixture(id: String, name: String = "$id.pdf") = DocumentUiModel(
-        id   = id,
+    private fun documentFixture(
+        id: String,
+        name: String = "$id.pdf",
+    ) = DocumentUiModel(
+        id = id,
         name = name,
         type = DocumentType.PDF,
         size = "1.2 MB",
-        date = "Hoy"
+        date = "Hoy",
     )
 
     private fun setContentWithLocale(content: @Composable () -> Unit) {
@@ -67,7 +69,7 @@ class TrashScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
         }
     }
@@ -81,9 +83,10 @@ class TrashScreenTest {
     @Test
     fun tocarRestaurar_llamaARestoreFromTrashConElIdCorrecto() {
         val repository = mockk<TrashRepository>(relaxed = true)
-        coEvery { repository.loadTrashedDocuments() } returns listOf(
-            TrashedDocumentUiModel(documentFixture("doc1"), System.currentTimeMillis())
-        )
+        coEvery { repository.loadTrashedDocuments() } returns
+            listOf(
+                TrashedDocumentUiModel(documentFixture("doc1"), System.currentTimeMillis()),
+            )
         // Bug preexistente encontrado 2026-09-14: TrashViewModel ganó
         // soundEffectPlayer con los efectos de sonido (backlog 2026-09-12)
         // pero este test nunca se actualizó, dejando
@@ -91,10 +94,12 @@ class TrashScreenTest {
         // se suma ahora porque actionError se localiza vía
         // context.getString() (fix 2026-09-14 del bug de mensajes
         // hardcodeados en español).
-        val viewModel = TrashViewModel(
-            repository, mockk(relaxed = true),
-            InstrumentationRegistry.getInstrumentation().targetContext
-        )
+        val viewModel =
+            TrashViewModel(
+                repository,
+                mockk(relaxed = true),
+                InstrumentationRegistry.getInstrumentation().targetContext,
+            )
 
         setContentWithLocale { TrashScreen(viewModel = viewModel) }
         waitForText("Restaurar")
@@ -108,9 +113,10 @@ class TrashScreenTest {
     @Test
     fun eliminarUno_confirmarDialogoLlamaADeleteForever() {
         val repository = mockk<TrashRepository>(relaxed = true)
-        coEvery { repository.loadTrashedDocuments() } returns listOf(
-            TrashedDocumentUiModel(documentFixture("doc1"), System.currentTimeMillis())
-        )
+        coEvery { repository.loadTrashedDocuments() } returns
+            listOf(
+                TrashedDocumentUiModel(documentFixture("doc1"), System.currentTimeMillis()),
+            )
         coEvery { repository.deleteForever("doc1") } returns DocumentRepository.DeleteOutcome.Deleted
         // Bug preexistente encontrado 2026-09-14: TrashViewModel ganó
         // soundEffectPlayer con los efectos de sonido (backlog 2026-09-12)
@@ -119,10 +125,12 @@ class TrashScreenTest {
         // se suma ahora porque actionError se localiza vía
         // context.getString() (fix 2026-09-14 del bug de mensajes
         // hardcodeados en español).
-        val viewModel = TrashViewModel(
-            repository, mockk(relaxed = true),
-            InstrumentationRegistry.getInstrumentation().targetContext
-        )
+        val viewModel =
+            TrashViewModel(
+                repository,
+                mockk(relaxed = true),
+                InstrumentationRegistry.getInstrumentation().targetContext,
+            )
 
         setContentWithLocale { TrashScreen(viewModel = viewModel) }
         waitForText("Eliminar ahora")
@@ -146,10 +154,11 @@ class TrashScreenTest {
         // coincidir con el orden real que arma el ViewModel al leer
         // uiState.items, o el coVerify de abajo no encuentra la llamada
         // (las listas se comparan por igualdad, orden incluido).
-        coEvery { repository.loadTrashedDocuments() } returns listOf(
-            TrashedDocumentUiModel(documentFixture("doc1"), deletedAt = 2_000L),
-            TrashedDocumentUiModel(documentFixture("doc2"), deletedAt = 1_000L)
-        )
+        coEvery { repository.loadTrashedDocuments() } returns
+            listOf(
+                TrashedDocumentUiModel(documentFixture("doc1"), deletedAt = 2_000L),
+                TrashedDocumentUiModel(documentFixture("doc2"), deletedAt = 1_000L),
+            )
         val ids = listOf("doc1", "doc2")
         coEvery { repository.deleteAllForever(ids) } returns TrashRepository.BulkDeleteOutcome.Done
         // Bug preexistente encontrado 2026-09-14: TrashViewModel ganó
@@ -159,10 +168,12 @@ class TrashScreenTest {
         // se suma ahora porque actionError se localiza vía
         // context.getString() (fix 2026-09-14 del bug de mensajes
         // hardcodeados en español).
-        val viewModel = TrashViewModel(
-            repository, mockk(relaxed = true),
-            InstrumentationRegistry.getInstrumentation().targetContext
-        )
+        val viewModel =
+            TrashViewModel(
+                repository,
+                mockk(relaxed = true),
+                InstrumentationRegistry.getInstrumentation().targetContext,
+            )
 
         setContentWithLocale { TrashScreen(viewModel = viewModel) }
         waitForText("Borrar todo")

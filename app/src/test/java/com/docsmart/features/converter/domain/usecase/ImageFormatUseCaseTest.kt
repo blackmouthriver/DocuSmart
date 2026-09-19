@@ -17,14 +17,16 @@ import java.nio.ByteOrder
  * realmente propenso a error de este fix -- con datos puros.
  */
 class ImageFormatUseCaseTest {
-
     private fun useCase() = ImageFormatUseCase(mockk<Context>(relaxed = true))
 
     @Test
     fun `argbPixelsToBmp escribe el encabezado BITMAPFILEHEADER-BITMAPINFOHEADER correcto`() {
-        val pixels = intArrayOf(
-            0xFFFF0000.toInt(), 0xFF00FF00.toInt() // 2x1: rojo, verde
-        )
+        val pixels =
+            intArrayOf(
+                0xFFFF0000.toInt(),
+                // 2x1: rojo, verde
+                0xFF00FF00.toInt(),
+            )
 
         val bytes = useCase().argbPixelsToBmp(width = 2, height = 1, pixels = pixels)
         val buf = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
@@ -72,14 +74,31 @@ class ImageFormatUseCaseTest {
         val pixelData = bytes.copyOfRange(54, bytes.size)
         // BMP escribe de abajo hacia arriba: la primera fila de datos es
         // la última fila lógica (azul, blanco), en BGR.
-        val expected = byteArrayOf(
-            0xFF.toByte(), 0x00, 0x00, // azul  -> B,G,R
-            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), // blanco -> B,G,R
-            0x00, 0x00, // padding (2 bytes)
-            0x00, 0x00, 0xFF.toByte(), // rojo  -> B,G,R
-            0x00, 0xFF.toByte(), 0x00, // verde -> B,G,R
-            0x00, 0x00 // padding (2 bytes)
-        )
+        val expected =
+            byteArrayOf(
+                0xFF.toByte(),
+                0x00,
+                // azul  -> B,G,R
+                0x00,
+                0xFF.toByte(),
+                0xFF.toByte(),
+                // blanco -> B,G,R
+                0xFF.toByte(),
+                0x00,
+                // padding (2 bytes)
+                0x00,
+                0x00,
+                0x00,
+                // rojo  -> B,G,R
+                0xFF.toByte(),
+                0x00,
+                0xFF.toByte(),
+                // verde -> B,G,R
+                0x00,
+                0x00,
+                // padding (2 bytes)
+                0x00,
+            )
         assertEquals(expected.size, pixelData.size)
         assertEquals(expected.toList(), pixelData.toList())
     }

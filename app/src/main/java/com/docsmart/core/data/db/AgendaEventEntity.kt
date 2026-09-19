@@ -25,5 +25,5 @@ data class AgendaEventEntity(
     val dateTimeMillis: Long,
     val documentId: String? = null,
     val reminderMinutesBefore: Int? = null,
-    val createdAt: Long
+    val createdAt: Long,
 )

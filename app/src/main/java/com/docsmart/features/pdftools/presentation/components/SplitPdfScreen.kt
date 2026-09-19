@@ -29,22 +29,22 @@ fun SplitPdfScreen(
     onFromPageChange: (Int) -> Unit,
     onToPageChange: (Int) -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_split),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_split_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -52,57 +52,58 @@ fun SplitPdfScreen(
         PdfSelectZone(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
-            readyText = stringResource(R.string.pdf_split_selected)
+            readyText = stringResource(R.string.pdf_split_selected),
         )
 
         // ── Rango de páginas ──────────────────────────
         if (selectedPdf != null) {
             val shape = MaterialTheme.shapes.large
             Box(
-                modifier = Modifier
-                    .accentShadow(shape = shape, elevation = 2.dp)
-                    .clip(shape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .accentBorder(shape = shape)
+                modifier =
+                    Modifier
+                        .accentShadow(shape = shape, elevation = 2.dp)
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .accentBorder(shape = shape),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.pdf_split_range_title),
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         // Desde página
                         Column(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.pdf_split_from_page),
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 IconButton(
                                     onClick = {
                                         if (fromPage > 1) onFromPageChange(fromPage - 1)
                                     },
                                     // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.size(48.dp),
                                 ) {
                                     Icon(
                                         Icons.Rounded.Remove,
                                         contentDescription = stringResource(R.string.pdf_split_from_page_decrease),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                                 Text(
@@ -110,17 +111,17 @@ fun SplitPdfScreen(
                                     style = MaterialTheme.typography.headlineSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.width(40.dp),
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
                                 )
                                 IconButton(
                                     onClick = { onFromPageChange(fromPage + 1) },
                                     // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.size(48.dp),
                                 ) {
                                     Icon(
                                         Icons.Rounded.Add,
                                         contentDescription = stringResource(R.string.pdf_split_from_page_increase),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }
@@ -129,28 +130,28 @@ fun SplitPdfScreen(
                         // Hasta página
                         Column(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.pdf_split_to_page),
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 IconButton(
                                     onClick = {
                                         if (toPage > fromPage) onToPageChange(toPage - 1)
                                     },
                                     // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.size(48.dp),
                                 ) {
                                     Icon(
                                         Icons.Rounded.Remove,
                                         contentDescription = stringResource(R.string.pdf_split_to_page_decrease),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                                 Text(
@@ -158,17 +159,17 @@ fun SplitPdfScreen(
                                     style = MaterialTheme.typography.headlineSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.width(40.dp),
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
                                 )
                                 IconButton(
                                     onClick = { onToPageChange(toPage + 1) },
                                     // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.size(48.dp),
                                 ) {
                                     Icon(
                                         Icons.Rounded.Add,
                                         contentDescription = stringResource(R.string.pdf_split_to_page_increase),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }
@@ -183,12 +184,14 @@ fun SplitPdfScreen(
                     // toPage). Corregido a ">" estricto.
                     val isInvalidRange = fromPage > toPage
                     Text(
-                        text  = stringResource(R.string.pdf_split_summary, pageCount, fromPage, toPage),
+                        text = stringResource(R.string.pdf_split_summary, pageCount, fromPage, toPage),
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isInvalidRange)
-                            MaterialTheme.colorScheme.error
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                        color =
+                            if (isInvalidRange) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                 }
             }
@@ -196,7 +199,7 @@ fun SplitPdfScreen(
             // ── Nombre del archivo ────────────────────
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -210,7 +213,7 @@ fun SplitPdfScreen(
             progressText = stringResource(R.string.pdf_split_progress),
             buttonLabel = stringResource(R.string.pdf_split),
             buttonIcon = Icons.Rounded.CallSplit,
-            onExecute = onExecute
+            onExecute = onExecute,
         )
     }
 }

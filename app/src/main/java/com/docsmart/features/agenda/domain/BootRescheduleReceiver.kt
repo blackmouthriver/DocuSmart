@@ -28,13 +28,18 @@ import javax.inject.Inject
 // solo duplicaría el mismo ciclo de vida `goAsync()`.
 @AndroidEntryPoint
 class BootRescheduleReceiver : BroadcastReceiver() {
-
     @Inject lateinit var agendaEventDao: AgendaEventDao
+
     @Inject lateinit var reminderScheduler: ReminderScheduler
+
     @Inject lateinit var noteDao: NoteDao
+
     @Inject lateinit var noteReminderScheduler: NoteReminderScheduler
 
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
@@ -64,7 +69,7 @@ internal suspend fun rescheduleAllReminders(
     agendaEventDao: AgendaEventDao,
     reminderScheduler: ReminderScheduler,
     noteDao: NoteDao,
-    noteReminderScheduler: NoteReminderScheduler
+    noteReminderScheduler: NoteReminderScheduler,
 ) {
     val events = agendaEventDao.getAllWithReminder()
     events.forEach { reminderScheduler.schedule(it) }
@@ -74,6 +79,6 @@ internal suspend fun rescheduleAllReminders(
     }
     Timber.d(
         "BootRescheduleReceiver: ${events.size} recordatorios de Agenda + " +
-            "${notes.size} de Notas reprogramados"
+            "${notes.size} de Notas reprogramados",
     )
 }

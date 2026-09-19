@@ -53,32 +53,33 @@ fun ViewerTopBar(
     // documento -- el ítem del menú "⋮" solo aparece si hay al menos una.
     linkedNotesCount: Int = 0,
     onOpenLinkedNotesClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn() + slideInVertically(),
         exit = fadeOut() + slideOutVertically(),
-        modifier = modifier
+        modifier = modifier,
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 4.dp
+            shadowElevation = 4.dp,
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .height(56.dp)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .height(56.dp)
+                        .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Botón atrás
                 IconButton(onClick = onBackClick) {
                     Icon(
                         imageVector = Icons.Rounded.ArrowBackIosNew,
                         contentDescription = stringResource(R.string.viewer_back),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -89,7 +90,7 @@ fun ViewerTopBar(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
 
                 // Buscar
@@ -99,22 +100,26 @@ fun ViewerTopBar(
                     Icon(
                         imageVector = Icons.Rounded.Search,
                         contentDescription = stringResource(R.string.viewer_search_content_desc),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 // Favorito
                 IconButton(onClick = onFavoriteClick) {
                     Icon(
-                        imageVector = if (isFavorite)
-                            Icons.Rounded.Favorite
-                        else
-                            Icons.Rounded.FavoriteBorder,
+                        imageVector =
+                            if (isFavorite) {
+                                Icons.Rounded.Favorite
+                            } else {
+                                Icons.Rounded.FavoriteBorder
+                            },
                         contentDescription = stringResource(R.string.viewer_favorite_content_desc),
-                        tint = if (isFavorite)
-                            MaterialTheme.colorScheme.error
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                        tint =
+                            if (isFavorite) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                 }
 
@@ -123,7 +128,7 @@ fun ViewerTopBar(
                     Icon(
                         imageVector = Icons.Rounded.Share,
                         contentDescription = stringResource(R.string.general_share),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -135,8 +140,12 @@ fun ViewerTopBar(
                         Icon(
                             imageVector = Icons.Rounded.EditNote,
                             contentDescription = stringResource(R.string.viewer_annotate_content_desc),
-                            tint = if (isAnnotating) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint =
+                                if (isAnnotating) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                         )
                     }
                 }
@@ -144,19 +153,20 @@ fun ViewerTopBar(
                 // Más opciones (renombrar/eliminar/OCR/firmar/Carpeta Segura)
                 // — RF-VIS-06/HU-42
                 ViewerMoreOptionsMenu(
-                    isPdf             = isPdf,
+                    isPdf = isPdf,
                     isReadOnlyPreview = isReadOnlyPreview,
-                    linkedNotesCount  = linkedNotesCount,
-                    actions = ViewerMenuActions(
-                        onConvert            = onConvertClick,
-                        onCreateQr           = onCreateQrClick,
-                        onMakeSearchable     = onMakeSearchableClick,
-                        onSign               = onSignClick,
-                        onMoveToSecureFolder = onMoveToSecureFolderClick,
-                        onRename             = onRenameClick,
-                        onDelete             = onDeleteClick,
-                        onOpenLinkedNotes    = onOpenLinkedNotesClick
-                    )
+                    linkedNotesCount = linkedNotesCount,
+                    actions =
+                        ViewerMenuActions(
+                            onConvert = onConvertClick,
+                            onCreateQr = onCreateQrClick,
+                            onMakeSearchable = onMakeSearchableClick,
+                            onSign = onSignClick,
+                            onMoveToSecureFolder = onMoveToSecureFolderClick,
+                            onRename = onRenameClick,
+                            onDelete = onDeleteClick,
+                            onOpenLinkedNotes = onOpenLinkedNotesClick,
+                        ),
                 )
             }
         }
@@ -166,14 +176,14 @@ fun ViewerTopBar(
 // Extraído de ViewerTopBar() (LongMethod de detekt, disparado al agregar
 // los 2 accesos de HU-42 gateados por `isPdf`) -- el menú "⋮" completo.
 private data class ViewerMenuActions(
-    val onConvert           : () -> Unit,
-    val onCreateQr          : () -> Unit,
-    val onMakeSearchable    : () -> Unit,
-    val onSign              : () -> Unit,
+    val onConvert: () -> Unit,
+    val onCreateQr: () -> Unit,
+    val onMakeSearchable: () -> Unit,
+    val onSign: () -> Unit,
     val onMoveToSecureFolder: () -> Unit,
-    val onRename            : () -> Unit,
-    val onDelete            : () -> Unit,
-    val onOpenLinkedNotes   : () -> Unit
+    val onRename: () -> Unit,
+    val onDelete: () -> Unit,
+    val onOpenLinkedNotes: () -> Unit,
 )
 
 @Composable
@@ -181,7 +191,7 @@ private fun ViewerMoreOptionsMenu(
     isPdf: Boolean,
     isReadOnlyPreview: Boolean,
     linkedNotesCount: Int,
-    actions: ViewerMenuActions
+    actions: ViewerMenuActions,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Box {
@@ -189,12 +199,12 @@ private fun ViewerMoreOptionsMenu(
             Icon(
                 imageVector = Icons.Rounded.MoreVert,
                 contentDescription = stringResource(R.string.viewer_more_options),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         DropdownMenu(
             expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false }
+            onDismissRequest = { menuExpanded = false },
         ) {
             // Atajos "Convertir"/"Crear QR" desde el documento ya abierto
             // (backlog UX 2026-08-30, HU-UX-01/02, AC5) -- van antes de
@@ -211,12 +221,18 @@ private fun ViewerMoreOptionsMenu(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.viewer_convert)) },
                     leadingIcon = { Icon(Icons.Rounded.SwapHoriz, contentDescription = null) },
-                    onClick = { menuExpanded = false; actions.onConvert() }
+                    onClick = {
+                        menuExpanded = false
+                        actions.onConvert()
+                    },
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.viewer_create_qr)) },
                     leadingIcon = { Icon(Icons.Rounded.QrCode, contentDescription = null) },
-                    onClick = { menuExpanded = false; actions.onCreateQr() }
+                    onClick = {
+                        menuExpanded = false
+                        actions.onCreateQr()
+                    },
                 )
                 // HU-42: "Hacer buscable"/"Firmar" solo tienen sentido para
                 // un PDF real -- mismo criterio que DocumentContextMenu.
@@ -224,12 +240,18 @@ private fun ViewerMoreOptionsMenu(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.doc_item_make_searchable)) },
                         leadingIcon = { Icon(Icons.Rounded.FindInPage, contentDescription = null) },
-                        onClick = { menuExpanded = false; actions.onMakeSearchable() }
+                        onClick = {
+                            menuExpanded = false
+                            actions.onMakeSearchable()
+                        },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.doc_item_sign)) },
                         leadingIcon = { Icon(Icons.Rounded.Draw, contentDescription = null) },
-                        onClick = { menuExpanded = false; actions.onSign() }
+                        onClick = {
+                            menuExpanded = false
+                            actions.onSign()
+                        },
                     )
                 }
             }
@@ -244,7 +266,10 @@ private fun ViewerMoreOptionsMenu(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.doc_item_move_to_secure_folder)) },
                     leadingIcon = { Icon(Icons.Rounded.Lock, contentDescription = null) },
-                    onClick = { menuExpanded = false; actions.onMoveToSecureFolder() }
+                    onClick = {
+                        menuExpanded = false
+                        actions.onMoveToSecureFolder()
+                    },
                 )
             }
             // Backlog UX #50, AC1: indicador de que este documento tiene
@@ -254,7 +279,10 @@ private fun ViewerMoreOptionsMenu(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.viewer_linked_notes, linkedNotesCount)) },
                     leadingIcon = { Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null) },
-                    onClick = { menuExpanded = false; actions.onOpenLinkedNotes() }
+                    onClick = {
+                        menuExpanded = false
+                        actions.onOpenLinkedNotes()
+                    },
                 )
             }
             // Hallazgo real de la revisión general 2026-09-16 (cuarta
@@ -266,7 +294,10 @@ private fun ViewerMoreOptionsMenu(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.viewer_rename)) },
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
-                    onClick = { menuExpanded = false; actions.onRename() }
+                    onClick = {
+                        menuExpanded = false
+                        actions.onRename()
+                    },
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.viewer_delete)) },
@@ -274,10 +305,13 @@ private fun ViewerMoreOptionsMenu(
                         Icon(
                             Icons.Rounded.DeleteOutline,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.error,
                         )
                     },
-                    onClick = { menuExpanded = false; actions.onDelete() }
+                    onClick = {
+                        menuExpanded = false
+                        actions.onDelete()
+                    },
                 )
             }
         }

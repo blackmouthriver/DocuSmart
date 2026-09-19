@@ -21,7 +21,6 @@ package com.docsmart.features.study.domain
  * aceptable para un resumen, no para una transcripción exacta.
  */
 object TextSummarizer {
-
     private const val MIN_SENTENCE_LENGTH = 15
     private const val MIN_WORD_LENGTH = 3
     private const val TARGET_FRACTION = 0.12
@@ -30,25 +29,171 @@ object TextSummarizer {
     private val SENTENCE_BOUNDARY = Regex("(?<=[.!?])\\s+(?=[A-ZÁÉÍÓÚÑÜ¿¡])")
     private val WORD = Regex("\\p{L}+")
 
-    private val STOPWORDS = setOf(
-        // Español
-        "de", "la", "que", "el", "en", "y", "a", "los", "del", "se", "las", "por", "un", "para",
-        "con", "no", "una", "su", "al", "lo", "como", "más", "pero", "sus", "le", "ya", "o",
-        "este", "sí", "porque", "esta", "entre", "cuando", "muy", "sin", "sobre", "también",
-        "me", "hasta", "hay", "donde", "quien", "desde", "todo", "nos", "durante", "todos",
-        "uno", "les", "ni", "contra", "otros", "ese", "eso", "ante", "ellos", "e", "esto", "mí",
-        "antes", "algunos", "qué", "unos", "yo", "otro", "otras", "otra", "él", "tanto", "esa",
-        "estos", "mucho", "quienes", "nada", "muchos", "cual", "poco", "ella", "estar", "estas",
-        "algunas", "algo", "nosotros", "mi", "mis", "tú", "te", "ti", "tu", "tus", "ellas",
-        "nosotras", "vosotros", "vosotras", "os", "es", "son", "fue", "era", "ser", "han", "ha",
-        "había", "hemos", "habían", "está", "están", "soy", "eres", "somos",
-        // Inglés
-        "the", "and", "for", "with", "that", "this", "these", "those", "from", "have", "has",
-        "had", "will", "would", "can", "could", "should", "does", "did", "his", "her", "their",
-        "our", "your", "which", "whom", "what", "when", "where", "why", "how", "all", "each",
-        "other", "some", "such", "nor", "only", "own", "same", "than", "too", "very", "just",
-        "was", "were", "been", "being", "not", "are"
-    )
+    private val STOPWORDS =
+        setOf(
+            // Español
+            "de",
+            "la",
+            "que",
+            "el",
+            "en",
+            "y",
+            "a",
+            "los",
+            "del",
+            "se",
+            "las",
+            "por",
+            "un",
+            "para",
+            "con",
+            "no",
+            "una",
+            "su",
+            "al",
+            "lo",
+            "como",
+            "más",
+            "pero",
+            "sus",
+            "le",
+            "ya",
+            "o",
+            "este",
+            "sí",
+            "porque",
+            "esta",
+            "entre",
+            "cuando",
+            "muy",
+            "sin",
+            "sobre",
+            "también",
+            "me",
+            "hasta",
+            "hay",
+            "donde",
+            "quien",
+            "desde",
+            "todo",
+            "nos",
+            "durante",
+            "todos",
+            "uno",
+            "les",
+            "ni",
+            "contra",
+            "otros",
+            "ese",
+            "eso",
+            "ante",
+            "ellos",
+            "e",
+            "esto",
+            "mí",
+            "antes",
+            "algunos",
+            "qué",
+            "unos",
+            "yo",
+            "otro",
+            "otras",
+            "otra",
+            "él",
+            "tanto",
+            "esa",
+            "estos",
+            "mucho",
+            "quienes",
+            "nada",
+            "muchos",
+            "cual",
+            "poco",
+            "ella",
+            "estar",
+            "estas",
+            "algunas",
+            "algo",
+            "nosotros",
+            "mi",
+            "mis",
+            "tú",
+            "te",
+            "ti",
+            "tu",
+            "tus",
+            "ellas",
+            "nosotras",
+            "vosotros",
+            "vosotras",
+            "os",
+            "es",
+            "son",
+            "fue",
+            "era",
+            "ser",
+            "han",
+            "ha",
+            "había",
+            "hemos",
+            "habían",
+            "está",
+            "están",
+            "soy",
+            "eres",
+            "somos",
+            // Inglés
+            "the",
+            "and",
+            "for",
+            "with",
+            "that",
+            "this",
+            "these",
+            "those",
+            "from",
+            "have",
+            "has",
+            "had",
+            "will",
+            "would",
+            "can",
+            "could",
+            "should",
+            "does",
+            "did",
+            "his",
+            "her",
+            "their",
+            "our",
+            "your",
+            "which",
+            "whom",
+            "what",
+            "when",
+            "where",
+            "why",
+            "how",
+            "all",
+            "each",
+            "other",
+            "some",
+            "such",
+            "nor",
+            "only",
+            "own",
+            "same",
+            "than",
+            "too",
+            "very",
+            "just",
+            "was",
+            "were",
+            "been",
+            "being",
+            "not",
+            "are",
+        )
 
     /**
      * Devuelve una lista de oraciones (subconjunto del texto original, en su
@@ -56,7 +201,10 @@ object TextSummarizer {
      * (menos oraciones que las que pediría el resumen), devuelve todas tal
      * cual -- no tendría sentido "resumir" un párrafo de 3 oraciones.
      */
-    fun summarize(paragraphs: List<String>, maxSentences: Int = 15): List<String> {
+    fun summarize(
+        paragraphs: List<String>,
+        maxSentences: Int = 15,
+    ): List<String> {
         val sentences = splitIntoSentences(paragraphs.joinToString(" "))
 
         // `upperBound` primero, `lowerBound` derivado de él (nunca al revés):
@@ -75,23 +223,29 @@ object TextSummarizer {
             val frequency = mutableMapOf<String, Int>()
             tokenized.forEach { words -> words.forEach { frequency[it] = (frequency[it] ?: 0) + 1 } }
 
-            val scoredIndices = sentences.indices.sortedByDescending { index ->
-                val words = tokenized[index]
-                if (words.isEmpty()) 0.0
-                else words.sumOf { frequency[it]?.toDouble() ?: 0.0 } / words.size
-            }
+            val scoredIndices =
+                sentences.indices.sortedByDescending { index ->
+                    val words = tokenized[index]
+                    if (words.isEmpty()) {
+                        0.0
+                    } else {
+                        words.sumOf { frequency[it]?.toDouble() ?: 0.0 } / words.size
+                    }
+                }
 
             scoredIndices.take(targetCount).sorted().map { sentences[it] }
         }
     }
 
     private fun splitIntoSentences(text: String): List<String> =
-        text.split(SENTENCE_BOUNDARY)
+        text
+            .split(SENTENCE_BOUNDARY)
             .map { it.trim() }
             .filter { it.length >= MIN_SENTENCE_LENGTH }
 
     private fun significantWords(sentence: String): List<String> =
-        WORD.findAll(sentence.lowercase())
+        WORD
+            .findAll(sentence.lowercase())
             .map { it.value }
             .filter { it.length >= MIN_WORD_LENGTH && it !in STOPWORDS }
             .toList()

@@ -8,11 +8,12 @@ import java.util.Properties
 // type release simplemente no queda firmado para Play Store — no rompe
 // assembleDebug ni el resto de las tareas normales.
 val keystorePropertiesFile = rootProject.file("keystore.properties")
-val releaseSigningProps = if (keystorePropertiesFile.exists()) {
-    Properties().apply { load(keystorePropertiesFile.inputStream()) }
-} else {
-    null
-}
+val releaseSigningProps =
+    if (keystorePropertiesFile.exists()) {
+        Properties().apply { load(keystorePropertiesFile.inputStream()) }
+    } else {
+        null
+    }
 
 plugins {
     alias(libs.plugins.android.application)
@@ -55,25 +56,25 @@ configurations.all {
 }
 
 android {
-    namespace   = "com.docsmart"
-    compileSdk  = 36
+    namespace = "com.docsmart"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId         = "com.docsmart"
-        minSdk                = 26
-        targetSdk             = 36
-        versionCode           = 4
-        versionName           = "1.0.0"
+        applicationId = "com.docsmart"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = 4
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
         if (releaseSigningProps != null) {
             create("release") {
-                storeFile     = rootProject.file(releaseSigningProps.getProperty("storeFile"))
+                storeFile = rootProject.file(releaseSigningProps.getProperty("storeFile"))
                 storePassword = releaseSigningProps.getProperty("storePassword")
-                keyAlias      = releaseSigningProps.getProperty("keyAlias")
-                keyPassword   = releaseSigningProps.getProperty("keyPassword")
+                keyAlias = releaseSigningProps.getProperty("keyAlias")
+                keyPassword = releaseSigningProps.getProperty("keyPassword")
             }
         }
     }
@@ -82,7 +83,7 @@ android {
         debug {
             isDebuggable = true
             manifestPlaceholders["firebaseAnalyticsDeactivated"] = true
-            manifestPlaceholders["firebaseCrashlyticsEnabled"]   = false
+            manifestPlaceholders["firebaseCrashlyticsEnabled"] = false
             // Genera datos de cobertura Jacoco durante connectedDebugAndroidTest
             // (Compose UI Testing) además de testDebugUnitTest -- ver
             // jacocoTestReport más abajo, que fusiona ambos en un solo XML.
@@ -93,10 +94,10 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             manifestPlaceholders["firebaseAnalyticsDeactivated"] = false
-            manifestPlaceholders["firebaseCrashlyticsEnabled"]   = true
+            manifestPlaceholders["firebaseCrashlyticsEnabled"] = true
             if (releaseSigningProps != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -111,7 +112,7 @@ android {
     kotlinOptions { jvmTarget = "17" }
 
     buildFeatures {
-        compose     = true
+        compose = true
         buildConfig = true
     }
 
@@ -141,23 +142,25 @@ android {
 
     packaging {
         resources {
-            excludes += setOf(
-                "META-INF/DEPENDENCIES",
-                "META-INF/LICENSE",
-                "META-INF/LICENSE.txt",
-                "META-INF/NOTICE",
-                "META-INF/NOTICE.txt",
-                // *.md en vez de listar LICENSE.md/LICENSE-notice.md/etc. una
-                // por una: junit-jupiter (transitivo vía androidTest) trae
-                // varios archivos de este tipo que chocan entre sí.
-                "META-INF/*.md",
-                "META-INF/*.kotlin_module",
-                "META-INF/versions/9/previous-compilation-data.bin"
-            )
-            pickFirsts += setOf(
-                "META-INF/AL2.0",
-                "META-INF/LGPL2.1"
-            )
+            excludes +=
+                setOf(
+                    "META-INF/DEPENDENCIES",
+                    "META-INF/LICENSE",
+                    "META-INF/LICENSE.txt",
+                    "META-INF/NOTICE",
+                    "META-INF/NOTICE.txt",
+                    // *.md en vez de listar LICENSE.md/LICENSE-notice.md/etc. una
+                    // por una: junit-jupiter (transitivo vía androidTest) trae
+                    // varios archivos de este tipo que chocan entre sí.
+                    "META-INF/*.md",
+                    "META-INF/*.kotlin_module",
+                    "META-INF/versions/9/previous-compilation-data.bin",
+                )
+            pickFirsts +=
+                setOf(
+                    "META-INF/AL2.0",
+                    "META-INF/LGPL2.1",
+                )
         }
     }
 }
@@ -201,7 +204,7 @@ sonar {
     properties {
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            "build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+            "build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml",
         )
     }
 }
@@ -253,7 +256,7 @@ kover {
                 classes(
                     "*.R", "*.R\$*", "*.BuildConfig", "*Test*",
                     "*Hilt_*", "*_Factory", "*_MembersInjector",
-                    "*Module_*Factory", "*_HiltModules*", "*.di.*"
+                    "*Module_*Factory", "*_HiltModules*", "*.di.*",
                 )
             }
         }
@@ -352,13 +355,14 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         html.required.set(true)
     }
 
-    val fileFilter = listOf(
-        "**/R.class", "**/R\$*.class", "**/BuildConfig.*", "**/Manifest*.*",
-        "**/*Test*.*", "android/**/*.*",
-        "**/Hilt_*.*", "**/*_Factory.*", "**/*_MembersInjector.*",
-        "**/*Module_*Factory.*", "**/dagger/**", "**/*_HiltModules*.*",
-        "**/di/**",
-    )
+    val fileFilter =
+        listOf(
+            "**/R.class", "**/R\$*.class", "**/BuildConfig.*", "**/Manifest*.*",
+            "**/*Test*.*", "android/**/*.*",
+            "**/Hilt_*.*", "**/*_Factory.*", "**/*_MembersInjector.*",
+            "**/*Module_*Factory.*", "**/dagger/**", "**/*_HiltModules*.*",
+            "**/di/**",
+        )
     // Causa raíz encontrada 2026-09-18 (investigación explícita pedida por el
     // usuario tras meses con "0% cobertura en código nuevo" en SonarCloud,
     // ver el intento revertido de 2026-09-09 más abajo en el historial de
@@ -393,9 +397,9 @@ tasks.register<JacocoReport>("jacocoTestReport") {
             // queda en la ruta, con espacios incluidos, de ahí el comodín).
             include(
                 "jacoco/testDebugUnitTest.exec",
-                "outputs/code_coverage/debugAndroidTest/connected/**/*.ec"
+                "outputs/code_coverage/debugAndroidTest/connected/**/*.ec",
             )
-        }
+        },
     )
 }
 
@@ -421,7 +425,7 @@ tasks.register<Exec>("snykTest") {
                 "snykTest: no se encontró SNYK_TOKEN en el entorno -- " +
                     "el escaneo real de vulnerabilidades no puede autenticarse contra Snyk. " +
                     "Corré 'snyk auth' una vez en esta máquina, o seteá SNYK_TOKEN " +
-                    "(mismo patrón que SONAR_TOKEN para SonarCloud)."
+                    "(mismo patrón que SONAR_TOKEN para SonarCloud).",
             )
         }
     }
@@ -429,59 +433,133 @@ tasks.register<Exec>("snykTest") {
 
 dependencies {
     // ── Core Android ──────────────────────────────────────────────────────────
-    implementation(libs.androidx.core.ktx)
+    // buildHealth (paso 3, removida): androidx-core-ktx solo aporta funciones
+    // de extensión Kotlin (toUri/toFile/toColorInt/bundleOf/edit{}/
+    // getSystemService<T>()/contentValuesOf/LocaleListCompat) -- ninguna se usa
+    // en el código (grep exhaustivo sin resultados). Las clases sí usadas
+    // (FileProvider, ContextCompat, PermissionChecker) viven en
+    // androidx.core:core (declarado directo más abajo), no en core-ktx.
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    // buildHealth: transitivas de androidx.core-ktx/activity-compose/etc. que
+    // el código fuente sí referencia directo (ContextCompat, FileProvider,
+    // PermissionChecker, ComponentActivity...) -- se declaran explícitas para
+    // no depender de que otra dependencia de nivel superior siga trayéndolas.
+    implementation("androidx.core:core:1.18.0")
+    implementation("androidx.activity:activity:1.13.0")
+    implementation("androidx.annotation:annotation:1.9.1")
+    implementation("androidx.collection:collection:1.5.0")
+    implementation("androidx.fragment:fragment:1.5.4")
 
     // ── Compose BOM ───────────────────────────────────────────────────────────
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
+    // buildHealth (paso 3, removida): sin ningún @Preview en el código fuente
+    // (grep de "@Preview" y de "import androidx.compose.ui.tooling.preview"
+    // sin resultados en app/src/main/java) -- no hay Composables de preview.
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.foundation)
+    // buildHealth: submódulos de Compose usados directo en el código
+    // (Composable/remember/State de runtime, Animatable de animation,
+    // Modifier de foundation-layout, Icons.* de material-icons-core, Dp/Offset
+    // de ui-unit/ui-geometry, TextStyle de ui-text, rememberSaveable).
+    implementation("androidx.compose.animation:animation:1.11.0")
+    implementation("androidx.compose.animation:animation-core:1.11.0")
+    implementation("androidx.compose.foundation:foundation-layout:1.11.0")
+    implementation("androidx.compose.material:material-icons-core:1.7.5")
+    implementation("androidx.compose.runtime:runtime:1.11.0")
+    implementation("androidx.compose.runtime:runtime-saveable:1.11.0")
+    implementation("androidx.compose.ui:ui-geometry:1.11.0")
+    implementation("androidx.compose.ui:ui-text:1.11.0")
+    implementation("androidx.compose.ui:ui-unit:1.11.0")
 
     // ── Navegación ────────────────────────────────────────────────────────────
     implementation(libs.androidx.navigation.compose)
+    // buildHealth: NavController/NavGraph (navigation-common) y el motor de
+    // navegación en runtime (navigation-runtime) usados directo, no solo vía
+    // los componentes de navigation-compose.
+    implementation("androidx.navigation:navigation-common:2.8.4")
+    implementation("androidx.navigation:navigation-runtime:2.8.4")
 
     // ── Lifecycle / ViewModel ─────────────────────────────────────────────────
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // ProcessLifecycleOwner (RF-SEC-08: auto-bloqueo de Carpeta Segura al
     // pasar a segundo plano) -- artefacto separado de lifecycle-runtime-ktx.
     implementation(libs.androidx.lifecycle.process)
+    // buildHealth: Lifecycle/LifecycleEventObserver (lifecycle-common) y
+    // SavedStateHandle de ViewModel (lifecycle-viewmodel-savedstate) usados
+    // directo; collectAsStateWithLifecycle (lifecycle-runtime-compose) igual.
+    implementation("androidx.lifecycle:lifecycle-common:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.4")
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // ── Hilt ──────────────────────────────────────────────────────────────────
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    // buildHealth: @Inject/@Module/@Provides son de Dagger/javax.inject
+    // directo, no solo de hilt-android (que los re-expone transitivamente).
+    implementation("com.google.dagger:dagger:2.57")
+    implementation("com.google.dagger:hilt-core:2.57")
+    implementation("javax.inject:javax.inject:1")
 
     // ── Coil ──────────────────────────────────────────────────────────────────
     implementation(libs.coil.compose)
+    // buildHealth: AsyncImage/ImageLoader (coil-base) y rememberAsyncImagePainter
+    // (coil-compose-base) usados directo, no solo vía el paraguas coil-compose;
+    // coil (el paraguas de coil-compose) también se referencia directo.
+    implementation("io.coil-kt:coil:2.7.0")
+    implementation("io.coil-kt:coil-base:2.7.0")
+    implementation("io.coil-kt:coil-compose-base:2.7.0")
 
     // ── Coroutines ────────────────────────────────────────────────────────────
-    implementation(libs.kotlinx.coroutines.android)
+    // buildHealth (Dependency Analysis Gradle Plugin): solo se usan símbolos de
+    // kotlinx-coroutines-core en el código fuente (Dispatchers, Flow, etc.) --
+    // el "android" en el nombre del artefacto es el Dispatchers.Main real para
+    // Android, resuelto en tiempo de ejecución, no referenciado directo desde
+    // bytecode compilado. kotlinx-coroutines-core se declara directo abajo.
+    runtimeOnly(libs.kotlinx.coroutines.android)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 
     // ── Room (historial de documentos abiertos) ──────────────────────────────
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    // buildHealth: anotaciones de Room (@Entity, @Dao, etc.) y el driver base
+    // de SQLite usados directo, no solo vía room-runtime/room-ktx.
+    implementation("androidx.room:room-common:2.8.4")
+    implementation("androidx.sqlite:sqlite:2.7.0")
     // Driver real de SQLite para pruebas de integración de Room en la JVM
     // (ver sustitución de variante -jvm más arriba en androidComponents).
     testImplementation(libs.androidx.sqlite.bundled)
 
     // ── iText7 ────────────────────────────────────────────────────────────────
-    implementation("com.itextpdf:itext7-core:7.2.5") {
-        exclude(group = "org.bouncycastle")
-    }
+    // buildHealth (paso 3, removida): itext7-core es un POM agregador sin
+    // clases propias -- el código fuente importa directo de los 4 submódulos
+    // de abajo (forms/io/kernel/layout), que ya se declaran explícitos (el
+    // classpath resuelto no cambia, ya venían transitivos vía itext7-core).
+    // Verificado con dependencyInsight que kernel ya exige
+    // bcpkix-jdk15on:1.70 transitivo (misma versión que la declaración
+    // explícita de bcpkix-jdk15on más abajo), así que el exclude de
+    // bouncycastle que tenía itext7-core no hacía falta repetirlo acá.
+    implementation("com.itextpdf:forms:7.2.5")
+    implementation("com.itextpdf:io:7.2.5")
+    implementation("com.itextpdf:kernel:7.2.5")
+    implementation("com.itextpdf:layout:7.2.5")
     // Módulo pdfCleanup — RF-PDF-14 (censurar contenido de forma irreversible):
     // a diferencia de dibujar un rectángulo negro con PdfCanvas (que deja el
     // texto/vector original intacto y extraíble debajo), este módulo elimina
     // de verdad el contenido del content stream dentro de la región indicada.
     implementation("com.itextpdf:cleanup:3.0.2")
-    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+    // Proveedor de seguridad cargado en runtime por iText (firma/cifrado PDF),
+    // sin import directo en el código de la app -- ver bcpkix-jdk15on más
+    // abajo, que sí queda `implementation` (evaluado, no removido: ver
+    // reporte final de buildHealth).
+    runtimeOnly("org.bouncycastle:bcprov-jdk15on:1.70")
     implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
 
     // ── Apache POI ────────────────────────────────────────────────────────────
@@ -518,6 +596,9 @@ dependencies {
 
     // ── Play Billing (Premium: mensual/anual/lifetime) ───────────────────────
     implementation(libs.billing.ktx)
+    // buildHealth: BillingClient/ProductDetails/PurchasesUpdatedListener son
+    // del artefacto base "billing", re-expuesto por billing-ktx.
+    implementation("com.android.billingclient:billing:9.1.0")
 
     // ── Timber ────────────────────────────────────────────────────────────────
     implementation("com.jakewharton.timber:timber:5.0.1")
@@ -525,13 +606,24 @@ dependencies {
     // ── CameraX ───────────────────────────────────────────────────────────────
     val cameraxVersion = "1.3.4"
     implementation("androidx.camera:camera-core:$cameraxVersion")
-    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    // camera-camera2 es el backend real de CameraX (Camera2 vendor
+    // implementation) -- se carga por service loader en runtime, el código
+    // fuente solo referencia las APIs de camera-core/camera-lifecycle/camera-view.
+    runtimeOnly("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
-    implementation("androidx.camera:camera-extensions:$cameraxVersion")
+    // buildHealth (paso 3, removida): camera-extensions (bokeh/HDR/night mode
+    // de fabricantes) -- sin ExtensionsManager/ExtensionMode ni ningún import
+    // de androidx.camera.extensions en el código (grep sin resultados).
 
     // ── ML Kit ────────────────────────────────────────────────────────────────
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
+    // buildHealth (Dependency Analysis Gradle Plugin) sugería reclasificar
+    // esto a runtimeOnly, pero es un FALSO POSITIVO real: QrScreen.kt importa
+    // y usa com.google.mlkit.vision.barcode.BarcodeScanning.getClient()
+    // directo (confirmado con error real de compilación "unresolved
+    // reference 'BarcodeScanning'" al probar el cambio) -- se revierte a
+    // implementation.
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     // Reconocimiento de texto (OCR) on-device para RF-PDF-15 -- distinto del
     // document-scanner (solo recorta/mejora la imagen del escaneo) y del
@@ -539,10 +631,25 @@ dependencies {
     // incluido en el APK, no la de Play Services) para funcionar offline
     // desde el primer uso, mismo criterio que barcode-scanning ya usa.
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    // buildHealth: clases base de MLKit/Play Services MLKit usadas por
+    // barcode-scanning/text-recognition (InputImage de vision-common, tipos
+    // comunes de barcode-scanning-common) y las variantes Play Services que
+    // document-scanner/barcode-scanning resuelven en runtime.
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition-common:19.1.0")
+    implementation("com.google.mlkit:barcode-scanning-common:17.0.0")
+    implementation("com.google.mlkit:vision-common:17.3.0")
+    // Modelo bundled real de text-recognition (offline desde el primer uso) --
+    // cargado en runtime, sin referencia directa en bytecode.
+    runtimeOnly("com.google.mlkit:text-recognition-bundled-common:17.0.0")
 
     // ── ZXing ─────────────────────────────────────────────────────────────────
     implementation("com.google.zxing:core:3.5.4")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
+    // El código fuente usa com.google.zxing.core directo (declarado arriba);
+    // zxing-android-embedded solo aporta la UI del escáner (CaptureActivity),
+    // consumida vía Intent/Manifest, no referenciada en bytecode compilado.
+    runtimeOnly("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
 
     // ── Guava ─────────────────────────────────────────────────────────────────
     implementation("com.google.guava:guava:32.1.3-android")
@@ -562,11 +669,27 @@ dependencies {
     implementation("com.google.firebase:firebase-config")
 
     // ── Testing ───────────────────────────────────────────────────────────────
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    // buildHealth (paso 3, removida): junit-jupiter es el paraguas
+    // (api+params+engine); el código fuente solo usa org.junit.jupiter.api.*
+    // (junit-jupiter-api, declarado directo abajo). jupiter-engine sigue
+    // presente en el classpath de test en runtime vía otras dependencias.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("app.cash.turbine:turbine:1.2.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    // buildHealth: la API de JUnit5 (org.junit.jupiter.api.Test/Assertions,
+    // usada en casi toda la suite) vive en junit-jupiter-api, submódulo del
+    // paraguas junit-jupiter (removido arriba).
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.14.4")
+    // buildHealth: motor de specs de Kotest (kotest-framework-engine) y las
+    // DSL de mockk (every/coEvery/slot, kotest-runner-junit5→mockk-dsl) usadas
+    // directo desde los tests, no solo vía los paraguas mockk/kotest-runner.
+    testImplementation("io.kotest:kotest-framework-engine:6.2.5")
+    testImplementation("io.mockk:mockk-dsl:1.13.13")
+    // ArchUnit core (ArchRule/JavaClasses/ClassFileImporter) -- ver
+    // ArchitectureTest.kt, que NO usa el runner de archunit-junit5 (removido
+    // más abajo), solo corre las reglas dentro de un @Test normal de JUnit5.
+    testImplementation("com.tngtech.archunit:archunit:1.5.0")
     // Kotest (pedido explícito del usuario, 2026-09-18) -- corre sobre el
     // mismo motor JUnit Platform que ya usa el resto de la suite
     // (testOptions.unitTests.all { useJUnitPlatform() } más abajo), así que
@@ -574,32 +697,59 @@ dependencies {
     // specs nuevas que se beneficien de sus estilos de test (FunSpec,
     // BehaviorSpec, etc.) o de matchers más expresivos -- no reemplaza
     // JUnit5+MockK en los tests ya escritos.
-    testImplementation(libs.kotest.runner.junit5)
+    // El motor de ejecución de Kotest se descubre vía JUnit Platform
+    // (ServiceLoader) -- los specs usan kotest-assertions-core/kotest-property
+    // (compile-time), no símbolos de kotest-runner-junit5 directo.
+    testRuntimeOnly(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.property)
-    // ArchUnit (pedido explícito del usuario, 2026-09-18) -- reglas de
-    // arquitectura ejecutables como tests JUnit5 normales, ver
-    // ArchitectureTest.kt.
-    testImplementation(libs.archunit.junit5)
+    // buildHealth (paso 3, removida): ArchitectureTest.kt (pedido explícito
+    // del usuario, 2026-09-18) solo importa com.tngtech.archunit.{base,
+    // core.domain,core.importer,lang.syntax} (archunit core, declarado
+    // arriba) + org.junit.jupiter.api.Test -- ningún símbolo de
+    // com.tngtech.archunit.junit.* (el runner/anotaciones propias de
+    // archunit-junit5) se usa.
     // El stub de Android para unit tests deja org.json.* sin implementar
     // ("not mocked") — esta dependencia real (mismo paquete org.json) la
     // sustituye solo para los tests, sin afectar el runtime de la app.
     testImplementation("org.json:json:20231013")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    // buildHealth: JUnit4 (junit:junit, usado por androidx.test.ext:junit y
+    // por las reglas @get:Rule) y el Monitor de instrumentación
+    // (androidx.test:monitor, ActivityLifecycleMonitorRegistry) usados
+    // directo en las pruebas, no solo vía runner/rules.
+    androidTestImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:monitor:1.8.0")
+    // Espresso no se usa directo en las pruebas (todas usan Compose UI
+    // Testing) -- se mantiene como dependencia de runtime porque
+    // AndroidJUnitRunner/InstrumentationRegistry lo necesitan indirectamente.
+    androidTestRuntimeOnly("androidx.test.espresso:espresso-core:3.7.0")
     // GrantPermissionRule -- LibraryScreenTest necesita permiso real de
     // almacenamiento concedido antes de componer la pantalla (LibraryScreen
     // lo verifica con ContextCompat.checkSelfPermission al inicio, no es
     // algo mockeable desde el ViewModel).
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.manifest)
+    // buildHealth (paso 3, removida): ui-test-manifest ya está como
+    // debugRuntimeOnly más abajo (única declaración recomendada oficialmente
+    // para Compose UI Testing -- el manifest de ComposeTestActivity se
+    // fusiona desde el APK debug, no hace falta declararlo también acá).
     // ── Compose UI Testing (instrumentado — corre en dispositivo/emulador) ────
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // buildHealth: SemanticsNodeInteraction/finders (ui-test) usados directo
+    // desde los ...ScreenTest.kt, no solo vía ui-test-junit4.
+    androidTestImplementation("androidx.compose.ui:ui-test:1.11.0")
     // mockk-android, no mockk: mockear en el dispositivo necesita soporte
     // dexmaker/bytebuddy-android, distinto del mockk de test/ (JVM).
     androidTestImplementation("io.mockk:mockk-android:1.13.13")
+    // buildHealth: DSL de mockk (every/coEvery/mockk<T>()) resuelta directo
+    // desde mockk-dsl; mockk-agent-android/mockk-agent son el motor de
+    // bytebuddy-android que mockk-android carga por ServiceLoader en runtime.
+    androidTestImplementation("io.mockk:mockk-dsl:1.13.13")
+    androidTestRuntimeOnly("io.mockk:mockk-agent-android:1.13.13")
+    androidTestRuntimeOnly("io.mockk:mockk-agent:1.13.13")
     debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-
+    // El manifest de la actividad de test (ComposeTestActivity) se consume
+    // vía manifest merge, no por código Kotlin compilado contra esta librería.
+    debugRuntimeOnly(libs.androidx.compose.ui.test.manifest)
 }

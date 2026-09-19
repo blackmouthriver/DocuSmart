@@ -37,7 +37,6 @@ import java.nio.file.Files
  * según uso real, no fecha de modificación del archivo.
  */
 class DocumentRepositoryTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var historyDao: FakeDocumentHistoryDao
@@ -51,11 +50,16 @@ class DocumentRepositoryTest {
         every { context.filesDir } returns filesDir
         historyDao = FakeDocumentHistoryDao()
         trashDao = FakeTrashDao()
-        repository = DocumentRepository(
-            context, mockk<FavoritesRepository>(relaxed = true), historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
-        )
+        repository =
+            DocumentRepository(
+                context,
+                mockk<FavoritesRepository>(relaxed = true),
+                historyDao,
+                trashDao,
+                mockk<MediaDeletePermission>(relaxed = true),
+                mockk<DownloadsAccessManager>(relaxed = true),
+                mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true),
+            )
         mockkStatic(Uri::class)
     }
 
@@ -66,151 +70,180 @@ class DocumentRepositoryTest {
     }
 
     @Test
-    fun `deleteDocument borra un archivo generado por la app`() = runTest {
-        val dir = File(filesDir, "converted").apply { mkdirs() }
-        val file = File(dir, "documento.pdf").apply { writeText("contenido") }
+    fun `deleteDocument borra un archivo generado por la app`() =
+        runTest {
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "documento.pdf").apply { writeText("contenido") }
 
-        val deleted = repository.deleteDocument(file.absolutePath)
+            val deleted = repository.deleteDocument(file.absolutePath)
 
-        assertTrue(deleted is DocumentRepository.DeleteOutcome.Deleted)
-        assertFalse(file.exists())
-    }
-
-    @Test
-    fun `deleteDocument devuelve Failed si el archivo de la app no existe`() = runTest {
-        val missing = File(filesDir, "no_existe.pdf")
-
-        val deleted = repository.deleteDocument(missing.absolutePath)
-
-        assertTrue(deleted is DocumentRepository.DeleteOutcome.Failed)
-    }
+            assertTrue(deleted is DocumentRepository.DeleteOutcome.Deleted)
+            assertFalse(file.exists())
+        }
 
     @Test
-    fun `deleteDocument borra un documento de MediaStore via ContentResolver`() = runTest {
-        val uriString = "content://media/external/downloads/12345"
-        val mockUri = mockk<Uri>()
-        every { Uri.parse(uriString) } returns mockUri
-        every { mockUri.authority } returns "media"
-        val resolver = mockk<ContentResolver>()
-        every { resolver.delete(mockUri, null, null) } returns 1
-        every { context.contentResolver } returns resolver
+    fun `deleteDocument devuelve Failed si el archivo de la app no existe`() =
+        runTest {
+            val missing = File(filesDir, "no_existe.pdf")
 
-        val deleted = repository.deleteDocument(uriString)
+            val deleted = repository.deleteDocument(missing.absolutePath)
 
-        assertTrue(deleted is DocumentRepository.DeleteOutcome.Deleted)
-    }
+            assertTrue(deleted is DocumentRepository.DeleteOutcome.Failed)
+        }
 
     @Test
-    fun `deleteDocument devuelve Failed si ContentResolver no pudo borrar`() = runTest {
-        val uriString = "content://media/external/downloads/99999"
-        val mockUri = mockk<Uri>()
-        every { Uri.parse(uriString) } returns mockUri
-        every { mockUri.authority } returns "media"
-        val resolver = mockk<ContentResolver>()
-        every { resolver.delete(mockUri, null, null) } returns 0
-        every { context.contentResolver } returns resolver
+    fun `deleteDocument borra un documento de MediaStore via ContentResolver`() =
+        runTest {
+            val uriString = "content://media/external/downloads/12345"
+            val mockUri = mockk<Uri>()
+            every { Uri.parse(uriString) } returns mockUri
+            every { mockUri.authority } returns "media"
+            val resolver = mockk<ContentResolver>()
+            every { resolver.delete(mockUri, null, null) } returns 1
+            every { context.contentResolver } returns resolver
 
-        val deleted = repository.deleteDocument(uriString)
+            val deleted = repository.deleteDocument(uriString)
 
-        assertTrue(deleted is DocumentRepository.DeleteOutcome.Failed)
-    }
-
-    @Test
-    fun `deleteDocument devuelve Failed si ContentResolver lanza excepcion generica`() = runTest {
-        val uriString = "content://media/external/images/1"
-        val mockUri = mockk<Uri>()
-        every { Uri.parse(uriString) } returns mockUri
-        every { mockUri.authority } returns "media"
-        val resolver = mockk<ContentResolver>()
-        every { resolver.delete(mockUri, null, null) } throws SecurityException("no permission")
-        every { context.contentResolver } returns resolver
-
-        val deleted = repository.deleteDocument(uriString)
-
-        assertTrue(deleted is DocumentRepository.DeleteOutcome.Failed)
-    }
+            assertTrue(deleted is DocumentRepository.DeleteOutcome.Deleted)
+        }
 
     @Test
-    fun `deleteDocument exitoso tambien borra el registro de historial`() = runTest {
-        val dir = File(filesDir, "converted").apply { mkdirs() }
-        val file = File(dir, "documento.pdf").apply { writeText("contenido") }
-        historyDao.recordOpen(DocumentHistoryEntry(file.absolutePath, 1000L))
+    fun `deleteDocument devuelve Failed si ContentResolver no pudo borrar`() =
+        runTest {
+            val uriString = "content://media/external/downloads/99999"
+            val mockUri = mockk<Uri>()
+            every { Uri.parse(uriString) } returns mockUri
+            every { mockUri.authority } returns "media"
+            val resolver = mockk<ContentResolver>()
+            every { resolver.delete(mockUri, null, null) } returns 0
+            every { context.contentResolver } returns resolver
 
-        repository.deleteDocument(file.absolutePath)
+            val deleted = repository.deleteDocument(uriString)
 
-        assertTrue(historyDao.recentDocumentIds(10).isEmpty())
-    }
+            assertTrue(deleted is DocumentRepository.DeleteOutcome.Failed)
+        }
+
+    @Test
+    fun `deleteDocument devuelve Failed si ContentResolver lanza excepcion generica`() =
+        runTest {
+            val uriString = "content://media/external/images/1"
+            val mockUri = mockk<Uri>()
+            every { Uri.parse(uriString) } returns mockUri
+            every { mockUri.authority } returns "media"
+            val resolver = mockk<ContentResolver>()
+            every { resolver.delete(mockUri, null, null) } throws SecurityException("no permission")
+            every { context.contentResolver } returns resolver
+
+            val deleted = repository.deleteDocument(uriString)
+
+            assertTrue(deleted is DocumentRepository.DeleteOutcome.Failed)
+        }
+
+    @Test
+    fun `deleteDocument exitoso tambien borra el registro de historial`() =
+        runTest {
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "documento.pdf").apply { writeText("contenido") }
+            historyDao.recordOpen(DocumentHistoryEntry(file.absolutePath, 1000L))
+
+            repository.deleteDocument(file.absolutePath)
+
+            assertTrue(historyDao.recentDocumentIds(10).isEmpty())
+        }
 
     // ── renameDocument (RF-VIS-06: extraído de Library/HomeViewModel para
     // reutilizarlo también desde el Visor) ────────────────────────────────
 
     @Test
-    fun `renameDocument renombra un archivo real de la app y devuelve la nueva ruta`() = runTest {
-        val favorites = mockk<FavoritesRepository>()
-        coEvery { favorites.removeAlias(any()) } just Runs
-        val identityMaintenance = mockk<com.docsmart.core.data.DocumentIdentityMaintenance>()
-        coEvery { identityMaintenance.onIdChanged(any(), any()) } just Runs
-        val repo = DocumentRepository(
-            context, favorites, historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            identityMaintenance
-        )
-        val dir  = File(filesDir, "converted").apply { mkdirs() }
-        val file = File(dir, "original.pdf").apply { writeText("contenido") }
+    fun `renameDocument renombra un archivo real de la app y devuelve la nueva ruta`() =
+        runTest {
+            val favorites = mockk<FavoritesRepository>()
+            coEvery { favorites.removeAlias(any()) } just Runs
+            val identityMaintenance = mockk<com.docsmart.core.data.DocumentIdentityMaintenance>()
+            coEvery { identityMaintenance.onIdChanged(any(), any()) } just Runs
+            val repo =
+                DocumentRepository(
+                    context,
+                    favorites,
+                    historyDao,
+                    trashDao,
+                    mockk<MediaDeletePermission>(relaxed = true),
+                    mockk<DownloadsAccessManager>(relaxed = true),
+                    identityMaintenance,
+                )
+            val dir = File(filesDir, "converted").apply { mkdirs() }
+            val file = File(dir, "original.pdf").apply { writeText("contenido") }
 
-        val newId = repo.renameDocument(file.absolutePath, "nuevo.pdf")
+            val newId = repo.renameDocument(file.absolutePath, "nuevo.pdf")
 
-        assertEquals(File(dir, "nuevo.pdf").absolutePath, newId)
-        assertTrue(File(dir, "nuevo.pdf").exists())
-        assertFalse(file.exists())
-        coVerify { favorites.removeAlias(file.absolutePath) }
-        // Hallazgo #50 (revisión general 2026-09-16): un rename físico
-        // también debe migrar favorito/anotaciones/marcadores/última página
-        // (DocumentIdentityMaintenance) al nuevo id (la ruta absoluta del
-        // archivo renombrado).
-        coVerify { identityMaintenance.onIdChanged(file.absolutePath, File(dir, "nuevo.pdf").absolutePath) }
-    }
-
-    @Test
-    fun `renameDocument de un documento de MediaStore usa alias sin tocar el archivo`() = runTest {
-        val favorites = mockk<FavoritesRepository>()
-        coEvery { favorites.saveAlias(any(), any()) } just Runs
-        val repo = DocumentRepository(
-            context, favorites, historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
-        )
-        val uriString = "content://media/external/downloads/12345"
-
-        val newId = repo.renameDocument(uriString, "Nuevo nombre.pdf")
-
-        assertEquals(uriString, newId, "un documento de MediaStore conserva su id -- solo cambia el alias")
-        coVerify { favorites.saveAlias(uriString, "Nuevo nombre.pdf") }
-    }
+            assertEquals(File(dir, "nuevo.pdf").absolutePath, newId)
+            assertTrue(File(dir, "nuevo.pdf").exists())
+            assertFalse(file.exists())
+            coVerify { favorites.removeAlias(file.absolutePath) }
+            // Hallazgo #50 (revisión general 2026-09-16): un rename físico
+            // también debe migrar favorito/anotaciones/marcadores/última página
+            // (DocumentIdentityMaintenance) al nuevo id (la ruta absoluta del
+            // archivo renombrado).
+            coVerify { identityMaintenance.onIdChanged(file.absolutePath, File(dir, "nuevo.pdf").absolutePath) }
+        }
 
     @Test
-    fun `renameDocument cae a alias si el archivo de la app no se pudo mover`() = runTest {
-        val favorites = mockk<FavoritesRepository>()
-        coEvery { favorites.saveAlias(any(), any()) } just Runs
-        val repo = DocumentRepository(
-            context, favorites, historyDao, trashDao,
-            mockk<MediaDeletePermission>(relaxed = true), mockk<DownloadsAccessManager>(relaxed = true),
-            mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true)
-        )
-        val missing = File(filesDir, "no_existe.pdf") // File.renameTo() sobre un origen inexistente devuelve false
+    fun `renameDocument de un documento de MediaStore usa alias sin tocar el archivo`() =
+        runTest {
+            val favorites = mockk<FavoritesRepository>()
+            coEvery { favorites.saveAlias(any(), any()) } just Runs
+            val repo =
+                DocumentRepository(
+                    context,
+                    favorites,
+                    historyDao,
+                    trashDao,
+                    mockk<MediaDeletePermission>(relaxed = true),
+                    mockk<DownloadsAccessManager>(relaxed = true),
+                    mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true),
+                )
+            val uriString = "content://media/external/downloads/12345"
 
-        val newId = repo.renameDocument(missing.absolutePath, "nuevo.pdf")
+            val newId = repo.renameDocument(uriString, "Nuevo nombre.pdf")
 
-        assertEquals(missing.absolutePath, newId, "el id no cambia si el rename real falló")
-        coVerify { favorites.saveAlias(missing.absolutePath, "nuevo.pdf") }
-    }
+            assertEquals(uriString, newId, "un documento de MediaStore conserva su id -- solo cambia el alias")
+            coVerify { favorites.saveAlias(uriString, "Nuevo nombre.pdf") }
+        }
+
+    @Test
+    fun `renameDocument cae a alias si el archivo de la app no se pudo mover`() =
+        runTest {
+            val favorites = mockk<FavoritesRepository>()
+            coEvery { favorites.saveAlias(any(), any()) } just Runs
+            val repo =
+                DocumentRepository(
+                    context,
+                    favorites,
+                    historyDao,
+                    trashDao,
+                    mockk<MediaDeletePermission>(relaxed = true),
+                    mockk<DownloadsAccessManager>(relaxed = true),
+                    mockk<com.docsmart.core.data.DocumentIdentityMaintenance>(relaxed = true),
+                )
+            val missing = File(filesDir, "no_existe.pdf") // File.renameTo() sobre un origen inexistente devuelve false
+
+            val newId = repo.renameDocument(missing.absolutePath, "nuevo.pdf")
+
+            assertEquals(missing.absolutePath, newId, "el id no cambia si el rename real falló")
+            coVerify { favorites.saveAlias(missing.absolutePath, "nuevo.pdf") }
+        }
 
     // ── mergeHistoryWithDocuments (RF-VIS/HOME: recientes = uso real) ─────────
 
-    private fun doc(id: String) = DocumentUiModel(
-        id = id, name = id, type = DocumentType.PDF,
-        size = "1 KB", date = "24/08/2026", isFavorite = false
-    )
+    private fun doc(id: String) =
+        DocumentUiModel(
+            id = id,
+            name = id,
+            type = DocumentType.PDF,
+            size = "1 KB",
+            date = "24/08/2026",
+            isFavorite = false,
+        )
 
     @Test
     fun `mergeHistoryWithDocuments prioriza el orden del historial sobre la fecha de archivo`() {
@@ -261,7 +294,10 @@ class DocumentRepositoryTest {
         }
 
         override suspend fun recentDocumentIds(limit: Int): List<String> =
-            store.entries.sortedByDescending { it.value }.map { it.key }.take(limit)
+            store.entries
+                .sortedByDescending { it.value }
+                .map { it.key }
+                .take(limit)
 
         override suspend fun allEntries(): List<DocumentHistoryEntry> =
             store.entries.sortedByDescending { it.value }.map { DocumentHistoryEntry(it.key, it.value) }
@@ -270,7 +306,10 @@ class DocumentRepositoryTest {
             store.remove(documentId)
         }
 
-        override suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String) {
+        override suspend fun updateDocumentId(
+            oldDocumentId: String,
+            newDocumentId: String,
+        ) {
             store.remove(oldDocumentId)?.let { store[newDocumentId] = it }
         }
     }

@@ -33,7 +33,6 @@ import java.nio.file.Files
  * "A & B" rompería el HTML generado en vez de mostrarse como texto plano).
  */
 class PdfToHtmlUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: PdfToHtmlUseCase
@@ -62,69 +61,74 @@ class PdfToHtmlUseCaseTest {
     }
 
     @Test
-    fun `extrae el texto real de un PDF de varias paginas y arma un HTML por pagina`() = runTest {
-        stubResolver(createPdf(listOf("Primera página", "Segunda página")))
+    fun `extrae el texto real de un PDF de varias paginas y arma un HTML por pagina`() =
+        runTest {
+            stubResolver(createPdf(listOf("Primera página", "Segunda página")))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val success = result as ConversionResult.Success
-        assertEquals("html", success.outputFile.extension)
-        assertEquals(2, success.pageCount)
-        val html = success.outputFile.readText()
-        assertTrue(html.contains("<p>Primera página</p>"))
-        assertTrue(html.contains("<p>Segunda página</p>"))
-        assertTrue(html.contains("<html"))
-        assertTrue(html.contains("</html>"))
-    }
+            assertTrue(result is ConversionResult.Success)
+            val success = result as ConversionResult.Success
+            assertEquals("html", success.outputFile.extension)
+            assertEquals(2, success.pageCount)
+            val html = success.outputFile.readText()
+            assertTrue(html.contains("<p>Primera página</p>"))
+            assertTrue(html.contains("<p>Segunda página</p>"))
+            assertTrue(html.contains("<html"))
+            assertTrue(html.contains("</html>"))
+        }
 
     // Si esta escapada se rompe, texto de usuario como "<script>" quedaría
     // interpretado como una etiqueta real por cualquier visor de HTML en vez
     // de mostrarse como texto plano.
     @Test
-    fun `escapa caracteres especiales HTML del texto extraido del PDF`() = runTest {
-        stubResolver(createPdf(listOf("<script>A & B</script>")))
+    fun `escapa caracteres especiales HTML del texto extraido del PDF`() =
+        runTest {
+            stubResolver(createPdf(listOf("<script>A & B</script>")))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        val html = (result as ConversionResult.Success).outputFile.readText()
-        assertTrue(html.contains("&lt;script&gt;A &amp; B&lt;/script&gt;"))
-        assertFalse(html.contains("<script>A & B</script>"))
-    }
-
-    @Test
-    fun `paginas en blanco se omiten del HTML pero las paginas con texto real se conservan`() = runTest {
-        stubResolver(createPdf(listOf("Con contenido", "   ", "")))
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Success)
-        val html = (result as ConversionResult.Success).outputFile.readText()
-        assertTrue(html.contains("Con contenido"))
-        // Solo una página real -- las 2 páginas en blanco no generan <div class="page">.
-        assertEquals(1, Regex("class=\"page\"").findAll(html).count())
-    }
+            val html = (result as ConversionResult.Success).outputFile.readText()
+            assertTrue(html.contains("&lt;script&gt;A &amp; B&lt;/script&gt;"))
+            assertFalse(html.contains("<script>A & B</script>"))
+        }
 
     @Test
-    fun `PDF sin texto extraible devuelve Error`() = runTest {
-        stubResolver(createPdf(emptyList()))
+    fun `paginas en blanco se omiten del HTML pero las paginas con texto real se conservan`() =
+        runTest {
+            stubResolver(createPdf(listOf("Con contenido", "   ", "")))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Success)
+            val html = (result as ConversionResult.Success).outputFile.readText()
+            assertTrue(html.contains("Con contenido"))
+            // Solo una página real -- las 2 páginas en blanco no generan <div class="page">.
+            assertEquals(1, Regex("class=\"page\"").findAll(html).count())
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `PDF sin texto extraible devuelve Error`() =
+        runTest {
+            stubResolver(createPdf(emptyList()))
 
-        val result = useCase(uri, "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
+
+    @Test
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uri, "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

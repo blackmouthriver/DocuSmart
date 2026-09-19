@@ -24,26 +24,30 @@ import com.docsmart.core.ui.theme.accentShadow
 fun DocuSmartCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large // 20dp
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
-            .then(
-                // H23 (auditoría de accesibilidad TalkBack 2026-09-18): sin
-                // role, TalkBack no anunciaba esta tarjeta como accionable.
-                if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick)
-                else Modifier
-            )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+                .then(
+                    // H23 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+                    // role, TalkBack no anunciaba esta tarjeta como accionable.
+                    if (onClick != null) {
+                        Modifier.clickable(role = Role.Button, onClick = onClick)
+                    } else {
+                        Modifier
+                    },
+                ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            content = content
+            content = content,
         )
     }
 }
@@ -51,40 +55,44 @@ fun DocuSmartCard(
 // ── Card de acceso rápido (grid home) ────────────────
 // Uso: íconos de acceso rápido en el Home
 @Composable
-fun  DocuSmartQuickAccessCard(
+fun DocuSmartQuickAccessCard(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconTint: Color = DocuBlue,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = modifier
-            .aspectRatio(1f)
-            .accentShadow(shape = shape)
-            .clip(shape)
-            .background(backgroundColor)
-            .accentBorder(shape = shape)
-            // H2 (auditoría de accesibilidad TalkBack 2026-09-18): sin role,
-            // TalkBack no anunciaba las 9 tarjetas de acceso rápido de Inicio
-            // como accionables.
-            .clickable(role = Role.Button, onClick = onClick)
+        modifier =
+            modifier
+                .aspectRatio(1f)
+                .accentShadow(shape = shape)
+                .clip(shape)
+                .background(backgroundColor)
+                .accentBorder(shape = shape)
+                // H2 (auditoría de accesibilidad TalkBack 2026-09-18): sin role,
+                // TalkBack no anunciaba las 9 tarjetas de acceso rápido de Inicio
+                // como accionables.
+                .clickable(role = Role.Button, onClick = onClick),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),          // ← reducido de 12dp a 8dp
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+            // ← reducido de 12dp a 8dp
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Box(
-                modifier = Modifier
-                    .size(40.dp)          // ← reducido de 48dp a 40dp
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(iconTint.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(40.dp) // ← reducido de 48dp a 40dp
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(iconTint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
@@ -98,17 +106,19 @@ fun  DocuSmartQuickAccessCard(
                     // abajo, que ya usa null para este mismo patrón.
                     contentDescription = null,
                     tint = iconTint,
-                    modifier = Modifier.size(22.dp)  // ← reducido de 28dp a 22dp
+                    // ← reducido de 28dp a 22dp
+                    modifier = Modifier.size(22.dp),
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall, // ← labelMedium → labelSmall
+                // ← labelMedium → labelSmall
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
     }
@@ -123,38 +133,41 @@ fun DocuSmartToolCard(
     description: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    iconTint: Color = DocuBlue
+    iconTint: Color = DocuBlue,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
-            // H23 (auditoría de accesibilidad TalkBack 2026-09-18): sin
-            // role, TalkBack no anunciaba esta tarjeta como accionable.
-            .clickable(role = Role.Button, onClick = onClick)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+                // H23 (auditoría de accesibilidad TalkBack 2026-09-18): sin
+                // role, TalkBack no anunciaba esta tarjeta como accionable.
+                .clickable(role = Role.Button, onClick = onClick),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(iconTint.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(52.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(iconTint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = iconTint,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(28.dp),
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -162,7 +175,7 @@ fun DocuSmartToolCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -170,14 +183,14 @@ fun DocuSmartToolCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Icon(
                 imageVector = androidx.compose.material.icons.Icons.Rounded.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
         }
     }

@@ -31,16 +31,20 @@ import java.util.Base64
  * páginas del documento.
  */
 class SignPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: SignPdfUseCase
 
-    private val messages = SignPdfMessages(
-        emptySignatureError = "emptySignatureError", readError = "readError", noPages = "noPages",
-        generateError = "generateError", success = "success %1\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        SignPdfMessages(
+            emptySignatureError = "emptySignatureError",
+            readError = "readError",
+            noPages = "noPages",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -59,60 +63,81 @@ class SignPdfUseCaseTest {
     }
 
     @Test
-    fun `firmar un PDF de una pagina produce un archivo no vacio en la pagina 1`() = runTest {
-        stubResolver(createPdf(pages = 1))
+    fun `firmar un PDF de una pagina produce un archivo no vacio en la pagina 1`() =
+        runTest {
+            stubResolver(createPdf(pages = 1))
 
-        val result = useCase(
-            mockk<Uri>(), signatureImageBytes = createSignaturePng(), pageNumber = 1, messages = messages
-        )
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    signatureImageBytes = createSignaturePng(),
+                    pageNumber = 1,
+                    messages = messages,
+                )
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("success 1", (result as PdfToolResult.Success).message)
-        assertTrue(result.outputFile.length() > 0L)
-    }
-
-    @Test
-    fun `firma sin imagen devuelve Error sin tocar el archivo`() = runTest {
-        val result = useCase(mockk<Uri>(), signatureImageBytes = ByteArray(0), pageNumber = 1, messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("emptySignatureError", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("success 1", (result as PdfToolResult.Success).message)
+            assertTrue(result.outputFile.length() > 0L)
+        }
 
     @Test
-    fun `un numero de pagina fuera de rango se ajusta a la ultima pagina valida`() = runTest {
-        stubResolver(createPdf(pages = 2))
+    fun `firma sin imagen devuelve Error sin tocar el archivo`() =
+        runTest {
+            val result = useCase(mockk<Uri>(), signatureImageBytes = ByteArray(0), pageNumber = 1, messages = messages)
 
-        val result = useCase(
-            mockk<Uri>(), signatureImageBytes = createSignaturePng(), pageNumber = 99, messages = messages
-        )
-
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("success 2", (result as PdfToolResult.Success).message)
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("emptySignatureError", (result as PdfToolResult.Error).message)
+        }
 
     @Test
-    fun `un numero de pagina menor a 1 se ajusta a la primera pagina`() = runTest {
-        stubResolver(createPdf(pages = 3))
+    fun `un numero de pagina fuera de rango se ajusta a la ultima pagina valida`() =
+        runTest {
+            stubResolver(createPdf(pages = 2))
 
-        val result = useCase(
-            mockk<Uri>(), signatureImageBytes = createSignaturePng(), pageNumber = 0, messages = messages
-        )
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    signatureImageBytes = createSignaturePng(),
+                    pageNumber = 99,
+                    messages = messages,
+                )
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("success 1", (result as PdfToolResult.Success).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("success 2", (result as PdfToolResult.Success).message)
+        }
 
     @Test
-    fun `firmar un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `un numero de pagina menor a 1 se ajusta a la primera pagina`() =
+        runTest {
+            stubResolver(createPdf(pages = 3))
 
-        val result = useCase(
-            mockk<Uri>(), signatureImageBytes = createSignaturePng(), pageNumber = 1, messages = messages
-        )
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    signatureImageBytes = createSignaturePng(),
+                    pageNumber = 0,
+                    messages = messages,
+                )
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("success 1", (result as PdfToolResult.Success).message)
+        }
+
+    @Test
+    fun `firmar un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    signatureImageBytes = createSignaturePng(),
+                    pageNumber = 1,
+                    messages = messages,
+                )
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -129,7 +154,12 @@ class SignPdfUseCaseTest {
         repeat(pages) { index ->
             val page = pdfDoc.addNewPage()
             val canvas = PdfCanvas(page)
-            canvas.beginText().setFontAndSize(font, 18f).moveText(50.0, 700.0).showText("PAGINA_${index + 1}").endText()
+            canvas
+                .beginText()
+                .setFontAndSize(font, 18f)
+                .moveText(50.0, 700.0)
+                .showText("PAGINA_${index + 1}")
+                .endText()
         }
         pdfDoc.close()
         return out.toByteArray()
@@ -140,8 +170,10 @@ class SignPdfUseCaseTest {
     // disponible en el classpath de tests unitarios de Android, así que no
     // se puede generar en tiempo de ejecución con las APIs estándar de la
     // JVM.
-    @Suppress("MaxLineLength")
-    private fun createSignaturePng(): ByteArray = Base64.getDecoder().decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAGQAAAAoCAIAAACHGsgUAAAAmklEQVR4nO3WIRLEQBDDQP//03c8mwVCjqs0sIcYKkl+x4mv2F8whM/fR2Z9E3N7iCfm9hBPzO0hvmB/wQ6mvmAI+wuG0HQAaDoANB0Amg6mg+lQx/6CITQdAJoOAE0HgKaD6WA61LG/YAhNB4CmA0DTAaDpYDqYDnXsLxhC0wGg6QDQdABoOpgOpkMd+wuG0HQAaDoANB0A/gH4oAkqruU2LwAAAABJRU5ErkJggg=="
-    )
+    private fun createSignaturePng(): ByteArray =
+        Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAGQAAAAoCAIAAACHGsgUAAAAmklEQVR4nO3WIRLEQBDDQP//03c8mwVCjqs0sIcYKkl+x4m" +
+                "v2F8whM/fR2Z9E3N7iCfm9hBPzO0hvmB/wQ6mvmAI+wuG0HQAaDoANB0Amg6mg+lQx/6CITQdAJoOAE0HgKaD6WA61LG/YA" +
+                "hNB4CmA0DTAaDpYDqYDnXsLxhC0wGg6QDQdABoOpgOpkMd+wuG0HQAaDoANB0A/gH4oAkqruU2LwAAAABJRU5ErkJggg==",
+        )
 }

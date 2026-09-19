@@ -14,8 +14,9 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @HiltAndroidApp
-class DocuSmartApplication : Application(), ImageLoaderFactory {
-
+class DocuSmartApplication :
+    Application(),
+    ImageLoaderFactory {
     @Inject lateinit var remoteConfigManager: RemoteConfigManager
 
     // Bug real corregido 2026-09-07 (ya no aplica desde la consolidación
@@ -78,10 +79,10 @@ class DocuSmartApplication : Application(), ImageLoaderFactory {
     // funcionen igual para PDFs que para imágenes normales en cualquier
     // pantalla, sin tener que pasar un ImageLoader propio en cada uso.
     override fun newImageLoader(): ImageLoader =
-        ImageLoader.Builder(this)
+        ImageLoader
+            .Builder(this)
             .components {
                 add(PdfThumbnailFetcher.UriFactory())
                 add(PdfThumbnailFetcher.FileFactory())
-            }
-            .build()
+            }.build()
 }

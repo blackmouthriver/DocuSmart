@@ -41,22 +41,22 @@ fun EditTextPdfScreen(
     onSearchTextChange: (String) -> Unit,
     onReplaceTextChange: (String) -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_edit_text),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_edit_text_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -65,7 +65,7 @@ fun EditTextPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_edit_text_ready),
-            accentColor = SmartBlue
+            accentColor = SmartBlue,
         )
 
         // ── Buscar / Reemplazar ────────────────────────
@@ -75,7 +75,7 @@ fun EditTextPdfScreen(
         if (selectedPdf != null) {
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -87,7 +87,7 @@ fun EditTextPdfScreen(
             buttonLabel = stringResource(R.string.pdf_edit_text_execute),
             buttonIcon = Icons.Rounded.Edit,
             onExecute = onExecute,
-            accentColor = SmartBlue
+            accentColor = SmartBlue,
         )
     }
 }
@@ -97,24 +97,25 @@ private fun EditTextSearchReplaceCard(
     searchText: String,
     replaceText: String,
     onSearchTextChange: (String) -> Unit,
-    onReplaceTextChange: (String) -> Unit
+    onReplaceTextChange: (String) -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 text = stringResource(R.string.pdf_edit_text_search_label),
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             OutlinedTextField(
                 value = searchText,
@@ -124,24 +125,25 @@ private fun EditTextSearchReplaceCard(
                     Text(
                         text = stringResource(R.string.pdf_edit_text_search_placeholder),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = SmartBlue,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                textStyle = MaterialTheme.typography.bodyMedium
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SmartBlue,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                textStyle = MaterialTheme.typography.bodyMedium,
             )
 
             Text(
                 text = stringResource(R.string.pdf_edit_text_replace_label),
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             OutlinedTextField(
                 value = replaceText,
@@ -151,35 +153,36 @@ private fun EditTextSearchReplaceCard(
                     Text(
                         text = stringResource(R.string.pdf_edit_text_replace_placeholder),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = SmartBlue,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                textStyle = MaterialTheme.typography.bodyMedium
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SmartBlue,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                textStyle = MaterialTheme.typography.bodyMedium,
             )
 
             HorizontalDivider(thickness = 0.5.dp)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(14.dp),
                 )
                 Text(
                     text = stringResource(R.string.pdf_edit_text_hint),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

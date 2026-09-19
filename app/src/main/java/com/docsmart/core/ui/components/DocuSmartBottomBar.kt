@@ -69,31 +69,35 @@ data class BottomNavItem(
     // comparar contra el destino actual) mientras que acá hace falta la
     // ruta ya resuelta (`NavRoutes.Converter.createRoute()`, sin el
     // placeholder literal) para que `navController.navigate(...)` funcione.
-    val navigateRoute: String = route
+    val navigateRoute: String = route,
 )
 
 // Los labels se resuelven con stringResource() dentro del Composable (ver
 // abajo) — bottomNavItems es una lista de nivel de módulo, sin contexto de
 // composición, así que no puede resolver el string aquí directamente.
-private val bottomNavItems = listOf(
-    BottomNavItem(R.string.nav_home, NavRoutes.Home.route, Icons.Rounded.Home),
-    BottomNavItem(R.string.nav_library, NavRoutes.Library.route, Icons.Rounded.LibraryBooks),
-    BottomNavItem(
-        R.string.nav_converter, NavRoutes.Converter.route, Icons.Rounded.SwapHoriz,
-        navigateRoute = NavRoutes.Converter.createRoute()
-    ),
-    BottomNavItem(R.string.nav_pdf, NavRoutes.PdfTools.route, Icons.Rounded.PictureAsPdf),
-    BottomNavItem(R.string.nav_settings, NavRoutes.Settings.route, Icons.Rounded.Settings)
-)
+private val bottomNavItems =
+    listOf(
+        BottomNavItem(R.string.nav_home, NavRoutes.Home.route, Icons.Rounded.Home),
+        BottomNavItem(R.string.nav_library, NavRoutes.Library.route, Icons.Rounded.LibraryBooks),
+        BottomNavItem(
+            R.string.nav_converter,
+            NavRoutes.Converter.route,
+            Icons.Rounded.SwapHoriz,
+            navigateRoute = NavRoutes.Converter.createRoute(),
+        ),
+        BottomNavItem(R.string.nav_pdf, NavRoutes.PdfTools.route, Icons.Rounded.PictureAsPdf),
+        BottomNavItem(R.string.nav_settings, NavRoutes.Settings.route, Icons.Rounded.Settings),
+    )
 
 // ── Solo mostrar en rutas principales ────────────────
-private val routesWithBottomBar = setOf(
-    NavRoutes.Home.route,
-    NavRoutes.Library.route,
-    NavRoutes.Converter.route,
-    NavRoutes.PdfTools.route,
-    NavRoutes.Settings.route
-)
+private val routesWithBottomBar =
+    setOf(
+        NavRoutes.Home.route,
+        NavRoutes.Library.route,
+        NavRoutes.Converter.route,
+        NavRoutes.PdfTools.route,
+        NavRoutes.Settings.route,
+    )
 
 // Medidas del bar con elevación móvil: el destino seleccionado sobresale
 // apenas del bar con un spring suave (feedback 2026-09-05: el diseño
@@ -109,9 +113,10 @@ private val routesWithBottomBar = setOf(
 // ignoraban el "Color de acento" elegido).
 private object BottomBarSizes {
     val BarCorner = 22.dp
-    val BarVerticalPadding = 6.dp    // feedback 2026-09-06 (2da vuelta): más delgada aún
+    val BarVerticalPadding = 6.dp // feedback 2026-09-06 (2da vuelta): más delgada aún
     val ItemBox = 52.dp
-    val ItemCorner = ItemBox / 2     // siempre circular, activo e inactivo
+    val ItemCorner = ItemBox / 2 // siempre circular, activo e inactivo
+
     // Sobresale la mitad del propio círculo (26dp = ItemBox/2), no la mitad
     // del valor anterior -- feedback 2026-09-06 (2da vuelta): "el botón no
     // sale de la barra, la idea es que salga la mitad".
@@ -123,14 +128,15 @@ private object BottomBarSizes {
 @Composable
 fun DocuSmartBottomBar(
     currentRoute: String?,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
 ) {
     if (currentRoute == null || currentRoute !in routesWithBottomBar) return
 
-    val barShape = RoundedCornerShape(
-        topStart = BottomBarSizes.BarCorner,
-        topEnd = BottomBarSizes.BarCorner
-    )
+    val barShape =
+        RoundedCornerShape(
+            topStart = BottomBarSizes.BarCorner,
+            topEnd = BottomBarSizes.BarCorner,
+        )
     // Feedback 2026-09-06 (3ra vuelta): con la superficie neutra (surface/
     // surfaceVariant) la barra "se perdía" contra el fondo animado al hacer
     // scroll -- se le da un tinte suave del propio Color de acento (mismo
@@ -147,22 +153,23 @@ fun DocuSmartBottomBar(
     val barBorderColor = lerp(accent, Color.Black, 0.3f).copy(alpha = 0.4f)
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            // Bug real encontrado 2026-09-06 ("arcos negros" reportados por
-            // el usuario en las esquinas de la barra): el hijo de abajo se
-            // recorta a `barShape` (redondeado solo arriba), así que las dos
-            // esquinitas triangulares FUERA de esa curva -- dentro del
-            // rectángulo de este Box exterior pero fuera de la forma
-            // redondeada -- quedaban sin pintar. Con el Scaffold en
-            // `containerColor = Color.Transparent` (para dejar ver el fondo
-            // animado), esas esquinas dejaban ver el fondo de la ventana de
-            // la Activity (negro) en vez del tono de la barra. Se pinta acá,
-            // en el Box exterior SIN recortar, con el mismo tono que la
-            // parada superior del degradado de abajo, para que esas
-            // esquinas combinen en vez de quedar transparentes o desentonar.
-            .background(barTopColor),
-        contentAlignment = Alignment.BottomCenter
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                // Bug real encontrado 2026-09-06 ("arcos negros" reportados por
+                // el usuario en las esquinas de la barra): el hijo de abajo se
+                // recorta a `barShape` (redondeado solo arriba), así que las dos
+                // esquinitas triangulares FUERA de esa curva -- dentro del
+                // rectángulo de este Box exterior pero fuera de la forma
+                // redondeada -- quedaban sin pintar. Con el Scaffold en
+                // `containerColor = Color.Transparent` (para dejar ver el fondo
+                // animado), esas esquinas dejaban ver el fondo de la ventana de
+                // la Activity (negro) en vez del tono de la barra. Se pinta acá,
+                // en el Box exterior SIN recortar, con el mismo tono que la
+                // parada superior del degradado de abajo, para que esas
+                // esquinas combinen en vez de quedar transparentes o desentonar.
+                .background(barTopColor),
+        contentAlignment = Alignment.BottomCenter,
     ) {
         // Superficie del bar -- se ajusta al alto real del Row (el único
         // hijo sin matchParentSize), en vez de un alto fijo adivinado que
@@ -184,7 +191,7 @@ fun DocuSmartBottomBar(
                 .matchParentSize()
                 .clip(barShape)
                 .background(Brush.verticalGradient(surfaceGradient))
-                .border(width = 1.5.dp, color = barBorderColor, shape = barShape)
+                .border(width = 1.5.dp, color = barBorderColor, shape = barShape),
         )
 
         // Items
@@ -194,7 +201,7 @@ fun DocuSmartBottomBar(
                 .navigationBarsPadding()
                 .padding(horizontal = 4.dp, vertical = BottomBarSizes.BarVerticalPadding),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             bottomNavItems.forEach { item ->
                 val isSelected = currentRoute == item.route
@@ -204,7 +211,7 @@ fun DocuSmartBottomBar(
                     label = label,
                     active = isSelected,
                     onClick = { if (!isSelected) onNavigate(item.navigateRoute) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -217,54 +224,56 @@ private fun BottomNavAnimatedItem(
     label: String,
     active: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Springs suaves y sin rebote (feedback 2026-09-05: la versión anterior
     // con DampingRatioMediumBouncy se sentía brusca/con rebote elástico) --
     // DampingRatioLowBouncy asienta con una transición suave, casi sin
     // overshoot. Duraciones subidas de nuevo (feedback 2026-09-06: "no pasa
     // tan rápido") para que la transición se note, no sea instantánea.
-    val liftSpec = spring<Dp>(
-        dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = 130f
-    )
+    val liftSpec =
+        spring<Dp>(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = 130f,
+        )
     val colorTween = tween<Color>(durationMillis = 480, easing = FastOutSlowInEasing)
     val sizeTween = tween<Dp>(durationMillis = 480, easing = FastOutSlowInEasing)
 
     val lift by animateDpAsState(
         targetValue = if (active) BottomBarSizes.LiftOffset else 0.dp,
         animationSpec = liftSpec,
-        label = "lift"
+        label = "lift",
     )
     val scale by animateFloatAsState(
         targetValue = if (active) 1f else 0.9f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = 130f),
-        label = "scale"
+        label = "scale",
     )
     val iconSize by animateDpAsState(
         targetValue = if (active) BottomBarSizes.ActiveIconSize else BottomBarSizes.InactiveIconSize,
         animationSpec = sizeTween,
-        label = "iconSize"
+        label = "iconSize",
     )
     // Feedback 2026-09-06 (4ta vuelta, cierre del punto de la barra): los
     // íconos inactivos se quedaban en gris neutro (onSurfaceVariant) sin
     // relación con el acento, contrastando poco contra la barra ya teñida
     // -- se mezcla con el acento (mismo patrón lerp que el tinte de la
     // barra) para que combinen sin perder legibilidad.
-    val inactiveIconColor = lerp(
-        MaterialTheme.colorScheme.onSurfaceVariant,
-        MaterialTheme.colorScheme.primary,
-        0.45f
-    )
+    val inactiveIconColor =
+        lerp(
+            MaterialTheme.colorScheme.onSurfaceVariant,
+            MaterialTheme.colorScheme.primary,
+            0.45f,
+        )
     val iconColor by animateColorAsState(
         targetValue = if (active) MaterialTheme.colorScheme.onPrimary else inactiveIconColor,
         animationSpec = colorTween,
-        label = "iconColor"
+        label = "iconColor",
     )
     val pillAlpha by animateFloatAsState(
         targetValue = if (active) 1f else 0f,
         animationSpec = tween(durationMillis = 480, easing = FastOutSlowInEasing),
-        label = "pillAlpha"
+        label = "pillAlpha",
     )
 
     val pillGradient = rememberAccentGradient()
@@ -272,15 +281,17 @@ private fun BottomNavAnimatedItem(
     val interaction = remember { MutableInteractionSource() }
 
     Column(
-        modifier = modifier.selectable(
-            selected = active,
-            onClick = onClick,
-            role = Role.Tab,
-            interactionSource = interaction,
-            indication = null            // el propio lift es el feedback
-        ),
+        modifier =
+            modifier.selectable(
+                selected = active,
+                onClick = onClick,
+                role = Role.Tab,
+                interactionSource = interaction,
+                // el propio lift es el feedback
+                indication = null,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         val circleShape = RoundedCornerShape(BottomBarSizes.ItemCorner)
         Box(
@@ -292,13 +303,13 @@ private fun BottomNavAnimatedItem(
                     elevation = (14 * pillAlpha).dp,
                     shape = circleShape,
                     ambientColor = pillShadowColor,
-                    spotColor = pillShadowColor
+                    spotColor = pillShadowColor,
                 )
                 .clip(circleShape)
                 .background(
-                    Brush.linearGradient(pillGradient.map { it.copy(alpha = pillAlpha) })
+                    Brush.linearGradient(pillGradient.map { it.copy(alpha = pillAlpha) }),
                 ),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
@@ -309,7 +320,7 @@ private fun BottomNavAnimatedItem(
                 // duplicaba el anuncio del nombre.
                 contentDescription = if (active) null else label,
                 tint = iconColor,
-                modifier = Modifier.size(iconSize)
+                modifier = Modifier.size(iconSize),
             )
         }
         // El título solo aparece para la pestaña activa (feedback
@@ -320,25 +331,30 @@ private fun BottomNavAnimatedItem(
         // rápido").
         AnimatedVisibility(
             visible = active,
-            enter = fadeIn(
-                animationSpec = tween(
-                    durationMillis = 260,
-                    delayMillis = 160,
-                    easing = FastOutSlowInEasing
-                )
-            ) + slideInVertically(
-                animationSpec = tween(
-                    durationMillis = 260,
-                    delayMillis = 160,
-                    easing = FastOutSlowInEasing
-                ),
-                initialOffsetY = { it / 2 }
-            ),
-            exit = fadeOut(animationSpec = tween(durationMillis = 160)) +
-                slideOutVertically(
-                    animationSpec = tween(durationMillis = 160),
-                    targetOffsetY = { it / 2 }
-                )
+            enter =
+                fadeIn(
+                    animationSpec =
+                        tween(
+                            durationMillis = 260,
+                            delayMillis = 160,
+                            easing = FastOutSlowInEasing,
+                        ),
+                ) +
+                    slideInVertically(
+                        animationSpec =
+                            tween(
+                                durationMillis = 260,
+                                delayMillis = 160,
+                                easing = FastOutSlowInEasing,
+                            ),
+                        initialOffsetY = { it / 2 },
+                    ),
+            exit =
+                fadeOut(animationSpec = tween(durationMillis = 160)) +
+                    slideOutVertically(
+                        animationSpec = tween(durationMillis = 160),
+                        targetOffsetY = { it / 2 },
+                    ),
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(Modifier.height(1.dp))
@@ -353,7 +369,7 @@ private fun BottomNavAnimatedItem(
                     // la app). labelSmall ya es 11sp en NORMAL (idéntico al
                     // valor anterior) y sí aplica el multiplicador propio.
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
         }

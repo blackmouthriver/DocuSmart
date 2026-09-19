@@ -74,14 +74,17 @@ import com.docsmart.features.agenda.presentation.components.AgendaLinkDocumentDi
 fun AgendaScreen(
     onBack: () -> Unit,
     openEventId: String? = null,
-    viewModel: AgendaViewModel = hiltViewModel()
+    viewModel: AgendaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { /* No-op: la alarma se programa igual sin el permiso, solo no se ve
-          la notificación cuando llegue la hora del recordatorio. */ }
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) {
+        /* No-op: la alarma se programa igual sin el permiso, solo no se ve
+          la notificación cuando llegue la hora del recordatorio. */
+        }
 
     // Hallazgo real de la auditoría de Agenda 2026-09-18 (Media): `openEventId`
     // nunca se consumía -- rotar el dispositivo recompone AgendaScreen desde
@@ -106,9 +109,10 @@ fun AgendaScreen(
     // no hace nada sin POST_NOTIFICATIONS concedido).
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@LaunchedEffect
-        val granted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.POST_NOTIFICATIONS
-        ) == PackageManager.PERMISSION_GRANTED
+        val granted =
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
         if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
@@ -143,24 +147,24 @@ fun AgendaScreen(
             FloatingActionButton(onClick = { viewModel.startCreating() }) {
                 Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.agenda_new_event))
             }
-        }
+        },
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = innerPadding.calculateTopPadding(), bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
                 // Sin padding horizontal propio: DocuSmartScreenHeader ya
                 // aplica el margen de 16dp estándar de todas las pantallas.
                 DocuSmartScreenHeader(
                     adUnitId = AdConstants.BANNER_AGENDA_ID,
-                    adManager = viewModel.adManager
+                    adManager = viewModel.adManager,
                 ) {
                     DocuSmartTopBanner(
                         screenTitle = stringResource(R.string.agenda_title),
                         screenSubtitle = stringResource(R.string.agenda_subtitle),
-                        onBack = onBack
+                        onBack = onBack,
                     )
                 }
             }
@@ -173,24 +177,25 @@ fun AgendaScreen(
                             context.startActivity(
                                 Intent(
                                     Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                    Uri.parse("package:${context.packageName}")
-                                )
+                                    Uri.parse("package:${context.packageName}"),
+                                ),
                             )
-                        }
+                        },
                     )
                 }
             }
 
             item {
-                val tabs = listOf(
-                    stringResource(R.string.agenda_view_list) to AgendaViewMode.LIST,
-                    stringResource(R.string.agenda_view_calendar) to AgendaViewMode.CALENDAR
-                )
+                val tabs =
+                    listOf(
+                        stringResource(R.string.agenda_view_list) to AgendaViewMode.LIST,
+                        stringResource(R.string.agenda_view_calendar) to AgendaViewMode.CALENDAR,
+                    )
                 TabRow(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     selectedTabIndex = tabs.indexOfFirst { it.second == uiState.viewMode },
                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                    contentColor = MaterialTheme.colorScheme.primary
+                    contentColor = MaterialTheme.colorScheme.primary,
                 ) {
                     tabs.forEach { (label, mode) ->
                         Tab(
@@ -203,9 +208,9 @@ fun AgendaScreen(
                                     text = label,
                                     fontWeight = if (uiState.viewMode == mode) FontWeight.Bold else FontWeight.Normal,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -213,18 +218,19 @@ fun AgendaScreen(
 
             when (uiState.viewMode) {
                 AgendaViewMode.LIST -> agendaListContent(uiState = uiState, viewModel = viewModel)
-                AgendaViewMode.CALENDAR -> item {
-                    AgendaCalendarView(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        month = uiState.calendarMonth,
-                        selectedDate = uiState.selectedDate,
-                        events = uiState.events,
-                        onPreviousMonth = { viewModel.goToPreviousMonth() },
-                        onNextMonth = { viewModel.goToNextMonth() },
-                        onSelectDate = { viewModel.selectDate(it) },
-                        onEventClick = { viewModel.startEditing(it) }
-                    )
-                }
+                AgendaViewMode.CALENDAR ->
+                    item {
+                        AgendaCalendarView(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            month = uiState.calendarMonth,
+                            selectedDate = uiState.selectedDate,
+                            events = uiState.events,
+                            onPreviousMonth = { viewModel.goToPreviousMonth() },
+                            onNextMonth = { viewModel.goToNextMonth() },
+                            onSelectDate = { viewModel.selectDate(it) },
+                            onEventClick = { viewModel.startEditing(it) },
+                        )
+                    }
             }
         }
     }
@@ -240,7 +246,7 @@ fun AgendaScreen(
             onUnlinkDocument = { viewModel.unlinkDocument() },
             onSave = { viewModel.saveDraft() },
             onDelete = { draft.id?.let { viewModel.deleteEvent(it) } },
-            onDismiss = { viewModel.dismissEditor() }
+            onDismiss = { viewModel.dismissEditor() },
         )
 
         if (uiState.showLinkDocumentDialog) {
@@ -248,7 +254,7 @@ fun AgendaScreen(
                 currentDocumentId = draft.documentId,
                 onDismiss = { viewModel.dismissLinkDocumentDialog() },
                 onSelect = { viewModel.linkDocument(it) },
-                onUnlink = { viewModel.unlinkDocument() }
+                onUnlink = { viewModel.unlinkDocument() },
             )
         }
     }
@@ -261,37 +267,40 @@ private fun canScheduleExactAlarmsNow(context: Context): Boolean {
 }
 
 @Composable
-private fun ExactAlarmPermissionBanner(onEnableClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ExactAlarmPermissionBanner(
+    onEnableClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.errorContainer
+        color = MaterialTheme.colorScheme.errorContainer,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Rounded.AlarmOn,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onErrorContainer
+                tint = MaterialTheme.colorScheme.onErrorContainer,
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.agenda_exact_alarm_banner_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Text(
                     text = stringResource(R.string.agenda_exact_alarm_banner_body),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Button(
                     onClick = onEnableClick,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp),
                 ) {
                     Text(stringResource(R.string.agenda_exact_alarm_banner_action))
                 }
@@ -302,28 +311,29 @@ private fun ExactAlarmPermissionBanner(onEnableClick: () -> Unit, modifier: Modi
 
 private fun LazyListScope.agendaListContent(
     uiState: AgendaUiState,
-    viewModel: AgendaViewModel
+    viewModel: AgendaViewModel,
 ) {
     if (uiState.events.isEmpty()) {
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 48.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 48.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.CalendarMonth,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(56.dp),
                 )
                 Text(
                     text = stringResource(R.string.agenda_empty_state),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 12.dp)
+                    modifier = Modifier.padding(top = 12.dp),
                 )
             }
         }

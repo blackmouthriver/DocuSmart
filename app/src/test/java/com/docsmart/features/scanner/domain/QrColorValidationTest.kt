@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test
  * para que la advertencia de HU-45 sea alcanzable en la práctica).
  */
 class QrColorValidationTest {
-
     private companion object {
         const val WHITE = 0xFFFFFF
         const val BLACK = 0x000000

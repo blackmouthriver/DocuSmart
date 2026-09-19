@@ -22,7 +22,6 @@ import java.nio.file.Files
  * que requiere Robolectric/instrumentación — no un unit test JVM puro.
  */
 class SecurityManagerTest {
-
     private lateinit var filesDir: File
     private lateinit var securityManager: SecurityManager
     private lateinit var prefsStore: MutableMap<String, Any?>
@@ -83,9 +82,11 @@ class SecurityManagerTest {
     fun `verifyPin migra en silencio un hash legado (sin salt) al esquema salteado`() {
         // Simula una instalación previa a este fix: pin_hash con SHA-256 de
         // una sola pasada, sin pin_salt.
-        val legacyHash = java.security.MessageDigest.getInstance("SHA-256")
-            .digest("1234".toByteArray())
-            .joinToString("") { "%02x".format(it) }
+        val legacyHash =
+            java.security.MessageDigest
+                .getInstance("SHA-256")
+                .digest("1234".toByteArray())
+                .joinToString("") { "%02x".format(it) }
         prefsStore["pin_hash"] = legacyHash
 
         assertTrue(securityManager.verifyPin("1234"), "debe aceptar el PIN correcto con el hash legado")
@@ -273,7 +274,7 @@ class SecurityManagerTest {
 
     @Test
     fun `getSecureFolderSize suma el tamano de todos los archivos protegidos`() {
-        val fileA = File(filesDir, "a.txt").apply { writeText("12345") }      // 5 bytes
+        val fileA = File(filesDir, "a.txt").apply { writeText("12345") } // 5 bytes
         val fileB = File(filesDir, "b.txt").apply { writeText("1234567890") } // 10 bytes
         securityManager.moveToSecure(fileA)
         securityManager.moveToSecure(fileB)

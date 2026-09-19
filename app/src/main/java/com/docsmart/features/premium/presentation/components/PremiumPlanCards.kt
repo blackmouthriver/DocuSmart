@@ -23,23 +23,23 @@ fun PremiumPlanCards(
     plans: List<PremiumPlan>,
     selectedPlan: PremiumPlan?,
     onPlanSelected: (PremiumPlan) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
             text = stringResource(R.string.premium_choose_plan),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         plans.forEach { plan ->
             PlanCard(
                 plan = plan,
                 isSelected = selectedPlan?.id == plan.id,
-                onSelected = { onPlanSelected(plan) }
+                onSelected = { onPlanSelected(plan) },
             )
         }
     }
@@ -49,108 +49,123 @@ fun PremiumPlanCards(
 private fun PlanCard(
     plan: PremiumPlan,
     isSelected: Boolean,
-    onSelected: () -> Unit
+    onSelected: () -> Unit,
 ) {
-    val borderColor = if (isSelected)
-        MaterialTheme.colorScheme.primary
-    else
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    val borderColor =
+        if (isSelected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .border(
-                width = if (isSelected) 1.5.dp else 0.5.dp,
-                color = borderColor,
-                shape = MaterialTheme.shapes.large
-            )
-            .selectable(
-                selected = isSelected,
-                onClick = onSelected
-            )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.large)
+                .border(
+                    width = if (isSelected) 1.5.dp else 0.5.dp,
+                    color = borderColor,
+                    shape = MaterialTheme.shapes.large,
+                )
+                .selectable(
+                    selected = isSelected,
+                    onClick = onSelected,
+                ),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             // ── Badge "Recomendado" dentro de la card ─
             if (plan.isPopular) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                                topStart = 20.dp,
-                                topEnd = 20.dp,
-                                bottomStart = 0.dp,
-                                bottomEnd = 0.dp
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape =
+                                    androidx.compose.foundation.shape.RoundedCornerShape(
+                                        topStart = 20.dp,
+                                        topEnd = 20.dp,
+                                        bottomStart = 0.dp,
+                                        bottomEnd = 0.dp,
+                                    ),
                             )
-                        )
-                        .padding(vertical = 4.dp),
-                    contentAlignment = Alignment.Center
+                            .padding(vertical = 4.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = stringResource(R.string.premium_recommended),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }
 
             // ── Contenido principal ───────────────────
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Radio button
                 Icon(
-                    imageVector = if (isSelected)
-                        Icons.Rounded.RadioButtonChecked
-                    else
-                        Icons.Rounded.RadioButtonUnchecked,
+                    imageVector =
+                        if (isSelected) {
+                            Icons.Rounded.RadioButtonChecked
+                        } else {
+                            Icons.Rounded.RadioButtonUnchecked
+                        },
                     contentDescription = null,
-                    tint = if (isSelected)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
+                    tint =
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    modifier = Modifier.size(22.dp),
                 )
 
                 // Info del plan
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = stringResource(plan.titleRes),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         // Badge de ahorro
                         plan.savingsLabelRes?.let { labelRes ->
                             Surface(
                                 shape = MaterialTheme.shapes.extraSmall,
-                                color = if (plan.isPopular)
-                                    PremiumGold.copy(alpha = 0.2f)
-                                else
-                                    MaterialTheme.colorScheme.primaryContainer
+                                color =
+                                    if (plan.isPopular) {
+                                        PremiumGold.copy(alpha = 0.2f)
+                                    } else {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    },
                             ) {
                                 Text(
                                     text = stringResource(labelRes),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (plan.isPopular)
-                                        PremiumGold
-                                    else
-                                        MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(
-                                        horizontal = 6.dp,
-                                        vertical = 2.dp
-                                    )
+                                    color =
+                                        if (plan.isPopular) {
+                                            PremiumGold
+                                        } else {
+                                            MaterialTheme.colorScheme.primary
+                                        },
+                                    modifier =
+                                        Modifier.padding(
+                                            horizontal = 6.dp,
+                                            vertical = 2.dp,
+                                        ),
                                 )
                             }
                         }
@@ -160,16 +175,17 @@ private fun PlanCard(
                         plan.trialDays?.let { days ->
                             Surface(
                                 shape = MaterialTheme.shapes.extraSmall,
-                                color = MaterialTheme.colorScheme.tertiaryContainer
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
                             ) {
                                 Text(
                                     text = stringResource(R.string.premium_trial_badge, days),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.padding(
-                                        horizontal = 6.dp,
-                                        vertical = 2.dp
-                                    )
+                                    modifier =
+                                        Modifier.padding(
+                                            horizontal = 6.dp,
+                                            vertical = 2.dp,
+                                        ),
                                 )
                             }
                         }
@@ -177,7 +193,7 @@ private fun PlanCard(
                     Text(
                         text = stringResource(plan.periodRes),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -185,10 +201,12 @@ private fun PlanCard(
                 Text(
                     text = plan.price,
                     style = MaterialTheme.typography.titleLarge,
-                    color = if (isSelected)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.onSurface
+                    color =
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                 )
             }
         }

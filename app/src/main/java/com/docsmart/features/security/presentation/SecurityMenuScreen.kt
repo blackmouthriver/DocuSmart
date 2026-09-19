@@ -25,22 +25,23 @@ import com.docsmart.core.ui.theme.accentShadow
 
 @Composable
 fun SecurityMenuScreen(
-    onBack        : () -> Unit = {},
+    onBack: () -> Unit = {},
     onSecureFolder: () -> Unit = {},
-    onPdfPassword : () -> Unit = {},
-    viewModel     : SecurityMenuViewModel = hiltViewModel()
+    onPdfPassword: () -> Unit = {},
+    viewModel: SecurityMenuViewModel = hiltViewModel(),
 ) {
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            // Pedido explícito del usuario 2026-09-07 (seguimiento): 12dp de
-            // espacio arriba (no 20dp) para que coincida con el resto de las
-            // pantallas -- el bottom de 20dp no cambia, es para separar del
-            // final de la lista.
-            .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                // Pedido explícito del usuario 2026-09-07 (seguimiento): 12dp de
+                // espacio arriba (no 20dp) para que coincida con el resto de las
+                // pantallas -- el bottom de 20dp no cambia, es para separar del
+                // final de la lista.
+                .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
         // banner que el resto de las pantallas -- ad+banner van en un solo
@@ -49,77 +50,78 @@ fun SecurityMenuScreen(
         Column {
             if (!isPremium) {
                 DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_SECURITY_ID,
-                    adManager = viewModel.adManager
+                    adUnitId = AdConstants.BANNER_SECURITY_ID,
+                    adManager = viewModel.adManager,
                 )
                 Spacer(Modifier.height(8.dp))
             }
             DocuSmartTopBanner(
-                screenTitle    = stringResource(R.string.security_title),
+                screenTitle = stringResource(R.string.security_title),
                 screenSubtitle = stringResource(R.string.security_subtitle),
-                onBack         = onBack
+                onBack = onBack,
             )
         }
 
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text       = stringResource(R.string.security_what_to_do),
-            style      = MaterialTheme.typography.titleMedium,
+            text = stringResource(R.string.security_what_to_do),
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            color      = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
         // Tarjeta Carpeta Segura
         SecurityOptionCard(
-            icon        = Icons.Rounded.Lock,
-            title       = stringResource(R.string.security_secure_folder),
+            icon = Icons.Rounded.Lock,
+            title = stringResource(R.string.security_secure_folder),
             description = stringResource(R.string.security_secure_folder_desc),
-            color       = MaterialTheme.colorScheme.primary,
-            badge       = stringResource(R.string.security_pin_required),
-            onClick     = onSecureFolder
+            color = MaterialTheme.colorScheme.primary,
+            badge = stringResource(R.string.security_pin_required),
+            onClick = onSecureFolder,
         )
 
         // Tarjeta Contraseña PDF
         SecurityOptionCard(
-            icon        = Icons.Rounded.Password,
-            title       = stringResource(R.string.security_pdf_password),
+            icon = Icons.Rounded.Password,
+            title = stringResource(R.string.security_pdf_password),
             description = stringResource(R.string.security_pdf_password_desc),
-            color       = MaterialTheme.colorScheme.error,
-            badge       = stringResource(R.string.security_no_pin),
-            onClick     = onPdfPassword
+            color = MaterialTheme.colorScheme.error,
+            badge = stringResource(R.string.security_no_pin),
+            onClick = onPdfPassword,
         )
     }
 }
 
 @Composable
 private fun SecurityOptionCard(
-    icon       : androidx.compose.ui.graphics.vector.ImageVector,
-    title      : String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
     description: String,
-    color      : androidx.compose.ui.graphics.Color,
-    badge      : String,
-    onClick    : () -> Unit
+    color: androidx.compose.ui.graphics.Color,
+    badge: String,
+    onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.extraLarge
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
-            .clickable { onClick() }
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+                .clickable { onClick() },
     ) {
         Row(
-            modifier              = Modifier.fillMaxWidth().padding(20.dp),
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment     = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Surface(
-                shape  = MaterialTheme.shapes.large,
-                color  = color.copy(alpha = 0.12f),
-                modifier = Modifier.size(56.dp)
+                shape = MaterialTheme.shapes.large,
+                color = color.copy(alpha = 0.12f),
+                modifier = Modifier.size(56.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, null, tint = color, modifier = Modifier.size(30.dp))
@@ -127,37 +129,38 @@ private fun SecurityOptionCard(
             }
             Column(modifier = Modifier.weight(1f)) {
                 Row(
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text       = title,
-                        style      = MaterialTheme.typography.titleMedium,
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color      = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Surface(
                         shape = MaterialTheme.shapes.small,
-                        color = color.copy(alpha = 0.15f)
+                        color = color.copy(alpha = 0.15f),
                     ) {
                         Text(
-                            text     = badge,
-                            style    = MaterialTheme.typography.labelSmall,
-                            color    = color,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            text = badge,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = color,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text  = description,
+                    text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Icon(
-                Icons.Rounded.ChevronRight, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Icons.Rounded.ChevronRight,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

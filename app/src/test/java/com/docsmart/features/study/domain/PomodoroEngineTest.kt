@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
  * docs/requirements/study.md §16 para el diseño completo del motor.
  */
 class PomodoroEngineTest {
-
     @Test
     fun `un tick normal solo descuenta un segundo`() {
         val current = PomodoroState(minutes = 10, seconds = 30, isRunning = true)
@@ -35,9 +34,14 @@ class PomodoroEngineTest {
 
     @Test
     fun `al terminar un bloque de estudio, cuenta el pomodoro y pasa a descanso pausado`() {
-        val current = PomodoroState(
-            minutes = 0, seconds = 0, isRunning = true, isBreak = false, pomodoroCount = 2
-        )
+        val current =
+            PomodoroState(
+                minutes = 0,
+                seconds = 0,
+                isRunning = true,
+                isBreak = false,
+                pomodoroCount = 2,
+            )
 
         val next = tickPomodoro(current)
 
@@ -50,9 +54,14 @@ class PomodoroEngineTest {
 
     @Test
     fun `al completar el 4to pomodoro, el descanso es largo`() {
-        val current = PomodoroState(
-            minutes = 0, seconds = 0, isRunning = true, isBreak = false, pomodoroCount = 3
-        )
+        val current =
+            PomodoroState(
+                minutes = 0,
+                seconds = 0,
+                isRunning = true,
+                isBreak = false,
+                pomodoroCount = 3,
+            )
 
         val next = tickPomodoro(current)
 
@@ -63,9 +72,14 @@ class PomodoroEngineTest {
 
     @Test
     fun `al completar el 8vo pomodoro (segundo múltiplo de 4), el descanso también es largo`() {
-        val current = PomodoroState(
-            minutes = 0, seconds = 0, isRunning = true, isBreak = false, pomodoroCount = 7
-        )
+        val current =
+            PomodoroState(
+                minutes = 0,
+                seconds = 0,
+                isRunning = true,
+                isBreak = false,
+                pomodoroCount = 7,
+            )
 
         val next = tickPomodoro(current)
 
@@ -75,9 +89,14 @@ class PomodoroEngineTest {
 
     @Test
     fun `al completar un pomodoro que no es multiplo de 4, el descanso es el corto de siempre`() {
-        val current = PomodoroState(
-            minutes = 0, seconds = 0, isRunning = true, isBreak = false, pomodoroCount = 4
-        )
+        val current =
+            PomodoroState(
+                minutes = 0,
+                seconds = 0,
+                isRunning = true,
+                isBreak = false,
+                pomodoroCount = 4,
+            )
 
         val next = tickPomodoro(current)
 
@@ -87,9 +106,14 @@ class PomodoroEngineTest {
 
     @Test
     fun `al terminar un descanso, vuelve a estudio pausado sin sumar otro pomodoro`() {
-        val current = PomodoroState(
-            minutes = 0, seconds = 0, isRunning = true, isBreak = true, pomodoroCount = 3
-        )
+        val current =
+            PomodoroState(
+                minutes = 0,
+                seconds = 0,
+                isRunning = true,
+                isBreak = true,
+                pomodoroCount = 3,
+            )
 
         val next = tickPomodoro(current)
 

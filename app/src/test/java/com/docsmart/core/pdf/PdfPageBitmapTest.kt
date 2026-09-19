@@ -23,7 +23,6 @@ import java.nio.file.Files
  * limpieza, que ocurre *antes* de tocar `PdfRenderer`.
  */
 class PdfPageBitmapTest {
-
     private lateinit var cacheDir: File
     private lateinit var context: Context
 
@@ -68,9 +67,10 @@ class PdfPageBitmapTest {
         val uri = mockk<Uri>()
         every { uri.scheme } returns "content"
         val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } throws SecurityException(
-            "Permission Denial: reading content://com.docsmart.fileprovider/contrato_confidencial.pdf"
-        )
+        every { resolver.openInputStream(uri) } throws
+            SecurityException(
+                "Permission Denial: reading content://com.docsmart.fileprovider/contrato_confidencial.pdf",
+            )
         every { context.contentResolver } returns resolver
 
         val pages = renderPdfPagesToBitmaps(uri, context)

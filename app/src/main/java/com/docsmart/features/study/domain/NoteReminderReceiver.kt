@@ -18,15 +18,21 @@ import com.docsmart.R
 // necesita (id/título de la nota) ya viaja en las extras del propio
 // Intent, mismo criterio que AgendaReminderReceiver (HU-65).
 class NoteReminderReceiver : BroadcastReceiver() {
-
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
         val noteId = intent.getStringExtra(NoteReminderScheduler.EXTRA_NOTE_ID) ?: return
         val title = intent.getStringExtra(NoteReminderScheduler.EXTRA_NOTE_TITLE).orEmpty()
         createNotificationChannelIfNeeded(context)
         showNotification(context, noteId, title)
     }
 
-    private fun showNotification(context: Context, noteId: String, title: String) {
+    private fun showNotification(
+        context: Context,
+        noteId: String,
+        title: String,
+    ) {
         // Hallazgo real (revisión de esta misma HU): un PendingIntent hacia
         // MainActivity con FLAG_IMMUTABLE sin FLAG_UPDATE_CURRENT es "el
         // mismo" para Android si comparte requestCode con el que ya arma
@@ -35,25 +41,28 @@ class NoteReminderReceiver : BroadcastReceiver() {
         // noteId y un eventId podía reabrir el ítem equivocado. `setData()`
         // con una Uri única por dominio+id vuelve al Intent siempre
         // distinto (data SÍ es parte de la igualdad de un PendingIntent).
-        val openAppIntent = PendingIntent.getActivity(
-            context,
-            noteId.hashCode(),
-            Intent(context, MainActivity::class.java).apply {
-                data = Uri.parse("docusmart://note-reminder/$noteId")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra(MainActivity.EXTRA_OPEN_NOTE_ID, noteId)
-            },
-            PendingIntent.FLAG_IMMUTABLE
-        )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_note)
-            .setContentTitle(title.ifBlank { context.getString(R.string.note_reminder_notification_fallback_title) })
-            .setContentText(context.getString(R.string.note_reminder_notification_text))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
-            .setContentIntent(openAppIntent)
-            .build()
+        val openAppIntent =
+            PendingIntent.getActivity(
+                context,
+                noteId.hashCode(),
+                Intent(context, MainActivity::class.java).apply {
+                    data = Uri.parse("docusmart://note-reminder/$noteId")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra(MainActivity.EXTRA_OPEN_NOTE_ID, noteId)
+                },
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+        val notification =
+            NotificationCompat
+                .Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification_note)
+                .setContentTitle(title.ifBlank { context.getString(R.string.note_reminder_notification_fallback_title) })
+                .setContentText(context.getString(R.string.note_reminder_notification_text))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setAutoCancel(true)
+                .setContentIntent(openAppIntent)
+                .build()
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         // `tag` propio: evita que esta notificación se pise con una de
         // Agenda si sus hashCode coinciden, mismo criterio que el `data`.
@@ -68,8 +77,8 @@ class NoteReminderReceiver : BroadcastReceiver() {
                 NotificationChannel(
                     CHANNEL_ID,
                     context.getString(R.string.note_reminder_notification_channel),
-                    NotificationManager.IMPORTANCE_HIGH
-                )
+                    NotificationManager.IMPORTANCE_HIGH,
+                ),
             )
         }
     }

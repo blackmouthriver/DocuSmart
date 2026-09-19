@@ -46,18 +46,19 @@ import org.junit.Test
  * diálogo real del sistema (que Compose UI Testing no puede tocar).
  */
 class LibraryScreenTest {
-
     // READ_MEDIA_VIDEO removido 2026-09-10 de este grant: ya no está
     // declarado en el manifest (ver comentario en MainActivity.kt), y
     // GrantPermissionRule falla si intenta otorgar un permiso que la app
     // no declara.
     @get:Rule
-    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
-        *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
-        else
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-    )
+    val permissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(
+            *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+            } else {
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+            },
+        )
 
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
@@ -65,20 +66,26 @@ class LibraryScreenTest {
     // "Dispositivo" según isDeviceDocument() en LibraryViewModel: content://
     // de MediaStore. "Mis archivos" es cualquier otro id (ruta de archivo
     // propia de la app).
-    private fun deviceDoc(name: String, type: DocumentType = DocumentType.IMAGE) = DocumentUiModel(
-        id   = "content://media/external/images/media/${name.hashCode()}",
+    private fun deviceDoc(
+        name: String,
+        type: DocumentType = DocumentType.IMAGE,
+    ) = DocumentUiModel(
+        id = "content://media/external/images/media/${name.hashCode()}",
         name = name,
         type = type,
         size = "1.0 MB",
-        date = "Hoy"
+        date = "Hoy",
     )
 
-    private fun appDoc(name: String, type: DocumentType = DocumentType.PDF) = DocumentUiModel(
-        id   = "/data/data/com.docsmart/files/converted/$name",
+    private fun appDoc(
+        name: String,
+        type: DocumentType = DocumentType.PDF,
+    ) = DocumentUiModel(
+        id = "/data/data/com.docsmart/files/converted/$name",
         name = name,
         type = type,
         size = "1.0 MB",
-        date = "Hoy"
+        date = "Hoy",
     )
 
     private fun buildViewModel(documents: List<DocumentUiModel>): LibraryViewModel {
@@ -96,10 +103,10 @@ class LibraryScreenTest {
         every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
 
         return LibraryViewModel(
-            adManager             = adManager,
-            repository            = repository,
-            trashRepository       = trashRepository,
-            favoritesRepository   = mockk<FavoritesRepository>(relaxed = true),
+            adManager = adManager,
+            repository = repository,
+            trashRepository = trashRepository,
+            favoritesRepository = mockk<FavoritesRepository>(relaxed = true),
             downloadsAccessManager = downloadsAccessManager,
             // Bug preexistente encontrado 2026-09-14: LibraryViewModel ganó
             // soundEffectPlayer con los efectos de sonido (backlog
@@ -108,7 +115,7 @@ class LibraryScreenTest {
             soundEffectPlayer = mockk(relaxed = true),
             // deleteError ahora se localiza vía context.getString() (fix
             // 2026-09-14 del bug de mensajes hardcodeados en español).
-            context = InstrumentationRegistry.getInstrumentation().targetContext
+            context = InstrumentationRegistry.getInstrumentation().targetContext,
         )
     }
 
@@ -126,7 +133,7 @@ class LibraryScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
         }
     }
@@ -139,12 +146,13 @@ class LibraryScreenTest {
 
     @Test
     fun cambiarPestana_muestraSoloDocumentosDeEsaPestana() {
-        val viewModel = buildViewModel(
-            listOf(
-                deviceDoc("FotoDispositivo.jpg"),
-                appDoc("ArchivoApp.pdf")
+        val viewModel =
+            buildViewModel(
+                listOf(
+                    deviceDoc("FotoDispositivo.jpg"),
+                    appDoc("ArchivoApp.pdf"),
+                ),
             )
-        )
 
         setContentWithLocale { LibraryScreen(viewModel = viewModel) }
         waitForText("FotoDispositivo.jpg")
@@ -162,12 +170,13 @@ class LibraryScreenTest {
 
     @Test
     fun filtrarPorCategoria_muestraSoloDocumentosDeEseTipo() {
-        val viewModel = buildViewModel(
-            listOf(
-                deviceDoc("Foto.jpg", DocumentType.IMAGE),
-                deviceDoc("Informe.docx", DocumentType.WORD)
+        val viewModel =
+            buildViewModel(
+                listOf(
+                    deviceDoc("Foto.jpg", DocumentType.IMAGE),
+                    deviceDoc("Informe.docx", DocumentType.WORD),
+                ),
             )
-        )
 
         setContentWithLocale { LibraryScreen(viewModel = viewModel) }
         waitForText("Foto.jpg")
@@ -187,12 +196,13 @@ class LibraryScreenTest {
 
     @Test
     fun buscar_filtraDocumentosPorNombre() {
-        val viewModel = buildViewModel(
-            listOf(
-                deviceDoc("Reporte_Enero.pdf", DocumentType.PDF),
-                deviceDoc("Foto_Playa.jpg", DocumentType.IMAGE)
+        val viewModel =
+            buildViewModel(
+                listOf(
+                    deviceDoc("Reporte_Enero.pdf", DocumentType.PDF),
+                    deviceDoc("Foto_Playa.jpg", DocumentType.IMAGE),
+                ),
             )
-        )
 
         setContentWithLocale { LibraryScreen(viewModel = viewModel) }
         waitForText("Reporte_Enero.pdf")

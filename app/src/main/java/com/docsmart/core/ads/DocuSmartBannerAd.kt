@@ -17,7 +17,7 @@ import timber.log.Timber
 fun DocuSmartBannerAd(
     adUnitId: String,
     adManager: AdManager,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val isPremium by adManager.isPremium.collectAsState()
     val isInitialized by adManager.isInitialized.collectAsState()
@@ -27,9 +27,10 @@ fun DocuSmartBannerAd(
     if (isPremium || !isInitialized) return
 
     AndroidView(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(60.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(60.dp),
         factory = { context ->
             try {
                 Timber.d("BannerAd: creando AdView — adUnitId=$adUnitId")
@@ -37,14 +38,16 @@ fun DocuSmartBannerAd(
                     setAdSize(AdSize.BANNER)
                     this.adUnitId = adUnitId
                     loadAd(AdRequest.Builder().build())
-                    adListener = object : com.google.android.gms.ads.AdListener() {
-                        override fun onAdLoaded() {
-                            Timber.d("BannerAd: ✅ anuncio cargado")
+                    adListener =
+                        object : com.google.android.gms.ads.AdListener() {
+                            override fun onAdLoaded() {
+                                Timber.d("BannerAd: ✅ anuncio cargado")
+                            }
+
+                            override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) {
+                                Timber.e("BannerAd: ❌ error ${error.code}: ${error.message}")
+                            }
                         }
-                        override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) {
-                            Timber.e("BannerAd: ❌ error ${error.code}: ${error.message}")
-                        }
-                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "BannerAd ERROR: ${e.message}")
@@ -58,22 +61,23 @@ fun DocuSmartBannerAd(
         // se reutiliza en Ajustes/Convertidor/Escáner/Visor/Seguridad/QR,
         // así que cada navegación entre esas pantallas acumulaba un AdView
         // sin liberar.
-        onRelease = { view -> (view as? AdView)?.destroy() }
+        onRelease = { view -> (view as? AdView)?.destroy() },
     )
 }
 
 @Composable
 fun AdBannerPlaceholder(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(60.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(60.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "Publicidad",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
         )
     }
 }

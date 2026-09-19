@@ -1,5 +1,6 @@
 package com.docsmart.features.agenda.presentation.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -78,7 +78,7 @@ fun AgendaEventEditorDialog(
     onUnlinkDocument: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val isEditing = draft.id != null
     // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
@@ -93,7 +93,10 @@ fun AgendaEventEditorDialog(
             title = { Text(stringResource(R.string.agenda_delete_confirm_title)) },
             text = { Text(stringResource(R.string.agenda_delete_confirm_body, draft.title)) },
             confirmButton = {
-                TextButton(onClick = { showDeleteConfirm = false; onDelete() }) {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    onDelete()
+                }) {
                     Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
@@ -101,25 +104,27 @@ fun AgendaEventEditorDialog(
                 TextButton(onClick = { showDeleteConfirm = false }) {
                     Text(stringResource(R.string.general_cancel))
                 }
-            }
+            },
         )
     }
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surface
+            color = MaterialTheme.colorScheme.surface,
         ) {
             Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
-                    text = stringResource(
-                        if (isEditing) R.string.agenda_editor_title_edit else R.string.agenda_editor_title_new
-                    ),
-                    style = MaterialTheme.typography.titleLarge
+                    text =
+                        stringResource(
+                            if (isEditing) R.string.agenda_editor_title_edit else R.string.agenda_editor_title_new,
+                        ),
+                    style = MaterialTheme.typography.titleLarge,
                 )
 
                 OutlinedTextField(
@@ -127,7 +132,7 @@ fun AgendaEventEditorDialog(
                     onValueChange = onTitleChange,
                     label = { Text(stringResource(R.string.agenda_field_title)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 OutlinedTextField(
@@ -136,33 +141,34 @@ fun AgendaEventEditorDialog(
                     label = { Text(stringResource(R.string.agenda_field_description)) },
                     minLines = 2,
                     maxLines = 4,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 AgendaDateTimeRow(
                     label = stringResource(R.string.agenda_field_datetime),
                     value = draft.dateTimeMillis.toLocalDateTime(),
-                    onValueChange = { onDateTimeChange(it.toEpochMillis()) }
+                    onValueChange = { onDateTimeChange(it.toEpochMillis()) },
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = stringResource(R.string.agenda_field_reminder),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         ReminderPreset.ALL.forEach { minutes ->
                             FilterChip(
                                 selected = draft.reminderMinutesBefore == minutes,
                                 onClick = { onReminderChange(minutes) },
                                 label = { Text(reminderOptionLabel(minutes), maxLines = 1) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                )
+                                colors =
+                                    FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    ),
                             )
                         }
                     }
@@ -175,38 +181,46 @@ fun AgendaEventEditorDialog(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Icon(
                             imageVector = if (draft.documentId != null) Icons.Rounded.Link else Icons.Rounded.LinkOff,
                             contentDescription = null,
-                            tint = if (draft.documentId != null) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint =
+                                if (draft.documentId != null) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                         )
                         Text(
-                            text = stringResource(
-                                if (draft.documentId != null) R.string.agenda_document_linked
-                                else R.string.agenda_document_not_linked
-                            ),
-                            style = MaterialTheme.typography.bodyMedium
+                            text =
+                                stringResource(
+                                    if (draft.documentId != null) {
+                                        R.string.agenda_document_linked
+                                    } else {
+                                        R.string.agenda_document_not_linked
+                                    },
+                                ),
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                     }
                     if (draft.documentId != null) {
                         IconButton(onClick = onUnlinkDocument) {
                             Icon(
                                 imageVector = Icons.Rounded.LinkOff,
-                                contentDescription = stringResource(R.string.agenda_unlink_document)
+                                contentDescription = stringResource(R.string.agenda_unlink_document),
                             )
                         }
                     } else {
                         IconButton(onClick = onLinkDocumentClick) {
                             Icon(
                                 imageVector = Icons.Rounded.InsertDriveFile,
-                                contentDescription = stringResource(R.string.agenda_link_document_title)
+                                contentDescription = stringResource(R.string.agenda_link_document_title),
                             )
                         }
                     }
@@ -215,7 +229,7 @@ fun AgendaEventEditorDialog(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (isEditing) {
                         TextButton(onClick = { showDeleteConfirm = true }) {
@@ -223,7 +237,7 @@ fun AgendaEventEditorDialog(
                                 imageVector = Icons.Rounded.Delete,
                                 contentDescription = null,
                                 tint = ErrorRed,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.general_delete), color = ErrorRed)
@@ -251,40 +265,44 @@ fun AgendaEventEditorDialog(
 // Alcanzable con cualquier combinación fecha+antelación cuyo resultado ya
 // pasó (ej. evento "en 3 horas" + "1 día antes").
 @Composable
-private fun ReminderPastWarning(dateTimeMillis: Long, reminderMinutesBefore: Int?) {
+private fun ReminderPastWarning(
+    dateTimeMillis: Long,
+    reminderMinutesBefore: Int?,
+) {
     if (reminderMinutesBefore == null ||
         reminderTriggerMillis(dateTimeMillis, reminderMinutesBefore) > System.currentTimeMillis()
-    ) return
+    ) {
+        return
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(
             imageVector = Icons.Rounded.WarningAmber,
             contentDescription = null,
             tint = WarningAmber,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(16.dp),
         )
         Text(
             text = stringResource(R.string.agenda_reminder_already_past),
             style = MaterialTheme.typography.bodySmall,
-            color = WarningAmber
+            color = WarningAmber,
         )
     }
 }
 
 @Composable
-private fun reminderOptionLabel(minutes: Int?): String = when (minutes) {
-    null -> stringResource(R.string.agenda_reminder_none)
-    ReminderPreset.AT_TIME -> stringResource(R.string.agenda_reminder_at_time)
-    ReminderPreset.MINUTES_15 -> stringResource(R.string.agenda_reminder_15_min)
-    ReminderPreset.HOUR_1 -> stringResource(R.string.agenda_reminder_1_hour)
-    ReminderPreset.DAY_1 -> stringResource(R.string.agenda_reminder_1_day)
-    else -> minutes.toString()
-}
+private fun reminderOptionLabel(minutes: Int?): String =
+    when (minutes) {
+        null -> stringResource(R.string.agenda_reminder_none)
+        ReminderPreset.AT_TIME -> stringResource(R.string.agenda_reminder_at_time)
+        ReminderPreset.MINUTES_15 -> stringResource(R.string.agenda_reminder_15_min)
+        ReminderPreset.HOUR_1 -> stringResource(R.string.agenda_reminder_1_hour)
+        ReminderPreset.DAY_1 -> stringResource(R.string.agenda_reminder_1_day)
+        else -> minutes.toString()
+    }
 
-private fun Long.toLocalDateTime(): LocalDateTime =
-    Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
+private fun Long.toLocalDateTime(): LocalDateTime = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
 
-private fun LocalDateTime.toEpochMillis(): Long =
-    atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+private fun LocalDateTime.toEpochMillis(): Long = atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
 private val AGENDA_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
 private val AGENDA_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -294,7 +312,7 @@ private val AGENDA_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern(
 private fun AgendaDateTimeRow(
     label: String,
     value: LocalDateTime,
-    onValueChange: (LocalDateTime) -> Unit
+    onValueChange: (LocalDateTime) -> Unit,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -303,7 +321,7 @@ private fun AgendaDateTimeRow(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.weight(1f)) {
@@ -333,7 +351,7 @@ private fun AgendaDateTimeRow(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.general_cancel)) }
-            }
+            },
         ) { DatePicker(state = state) }
     }
 
@@ -343,12 +361,12 @@ private fun AgendaDateTimeRow(
             Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
                 Column(
                     modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TimePicker(state = state)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
                             Text(stringResource(R.string.general_cancel))

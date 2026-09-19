@@ -18,31 +18,34 @@ import org.junit.jupiter.api.Test
  * pantalla).
  */
 class StudyTextExtractionTest {
-
     // ── groupPdfChunksIntoParagraphs ──────────────────────────────────────
 
     @Test
     fun `lineas con poco espacio entre si quedan en el mismo parrafo`() {
-        val chunks = listOf(
-            StudyPdfChunk("Primera linea de un parrafo largo", y = 700f, fontSize = 12f),
-            StudyPdfChunk("que continua ajustado en la siguiente.", y = 686f, fontSize = 12f) // gap 14 < 1.6*12
-        )
+        val chunks =
+            listOf(
+                StudyPdfChunk("Primera linea de un parrafo largo", y = 700f, fontSize = 12f),
+                // gap 14 < 1.6*12
+                StudyPdfChunk("que continua ajustado en la siguiente.", y = 686f, fontSize = 12f),
+            )
 
         val paragraphs = groupPdfChunksIntoParagraphs(chunks)
 
         assertEquals(1, paragraphs.size)
         assertEquals(
             "Primera linea de un parrafo largo que continua ajustado en la siguiente.",
-            paragraphs[0]
+            paragraphs[0],
         )
     }
 
     @Test
     fun `un salto vertical grande crea un parrafo nuevo`() {
-        val chunks = listOf(
-            StudyPdfChunk("Primer parrafo.", y = 700f, fontSize = 12f),
-            StudyPdfChunk("Segundo parrafo.", y = 650f, fontSize = 12f) // gap 50 > 1.6*12
-        )
+        val chunks =
+            listOf(
+                StudyPdfChunk("Primer parrafo.", y = 700f, fontSize = 12f),
+                // gap 50 > 1.6*12
+                StudyPdfChunk("Segundo parrafo.", y = 650f, fontSize = 12f),
+            )
 
         val paragraphs = groupPdfChunksIntoParagraphs(chunks)
 
@@ -53,10 +56,11 @@ class StudyTextExtractionTest {
 
     @Test
     fun `parrafos muy cortos se descartan`() {
-        val chunks = listOf(
-            StudyPdfChunk("Ok", y = 700f, fontSize = 12f),
-            StudyPdfChunk("Un parrafo real con suficiente longitud.", y = 650f, fontSize = 12f)
-        )
+        val chunks =
+            listOf(
+                StudyPdfChunk("Ok", y = 700f, fontSize = 12f),
+                StudyPdfChunk("Un parrafo real con suficiente longitud.", y = 650f, fontSize = 12f),
+            )
 
         val paragraphs = groupPdfChunksIntoParagraphs(chunks)
 

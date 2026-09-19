@@ -18,28 +18,31 @@ import javax.inject.Inject
  * limpiarlos con seguridad -- ver [deleteCachedFile].
  */
 @HiltViewModel
-class ScanImageEditorViewModel @Inject constructor(
-    private val editor: ScanImageEditor
-) : ViewModel() {
-
-    fun applyAdjustments(
-        uri: Uri,
-        brightness: Int,
-        contrast: Int,
-        scalePercent: Int,
-        onResult: (Uri?) -> Unit
-    ) {
-        viewModelScope.launch {
-            onResult(editor.applyAdjustments(uri, brightness, contrast, scalePercent))
+class ScanImageEditorViewModel
+    @Inject
+    constructor(
+        private val editor: ScanImageEditor,
+    ) : ViewModel() {
+        fun applyAdjustments(
+            uri: Uri,
+            brightness: Int,
+            contrast: Int,
+            scalePercent: Int,
+            onResult: (Uri?) -> Unit,
+        ) {
+            viewModelScope.launch {
+                onResult(editor.applyAdjustments(uri, brightness, contrast, scalePercent))
+            }
         }
+
+        // HU-41: suspend directo (no callback) -- se llama desde un
+        // LaunchedEffect de ScanResultScreen que ya corre en su propio
+        // coroutine scope, a diferencia de applyAdjustments() arriba (disparado
+        // desde el onClick no-suspend del botón "Aplicar" del editor).
+        suspend fun applyColorMode(
+            uri: Uri,
+            mode: ScanColorMode,
+        ): Uri? = editor.applyColorMode(uri, mode)
+
+        fun deleteCachedFile(uri: Uri) = editor.deleteCachedFile(uri)
     }
-
-    // HU-41: suspend directo (no callback) -- se llama desde un
-    // LaunchedEffect de ScanResultScreen que ya corre en su propio
-    // coroutine scope, a diferencia de applyAdjustments() arriba (disparado
-    // desde el onClick no-suspend del botón "Aplicar" del editor).
-    suspend fun applyColorMode(uri: Uri, mode: ScanColorMode): Uri? =
-        editor.applyColorMode(uri, mode)
-
-    fun deleteCachedFile(uri: Uri) = editor.deleteCachedFile(uri)
-}

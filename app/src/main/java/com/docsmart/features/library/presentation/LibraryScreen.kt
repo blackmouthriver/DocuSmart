@@ -10,23 +10,21 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.PhoneAndroid
-import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -40,9 +38,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
-import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.util.ReloadOnScreenResume
@@ -52,21 +50,21 @@ import timber.log.Timber
 @Composable
 fun LibraryScreen(
     onDocumentClick: (String) -> Unit = {},
-    onTrashClick   : () -> Unit = {},
+    onTrashClick: () -> Unit = {},
     // Atajos desde el menú "⋮" de un documento (backlog UX 2026-08-30,
     // HU-UX-01/02) -- sin acción por defecto porque, a diferencia de Home,
     // Biblioteca no tiene un CTA genérico de Convertir/QR al cual caer.
-    onConvertClick : (DocumentUiModel) -> Unit = {},
+    onConvertClick: (DocumentUiModel) -> Unit = {},
     onCreateQrClick: (DocumentUiModel) -> Unit = {},
-    onMakeSearchableClick   : (DocumentUiModel) -> Unit = {},
-    onSignClick             : (DocumentUiModel) -> Unit = {},
+    onMakeSearchableClick: (DocumentUiModel) -> Unit = {},
+    onSignClick: (DocumentUiModel) -> Unit = {},
     onMoveToSecureFolderClick: (DocumentUiModel) -> Unit = {},
-    viewModel      : LibraryViewModel = hiltViewModel()
+    viewModel: LibraryViewModel = hiltViewModel(),
 ) {
-    val uiState   by viewModel.uiState.collectAsStateWithLifecycle()
-    val context    = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
-    var hasPermission   by remember { mutableStateOf(checkStoragePermission(context)) }
+    var hasPermission by remember { mutableStateOf(checkStoragePermission(context)) }
     var permissionDenied by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.deleteError) {
@@ -84,13 +82,14 @@ fun LibraryScreen(
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        hasPermission    = permissions.values.any { it }
-        permissionDenied = permissions.values.all { !it }
-        if (hasPermission) viewModel.loadDocuments()
-    }
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { permissions ->
+            hasPermission = permissions.values.any { it }
+            permissionDenied = permissions.values.all { !it }
+            if (hasPermission) viewModel.loadDocuments()
+        }
 
     // Fila 22 del backlog UX: vincular Descargas por SAF para ver PDF/Word/
     // Excel/PowerPoint/Texto reales del dispositivo (ver DownloadsAccessManager
@@ -99,12 +98,14 @@ fun LibraryScreen(
     val linkedFolderUri by viewModel.linkedDownloadsFolderUri.collectAsStateWithLifecycle()
     // Nombre real de la carpeta (ej. "DMSS") para mostrarlo en el atajo en
     // vez de un genérico "Carpeta" -- pedido explícito del usuario.
-    val linkedFolderName = remember(linkedFolderUri) {
-        linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
-    }
-    val linkFolderLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
+    val linkedFolderName =
+        remember(linkedFolderUri) {
+            linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
+        }
+    val linkFolderLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocumentTree(),
+        ) { uri -> uri?.let { viewModel.onDownloadsFolderPicked(it) } }
 
     // Efectos de permiso (solicitud inicial, recarga al concederlo, recarga
     // en cada resume, y el fix R11 de recheck en cada resume) extraídos a
@@ -112,9 +113,9 @@ fun LibraryScreen(
     LibraryPermissionEffects(context, viewModel, hasPermission, permissionLauncher) { hasPermission = it }
 
     LazyColumn(
-        modifier        = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding  = PaddingValues(bottom = 100.dp)
+        contentPadding = PaddingValues(bottom = 100.dp),
     ) {
         // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
         // banner que el resto de las pantallas -- ver DocuSmartScreenHeader.
@@ -124,12 +125,12 @@ fun LibraryScreen(
         // el usuario ya está mirando para elegir qué documentos ver.
         item {
             DocuSmartScreenHeader(
-                adUnitId  = AdConstants.BANNER_LIBRARY_ID,
-                adManager = viewModel.adManager
+                adUnitId = AdConstants.BANNER_LIBRARY_ID,
+                adManager = viewModel.adManager,
             ) {
                 DocuSmartTopBanner(
-                    screenTitle    = stringResource(R.string.library_title),
-                    screenSubtitle = stringResource(R.string.library_subtitle)
+                    screenTitle = stringResource(R.string.library_title),
+                    screenSubtitle = stringResource(R.string.library_subtitle),
                 )
             }
         }
@@ -138,8 +139,8 @@ fun LibraryScreen(
         if (!hasPermission) {
             item {
                 NoPermissionContent(
-                    permissionDenied    = permissionDenied,
-                    onRequestPermission = { permissionLauncher.launch(getRequiredPermissions()) }
+                    permissionDenied = permissionDenied,
+                    onRequestPermission = { permissionLauncher.launch(getRequiredPermissions()) },
                 )
             }
             return@LazyColumn
@@ -148,10 +149,10 @@ fun LibraryScreen(
         // ── Buscador ──────────────────────────────────────────────────────────
         item {
             LibraryHeader(
-                searchQuery    = uiState.searchQuery,
-                onQueryChange  = { viewModel.onSearchQueryChange(it) },
-                onClear        = { viewModel.clearSearch() },
-                totalDocuments = uiState.allDocuments.size
+                searchQuery = uiState.searchQuery,
+                onQueryChange = { viewModel.onSearchQueryChange(it) },
+                onClear = { viewModel.clearSearch() },
+                totalDocuments = uiState.allDocuments.size,
             )
         }
 
@@ -159,15 +160,15 @@ fun LibraryScreen(
         // vinculada, si hay una) ────────────────────────────────────────────────
         item {
             LibraryTabs(
-                selectedTab      = uiState.selectedTab,
-                deviceCount      = uiState.deviceDocuments.size,
-                appFilesCount    = uiState.appDocuments.size,
-                trashCount       = uiState.trashCount,
-                linkedFolderUri  = linkedFolderUri,
+                selectedTab = uiState.selectedTab,
+                deviceCount = uiState.deviceDocuments.size,
+                appFilesCount = uiState.appDocuments.size,
+                trashCount = uiState.trashCount,
+                linkedFolderUri = linkedFolderUri,
                 linkedFolderName = linkedFolderName,
-                onTabSelected    = { viewModel.onTabSelected(it) },
-                onTrashClick     = onTrashClick,
-                onOpenFolderClick = { openLinkedFolder(context, it) }
+                onTabSelected = { viewModel.onTabSelected(it) },
+                onTrashClick = onTrashClick,
+                onOpenFolderClick = { openLinkedFolder(context, it) },
             )
         }
 
@@ -180,13 +181,14 @@ fun LibraryScreen(
         // HU-UX-05).
         item {
             Text(
-                text = when (uiState.selectedTab) {
-                    LibraryTab.DEVICE    -> stringResource(R.string.library_tab_device_description)
-                    LibraryTab.APP_FILES -> stringResource(R.string.library_tab_app_files_description)
-                },
-                style    = MaterialTheme.typography.bodySmall,
-                color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp)
+                text =
+                    when (uiState.selectedTab) {
+                        LibraryTab.DEVICE -> stringResource(R.string.library_tab_device_description)
+                        LibraryTab.APP_FILES -> stringResource(R.string.library_tab_app_files_description)
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
         }
 
@@ -199,7 +201,7 @@ fun LibraryScreen(
                 LinkDownloadsFolderCard(
                     onLinkClick = {
                         linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
-                    }
+                    },
                 )
             }
         }
@@ -207,8 +209,8 @@ fun LibraryScreen(
         // ── Filtros de categoría (FlowRow) ────────────────────────────────────
         item {
             CategoryFilter(
-                selectedCategory   = uiState.selectedCategory,
-                onCategorySelected = { viewModel.onCategorySelected(it) }
+                selectedCategory = uiState.selectedCategory,
+                onCategorySelected = { viewModel.onCategorySelected(it) },
             )
         }
 
@@ -216,16 +218,16 @@ fun LibraryScreen(
         if (uiState.searchQuery.isBlank() && uiState.selectedCategory == null) {
             item {
                 FavoritesSection(
-                    favorites       = uiState.favorites,
+                    favorites = uiState.favorites,
                     onDocumentClick = { doc -> onDocumentClick(doc.id) },
                     onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
-                    onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
-                    onDeleteClick   = { id -> viewModel.removeDocument(id) },
-                    onConvertClick  = onConvertClick,
+                    onRenameClick = { id, newName -> viewModel.renameDocument(id, newName) },
+                    onDeleteClick = { id -> viewModel.removeDocument(id) },
+                    onConvertClick = onConvertClick,
                     onCreateQrClick = onCreateQrClick,
-                    onMakeSearchableClick     = onMakeSearchableClick,
-                    onSignClick               = onSignClick,
-                    onMoveToSecureFolderClick = onMoveToSecureFolderClick
+                    onMakeSearchableClick = onMakeSearchableClick,
+                    onSignClick = onSignClick,
+                    onMoveToSecureFolderClick = onMoveToSecureFolderClick,
                 )
             }
         }
@@ -233,17 +235,17 @@ fun LibraryScreen(
         // ── Lista de documentos ───────────────────────────────────────────────
         item {
             DocumentListSection(
-                documents       = uiState.filteredDocuments,
+                documents = uiState.filteredDocuments,
                 onDocumentClick = { doc -> onDocumentClick(doc.id) },
                 onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
-                onRenameClick   = { id, newName -> viewModel.renameDocument(id, newName) },
-                onDeleteClick   = { id -> viewModel.removeDocument(id) },
-                onConvertClick  = onConvertClick,
+                onRenameClick = { id, newName -> viewModel.renameDocument(id, newName) },
+                onDeleteClick = { id -> viewModel.removeDocument(id) },
+                onConvertClick = onConvertClick,
                 onCreateQrClick = onCreateQrClick,
-                onMakeSearchableClick    = onMakeSearchableClick,
-                onSignClick              = onSignClick,
+                onMakeSearchableClick = onMakeSearchableClick,
+                onSignClick = onSignClick,
                 onMoveToSecureFolderClick = onMoveToSecureFolderClick,
-                searchQuery     = uiState.searchQuery
+                searchQuery = uiState.searchQuery,
             )
         }
     }
@@ -254,11 +256,11 @@ fun LibraryScreen(
 // (LongMethod). Sin cambios de comportamiento respecto a como vivían inline.
 @Composable
 private fun LibraryPermissionEffects(
-    context           : android.content.Context,
-    viewModel         : LibraryViewModel,
-    hasPermission     : Boolean,
+    context: android.content.Context,
+    viewModel: LibraryViewModel,
+    hasPermission: Boolean,
     permissionLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>,
-    onPermissionChanged: (Boolean) -> Unit
+    onPermissionChanged: (Boolean) -> Unit,
 ) {
     LaunchedEffect(Unit) {
         if (!hasPermission) permissionLauncher.launch(getRequiredPermissions())
@@ -302,15 +304,15 @@ private fun LibraryPermissionEffects(
 // no un elemento suelto.
 @Composable
 private fun LibraryTabs(
-    selectedTab      : LibraryTab,
-    deviceCount      : Int,
-    appFilesCount    : Int,
-    trashCount       : Int,
-    linkedFolderUri  : Uri?,
-    linkedFolderName : String?,
-    onTabSelected    : (LibraryTab) -> Unit,
-    onTrashClick     : () -> Unit,
-    onOpenFolderClick: (Uri) -> Unit
+    selectedTab: LibraryTab,
+    deviceCount: Int,
+    appFilesCount: Int,
+    trashCount: Int,
+    linkedFolderUri: Uri?,
+    linkedFolderName: String?,
+    onTabSelected: (LibraryTab) -> Unit,
+    onTrashClick: () -> Unit,
+    onOpenFolderClick: (Uri) -> Unit,
 ) {
     // Sin carpeta vinculada: 1 fila de 3. Con carpeta vinculada: grilla 2x2
     // -- 4 en una sola fila angostaba tanto las tarjetas que "Dispositivo"
@@ -318,92 +320,93 @@ private fun LibraryTabs(
     // usuario 2026-09-03).
     if (linkedFolderUri == null) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-                .padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+                    .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             LibraryTabItem(
-                icon     = Icons.Rounded.PhoneAndroid,
-                label    = stringResource(R.string.library_tab_device),
+                icon = Icons.Rounded.PhoneAndroid,
+                label = stringResource(R.string.library_tab_device),
                 subtitle = stringResource(R.string.library_tab_file_count, deviceCount),
                 selected = selectedTab == LibraryTab.DEVICE,
-                onClick  = { onTabSelected(LibraryTab.DEVICE) },
-                modifier = Modifier.weight(1f)
+                onClick = { onTabSelected(LibraryTab.DEVICE) },
+                modifier = Modifier.weight(1f),
             )
             LibraryTabItem(
-                icon     = Icons.Rounded.Folder,
-                label    = stringResource(R.string.library_tab_app_files),
+                icon = Icons.Rounded.Folder,
+                label = stringResource(R.string.library_tab_app_files),
                 subtitle = stringResource(R.string.library_tab_file_count, appFilesCount),
                 selected = selectedTab == LibraryTab.APP_FILES,
-                onClick  = { onTabSelected(LibraryTab.APP_FILES) },
-                modifier = Modifier.weight(1f)
+                onClick = { onTabSelected(LibraryTab.APP_FILES) },
+                modifier = Modifier.weight(1f),
             )
             // Papelera -- mismo componente visual que las pestañas (ícono +
             // label + contador, weight(1f)) en vez de una tarjeta de ancho
             // fijo sin texto. Bug real reportado por el usuario 2026-08-30:
             // se veía solo el ícono, sin título, y de tamaño distinto.
             LibraryTabItem(
-                icon     = Icons.Rounded.DeleteOutline,
-                label    = stringResource(R.string.library_trash),
+                icon = Icons.Rounded.DeleteOutline,
+                label = stringResource(R.string.library_trash),
                 subtitle = stringResource(R.string.library_tab_file_count, trashCount),
                 selected = false,
-                onClick  = onTrashClick,
+                onClick = onTrashClick,
                 modifier = Modifier.weight(1f),
-                isTab    = false
+                isTab = false,
             )
         }
     } else {
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 LibraryTabItem(
-                    icon     = Icons.Rounded.PhoneAndroid,
-                    label    = stringResource(R.string.library_tab_device),
+                    icon = Icons.Rounded.PhoneAndroid,
+                    label = stringResource(R.string.library_tab_device),
                     subtitle = stringResource(R.string.library_tab_file_count, deviceCount),
                     selected = selectedTab == LibraryTab.DEVICE,
-                    onClick  = { onTabSelected(LibraryTab.DEVICE) },
-                    modifier = Modifier.weight(1f)
+                    onClick = { onTabSelected(LibraryTab.DEVICE) },
+                    modifier = Modifier.weight(1f),
                 )
                 LibraryTabItem(
-                    icon     = Icons.Rounded.Folder,
-                    label    = stringResource(R.string.library_tab_app_files),
+                    icon = Icons.Rounded.Folder,
+                    label = stringResource(R.string.library_tab_app_files),
                     subtitle = stringResource(R.string.library_tab_file_count, appFilesCount),
                     selected = selectedTab == LibraryTab.APP_FILES,
-                    onClick  = { onTabSelected(LibraryTab.APP_FILES) },
-                    modifier = Modifier.weight(1f)
+                    onClick = { onTabSelected(LibraryTab.APP_FILES) },
+                    modifier = Modifier.weight(1f),
                 )
             }
             Row(
                 modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 LibraryTabItem(
-                    icon     = Icons.Rounded.DeleteOutline,
-                    label    = stringResource(R.string.library_trash),
+                    icon = Icons.Rounded.DeleteOutline,
+                    label = stringResource(R.string.library_trash),
                     subtitle = stringResource(R.string.library_tab_file_count, trashCount),
                     selected = false,
-                    onClick  = onTrashClick,
+                    onClick = onTrashClick,
                     modifier = Modifier.weight(1f),
-                    isTab    = false
+                    isTab = false,
                 )
                 // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX):
                 // muestra el nombre real de la carpeta elegida (ej. "DMSS"),
                 // no un genérico "Carpeta" -- pedido explícito del usuario.
                 LibraryTabItem(
-                    icon     = Icons.Rounded.FolderOpen,
-                    label    = linkedFolderName ?: stringResource(R.string.library_folder_shortcut_label),
+                    icon = Icons.Rounded.FolderOpen,
+                    label = linkedFolderName ?: stringResource(R.string.library_folder_shortcut_label),
                     subtitle = stringResource(R.string.library_folder_shortcut_subtitle),
                     selected = false,
-                    onClick  = { onOpenFolderClick(linkedFolderUri) },
+                    onClick = { onOpenFolderClick(linkedFolderUri) },
                     modifier = Modifier.weight(1f),
-                    isTab    = false
+                    isTab = false,
                 )
             }
         }
@@ -412,11 +415,11 @@ private fun LibraryTabs(
 
 @Composable
 private fun LibraryTabItem(
-    icon    : androidx.compose.ui.graphics.vector.ImageVector,
-    label   : String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
     subtitle: String,
     selected: Boolean,
-    onClick : () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     // Hallazgo real de la auditoría general 2026-09-17 (séptima ronda,
     // Media -- A4): "Dispositivo"/"Mis archivos" son pestañas reales
@@ -426,35 +429,42 @@ private fun LibraryTabItem(
     // TalkBack, así que ninguna pestaña anunciaba "seleccionada". La
     // barra de navegación inferior ya usa `Modifier.selectable(...)`
     // para el mismo patrón (`DocuSmartBottomBar.kt`) -- se alinea acá.
-    isTab: Boolean = true
+    isTab: Boolean = true,
 ) {
     val shape = MaterialTheme.shapes.large
-    val containerColor = if (selected)
-        MaterialTheme.colorScheme.primaryContainer
-    else
-        MaterialTheme.colorScheme.surface
+    val containerColor =
+        if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        }
     Box(
-        modifier = modifier
-            .then(
-                // Sombra/borde de acento solo cuando NO está seleccionada --
-                // igual que antes con 0.dp, la tarjeta seleccionada no lleva
-                // sombra, y usa su propio borde grueso de "seleccionado".
-                if (!selected) Modifier.accentShadow(shape = shape, elevation = 2.dp)
-                else Modifier
-            )
-            .clip(shape)
-            .background(containerColor)
-            .then(
-                if (selected)
-                    Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
-                else
-                    Modifier.accentBorder(shape = shape)
-            )
-            .selectable(
-                selected = selected,
-                onClick  = onClick,
-                role     = if (isTab) Role.Tab else Role.Button
-            )
+        modifier =
+            modifier
+                .then(
+                    // Sombra/borde de acento solo cuando NO está seleccionada --
+                    // igual que antes con 0.dp, la tarjeta seleccionada no lleva
+                    // sombra, y usa su propio borde grueso de "seleccionado".
+                    if (!selected) {
+                        Modifier.accentShadow(shape = shape, elevation = 2.dp)
+                    } else {
+                        Modifier
+                    },
+                )
+                .clip(shape)
+                .background(containerColor)
+                .then(
+                    if (selected) {
+                        Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
+                    } else {
+                        Modifier.accentBorder(shape = shape)
+                    },
+                )
+                .selectable(
+                    selected = selected,
+                    onClick = onClick,
+                    role = if (isTab) Role.Tab else Role.Button,
+                ),
     ) {
         // HU-UX-05: con "Grande"/"Muy grande" activo, "Dispositivo"/"Mis
         // archivos"/"Papelera" no entran ni en 2 líneas compartiendo el ancho
@@ -464,40 +474,49 @@ private fun LibraryTabItem(
         // texto ya entraba en una línea, así que no hay cambio visual ahí
         // más que el ícono ahora arriba en vez de al lado.
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Icon(
-                imageVector        = icon,
+                imageVector = icon,
                 contentDescription = null,
-                tint               = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier           = Modifier.size(20.dp)
+                tint =
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                modifier = Modifier.size(20.dp),
             )
             Text(
-                text       = label,
+                text = label,
                 // Card angostada por el atajo de carpeta agregado en la fila
                 // 22 del backlog UX -- labelMedium en vez de labelLarge para
                 // que "Dispositivo"/"Mis archivos" sigan entrando en una
                 // línea con las 4 columnas.
-                style      = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color      = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurface,
-                textAlign  = TextAlign.Center,
-                maxLines   = 2,
-                overflow   = TextOverflow.Ellipsis
+                color =
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text      = subtitle,
-                style     = MaterialTheme.typography.labelSmall,
-                color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                maxLines  = 1,
-                overflow  = TextOverflow.Ellipsis
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -512,44 +531,46 @@ private fun LibraryTabItem(
 @Composable
 private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        shape  = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+        shape = MaterialTheme.shapes.large,
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+            ),
     ) {
         Column(
-            modifier            = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
-                verticalAlignment    = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(
-                    imageVector        = Icons.Rounded.CreateNewFolder,
+                    imageVector = Icons.Rounded.CreateNewFolder,
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Text(
-                    text       = stringResource(R.string.library_link_downloads_title),
-                    style      = MaterialTheme.typography.titleSmall,
+                    text = stringResource(R.string.library_link_downloads_title),
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color      = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
             Text(
-                text  = stringResource(R.string.library_link_downloads_body),
+                text = stringResource(R.string.library_link_downloads_body),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             Button(
                 onClick = onLinkClick,
-                shape   = MaterialTheme.shapes.medium,
-                modifier = Modifier.align(Alignment.End)
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.align(Alignment.End),
             ) {
                 Text(stringResource(R.string.library_link_downloads_button))
             }
@@ -560,40 +581,48 @@ private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
 // ── Sin permisos ──────────────────────────────────────────────────────────────
 @Composable
 private fun NoPermissionContent(
-    permissionDenied   : Boolean,
-    onRequestPermission: () -> Unit
+    permissionDenied: Boolean,
+    onRequestPermission: () -> Unit,
 ) {
     Column(
-        modifier            = Modifier.fillMaxWidth().padding(32.dp),
+        modifier = Modifier.fillMaxWidth().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Icon(
-            imageVector        = Icons.Rounded.FolderOff,
+            imageVector = Icons.Rounded.FolderOff,
             contentDescription = null,
-            modifier           = Modifier.size(64.dp),
-            tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
         )
         // Bug real encontrado 2026-09-14 (repaso general): estos 5 textos
         // estaban hardcodeados en español, saltándose el sistema de 12
         // idiomas que ya usa el resto de la pantalla.
         Text(
-            text      = stringResource(
-                if (permissionDenied) R.string.library_no_permission_denied_title
-                else R.string.library_no_permission_required_title
-            ),
-            style     = MaterialTheme.typography.titleMedium,
-            color     = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
+            text =
+                stringResource(
+                    if (permissionDenied) {
+                        R.string.library_no_permission_denied_title
+                    } else {
+                        R.string.library_no_permission_required_title
+                    },
+                ),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
         )
         Text(
-            text  = stringResource(
-                if (permissionDenied) R.string.library_no_permission_denied_body
-                else R.string.library_no_permission_required_body
-            ),
-            style     = MaterialTheme.typography.bodyMedium,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            text =
+                stringResource(
+                    if (permissionDenied) {
+                        R.string.library_no_permission_denied_body
+                    } else {
+                        R.string.library_no_permission_required_body
+                    },
+                ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
         if (!permissionDenied) {
             Button(onClick = onRequestPermission, shape = MaterialTheme.shapes.medium) {
@@ -607,35 +636,41 @@ private fun NoPermissionContent(
 // READ_MEDIA_VIDEO removido 2026-09-10: DocuSmart no tiene ninguna función
 // que use contenido de video, ver comentario en MainActivity.kt.
 private fun getRequiredPermissions(): Array<String> =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
-    else
+    } else {
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
 
 private fun checkStoragePermission(context: android.content.Context): Boolean =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PermissionChecker.PERMISSION_GRANTED
-    else
+    } else {
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PermissionChecker.PERMISSION_GRANTED
+    }
 
 // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX): delega en
 // cualquier app que sepa abrir un árbol de documentos (normalmente el
 // gestor de archivos del sistema) en vez de reimplementar un navegador de
 // carpetas propio -- ningún dispositivo probado carece de una app así,
 // pero se cubre igual el caso raro con un aviso en vez de un cierre.
-private fun openLinkedFolder(context: android.content.Context, folderUri: Uri) {
+private fun openLinkedFolder(
+    context: android.content.Context,
+    folderUri: Uri,
+) {
     try {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(folderUri, DocumentsContract.Document.MIME_TYPE_DIR)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(folderUri, DocumentsContract.Document.MIME_TYPE_DIR)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
         Timber.w(e, "openLinkedFolder: sin app que maneje ACTION_VIEW para un árbol de documentos")
         android.widget.Toast.makeText(
             context,
             context.getString(R.string.library_folder_shortcut_no_app),
-            android.widget.Toast.LENGTH_SHORT
+            android.widget.Toast.LENGTH_SHORT,
         ).show()
     }
 }

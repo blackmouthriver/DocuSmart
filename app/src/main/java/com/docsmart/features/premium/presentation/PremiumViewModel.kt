@@ -44,200 +44,218 @@ data class PremiumUiState(
     // encontrar la misma compra en PENDING no tenía forma de mostrarlo de
     // nuevo. Este flag persiste en el estado de la pantalla para que
     // PremiumScreen pueda mostrar un aviso permanente mientras dure.
-    val isPendingPurchase: Boolean = false
+    val isPendingPurchase: Boolean = false,
 )
 
 @HiltViewModel
-class PremiumViewModel @Inject constructor(
-    private val premiumManager: PremiumManager,
-    private val premiumRepository: PremiumRepository,
-    private val billingManager: BillingManager
-) : ViewModel() {
+class PremiumViewModel
+    @Inject
+    constructor(
+        private val premiumManager: PremiumManager,
+        private val premiumRepository: PremiumRepository,
+        private val billingManager: BillingManager,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow(PremiumUiState())
+        val uiState: StateFlow<PremiumUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(PremiumUiState())
-    val uiState: StateFlow<PremiumUiState> = _uiState.asStateFlow()
+        // Mensajes localizados capturados en el momento de la acción (purchase()/
+        // restorePurchases()) — Play Billing responde de forma asíncrona vía
+        // billingManager.purchaseResult, y para entonces ya no hay stringResource()
+        // disponible directamente (el ViewModel no es @Composable).
+        private var purchaseErrorMessage = ""
+        private var pendingMessage = ""
+        private var noPurchasesFoundMessage = ""
+        private var restoreSuccessMessage = ""
 
-    // Mensajes localizados capturados en el momento de la acción (purchase()/
-    // restorePurchases()) — Play Billing responde de forma asíncrona vía
-    // billingManager.purchaseResult, y para entonces ya no hay stringResource()
-    // disponible directamente (el ViewModel no es @Composable).
-    private var purchaseErrorMessage    = ""
-    private var pendingMessage          = ""
-    private var noPurchasesFoundMessage = ""
-    private var restoreSuccessMessage   = ""
-
-    init {
-        loadPlans()
-        observePremiumStatus()
-        observeOffers()
-        observeTrialEndsAt()
-        observeAutoTrialState()
-        observePurchaseResult()
-    }
-
-    private fun loadPlans() {
-        val plans = premiumRepository.getAvailablePlans()
-        _uiState.update { state ->
-            state.copy(
-                plans = plans,
-                selectedPlan = plans.find { it.isPopular } ?: plans.first()
-            )
+        init {
+            loadPlans()
+            observePremiumStatus()
+            observeOffers()
+            observeTrialEndsAt()
+            observeAutoTrialState()
+            observePurchaseResult()
         }
-    }
 
-    private fun observePremiumStatus() {
-        viewModelScope.launch {
-            premiumManager.isPremium.collect { isPremium ->
-                _uiState.update { it.copy(isPremium = isPremium) }
+        private fun loadPlans() {
+            val plans = premiumRepository.getAvailablePlans()
+            _uiState.update { state ->
+                state.copy(
+                    plans = plans,
+                    selectedPlan = plans.find { it.isPopular } ?: plans.first(),
+                )
             }
         }
-    }
 
-    // Sobrescribe el precio fijo de PremiumRepository con el precio real y
-    // localizado que devuelve Play Billing (y los días de prueba gratuita si
-    // el plan tiene uno configurado en Play Console), en cuanto esté
-    // disponible.
-    private fun observeOffers() {
-        viewModelScope.launch {
-            billingManager.planOffers.collect { offers ->
-                if (offers.isEmpty()) return@collect
-                _uiState.update { state ->
-                    state.copy(plans = state.plans.map { plan ->
-                        offers[plan.productId]?.let { offer ->
-                            plan.copy(
-                                price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
-                                trialDays = offer.trialDays
-                            )
-                        } ?: plan
-                    })
+        private fun observePremiumStatus() {
+            viewModelScope.launch {
+                premiumManager.isPremium.collect { isPremium ->
+                    _uiState.update { it.copy(isPremium = isPremium) }
                 }
             }
         }
-    }
 
-    // HU-54, AC1: mientras dure la prueba, PremiumActiveCard debe poder
-    // mostrar la fecha real de cobro.
-    private fun observeTrialEndsAt() {
-        viewModelScope.launch {
-            premiumManager.trialEndsAtMillis.collect { trialEndsAtMillis ->
-                _uiState.update { it.copy(trialEndsAtMillis = trialEndsAtMillis) }
-            }
-        }
-    }
-
-    // Trial automático sin tarjeta: isPaidPremium/autoTrialDaysRemaining
-    // determinan si esta pantalla debe seguir mostrando los planes de
-    // suscripción (ver PremiumScreen) y el mensaje de días restantes.
-    private fun observeAutoTrialState() {
-        viewModelScope.launch {
-            premiumManager.isPaidPremium.collect { isPaidPremium ->
-                _uiState.update { it.copy(isPaidPremium = isPaidPremium) }
-            }
-        }
-        viewModelScope.launch {
-            premiumManager.autoTrialDaysRemaining.collect { daysRemaining ->
-                _uiState.update { it.copy(autoTrialDaysRemaining = daysRemaining) }
-            }
-        }
-    }
-
-    private fun observePurchaseResult() {
-        viewModelScope.launch {
-            billingManager.purchaseResult.collect { result ->
-                _uiState.update { state ->
-                    when (result) {
-                        // isPendingPurchase = false: una compra recién exitosa ya
-                        // no está pendiente (y si venía de una revalidación
-                        // automática detrás de una PENDING anterior, corresponde
-                        // apagar el aviso persistente).
-                        is PurchaseResult.Success -> state.copy(
-                            isPurchasing = false, purchaseSuccess = true, errorMessage = null,
-                            isPendingPurchase = false
-                        )
-                        is PurchaseResult.Cancelled -> state.copy(isPurchasing = false)
-                        is PurchaseResult.Pending -> state.copy(
-                            isPurchasing = false, errorMessage = pendingMessage, isPendingPurchase = true
-                        )
-                        // NoPurchasesToRestore ahora solo llega cuando de verdad no
-                        // hay ninguna compra (ver evaluateRestoreOutcome/H3) -- ya no
-                        // puede confundirse con una PENDING, así que también apaga
-                        // el aviso persistente.
-                        is PurchaseResult.NoPurchasesToRestore -> state.copy(
-                            isPurchasing = false, errorMessage = noPurchasesFoundMessage, isPendingPurchase = false
-                        )
-                        is PurchaseResult.Error -> state.copy(
-                            isPurchasing = false,
-                            errorMessage = purchaseErrorMessage.ifBlank { result.debugMessage }
+        // Sobrescribe el precio fijo de PremiumRepository con el precio real y
+        // localizado que devuelve Play Billing (y los días de prueba gratuita si
+        // el plan tiene uno configurado en Play Console), en cuanto esté
+        // disponible.
+        private fun observeOffers() {
+            viewModelScope.launch {
+                billingManager.planOffers.collect { offers ->
+                    if (offers.isEmpty()) return@collect
+                    _uiState.update { state ->
+                        state.copy(
+                            plans =
+                                state.plans.map { plan ->
+                                    offers[plan.productId]?.let { offer ->
+                                        plan.copy(
+                                            price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
+                                            trialDays = offer.trialDays,
+                                        )
+                                    } ?: plan
+                                },
                         )
                     }
                 }
             }
         }
-    }
 
-    fun selectPlan(plan: PremiumPlan) {
-        _uiState.update { it.copy(selectedPlan = plan) }
-    }
-
-    fun purchase(activity: Activity, purchaseErrorMessage: String, pendingMessage: String) {
-        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
-        // sin este guard, un doble-toque rápido en "Comprar" podía lanzar
-        // dos flujos de Play Billing superpuestos antes de que la
-        // recomposición ocultara el botón -- mismo patrón ya corregido en
-        // Convertidor (#31) y el creador de QR (#6/#13).
-        if (_uiState.value.isPurchasing) return
-        val plan = _uiState.value.selectedPlan ?: return
-        this.purchaseErrorMessage = purchaseErrorMessage
-        this.pendingMessage = pendingMessage
-
-        DocuSmartAnalytics.logPremiumPurchaseAttempt(plan.id)
-        _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
-        val launched = billingManager.launchPurchase(activity, plan.productId)
-        if (!launched) {
-            _uiState.update { it.copy(isPurchasing = false, errorMessage = purchaseErrorMessage) }
-        }
-        // Si se lanzó, isPurchasing se resuelve cuando llegue purchaseResult.
-    }
-
-    fun restorePurchases(
-        noPurchasesFoundMessage: String,
-        restoreSuccessMessage: String,
-        restoreErrorMessage: String
-    ) {
-        // Hallazgos reales de la auditoría general 2026-09-17 (M11/M12):
-        // faltaba el mismo guard de re-entrada que purchase() (doble-toque en
-        // "Restaurar compras" podía lanzar dos consultas superpuestas), y
-        // purchaseErrorMessage nunca se fijaba acá -- si la consulta a Play
-        // Billing fallaba, observePurchaseResult() caía directo al
-        // result.debugMessage crudo (en inglés) en vez de un mensaje
-        // localizado.
-        if (_uiState.value.isPurchasing) return
-        this.noPurchasesFoundMessage = noPurchasesFoundMessage
-        this.restoreSuccessMessage = restoreSuccessMessage
-        this.purchaseErrorMessage = restoreErrorMessage
-        _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
-        viewModelScope.launch {
-            billingManager.restorePurchases()
-            // premiumManager.isPaidPremium.value, no isPremium.value: con el
-            // trial automático sin tarjeta, isPremium ya puede ser true sin
-            // que se haya restaurado nada real -- usar isPremium acá le
-            // mostraría "compra restaurada" a alguien que solo está en el
-            // trial. Se lee directo del StateFlow (no _uiState.value) para
-            // evitar una carrera con el colector de observeAutoTrialState(),
-            // que corre en otra corrutina y podría no haber procesado la
-            // actualización todavía.
-            val wasRestored = premiumManager.isPaidPremium.value
-            _uiState.update { state ->
-                state.copy(
-                    isPurchasing = false,
-                    errorMessage = if (wasRestored) restoreSuccessMessage else noPurchasesFoundMessage,
-                    purchaseSuccess = wasRestored
-                )
+        // HU-54, AC1: mientras dure la prueba, PremiumActiveCard debe poder
+        // mostrar la fecha real de cobro.
+        private fun observeTrialEndsAt() {
+            viewModelScope.launch {
+                premiumManager.trialEndsAtMillis.collect { trialEndsAtMillis ->
+                    _uiState.update { it.copy(trialEndsAtMillis = trialEndsAtMillis) }
+                }
             }
         }
-    }
 
-    fun dismissError() {
-        _uiState.update { it.copy(errorMessage = null) }
+        // Trial automático sin tarjeta: isPaidPremium/autoTrialDaysRemaining
+        // determinan si esta pantalla debe seguir mostrando los planes de
+        // suscripción (ver PremiumScreen) y el mensaje de días restantes.
+        private fun observeAutoTrialState() {
+            viewModelScope.launch {
+                premiumManager.isPaidPremium.collect { isPaidPremium ->
+                    _uiState.update { it.copy(isPaidPremium = isPaidPremium) }
+                }
+            }
+            viewModelScope.launch {
+                premiumManager.autoTrialDaysRemaining.collect { daysRemaining ->
+                    _uiState.update { it.copy(autoTrialDaysRemaining = daysRemaining) }
+                }
+            }
+        }
+
+        private fun observePurchaseResult() {
+            viewModelScope.launch {
+                billingManager.purchaseResult.collect { result ->
+                    _uiState.update { state ->
+                        when (result) {
+                            // isPendingPurchase = false: una compra recién exitosa ya
+                            // no está pendiente (y si venía de una revalidación
+                            // automática detrás de una PENDING anterior, corresponde
+                            // apagar el aviso persistente).
+                            is PurchaseResult.Success ->
+                                state.copy(
+                                    isPurchasing = false,
+                                    purchaseSuccess = true,
+                                    errorMessage = null,
+                                    isPendingPurchase = false,
+                                )
+                            is PurchaseResult.Cancelled -> state.copy(isPurchasing = false)
+                            is PurchaseResult.Pending ->
+                                state.copy(
+                                    isPurchasing = false,
+                                    errorMessage = pendingMessage,
+                                    isPendingPurchase = true,
+                                )
+                            // NoPurchasesToRestore ahora solo llega cuando de verdad no
+                            // hay ninguna compra (ver evaluateRestoreOutcome/H3) -- ya no
+                            // puede confundirse con una PENDING, así que también apaga
+                            // el aviso persistente.
+                            is PurchaseResult.NoPurchasesToRestore ->
+                                state.copy(
+                                    isPurchasing = false,
+                                    errorMessage = noPurchasesFoundMessage,
+                                    isPendingPurchase = false,
+                                )
+                            is PurchaseResult.Error ->
+                                state.copy(
+                                    isPurchasing = false,
+                                    errorMessage = purchaseErrorMessage.ifBlank { result.debugMessage },
+                                )
+                        }
+                    }
+                }
+            }
+        }
+
+        fun selectPlan(plan: PremiumPlan) {
+            _uiState.update { it.copy(selectedPlan = plan) }
+        }
+
+        fun purchase(
+            activity: Activity,
+            purchaseErrorMessage: String,
+            pendingMessage: String,
+        ) {
+            // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+            // sin este guard, un doble-toque rápido en "Comprar" podía lanzar
+            // dos flujos de Play Billing superpuestos antes de que la
+            // recomposición ocultara el botón -- mismo patrón ya corregido en
+            // Convertidor (#31) y el creador de QR (#6/#13).
+            if (_uiState.value.isPurchasing) return
+            val plan = _uiState.value.selectedPlan ?: return
+            this.purchaseErrorMessage = purchaseErrorMessage
+            this.pendingMessage = pendingMessage
+
+            DocuSmartAnalytics.logPremiumPurchaseAttempt(plan.id)
+            _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
+            val launched = billingManager.launchPurchase(activity, plan.productId)
+            if (!launched) {
+                _uiState.update { it.copy(isPurchasing = false, errorMessage = purchaseErrorMessage) }
+            }
+            // Si se lanzó, isPurchasing se resuelve cuando llegue purchaseResult.
+        }
+
+        fun restorePurchases(
+            noPurchasesFoundMessage: String,
+            restoreSuccessMessage: String,
+            restoreErrorMessage: String,
+        ) {
+            // Hallazgos reales de la auditoría general 2026-09-17 (M11/M12):
+            // faltaba el mismo guard de re-entrada que purchase() (doble-toque en
+            // "Restaurar compras" podía lanzar dos consultas superpuestas), y
+            // purchaseErrorMessage nunca se fijaba acá -- si la consulta a Play
+            // Billing fallaba, observePurchaseResult() caía directo al
+            // result.debugMessage crudo (en inglés) en vez de un mensaje
+            // localizado.
+            if (_uiState.value.isPurchasing) return
+            this.noPurchasesFoundMessage = noPurchasesFoundMessage
+            this.restoreSuccessMessage = restoreSuccessMessage
+            this.purchaseErrorMessage = restoreErrorMessage
+            _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
+            viewModelScope.launch {
+                billingManager.restorePurchases()
+                // premiumManager.isPaidPremium.value, no isPremium.value: con el
+                // trial automático sin tarjeta, isPremium ya puede ser true sin
+                // que se haya restaurado nada real -- usar isPremium acá le
+                // mostraría "compra restaurada" a alguien que solo está en el
+                // trial. Se lee directo del StateFlow (no _uiState.value) para
+                // evitar una carrera con el colector de observeAutoTrialState(),
+                // que corre en otra corrutina y podría no haber procesado la
+                // actualización todavía.
+                val wasRestored = premiumManager.isPaidPremium.value
+                _uiState.update { state ->
+                    state.copy(
+                        isPurchasing = false,
+                        errorMessage = if (wasRestored) restoreSuccessMessage else noPurchasesFoundMessage,
+                        purchaseSuccess = wasRestored,
+                    )
+                }
+            }
+        }
+
+        fun dismissError() {
+            _uiState.update { it.copy(errorMessage = null) }
+        }
     }
-}

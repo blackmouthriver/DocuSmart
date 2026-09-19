@@ -7,10 +7,10 @@ package com.docsmart.features.viewer.domain.annotation
  * en vez de vivir solo dentro del `pointerInput` de `PdfViewerContent`.
  */
 data class PdfRectPts(
-    val xPts     : Float,
-    val yPts     : Float,
-    val widthPts : Float,
-    val heightPts: Float
+    val xPts: Float,
+    val yPts: Float,
+    val widthPts: Float,
+    val heightPts: Float,
 )
 
 // Mínimo real para no persistir un resaltado "accidental" de un toque mal
@@ -24,55 +24,59 @@ const val MIN_HIGHLIGHT_SIZE_PTS = 4f
  * usada por `pageHighlights` en `PdfViewerContent`.
  */
 fun screenDragToPdfRect(
-    screenX1: Float, screenY1: Float,
-    screenX2: Float, screenY2: Float,
-    displayScale : Float,
-    pageHeightPts: Float
+    screenX1: Float,
+    screenY1: Float,
+    screenX2: Float,
+    screenY2: Float,
+    displayScale: Float,
+    pageHeightPts: Float,
 ): PdfRectPts {
     val minX = minOf(screenX1, screenX2)
     val maxX = maxOf(screenX1, screenX2)
     val minY = minOf(screenY1, screenY2)
     val maxY = maxOf(screenY1, screenY2)
     return PdfRectPts(
-        xPts      = minX / displayScale,
-        yPts      = pageHeightPts - (maxY / displayScale),
-        widthPts  = (maxX - minX) / displayScale,
-        heightPts = (maxY - minY) / displayScale
+        xPts = minX / displayScale,
+        yPts = pageHeightPts - (maxY / displayScale),
+        widthPts = (maxX - minX) / displayScale,
+        heightPts = (maxY - minY) / displayScale,
     )
 }
 
 /** Convierte un punto de pantalla (anclaje de una nota) a puntos PDF. */
 fun screenPointToPdfPoint(
-    screenX: Float, screenY: Float,
-    displayScale : Float,
-    pageHeightPts: Float
-): PdfRectPts = PdfRectPts(
-    xPts      = screenX / displayScale,
-    yPts      = pageHeightPts - (screenY / displayScale),
-    widthPts  = 0f,
-    heightPts = 0f
-)
+    screenX: Float,
+    screenY: Float,
+    displayScale: Float,
+    pageHeightPts: Float,
+): PdfRectPts =
+    PdfRectPts(
+        xPts = screenX / displayScale,
+        yPts = pageHeightPts - (screenY / displayScale),
+        widthPts = 0f,
+        heightPts = 0f,
+    )
 
 /** Inverso: convierte un punto en puntos PDF a coordenadas de pantalla (px). */
 fun pdfPointToScreenPoint(
-    xPts: Float, yPts: Float,
-    displayScale : Float,
-    pageHeightPts: Float
+    xPts: Float,
+    yPts: Float,
+    displayScale: Float,
+    pageHeightPts: Float,
 ): Pair<Float, Float> {
     val screenX = xPts * displayScale
     val screenY = (pageHeightPts - yPts) * displayScale
     return screenX to screenY
 }
 
-fun isValidHighlightSize(rect: PdfRectPts): Boolean =
-    rect.widthPts >= MIN_HIGHLIGHT_SIZE_PTS && rect.heightPts >= MIN_HIGHLIGHT_SIZE_PTS
+fun isValidHighlightSize(rect: PdfRectPts): Boolean = rect.widthPts >= MIN_HIGHLIGHT_SIZE_PTS && rect.heightPts >= MIN_HIGHLIGHT_SIZE_PTS
 
 /** Rectángulo en el sistema de coordenadas CRUDO del MediaBox (sin rotar). */
 data class RawPageRect(
-    val x     : Float,
-    val y     : Float,
-    val width : Float,
-    val height: Float
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
 )
 
 // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada, #16):
@@ -93,26 +97,35 @@ data class RawPageRect(
 fun visualRectToRawPageRect(
     visual: PdfRectPts,
     rotationDegrees: Int,
-    rawPageWidthPts : Float,
-    rawPageHeightPts: Float
+    rawPageWidthPts: Float,
+    rawPageHeightPts: Float,
 ): RawPageRect {
     val vx = visual.xPts
     val vy = visual.yPts
     val vw = visual.widthPts
     val vh = visual.heightPts
     return when (normalizeRotation(rotationDegrees)) {
-        90 -> RawPageRect(
-            x = rawPageWidthPts - (vy + vh), y = vx,
-            width = vh, height = vw
-        )
-        180 -> RawPageRect(
-            x = rawPageWidthPts - (vx + vw), y = rawPageHeightPts - (vy + vh),
-            width = vw, height = vh
-        )
-        270 -> RawPageRect(
-            x = vy, y = rawPageHeightPts - (vx + vw),
-            width = vh, height = vw
-        )
+        90 ->
+            RawPageRect(
+                x = rawPageWidthPts - (vy + vh),
+                y = vx,
+                width = vh,
+                height = vw,
+            )
+        180 ->
+            RawPageRect(
+                x = rawPageWidthPts - (vx + vw),
+                y = rawPageHeightPts - (vy + vh),
+                width = vw,
+                height = vh,
+            )
+        270 ->
+            RawPageRect(
+                x = vy,
+                y = rawPageHeightPts - (vx + vw),
+                width = vh,
+                height = vw,
+            )
         else -> RawPageRect(x = vx, y = vy, width = vw, height = vh)
     }
 }

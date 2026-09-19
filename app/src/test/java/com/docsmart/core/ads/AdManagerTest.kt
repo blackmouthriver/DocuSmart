@@ -18,14 +18,13 @@ import org.junit.jupiter.api.Test
  * testearla.
  */
 class AdManagerTest {
-
     @Test
     fun `no muestra el interstitial antes de alcanzar el minimo de conversiones`() {
         assertFalse(
             shouldShowInterstitial(
                 conversionCount = AdConstants.INTERSTITIAL_MIN_CONVERSIONS - 1,
-                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS
-            )
+                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS,
+            ),
         )
     }
 
@@ -34,8 +33,8 @@ class AdManagerTest {
         assertTrue(
             shouldShowInterstitial(
                 conversionCount = AdConstants.INTERSTITIAL_MIN_CONVERSIONS,
-                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS
-            )
+                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS,
+            ),
         )
     }
 
@@ -44,8 +43,8 @@ class AdManagerTest {
         assertFalse(
             shouldShowInterstitial(
                 conversionCount = AdConstants.INTERSTITIAL_MIN_CONVERSIONS + 10,
-                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS - 1
-            )
+                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS - 1,
+            ),
         )
     }
 
@@ -54,8 +53,8 @@ class AdManagerTest {
         assertTrue(
             shouldShowInterstitial(
                 conversionCount = AdConstants.INTERSTITIAL_MIN_CONVERSIONS + 10,
-                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS + 60_000L
-            )
+                timeSinceLastMs = AdConstants.INTERSTITIAL_MIN_INTERVAL_MS + 60_000L,
+            ),
         )
     }
 

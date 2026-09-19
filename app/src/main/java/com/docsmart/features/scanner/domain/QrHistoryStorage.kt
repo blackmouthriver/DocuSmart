@@ -19,7 +19,7 @@ data class QrHistoryEntry(
     // leído está cifrado (el tipo real no se conoce hasta desbloquearlo).
     val typeName: String,
     val source: QrHistorySource,
-    val createdAtMillis: Long
+    val createdAtMillis: Long,
 )
 
 /**
@@ -38,32 +38,35 @@ object QrHistoryStorage {
     // Un JSON corrupto o inesperado debe verse como lista vacía, no como un
     // crash de la pantalla de Historial.
     @Suppress("TooGenericExceptionCaught")
-    fun loadAll(context: Context): List<QrHistoryEntry> {
-        return try {
+    fun loadAll(context: Context): List<QrHistoryEntry> =
+        try {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val json = prefs.getString(KEY_LIST, "[]") ?: "[]"
             val array = JSONArray(json)
             (0 until array.length()).map { i ->
                 val obj = array.getJSONObject(i)
                 QrHistoryEntry(
-                    id              = obj.getString("id"),
-                    content         = obj.getString("content"),
-                    typeName        = obj.optString("type", "TEXT"),
-                    source          = runCatching { QrHistorySource.valueOf(obj.getString("source")) }
-                        .getOrDefault(QrHistorySource.SCANNED),
-                    createdAtMillis = obj.optLong("createdAt", 0L)
+                    id = obj.getString("id"),
+                    content = obj.getString("content"),
+                    typeName = obj.optString("type", "TEXT"),
+                    source =
+                        runCatching { QrHistorySource.valueOf(obj.getString("source")) }
+                            .getOrDefault(QrHistorySource.SCANNED),
+                    createdAtMillis = obj.optLong("createdAt", 0L),
                 )
             }
         } catch (e: Exception) {
             Timber.e(e, "Error cargando historial de QR")
             emptyList()
         }
-    }
 
     // Inserta al principio (más reciente primero) y recorta al tope,
     // descartando lo más viejo -- RF1.
     @Suppress("TooGenericExceptionCaught")
-    fun save(context: Context, entry: QrHistoryEntry) {
+    fun save(
+        context: Context,
+        entry: QrHistoryEntry,
+    ) {
         try {
             val combined = (listOf(entry) + loadAll(context)).take(MAX_ENTRIES)
             persist(context, combined)
@@ -76,7 +79,10 @@ object QrHistoryStorage {
     // archivo real (el historial nunca guarda archivos, solo el string del
     // contenido).
     @Suppress("TooGenericExceptionCaught")
-    fun remove(context: Context, id: String) {
+    fun remove(
+        context: Context,
+        id: String,
+    ) {
         try {
             persist(context, loadAll(context).filterNot { it.id == id })
         } catch (e: Exception) {
@@ -93,7 +99,10 @@ object QrHistoryStorage {
         }
     }
 
-    private fun persist(context: Context, list: List<QrHistoryEntry>) {
+    private fun persist(
+        context: Context,
+        list: List<QrHistoryEntry>,
+    ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val array = JSONArray()
         list.forEach { entry ->
@@ -104,7 +113,7 @@ object QrHistoryStorage {
                     put("type", entry.typeName)
                     put("source", entry.source.name)
                     put("createdAt", entry.createdAtMillis)
-                }
+                },
             )
         }
         prefs.edit().putString(KEY_LIST, array.toString()).apply()

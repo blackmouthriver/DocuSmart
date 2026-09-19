@@ -18,5 +18,5 @@ import androidx.room.Index
 data class PageBookmarkEntity(
     val documentId: String,
     val page: Int,
-    val createdAt: Long
+    val createdAt: Long,
 )

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -39,7 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
 import com.docsmart.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -58,21 +58,22 @@ import kotlinx.coroutines.launch
  */
 private object DsBrand {
     val BlueLight = Color(0xFF1E9BFF)
-    val BlueMid   = Color(0xFF2563FF)
-    val Indigo    = Color(0xFF3B1FE0)
-    val White     = Color(0xFFFFFFFF)
+    val BlueMid = Color(0xFF2563FF)
+    val Indigo = Color(0xFF3B1FE0)
+    val White = Color(0xFFFFFFFF)
     val PaperLine = Color(0xFFDFE6FF)
-    val Scan      = Color(0xFF7EE0FF)
+    val Scan = Color(0xFF7EE0FF)
 
-    val Gradient = Brush.linearGradient(
-        colorStops = arrayOf(0f to BlueLight, 0.45f to BlueMid, 1f to Indigo),
-        start = Offset(0f, 0f),
-        end   = Offset(900f, 1600f)
-    )
+    val Gradient =
+        Brush.linearGradient(
+            colorStops = arrayOf(0f to BlueLight, 0.45f to BlueMid, 1f to Indigo),
+            start = Offset(0f, 0f),
+            end = Offset(900f, 1600f),
+        )
 }
 
 private val Display = FontFamily.SansSerif
-private val Mono     = FontFamily.Monospace
+private val Mono = FontFamily.Monospace
 
 /**
  * Marca DocuSmart: mira de 4 esquinas + documento revelado por una línea
@@ -82,36 +83,37 @@ private val Mono     = FontFamily.Monospace
  */
 @Composable
 private fun DocusmartMark(
-    size    : Dp = 150.dp,
-    reveal  : Float = 1f,
-    scan    : Float = 1f,
+    size: Dp = 150.dp,
+    reveal: Float = 1f,
+    scan: Float = 1f,
     showScan: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val frameH   = size * 1.12f
+    val frameH = size * 1.12f
     val docInsetX = size * 0.147f
     val docInsetY = size * 0.119f
-    val bracket   = size * 0.173f
-    val stroke    = size * 0.027f
+    val bracket = size * 0.173f
+    val stroke = size * 0.027f
 
     Box(Modifier.size(size, frameH).then(modifier)) {
         Box(
-            modifier = Modifier
-                .padding(horizontal = docInsetX, vertical = docInsetY)
-                .fillMaxSize()
-                .drawWithContent {
-                    clipRect(bottom = this.size.height * reveal.coerceIn(0f, 1f)) {
-                        this@drawWithContent.drawContent()
+            modifier =
+                Modifier
+                    .padding(horizontal = docInsetX, vertical = docInsetY)
+                    .fillMaxSize()
+                    .drawWithContent {
+                        clipRect(bottom = this.size.height * reveal.coerceIn(0f, 1f)) {
+                            this@drawWithContent.drawContent()
+                        }
                     }
-                }
-                .shadow(14.dp, RoundedCornerShape(size * 0.08f))
-                .clip(RoundedCornerShape(size * 0.08f))
-                .background(DsBrand.White),
-            contentAlignment = Alignment.Center
+                    .shadow(14.dp, RoundedCornerShape(size * 0.08f))
+                    .clip(RoundedCornerShape(size * 0.08f))
+                    .background(DsBrand.White),
+            contentAlignment = Alignment.Center,
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = size * 0.133f),
-                verticalArrangement = Arrangement.spacedBy(size * 0.08f)
+                verticalArrangement = Arrangement.spacedBy(size * 0.08f),
             ) {
                 PaperLine(1f, size)
                 PaperLine(1f, size)
@@ -122,13 +124,14 @@ private fun DocusmartMark(
         if (showScan) {
             val travel = frameH * (scan.coerceIn(0f, 1f) - 0.5f)
             Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = size * 0.093f)
-                    .fillMaxWidth()
-                    .height(size * 0.02f)
-                    .graphicsLayer { translationY = travel.toPx() }
-                    .background(DsBrand.Scan, RoundedCornerShape(50))
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = size * 0.093f)
+                        .fillMaxWidth()
+                        .height(size * 0.02f)
+                        .graphicsLayer { translationY = travel.toPx() }
+                        .background(DsBrand.Scan, RoundedCornerShape(50)),
             )
         }
 
@@ -140,56 +143,60 @@ private fun DocusmartMark(
 }
 
 @Composable
-private fun PaperLine(fraction: Float, size: Dp) {
+private fun PaperLine(
+    fraction: Float,
+    size: Dp,
+) {
     Box(
         Modifier
             .fillMaxWidth(fraction)
             .height(size * 0.047f)
-            .background(DsBrand.PaperLine, RoundedCornerShape(50))
+            .background(DsBrand.PaperLine, RoundedCornerShape(50)),
     )
 }
 
 @Composable
 private fun BoxScope.Bracket(
-    align : Alignment,
-    len   : Dp,
+    align: Alignment,
+    len: Dp,
     stroke: Dp,
-    shape : RoundedCornerShape
+    shape: RoundedCornerShape,
 ) {
     val horizontalTop = align == Alignment.TopStart || align == Alignment.TopEnd
-    val leftSide       = align == Alignment.TopStart || align == Alignment.BottomStart
+    val leftSide = align == Alignment.TopStart || align == Alignment.BottomStart
     Box(Modifier.align(align).size(len)) {
         Box(
-            modifier = Modifier
-                .align(if (horizontalTop) Alignment.TopCenter else Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(stroke)
-                .background(DsBrand.White, shape)
+            modifier =
+                Modifier
+                    .align(if (horizontalTop) Alignment.TopCenter else Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(stroke)
+                    .background(DsBrand.White, shape),
         )
         Box(
-            modifier = Modifier
-                .align(if (leftSide) Alignment.CenterStart else Alignment.CenterEnd)
-                .fillMaxHeight()
-                .width(stroke)
-                .background(DsBrand.White, shape)
+            modifier =
+                Modifier
+                    .align(if (leftSide) Alignment.CenterStart else Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(stroke)
+                    .background(DsBrand.White, shape),
         )
     }
 }
 
 @Composable
-fun SplashDocuSmartScreen(
-    onFinished: () -> Unit
-) {
+fun SplashDocuSmartScreen(onFinished: () -> Unit) {
     val context = LocalContext.current
-    val reduceMotion = remember {
-        Settings.Global.getFloat(
-            context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f
-        ) == 0f
-    }
+    val reduceMotion =
+        remember {
+            Settings.Global.getFloat(
+                context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f,
+            ) == 0f
+        }
 
-    val scan   = remember { Animatable(if (reduceMotion) 1f else 0f) }
+    val scan = remember { Animatable(if (reduceMotion) 1f else 0f) }
     val reveal = remember { Animatable(if (reduceMotion) 1f else 0f) }
-    val word   = remember { Animatable(if (reduceMotion) 1f else 0f) }
+    val word = remember { Animatable(if (reduceMotion) 1f else 0f) }
 
     LaunchedEffect(Unit) {
         if (!reduceMotion) {
@@ -204,44 +211,47 @@ fun SplashDocuSmartScreen(
 
     Box(
         modifier = Modifier.fillMaxSize().background(DsBrand.Gradient),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(40.dp)
+            verticalArrangement = Arrangement.spacedBy(40.dp),
         ) {
             DocusmartMark(
-                size     = 150.dp,
-                reveal   = reveal.value,
-                scan     = scan.value,
-                showScan = !reduceMotion && scan.value < 0.98f
+                size = 150.dp,
+                reveal = reveal.value,
+                scan = scan.value,
+                showScan = !reduceMotion && scan.value < 0.98f,
             )
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.graphicsLayer {
-                    alpha = word.value
-                    translationY = (1f - word.value) * 24f
-                }
+                modifier =
+                    Modifier.graphicsLayer {
+                        alpha = word.value
+                        translationY = (1f - word.value) * 24f
+                    },
             ) {
                 Text(
                     text = "docusmart",
-                    style = TextStyle(
-                        fontFamily    = Display,
-                        fontWeight    = FontWeight.ExtraBold,
-                        fontSize      = 28.sp,
-                        letterSpacing = (-0.5).sp,
-                        color         = DsBrand.White
-                    )
+                    style =
+                        TextStyle(
+                            fontFamily = Display,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 28.sp,
+                            letterSpacing = (-0.5).sp,
+                            color = DsBrand.White,
+                        ),
                 )
                 Text(
                     text = stringResource(R.string.splash_tagline),
-                    style = TextStyle(
-                        fontFamily    = Mono,
-                        fontSize      = 10.sp,
-                        letterSpacing = 2.6.sp,
-                        color         = DsBrand.White.copy(alpha = 0.72f)
-                    )
+                    style =
+                        TextStyle(
+                            fontFamily = Mono,
+                            fontSize = 10.sp,
+                            letterSpacing = 2.6.sp,
+                            color = DsBrand.White.copy(alpha = 0.72f),
+                        ),
                 )
             }
         }

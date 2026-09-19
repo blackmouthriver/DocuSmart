@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Test
  * `StudyNotesExporter`.
  */
 class StudySummaryExporterTest {
-
     @Test
     fun `incluye el nombre del documento y cada oracion con vineta`() {
-        val result = StudySummaryExporter.buildPlainText(
-            documentName = "It - Stephen King.pdf",
-            sentences    = listOf("Primera oración clave.", "Segunda oración clave.")
-        )
+        val result =
+            StudySummaryExporter.buildPlainText(
+                documentName = "It - Stephen King.pdf",
+                sentences = listOf("Primera oración clave.", "Segunda oración clave."),
+            )
 
         assertTrue(result.contains("It - Stephen King.pdf"))
         assertTrue(result.contains("• Primera oración clave."))

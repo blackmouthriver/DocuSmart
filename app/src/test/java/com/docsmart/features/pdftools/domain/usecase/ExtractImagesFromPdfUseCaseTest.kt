@@ -34,16 +34,19 @@ import java.util.Base64
  * directo desde la página, común en exportaciones de Word/Office).
  */
 class ExtractImagesFromPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: ExtractImagesFromPdfUseCase
 
-    private val messages = ExtractImagesMessages(
-        readError = "readError", noPages = "noPages", noImages = "noImages",
-        success = "success %1\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        ExtractImagesMessages(
+            readError = "readError",
+            noPages = "noPages",
+            noImages = "noImages",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -62,45 +65,49 @@ class ExtractImagesFromPdfUseCaseTest {
     }
 
     @Test
-    fun `PDF con 3 imagenes en paginas distintas produce 3 archivos`() = runTest {
-        stubResolver(createPdfWithImages(imageCount = 3))
+    fun `PDF con 3 imagenes en paginas distintas produce 3 archivos`() =
+        runTest {
+            stubResolver(createPdfWithImages(imageCount = 3))
 
-        val result = useCase(mockk<Uri>(), messages = messages)
+            val result = useCase(mockk<Uri>(), messages = messages)
 
-        assertTrue(result is PdfToolResult.MultiSuccess)
-        val files = (result as PdfToolResult.MultiSuccess).outputFiles
-        assertEquals(3, files.size)
-        files.forEach { assertTrue(it.exists() && it.length() > 0) }
-    }
-
-    @Test
-    fun `PDF sin imagenes devuelve Error en vez de un resultado vacio`() = runTest {
-        stubResolver(createPdfWithImages(imageCount = 0, plainPages = 2))
-
-        val result = useCase(mockk<Uri>(), messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("noImages", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.MultiSuccess)
+            val files = (result as PdfToolResult.MultiSuccess).outputFiles
+            assertEquals(3, files.size)
+            files.forEach { assertTrue(it.exists() && it.length() > 0) }
+        }
 
     @Test
-    fun `PDF invalido devuelve Error de lectura`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `PDF sin imagenes devuelve Error en vez de un resultado vacio`() =
+        runTest {
+            stubResolver(createPdfWithImages(imageCount = 0, plainPages = 2))
 
-        val result = useCase(mockk<Uri>(), messages = messages)
+            val result = useCase(mockk<Uri>(), messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("noImages", (result as PdfToolResult.Error).message)
+        }
 
     @Test
-    fun `imagen envuelta en un Form XObject tambien se extrae`() = runTest {
-        stubResolver(createPdfWithImageInsideForm())
+    fun `PDF invalido devuelve Error de lectura`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
 
-        val result = useCase(mockk<Uri>(), messages = messages)
+            val result = useCase(mockk<Uri>(), messages = messages)
 
-        assertTrue(result is PdfToolResult.MultiSuccess)
-        assertEquals(1, (result as PdfToolResult.MultiSuccess).outputFiles.size)
-    }
+            assertTrue(result is PdfToolResult.Error)
+        }
+
+    @Test
+    fun `imagen envuelta en un Form XObject tambien se extrae`() =
+        runTest {
+            stubResolver(createPdfWithImageInsideForm())
+
+            val result = useCase(mockk<Uri>(), messages = messages)
+
+            assertTrue(result is PdfToolResult.MultiSuccess)
+            assertEquals(1, (result as PdfToolResult.MultiSuccess).outputFiles.size)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -110,7 +117,10 @@ class ExtractImagesFromPdfUseCaseTest {
         every { context.contentResolver } returns resolver
     }
 
-    private fun createPdfWithImages(imageCount: Int, plainPages: Int = 0): ByteArray {
+    private fun createPdfWithImages(
+        imageCount: Int,
+        plainPages: Int = 0,
+    ): ByteArray {
         val out = ByteArrayOutputStream()
         val pdfDoc = PdfDocument(PdfWriter(out))
         repeat(imageCount) {
@@ -145,7 +155,8 @@ class ExtractImagesFromPdfUseCaseTest {
     // de java.awt/ImageIO (no disponibles en el classpath de este módulo de
     // tests), suficiente para que ImageDataFactory.create() lo reconozca
     // como una imagen embebida real.
-    private fun createPngBytes(): ByteArray = Base64.getDecoder().decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-    )
+    private fun createPngBytes(): ByteArray =
+        Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+        )
 }

@@ -29,7 +29,7 @@ fun canonicalMediaUri(uri: Uri): Uri {
     return try {
         ContentUris.withAppendedId(
             MediaStore.Files.getContentUri("external"),
-            ContentUris.parseId(uri)
+            ContentUris.parseId(uri),
         )
     } catch (e: UnsupportedOperationException) {
         // ContentUris.parseId() lanza esto si el último segmento del Uri no

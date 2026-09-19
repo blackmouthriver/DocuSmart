@@ -28,17 +28,20 @@ import java.nio.file.Files
  * páginas resultante como contrato del use case.
  */
 class MergePdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: MergePdfUseCase
 
-    private val messages = MergePdfMessages(
-        minPdfsError = "minPdfsError", readError = "readError",
-        generateError = "generateError", success = "success %1\$d %2\$d",
-        genericError = "genericError %1\$s", partialWarning = "partial %1\$d"
-    )
+    private val messages =
+        MergePdfMessages(
+            minPdfsError = "minPdfsError",
+            readError = "readError",
+            generateError = "generateError",
+            success = "success %1\$d %2\$d",
+            genericError = "genericError %1\$s",
+            partialWarning = "partial %1\$d",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -57,26 +60,28 @@ class MergePdfUseCaseTest {
     }
 
     @Test
-    fun `merge de dos PDFs suma las paginas de ambos`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
-        every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
-        every { context.contentResolver } returns resolver
+    fun `merge de dos PDFs suma las paginas de ambos`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
+            every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(listOf(uriA, uriB), messages = messages)
+            val result = useCase(listOf(uriA, uriB), messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
+        }
 
     @Test
-    fun `merge con menos de 2 PDFs devuelve Error sin tocar el sistema de archivos`() = runTest {
-        val result = useCase(listOf(mockk<Uri>()), messages = messages)
+    fun `merge con menos de 2 PDFs devuelve Error sin tocar el sistema de archivos`() =
+        runTest {
+            val result = useCase(listOf(mockk<Uri>()), messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // Hallazgo real de la auditoría general 2026-09-17 (M5): si una URI
     // falla al copiarse (openInputStream devuelve null -- permiso
@@ -84,24 +89,25 @@ class MergePdfUseCaseTest {
     // antes la unión seguía con las demás y reportaba éxito sin avisar
     // cuál se saltó.
     @Test
-    fun `merge avisa si una URI no se pudo copiar, pero sigue con las demas`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriFallida = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
-        every { resolver.openInputStream(uriFallida) } returns null
-        every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
-        every { context.contentResolver } returns resolver
+    fun `merge avisa si una URI no se pudo copiar, pero sigue con las demas`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriFallida = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
+            every { resolver.openInputStream(uriFallida) } returns null
+            every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(listOf(uriA, uriFallida, uriB), messages = messages)
+            val result = useCase(listOf(uriA, uriFallida, uriB), messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val success = result as PdfToolResult.Success
-        assertEquals(5, pageCountOf(success.outputFile))
-        // 2 archivos realmente unidos (no 3) + aviso de 1 archivo omitido.
-        assertEquals("success 2 5 partial 1", success.message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val success = result as PdfToolResult.Success
+            assertEquals(5, pageCountOf(success.outputFile))
+            // 2 archivos realmente unidos (no 3) + aviso de 1 archivo omitido.
+            assertEquals("success 2 5 partial 1", success.message)
+        }
 
     // Revisión adversarial de correctitud (ronda 13, Alta): a diferencia
     // del test de arriba (URI que ni siquiera se pudo COPIAR), acá el
@@ -114,26 +120,27 @@ class MergePdfUseCaseTest {
     // merge". mergedFileCount corrige esto contando solo lo realmente
     // unido.
     @Test
-    fun `merge cuenta una sola vez un archivo que se copia bien pero no es un PDF valido`() = runTest {
-        val uriA = mockk<Uri>()
-        val uriCorrupto = mockk<Uri>()
-        val uriB = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
-        every { resolver.openInputStream(uriCorrupto) } answers {
-            ByteArrayInputStream("esto no es un pdf".toByteArray())
+    fun `merge cuenta una sola vez un archivo que se copia bien pero no es un PDF valido`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriCorrupto = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uriA) } answers { ByteArrayInputStream(createTestPdf(3)) }
+            every { resolver.openInputStream(uriCorrupto) } answers {
+                ByteArrayInputStream("esto no es un pdf".toByteArray())
+            }
+            every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(listOf(uriA, uriCorrupto, uriB), messages = messages)
+
+            assertTrue(result is PdfToolResult.Success)
+            val success = result as PdfToolResult.Success
+            assertEquals(5, pageCountOf(success.outputFile))
+            // 2 archivos realmente unidos (no 3, que sería contar el corrupto dos veces).
+            assertEquals("success 2 5 partial 1", success.message)
         }
-        every { resolver.openInputStream(uriB) } answers { ByteArrayInputStream(createTestPdf(2)) }
-        every { context.contentResolver } returns resolver
-
-        val result = useCase(listOf(uriA, uriCorrupto, uriB), messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        val success = result as PdfToolResult.Success
-        assertEquals(5, pageCountOf(success.outputFile))
-        // 2 archivos realmente unidos (no 3, que sería contar el corrupto dos veces).
-        assertEquals("success 2 5 partial 1", success.message)
-    }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

@@ -5,35 +5,32 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -55,6 +52,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
@@ -74,9 +72,9 @@ import com.docsmart.features.converter.domain.usecase.extractLegacyDocBlocks
 import com.docsmart.features.converter.domain.usecase.isHeadingStyleName
 import com.docsmart.features.viewer.domain.annotation.PdfRectPts
 import com.docsmart.features.viewer.domain.annotation.isValidHighlightSize
+import com.docsmart.features.viewer.domain.annotation.pdfPointToScreenPoint
 import com.docsmart.features.viewer.domain.annotation.screenDragToPdfRect
 import com.docsmart.features.viewer.domain.annotation.screenPointToPdfPoint
-import com.docsmart.features.viewer.domain.annotation.pdfPointToScreenPoint
 import com.docsmart.features.viewer.domain.usecase.PdfMatchRect
 import com.docsmart.features.viewer.presentation.components.ViewerAnnotationDetailDialog
 import com.docsmart.features.viewer.presentation.components.ViewerAnnotationToolbar
@@ -102,27 +100,27 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
 import timber.log.Timber
 import java.io.InputStream
-import java.util.zip.ZipInputStream
+import androidx.compose.ui.geometry.Size as ComposeSize
 
 @Composable
 fun ViewerScreen(
     documentId: String,
-    onBack    : () -> Unit,
+    onBack: () -> Unit,
     // Atajos "Convertir"/"Crear QR" desde el menú del Visor (backlog UX
     // 2026-08-30, HU-UX-01/02, AC5) -- reciben el documento actualmente
     // abierto para poder precargarlo en la pantalla de destino.
-    onConvertClick : (DocumentUiModel) -> Unit = {},
+    onConvertClick: (DocumentUiModel) -> Unit = {},
     onCreateQrClick: (DocumentUiModel) -> Unit = {},
-    onMakeSearchableClick   : (DocumentUiModel) -> Unit = {},
-    onSignClick             : (DocumentUiModel) -> Unit = {},
+    onMakeSearchableClick: (DocumentUiModel) -> Unit = {},
+    onSignClick: (DocumentUiModel) -> Unit = {},
     onMoveToSecureFolderClick: (DocumentUiModel) -> Unit = {},
-    viewModel : ViewerViewModel = hiltViewModel()
+    viewModel: ViewerViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
-    val context       = LocalContext.current
-    var showSearch    by remember { mutableStateOf(false) }
-    var searchQuery   by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
     // seguridad -- S1): la vista previa de solo lectura de Carpeta Segura
@@ -164,15 +162,15 @@ fun ViewerScreen(
     if (uiState.showRenameDialog) {
         ViewerRenameDialog(
             currentName = uiState.document?.name ?: "",
-            onConfirm   = { newName -> viewModel.renameDocument(newName) },
-            onDismiss   = { viewModel.dismissRenameDialog() }
+            onConfirm = { newName -> viewModel.renameDocument(newName) },
+            onDismiss = { viewModel.dismissRenameDialog() },
         )
     }
     if (uiState.showDeleteConfirm) {
         ViewerDeleteConfirmDialog(
-            fileName  = uiState.document?.name ?: "",
+            fileName = uiState.document?.name ?: "",
             onConfirm = { viewModel.confirmDelete(context) },
-            onDismiss = { viewModel.dismissDeleteConfirm() }
+            onDismiss = { viewModel.dismissDeleteConfirm() },
         )
     }
 
@@ -180,51 +178,52 @@ fun ViewerScreen(
     if (uiState.pendingNoteAnchor != null) {
         ViewerNoteInputDialog(
             onConfirm = { text -> viewModel.confirmNote(text) },
-            onDismiss = { viewModel.cancelPendingNote() }
+            onDismiss = { viewModel.cancelPendingNote() },
         )
     }
     uiState.viewingAnnotation?.let { annotation ->
         ViewerAnnotationDetailDialog(
             annotation = annotation,
-            onDelete   = { viewModel.deleteAnnotation(annotation.id) },
-            onDismiss  = { viewModel.dismissAnnotationDetail() }
+            onDelete = { viewModel.deleteAnnotation(annotation.id) },
+            onDismiss = { viewModel.dismissAnnotationDetail() },
         )
     }
     if (uiState.showShareChoiceDialog) {
         ViewerShareChoiceDialog(
-            isFlattening           = uiState.isFlatteningForShare,
+            isFlattening = uiState.isFlatteningForShare,
             onShareWithAnnotations = { viewModel.shareWithAnnotations(context) },
-            onShareOriginal        = { viewModel.shareOriginal(context) },
-            onDismiss               = { viewModel.dismissShareChoiceDialog() }
+            onShareOriginal = { viewModel.shareOriginal(context) },
+            onDismiss = { viewModel.dismissShareChoiceDialog() },
         )
     }
 
     // ── Backlog UX #50: notas de Modo Estudio vinculadas a este documento ────
     if (uiState.showLinkedNotesDialog) {
         ViewerLinkedNotesDialog(
-            notes     = uiState.linkedNotes,
-            onDismiss = { viewModel.dismissLinkedNotesDialog() }
+            notes = uiState.linkedNotes,
+            onDismiss = { viewModel.dismissLinkedNotesDialog() },
         )
     }
 
     // ── Dialog de contraseña PDF ──────────────────────────────────────────────
     if (uiState.requiresPassword) {
         PdfPasswordDialog(
-            fileName      = uiState.document?.name ?: "Documento",
+            fileName = uiState.document?.name ?: "Documento",
             passwordError = uiState.passwordError,
-            isLoading     = uiState.isLoading,
-            onConfirm     = { password -> viewModel.unlockPdfWithPassword(password) },
-            onDismiss     = {
+            isLoading = uiState.isLoading,
+            onConfirm = { password -> viewModel.unlockPdfWithPassword(password) },
+            onDismiss = {
                 viewModel.dismissPasswordDialog()
                 // Usar onBack — el NavGraph decide si popBackStack o finish()
                 onBack()
-            }
+            },
         )
     }
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
     ) {
         when {
             uiState.requiresPassword -> {
@@ -233,27 +232,28 @@ fun ViewerScreen(
             uiState.isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color    = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
             uiState.error != null -> {
                 Column(
-                    modifier            = Modifier
-                        .align(Alignment.Center)
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(
-                        imageVector        = Icons.Rounded.BrokenImage,
+                        imageVector = Icons.Rounded.BrokenImage,
                         contentDescription = null,
-                        modifier           = Modifier.size(64.dp),
-                        tint               = MaterialTheme.colorScheme.error
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.error,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text  = uiState.error ?: stringResource(R.string.viewer_error),
+                        text = uiState.error ?: stringResource(R.string.viewer_error),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(onClick = onBack) {
@@ -262,8 +262,8 @@ fun ViewerScreen(
                 }
             }
             uiState.document != null -> {
-                val fileUri  = uiState.fileUri
-                val mime     = (uiState.mimeType ?: "").lowercase()
+                val fileUri = uiState.fileUri
+                val mime = (uiState.mimeType ?: "").lowercase()
                 val fileName = (uiState.document?.name ?: "").lowercase()
                 // Hallazgo real de la auditoría general 2026-09-17 (M10):
                 // android.util.Log.d ignora el árbol de Timber -- a
@@ -272,24 +272,24 @@ fun ViewerScreen(
                 // en builds de release.
                 Timber.d(
                     "document!=null fileUri=$fileUri mime=$mime fileName=$fileName " +
-                        "requiresPassword=${uiState.requiresPassword} error=${uiState.error}"
+                        "requiresPassword=${uiState.requiresPassword} error=${uiState.error}",
                 )
 
                 when {
                     mime.contains("image") ||
-                            fileName.endsWith(".jpg")  || fileName.endsWith(".jpeg") ||
-                            fileName.endsWith(".png")  || fileName.endsWith(".webp") ||
-                            fileName.endsWith(".gif")  -> {
+                        fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
+                        fileName.endsWith(".png") || fileName.endsWith(".webp") ||
+                        fileName.endsWith(".gif") -> {
                         ImageViewerContent(
-                            uri   = fileUri,
-                            onTap = { viewModel.toggleControls() }
+                            uri = fileUri,
+                            onTap = { viewModel.toggleControls() },
                         )
                     }
                     mime.contains("pdf") || fileName.endsWith(".pdf") -> {
                         // key fuerza recrear el composable cuando cambia la URI (ej: después de desencriptar)
                         key(fileUri?.toString()) {
                             PdfViewerContent(
-                                uri           = fileUri,
+                                uri = fileUri,
                                 // Backlog UX #47/#48: un salto pendiente
                                 // (marcador tocado o última página vista al
                                 // abrir) tiene prioridad sobre el resultado
@@ -298,64 +298,65 @@ fun ViewerScreen(
                                 // buscar y tocar un marcador en el mismo
                                 // instante), así que el orden solo importa
                                 // el primer frame tras cualquiera de los dos.
-                                targetPage    = uiState.pendingPageJump
-                                    ?: uiState.pdfSearchMatches
-                                        .getOrNull(uiState.pdfSearchIndex)
-                                        ?.minus(1),
+                                targetPage =
+                                    uiState.pendingPageJump
+                                        ?: uiState.pdfSearchMatches
+                                            .getOrNull(uiState.pdfSearchIndex)
+                                            ?.minus(1),
                                 onTargetPageConsumed = { viewModel.onPageJumpConsumed() },
-                                highlights           = uiState.pdfSearchHighlights,
-                                onPageChanged        = { page, total -> viewModel.onPageChanged(page, total) },
-                                onTap                = { viewModel.toggleControls() },
-                                annotationMode       = uiState.annotationMode,
+                                highlights = uiState.pdfSearchHighlights,
+                                onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
+                                onTap = { viewModel.toggleControls() },
+                                annotationMode = uiState.annotationMode,
                                 selectedHighlightColor = uiState.selectedHighlightColor,
-                                documentAnnotations  = uiState.annotations,
-                                onHighlightDrawn     = { page, rect -> viewModel.addHighlight(page, rect) },
-                                onNoteRequested       = { page, anchor -> viewModel.requestAddNote(page, anchor) },
-                                onAnnotationTap       = { annotation -> viewModel.viewAnnotation(annotation) }
+                                documentAnnotations = uiState.annotations,
+                                onHighlightDrawn = { page, rect -> viewModel.addHighlight(page, rect) },
+                                onNoteRequested = { page, anchor -> viewModel.requestAddNote(page, anchor) },
+                                onAnnotationTap = { annotation -> viewModel.viewAnnotation(annotation) },
                             )
                         }
                     }
                     mime.contains("word") || mime.contains("msword") ||
-                            mime.contains("wordprocessingml") ||
-                            fileName.endsWith(".doc") || fileName.endsWith(".docx") -> {
+                        mime.contains("wordprocessingml") ||
+                        fileName.endsWith(".doc") || fileName.endsWith(".docx") -> {
                         WordViewerContent(
-                            uri         = fileUri,
+                            uri = fileUri,
                             searchQuery = searchQuery,
-                            onTap       = { viewModel.toggleControls() }
+                            onTap = { viewModel.toggleControls() },
                         )
                     }
                     mime.contains("excel") || mime.contains("spreadsheet") ||
-                            mime.contains("ms-excel") || mime.contains("sheet") ||
-                            fileName.endsWith(".xls") || fileName.endsWith(".xlsx") -> {
+                        mime.contains("ms-excel") || mime.contains("sheet") ||
+                        fileName.endsWith(".xls") || fileName.endsWith(".xlsx") -> {
                         ExcelViewerContent(
-                            uri         = fileUri,
+                            uri = fileUri,
                             searchQuery = searchQuery,
-                            onTap       = { viewModel.toggleControls() }
+                            onTap = { viewModel.toggleControls() },
                         )
                     }
                     mime.contains("powerpoint") || mime.contains("presentation") ||
-                            fileName.endsWith(".ppt") || fileName.endsWith(".pptx") -> {
+                        fileName.endsWith(".ppt") || fileName.endsWith(".pptx") -> {
                         PptViewerContent(
-                            uri         = fileUri,
+                            uri = fileUri,
                             searchQuery = searchQuery,
-                            onTap       = { viewModel.toggleControls() }
+                            onTap = { viewModel.toggleControls() },
                         )
                     }
                     mime.contains("text") ||
-                            fileName.endsWith(".txt") || fileName.endsWith(".md") ||
-                            fileName.endsWith(".csv") -> {
+                        fileName.endsWith(".txt") || fileName.endsWith(".md") ||
+                        fileName.endsWith(".csv") -> {
                         TextViewerContent(
-                            uri         = fileUri,
+                            uri = fileUri,
                             searchQuery = searchQuery,
-                            onTap       = { viewModel.toggleControls() }
+                            onTap = { viewModel.toggleControls() },
                         )
                     }
                     else -> {
                         UnsupportedFormatContent(
                             mimeType = mime,
                             fileName = uiState.document?.name ?: "",
-                            fileUri  = fileUri,
-                            onTap    = { viewModel.toggleControls() }
+                            fileUri = fileUri,
+                            onTap = { viewModel.toggleControls() },
                         )
                     }
                 }
@@ -366,23 +367,25 @@ fun ViewerScreen(
         // de detekt tras agregar los accesos de HU-42) ───────────────────────
         uiState.document?.let { doc ->
             ViewerTopBarSection(
-                doc     = doc,
+                doc = doc,
                 uiState = uiState,
-                onBack  = onBack,
+                onBack = onBack,
                 viewModel = viewModel,
-                search  = ViewerSearchState(
-                    query          = searchQuery,
-                    active         = showSearch,
-                    onQueryChange  = { searchQuery = it },
-                    onActiveChange = { showSearch = it }
-                ),
-                documentActions = ViewerDocumentActions(
-                    onConvert            = onConvertClick,
-                    onCreateQr           = onCreateQrClick,
-                    onMakeSearchable     = onMakeSearchableClick,
-                    onSign               = onSignClick,
-                    onMoveToSecureFolder = onMoveToSecureFolderClick
-                )
+                search =
+                    ViewerSearchState(
+                        query = searchQuery,
+                        active = showSearch,
+                        onQueryChange = { searchQuery = it },
+                        onActiveChange = { showSearch = it },
+                    ),
+                documentActions =
+                    ViewerDocumentActions(
+                        onConvert = onConvertClick,
+                        onCreateQr = onCreateQrClick,
+                        onMakeSearchable = onMakeSearchableClick,
+                        onSign = onSignClick,
+                        onMoveToSecureFolder = onMoveToSecureFolderClick,
+                    ),
             )
         }
 
@@ -399,27 +402,27 @@ fun ViewerScreen(
                 // app (16dp). Ambos comparten esta misma Column vertical
                 // sin superponerse, así que agregar el margen no rompe nada.
                 DocuSmartBannerAd(
-                    adUnitId  = AdConstants.BANNER_VIEWER_ID,
+                    adUnitId = AdConstants.BANNER_VIEWER_ID,
                     adManager = viewModel.adManager,
-                    modifier  = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
             ViewerBottomBar(
-                currentPage             = uiState.currentPage,
-                totalPages              = uiState.totalPages,
-                visible                 = uiState.showControls,
+                currentPage = uiState.currentPage,
+                totalPages = uiState.totalPages,
+                visible = uiState.showControls,
                 isCurrentPageBookmarked = uiState.currentPage in uiState.bookmarkedPages,
-                onToggleBookmark        = { viewModel.toggleBookmarkCurrentPage() },
-                onShowBookmarks         = { viewModel.showBookmarksSheet() }
+                onToggleBookmark = { viewModel.toggleBookmarkCurrentPage() },
+                onShowBookmarks = { viewModel.showBookmarksSheet() },
             )
         }
 
         if (uiState.showBookmarksSheet) {
             ViewerBookmarksSheet(
                 bookmarkedPages = uiState.bookmarkedPages.sorted(),
-                onNavigate      = { page -> viewModel.navigateToBookmark(page) },
-                onRemove        = { page -> viewModel.removeBookmark(page) },
-                onDismiss       = { viewModel.dismissBookmarksSheet() }
+                onNavigate = { page -> viewModel.navigateToBookmark(page) },
+                onRemove = { page -> viewModel.removeBookmark(page) },
+                onDismiss = { viewModel.dismissBookmarksSheet() },
             )
         }
     }
@@ -430,11 +433,11 @@ fun ViewerScreen(
 // extraer ViewerTopBarSection() de abajo (fix de LongMethod de detekt,
 // disparado al agregar esos mismos accesos a ViewerScreen()).
 private data class ViewerDocumentActions(
-    val onConvert           : (DocumentUiModel) -> Unit,
-    val onCreateQr          : (DocumentUiModel) -> Unit,
-    val onMakeSearchable    : (DocumentUiModel) -> Unit,
-    val onSign              : (DocumentUiModel) -> Unit,
-    val onMoveToSecureFolder: (DocumentUiModel) -> Unit
+    val onConvert: (DocumentUiModel) -> Unit,
+    val onCreateQr: (DocumentUiModel) -> Unit,
+    val onMakeSearchable: (DocumentUiModel) -> Unit,
+    val onSign: (DocumentUiModel) -> Unit,
+    val onMoveToSecureFolder: (DocumentUiModel) -> Unit,
 )
 
 // Estado mutable de la búsqueda, agrupado por el mismo motivo de arriba --
@@ -442,10 +445,10 @@ private data class ViewerDocumentActions(
 // usa el contenido principal para Word/Excel/PowerPoint/Texto), acá solo se
 // pasan junto con sus setters.
 private data class ViewerSearchState(
-    val query         : String,
-    val active        : Boolean,
-    val onQueryChange : (String) -> Unit,
-    val onActiveChange: (Boolean) -> Unit
+    val query: String,
+    val active: Boolean,
+    val onQueryChange: (String) -> Unit,
+    val onActiveChange: (Boolean) -> Unit,
 )
 
 // Extraído de ViewerScreen() (LongMethod de detekt, disparado al agregar
@@ -454,35 +457,36 @@ private data class ViewerSearchState(
 // (habilitan buscar) y el debounce de búsqueda en PDF.
 @Composable
 private fun BoxScope.ViewerTopBarSection(
-    doc            : DocumentUiModel,
-    uiState        : ViewerUiState,
-    onBack         : () -> Unit,
-    viewModel      : ViewerViewModel,
-    search         : ViewerSearchState,
-    documentActions: ViewerDocumentActions
+    doc: DocumentUiModel,
+    uiState: ViewerUiState,
+    onBack: () -> Unit,
+    viewModel: ViewerViewModel,
+    search: ViewerSearchState,
+    documentActions: ViewerDocumentActions,
 ) {
     val context = LocalContext.current
-    val mime        = (uiState.mimeType ?: "").lowercase()
-    val isPdf       = mime.contains("pdf") || doc.name.endsWith(".pdf", ignoreCase = true)
+    val mime = (uiState.mimeType ?: "").lowercase()
+    val isPdf = mime.contains("pdf") || doc.name.endsWith(".pdf", ignoreCase = true)
     // Bug real encontrado 2026-09-14 (revisión pre-fusión HU-42, preexistente
     // -- no introducido por esta extracción): faltaba el mismo fallback por
     // extensión que ya tiene el `when` de renderizado principal para
     // Word/Excel/PowerPoint con MIME genérico (p.ej. `application/octet-stream`
     // de algunos `DocumentsProvider`), lo que dejaba el botón de búsqueda
     // inactivo aunque el documento sí se renderizara.
-    val isTextBased = isPdf ||
-            mime.contains("word")       ||
-            mime.contains("text")       ||
-            mime.contains("excel")      ||
+    val isTextBased =
+        isPdf ||
+            mime.contains("word") ||
+            mime.contains("text") ||
+            mime.contains("excel") ||
             mime.contains("powerpoint") ||
-            doc.name.endsWith(".txt")   ||
-            doc.name.endsWith(".md")    ||
-            doc.name.endsWith(".csv")   ||
-            doc.name.endsWith(".doc")   ||
-            doc.name.endsWith(".docx")  ||
-            doc.name.endsWith(".xls")   ||
-            doc.name.endsWith(".xlsx")  ||
-            doc.name.endsWith(".ppt")   ||
+            doc.name.endsWith(".txt") ||
+            doc.name.endsWith(".md") ||
+            doc.name.endsWith(".csv") ||
+            doc.name.endsWith(".doc") ||
+            doc.name.endsWith(".docx") ||
+            doc.name.endsWith(".xls") ||
+            doc.name.endsWith(".xlsx") ||
+            doc.name.endsWith(".ppt") ||
             doc.name.endsWith(".pptx")
 
     // ── Búsqueda en PDF: los otros formatos filtran en línea vía
@@ -500,13 +504,13 @@ private fun BoxScope.ViewerTopBarSection(
     }
 
     ViewerTopBar(
-        fileName        = doc.name,
-        isFavorite      = uiState.isFavorite,
-        visible         = uiState.showControls,
-        onBackClick     = onBack,
+        fileName = doc.name,
+        isFavorite = uiState.isFavorite,
+        visible = uiState.showControls,
+        onBackClick = onBack,
         onFavoriteClick = { viewModel.toggleFavorite() },
-        onShareClick    = { viewModel.shareDocument(context) },
-        onSearchClick   = {
+        onShareClick = { viewModel.shareDocument(context) },
+        onSearchClick = {
             if (isTextBased) {
                 val newActive = !search.active
                 search.onActiveChange(newActive)
@@ -519,15 +523,15 @@ private fun BoxScope.ViewerTopBarSection(
                 }
             }
         },
-        onConvertClick  = { documentActions.onConvert(doc) },
+        onConvertClick = { documentActions.onConvert(doc) },
         onCreateQrClick = { documentActions.onCreateQr(doc) },
-        isPdf           = isPdf,
-        onMakeSearchableClick    = { documentActions.onMakeSearchable(doc) },
-        onSignClick              = { documentActions.onSign(doc) },
+        isPdf = isPdf,
+        onMakeSearchableClick = { documentActions.onMakeSearchable(doc) },
+        onSignClick = { documentActions.onSign(doc) },
         onMoveToSecureFolderClick = { documentActions.onMoveToSecureFolder(doc) },
-        onRenameClick   = { viewModel.onRenameClick() },
-        onDeleteClick   = { viewModel.onDeleteClick() },
-        isAnnotating    = uiState.showAnnotationToolbar,
+        onRenameClick = { viewModel.onRenameClick() },
+        onDeleteClick = { viewModel.onDeleteClick() },
+        isAnnotating = uiState.showAnnotationToolbar,
         onAnnotateClick = {
             viewModel.toggleAnnotationToolbar()
             // HU-46: misma exclusión mutua que arriba, en el sentido inverso.
@@ -537,32 +541,36 @@ private fun BoxScope.ViewerTopBarSection(
             }
         },
         isReadOnlyPreview = uiState.isReadOnlyPreview,
-        linkedNotesCount  = uiState.linkedNotes.size,
+        linkedNotesCount = uiState.linkedNotes.size,
         onOpenLinkedNotesClick = { viewModel.showLinkedNotesDialog() },
-        modifier        = Modifier.align(Alignment.TopCenter)
+        modifier = Modifier.align(Alignment.TopCenter),
     )
 
     // ── Barra de búsqueda ─────────────────────────────────────────────
     if (search.active && isTextBased) {
         Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 56.dp)
-                .statusBarsPadding()
-                .zIndex(10f)
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 56.dp)
+                    .statusBarsPadding()
+                    .zIndex(10f),
         ) {
             SearchBar(
-                query    = search.query,
-                onQuery  = { search.onQueryChange(it) },
-                onClose  = { search.onActiveChange(false); search.onQueryChange("") }
+                query = search.query,
+                onQuery = { search.onQueryChange(it) },
+                onClose = {
+                    search.onActiveChange(false)
+                    search.onQueryChange("")
+                },
             )
             if (isPdf) {
                 PdfSearchResultBar(
-                    matchCount   = uiState.pdfSearchMatches.size,
+                    matchCount = uiState.pdfSearchMatches.size,
                     currentIndex = uiState.pdfSearchIndex,
-                    hasQuery     = search.query.isNotBlank(),
-                    onNext       = { viewModel.nextPdfSearchResult() },
-                    onPrevious   = { viewModel.previousPdfSearchResult() }
+                    hasQuery = search.query.isNotBlank(),
+                    onNext = { viewModel.nextPdfSearchResult() },
+                    onPrevious = { viewModel.previousPdfSearchResult() },
                 )
             }
         }
@@ -571,20 +579,21 @@ private fun BoxScope.ViewerTopBarSection(
     // ── HU-46: barra de herramientas de anotación ─────────────────────
     if (uiState.showAnnotationToolbar && isPdf) {
         ViewerAnnotationToolbar(
-            mode            = uiState.annotationMode,
-            selectedColor   = uiState.selectedHighlightColor,
+            mode = uiState.annotationMode,
+            selectedColor = uiState.selectedHighlightColor,
             highlightColors = ANNOTATION_HIGHLIGHT_COLORS,
             onColorSelected = { color ->
                 viewModel.setHighlightColor(color)
                 viewModel.setAnnotationMode(AnnotationMode.HIGHLIGHT)
             },
-            onNoteSelected  = { viewModel.setAnnotationMode(AnnotationMode.NOTE) },
-            onDone          = { viewModel.closeAnnotationToolbar() },
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 56.dp)
-                .statusBarsPadding()
-                .zIndex(10f)
+            onNoteSelected = { viewModel.setAnnotationMode(AnnotationMode.NOTE) },
+            onDone = { viewModel.closeAnnotationToolbar() },
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 56.dp)
+                    .statusBarsPadding()
+                    .zIndex(10f),
         )
     }
 }
@@ -592,44 +601,47 @@ private fun BoxScope.ViewerTopBarSection(
 // ── Barra de búsqueda inline ──────────────────────────────────────────────────
 @Composable
 private fun SearchBar(
-    query   : String,
-    onQuery : (String) -> Unit,
-    onClose : () -> Unit,
-    modifier: Modifier = Modifier
+    query: String,
+    onQuery: (String) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier        = modifier.fillMaxWidth(),
-        color           = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp,
     ) {
         Row(
-            modifier              = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Icon(
-                Icons.Rounded.Search, null,
-                tint     = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
+                Icons.Rounded.Search,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
             )
             OutlinedTextField(
-                value         = query,
+                value = query,
                 onValueChange = onQuery,
-                modifier      = Modifier.weight(1f),
-                placeholder   = {
+                modifier = Modifier.weight(1f),
+                placeholder = {
                     Text(
                         stringResource(R.string.viewer_search_placeholder),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 },
                 singleLine = true,
-                shape      = MaterialTheme.shapes.medium,
-                colors     = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                shape = MaterialTheme.shapes.medium,
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
             )
             // Hallazgo real de la auditoría general 2026-09-17 (séptima
             // ronda, Alta -- A2): botón ícono-solo sin contentDescription
@@ -638,7 +650,7 @@ private fun SearchBar(
                 Icon(
                     Icons.Rounded.Close,
                     contentDescription = stringResource(R.string.general_close),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -647,25 +659,29 @@ private fun SearchBar(
 
 // ── Visor de imágenes ─────────────────────────────────────────────────────────
 @Composable
-private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
+private fun ImageViewerContent(
+    uri: Uri?,
+    onTap: () -> Unit,
+) {
     val context = LocalContext.current
-    var bitmap  by remember { mutableStateOf<Bitmap?>(null) }
-    var scale   by remember { mutableFloatStateOf(1f) }
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        bitmap = withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(uri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream)
+        bitmap =
+            withContext(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
+                } catch (e: Exception) {
+                    Timber.e("Error cargando imagen: ${e.message}")
+                    null
                 }
-            } catch (e: Exception) {
-                Timber.e("Error cargando imagen: ${e.message}")
-                null
             }
-        }
     }
 
     if (bitmap == null) {
@@ -676,31 +692,33 @@ private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable { onTap() }
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale   = (scale * zoom).coerceIn(0.5f, 5f)
-                    offsetX += pan.x
-                    offsetY += pan.y
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .clickable { onTap() }
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        scale = (scale * zoom).coerceIn(0.5f, 5f)
+                        offsetX += pan.x
+                        offsetY += pan.y
+                    }
                 }
-            }
-            .graphicsLayer(
-                scaleX       = scale,
-                scaleY       = scale,
-                translationX = offsetX,
-                translationY = offsetY
-            ),
-        contentAlignment = Alignment.Center
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offsetX,
+                    translationY = offsetY,
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         bitmap?.let {
             Image(
-                bitmap             = it.asImageBitmap(),
+                bitmap = it.asImageBitmap(),
                 contentDescription = null,
-                modifier           = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 92.dp, bottom = 92.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 92.dp, bottom = 92.dp),
             )
         }
     }
@@ -709,52 +727,57 @@ private fun ImageViewerContent(uri: Uri?, onTap: () -> Unit) {
 // ── Barra de resultados de búsqueda en PDF ────────────────────────────────────
 @Composable
 private fun PdfSearchResultBar(
-    matchCount  : Int,
+    matchCount: Int,
     currentIndex: Int,
-    hasQuery    : Boolean,
-    onNext      : () -> Unit,
-    onPrevious  : () -> Unit,
-    modifier: Modifier = Modifier
+    hasQuery: Boolean,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier        = modifier.fillMaxWidth(),
-        color           = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp,
     ) {
         Row(
-            modifier              = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             // Bug real encontrado 2026-09-14 (repaso general): estos textos
             // y content descriptions estaban hardcodeados en español,
             // saltándose el sistema de 12 idiomas.
             Text(
-                text = when {
-                    !hasQuery       -> ""
-                    matchCount == 0 -> stringResource(R.string.viewer_search_no_results)
-                    else            -> String.format(
-                        stringResource(R.string.viewer_search_match_format), currentIndex + 1, matchCount
-                    )
-                },
+                text =
+                    when {
+                        !hasQuery -> ""
+                        matchCount == 0 -> stringResource(R.string.viewer_search_no_results)
+                        else ->
+                            String.format(
+                                stringResource(R.string.viewer_search_match_format),
+                                currentIndex + 1,
+                                matchCount,
+                            )
+                    },
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row {
                 IconButton(onClick = onPrevious, enabled = matchCount > 0) {
                     Icon(
                         Icons.Rounded.KeyboardArrowUp,
                         contentDescription = stringResource(R.string.viewer_search_previous_match),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 IconButton(onClick = onNext, enabled = matchCount > 0) {
                     Icon(
                         Icons.Rounded.KeyboardArrowDown,
                         contentDescription = stringResource(R.string.viewer_search_next_match),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -770,31 +793,31 @@ private val PdfHighlightColor = Color(0xFFFFEB3B).copy(alpha = 0.4f)
 // de arriba, aplicada sobre el color elegido por el usuario en vez de fijo).
 private const val ANNOTATION_HIGHLIGHT_ALPHA = 0.35f
 private val NoteMarkerRadiusDp = 9.dp
-private val NoteHitRadiusDp    = 22.dp // más grande que el marcador visual -- objetivo táctil cómodo
+private val NoteHitRadiusDp = 22.dp // más grande que el marcador visual -- objetivo táctil cómodo
 
 // ── Visor de PDF ──────────────────────────────────────────────────────────────
 @Composable
 private fun PdfViewerContent(
-    uri          : Uri?,
-    targetPage   : Int?,
+    uri: Uri?,
+    targetPage: Int?,
     onTargetPageConsumed: () -> Unit = {},
-    highlights   : Map<Int, List<PdfMatchRect>>,
+    highlights: Map<Int, List<PdfMatchRect>>,
     onPageChanged: (Int, Int) -> Unit,
-    onTap        : () -> Unit,
+    onTap: () -> Unit,
     // HU-46: resaltado + notas adhesivas persistentes por documento.
-    annotationMode         : AnnotationMode = AnnotationMode.NONE,
-    selectedHighlightColor : Int = ANNOTATION_HIGHLIGHT_COLORS.first(),
-    documentAnnotations    : Map<Int, List<AnnotationEntity>> = emptyMap(),
-    onHighlightDrawn       : (Int, PdfRectPts) -> Unit = { _, _ -> },
-    onNoteRequested        : (Int, PdfRectPts) -> Unit = { _, _ -> },
-    onAnnotationTap        : (AnnotationEntity) -> Unit = {}
+    annotationMode: AnnotationMode = AnnotationMode.NONE,
+    selectedHighlightColor: Int = ANNOTATION_HIGHLIGHT_COLORS.first(),
+    documentAnnotations: Map<Int, List<AnnotationEntity>> = emptyMap(),
+    onHighlightDrawn: (Int, PdfRectPts) -> Unit = { _, _ -> },
+    onNoteRequested: (Int, PdfRectPts) -> Unit = { _, _ -> },
+    onAnnotationTap: (AnnotationEntity) -> Unit = {},
 ) {
-    val context   = LocalContext.current
-    var pages     by remember { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
+    val context = LocalContext.current
+    var pages by remember { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
     var loadError by remember { mutableStateOf(false) }
-    var scale         by remember { mutableFloatStateOf(1f) }
-    var offsetX       by remember { mutableFloatStateOf(0f) }
-    var offsetY       by remember { mutableFloatStateOf(0f) }
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val listState = rememberLazyListState()
     val noteHitRadiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { NoteHitRadiusDp.toPx() }
@@ -817,15 +840,16 @@ private fun PdfViewerContent(
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        pages = withContext(Dispatchers.IO) {
-            try {
-                renderPdfPagesToBitmaps(uri, context)
-            } catch (e: Exception) {
-                Timber.e("Error renderizando PDF: ${e.message}")
-                loadError = true
-                emptyList()
+        pages =
+            withContext(Dispatchers.IO) {
+                try {
+                    renderPdfPagesToBitmaps(uri, context)
+                } catch (e: Exception) {
+                    Timber.e("Error renderizando PDF: ${e.message}")
+                    loadError = true
+                    emptyList()
+                }
             }
-        }
         onPageChanged(0, pages.size)
     }
 
@@ -850,9 +874,9 @@ private fun PdfViewerContent(
     if (loadError) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text  = stringResource(R.string.viewer_error),
+                text = stringResource(R.string.viewer_error),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         return
@@ -864,9 +888,9 @@ private fun PdfViewerContent(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text  = stringResource(R.string.viewer_rendering),
+                    text = stringResource(R.string.viewer_rendering),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -878,94 +902,105 @@ private fun PdfViewerContent(
     // conviven mal con arrastrar un rectángulo o tocar para anclar una nota.
     // En AnnotationMode.NONE el comportamiento es exactamente el de antes.
     val isAnnotating = annotationMode != AnnotationMode.NONE
-    val columnModifier = Modifier
-        .fillMaxSize()
-        .onSizeChanged { containerSize = it }
-        .let { base ->
-            if (isAnnotating) base else base
-                .clickable { onTap() }
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        val newScale = (scale * zoom).coerceIn(0.5f, 4f)
-                        // Bug real (QA): sin límite, arrastrar tras hacer zoom
-                        // podía sacar el contenido del área visible por
-                        // completo -- "el PDF se pierde arriba" -- sin ninguna
-                        // forma de recuperarlo salvo adivinar cuánto arrastrar
-                        // de vuelta. `graphicsLayer` escala/traslada desde el
-                        // centro por defecto, así que el desplazamiento máximo
-                        // que deja al menos el borde del contenido visible es
-                        // `tamaño * (escala - 1) / 2` por eje -- en escala 1 el
-                        // rango es [0, 0], forzando el desplazamiento de vuelta
-                        // a cero en cuanto se hace pinch-zoom-out del todo.
-                        val maxX = (containerSize.width  * (newScale - 1) / 2f).coerceAtLeast(0f)
-                        val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
-                        scale   = newScale
-                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
-                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
-                    }
+    val columnModifier =
+        Modifier
+            .fillMaxSize()
+            .onSizeChanged { containerSize = it }
+            .let { base ->
+                if (isAnnotating) {
+                    base
+                } else {
+                    base
+                        .clickable { onTap() }
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                val newScale = (scale * zoom).coerceIn(0.5f, 4f)
+                                // Bug real (QA): sin límite, arrastrar tras hacer zoom
+                                // podía sacar el contenido del área visible por
+                                // completo -- "el PDF se pierde arriba" -- sin ninguna
+                                // forma de recuperarlo salvo adivinar cuánto arrastrar
+                                // de vuelta. `graphicsLayer` escala/traslada desde el
+                                // centro por defecto, así que el desplazamiento máximo
+                                // que deja al menos el borde del contenido visible es
+                                // `tamaño * (escala - 1) / 2` por eje -- en escala 1 el
+                                // rango es [0, 0], forzando el desplazamiento de vuelta
+                                // a cero en cuanto se hace pinch-zoom-out del todo.
+                                val maxX = (containerSize.width * (newScale - 1) / 2f).coerceAtLeast(0f)
+                                val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
+                                scale = newScale
+                                offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
+                            }
+                        }
                 }
-        }
-        .graphicsLayer(
-            scaleX       = if (isAnnotating) 1f else scale,
-            scaleY       = if (isAnnotating) 1f else scale,
-            translationX = if (isAnnotating) 0f else offsetX,
-            translationY = if (isAnnotating) 0f else offsetY
-        )
+            }
+            .graphicsLayer(
+                scaleX = if (isAnnotating) 1f else scale,
+                scaleY = if (isAnnotating) 1f else scale,
+                translationX = if (isAnnotating) 0f else offsetX,
+                translationY = if (isAnnotating) 0f else offsetY,
+            )
 
     LazyColumn(
         state = listState,
         modifier = columnModifier,
-        contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 8.dp, end = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp, start = 8.dp, end = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         itemsIndexed(pages) { index, pageBitmap ->
             LaunchedEffect(index, pages.size) {
                 onPageChanged(index, pages.size)
             }
-            val pageNumber      = index + 1
-            val pageHighlights  = highlights[pageNumber]
+            val pageNumber = index + 1
+            val pageHighlights = highlights[pageNumber]
             val pageAnnotations = documentAnnotations[pageNumber].orEmpty()
-            var dragStart   by remember { mutableStateOf<Offset?>(null) }
+            var dragStart by remember { mutableStateOf<Offset?>(null) }
             var dragCurrent by remember { mutableStateOf<Offset?>(null) }
             val shape = MaterialTheme.shapes.small
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .accentShadow(shape = shape, elevation = 2.dp)
-                    .clip(shape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .accentBorder(shape = shape)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .accentShadow(shape = shape, elevation = 2.dp)
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .accentBorder(shape = shape),
             ) {
                 Image(
-                    bitmap             = pageBitmap.bitmap.asImageBitmap(),
+                    bitmap = pageBitmap.bitmap.asImageBitmap(),
                     contentDescription = stringResource(R.string.viewer_page_content_desc, pageNumber),
-                    modifier           = Modifier
-                        .fillMaxWidth()
-                        .pdfAnnotationGestures(
-                            annotationMode  = annotationMode,
-                            pageBitmap      = pageBitmap,
-                            pageNumber      = pageNumber,
-                            pageAnnotations = pageAnnotations,
-                            noteHitRadiusPx = noteHitRadiusPx,
-                            onDragPreview   = { start, current -> dragStart = start; dragCurrent = current },
-                            callbacks = PdfAnnotationCallbacks(
-                                onHighlightDrawn = onHighlightDrawn,
-                                onNoteRequested  = onNoteRequested,
-                                onAnnotationTap  = onAnnotationTap,
-                                onTap            = onTap
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .pdfAnnotationGestures(
+                                annotationMode = annotationMode,
+                                pageBitmap = pageBitmap,
+                                pageNumber = pageNumber,
+                                pageAnnotations = pageAnnotations,
+                                noteHitRadiusPx = noteHitRadiusPx,
+                                onDragPreview = { start, current ->
+                                    dragStart = start
+                                    dragCurrent = current
+                                },
+                                callbacks =
+                                    PdfAnnotationCallbacks(
+                                        onHighlightDrawn = onHighlightDrawn,
+                                        onNoteRequested = onNoteRequested,
+                                        onAnnotationTap = onAnnotationTap,
+                                        onTap = onTap,
+                                    ),
                             )
-                        )
-                        .drawWithContent {
-                            drawContent()
-                            val preview = dragStart?.let { s -> dragCurrent?.let { c -> s to c } }
-                            drawPdfPageOverlays(
-                                pageBitmap             = pageBitmap,
-                                pageHighlights         = pageHighlights,
-                                pageAnnotations        = pageAnnotations,
-                                dragPreview            = preview,
-                                selectedHighlightColor = selectedHighlightColor
-                            )
-                        }
+                            .drawWithContent {
+                                drawContent()
+                                val preview = dragStart?.let { s -> dragCurrent?.let { c -> s to c } }
+                                drawPdfPageOverlays(
+                                    pageBitmap = pageBitmap,
+                                    pageHighlights = pageHighlights,
+                                    pageAnnotations = pageAnnotations,
+                                    dragPreview = preview,
+                                    selectedHighlightColor = selectedHighlightColor,
+                                )
+                            },
                 )
             }
         }
@@ -977,9 +1012,9 @@ private fun PdfViewerContent(
 // usado en ViewerDocumentActions/ViewerMenuActions de este mismo archivo).
 private data class PdfAnnotationCallbacks(
     val onHighlightDrawn: (Int, PdfRectPts) -> Unit,
-    val onNoteRequested : (Int, PdfRectPts) -> Unit,
-    val onAnnotationTap : (AnnotationEntity) -> Unit,
-    val onTap           : () -> Unit
+    val onNoteRequested: (Int, PdfRectPts) -> Unit,
+    val onAnnotationTap: (AnnotationEntity) -> Unit,
+    val onTap: () -> Unit,
 )
 
 // HU-46: gestos de anotación de una página -- extraído de PdfViewerContent
@@ -1000,65 +1035,90 @@ private data class PdfAnnotationCallbacks(
 // vigente en cada tap (Modifier.composed{} es necesario para poder llamar
 // una función @Composable como rememberUpdatedState acá).
 private fun Modifier.pdfAnnotationGestures(
-    annotationMode  : AnnotationMode,
-    pageBitmap      : PdfPageBitmap,
-    pageNumber      : Int,
-    pageAnnotations : List<AnnotationEntity>,
-    noteHitRadiusPx : Float,
-    onDragPreview   : (Offset?, Offset?) -> Unit,
-    callbacks       : PdfAnnotationCallbacks
-): Modifier = composed {
-    val currentAnnotations by rememberUpdatedState(pageAnnotations)
-    pointerInput(annotationMode, pageBitmap) {
-        val displayScale = size.width / pageBitmap.pageWidthPts
-        if (annotationMode == AnnotationMode.HIGHLIGHT) {
-            var dragStart  : Offset? = null
-            var dragCurrent: Offset? = null
-            detectDragGestures(
-                onDragStart = { offset -> dragStart = offset; dragCurrent = offset; onDragPreview(offset, offset) },
-                onDrag      = { change, _ -> dragCurrent = change.position; onDragPreview(dragStart, dragCurrent) },
-                onDragEnd   = {
-                    val start   = dragStart
-                    val current = dragCurrent
-                    if (start != null && current != null) {
-                        val rect = screenDragToPdfRect(
-                            start.x, start.y, current.x, current.y, displayScale, pageBitmap.pageHeightPts
-                        )
-                        if (isValidHighlightSize(rect)) callbacks.onHighlightDrawn(pageNumber, rect)
-                    }
-                    dragStart = null; dragCurrent = null
-                    onDragPreview(null, null)
-                },
-                onDragCancel = { dragStart = null; dragCurrent = null; onDragPreview(null, null) }
-            )
-        } else {
-            detectTapGestures(onTap = { offset ->
-                val hit = hitTestAnnotation(
-                    offset, currentAnnotations, displayScale, pageBitmap.pageHeightPts, noteHitRadiusPx
+    annotationMode: AnnotationMode,
+    pageBitmap: PdfPageBitmap,
+    pageNumber: Int,
+    pageAnnotations: List<AnnotationEntity>,
+    noteHitRadiusPx: Float,
+    onDragPreview: (Offset?, Offset?) -> Unit,
+    callbacks: PdfAnnotationCallbacks,
+): Modifier =
+    composed {
+        val currentAnnotations by rememberUpdatedState(pageAnnotations)
+        pointerInput(annotationMode, pageBitmap) {
+            val displayScale = size.width / pageBitmap.pageWidthPts
+            if (annotationMode == AnnotationMode.HIGHLIGHT) {
+                var dragStart: Offset? = null
+                var dragCurrent: Offset? = null
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        dragStart = offset
+                        dragCurrent = offset
+                        onDragPreview(offset, offset)
+                    },
+                    onDrag = { change, _ ->
+                        dragCurrent = change.position
+                        onDragPreview(dragStart, dragCurrent)
+                    },
+                    onDragEnd = {
+                        val start = dragStart
+                        val current = dragCurrent
+                        if (start != null && current != null) {
+                            val rect =
+                                screenDragToPdfRect(
+                                    start.x,
+                                    start.y,
+                                    current.x,
+                                    current.y,
+                                    displayScale,
+                                    pageBitmap.pageHeightPts,
+                                )
+                            if (isValidHighlightSize(rect)) callbacks.onHighlightDrawn(pageNumber, rect)
+                        }
+                        dragStart = null
+                        dragCurrent = null
+                        onDragPreview(null, null)
+                    },
+                    onDragCancel = {
+                        dragStart = null
+                        dragCurrent = null
+                        onDragPreview(null, null)
+                    },
                 )
-                when {
-                    hit != null -> callbacks.onAnnotationTap(hit)
-                    annotationMode == AnnotationMode.NOTE -> callbacks.onNoteRequested(
-                        pageNumber,
-                        screenPointToPdfPoint(offset.x, offset.y, displayScale, pageBitmap.pageHeightPts)
-                    )
-                    else -> callbacks.onTap()
-                }
-            })
+            } else {
+                detectTapGestures(onTap = { offset ->
+                    val hit =
+                        hitTestAnnotation(
+                            offset,
+                            currentAnnotations,
+                            displayScale,
+                            pageBitmap.pageHeightPts,
+                            noteHitRadiusPx,
+                        )
+                    when {
+                        hit != null -> callbacks.onAnnotationTap(hit)
+                        annotationMode == AnnotationMode.NOTE ->
+                            callbacks.onNoteRequested(
+                                pageNumber,
+                                screenPointToPdfPoint(offset.x, offset.y, displayScale, pageBitmap.pageHeightPts),
+                            )
+                        else -> callbacks.onTap()
+                    }
+                })
+            }
         }
     }
-}
 
 // HU-46: dibuja, sobre el bitmap ya renderizado de una página, el
 // resaltado de búsqueda (RF-VIS-08, ya existente), las anotaciones
 // persistidas y la vista previa en vivo del resaltado que se está
 // arrastrando -- extraído de PdfViewerContent (LongMethod de detekt).
 private fun DrawScope.drawPdfPageOverlays(
-    pageBitmap             : PdfPageBitmap,
-    pageHighlights         : List<PdfMatchRect>?,
-    pageAnnotations        : List<AnnotationEntity>,
-    dragPreview            : Pair<Offset, Offset>?,
-    selectedHighlightColor : Int
+    pageBitmap: PdfPageBitmap,
+    pageHighlights: List<PdfMatchRect>?,
+    pageAnnotations: List<AnnotationEntity>,
+    dragPreview: Pair<Offset, Offset>?,
+    selectedHighlightColor: Int,
 ) {
     val displayScale = size.width / pageBitmap.pageWidthPts
     // RF-VIS-08: resaltado inline -- convierte cada coincidencia de puntos
@@ -1068,9 +1128,9 @@ private fun DrawScope.drawPdfPageOverlays(
         val screenX = r.xPts * displayScale
         val screenY = (pageBitmap.pageHeightPts - (r.yPts + r.heightPts)) * displayScale
         drawRect(
-            color   = PdfHighlightColor,
+            color = PdfHighlightColor,
             topLeft = Offset(screenX, screenY),
-            size    = ComposeSize(r.widthPts * displayScale, r.heightPts * displayScale)
+            size = ComposeSize(r.widthPts * displayScale, r.heightPts * displayScale),
         )
     }
     pageAnnotations.forEach { annotation ->
@@ -1079,24 +1139,28 @@ private fun DrawScope.drawPdfPageOverlays(
                 val screenX = annotation.xPts * displayScale
                 val screenY = (pageBitmap.pageHeightPts - (annotation.yPts + annotation.heightPts)) * displayScale
                 drawRect(
-                    color   = Color(annotation.color).copy(alpha = ANNOTATION_HIGHLIGHT_ALPHA),
+                    color = Color(annotation.color).copy(alpha = ANNOTATION_HIGHLIGHT_ALPHA),
                     topLeft = Offset(screenX, screenY),
-                    size    = ComposeSize(annotation.widthPts * displayScale, annotation.heightPts * displayScale)
+                    size = ComposeSize(annotation.widthPts * displayScale, annotation.heightPts * displayScale),
                 )
             }
             AnnotationType.NOTE -> {
-                val (cx, cy) = pdfPointToScreenPoint(
-                    annotation.xPts, annotation.yPts, displayScale, pageBitmap.pageHeightPts
-                )
+                val (cx, cy) =
+                    pdfPointToScreenPoint(
+                        annotation.xPts,
+                        annotation.yPts,
+                        displayScale,
+                        pageBitmap.pageHeightPts,
+                    )
                 drawCircle(color = Color(annotation.color), radius = NoteMarkerRadiusDp.toPx(), center = Offset(cx, cy))
             }
         }
     }
     dragPreview?.let { (start, current) ->
         drawRect(
-            color   = Color(selectedHighlightColor).copy(alpha = ANNOTATION_HIGHLIGHT_ALPHA),
+            color = Color(selectedHighlightColor).copy(alpha = ANNOTATION_HIGHLIGHT_ALPHA),
             topLeft = Offset(minOf(start.x, current.x), minOf(start.y, current.y)),
-            size    = ComposeSize(kotlin.math.abs(current.x - start.x), kotlin.math.abs(current.y - start.y))
+            size = ComposeSize(kotlin.math.abs(current.x - start.x), kotlin.math.abs(current.y - start.y)),
         )
     }
 }
@@ -1106,28 +1170,29 @@ private fun DrawScope.drawPdfPageOverlays(
 // arriba. NOTE usa un radio táctil (más grande que el marcador visual);
 // HIGHLIGHT usa su rectángulo real.
 private fun hitTestAnnotation(
-    tap          : Offset,
-    annotations  : List<AnnotationEntity>,
-    displayScale : Float,
+    tap: Offset,
+    annotations: List<AnnotationEntity>,
+    displayScale: Float,
     pageHeightPts: Float,
-    noteHitRadiusPx: Float
+    noteHitRadiusPx: Float,
 ): AnnotationEntity? {
     for (annotation in annotations.asReversed()) {
-        val hit = when (annotation.type) {
-            AnnotationType.NOTE -> {
-                val (cx, cy) = pdfPointToScreenPoint(annotation.xPts, annotation.yPts, displayScale, pageHeightPts)
-                val dx = tap.x - cx
-                val dy = tap.y - cy
-                (dx * dx + dy * dy) <= noteHitRadiusPx * noteHitRadiusPx
+        val hit =
+            when (annotation.type) {
+                AnnotationType.NOTE -> {
+                    val (cx, cy) = pdfPointToScreenPoint(annotation.xPts, annotation.yPts, displayScale, pageHeightPts)
+                    val dx = tap.x - cx
+                    val dy = tap.y - cy
+                    (dx * dx + dy * dy) <= noteHitRadiusPx * noteHitRadiusPx
+                }
+                AnnotationType.HIGHLIGHT -> {
+                    val screenX = annotation.xPts * displayScale
+                    val screenY = (pageHeightPts - (annotation.yPts + annotation.heightPts)) * displayScale
+                    val screenW = annotation.widthPts * displayScale
+                    val screenH = annotation.heightPts * displayScale
+                    tap.x in screenX..(screenX + screenW) && tap.y in screenY..(screenY + screenH)
+                }
             }
-            AnnotationType.HIGHLIGHT -> {
-                val screenX = annotation.xPts * displayScale
-                val screenY = (pageHeightPts - (annotation.yPts + annotation.heightPts)) * displayScale
-                val screenW = annotation.widthPts * displayScale
-                val screenH = annotation.heightPts * displayScale
-                tap.x in screenX..(screenX + screenW) && tap.y in screenY..(screenY + screenH)
-            }
-        }
         if (hit) return annotation
     }
     return null
@@ -1158,7 +1223,7 @@ private fun <T> rememberDocumentLoad(
     uri: Uri?,
     initial: T,
     errorLogTag: String,
-    extract: suspend (java.io.InputStream) -> T
+    extract: suspend (java.io.InputStream) -> T,
 ): DocumentLoadState<T> {
     val context = LocalContext.current
     // Antes cada pantalla usaba `remember { }` sin `key(uri)` para
@@ -1174,17 +1239,18 @@ private fun <T> rememberDocumentLoad(
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        data = withContext(Dispatchers.IO) {
-            try {
-                context.contentResolver.openInputStream(uri)?.use { extract(it) } ?: initial
-            } catch (e: Exception) {
-                Timber.e(e, "Error leyendo $errorLogTag")
-                hasError = true
-                initial
-            } finally {
-                isLoading = false
+        data =
+            withContext(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { extract(it) } ?: initial
+                } catch (e: Exception) {
+                    Timber.e(e, "Error leyendo $errorLogTag")
+                    hasError = true
+                    initial
+                } finally {
+                    isLoading = false
+                }
             }
-        }
     }
     return DocumentLoadState(data, isLoading, hasError)
 }
@@ -1195,19 +1261,21 @@ private fun DocumentContentBox(
     isErrorState: Boolean,
     errorMessage: String,
     onTap: () -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .clickable { onTap() }
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .clickable { onTap() },
     ) {
         when {
-            isLoading -> CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color    = MaterialTheme.colorScheme.primary
-            )
+            isLoading ->
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary,
+                )
             // Corrección tras la revisión adversarial de este mismo lote:
             // el `Text` de error de Word tenía `style = bodyMedium`
             // explícito (dentro de una `Column` que ahora se simplificó,
@@ -1217,13 +1285,14 @@ private fun DocumentContentBox(
             // al compartir esta caja. Se deja explícito para las 4
             // pantallas, restaurando el de Word exacto y normalizando
             // Excel/PPT/Texto al mismo.
-            isErrorState -> Text(
-                text      = errorMessage,
-                modifier  = Modifier.align(Alignment.Center).padding(32.dp),
-                style     = MaterialTheme.typography.bodyMedium,
-                color     = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            isErrorState ->
+                Text(
+                    text = errorMessage,
+                    modifier = Modifier.align(Alignment.Center).padding(32.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
             else -> content()
         }
     }
@@ -1240,6 +1309,7 @@ private fun DocumentContentBox(
 // vs .docx (OOXML) y de nombres de estilo de encabezado no-ingleses (Word en
 // español escribe "Ttulo1", no "Heading1").
 internal data class WordRun(val text: String, val bold: Boolean, val italic: Boolean, val fontSizeSp: Int?)
+
 internal data class WordParagraph(val runs: List<WordRun>, val isHeading: Boolean)
 
 // Antes cada .docx se aplanaba a una sola lista de párrafos -- una tabla
@@ -1247,7 +1317,9 @@ internal data class WordParagraph(val runs: List<WordRun>, val isHeading: Boolea
 // Ahora se preserva su forma real de grilla, mismo componente visual que ya
 // usa el visor de Excel (ExcelGridRow).
 internal sealed interface WordBlock
+
 internal data class WordParagraphBlock(val paragraph: WordParagraph) : WordBlock
+
 internal data class WordTableBlock(val rows: List<List<String>>) : WordBlock
 
 internal fun extractWordBlocks(input: java.io.InputStream): List<WordBlock> {
@@ -1275,16 +1347,17 @@ internal fun extractOoxmlWordBlocks(stream: java.io.InputStream): List<WordBlock
 }
 
 internal fun extractWordParagraphBlock(paragraph: XWPFParagraph): WordParagraphBlock? {
-    val runs = paragraph.runs.mapNotNull { run ->
-        val text = run.text()
-        if (text.isNullOrBlank()) return@mapNotNull null
-        WordRun(
-            text       = text,
-            bold       = run.isBold,
-            italic     = run.isItalic,
-            fontSizeSp = run.fontSizeAsDouble?.toInt()
-        )
-    }
+    val runs =
+        paragraph.runs.mapNotNull { run ->
+            val text = run.text()
+            if (text.isNullOrBlank()) return@mapNotNull null
+            WordRun(
+                text = text,
+                bold = run.isBold,
+                italic = run.isItalic,
+                fontSizeSp = run.fontSizeAsDouble?.toInt(),
+            )
+        }
     if (runs.isEmpty()) return null
     val isHeading = isHeadingStyleName(paragraph.style ?: "")
     return WordParagraphBlock(WordParagraph(runs, isHeading))
@@ -1297,64 +1370,75 @@ internal fun extractWordTableBlock(table: XWPFTable): WordTableBlock? {
 
 private fun wordParagraphAnnotatedString(
     para: WordParagraph,
-    baseSizeSp: TextUnit
-): AnnotatedString = buildAnnotatedString {
-    para.runs.forEach { run ->
-        withStyle(
-            SpanStyle(
-                fontWeight = if (run.bold) FontWeight.Bold else FontWeight.Normal,
-                fontStyle  = if (run.italic) FontStyle.Italic else FontStyle.Normal,
-                fontSize   = run.fontSizeSp?.sp ?: baseSizeSp
-            )
-        ) { append(run.text) }
+    baseSizeSp: TextUnit,
+): AnnotatedString =
+    buildAnnotatedString {
+        para.runs.forEach { run ->
+            withStyle(
+                SpanStyle(
+                    fontWeight = if (run.bold) FontWeight.Bold else FontWeight.Normal,
+                    fontStyle = if (run.italic) FontStyle.Italic else FontStyle.Normal,
+                    fontSize = run.fontSizeSp?.sp ?: baseSizeSp,
+                ),
+            ) { append(run.text) }
+        }
     }
-}
 
 @Composable
 private fun WordViewerContent(
-    uri        : Uri?,
+    uri: Uri?,
     searchQuery: String = "",
-    onTap      : () -> Unit
+    onTap: () -> Unit,
 ) {
     val load = rememberDocumentLoad(uri, emptyList<WordBlock>(), "Word") { extractWordBlocks(it) }
     val blocks = load.data
 
-    fun blockPlainText(block: WordBlock): String = when (block) {
-        is WordParagraphBlock -> block.paragraph.runs.joinToString("") { it.text }
-        is WordTableBlock     -> block.rows.joinToString(" ") { row -> row.joinToString(" ") }
-    }
+    fun blockPlainText(block: WordBlock): String =
+        when (block) {
+            is WordParagraphBlock -> block.paragraph.runs.joinToString("") { it.text }
+            is WordTableBlock -> block.rows.joinToString(" ") { row -> row.joinToString(" ") }
+        }
 
-    val displayBlocks = if (searchQuery.isBlank()) blocks
-    else blocks.filter { blockPlainText(it).contains(searchQuery, ignoreCase = true) }
+    val displayBlocks =
+        if (searchQuery.isBlank()) {
+            blocks
+        } else {
+            blocks.filter { blockPlainText(it).contains(searchQuery, ignoreCase = true) }
+        }
 
     DocumentContentBox(
-        isLoading    = load.isLoading,
+        isLoading = load.isLoading,
         isErrorState = load.hasError || blocks.isEmpty(),
         errorMessage = stringResource(R.string.viewer_word_read_error),
-        onTap        = onTap
+        onTap = onTap,
     ) {
         LazyColumn(
-            modifier            = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-            contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             if (searchQuery.isNotBlank()) {
                 item {
                     Text(
-                        text     = stringResource(
-                            R.string.viewer_search_results_count, displayBlocks.size, searchQuery
-                        ),
-                        style    = MaterialTheme.typography.labelMedium,
-                        color    = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        text =
+                            stringResource(
+                                R.string.viewer_search_results_count,
+                                displayBlocks.size,
+                                searchQuery,
+                            ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
             }
             itemsIndexed(displayBlocks) { _, block ->
-                val bgColor = if (searchQuery.isNotBlank())
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else
-                    MaterialTheme.colorScheme.background
+                val bgColor =
+                    if (searchQuery.isNotBlank()) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    } else {
+                        MaterialTheme.colorScheme.background
+                    }
 
                 when (block) {
                     is WordTableBlock -> WordTableView(block, modifier = Modifier.padding(vertical = 8.dp))
@@ -1362,36 +1446,38 @@ private fun WordViewerContent(
                         val para = block.paragraph
                         if (para.isHeading) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(bgColor, RoundedCornerShape(8.dp))
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .background(bgColor, RoundedCornerShape(8.dp)),
                             ) {
                                 Spacer(Modifier.height(16.dp))
                                 Text(
-                                    text       = wordParagraphAnnotatedString(para, baseSizeSp = 18.sp),
-                                    style      = MaterialTheme.typography.titleMedium,
+                                    text = wordParagraphAnnotatedString(para, baseSizeSp = 18.sp),
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color      = MaterialTheme.colorScheme.primary,
-                                    lineHeight = 26.sp
+                                    color = MaterialTheme.colorScheme.primary,
+                                    lineHeight = 26.sp,
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 HorizontalDivider(
-                                    color     = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    thickness = 1.dp
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    thickness = 1.dp,
                                 )
                                 Spacer(Modifier.height(8.dp))
                             }
                         } else {
                             Text(
-                                text       = wordParagraphAnnotatedString(para, baseSizeSp = 14.sp),
-                                style      = MaterialTheme.typography.bodyMedium,
-                                color      = MaterialTheme.colorScheme.onSurface,
+                                text = wordParagraphAnnotatedString(para, baseSizeSp = 14.sp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 24.sp,
-                                modifier   = Modifier
-                                    .padding(vertical = 3.dp)
-                                    .fillMaxWidth()
-                                    .background(bgColor, RoundedCornerShape(4.dp))
-                                    .padding(horizontal = if (searchQuery.isNotBlank()) 8.dp else 0.dp)
+                                modifier =
+                                    Modifier
+                                        .padding(vertical = 3.dp)
+                                        .fillMaxWidth()
+                                        .background(bgColor, RoundedCornerShape(4.dp))
+                                        .padding(horizontal = if (searchQuery.isNotBlank()) 8.dp else 0.dp),
                             )
                         }
                     }
@@ -1405,13 +1491,17 @@ private fun WordViewerContent(
 // plano entre los párrafos -- ahora se ve como una grilla real, con scroll
 // horizontal propio si tiene más columnas de las que caben en pantalla.
 @Composable
-private fun WordTableView(table: WordTableBlock, modifier: Modifier = Modifier) {
+private fun WordTableView(
+    table: WordTableBlock,
+    modifier: Modifier = Modifier,
+) {
     val columnCount = table.rows.maxOfOrNull { it.size } ?: 0
     val scrollState = rememberScrollState()
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp)),
     ) {
         table.rows.forEachIndexed { rowIndex, row ->
             if (rowIndex > 0) {
@@ -1421,26 +1511,31 @@ private fun WordTableView(table: WordTableBlock, modifier: Modifier = Modifier) 
                 for (col in 0 until columnCount) {
                     if (col > 0) {
                         Box(
-                            modifier = Modifier
-                                .width(0.5.dp)
-                                .height(40.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant)
+                            modifier =
+                                Modifier
+                                    .width(0.5.dp)
+                                    .height(40.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant),
                         )
                     }
                     Box(
-                        modifier = Modifier
-                            .width(EXCEL_COLUMN_WIDTH)
-                            .background(
-                                if (rowIndex == 0) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                else Color.Transparent
-                            )
-                            .padding(horizontal = 10.dp, vertical = 9.dp)
+                        modifier =
+                            Modifier
+                                .width(EXCEL_COLUMN_WIDTH)
+                                .background(
+                                    if (rowIndex == 0) {
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                )
+                                .padding(horizontal = 10.dp, vertical = 9.dp),
                     ) {
                         Text(
-                            text       = row.getOrElse(col) { "" },
-                            style      = MaterialTheme.typography.bodySmall,
+                            text = row.getOrElse(col) { "" },
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = if (rowIndex == 0) FontWeight.SemiBold else FontWeight.Normal,
-                            maxLines   = 3
+                            maxLines = 3,
                         )
                     }
                 }
@@ -1462,6 +1557,7 @@ private fun WordTableView(table: WordTableBlock, modifier: Modifier = Modifier) 
 private val EXCEL_COLUMN_WIDTH = 120.dp
 
 private data class ExcelRow(val cells: List<String>)
+
 private data class ExcelSheetModel(val name: String, val rows: List<ExcelRow>)
 
 // Hallazgo real de la auditoría general 2026-09-17 (M8): si algo lanzaba
@@ -1472,29 +1568,35 @@ private fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel
     val workbook = WorkbookFactory.create(input)
     try {
         val formatter = DataFormatter()
-        val evaluator = try {
-            workbook.creationHelper.createFormulaEvaluator()
-        } catch (e: Exception) {
-            Timber.w(e, "extractExcelSheets: no se pudo crear el evaluador de fórmulas")
-            null
-        }
+        val evaluator =
+            try {
+                workbook.creationHelper.createFormulaEvaluator()
+            } catch (e: Exception) {
+                Timber.w(e, "extractExcelSheets: no se pudo crear el evaluador de fórmulas")
+                null
+            }
         return (0 until workbook.numberOfSheets).mapNotNull { sheetIndex ->
             val sheet = workbook.getSheetAt(sheetIndex)
-            val rows = sheet.mapNotNull { row ->
-                val lastCell = row.lastCellNum.toInt()
-                if (lastCell < 0) return@mapNotNull null
-                val cells = (0 until lastCell).map { col ->
-                    val cell = row.getCell(col) ?: return@map ""
-                    try {
-                        if (evaluator != null) formatter.formatCellValue(cell, evaluator)
-                        else formatter.formatCellValue(cell)
-                    } catch (e: Exception) {
-                        Timber.w(e, "extractExcelSheets: no se pudo formatear una celda")
-                        ""
-                    }
+            val rows =
+                sheet.mapNotNull { row ->
+                    val lastCell = row.lastCellNum.toInt()
+                    if (lastCell < 0) return@mapNotNull null
+                    val cells =
+                        (0 until lastCell).map { col ->
+                            val cell = row.getCell(col) ?: return@map ""
+                            try {
+                                if (evaluator != null) {
+                                    formatter.formatCellValue(cell, evaluator)
+                                } else {
+                                    formatter.formatCellValue(cell)
+                                }
+                            } catch (e: Exception) {
+                                Timber.w(e, "extractExcelSheets: no se pudo formatear una celda")
+                                ""
+                            }
+                        }
+                    if (cells.any { it.isNotBlank() }) ExcelRow(cells) else null
                 }
-                if (cells.any { it.isNotBlank() }) ExcelRow(cells) else null
-            }
             if (rows.isEmpty()) null else ExcelSheetModel(sheet.sheetName, rows)
         }
     } finally {
@@ -1504,9 +1606,9 @@ private fun extractExcelSheets(input: java.io.InputStream): List<ExcelSheetModel
 
 @Composable
 private fun ExcelViewerContent(
-    uri        : Uri?,
+    uri: Uri?,
     searchQuery: String = "",
-    onTap      : () -> Unit
+    onTap: () -> Unit,
 ) {
     val load = rememberDocumentLoad(uri, emptyList<ExcelSheetModel>(), "Excel") { extractExcelSheets(it) }
     val sheets = load.data
@@ -1517,8 +1619,7 @@ private fun ExcelViewerContent(
     // con la misma clave.
     LaunchedEffect(uri) { sheetIndex = 0 }
 
-    fun sheetMatches(sheet: ExcelSheetModel) =
-        sheet.rows.any { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
+    fun sheetMatches(sheet: ExcelSheetModel) = sheet.rows.any { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
 
     // Hallazgo real de la revisión general 2026-09-16 (#13): la búsqueda
     // solo filtraba la hoja activa -- si la coincidencia estaba en otra
@@ -1537,19 +1638,28 @@ private fun ExcelViewerContent(
     }
 
     val rows = sheets.getOrNull(sheetIndex)?.rows.orEmpty()
-    val displayRows = if (searchQuery.isBlank()) rows
-    else rows.filter { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
-    val totalMatches = if (searchQuery.isBlank()) 0 else sheets.sumOf { sheet ->
-        sheet.rows.count { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
-    }
+    val displayRows =
+        if (searchQuery.isBlank()) {
+            rows
+        } else {
+            rows.filter { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
+        }
+    val totalMatches =
+        if (searchQuery.isBlank()) {
+            0
+        } else {
+            sheets.sumOf { sheet ->
+                sheet.rows.count { row -> row.cells.any { it.contains(searchQuery, ignoreCase = true) } }
+            }
+        }
     val columnCount = rows.maxOfOrNull { it.cells.size } ?: 0
     val gridScrollState = rememberScrollState()
 
     DocumentContentBox(
-        isLoading    = load.isLoading,
+        isLoading = load.isLoading,
         isErrorState = load.hasError || sheets.isEmpty(),
         errorMessage = stringResource(R.string.viewer_excel_read_error),
-        onTap        = onTap
+        onTap = onTap,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Spacer(Modifier.height(100.dp))
@@ -1557,59 +1667,66 @@ private fun ExcelViewerContent(
             // ruido visual en el caso más común de un solo Excel simple.
             if (sheets.size > 1) {
                 ExcelSheetTabs(
-                    sheetNames   = sheets.map { it.name },
+                    sheetNames = sheets.map { it.name },
                     selectedIndex = sheetIndex,
-                    onSelect     = { sheetIndex = it }
+                    onSelect = { sheetIndex = it },
                 )
             }
             LazyColumn(
-                modifier       = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 100.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp),
             ) {
-            if (searchQuery.isNotBlank()) {
-                item {
-                    Text(
-                        // totalMatches cuenta en TODO el libro, no solo la
-                        // hoja activa (#13) -- displayRows sigue acotado a
-                        // la hoja activa (ya auto-seleccionada arriba si
-                        // hacía falta) porque la grilla es por hoja.
-                        text     = stringResource(
-                            R.string.viewer_search_results_count, totalMatches, searchQuery
-                        ),
-                        style    = MaterialTheme.typography.labelMedium,
-                        color    = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
+                if (searchQuery.isNotBlank()) {
+                    item {
+                        Text(
+                            // totalMatches cuenta en TODO el libro, no solo la
+                            // hoja activa (#13) -- displayRows sigue acotado a
+                            // la hoja activa (ya auto-seleccionada arriba si
+                            // hacía falta) porque la grilla es por hoja.
+                            text =
+                                stringResource(
+                                    R.string.viewer_search_results_count,
+                                    totalMatches,
+                                    searchQuery,
+                                ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    }
                 }
-            }
 
-            val header = if (searchQuery.isBlank()) displayRows.firstOrNull() else null
-            val data   = if (searchQuery.isBlank() && displayRows.size > 1)
-                displayRows.drop(1) else displayRows
+                val header = if (searchQuery.isBlank()) displayRows.firstOrNull() else null
+                val data =
+                    if (searchQuery.isBlank() && displayRows.size > 1) {
+                        displayRows.drop(1)
+                    } else {
+                        displayRows
+                    }
 
-            if (header != null) {
-                item {
+                if (header != null) {
+                    item {
+                        ExcelGridRow(
+                            cells = header.cells,
+                            columnCount = columnCount,
+                            scrollState = gridScrollState,
+                            isHeader = true,
+                            highlighted = false,
+                            zebra = false,
+                        )
+                    }
+                }
+
+                itemsIndexed(data) { index, row ->
                     ExcelGridRow(
-                        cells       = header.cells,
+                        cells = row.cells,
                         columnCount = columnCount,
                         scrollState = gridScrollState,
-                        isHeader    = true,
-                        highlighted = false,
-                        zebra       = false
+                        isHeader = false,
+                        highlighted = searchQuery.isNotBlank(),
+                        zebra = index % 2 == 0,
                     )
                 }
-            }
-
-            itemsIndexed(data) { index, row ->
-                ExcelGridRow(
-                    cells       = row.cells,
-                    columnCount = columnCount,
-                    scrollState = gridScrollState,
-                    isHeader    = false,
-                    highlighted = searchQuery.isNotBlank(),
-                    zebra       = index % 2 == 0
-                )
-            }
             }
         }
     }
@@ -1617,20 +1734,20 @@ private fun ExcelViewerContent(
 
 @Composable
 private fun ExcelSheetTabs(
-    sheetNames   : List<String>,
+    sheetNames: List<String>,
     selectedIndex: Int,
-    onSelect     : (Int) -> Unit
+    onSelect: (Int) -> Unit,
 ) {
     ScrollableTabRow(
         selectedTabIndex = selectedIndex,
-        edgePadding      = 16.dp,
-        containerColor   = MaterialTheme.colorScheme.surface
+        edgePadding = 16.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         sheetNames.forEachIndexed { index, name ->
             Tab(
                 selected = index == selectedIndex,
-                onClick  = { onSelect(index) },
-                text     = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                onClick = { onSelect(index) },
+                text = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             )
         }
     }
@@ -1638,54 +1755,62 @@ private fun ExcelSheetTabs(
 
 @Composable
 private fun ExcelGridRow(
-    cells      : List<String>,
+    cells: List<String>,
     columnCount: Int,
     scrollState: ScrollState,
-    isHeader   : Boolean,
+    isHeader: Boolean,
     highlighted: Boolean,
-    zebra      : Boolean
+    zebra: Boolean,
 ) {
-    val bgColor = when {
-        isHeader    -> MaterialTheme.colorScheme.primary
-        highlighted -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        zebra       -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        else        -> MaterialTheme.colorScheme.surface
-    }
+    val bgColor =
+        when {
+            isHeader -> MaterialTheme.colorScheme.primary
+            highlighted -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            zebra -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            else -> MaterialTheme.colorScheme.surface
+        }
     Column {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(scrollState)
-                .background(bgColor)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(scrollState)
+                    .background(bgColor),
         ) {
             for (col in 0 until columnCount) {
                 if (col > 0) {
                     Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(if (isHeader) 40.dp else 36.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        modifier =
+                            Modifier
+                                .width(1.dp)
+                                .height(if (isHeader) 40.dp else 36.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                     )
                 }
                 Box(
-                    modifier = Modifier
-                        .width(EXCEL_COLUMN_WIDTH)
-                        .padding(horizontal = 10.dp, vertical = 9.dp)
+                    modifier =
+                        Modifier
+                            .width(EXCEL_COLUMN_WIDTH)
+                            .padding(horizontal = 10.dp, vertical = 9.dp),
                 ) {
                     Text(
-                        text       = cells.getOrElse(col) { "" },
-                        style      = MaterialTheme.typography.bodySmall,
+                        text = cells.getOrElse(col) { "" },
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = if (isHeader) FontWeight.Bold else FontWeight.Normal,
-                        color      = if (isHeader) MaterialTheme.colorScheme.onPrimary
-                                     else MaterialTheme.colorScheme.onSurface,
-                        maxLines   = 2
+                        color =
+                            if (isHeader) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        maxLines = 2,
                     )
                 }
             }
         }
         HorizontalDivider(
-            color     = MaterialTheme.colorScheme.outlineVariant,
-            thickness = 0.5.dp
+            color = MaterialTheme.colorScheme.outlineVariant,
+            thickness = 0.5.dp,
         )
     }
 }
@@ -1707,10 +1832,11 @@ private fun ExcelGridRow(
 // en su posición exacta -- sigue siendo una mejora real (formato real por
 // forma, imágenes reales) sin depender de una API que no compila en Android.
 internal data class PptShapeContent(
-    val runs      : List<WordRun>,
-    val isTitle   : Boolean,
-    val imageBytes: ByteArray?
+    val runs: List<WordRun>,
+    val isTitle: Boolean,
+    val imageBytes: ByteArray?,
 )
+
 internal data class PptSlideModel(val number: Int, val shapes: List<PptShapeContent>)
 
 // Hallazgo real de la auditoría general 2026-09-17 (M8): mismo problema que
@@ -1729,84 +1855,97 @@ private fun extractPptSlides(input: InputStream): List<PptSlideModel> {
 
 private fun extractPptShapeContent(shape: XSLFShape): PptShapeContent? {
     if (shape is XSLFPictureShape) {
-        val bytes = try {
-            shape.pictureData?.data
-        } catch (e: Exception) {
-            Timber.w(e, "extractPptShapeContent: no se pudo leer una imagen")
-            null
-        }
+        val bytes =
+            try {
+                shape.pictureData?.data
+            } catch (e: Exception) {
+                Timber.w(e, "extractPptShapeContent: no se pudo leer una imagen")
+                null
+            }
         return bytes?.let { PptShapeContent(runs = emptyList(), isTitle = false, imageBytes = it) }
     }
 
     if (shape !is XSLFTextShape) return null
-    val isTitle = try {
-        shape.isPlaceholder && shape.textType?.name?.contains("TITLE", ignoreCase = true) == true
-    } catch (e: Exception) {
-        Timber.w(e, "extractPptShapeContent: no se pudo determinar si la forma es un título")
-        false
-    }
+    val isTitle =
+        try {
+            shape.isPlaceholder && shape.textType?.name?.contains("TITLE", ignoreCase = true) == true
+        } catch (e: Exception) {
+            Timber.w(e, "extractPptShapeContent: no se pudo determinar si la forma es un título")
+            false
+        }
     // Cada `XSLFTextParagraph` es un punto/viñeta separado (RF pedido por el
     // usuario 2026-09-03) -- sin un salto de línea entre ellos, "Punto uno"
     // y "Punto dos" quedaban pegados como "Punto unoPunto dos". En cuerpos
     // (no títulos) se antepone "• " a cada punto -- PowerPoint dibuja la
     // viñeta aparte, no la incluye en el texto del run.
-    val paragraphRuns = shape.textParagraphs.mapNotNull { paragraph ->
-        val runs = paragraph.textRuns.mapNotNull { run ->
-            val text = run.rawText
-            if (text.isNullOrBlank()) return@mapNotNull null
-            WordRun(
-                text       = text,
-                bold       = run.isBold,
-                italic     = run.isItalic,
-                fontSizeSp = run.fontSize?.toInt()
-            )
+    val paragraphRuns =
+        shape.textParagraphs.mapNotNull { paragraph ->
+            val runs =
+                paragraph.textRuns.mapNotNull { run ->
+                    val text = run.rawText
+                    if (text.isNullOrBlank()) return@mapNotNull null
+                    WordRun(
+                        text = text,
+                        bold = run.isBold,
+                        italic = run.isItalic,
+                        fontSizeSp = run.fontSize?.toInt(),
+                    )
+                }
+            if (runs.isEmpty()) return@mapNotNull null
+            if (isTitle) runs else listOf(WordRun("• ", bold = false, italic = false, fontSizeSp = null)) + runs
         }
-        if (runs.isEmpty()) return@mapNotNull null
-        if (isTitle) runs else listOf(WordRun("• ", bold = false, italic = false, fontSizeSp = null)) + runs
-    }
     if (paragraphRuns.isEmpty()) return null
-    val runs = paragraphRuns.reduce { acc, paragraph ->
-        acc + WordRun("\n", bold = false, italic = false, fontSizeSp = null) + paragraph
-    }
+    val runs =
+        paragraphRuns.reduce { acc, paragraph ->
+            acc + WordRun("\n", bold = false, italic = false, fontSizeSp = null) + paragraph
+        }
     return PptShapeContent(runs = runs, isTitle = isTitle, imageBytes = null)
 }
 
 @Composable
 private fun PptViewerContent(
-    uri        : Uri?,
+    uri: Uri?,
     searchQuery: String = "",
-    onTap      : () -> Unit
+    onTap: () -> Unit,
 ) {
     val load = rememberDocumentLoad(uri, emptyList<PptSlideModel>(), "PPT") { extractPptSlides(it) }
     val slides = load.data
 
-    fun slideText(slide: PptSlideModel) = slide.shapes.joinToString(" ") { shape ->
-        shape.runs.joinToString(" ") { it.text }
-    }
+    fun slideText(slide: PptSlideModel) =
+        slide.shapes.joinToString(" ") { shape ->
+            shape.runs.joinToString(" ") { it.text }
+        }
 
-    val displaySlides = if (searchQuery.isBlank()) slides
-    else slides.filter { slideText(it).contains(searchQuery, ignoreCase = true) }
+    val displaySlides =
+        if (searchQuery.isBlank()) {
+            slides
+        } else {
+            slides.filter { slideText(it).contains(searchQuery, ignoreCase = true) }
+        }
 
     DocumentContentBox(
-        isLoading    = load.isLoading,
+        isLoading = load.isLoading,
         isErrorState = load.hasError || slides.isEmpty(),
         errorMessage = stringResource(R.string.viewer_ppt_read_error),
-        onTap        = onTap
+        onTap = onTap,
     ) {
         LazyColumn(
-            modifier            = Modifier.fillMaxSize(),
-            contentPadding      = PaddingValues(top = 100.dp, bottom = 100.dp, start = 16.dp, end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp, start = 16.dp, end = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (searchQuery.isNotBlank()) {
                 item {
                     Text(
-                        text     = stringResource(
-                            R.string.viewer_search_results_count, displaySlides.size, searchQuery
-                        ),
-                        style    = MaterialTheme.typography.labelMedium,
-                        color    = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                        text =
+                            stringResource(
+                                R.string.viewer_search_results_count,
+                                displaySlides.size,
+                                searchQuery,
+                            ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 4.dp),
                     )
                 }
             }
@@ -1818,24 +1957,27 @@ private fun PptViewerContent(
             itemsIndexed(displaySlides) { _, slide ->
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text     = stringResource(R.string.viewer_slide_number, slide.number),
-                        style    = MaterialTheme.typography.labelSmall,
-                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        text = stringResource(R.string.viewer_slide_number, slide.number),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp),
                     )
                     val shape = MaterialTheme.shapes.large
-                    val containerColor = if (searchQuery.isNotBlank())
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                    else
-                        Color.White
+                    val containerColor =
+                        if (searchQuery.isNotBlank()) {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                        } else {
+                            Color.White
+                        }
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f / 9f)
-                            .accentShadow(shape = shape, elevation = 3.dp)
-                            .clip(shape)
-                            .background(containerColor)
-                            .accentBorder(shape = shape)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .accentShadow(shape = shape, elevation = 3.dp)
+                                .clip(shape)
+                                .background(containerColor)
+                                .accentBorder(shape = shape),
                     ) {
                         PptSlideCanvas(slide)
                     }
@@ -1852,8 +1994,8 @@ private fun PptViewerContent(
 @Composable
 private fun PptSlideCanvas(slide: PptSlideModel) {
     Column(
-        modifier            = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         slide.shapes.forEach { shapeContent -> PptShapeView(shapeContent) }
     }
@@ -1863,28 +2005,30 @@ private fun PptSlideCanvas(slide: PptSlideModel) {
 private fun PptShapeView(shape: PptShapeContent) {
     val imageBytes = shape.imageBytes
     if (imageBytes != null) {
-        val bitmap = remember(imageBytes) {
-            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-        }
+        val bitmap =
+            remember(imageBytes) {
+                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            }
         if (bitmap != null) {
             Image(
-                bitmap             = bitmap.asImageBitmap(),
+                bitmap = bitmap.asImageBitmap(),
                 contentDescription = null,
-                modifier           = Modifier.fillMaxWidth(),
-                contentScale       = androidx.compose.ui.layout.ContentScale.FillWidth
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = androidx.compose.ui.layout.ContentScale.FillWidth,
             )
         }
         return
     }
     Text(
-        text       = wordParagraphAnnotatedString(
-            WordParagraph(shape.runs, isHeading = shape.isTitle),
-            baseSizeSp = if (shape.isTitle) 20.sp else 13.sp
-        ),
-        style      = MaterialTheme.typography.bodyMedium,
+        text =
+            wordParagraphAnnotatedString(
+                WordParagraph(shape.runs, isHeading = shape.isTitle),
+                baseSizeSp = if (shape.isTitle) 20.sp else 13.sp,
+            ),
+        style = MaterialTheme.typography.bodyMedium,
         fontWeight = if (shape.isTitle) FontWeight.Bold else FontWeight.Normal,
-        color      = if (shape.isTitle) MaterialTheme.colorScheme.primary else Color(0xFF222222),
-        maxLines   = if (shape.isTitle) 3 else Int.MAX_VALUE
+        color = if (shape.isTitle) MaterialTheme.colorScheme.primary else Color(0xFF222222),
+        maxLines = if (shape.isTitle) 3 else Int.MAX_VALUE,
     )
 }
 
@@ -1898,22 +2042,23 @@ private const val MAX_TEXT_VIEWER_CHARS = 5_000_000
 
 @Composable
 private fun TextViewerContent(
-    uri        : Uri?,
+    uri: Uri?,
     searchQuery: String = "",
-    onTap      : () -> Unit
+    onTap: () -> Unit,
 ) {
     val truncatedNotice = stringResource(R.string.viewer_text_truncated_notice)
-    val load = rememberDocumentLoad(uri, "", "TXT") { input ->
-        val text = input.bufferedReader().readText()
-        if (text.length > MAX_TEXT_VIEWER_CHARS) {
-            text.take(MAX_TEXT_VIEWER_CHARS) + "\n\n" + truncatedNotice
-        } else {
-            text
+    val load =
+        rememberDocumentLoad(uri, "", "TXT") { input ->
+            val text = input.bufferedReader().readText()
+            if (text.length > MAX_TEXT_VIEWER_CHARS) {
+                text.take(MAX_TEXT_VIEWER_CHARS) + "\n\n" + truncatedNotice
+            } else {
+                text
+            }
         }
-    }
 
     DocumentContentBox(
-        isLoading    = load.isLoading,
+        isLoading = load.isLoading,
         // A diferencia de Word/Excel/PPT, un texto vacío es un estado
         // válido (archivo realmente vacío, ver TextViewerBody más abajo),
         // no un indicio de que algo falló al extraer -- solo `hasError`
@@ -1924,27 +2069,31 @@ private fun TextViewerContent(
         // vacío, en vez de avisar que la lectura falló.
         isErrorState = load.hasError,
         errorMessage = stringResource(R.string.viewer_text_read_error),
-        onTap        = onTap
+        onTap = onTap,
     ) {
         TextViewerBody(load.data, searchQuery)
     }
 }
 
 @Composable
-private fun TextViewerBody(text: String, searchQuery: String) {
+private fun TextViewerBody(
+    text: String,
+    searchQuery: String,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
     ) {
         if (searchQuery.isBlank()) {
             Text(
-                text       = text.ifBlank { stringResource(R.string.viewer_empty_file) },
-                style      = MaterialTheme.typography.bodyMedium,
-                fontSize   = 15.sp,
-                color      = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 24.sp
+                text = text.ifBlank { stringResource(R.string.viewer_empty_file) },
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 24.sp,
             )
         } else {
             TextViewerSearchResults(text, searchQuery)
@@ -1953,36 +2102,40 @@ private fun TextViewerBody(text: String, searchQuery: String) {
 }
 
 @Composable
-private fun TextViewerSearchResults(text: String, searchQuery: String) {
+private fun TextViewerSearchResults(
+    text: String,
+    searchQuery: String,
+) {
     val lines = text.lines().filter { it.contains(searchQuery, ignoreCase = true) }
     if (lines.isEmpty()) {
         Text(
-            text  = stringResource(R.string.viewer_search_no_results),
+            text = stringResource(R.string.viewer_search_no_results),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         return
     }
     Text(
-        text     = stringResource(R.string.viewer_text_results_count, lines.size),
-        style    = MaterialTheme.typography.labelMedium,
-        color    = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(bottom = 8.dp)
+        text = stringResource(R.string.viewer_text_results_count, lines.size),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(bottom = 8.dp),
     )
     lines.forEach { line ->
         Text(
-            text       = line,
-            style      = MaterialTheme.typography.bodyMedium,
-            fontSize   = 15.sp,
-            color      = MaterialTheme.colorScheme.onSurface,
+            text = line,
+            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onSurface,
             lineHeight = 24.sp,
-            modifier   = Modifier
-                .fillMaxWidth()
-                .background(
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                    MaterialTheme.shapes.small
-                )
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        MaterialTheme.shapes.small,
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
         )
         Spacer(Modifier.height(4.dp))
     }
@@ -1991,12 +2144,12 @@ private fun TextViewerSearchResults(text: String, searchQuery: String) {
 // ── Dialog de contraseña PDF ──────────────────────────────────────────────────
 @Composable
 private fun PdfPasswordDialog(
-    fileName        : String,
-    passwordError   : String?,
-    isLoading       : Boolean,
-    onConfirm       : (String) -> Unit,
-    onDismiss       : () -> Unit,
-    dialogViewModel : PdfPasswordDialogViewModel = hiltViewModel()
+    fileName: String,
+    passwordError: String?,
+    isLoading: Boolean,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+    dialogViewModel: PdfPasswordDialogViewModel = hiltViewModel(),
 ) {
     // Hallazgo real de la auditoría general 2026-09-17 (B12): la contraseña
     // ya no vive en `rememberSaveable` (Bundle de `onSaveInstanceState`) --
@@ -2018,79 +2171,89 @@ private fun PdfPasswordDialog(
     }
 
     AlertDialog(
-        onDismissRequest = { dialogViewModel.clear(); onDismiss() },
-        shape            = MaterialTheme.shapes.extraLarge,
-        icon             = {
+        onDismissRequest = {
+            dialogViewModel.clear()
+            onDismiss()
+        },
+        shape = MaterialTheme.shapes.extraLarge,
+        icon = {
             Icon(
-                Icons.Rounded.Lock, null,
-                tint     = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
+                Icons.Rounded.Lock,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp),
             )
         },
         title = {
             Text(
-                text      = stringResource(R.string.viewer_pdf_password_title),
-                style     = MaterialTheme.typography.titleLarge,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                text = stringResource(R.string.viewer_pdf_password_title),
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         },
         text = {
             PdfPasswordDialogBody(
-                fileName      = fileName,
-                password      = password,
+                fileName = fileName,
+                password = password,
                 onPasswordChange = dialogViewModel::onPasswordChange,
-                showPassword  = showPassword,
+                showPassword = showPassword,
                 onToggleShowPassword = dialogViewModel::onToggleShowPassword,
-                passwordError = passwordError
+                passwordError = passwordError,
             )
         },
         confirmButton = {
             Button(
-                onClick  = { if (password.isNotBlank()) onConfirm(password) },
-                enabled  = password.isNotBlank() && !isLoading,
+                onClick = { if (password.isNotBlank()) onConfirm(password) },
+                enabled = password.isNotBlank() && !isLoading,
                 modifier = Modifier.fillMaxWidth(),
-                shape    = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             ) {
                 PdfPasswordConfirmButtonContent(isLoading)
             }
         },
         dismissButton = {
-            TextButton(onClick = { dialogViewModel.clear(); onDismiss() }) {
+            TextButton(onClick = {
+                dialogViewModel.clear()
+                onDismiss()
+            }) {
                 Text(stringResource(R.string.general_cancel))
             }
-        }
+        },
     )
 }
 
 @Composable
 private fun PdfPasswordDialogBody(
-    fileName            : String,
-    password            : String,
-    onPasswordChange    : (String) -> Unit,
-    showPassword        : Boolean,
+    fileName: String,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    showPassword: Boolean,
     onToggleShowPassword: () -> Unit,
-    passwordError       : String?
+    passwordError: String?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text  = stringResource(R.string.viewer_pdf_password_body, fileName),
+            text = stringResource(R.string.viewer_pdf_password_body, fileName),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         OutlinedTextField(
-            value         = password,
+            value = password,
             onValueChange = onPasswordChange,
-            modifier      = Modifier.fillMaxWidth(),
-            label         = { Text(stringResource(R.string.viewer_pdf_password_label)) },
-            placeholder   = { Text(stringResource(R.string.viewer_pdf_password_placeholder)) },
-            visualTransformation = if (showPassword)
-                androidx.compose.ui.text.input.VisualTransformation.None
-            else
-                androidx.compose.ui.text.input.PasswordVisualTransformation(),
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Password
-            ),
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.viewer_pdf_password_label)) },
+            placeholder = { Text(stringResource(R.string.viewer_pdf_password_placeholder)) },
+            visualTransformation =
+                if (showPassword) {
+                    androidx.compose.ui.text.input.VisualTransformation.None
+                } else {
+                    androidx.compose.ui.text.input.PasswordVisualTransformation()
+                },
+            keyboardOptions =
+                androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Password,
+                ),
             trailingIcon = {
                 // Hallazgo real de la auditoría general 2026-09-17
                 // (séptima ronda, Alta -- A1): la misma corrección ya
@@ -2099,24 +2262,28 @@ private fun PdfPasswordDialogBody(
                 // "Botón" sin decir qué hace.
                 IconButton(onClick = onToggleShowPassword) {
                     Icon(
-                        if (showPassword) Icons.Rounded.VisibilityOff
-                        else Icons.Rounded.Visibility,
-                        contentDescription = stringResource(
-                            if (showPassword) R.string.password_hide else R.string.password_show
-                        )
+                        if (showPassword) {
+                            Icons.Rounded.VisibilityOff
+                        } else {
+                            Icons.Rounded.Visibility
+                        },
+                        contentDescription =
+                            stringResource(
+                                if (showPassword) R.string.password_hide else R.string.password_show,
+                            ),
                     )
                 }
             },
-            isError    = passwordError != null,
+            isError = passwordError != null,
             singleLine = true,
-            shape      = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         )
 
         passwordError?.let {
             Text(
-                text  = it,
+                text = it,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
             )
         }
     }
@@ -2126,9 +2293,9 @@ private fun PdfPasswordDialogBody(
 private fun PdfPasswordConfirmButtonContent(isLoading: Boolean) {
     if (isLoading) {
         CircularProgressIndicator(
-            modifier    = Modifier.size(16.dp),
+            modifier = Modifier.size(16.dp),
             strokeWidth = 2.dp,
-            color       = MaterialTheme.colorScheme.onPrimary
+            color = MaterialTheme.colorScheme.onPrimary,
         )
     } else {
         Icon(Icons.Rounded.LockOpen, null, modifier = Modifier.size(16.dp))
@@ -2136,50 +2303,63 @@ private fun PdfPasswordConfirmButtonContent(isLoading: Boolean) {
         Text(stringResource(R.string.viewer_pdf_password_open_button))
     }
 }
+
 // ── Formato no soportado ──────────────────────────────────────────────────────
 @Composable
 private fun UnsupportedFormatContent(
     mimeType: String,
     fileName: String,
-    fileUri : Uri?,
-    onTap   : () -> Unit
+    fileUri: Uri?,
+    onTap: () -> Unit,
 ) {
-    val context         = LocalContext.current
-    val openWithText    = stringResource(R.string.viewer_open_other)
-    val openErrorText   = stringResource(R.string.viewer_open_other_error)
+    val context = LocalContext.current
+    val openWithText = stringResource(R.string.viewer_open_other)
+    val openErrorText = stringResource(R.string.viewer_open_other_error)
     val unsupportedText = stringResource(R.string.viewer_unsupported)
 
-    val formatLabel = when {
-        mimeType.contains("word")       || mimeType.contains("msword")       -> "Word"
-        mimeType.contains("excel")      || mimeType.contains("sheet")        -> "Excel"
-        mimeType.contains("powerpoint") || mimeType.contains("presentation") -> "PowerPoint"
-        mimeType.contains("text") -> stringResource(R.string.viewer_format_text)
-        else                      -> stringResource(R.string.viewer_format_generic)
-    }
+    val formatLabel =
+        when {
+            mimeType.contains("word") || mimeType.contains("msword") -> "Word"
+            mimeType.contains("excel") || mimeType.contains("sheet") -> "Excel"
+            mimeType.contains("powerpoint") || mimeType.contains("presentation") -> "PowerPoint"
+            mimeType.contains("text") -> stringResource(R.string.viewer_format_text)
+            else -> stringResource(R.string.viewer_format_generic)
+        }
 
     Box(
-        modifier         = Modifier.fillMaxSize().clickable { onTap() },
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxSize().clickable { onTap() },
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier            = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(80.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(formatLabel,
+                Text(
+                    formatLabel,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
             }
-            Text(fileName,        style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,        textAlign = TextAlign.Center)
-            Text(unsupportedText, style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            Text(
+                fileName,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                unsupportedText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
             if (fileUri != null) {
                 Button(onClick = {
                     try {
@@ -2194,17 +2374,21 @@ private fun UnsupportedFormatContent(
                         // envolver con FileProvider antes de lanzar el
                         // Intent.
                         val safePath = fileUri.path
-                        val safeUri = if (fileUri.scheme == "file" && safePath != null) {
-                            FileProvider.getUriForFile(
-                                context, "${context.packageName}.fileprovider", java.io.File(safePath)
-                            )
-                        } else {
-                            fileUri
-                        }
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(safeUri, mimeType)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
+                        val safeUri =
+                            if (fileUri.scheme == "file" && safePath != null) {
+                                FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    java.io.File(safePath),
+                                )
+                            } else {
+                                fileUri
+                            }
+                        val intent =
+                            Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(safeUri, mimeType)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
                         context.startActivity(Intent.createChooser(intent, openWithText))
                     } catch (e: Exception) {
                         Timber.e(e, "No se pudo abrir con otra app: ${e.message}")
@@ -2215,4 +2399,3 @@ private fun UnsupportedFormatContent(
         }
     }
 }
-

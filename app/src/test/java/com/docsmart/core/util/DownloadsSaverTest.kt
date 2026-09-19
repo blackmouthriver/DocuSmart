@@ -34,7 +34,6 @@ import java.nio.file.Files
  * la lógica real de saneo de nombre, colisión y manejo de errores.
  */
 class DownloadsSaverTest {
-
     private lateinit var downloadsDir: File
     private lateinit var context: Context
 
@@ -72,17 +71,18 @@ class DownloadsSaverTest {
     // ── saveFile ──────────────────────────────────────────────────────────
 
     @Test
-    fun `saveFile copia el contenido real al directorio de Descargas`() = runTest {
-        val source = File(Files.createTempDirectory("docsmart_src_").toFile(), "documento.pdf")
-        source.writeText("contenido real del pdf")
+    fun `saveFile copia el contenido real al directorio de Descargas`() =
+        runTest {
+            val source = File(Files.createTempDirectory("docsmart_src_").toFile(), "documento.pdf")
+            source.writeText("contenido real del pdf")
 
-        val saved = DownloadsSaver.saveFile(context, source, "application/pdf")
+            val saved = DownloadsSaver.saveFile(context, source, "application/pdf")
 
-        assertTrue(saved)
-        val dest = File(downloadsDir, "documento.pdf")
-        assertTrue(dest.exists())
-        assertEquals("contenido real del pdf", dest.readText())
-    }
+            assertTrue(saved)
+            val dest = File(downloadsDir, "documento.pdf")
+            assertTrue(dest.exists())
+            assertEquals("contenido real del pdf", dest.readText())
+        }
 
     @Test
     fun `saveFile sanea un displayName con segmentos de ruta antes de usarlo como nombre destino`() {
@@ -94,15 +94,16 @@ class DownloadsSaverTest {
         val source = File(Files.createTempDirectory("docsmart_src_").toFile(), "original.pdf")
         source.writeText("contenido")
 
-        val saved = runBlocking {
-            DownloadsSaver.saveFile(context, source, "application/pdf", displayName = "../../evil.pdf")
-        }
+        val saved =
+            runBlocking {
+                DownloadsSaver.saveFile(context, source, "application/pdf", displayName = "../../evil.pdf")
+            }
 
         assertTrue(saved)
         assertTrue(File(downloadsDir, "evil.pdf").exists(), "debe guardarse con el nombre saneado dentro de Descargas")
         assertFalse(
             File(downloadsDir.parentFile?.parentFile, "evil.pdf").exists(),
-            "no debe escapar del directorio de Descargas"
+            "no debe escapar del directorio de Descargas",
         )
     }
 
@@ -124,7 +125,7 @@ class DownloadsSaverTest {
         val renamed = File(downloadsDir, "documento (1).pdf")
         assertTrue(
             renamed.exists(),
-            "el nuevo archivo debe guardarse con un sufijo numerico en vez de pisar el existente"
+            "el nuevo archivo debe guardarse con un sufijo numerico en vez de pisar el existente",
         )
         assertEquals("version nueva", renamed.readText())
     }
@@ -163,9 +164,10 @@ class DownloadsSaverTest {
         val sourceUri = mockk<Uri>()
         every { resolver.openInputStream(sourceUri) } returns ByteArrayInputStream("contenido de origen".toByteArray())
 
-        val saved = runBlocking {
-            DownloadsSaver.saveUri(context, sourceUri, "text/plain", "notas.txt")
-        }
+        val saved =
+            runBlocking {
+                DownloadsSaver.saveUri(context, sourceUri, "text/plain", "notas.txt")
+            }
 
         assertTrue(saved)
         val dest = File(downloadsDir, "notas.txt")
@@ -180,9 +182,10 @@ class DownloadsSaverTest {
         val sourceUri = mockk<Uri>()
         every { resolver.openInputStream(sourceUri) } returns null
 
-        val saved = runBlocking {
-            DownloadsSaver.saveUri(context, sourceUri, "text/plain", "notas.txt")
-        }
+        val saved =
+            runBlocking {
+                DownloadsSaver.saveUri(context, sourceUri, "text/plain", "notas.txt")
+            }
 
         assertFalse(saved)
         assertFalse(File(downloadsDir, "notas.txt").exists())
@@ -196,9 +199,10 @@ class DownloadsSaverTest {
         val sourceUri = mockk<Uri>()
         every { resolver.openInputStream(sourceUri) } returns ByteArrayInputStream("version nueva".toByteArray())
 
-        val saved = runBlocking {
-            DownloadsSaver.saveUri(context, sourceUri, "text/plain", "notas.txt")
-        }
+        val saved =
+            runBlocking {
+                DownloadsSaver.saveUri(context, sourceUri, "text/plain", "notas.txt")
+            }
 
         assertTrue(saved)
         assertEquals("version vieja", File(downloadsDir, "notas.txt").readText())

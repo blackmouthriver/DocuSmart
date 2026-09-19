@@ -19,21 +19,23 @@ class AnnotationTypeConverter {
     fun fromType(type: AnnotationType): String = type.name
 
     @TypeConverter
-    fun toType(value: String): AnnotationType =
-        AnnotationType.entries.firstOrNull { it.name == value } ?: AnnotationType.HIGHLIGHT
+    fun toType(value: String): AnnotationType = AnnotationType.entries.firstOrNull { it.name == value } ?: AnnotationType.HIGHLIGHT
 }
 
 @Entity(tableName = "annotations", indices = [Index("documentId")])
 data class AnnotationEntity(
     @androidx.room.PrimaryKey val id: String,
     val documentId: String,
-    val type      : AnnotationType,
-    val page      : Int,    // 1-based, mismo criterio que pdfSearchHighlights
-    val xPts      : Float,
-    val yPts      : Float,
-    val widthPts  : Float,
-    val heightPts : Float,
-    val color     : Int,    // ARGB opaco -- la transparencia del resaltado se aplica al dibujar, no al guardar
-    val text      : String, // vacío para HIGHLIGHT, contenido de la nota para NOTE
-    val createdAt : Long
+    val type: AnnotationType,
+    // 1-based, mismo criterio que pdfSearchHighlights
+    val page: Int,
+    val xPts: Float,
+    val yPts: Float,
+    val widthPts: Float,
+    val heightPts: Float,
+    // ARGB opaco -- la transparencia del resaltado se aplica al dibujar, no al guardar
+    val color: Int,
+    // vacío para HIGHLIGHT, contenido de la nota para NOTE
+    val text: String,
+    val createdAt: Long,
 )

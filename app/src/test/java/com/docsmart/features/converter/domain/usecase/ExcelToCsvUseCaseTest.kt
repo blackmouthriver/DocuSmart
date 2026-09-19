@@ -24,7 +24,6 @@ import java.nio.file.Files
  * opción entregaba un PDF, no un .csv. Este use case reemplaza ese hueco.
  */
 class ExcelToCsvUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: ExcelToCsvUseCase
@@ -47,37 +46,40 @@ class ExcelToCsvUseCaseTest {
     }
 
     @Test
-    fun `convierte filas y columnas a CSV separado por comas`() = runTest {
-        stubResolver(createTestXlsx(listOf(listOf("Nombre", "Edad"), listOf("Ana", "30"))))
+    fun `convierte filas y columnas a CSV separado por comas`() =
+        runTest {
+            stubResolver(createTestXlsx(listOf(listOf("Nombre", "Edad"), listOf("Ana", "30"))))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("csv", outputFile.extension)
-        val lines = outputFile.readLines()
-        assertEquals("Nombre,Edad", lines[0])
-        assertEquals("Ana,30", lines[1])
-    }
-
-    @Test
-    fun `escapa valores con comas y comillas segun el estandar CSV`() = runTest {
-        stubResolver(createTestXlsx(listOf(listOf("Empresa, S.A.", "dijo \"hola\""))))
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("\"Empresa, S.A.\",\"dijo \"\"hola\"\"\"", outputFile.readLines()[0])
-    }
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("csv", outputFile.extension)
+            val lines = outputFile.readLines()
+            assertEquals("Nombre,Edad", lines[0])
+            assertEquals("Ana,30", lines[1])
+        }
 
     @Test
-    fun `hoja vacia devuelve Error`() = runTest {
-        stubResolver(createTestXlsx(emptyList()))
+    fun `escapa valores con comas y comillas segun el estandar CSV`() =
+        runTest {
+            stubResolver(createTestXlsx(listOf(listOf("Empresa, S.A.", "dijo \"hola\""))))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("\"Empresa, S.A.\",\"dijo \"\"hola\"\"\"", outputFile.readLines()[0])
+        }
+
+    @Test
+    fun `hoja vacia devuelve Error`() =
+        runTest {
+            stubResolver(createTestXlsx(emptyList()))
+
+            val result = useCase(mockk<Uri>(), "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

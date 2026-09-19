@@ -8,7 +8,7 @@ import java.util.Calendar
 
 data class StudyStats(
     val totalReadingMillis: Long,
-    val pomodoroTimestamps: List<Long>
+    val pomodoroTimestamps: List<Long>,
 )
 
 /**
@@ -28,14 +28,20 @@ object StudyStatsStorage {
     // acumular para siempre un historial que nadie consulta.
     internal const val POMODORO_HISTORY_RETENTION_DAYS = 90L
 
-    fun addReadingTime(context: Context, millis: Long) {
+    fun addReadingTime(
+        context: Context,
+        millis: Long,
+    ) {
         if (millis <= 0) return
         val prefs = prefs(context)
         val current = prefs.getLong(KEY_TOTAL_READING_MILLIS, 0L)
         prefs.edit().putLong(KEY_TOTAL_READING_MILLIS, current + millis).apply()
     }
 
-    fun recordPomodoroCompletion(context: Context, at: Long = System.currentTimeMillis()) {
+    fun recordPomodoroCompletion(
+        context: Context,
+        at: Long = System.currentTimeMillis(),
+    ) {
         val prefs = prefs(context)
         val updated = trimOldTimestamps(loadPomodoroTimestamps(prefs) + at, at)
         prefs.edit().putString(KEY_POMODORO_TIMESTAMPS, JSONArray(updated).toString()).apply()
@@ -45,18 +51,21 @@ object StudyStatsStorage {
         val prefs = prefs(context)
         return StudyStats(
             totalReadingMillis = prefs.getLong(KEY_TOTAL_READING_MILLIS, 0L),
-            pomodoroTimestamps = loadPomodoroTimestamps(prefs)
+            pomodoroTimestamps = loadPomodoroTimestamps(prefs),
         )
     }
 
-    internal fun trimOldTimestamps(timestamps: List<Long>, now: Long): List<Long> {
+    internal fun trimOldTimestamps(
+        timestamps: List<Long>,
+        now: Long,
+    ): List<Long> {
         val cutoff = now - POMODORO_HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000L
         return timestamps.filter { it >= cutoff }
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun loadPomodoroTimestamps(prefs: SharedPreferences): List<Long> {
-        return try {
+    private fun loadPomodoroTimestamps(prefs: SharedPreferences): List<Long> =
+        try {
             val json = prefs.getString(KEY_POMODORO_TIMESTAMPS, "[]") ?: "[]"
             val array = JSONArray(json)
             (0 until array.length()).map { array.getLong(it) }
@@ -64,10 +73,8 @@ object StudyStatsStorage {
             Timber.e(e, "Error cargando historial de pomodoros")
             emptyList()
         }
-    }
 
-    private fun prefs(context: Context): SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun prefs(context: Context): SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }
 
 /**
@@ -77,7 +84,10 @@ object StudyStatsStorage {
  * usar `System.currentTimeMillis()` internamente para poder testear semanas
  * fijas sin depender del reloj real.
  */
-internal fun pomodoroCountsByWeekday(timestamps: List<Long>, now: Long): IntArray {
+internal fun pomodoroCountsByWeekday(
+    timestamps: List<Long>,
+    now: Long,
+): IntArray {
     val calendar = Calendar.getInstance()
     calendar.timeInMillis = now
     calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -99,8 +109,10 @@ internal fun pomodoroCountsByWeekday(timestamps: List<Long>, now: Long): IntArra
 }
 
 /** Total de pomodoros dentro de la semana calendario actual. */
-internal fun pomodoroCountThisWeek(timestamps: List<Long>, now: Long): Int =
-    pomodoroCountsByWeekday(timestamps, now).sum()
+internal fun pomodoroCountThisWeek(
+    timestamps: List<Long>,
+    now: Long,
+): Int = pomodoroCountsByWeekday(timestamps, now).sum()
 
 /**
  * Total de pomodoros completados en el día calendario de `now` -- usado
@@ -111,7 +123,10 @@ internal fun pomodoroCountThisWeek(timestamps: List<Long>, now: Long): Int =
  * proceso moría entre bloques, aunque el historial real ya llevara varios
  * pomodoros completados hoy).
  */
-internal fun pomodoroCountToday(timestamps: List<Long>, now: Long): Int {
+internal fun pomodoroCountToday(
+    timestamps: List<Long>,
+    now: Long,
+): Int {
     val calendar = Calendar.getInstance()
     calendar.timeInMillis = now
     calendar.set(Calendar.HOUR_OF_DAY, 0)

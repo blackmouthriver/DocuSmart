@@ -23,94 +23,103 @@ import com.docsmart.core.ui.theme.accentShadow
 @Composable
 fun ConversionProgress(
     totalImages: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Animación de rotación continua
     val infiniteTransition = rememberInfiniteTransition(label = "conversion")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1200,
-                easing = LinearEasing
-            )
-        ),
-        label = "rotation"
+        animationSpec =
+            infiniteRepeatable(
+                animation =
+                    tween(
+                        durationMillis = 1200,
+                        easing = LinearEasing,
+                    ),
+            ),
+        label = "rotation",
     )
 
     // Animación de opacidad pulsante
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 800,
-                easing = FastOutSlowInEasing
+        animationSpec =
+            infiniteRepeatable(
+                animation =
+                    tween(
+                        durationMillis = 800,
+                        easing = FastOutSlowInEasing,
+                    ),
+                repeatMode = RepeatMode.Reverse,
             ),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "alpha"
+        label = "alpha",
     )
 
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             // Ícono animado
             Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.extraLarge
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(80.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.extraLarge,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.SwapHoriz,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
-                    modifier = Modifier
-                        .size(40.dp)
-                        .rotate(rotation)
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .rotate(rotation),
                 )
             }
 
             // Texto de progreso
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = stringResource(R.string.converter_progress_title),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = stringResource(R.string.converter_progress_subtitle, totalImages),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             // Barra de progreso indeterminada
             LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(6.dp),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.primaryContainer,
             )
@@ -118,7 +127,7 @@ fun ConversionProgress(
             Text(
                 text = stringResource(R.string.converter_progress_footer),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

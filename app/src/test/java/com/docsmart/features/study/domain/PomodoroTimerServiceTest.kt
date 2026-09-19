@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test
  * así que se prueba la decisión pura por separado.
  */
 class PomodoroTimerServiceTest {
-
     @Test
     fun `con un evento pendiente en replayCache, postea la alerta y despues consume el evento`() {
         val posted = mutableListOf<Boolean>()
@@ -31,7 +30,7 @@ class PomodoroTimerServiceTest {
         flushPendingCompletionEvent(
             replayCache = listOf(true),
             postAlert = { posted.add(it) },
-            consume = { consumed = true }
+            consume = { consumed = true },
         )
 
         verifyPostedThenConsumed(posted, consumed, expectedWasBreak = true)
@@ -45,7 +44,7 @@ class PomodoroTimerServiceTest {
         flushPendingCompletionEvent(
             replayCache = listOf(false),
             postAlert = { posted.add(it) },
-            consume = { consumed = true }
+            consume = { consumed = true },
         )
 
         verifyPostedThenConsumed(posted, consumed, expectedWasBreak = false)
@@ -75,8 +74,14 @@ class PomodoroTimerServiceTest {
         }
     }
 
-    private fun verifyPostedThenConsumed(posted: List<Boolean>, consumed: Boolean, expectedWasBreak: Boolean) {
-        org.junit.jupiter.api.Assertions.assertEquals(listOf(expectedWasBreak), posted)
-        org.junit.jupiter.api.Assertions.assertTrue(consumed)
+    private fun verifyPostedThenConsumed(
+        posted: List<Boolean>,
+        consumed: Boolean,
+        expectedWasBreak: Boolean,
+    ) {
+        org.junit.jupiter.api.Assertions
+            .assertEquals(listOf(expectedWasBreak), posted)
+        org.junit.jupiter.api.Assertions
+            .assertTrue(consumed)
     }
 }

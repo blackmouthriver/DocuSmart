@@ -21,19 +21,20 @@ fun DocuSmartSearchBar(
     modifier: Modifier = Modifier,
     placeholder: String = "Buscar documentos...",
     onSearch: (String) -> Unit = {},
-    onClear: () -> Unit = {}
+    onClear: () -> Unit = {},
 ) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(52.dp),
         placeholder = {
             Text(
                 text = placeholder,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         leadingIcon = {
@@ -45,7 +46,7 @@ fun DocuSmartSearchBar(
                 imageVector = Icons.Rounded.Search,
                 contentDescription = stringResource(R.string.search_bar_icon_desc),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
         },
         trailingIcon = {
@@ -55,21 +56,23 @@ fun DocuSmartSearchBar(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = stringResource(R.string.search_bar_clear_desc),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
         },
         singleLine = true,
-        shape = MaterialTheme.shapes.medium, // 16dp
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-        ),
+        // 16dp
+        shape = MaterialTheme.shapes.medium,
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+            ),
         textStyle = MaterialTheme.typography.bodyMedium,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch(query) })
+        keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
     )
 }

@@ -27,52 +27,64 @@ fun ViewerBottomBar(
     isCurrentPageBookmarked: Boolean = false,
     onToggleBookmark: () -> Unit = {},
     onShowBookmarks: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
         visible = visible && totalPages > 0,
         enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
         exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
-        modifier = modifier
+        modifier = modifier,
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 4.dp
+            shadowElevation = 4.dp,
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .height(48.dp)
-                    .padding(horizontal = 4.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .height(48.dp)
+                        .padding(horizontal = 4.dp),
             ) {
                 IconButton(onClick = onShowBookmarks, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(
-                        imageVector        = Icons.Rounded.Bookmarks,
-                        contentDescription = stringResource(R.string.viewer_bookmarks_title)
+                        imageVector = Icons.Rounded.Bookmarks,
+                        contentDescription = stringResource(R.string.viewer_bookmarks_title),
                     )
                 }
                 // Bug real encontrado 2026-09-14 (repaso general):
                 // hardcodeado en español, saltándose el sistema de idiomas.
                 Text(
-                    text = String.format(
-                        stringResource(R.string.viewer_bottom_bar_page_format), currentPage + 1, totalPages
-                    ),
-                    style    = MaterialTheme.typography.labelMedium,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Center)
+                    text =
+                        String.format(
+                            stringResource(R.string.viewer_bottom_bar_page_format),
+                            currentPage + 1,
+                            totalPages,
+                        ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.Center),
                 )
                 IconButton(onClick = onToggleBookmark, modifier = Modifier.align(Alignment.CenterEnd)) {
                     val bookmarkIcon =
                         if (isCurrentPageBookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder
                     Icon(
                         imageVector = bookmarkIcon,
-                        contentDescription = stringResource(
-                            if (isCurrentPageBookmarked) R.string.viewer_bookmark_remove
-                            else R.string.viewer_bookmark_add
-                        ),
-                        tint = if (isCurrentPageBookmarked) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        contentDescription =
+                            stringResource(
+                                if (isCurrentPageBookmarked) {
+                                    R.string.viewer_bookmark_remove
+                                } else {
+                                    R.string.viewer_bookmark_add
+                                },
+                            ),
+                        tint =
+                            if (isCurrentPageBookmarked) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                 }
             }

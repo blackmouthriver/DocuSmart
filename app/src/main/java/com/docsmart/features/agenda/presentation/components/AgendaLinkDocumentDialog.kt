@@ -16,19 +16,19 @@ import com.docsmart.core.ui.components.LinkDocumentDialog
 @Composable
 fun AgendaLinkDocumentDialog(
     currentDocumentId: String?,
-    onDismiss        : () -> Unit,
-    onSelect         : (DocumentUiModel) -> Unit,
-    onUnlink         : () -> Unit,
-    viewModel        : AppLibraryPickerViewModel = hiltViewModel()
+    onDismiss: () -> Unit,
+    onSelect: (DocumentUiModel) -> Unit,
+    onUnlink: () -> Unit,
+    viewModel: AppLibraryPickerViewModel = hiltViewModel(),
 ) {
     LinkDocumentDialog(
         currentDocumentId = currentDocumentId,
-        title             = stringResource(R.string.agenda_link_document_title),
-        emptyMessage      = stringResource(R.string.agenda_link_document_empty),
-        unlinkLabel       = stringResource(R.string.agenda_unlink_document),
-        onDismiss         = onDismiss,
-        onSelect          = onSelect,
-        onUnlink          = onUnlink,
-        viewModel         = viewModel
+        title = stringResource(R.string.agenda_link_document_title),
+        emptyMessage = stringResource(R.string.agenda_link_document_empty),
+        unlinkLabel = stringResource(R.string.agenda_unlink_document),
+        onDismiss = onDismiss,
+        onSelect = onSelect,
+        onUnlink = onUnlink,
+        viewModel = viewModel,
     )
 }

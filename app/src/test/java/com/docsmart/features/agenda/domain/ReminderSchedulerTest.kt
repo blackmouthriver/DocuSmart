@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test
  * ver limitación documentada en el resumen final de la ronda.
  */
 class ReminderSchedulerTest {
-
     private lateinit var context: Context
     private lateinit var alarmManager: AlarmManager
     private lateinit var scheduler: ReminderScheduler
@@ -52,13 +51,13 @@ class ReminderSchedulerTest {
     private fun event(
         id: String = "event-1",
         reminderMinutesBefore: Int? = 10,
-        dateTimeMillis: Long = System.currentTimeMillis() + 3_600_000
+        dateTimeMillis: Long = System.currentTimeMillis() + 3_600_000,
     ) = AgendaEventEntity(
         id = id,
         title = "Reunión",
         dateTimeMillis = dateTimeMillis,
         reminderMinutesBefore = reminderMinutesBefore,
-        createdAt = System.currentTimeMillis()
+        createdAt = System.currentTimeMillis(),
     )
 
     @Test
@@ -73,10 +72,11 @@ class ReminderSchedulerTest {
     fun `schedule no programa nada si la fecha de disparo ya paso (reprogramando tras un reinicio tardio)`() {
         // dateTimeMillis a solo 5 min, con recordatorio de 10 min antes -> el
         // trigger calculado ya quedó 5 min en el pasado.
-        val past = event(
-            dateTimeMillis = System.currentTimeMillis() + 5 * 60_000,
-            reminderMinutesBefore = 10
-        )
+        val past =
+            event(
+                dateTimeMillis = System.currentTimeMillis() + 5 * 60_000,
+                reminderMinutesBefore = 10,
+            )
 
         scheduler.schedule(past)
 

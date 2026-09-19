@@ -18,139 +18,152 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
-class PdfToImageUseCase @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    suspend operator fun invoke(
-        pdfUri: Uri,
-        fileName: String? = null
-    ): ConversionResult = withContext(Dispatchers.IO) {
-        // Bug real corregido 2026-09-08: el archivo de caché tenía un
-        // nombre fijo ("temp_convert.pdf", no único como en el resto de los
-        // use cases de esta app) y nunca se borraba -- quedaba en disco
-        // después de cada conversión, y dos conversiones de este tipo a la
-        // vez competían por el mismo archivo. `renderer`/`fileDescriptor`
-        // tampoco se cerraban si algo fallaba a mitad del loop (ej.
-        // `OutOfMemoryError` al renderizar una página a 2x, que ni siquiera
-        // hereda de `Exception` y no la atrapa el catch de más abajo).
-        var cacheFile: File? = null
-        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
-        // si el loop de páginas fallaba a mitad de camino (OutOfMemoryError
-        // u otra excepción al renderizar la página N de un PDF grande),
-        // las páginas 1..N-1 ya escritas a disco quedaban huérfanas en
-        // filesDir/converted para siempre -- la función nunca llegaba a
-        // Success, así que nada las referenciaba ni las borraba. Se
-        // declara afuera del try para poder limpiarlas en ambos catch.
-        val outputFiles = mutableListOf<File>()
-        try {
-            // ── Copiar al cache ───────────────────────
-            cacheFile = File(context.cacheDir, "temp_convert_${System.currentTimeMillis()}.pdf")
-            if (!copyPdfToCache(pdfUri, cacheFile)) {
-                return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
-            }
+class PdfToImageUseCase
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        suspend operator fun invoke(
+            pdfUri: Uri,
+            fileName: String? = null,
+        ): ConversionResult =
+            withContext(Dispatchers.IO) {
+                // Bug real corregido 2026-09-08: el archivo de caché tenía un
+                // nombre fijo ("temp_convert.pdf", no único como en el resto de los
+                // use cases de esta app) y nunca se borraba -- quedaba en disco
+                // después de cada conversión, y dos conversiones de este tipo a la
+                // vez competían por el mismo archivo. `renderer`/`fileDescriptor`
+                // tampoco se cerraban si algo fallaba a mitad del loop (ej.
+                // `OutOfMemoryError` al renderizar una página a 2x, que ni siquiera
+                // hereda de `Exception` y no la atrapa el catch de más abajo).
+                var cacheFile: File? = null
+                // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+                // si el loop de páginas fallaba a mitad de camino (OutOfMemoryError
+                // u otra excepción al renderizar la página N de un PDF grande),
+                // las páginas 1..N-1 ya escritas a disco quedaban huérfanas en
+                // filesDir/converted para siempre -- la función nunca llegaba a
+                // Success, así que nada las referenciaba ni las borraba. Se
+                // declara afuera del try para poder limpiarlas en ambos catch.
+                val outputFiles = mutableListOf<File>()
+                try {
+                    // ── Copiar al cache ───────────────────────
+                    cacheFile = File(context.cacheDir, "temp_convert_${System.currentTimeMillis()}.pdf")
+                    if (!copyPdfToCache(pdfUri, cacheFile)) {
+                        return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_pdf))
+                    }
 
-            val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
-            val baseName = fileName ?: generateTimestamp()
+                    val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
+                    val baseName = fileName ?: generateTimestamp()
 
-            outputFiles.addAll(renderAllPages(cacheFile, outputDir, baseName))
+                    outputFiles.addAll(renderAllPages(cacheFile, outputDir, baseName))
 
-            if (outputFiles.isEmpty()) {
-                return@withContext ConversionResult.Error(
-                    context.getString(R.string.converter_error_extract_pages_failed)
-                )
-            }
+                    if (outputFiles.isEmpty()) {
+                        return@withContext ConversionResult.Error(
+                            context.getString(R.string.converter_error_extract_pages_failed),
+                        )
+                    }
 
-            // Retornar el primer archivo como resultado principal
-            ConversionResult.Success(
-                outputFile = outputFiles.first(),
-                pageCount = outputFiles.size,
-                fileSizeKb = outputFiles.sumOf { it.length() / 1024 }.toInt(),
-                extraFiles = outputFiles.drop(1)
-            )
-        } catch (e: CancellationException) {
-            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
-            // en ConvertImageToPdfUseCase.kt. Las páginas ya escritas a
-            // disco antes de la cancelación se borran igual que en los
-            // catches de error (mismo criterio de cleanupOrphanPages), pero
-            // sin construir un ConversionResult.Error -- la cancelación se
-            // relanza tal cual.
-            outputFiles.forEach { it.delete() }
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Error convirtiendo PDF a imagen")
-            cleanupOrphanPages(outputFiles, e.message ?: "")
-        } catch (e: OutOfMemoryError) {
-            // OutOfMemoryError no hereda de Exception -- sin este catch,
-            // una página de alta resolución (width*2 x height*2) sin
-            // memoria suficiente crasheaba toda la conversión.
-            Timber.e(e, "Sin memoria convirtiendo PDF a imagen")
-            cleanupOrphanPages(outputFiles, context.getString(R.string.converter_error_unknown))
-        } finally {
-            cacheFile?.delete()
-        }
-    }
-
-    // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al
-    // agregar el catch de CancellationException del hallazgo 1 de la
-    // auditoría del Convertidor).
-    private fun copyPdfToCache(pdfUri: Uri, cacheFile: File): Boolean {
-        var copied = false
-        context.contentResolver.openInputStream(pdfUri)?.use { input ->
-            cacheFile.outputStream().use { output -> input.copyTo(output) }
-            copied = true
-        }
-        return copied
-    }
-
-    // Extraído de invoke() (mismo motivo que copyPdfToCache()) -- agrupa la
-    // apertura del PdfRenderer y el render de todas las páginas.
-    private fun renderAllPages(cacheFile: File, outputDir: File, baseName: String): List<File> {
-        val rendered = mutableListOf<File>()
-        ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fileDescriptor ->
-            PdfRenderer(fileDescriptor).use { renderer ->
-                for (i in 0 until renderer.pageCount) {
-                    rendered.add(renderPageToFile(renderer, i, outputDir, baseName))
+                    // Retornar el primer archivo como resultado principal
+                    ConversionResult.Success(
+                        outputFile = outputFiles.first(),
+                        pageCount = outputFiles.size,
+                        fileSizeKb = outputFiles.sumOf { it.length() / 1024 }.toInt(),
+                        extraFiles = outputFiles.drop(1),
+                    )
+                } catch (e: CancellationException) {
+                    // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+                    // en ConvertImageToPdfUseCase.kt. Las páginas ya escritas a
+                    // disco antes de la cancelación se borran igual que en los
+                    // catches de error (mismo criterio de cleanupOrphanPages), pero
+                    // sin construir un ConversionResult.Error -- la cancelación se
+                    // relanza tal cual.
+                    outputFiles.forEach { it.delete() }
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Error convirtiendo PDF a imagen")
+                    cleanupOrphanPages(outputFiles, e.message ?: "")
+                } catch (e: OutOfMemoryError) {
+                    // OutOfMemoryError no hereda de Exception -- sin este catch,
+                    // una página de alta resolución (width*2 x height*2) sin
+                    // memoria suficiente crasheaba toda la conversión.
+                    Timber.e(e, "Sin memoria convirtiendo PDF a imagen")
+                    cleanupOrphanPages(outputFiles, context.getString(R.string.converter_error_unknown))
+                } finally {
+                    cacheFile?.delete()
                 }
             }
+
+        // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al
+        // agregar el catch de CancellationException del hallazgo 1 de la
+        // auditoría del Convertidor).
+        private fun copyPdfToCache(
+            pdfUri: Uri,
+            cacheFile: File,
+        ): Boolean {
+            var copied = false
+            context.contentResolver.openInputStream(pdfUri)?.use { input ->
+                cacheFile.outputStream().use { output -> input.copyTo(output) }
+                copied = true
+            }
+            return copied
         }
-        return rendered
-    }
 
-    // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al
-    // sumar la limpieza de páginas huérfanas de la revisión general
-    // 2026-09-16, cuarta pasada, hallazgo #21) -- agrupa el borrado de las
-    // páginas ya escritas a disco antes del fallo con la construcción del
-    // Error, compartido por los dos catch.
-    private fun cleanupOrphanPages(outputFiles: List<File>, errorDetail: String): ConversionResult {
-        outputFiles.forEach { it.delete() }
-        return ConversionResult.Error(
-            String.format(context.getString(R.string.converter_error_generic_format), errorDetail)
-        )
-    }
-
-    // Hallazgo real de la revisión general 2026-09-16: page.close() manual
-    // solo se alcanzaba si createBitmap/render no fallaban -- .use{} (a
-    // diferencia de un try/catch(Exception)) cierra la page pase lo que
-    // pase, OutOfMemoryError incluido. Extraído de invoke() además para
-    // bajar la complejidad ciclomática (detekt).
-    private fun renderPageToFile(
-        renderer: PdfRenderer,
-        pageIndex: Int,
-        outputDir: File,
-        baseName: String
-    ): File = renderer.openPage(pageIndex).use { page ->
-        val bitmap = Bitmap.createBitmap(page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888)
-        bitmap.eraseColor(android.graphics.Color.WHITE)
-        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-
-        val outputFile = File(outputDir, "${baseName}_pagina${pageIndex + 1}.jpg")
-        outputFile.outputStream().use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+        // Extraído de invoke() (mismo motivo que copyPdfToCache()) -- agrupa la
+        // apertura del PdfRenderer y el render de todas las páginas.
+        private fun renderAllPages(
+            cacheFile: File,
+            outputDir: File,
+            baseName: String,
+        ): List<File> {
+            val rendered = mutableListOf<File>()
+            ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY).use { fileDescriptor ->
+                PdfRenderer(fileDescriptor).use { renderer ->
+                    for (i in 0 until renderer.pageCount) {
+                        rendered.add(renderPageToFile(renderer, i, outputDir, baseName))
+                    }
+                }
+            }
+            return rendered
         }
-        bitmap.recycle()
-        outputFile
-    }
 
-    private fun generateTimestamp() =
-        SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-}
+        // Extraído de invoke() (detekt: CyclomaticComplexMethod, disparado al
+        // sumar la limpieza de páginas huérfanas de la revisión general
+        // 2026-09-16, cuarta pasada, hallazgo #21) -- agrupa el borrado de las
+        // páginas ya escritas a disco antes del fallo con la construcción del
+        // Error, compartido por los dos catch.
+        private fun cleanupOrphanPages(
+            outputFiles: List<File>,
+            errorDetail: String,
+        ): ConversionResult {
+            outputFiles.forEach { it.delete() }
+            return ConversionResult.Error(
+                String.format(context.getString(R.string.converter_error_generic_format), errorDetail),
+            )
+        }
+
+        // Hallazgo real de la revisión general 2026-09-16: page.close() manual
+        // solo se alcanzaba si createBitmap/render no fallaban -- .use{} (a
+        // diferencia de un try/catch(Exception)) cierra la page pase lo que
+        // pase, OutOfMemoryError incluido. Extraído de invoke() además para
+        // bajar la complejidad ciclomática (detekt).
+        private fun renderPageToFile(
+            renderer: PdfRenderer,
+            pageIndex: Int,
+            outputDir: File,
+            baseName: String,
+        ): File =
+            renderer.openPage(pageIndex).use { page ->
+                val bitmap = Bitmap.createBitmap(page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888)
+                bitmap.eraseColor(android.graphics.Color.WHITE)
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+                val outputFile = File(outputDir, "${baseName}_pagina${pageIndex + 1}.jpg")
+                outputFile.outputStream().use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                }
+                bitmap.recycle()
+                outputFile
+            }
+
+        private fun generateTimestamp() = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    }

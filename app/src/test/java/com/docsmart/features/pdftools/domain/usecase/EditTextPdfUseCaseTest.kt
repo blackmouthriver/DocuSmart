@@ -32,17 +32,21 @@ import java.nio.file.Files
  * el PDF de salida, no solo que "algo se dibujó encima".
  */
 class EditTextPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: EditTextPdfUseCase
 
-    private val messages = EditTextPdfMessages(
-        emptySearchError = "emptySearchError", readError = "readError", noPages = "noPages",
-        noMatchesError = "noMatchesError", generateError = "generateError",
-        success = "success %1\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        EditTextPdfMessages(
+            emptySearchError = "emptySearchError",
+            readError = "readError",
+            noPages = "noPages",
+            noMatchesError = "noMatchesError",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -61,55 +65,60 @@ class EditTextPdfUseCaseTest {
     }
 
     @Test
-    fun `reemplaza el texto encontrado y elimina el original de verdad`() = runTest {
-        stubResolver(createPdf(listOf("Hola Mundo Antiguo")))
+    fun `reemplaza el texto encontrado y elimina el original de verdad`() =
+        runTest {
+            stubResolver(createPdf(listOf("Hola Mundo Antiguo")))
 
-        val result = useCase(mockk<Uri>(), searchText = "Antiguo", replaceText = "Nuevo", messages = messages)
+            val result = useCase(mockk<Uri>(), searchText = "Antiguo", replaceText = "Nuevo", messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val text = pageTextOf((result as PdfToolResult.Success).outputFile)
-        assertFalse(text.contains("Antiguo"))
-        assertTrue(text.contains("Nuevo"))
-    }
-
-    @Test
-    fun `busqueda vacia devuelve Error sin tocar el archivo`() = runTest {
-        val result = useCase(mockk<Uri>(), searchText = "", replaceText = "x", messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("emptySearchError", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val text = pageTextOf((result as PdfToolResult.Success).outputFile)
+            assertFalse(text.contains("Antiguo"))
+            assertTrue(text.contains("Nuevo"))
+        }
 
     @Test
-    fun `texto no encontrado devuelve Error especifico`() = runTest {
-        stubResolver(createPdf(listOf("Contenido de la pagina")))
+    fun `busqueda vacia devuelve Error sin tocar el archivo`() =
+        runTest {
+            val result = useCase(mockk<Uri>(), searchText = "", replaceText = "x", messages = messages)
 
-        val result = useCase(mockk<Uri>(), searchText = "NoExiste", replaceText = "x", messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("noMatchesError", (result as PdfToolResult.Error).message)
-    }
-
-    @Test
-    fun `todas las ocurrencias en la pagina se reemplazan y el mensaje informa el total`() = runTest {
-        stubResolver(createPdf(listOf("Gato", "Perro Gato", "Gato Pajaro")))
-
-        val result = useCase(mockk<Uri>(), searchText = "Gato", replaceText = "Leon", messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("success 3", (result as PdfToolResult.Success).message)
-        val text = pageTextOf(result.outputFile)
-        assertFalse(text.contains("Gato"))
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("emptySearchError", (result as PdfToolResult.Error).message)
+        }
 
     @Test
-    fun `editar un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `texto no encontrado devuelve Error especifico`() =
+        runTest {
+            stubResolver(createPdf(listOf("Contenido de la pagina")))
 
-        val result = useCase(mockk<Uri>(), searchText = "algo", replaceText = "x", messages = messages)
+            val result = useCase(mockk<Uri>(), searchText = "NoExiste", replaceText = "x", messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("noMatchesError", (result as PdfToolResult.Error).message)
+        }
+
+    @Test
+    fun `todas las ocurrencias en la pagina se reemplazan y el mensaje informa el total`() =
+        runTest {
+            stubResolver(createPdf(listOf("Gato", "Perro Gato", "Gato Pajaro")))
+
+            val result = useCase(mockk<Uri>(), searchText = "Gato", replaceText = "Leon", messages = messages)
+
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("success 3", (result as PdfToolResult.Success).message)
+            val text = pageTextOf(result.outputFile)
+            assertFalse(text.contains("Gato"))
+        }
+
+    @Test
+    fun `editar un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(), searchText = "algo", replaceText = "x", messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -126,7 +135,8 @@ class EditTextPdfUseCaseTest {
         val page = pdfDoc.addNewPage()
         val canvas = PdfCanvas(page)
         lines.forEachIndexed { index, line ->
-            canvas.beginText()
+            canvas
+                .beginText()
                 .setFontAndSize(font, 18f)
                 .moveText(50.0, (700 - index * 40).toDouble())
                 .showText(line)

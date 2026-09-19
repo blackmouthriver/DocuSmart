@@ -14,10 +14,17 @@ import timber.log.Timber
  * es lo que hace visible el error en la consola de Firebase sin tumbar la app.
  */
 class CrashlyticsTree : Timber.Tree() {
+    override fun isLoggable(
+        tag: String?,
+        priority: Int,
+    ): Boolean = priority >= Log.INFO
 
-    override fun isLoggable(tag: String?, priority: Int): Boolean = priority >= Log.INFO
-
-    override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+    override fun log(
+        priority: Int,
+        tag: String?,
+        message: String,
+        t: Throwable?,
+    ) {
         val crashlytics = FirebaseCrashlytics.getInstance()
         crashlytics.log("${tag.orEmpty()}: $message")
 

@@ -32,17 +32,19 @@ import java.nio.file.Files
  * pero acá el orden de origen de cada página es lo que se está probando.
  */
 class ReorderPagesUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: ReorderPagesUseCase
 
-    private val messages = ReorderPagesMessages(
-        emptyOrderError = "emptyOrderError", readError = "readError",
-        generateError = "generateError", success = "success %1\$d",
-        genericError = "genericError %1\$s"
-    )
+    private val messages =
+        ReorderPagesMessages(
+            emptyOrderError = "emptyOrderError",
+            readError = "readError",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -61,56 +63,61 @@ class ReorderPagesUseCaseTest {
     }
 
     @Test
-    fun `reordenar sin eliminar refleja el nuevo orden en el resultado`() = runTest {
-        stubResolver(createLabeledPdf(pages = 3))
+    fun `reordenar sin eliminar refleja el nuevo orden en el resultado`() =
+        runTest {
+            stubResolver(createLabeledPdf(pages = 3))
 
-        val result = useCase(mockk<Uri>(), pageOrder = listOf(3, 1, 2), messages = messages)
+            val result = useCase(mockk<Uri>(), pageOrder = listOf(3, 1, 2), messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(listOf("PAGINA_3", "PAGINA_1", "PAGINA_2"), texts)
-    }
-
-    @Test
-    fun `omitir una pagina de la lista la elimina del resultado`() = runTest {
-        stubResolver(createLabeledPdf(pages = 5))
-
-        // Se omiten las páginas 2 y 4 -- quedan solo 1, 3, 5 en ese orden.
-        val result = useCase(mockk<Uri>(), pageOrder = listOf(1, 3, 5), messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(listOf("PAGINA_1", "PAGINA_3", "PAGINA_5"), texts)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(listOf("PAGINA_3", "PAGINA_1", "PAGINA_2"), texts)
+        }
 
     @Test
-    fun `reordenar y eliminar a la vez produce el resultado combinado correcto`() = runTest {
-        stubResolver(createLabeledPdf(pages = 4))
+    fun `omitir una pagina de la lista la elimina del resultado`() =
+        runTest {
+            stubResolver(createLabeledPdf(pages = 5))
 
-        // Se elimina la página 2, y las 3 restantes quedan en orden 4,1,3.
-        val result = useCase(mockk<Uri>(), pageOrder = listOf(4, 1, 3), messages = messages)
+            // Se omiten las páginas 2 y 4 -- quedan solo 1, 3, 5 en ese orden.
+            val result = useCase(mockk<Uri>(), pageOrder = listOf(1, 3, 5), messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(listOf("PAGINA_4", "PAGINA_1", "PAGINA_3"), texts)
-    }
-
-    @Test
-    fun `lista de orden vacia devuelve Error sin tocar el archivo`() = runTest {
-        val result = useCase(mockk<Uri>(), pageOrder = emptyList(), messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("emptyOrderError", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(listOf("PAGINA_1", "PAGINA_3", "PAGINA_5"), texts)
+        }
 
     @Test
-    fun `reordenar un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `reordenar y eliminar a la vez produce el resultado combinado correcto`() =
+        runTest {
+            stubResolver(createLabeledPdf(pages = 4))
 
-        val result = useCase(mockk<Uri>(), pageOrder = listOf(1), messages = messages)
+            // Se elimina la página 2, y las 3 restantes quedan en orden 4,1,3.
+            val result = useCase(mockk<Uri>(), pageOrder = listOf(4, 1, 3), messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(listOf("PAGINA_4", "PAGINA_1", "PAGINA_3"), texts)
+        }
+
+    @Test
+    fun `lista de orden vacia devuelve Error sin tocar el archivo`() =
+        runTest {
+            val result = useCase(mockk<Uri>(), pageOrder = emptyList(), messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("emptyOrderError", (result as PdfToolResult.Error).message)
+        }
+
+    @Test
+    fun `reordenar un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(), pageOrder = listOf(1), messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -127,7 +134,8 @@ class ReorderPagesUseCaseTest {
         repeat(pages) { index ->
             val page = pdfDoc.addNewPage()
             val canvas = PdfCanvas(page)
-            canvas.beginText()
+            canvas
+                .beginText()
                 .setFontAndSize(font, 24f)
                 .moveText(50.0, 700.0)
                 .showText("PAGINA_${index + 1}")
@@ -140,9 +148,10 @@ class ReorderPagesUseCaseTest {
     private fun pageTextsOf(file: File): List<String> {
         val reader = PdfReader(file)
         val pdf = PdfDocument(reader)
-        val texts = (1..pdf.numberOfPages).map {
-            PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
-        }
+        val texts =
+            (1..pdf.numberOfPages).map {
+                PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
+            }
         pdf.close()
         return texts
     }

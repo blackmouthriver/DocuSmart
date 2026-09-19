@@ -22,12 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.docsmart.R
-import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.core.ui.theme.accentBorder
@@ -36,28 +35,29 @@ import com.docsmart.features.security.domain.PdfPasswordMessages
 
 @Composable
 fun PdfPasswordScreen(
-    onBack   : () -> Unit = {},
-    viewModel: SecurityViewModel = hiltViewModel()
+    onBack: () -> Unit = {},
+    viewModel: SecurityViewModel = hiltViewModel(),
 ) {
     val uiState = viewModel.uiState.collectAsState().value
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val pdfPasswordMessages = PdfPasswordMessages(
-        readError            = stringResource(R.string.pdf_pw_read_error),
-        emptyFile             = stringResource(R.string.pdf_pw_empty_file),
-        protectSuccess        = stringResource(R.string.pdf_pw_protect_success),
-        protectGenerateError  = stringResource(R.string.pdf_pw_protect_generate_error),
-        protectError          = stringResource(R.string.pdf_pw_protect_error),
-        removeSuccess         = stringResource(R.string.pdf_pw_remove_success),
-        removeGenerateError   = stringResource(R.string.pdf_pw_remove_generate_error),
-        removeError           = stringResource(R.string.pdf_pw_remove_error)
-    )
-    val wrongPasswordMessage      = stringResource(R.string.pdf_pw_wrong_password)
+    val pdfPasswordMessages =
+        PdfPasswordMessages(
+            readError = stringResource(R.string.pdf_pw_read_error),
+            emptyFile = stringResource(R.string.pdf_pw_empty_file),
+            protectSuccess = stringResource(R.string.pdf_pw_protect_success),
+            protectGenerateError = stringResource(R.string.pdf_pw_protect_generate_error),
+            protectError = stringResource(R.string.pdf_pw_protect_error),
+            removeSuccess = stringResource(R.string.pdf_pw_remove_success),
+            removeGenerateError = stringResource(R.string.pdf_pw_remove_generate_error),
+            removeError = stringResource(R.string.pdf_pw_remove_error),
+        )
+    val wrongPasswordMessage = stringResource(R.string.pdf_pw_wrong_password)
     val wrongPasswordRetryMessage = stringResource(R.string.pdf_pw_wrong_password_retry)
     val saveDownloadsSuccessTemplate = stringResource(R.string.security_save_downloads_success)
-    val saveDownloadsErrorMessage    = stringResource(R.string.security_save_downloads_error)
-    val defaultDocumentName          = stringResource(R.string.pdf_pw_default_document_name)
+    val saveDownloadsErrorMessage = stringResource(R.string.security_save_downloads_error)
+    val defaultDocumentName = stringResource(R.string.pdf_pw_default_document_name)
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
@@ -67,34 +67,39 @@ fun PdfPasswordScreen(
     }
 
     Scaffold(
-        snackbarHost   = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         // Fondo animado global (backlog UX 2026-09-06): transparente para
         // dejar ver la capa pintada una sola vez en MainActivity. Se excluye
         // el inset inferior de systemBars (bug real "línea blanca": este
         // Scaffold lo reservaba por duplicado sobre el que ya reserva
         // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
         // detalle completo).
-        contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-        ),
-        containerColor = Color.Transparent
+        contentWindowInsets =
+            WindowInsets.systemBars.only(
+                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+            ),
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         LazyColumn(
-            modifier       = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                top    = 24.dp, bottom = 100.dp,
-                start  = 20.dp, end    = 20.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            contentPadding =
+                PaddingValues(
+                    top = 24.dp,
+                    bottom = 100.dp,
+                    start = 20.dp,
+                    end = 20.dp,
+                ),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // ── Header ───────────────────────────────────────────────────────
             item {
                 DocuSmartTopBanner(
-                    screenTitle    = stringResource(R.string.security_pdf_password),
+                    screenTitle = stringResource(R.string.security_pdf_password),
                     screenSubtitle = stringResource(R.string.pdf_pw_screen_subtitle),
-                    onBack         = onBack
+                    onBack = onBack,
                 )
             }
 
@@ -103,28 +108,28 @@ fun PdfPasswordScreen(
                 if (uiState.pdfPasswordMode == null) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
-                            text       = stringResource(R.string.security_what_to_do),
-                            style      = MaterialTheme.typography.titleMedium,
+                            text = stringResource(R.string.security_what_to_do),
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color      = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
 
                         // Tarjeta Proteger
                         ModeCard(
-                            icon        = Icons.Rounded.Lock,
-                            title       = stringResource(R.string.pdf_pw_mode_protect_title),
+                            icon = Icons.Rounded.Lock,
+                            title = stringResource(R.string.pdf_pw_mode_protect_title),
                             description = stringResource(R.string.pdf_pw_mode_protect_desc),
-                            color       = MaterialTheme.colorScheme.primary,
-                            onClick     = { viewModel.setPdfPasswordMode(PdfPasswordMode.PROTECT) }
+                            color = MaterialTheme.colorScheme.primary,
+                            onClick = { viewModel.setPdfPasswordMode(PdfPasswordMode.PROTECT) },
                         )
 
                         // Tarjeta Quitar
                         ModeCard(
-                            icon        = Icons.Rounded.LockOpen,
-                            title       = stringResource(R.string.pdf_pw_mode_remove_title),
+                            icon = Icons.Rounded.LockOpen,
+                            title = stringResource(R.string.pdf_pw_mode_remove_title),
                             description = stringResource(R.string.pdf_pw_mode_remove_desc),
-                            color       = MaterialTheme.colorScheme.error,
-                            onClick     = { viewModel.setPdfPasswordMode(PdfPasswordMode.REMOVE) }
+                            color = MaterialTheme.colorScheme.error,
+                            onClick = { viewModel.setPdfPasswordMode(PdfPasswordMode.REMOVE) },
                         )
                     }
                 }
@@ -134,40 +139,17 @@ fun PdfPasswordScreen(
             if (uiState.pdfPasswordMode == PdfPasswordMode.PROTECT) {
                 item {
                     ProtectPdfForm(
-                        uiState   = uiState,
-                        context   = context,
+                        uiState = uiState,
+                        context = context,
                         defaultDocumentName = defaultDocumentName,
                         onProtect = { uri, password, fileName ->
                             viewModel.protectPdfWithPassword(
-                                context, uri, password, fileName,
-                                pdfPasswordMessages, wrongPasswordMessage
-                            )
-                        },
-                        onCancel  = {
-                            viewModel.setPdfPasswordMode(null)
-                            viewModel.dismissPdfResult()
-                        },
-                        onSaveToDownloads = { file ->
-                            viewModel.savePdfToDownloads(
-                                context, file,
-                                saveDownloadsSuccessTemplate, saveDownloadsErrorMessage
-                            )
-                        }
-                    )
-                }
-            }
-
-            // ── Formulario Quitar ─────────────────────────────────────────────
-            if (uiState.pdfPasswordMode == PdfPasswordMode.REMOVE) {
-                item {
-                    RemovePdfPasswordForm(
-                        uiState  = uiState,
-                        context  = context,
-                        defaultDocumentName = defaultDocumentName,
-                        onRemove = { uri, password, fileName ->
-                            viewModel.removePdfPassword(
-                                context, uri, password, fileName,
-                                pdfPasswordMessages, wrongPasswordRetryMessage
+                                context,
+                                uri,
+                                password,
+                                fileName,
+                                pdfPasswordMessages,
+                                wrongPasswordMessage,
                             )
                         },
                         onCancel = {
@@ -176,10 +158,45 @@ fun PdfPasswordScreen(
                         },
                         onSaveToDownloads = { file ->
                             viewModel.savePdfToDownloads(
-                                context, file,
-                                saveDownloadsSuccessTemplate, saveDownloadsErrorMessage
+                                context,
+                                file,
+                                saveDownloadsSuccessTemplate,
+                                saveDownloadsErrorMessage,
                             )
-                        }
+                        },
+                    )
+                }
+            }
+
+            // ── Formulario Quitar ─────────────────────────────────────────────
+            if (uiState.pdfPasswordMode == PdfPasswordMode.REMOVE) {
+                item {
+                    RemovePdfPasswordForm(
+                        uiState = uiState,
+                        context = context,
+                        defaultDocumentName = defaultDocumentName,
+                        onRemove = { uri, password, fileName ->
+                            viewModel.removePdfPassword(
+                                context,
+                                uri,
+                                password,
+                                fileName,
+                                pdfPasswordMessages,
+                                wrongPasswordRetryMessage,
+                            )
+                        },
+                        onCancel = {
+                            viewModel.setPdfPasswordMode(null)
+                            viewModel.dismissPdfResult()
+                        },
+                        onSaveToDownloads = { file ->
+                            viewModel.savePdfToDownloads(
+                                context,
+                                file,
+                                saveDownloadsSuccessTemplate,
+                                saveDownloadsErrorMessage,
+                            )
+                        },
                     )
                 }
             }
@@ -190,56 +207,59 @@ fun PdfPasswordScreen(
 // ── Tarjeta de modo ───────────────────────────────────────────────────────────
 @Composable
 private fun ModeCard(
-    icon       : androidx.compose.ui.graphics.vector.ImageVector,
-    title      : String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
     description: String,
-    color      : androidx.compose.ui.graphics.Color,
-    onClick    : () -> Unit
+    color: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
-            .clickable { onClick() }
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+                .clickable { onClick() },
     ) {
         Row(
-            modifier              = Modifier.fillMaxWidth().padding(20.dp),
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment     = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .padding(0.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(52.dp)
+                        .padding(0.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
                     color = color.copy(alpha = 0.12f),
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(52.dp),
                 ) {}
                 Icon(icon, null, tint = color, modifier = Modifier.size(28.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text       = title,
-                    style      = MaterialTheme.typography.titleMedium,
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color      = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text  = description,
+                    text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Icon(
-                Icons.Rounded.ChevronRight, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Icons.Rounded.ChevronRight,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -248,180 +268,221 @@ private fun ModeCard(
 // ── Formulario proteger PDF ───────────────────────────────────────────────────
 @Composable
 private fun ProtectPdfForm(
-    uiState          : SecurityUiState,
-    context          : android.content.Context,
+    uiState: SecurityUiState,
+    context: android.content.Context,
     defaultDocumentName: String,
-    onProtect        : (Uri, String, String) -> Unit,
-    onCancel         : () -> Unit,
-    onSaveToDownloads: (java.io.File) -> Unit
+    onProtect: (Uri, String, String) -> Unit,
+    onCancel: () -> Unit,
+    onSaveToDownloads: (java.io.File) -> Unit,
 ) {
-    var selectedUri  by remember { mutableStateOf<Uri?>(null) }
-    var fileName     by remember { mutableStateOf("") }
-    var password     by remember { mutableStateOf("") }
-    var confirmPass  by remember { mutableStateOf("") }
+    var selectedUri by remember { mutableStateOf<Uri?>(null) }
+    var fileName by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPass by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var showSourceChooser by remember { mutableStateOf(false) }
 
-    val pdfLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            selectedUri = it
-            context.contentResolver.query(
-                it,
-                arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
-                null, null, null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    fileName = cursor.getString(0)?.removeSuffix(".pdf") ?: defaultDocumentName
+    val pdfLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent(),
+        ) { uri ->
+            uri?.let {
+                selectedUri = it
+                context.contentResolver.query(
+                    it,
+                    arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+                    null,
+                    null,
+                    null,
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        fileName = cursor.getString(0)?.removeSuffix(".pdf") ?: defaultDocumentName
+                    }
                 }
             }
         }
-    }
 
     // Item #15 del backlog UX: ofrece elegir un PDF ya indexado por la app
     // (Biblioteca completa), no solo el selector del sistema.
     if (showSourceChooser) {
         FileSourcePickerDialog(
-            title              = stringResource(R.string.pdf_pw_protect_section_title),
-            onDismiss          = { showSourceChooser = false },
+            title = stringResource(R.string.pdf_pw_protect_section_title),
+            onDismiss = { showSourceChooser = false },
             onChooseFromDevice = {
                 showSourceChooser = false
                 pdfLauncher.launch("application/pdf")
             },
-            onChooseDocument   = { document ->
+            onChooseDocument = { document ->
                 showSourceChooser = false
                 selectedUri = document.toContentUri()
-                fileName    = document.name.removeSuffix(".pdf")
+                fileName = document.name.removeSuffix(".pdf")
             },
-            filter = { it.type == DocumentType.PDF }
+            filter = { it.type == DocumentType.PDF },
         )
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
         // Título sección
         Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(Icons.Rounded.Lock, null,
-                tint     = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Rounded.Lock,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
             Text(
-                text       = stringResource(R.string.pdf_pw_protect_section_title),
-                style      = MaterialTheme.typography.titleMedium,
+                text = stringResource(R.string.pdf_pw_protect_section_title),
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
 
         // Selector PDF
         Card(
-            modifier  = Modifier.fillMaxWidth().clickable { showSourceChooser = true },
-            shape     = MaterialTheme.shapes.large,
-            colors    = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            ),
-            elevation = CardDefaults.cardElevation(0.dp)
+            modifier = Modifier.fillMaxWidth().clickable { showSourceChooser = true },
+            shape = MaterialTheme.shapes.large,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                ),
+            elevation = CardDefaults.cardElevation(0.dp),
         ) {
             Row(
-                modifier              = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment     = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Rounded.PictureAsPdf, null,
-                    tint     = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(28.dp))
+                Icon(
+                    Icons.Rounded.PictureAsPdf,
+                    null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp),
+                )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text  = if (selectedUri != null) fileName.ifBlank { stringResource(R.string.pdf_pw_selected_placeholder) }
-                        else stringResource(R.string.pdf_pw_tap_to_select),
+                        text =
+                            if (selectedUri != null) {
+                                fileName.ifBlank { stringResource(R.string.pdf_pw_selected_placeholder) }
+                            } else {
+                                stringResource(R.string.pdf_pw_tap_to_select)
+                            },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (selectedUri != null) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        color =
+                            if (selectedUri != null) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                     if (selectedUri != null) {
                         Text(
-                            text  = stringResource(R.string.pdf_pw_ready_to_protect),
+                            text = stringResource(R.string.pdf_pw_ready_to_protect),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
                 Icon(
-                    if (selectedUri != null) Icons.Rounded.CheckCircle
-                    else Icons.Rounded.FolderOpen,
+                    if (selectedUri != null) {
+                        Icons.Rounded.CheckCircle
+                    } else {
+                        Icons.Rounded.FolderOpen
+                    },
                     null,
-                    tint = if (selectedUri != null) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    tint =
+                        if (selectedUri != null) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
 
         // Campo contraseña
         OutlinedTextField(
-            value         = password,
+            value = password,
             onValueChange = { password = it },
-            modifier      = Modifier.fillMaxWidth(),
-            label         = { Text(stringResource(R.string.pdf_pw_new_password_label)) },
-            visualTransformation = if (showPassword) VisualTransformation.None
-            else PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.pdf_pw_new_password_label)) },
+            visualTransformation =
+                if (showPassword) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            trailingIcon  = {
+            trailingIcon = {
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(
-                        if (showPassword) Icons.Rounded.VisibilityOff
-                        else Icons.Rounded.Visibility,
-                        contentDescription = stringResource(
-                            if (showPassword) R.string.password_hide else R.string.password_show
-                        )
+                        if (showPassword) {
+                            Icons.Rounded.VisibilityOff
+                        } else {
+                            Icons.Rounded.Visibility
+                        },
+                        contentDescription =
+                            stringResource(
+                                if (showPassword) R.string.password_hide else R.string.password_show,
+                            ),
                     )
                 }
             },
             singleLine = true,
-            shape      = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         )
 
         // Confirmar contraseña
         OutlinedTextField(
-            value         = confirmPass,
+            value = confirmPass,
             onValueChange = { confirmPass = it },
-            modifier      = Modifier.fillMaxWidth(),
-            label         = { Text(stringResource(R.string.pdf_pw_confirm_password_label)) },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.pdf_pw_confirm_password_label)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            isError       = confirmPass.isNotEmpty() && password != confirmPass,
+            isError = confirmPass.isNotEmpty() && password != confirmPass,
             supportingText = {
-                if (confirmPass.isNotEmpty() && password != confirmPass)
-                    Text(stringResource(R.string.pdf_pw_passwords_dont_match),
-                        color = MaterialTheme.colorScheme.error)
+                if (confirmPass.isNotEmpty() && password != confirmPass) {
+                    Text(
+                        stringResource(R.string.pdf_pw_passwords_dont_match),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             },
             singleLine = true,
-            shape      = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         )
 
         // Error
         uiState.pdfPasswordError?.let {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape    = MaterialTheme.shapes.medium,
-                colors   = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
+                shape = MaterialTheme.shapes.medium,
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
             ) {
                 Row(
-                    modifier              = Modifier.fillMaxWidth().padding(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment     = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Rounded.Error, null,
-                        tint     = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(18.dp))
-                    Text(it,
+                    Icon(
+                        Icons.Rounded.Error,
+                        null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        it,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer)
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
                 }
             }
         }
@@ -430,38 +491,42 @@ private fun ProtectPdfForm(
         uiState.pdfOutputFile?.let { file ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape    = MaterialTheme.shapes.medium,
-                colors   = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                )
+                shape = MaterialTheme.shapes.medium,
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                    ),
             ) {
                 Column(
-                    modifier            = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment     = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Rounded.CheckCircle, null,
-                            tint     = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.CheckCircle,
+                            null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
                         Text(
-                            text       = stringResource(R.string.pdf_pw_protected_success_title),
-                            style      = MaterialTheme.typography.titleSmall,
+                            text = stringResource(R.string.pdf_pw_protected_success_title),
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color      = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Text(
-                        text  = file.name,
+                        text = file.name,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Button(
-                        onClick  = { onSaveToDownloads(file) },
+                        onClick = { onSaveToDownloads(file) },
                         modifier = Modifier.fillMaxWidth(),
-                        shape    = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
@@ -473,31 +538,32 @@ private fun ProtectPdfForm(
 
         // Botones
         Row(
-            modifier              = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(
-                onClick  = onCancel,
+                onClick = onCancel,
                 modifier = Modifier.weight(1f),
-                shape    = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             ) { Text(stringResource(R.string.general_cancel)) }
 
             Button(
-                onClick  = {
+                onClick = {
                     if (selectedUri != null && password.isNotBlank() && password == confirmPass) {
                         onProtect(selectedUri!!, password, fileName.ifBlank { defaultDocumentName })
                     }
                 },
-                enabled  = selectedUri != null && password.isNotBlank() &&
+                enabled =
+                    selectedUri != null && password.isNotBlank() &&
                         password == confirmPass && !uiState.isPdfProcessing,
                 modifier = Modifier.weight(1f),
-                shape    = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             ) {
                 if (uiState.isPdfProcessing) {
                     CircularProgressIndicator(
-                        modifier    = Modifier.size(16.dp),
+                        modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color       = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 } else {
                     Icon(Icons.Rounded.Lock, null, modifier = Modifier.size(16.dp))
@@ -512,160 +578,196 @@ private fun ProtectPdfForm(
 // ── Formulario quitar contraseña ──────────────────────────────────────────────
 @Composable
 private fun RemovePdfPasswordForm(
-    uiState          : SecurityUiState,
-    context          : android.content.Context,
+    uiState: SecurityUiState,
+    context: android.content.Context,
     defaultDocumentName: String,
-    onRemove         : (Uri, String, String) -> Unit,
-    onCancel         : () -> Unit,
-    onSaveToDownloads: (java.io.File) -> Unit
+    onRemove: (Uri, String, String) -> Unit,
+    onCancel: () -> Unit,
+    onSaveToDownloads: (java.io.File) -> Unit,
 ) {
-    var selectedUri  by remember { mutableStateOf<Uri?>(null) }
-    var fileName     by remember { mutableStateOf("") }
-    var password     by remember { mutableStateOf("") }
+    var selectedUri by remember { mutableStateOf<Uri?>(null) }
+    var fileName by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var showSourceChooser by remember { mutableStateOf(false) }
 
-    val pdfLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            selectedUri = it
-            context.contentResolver.query(
-                it,
-                arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
-                null, null, null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    fileName = cursor.getString(0)?.removeSuffix(".pdf") ?: defaultDocumentName
+    val pdfLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent(),
+        ) { uri ->
+            uri?.let {
+                selectedUri = it
+                context.contentResolver.query(
+                    it,
+                    arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+                    null,
+                    null,
+                    null,
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        fileName = cursor.getString(0)?.removeSuffix(".pdf") ?: defaultDocumentName
+                    }
                 }
             }
         }
-    }
 
     // Item #15 del backlog UX: mismo criterio que ProtectPdfForm.
     if (showSourceChooser) {
         FileSourcePickerDialog(
-            title              = stringResource(R.string.pdf_pw_remove_section_title),
-            onDismiss          = { showSourceChooser = false },
+            title = stringResource(R.string.pdf_pw_remove_section_title),
+            onDismiss = { showSourceChooser = false },
             onChooseFromDevice = {
                 showSourceChooser = false
                 pdfLauncher.launch("application/pdf")
             },
-            onChooseDocument   = { document ->
+            onChooseDocument = { document ->
                 showSourceChooser = false
                 selectedUri = document.toContentUri()
-                fileName    = document.name.removeSuffix(".pdf")
+                fileName = document.name.removeSuffix(".pdf")
             },
-            filter = { it.type == DocumentType.PDF }
+            filter = { it.type == DocumentType.PDF },
         )
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
         Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(Icons.Rounded.LockOpen, null,
-                tint     = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Rounded.LockOpen,
+                null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(20.dp),
+            )
             Text(
-                text       = stringResource(R.string.pdf_pw_remove_section_title),
-                style      = MaterialTheme.typography.titleMedium,
+                text = stringResource(R.string.pdf_pw_remove_section_title),
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
 
         // Selector PDF
         Card(
-            modifier  = Modifier.fillMaxWidth().clickable { showSourceChooser = true },
-            shape     = MaterialTheme.shapes.large,
-            colors    = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-            ),
-            elevation = CardDefaults.cardElevation(0.dp)
+            modifier = Modifier.fillMaxWidth().clickable { showSourceChooser = true },
+            shape = MaterialTheme.shapes.large,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                ),
+            elevation = CardDefaults.cardElevation(0.dp),
         ) {
             Row(
-                modifier              = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment     = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Rounded.PictureAsPdf, null,
-                    tint     = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(28.dp))
+                Icon(
+                    Icons.Rounded.PictureAsPdf,
+                    null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp),
+                )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text  = if (selectedUri != null) fileName.ifBlank { stringResource(R.string.pdf_pw_selected_placeholder) }
-                        else stringResource(R.string.pdf_pw_tap_to_select_protected),
+                        text =
+                            if (selectedUri != null) {
+                                fileName.ifBlank { stringResource(R.string.pdf_pw_selected_placeholder) }
+                            } else {
+                                stringResource(R.string.pdf_pw_tap_to_select_protected)
+                            },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (selectedUri != null) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        color =
+                            if (selectedUri != null) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                     if (selectedUri != null) {
                         Text(
-                            text  = stringResource(R.string.pdf_pw_ready),
+                            text = stringResource(R.string.pdf_pw_ready),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 }
                 Icon(
-                    if (selectedUri != null) Icons.Rounded.CheckCircle
-                    else Icons.Rounded.FolderOpen,
+                    if (selectedUri != null) {
+                        Icons.Rounded.CheckCircle
+                    } else {
+                        Icons.Rounded.FolderOpen
+                    },
                     null,
-                    tint     = if (selectedUri != null) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    tint =
+                        if (selectedUri != null) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
 
         // Contraseña actual
         OutlinedTextField(
-            value         = password,
+            value = password,
             onValueChange = { password = it },
-            modifier      = Modifier.fillMaxWidth(),
-            label         = { Text(stringResource(R.string.pdf_pw_current_password_label)) },
-            placeholder   = { Text(stringResource(R.string.pdf_pw_current_password_placeholder)) },
-            visualTransformation = if (showPassword) VisualTransformation.None
-            else PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.pdf_pw_current_password_label)) },
+            placeholder = { Text(stringResource(R.string.pdf_pw_current_password_placeholder)) },
+            visualTransformation =
+                if (showPassword) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            trailingIcon  = {
+            trailingIcon = {
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(
-                        if (showPassword) Icons.Rounded.VisibilityOff
-                        else Icons.Rounded.Visibility,
-                        contentDescription = stringResource(
-                            if (showPassword) R.string.password_hide else R.string.password_show
-                        )
+                        if (showPassword) {
+                            Icons.Rounded.VisibilityOff
+                        } else {
+                            Icons.Rounded.Visibility
+                        },
+                        contentDescription =
+                            stringResource(
+                                if (showPassword) R.string.password_hide else R.string.password_show,
+                            ),
                     )
                 }
             },
             singleLine = true,
-            shape      = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         )
 
         // Aviso
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape    = MaterialTheme.shapes.medium,
-            colors   = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            shape = MaterialTheme.shapes.medium,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         ) {
             Row(
-                modifier              = Modifier.fillMaxWidth().padding(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment     = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Rounded.Info, null,
-                    tint     = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp))
+                Icon(
+                    Icons.Rounded.Info,
+                    null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
                 Text(
-                    text  = stringResource(R.string.pdf_pw_remove_warning),
+                    text = stringResource(R.string.pdf_pw_remove_warning),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -674,22 +776,28 @@ private fun RemovePdfPasswordForm(
         uiState.pdfPasswordError?.let {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape    = MaterialTheme.shapes.medium,
-                colors   = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
+                shape = MaterialTheme.shapes.medium,
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
             ) {
                 Row(
-                    modifier              = Modifier.fillMaxWidth().padding(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment     = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Rounded.Error, null,
-                        tint     = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(18.dp))
-                    Text(it,
+                    Icon(
+                        Icons.Rounded.Error,
+                        null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        it,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer)
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
                 }
             }
         }
@@ -698,38 +806,42 @@ private fun RemovePdfPasswordForm(
         uiState.pdfOutputFile?.let { file ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape    = MaterialTheme.shapes.medium,
-                colors   = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                )
+                shape = MaterialTheme.shapes.medium,
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                    ),
             ) {
                 Column(
-                    modifier            = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment     = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Rounded.CheckCircle, null,
-                            tint     = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.CheckCircle,
+                            null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
                         Text(
-                            text       = stringResource(R.string.pdf_pw_removed_success_title),
-                            style      = MaterialTheme.typography.titleSmall,
+                            text = stringResource(R.string.pdf_pw_removed_success_title),
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color      = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Text(
-                        text  = file.name,
+                        text = file.name,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Button(
-                        onClick  = { onSaveToDownloads(file) },
+                        onClick = { onSaveToDownloads(file) },
                         modifier = Modifier.fillMaxWidth(),
-                        shape    = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
@@ -741,33 +853,34 @@ private fun RemovePdfPasswordForm(
 
         // Botones
         Row(
-            modifier              = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(
-                onClick  = onCancel,
+                onClick = onCancel,
                 modifier = Modifier.weight(1f),
-                shape    = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             ) { Text(stringResource(R.string.general_cancel)) }
 
             Button(
-                onClick  = {
+                onClick = {
                     if (selectedUri != null && password.isNotBlank()) {
                         onRemove(selectedUri!!, password, fileName.ifBlank { defaultDocumentName })
                     }
                 },
-                enabled  = selectedUri != null && password.isNotBlank() && !uiState.isPdfProcessing,
+                enabled = selectedUri != null && password.isNotBlank() && !uiState.isPdfProcessing,
                 modifier = Modifier.weight(1f),
-                shape    = MaterialTheme.shapes.medium,
-                colors   = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
+                shape = MaterialTheme.shapes.medium,
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                    ),
             ) {
                 if (uiState.isPdfProcessing) {
                     CircularProgressIndicator(
-                        modifier    = Modifier.size(16.dp),
+                        modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color       = MaterialTheme.colorScheme.onError
+                        color = MaterialTheme.colorScheme.onError,
                     )
                 } else {
                     Icon(Icons.Rounded.LockOpen, null, modifier = Modifier.size(16.dp))

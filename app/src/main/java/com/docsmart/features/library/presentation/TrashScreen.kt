@@ -60,8 +60,8 @@ import com.docsmart.core.ui.theme.accentShadow
  */
 @Composable
 fun TrashScreen(
-    onBack   : () -> Unit = {},
-    viewModel: TrashViewModel = hiltViewModel()
+    onBack: () -> Unit = {},
+    viewModel: TrashViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -80,18 +80,19 @@ fun TrashScreen(
     // sistema y, si vuelve OK, se avisa de vuelta al ViewModel para limpiar
     // la papelera (ver DocumentRepository.DeleteOutcome.NeedsPermission).
     var pendingRequest by remember { mutableStateOf<PendingDeleteRequest?>(null) }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        val request = pendingRequest
-        pendingRequest = null
-        if (result.resultCode == Activity.RESULT_OK && request != null) {
-            when (request) {
-                is PendingDeleteRequest.Single -> viewModel.onSingleDeleteConfirmed(request.documentId)
-                is PendingDeleteRequest.Bulk   -> viewModel.onBulkDeleteConfirmed(request.documentIds)
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.StartIntentSenderForResult(),
+        ) { result ->
+            val request = pendingRequest
+            pendingRequest = null
+            if (result.resultCode == Activity.RESULT_OK && request != null) {
+                when (request) {
+                    is PendingDeleteRequest.Single -> viewModel.onSingleDeleteConfirmed(request.documentId)
+                    is PendingDeleteRequest.Bulk -> viewModel.onBulkDeleteConfirmed(request.documentIds)
+                }
             }
         }
-    }
     LaunchedEffect(Unit) {
         viewModel.pendingDeleteRequest.collect { request ->
             pendingRequest = request
@@ -101,31 +102,31 @@ fun TrashScreen(
 
     pendingDelete?.let { item ->
         TrashDeleteForeverDialog(
-            fileName  = item.document.name,
+            fileName = item.document.name,
             onConfirm = {
                 viewModel.deleteForever(item.document.id)
                 pendingDelete = null
             },
-            onDismiss = { pendingDelete = null }
+            onDismiss = { pendingDelete = null },
         )
     }
 
     if (pendingDeleteAll) {
         TrashDeleteAllDialog(
-            count     = uiState.items.size,
+            count = uiState.items.size,
             onConfirm = {
                 viewModel.deleteAll()
                 pendingDeleteAll = false
             },
-            onDismiss = { pendingDeleteAll = false }
+            onDismiss = { pendingDeleteAll = false },
         )
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         DocuSmartTopBanner(
-            screenTitle    = stringResource(R.string.trash_title),
+            screenTitle = stringResource(R.string.trash_title),
             screenSubtitle = stringResource(R.string.trash_subtitle),
-            onBack         = onBack
+            onBack = onBack,
         )
 
         if (uiState.items.isNotEmpty()) {
@@ -135,20 +136,20 @@ fun TrashScreen(
             // espacio liberaría "Borrar todo".
             val totalSize = formatTrashSize(uiState.items.sumOf { it.document.sizeBytes })
             Text(
-                text  = stringResource(R.string.trash_total_size, totalSize),
+                text = stringResource(R.string.trash_total_size, totalSize),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
-                onClick  = { pendingDeleteAll = true },
+                onClick = { pendingDeleteAll = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors   = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
             ) {
                 Icon(
-                    imageVector        = Icons.Rounded.DeleteSweep,
+                    imageVector = Icons.Rounded.DeleteSweep,
                     contentDescription = null,
-                    modifier           = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.trash_delete_all))
@@ -168,9 +169,9 @@ fun TrashScreen(
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(uiState.items, key = { it.document.id }) { item ->
                         TrashItemCard(
-                            item             = item,
-                            onRestore        = { viewModel.restore(item.document.id) },
-                            onDeleteForever  = { pendingDelete = item }
+                            item = item,
+                            onRestore = { viewModel.restore(item.document.id) },
+                            onDeleteForever = { pendingDelete = item },
                         )
                     }
                 }
@@ -182,85 +183,89 @@ fun TrashScreen(
 @Composable
 private fun TrashEmptyState() {
     Column(
-        modifier            = Modifier.fillMaxWidth().padding(top = 48.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(
-            imageVector        = Icons.Rounded.DeleteSweep,
+            imageVector = Icons.Rounded.DeleteSweep,
             contentDescription = null,
-            modifier           = Modifier.size(56.dp),
-            tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
         )
         Text(
-            text      = stringResource(R.string.trash_empty_title),
-            style     = MaterialTheme.typography.titleMedium,
-            color     = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
+            text = stringResource(R.string.trash_empty_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
         )
         Text(
-            text      = stringResource(R.string.trash_empty_body),
-            style     = MaterialTheme.typography.bodyMedium,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            text = stringResource(R.string.trash_empty_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
     }
 }
 
 @Composable
 private fun TrashItemCard(
-    item           : TrashedItemUi,
-    onRestore      : () -> Unit,
-    onDeleteForever: () -> Unit
+    item: TrashedItemUi,
+    onRestore: () -> Unit,
+    onDeleteForever: () -> Unit,
 ) {
     val doc = item.document
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .accentShadow(shape = shape, elevation = 1.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .accentShadow(shape = shape, elevation = 1.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(doc.type.color.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(doc.type.color.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text  = doc.type.label.take(1),
+                        text = doc.type.label.take(1),
                         style = MaterialTheme.typography.labelLarge,
-                        color = doc.type.color
+                        color = doc.type.color,
                     )
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text       = doc.name,
-                        style      = MaterialTheme.typography.bodyMedium,
-                        maxLines   = 1,
-                        overflow   = TextOverflow.Ellipsis,
-                        color      = MaterialTheme.colorScheme.onSurface
+                        text = doc.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text  = "${doc.size} · ${doc.date}",
+                        text = "${doc.size} · ${doc.date}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
             Text(
-                text  = if (item.daysRemaining <= 0)
-                    stringResource(R.string.trash_deletes_today)
-                else
-                    stringResource(R.string.trash_days_remaining, item.daysRemaining),
+                text =
+                    if (item.daysRemaining <= 0) {
+                        stringResource(R.string.trash_deletes_today)
+                    } else {
+                        stringResource(R.string.trash_days_remaining, item.daysRemaining)
+                    },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -277,7 +282,7 @@ private fun TrashItemCard(
                 OutlinedButton(
                     onClick = onDeleteForever,
                     modifier = Modifier.weight(1f),
-                    colors  = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
                     Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
@@ -290,38 +295,38 @@ private fun TrashItemCard(
 
 @Composable
 private fun TrashDeleteAllDialog(
-    count    : Int,
+    count: Int,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.trash_delete_all_confirm_title)) },
-        text  = { Text(stringResource(R.string.trash_delete_all_confirm_body, count)) },
+        text = { Text(stringResource(R.string.trash_delete_all_confirm_body, count)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
-                    text  = stringResource(R.string.general_delete),
-                    color = MaterialTheme.colorScheme.error
+                    text = stringResource(R.string.general_delete),
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
-        }
+        },
     )
 }
 
 @Composable
 private fun TrashDeleteForeverDialog(
-    fileName : String,
+    fileName: String,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.trash_delete_forever_confirm_title)) },
-        text  = {
+        text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.trash_delete_forever_confirm_body, fileName))
                 // H2 (backlog-mejoras-ux-2026-08-30.md §12): Android puede
@@ -329,23 +334,23 @@ private fun TrashDeleteForeverDialog(
                 // app no creó (MediaStore) -- se avisa antes de que
                 // aparezca, para que no se sienta como un paso inesperado.
                 Text(
-                    text  = stringResource(R.string.trash_delete_forever_permission_note),
+                    text = stringResource(R.string.trash_delete_forever_permission_note),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
-                    text  = stringResource(R.string.general_delete),
-                    color = MaterialTheme.colorScheme.error
+                    text = stringResource(R.string.general_delete),
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
-        }
+        },
     )
 }
 
@@ -359,13 +364,14 @@ private fun TrashDeleteForeverDialog(
 // idiomas -- mismo patrón ya corregido en DocumentRepository/
 // ScanSessionManager, nunca extendido acá.
 @Composable
-private fun formatTrashSize(bytes: Long): String = when {
-    bytes < 1024        -> stringResource(R.string.file_size_bytes, bytes)
-    bytes < 1024 * 1024 -> stringResource(R.string.file_size_kb, bytes / 1024)
-    else -> {
-        // NonObservableLocale de lint: Locale.getDefault() no es estado
-        // observable por Compose -- LocalLocale.current sí.
-        val locale = androidx.compose.ui.platform.LocalLocale.current.platformLocale
-        stringResource(R.string.file_size_mb, String.format(locale, "%.1f", bytes / (1024.0 * 1024.0)))
+private fun formatTrashSize(bytes: Long): String =
+    when {
+        bytes < 1024 -> stringResource(R.string.file_size_bytes, bytes)
+        bytes < 1024 * 1024 -> stringResource(R.string.file_size_kb, bytes / 1024)
+        else -> {
+            // NonObservableLocale de lint: Locale.getDefault() no es estado
+            // observable por Compose -- LocalLocale.current sí.
+            val locale = androidx.compose.ui.platform.LocalLocale.current.platformLocale
+            stringResource(R.string.file_size_mb, String.format(locale, "%.1f", bytes / (1024.0 * 1024.0)))
+        }
     }
-}

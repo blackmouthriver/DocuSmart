@@ -22,11 +22,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
-import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DailyLimitDialog
-import com.docsmart.core.ui.components.DocumentType
+import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.core.ui.theme.accentBorder
@@ -56,7 +57,6 @@ import com.docsmart.features.pdftools.presentation.components.FillFormScreen
 import com.docsmart.features.pdftools.presentation.components.MergePdfScreen
 import com.docsmart.features.pdftools.presentation.components.NumberPagesScreen
 import com.docsmart.features.pdftools.presentation.components.OcrPdfScreen
-import com.docsmart.features.pdftools.presentation.components.OutputFileNameField
 import com.docsmart.features.pdftools.presentation.components.PdfToolsMenu
 import com.docsmart.features.pdftools.presentation.components.RedactPdfScreen
 import com.docsmart.features.pdftools.presentation.components.ReorderPagesScreen
@@ -64,7 +64,6 @@ import com.docsmart.features.pdftools.presentation.components.RotatePdfScreen
 import com.docsmart.features.pdftools.presentation.components.SignPdfScreen
 import com.docsmart.features.pdftools.presentation.components.SplitPdfScreen
 import com.docsmart.features.pdftools.presentation.components.WatermarkPdfScreen
-import com.docsmart.R
 
 private const val MIME_PDF = "application/pdf"
 
@@ -75,260 +74,278 @@ fun PdfToolsScreen(
     // selector de PDF. `initialTool` es el nombre del enum `PdfTool`
     // (p.ej. "OCR"/"SIGN"). Ambos `null` (entrada genérica desde el menú
     // principal) deja el comportamiento igual que antes.
-    initialTool   : String? = null,
+    initialTool: String? = null,
     initialFileUri: String? = null,
-    viewModel: PdfToolsViewModel = hiltViewModel()
+    viewModel: PdfToolsViewModel = hiltViewModel(),
 ) {
-    val uiState         by viewModel.uiState.collectAsStateWithLifecycle()
-    val isPremium       by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     val isRewardedReady by viewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
-    val context    = LocalContext.current
-    val activity   = context as? Activity
+    val context = LocalContext.current
+    val activity = context as? Activity
     val snackbarHostState = remember { SnackbarHostState() }
     val adNotAvailableMessage = stringResource(R.string.pdf_tools_ad_not_available)
     val shareChooserTitle = stringResource(R.string.pdf_tools_share)
     val shareErrorMessage = stringResource(R.string.pdf_tools_share_error)
-    val saveErrorMessage  = stringResource(R.string.pdf_tools_save_error)
+    val saveErrorMessage = stringResource(R.string.pdf_tools_save_error)
     // ── Mensajes de los 4 use cases, resueltos acá (stringResource() no puede
     // llamarse dentro de remember{}, @DisallowComposableCalls) y empaquetados
     // sin recalcular en cada recomposición ──────────────────────────────────
-    val mergeMinPdfsError    = stringResource(R.string.pdf_merge_min_pdfs_error)
-    val mergeReadError       = stringResource(R.string.pdf_merge_read_error)
-    val mergeGenerateError   = stringResource(R.string.pdf_merge_generate_error)
-    val mergeSuccess         = stringResource(R.string.pdf_merge_success)
+    val mergeMinPdfsError = stringResource(R.string.pdf_merge_min_pdfs_error)
+    val mergeReadError = stringResource(R.string.pdf_merge_read_error)
+    val mergeGenerateError = stringResource(R.string.pdf_merge_generate_error)
+    val mergeSuccess = stringResource(R.string.pdf_merge_success)
     val mergePartialWarning = stringResource(R.string.pdf_merge_partial_warning)
-    val mergeGenericError    = stringResource(R.string.pdf_merge_error)
-    val splitReadError       = stringResource(R.string.pdf_split_read_error)
-    val splitNoPages         = stringResource(R.string.pdf_split_no_pages)
-    val splitGenerateError   = stringResource(R.string.pdf_split_generate_error)
-    val splitSuccess         = stringResource(R.string.pdf_split_success)
-    val splitGenericError    = stringResource(R.string.pdf_split_error)
-    val compressReadError        = stringResource(R.string.pdf_compress_read_error)
-    val compressEmptyFile        = stringResource(R.string.pdf_compress_empty_file)
-    val compressNoPages          = stringResource(R.string.pdf_compress_no_pages)
-    val compressGenerateError    = stringResource(R.string.pdf_compress_generate_error)
+    val mergeGenericError = stringResource(R.string.pdf_merge_error)
+    val splitReadError = stringResource(R.string.pdf_split_read_error)
+    val splitNoPages = stringResource(R.string.pdf_split_no_pages)
+    val splitGenerateError = stringResource(R.string.pdf_split_generate_error)
+    val splitSuccess = stringResource(R.string.pdf_split_success)
+    val splitGenericError = stringResource(R.string.pdf_split_error)
+    val compressReadError = stringResource(R.string.pdf_compress_read_error)
+    val compressEmptyFile = stringResource(R.string.pdf_compress_empty_file)
+    val compressNoPages = stringResource(R.string.pdf_compress_no_pages)
+    val compressGenerateError = stringResource(R.string.pdf_compress_generate_error)
     val compressAlreadyOptimized = stringResource(R.string.pdf_compress_already_optimized)
-    val compressSuccess          = stringResource(R.string.pdf_compress_success)
-    val compressGenericError     = stringResource(R.string.pdf_compress_error)
-    val rotateReadError      = stringResource(R.string.pdf_rotate_read_error)
-    val rotateNoPages        = stringResource(R.string.pdf_rotate_no_pages)
-    val rotateGenerateError  = stringResource(R.string.pdf_rotate_generate_error)
-    val rotateSuccess        = stringResource(R.string.pdf_rotate_success)
-    val rotateGenericError   = stringResource(R.string.pdf_rotate_error)
-    val numberPagesReadError        = stringResource(R.string.pdf_number_pages_read_error)
-    val numberPagesNoPages          = stringResource(R.string.pdf_number_pages_no_pages)
-    val numberPagesGenerateError    = stringResource(R.string.pdf_number_pages_generate_error)
-    val numberPagesSuccess          = stringResource(R.string.pdf_number_pages_success)
-    val numberPagesGenericError     = stringResource(R.string.pdf_number_pages_error)
-    val numberPagesTemplate         = stringResource(R.string.pdf_number_pages_footer_template)
+    val compressSuccess = stringResource(R.string.pdf_compress_success)
+    val compressGenericError = stringResource(R.string.pdf_compress_error)
+    val rotateReadError = stringResource(R.string.pdf_rotate_read_error)
+    val rotateNoPages = stringResource(R.string.pdf_rotate_no_pages)
+    val rotateGenerateError = stringResource(R.string.pdf_rotate_generate_error)
+    val rotateSuccess = stringResource(R.string.pdf_rotate_success)
+    val rotateGenericError = stringResource(R.string.pdf_rotate_error)
+    val numberPagesReadError = stringResource(R.string.pdf_number_pages_read_error)
+    val numberPagesNoPages = stringResource(R.string.pdf_number_pages_no_pages)
+    val numberPagesGenerateError = stringResource(R.string.pdf_number_pages_generate_error)
+    val numberPagesSuccess = stringResource(R.string.pdf_number_pages_success)
+    val numberPagesGenericError = stringResource(R.string.pdf_number_pages_error)
+    val numberPagesTemplate = stringResource(R.string.pdf_number_pages_footer_template)
     val watermarkEmptyTextError = stringResource(R.string.pdf_watermark_empty_text_error)
-    val watermarkReadError      = stringResource(R.string.pdf_watermark_read_error)
-    val watermarkNoPages        = stringResource(R.string.pdf_watermark_no_pages)
-    val watermarkGenerateError  = stringResource(R.string.pdf_watermark_generate_error)
-    val watermarkSuccess        = stringResource(R.string.pdf_watermark_success)
-    val watermarkGenericError   = stringResource(R.string.pdf_watermark_error)
+    val watermarkReadError = stringResource(R.string.pdf_watermark_read_error)
+    val watermarkNoPages = stringResource(R.string.pdf_watermark_no_pages)
+    val watermarkGenerateError = stringResource(R.string.pdf_watermark_generate_error)
+    val watermarkSuccess = stringResource(R.string.pdf_watermark_success)
+    val watermarkGenericError = stringResource(R.string.pdf_watermark_error)
     val reorderEmptyOrderError = stringResource(R.string.pdf_reorder_pages_empty_order_error)
-    val reorderReadError       = stringResource(R.string.pdf_reorder_pages_read_error)
-    val reorderGenerateError   = stringResource(R.string.pdf_reorder_pages_generate_error)
-    val reorderSuccess         = stringResource(R.string.pdf_reorder_pages_success)
-    val reorderGenericError    = stringResource(R.string.pdf_reorder_pages_error)
-    val compareReadErrorA      = stringResource(R.string.pdf_compare_read_error_a)
-    val compareReadErrorB      = stringResource(R.string.pdf_compare_read_error_b)
-    val compareGenerateError   = stringResource(R.string.pdf_compare_generate_error)
-    val compareIdentical       = stringResource(R.string.pdf_compare_identical)
+    val reorderReadError = stringResource(R.string.pdf_reorder_pages_read_error)
+    val reorderGenerateError = stringResource(R.string.pdf_reorder_pages_generate_error)
+    val reorderSuccess = stringResource(R.string.pdf_reorder_pages_success)
+    val reorderGenericError = stringResource(R.string.pdf_reorder_pages_error)
+    val compareReadErrorA = stringResource(R.string.pdf_compare_read_error_a)
+    val compareReadErrorB = stringResource(R.string.pdf_compare_read_error_b)
+    val compareGenerateError = stringResource(R.string.pdf_compare_generate_error)
+    val compareIdentical = stringResource(R.string.pdf_compare_identical)
     val compareDifferencesFound = stringResource(R.string.pdf_compare_differences_found)
-    val compareGenericError    = stringResource(R.string.pdf_compare_error)
-    val compareReportTitle       = stringResource(R.string.pdf_compare_report_title)
-    val compareReportPageHeader   = stringResource(R.string.pdf_compare_report_page_header)
-    val compareReportPageOnlyInA   = stringResource(R.string.pdf_compare_report_page_only_in_a)
-    val compareReportPageOnlyInB    = stringResource(R.string.pdf_compare_report_page_only_in_b)
-    val compareReportOnlyInALine     = stringResource(R.string.pdf_compare_report_only_in_a_line)
-    val compareReportOnlyInBLine      = stringResource(R.string.pdf_compare_report_only_in_b_line)
+    val compareGenericError = stringResource(R.string.pdf_compare_error)
+    val compareReportTitle = stringResource(R.string.pdf_compare_report_title)
+    val compareReportPageHeader = stringResource(R.string.pdf_compare_report_page_header)
+    val compareReportPageOnlyInA = stringResource(R.string.pdf_compare_report_page_only_in_a)
+    val compareReportPageOnlyInB = stringResource(R.string.pdf_compare_report_page_only_in_b)
+    val compareReportOnlyInALine = stringResource(R.string.pdf_compare_report_only_in_a_line)
+    val compareReportOnlyInBLine = stringResource(R.string.pdf_compare_report_only_in_b_line)
     val redactEmptyRectsError = stringResource(R.string.pdf_redact_empty_rects_error)
-    val redactReadError       = stringResource(R.string.pdf_redact_read_error)
-    val redactNoPages         = stringResource(R.string.pdf_redact_no_pages)
-    val redactGenerateError   = stringResource(R.string.pdf_redact_generate_error)
-    val redactSuccess         = stringResource(R.string.pdf_redact_success)
-    val redactGenericError    = stringResource(R.string.pdf_redact_error)
-    val cropReadError      = stringResource(R.string.pdf_crop_read_error)
-    val cropNoPages        = stringResource(R.string.pdf_crop_no_pages)
-    val cropGenerateError  = stringResource(R.string.pdf_crop_generate_error)
-    val cropSuccess        = stringResource(R.string.pdf_crop_success)
-    val cropGenericError   = stringResource(R.string.pdf_crop_error)
+    val redactReadError = stringResource(R.string.pdf_redact_read_error)
+    val redactNoPages = stringResource(R.string.pdf_redact_no_pages)
+    val redactGenerateError = stringResource(R.string.pdf_redact_generate_error)
+    val redactSuccess = stringResource(R.string.pdf_redact_success)
+    val redactGenericError = stringResource(R.string.pdf_redact_error)
+    val cropReadError = stringResource(R.string.pdf_crop_read_error)
+    val cropNoPages = stringResource(R.string.pdf_crop_no_pages)
+    val cropGenerateError = stringResource(R.string.pdf_crop_generate_error)
+    val cropSuccess = stringResource(R.string.pdf_crop_success)
+    val cropGenericError = stringResource(R.string.pdf_crop_error)
     val editTextEmptySearchError = stringResource(R.string.pdf_edit_text_empty_search_error)
-    val editTextReadError        = stringResource(R.string.pdf_edit_text_read_error)
-    val editTextNoPages          = stringResource(R.string.pdf_edit_text_no_pages)
-    val editTextNoMatchesError   = stringResource(R.string.pdf_edit_text_no_matches_error)
-    val editTextGenerateError    = stringResource(R.string.pdf_edit_text_generate_error)
-    val editTextSuccess          = stringResource(R.string.pdf_edit_text_success)
-    val editTextGenericError     = stringResource(R.string.pdf_edit_text_error)
+    val editTextReadError = stringResource(R.string.pdf_edit_text_read_error)
+    val editTextNoPages = stringResource(R.string.pdf_edit_text_no_pages)
+    val editTextNoMatchesError = stringResource(R.string.pdf_edit_text_no_matches_error)
+    val editTextGenerateError = stringResource(R.string.pdf_edit_text_generate_error)
+    val editTextSuccess = stringResource(R.string.pdf_edit_text_success)
+    val editTextGenericError = stringResource(R.string.pdf_edit_text_error)
     val signEmptySignatureError = stringResource(R.string.pdf_sign_empty_signature_error)
-    val signReadError           = stringResource(R.string.pdf_sign_read_error)
-    val signNoPages             = stringResource(R.string.pdf_sign_no_pages)
-    val signGenerateError       = stringResource(R.string.pdf_sign_generate_error)
-    val signSuccess             = stringResource(R.string.pdf_sign_success)
-    val signGenericError        = stringResource(R.string.pdf_sign_error)
+    val signReadError = stringResource(R.string.pdf_sign_read_error)
+    val signNoPages = stringResource(R.string.pdf_sign_no_pages)
+    val signGenerateError = stringResource(R.string.pdf_sign_generate_error)
+    val signSuccess = stringResource(R.string.pdf_sign_success)
+    val signGenericError = stringResource(R.string.pdf_sign_error)
     val fillFormEmptyValuesError = stringResource(R.string.pdf_fill_form_empty_values_error)
-    val fillFormReadError        = stringResource(R.string.pdf_fill_form_read_error)
-    val fillFormNoFieldsError    = stringResource(R.string.pdf_fill_form_no_fields_error)
-    val fillFormGenerateError    = stringResource(R.string.pdf_fill_form_generate_error)
-    val fillFormSuccess          = stringResource(R.string.pdf_fill_form_success)
-    val fillFormGenericError     = stringResource(R.string.pdf_fill_form_error)
-    val ocrReadError        = stringResource(R.string.pdf_ocr_read_error)
-    val ocrNoPages          = stringResource(R.string.pdf_ocr_no_pages)
-    val ocrAlreadyHasText   = stringResource(R.string.pdf_ocr_already_has_text)
-    val ocrNoTextFound      = stringResource(R.string.pdf_ocr_no_text_found)
-    val ocrGenerateError    = stringResource(R.string.pdf_ocr_generate_error)
-    val ocrSuccess          = stringResource(R.string.pdf_ocr_success)
-    val ocrGenericError     = stringResource(R.string.pdf_ocr_error)
+    val fillFormReadError = stringResource(R.string.pdf_fill_form_read_error)
+    val fillFormNoFieldsError = stringResource(R.string.pdf_fill_form_no_fields_error)
+    val fillFormGenerateError = stringResource(R.string.pdf_fill_form_generate_error)
+    val fillFormSuccess = stringResource(R.string.pdf_fill_form_success)
+    val fillFormGenericError = stringResource(R.string.pdf_fill_form_error)
+    val ocrReadError = stringResource(R.string.pdf_ocr_read_error)
+    val ocrNoPages = stringResource(R.string.pdf_ocr_no_pages)
+    val ocrAlreadyHasText = stringResource(R.string.pdf_ocr_already_has_text)
+    val ocrNoTextFound = stringResource(R.string.pdf_ocr_no_text_found)
+    val ocrGenerateError = stringResource(R.string.pdf_ocr_generate_error)
+    val ocrSuccess = stringResource(R.string.pdf_ocr_success)
+    val ocrGenericError = stringResource(R.string.pdf_ocr_error)
     val extractImagesReadError = stringResource(R.string.pdf_extract_images_read_error)
-    val extractImagesNoPages   = stringResource(R.string.pdf_extract_images_no_pages)
-    val extractImagesNoImages  = stringResource(R.string.pdf_extract_images_no_images)
-    val extractImagesSuccess   = stringResource(R.string.pdf_extract_images_success)
+    val extractImagesNoPages = stringResource(R.string.pdf_extract_images_no_pages)
+    val extractImagesNoImages = stringResource(R.string.pdf_extract_images_no_images)
+    val extractImagesSuccess = stringResource(R.string.pdf_extract_images_success)
     val extractImagesGenericError = stringResource(R.string.pdf_extract_images_error)
     val pdfToolsUnexpectedError = stringResource(R.string.pdf_tools_unexpected_error)
 
-    val pdfToolMessages = remember {
-        PdfToolMessages(
-            merge = MergePdfMessages(
-                minPdfsError  = mergeMinPdfsError,
-                readError     = mergeReadError,
-                generateError = mergeGenerateError,
-                success       = mergeSuccess,
-                genericError  = mergeGenericError,
-                partialWarning = mergePartialWarning
-            ),
-            split = SplitPdfMessages(
-                readError     = splitReadError,
-                noPages       = splitNoPages,
-                generateError = splitGenerateError,
-                success       = splitSuccess,
-                genericError  = splitGenericError
-            ),
-            compress = CompressPdfMessages(
-                readError        = compressReadError,
-                emptyFile        = compressEmptyFile,
-                noPages          = compressNoPages,
-                generateError    = compressGenerateError,
-                alreadyOptimized = compressAlreadyOptimized,
-                success          = compressSuccess,
-                genericError     = compressGenericError
-            ),
-            rotate = RotatePdfMessages(
-                readError     = rotateReadError,
-                noPages       = rotateNoPages,
-                generateError = rotateGenerateError,
-                success       = rotateSuccess,
-                genericError  = rotateGenericError
-            ),
-            numberPages = NumberPagesMessages(
-                readError           = numberPagesReadError,
-                noPages             = numberPagesNoPages,
-                generateError       = numberPagesGenerateError,
-                success             = numberPagesSuccess,
-                genericError        = numberPagesGenericError,
-                pageOfTotalTemplate = numberPagesTemplate
-            ),
-            watermark = WatermarkMessages(
-                emptyTextError = watermarkEmptyTextError,
-                readError      = watermarkReadError,
-                noPages        = watermarkNoPages,
-                generateError  = watermarkGenerateError,
-                success        = watermarkSuccess,
-                genericError   = watermarkGenericError
-            ),
-            reorderPages = ReorderPagesMessages(
-                emptyOrderError = reorderEmptyOrderError,
-                readError       = reorderReadError,
-                generateError   = reorderGenerateError,
-                success         = reorderSuccess,
-                genericError    = reorderGenericError
-            ),
-            compare = ComparePdfMessages(
-                readErrorA         = compareReadErrorA,
-                readErrorB         = compareReadErrorB,
-                generateError      = compareGenerateError,
-                identical          = compareIdentical,
-                differencesFound   = compareDifferencesFound,
-                genericError       = compareGenericError,
-                reportTitle        = compareReportTitle,
-                reportPageHeader   = compareReportPageHeader,
-                reportPageOnlyInA  = compareReportPageOnlyInA,
-                reportPageOnlyInB  = compareReportPageOnlyInB,
-                reportOnlyInALine  = compareReportOnlyInALine,
-                reportOnlyInBLine  = compareReportOnlyInBLine
-            ),
-            redact = RedactPdfMessages(
-                emptyRectsError = redactEmptyRectsError,
-                readError       = redactReadError,
-                noPages         = redactNoPages,
-                generateError   = redactGenerateError,
-                success         = redactSuccess,
-                genericError    = redactGenericError
-            ),
-            crop = CropPdfMessages(
-                readError     = cropReadError,
-                noPages       = cropNoPages,
-                generateError = cropGenerateError,
-                success       = cropSuccess,
-                genericError  = cropGenericError
-            ),
-            editText = EditTextPdfMessages(
-                emptySearchError = editTextEmptySearchError,
-                readError        = editTextReadError,
-                noPages          = editTextNoPages,
-                noMatchesError   = editTextNoMatchesError,
-                generateError    = editTextGenerateError,
-                success          = editTextSuccess,
-                genericError     = editTextGenericError
-            ),
-            sign = SignPdfMessages(
-                emptySignatureError = signEmptySignatureError,
-                readError           = signReadError,
-                noPages             = signNoPages,
-                generateError       = signGenerateError,
-                success             = signSuccess,
-                genericError        = signGenericError
-            ),
-            fillForm = FillFormMessages(
-                emptyValuesError = fillFormEmptyValuesError,
-                readError        = fillFormReadError,
-                noFieldsError    = fillFormNoFieldsError,
-                generateError    = fillFormGenerateError,
-                success          = fillFormSuccess,
-                genericError     = fillFormGenericError
-            ),
-            ocr = OcrPdfMessages(
-                readError      = ocrReadError,
-                noPages        = ocrNoPages,
-                alreadyHasText = ocrAlreadyHasText,
-                noTextFound    = ocrNoTextFound,
-                generateError  = ocrGenerateError,
-                success        = ocrSuccess,
-                genericError   = ocrGenericError
-            ),
-            extractImages = ExtractImagesMessages(
-                readError    = extractImagesReadError,
-                noPages      = extractImagesNoPages,
-                noImages     = extractImagesNoImages,
-                success      = extractImagesSuccess,
-                genericError = extractImagesGenericError
-            ),
-            genericError = pdfToolsUnexpectedError
-        )
-    }
+    val pdfToolMessages =
+        remember {
+            PdfToolMessages(
+                merge =
+                    MergePdfMessages(
+                        minPdfsError = mergeMinPdfsError,
+                        readError = mergeReadError,
+                        generateError = mergeGenerateError,
+                        success = mergeSuccess,
+                        genericError = mergeGenericError,
+                        partialWarning = mergePartialWarning,
+                    ),
+                split =
+                    SplitPdfMessages(
+                        readError = splitReadError,
+                        noPages = splitNoPages,
+                        generateError = splitGenerateError,
+                        success = splitSuccess,
+                        genericError = splitGenericError,
+                    ),
+                compress =
+                    CompressPdfMessages(
+                        readError = compressReadError,
+                        emptyFile = compressEmptyFile,
+                        noPages = compressNoPages,
+                        generateError = compressGenerateError,
+                        alreadyOptimized = compressAlreadyOptimized,
+                        success = compressSuccess,
+                        genericError = compressGenericError,
+                    ),
+                rotate =
+                    RotatePdfMessages(
+                        readError = rotateReadError,
+                        noPages = rotateNoPages,
+                        generateError = rotateGenerateError,
+                        success = rotateSuccess,
+                        genericError = rotateGenericError,
+                    ),
+                numberPages =
+                    NumberPagesMessages(
+                        readError = numberPagesReadError,
+                        noPages = numberPagesNoPages,
+                        generateError = numberPagesGenerateError,
+                        success = numberPagesSuccess,
+                        genericError = numberPagesGenericError,
+                        pageOfTotalTemplate = numberPagesTemplate,
+                    ),
+                watermark =
+                    WatermarkMessages(
+                        emptyTextError = watermarkEmptyTextError,
+                        readError = watermarkReadError,
+                        noPages = watermarkNoPages,
+                        generateError = watermarkGenerateError,
+                        success = watermarkSuccess,
+                        genericError = watermarkGenericError,
+                    ),
+                reorderPages =
+                    ReorderPagesMessages(
+                        emptyOrderError = reorderEmptyOrderError,
+                        readError = reorderReadError,
+                        generateError = reorderGenerateError,
+                        success = reorderSuccess,
+                        genericError = reorderGenericError,
+                    ),
+                compare =
+                    ComparePdfMessages(
+                        readErrorA = compareReadErrorA,
+                        readErrorB = compareReadErrorB,
+                        generateError = compareGenerateError,
+                        identical = compareIdentical,
+                        differencesFound = compareDifferencesFound,
+                        genericError = compareGenericError,
+                        reportTitle = compareReportTitle,
+                        reportPageHeader = compareReportPageHeader,
+                        reportPageOnlyInA = compareReportPageOnlyInA,
+                        reportPageOnlyInB = compareReportPageOnlyInB,
+                        reportOnlyInALine = compareReportOnlyInALine,
+                        reportOnlyInBLine = compareReportOnlyInBLine,
+                    ),
+                redact =
+                    RedactPdfMessages(
+                        emptyRectsError = redactEmptyRectsError,
+                        readError = redactReadError,
+                        noPages = redactNoPages,
+                        generateError = redactGenerateError,
+                        success = redactSuccess,
+                        genericError = redactGenericError,
+                    ),
+                crop =
+                    CropPdfMessages(
+                        readError = cropReadError,
+                        noPages = cropNoPages,
+                        generateError = cropGenerateError,
+                        success = cropSuccess,
+                        genericError = cropGenericError,
+                    ),
+                editText =
+                    EditTextPdfMessages(
+                        emptySearchError = editTextEmptySearchError,
+                        readError = editTextReadError,
+                        noPages = editTextNoPages,
+                        noMatchesError = editTextNoMatchesError,
+                        generateError = editTextGenerateError,
+                        success = editTextSuccess,
+                        genericError = editTextGenericError,
+                    ),
+                sign =
+                    SignPdfMessages(
+                        emptySignatureError = signEmptySignatureError,
+                        readError = signReadError,
+                        noPages = signNoPages,
+                        generateError = signGenerateError,
+                        success = signSuccess,
+                        genericError = signGenericError,
+                    ),
+                fillForm =
+                    FillFormMessages(
+                        emptyValuesError = fillFormEmptyValuesError,
+                        readError = fillFormReadError,
+                        noFieldsError = fillFormNoFieldsError,
+                        generateError = fillFormGenerateError,
+                        success = fillFormSuccess,
+                        genericError = fillFormGenericError,
+                    ),
+                ocr =
+                    OcrPdfMessages(
+                        readError = ocrReadError,
+                        noPages = ocrNoPages,
+                        alreadyHasText = ocrAlreadyHasText,
+                        noTextFound = ocrNoTextFound,
+                        generateError = ocrGenerateError,
+                        success = ocrSuccess,
+                        genericError = ocrGenericError,
+                    ),
+                extractImages =
+                    ExtractImagesMessages(
+                        readError = extractImagesReadError,
+                        noPages = extractImagesNoPages,
+                        noImages = extractImagesNoImages,
+                        success = extractImagesSuccess,
+                        genericError = extractImagesGenericError,
+                    ),
+                genericError = pdfToolsUnexpectedError,
+            )
+        }
 
-    val multiPdfLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        if (uris.isNotEmpty()) viewModel.addPdfsToMerge(uris)
-    }
+    val multiPdfLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetMultipleContents(),
+        ) { uris ->
+            if (uris.isNotEmpty()) viewModel.addPdfsToMerge(uris)
+        }
 
-    val singlePdfLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { viewModel.onPdfsSelected(listOf(it)) }
-    }
+    val singlePdfLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri ->
+            uri?.let { viewModel.onPdfsSelected(listOf(it)) }
+        }
 
     // Item #15 del backlog UX: las 12 herramientas de un solo PDF ofrecen
     // elegir un archivo ya indexado por la app (Biblioteca completa), no
@@ -341,31 +358,33 @@ fun PdfToolsScreen(
     var showPdfSourceChooser by remember { mutableStateOf(false) }
     if (showPdfSourceChooser) {
         FileSourcePickerDialog(
-            title              = stringResource(R.string.pdf_tools_title),
-            onDismiss          = { showPdfSourceChooser = false },
+            title = stringResource(R.string.pdf_tools_title),
+            onDismiss = { showPdfSourceChooser = false },
             onChooseFromDevice = {
                 showPdfSourceChooser = false
                 singlePdfLauncher.launch(MIME_PDF)
             },
-            onChooseDocument   = { document ->
+            onChooseDocument = { document ->
                 showPdfSourceChooser = false
                 viewModel.onPdfsSelected(listOf(document.toContentUri()))
             },
-            filter = { it.type == DocumentType.PDF }
+            filter = { it.type == DocumentType.PDF },
         )
     }
 
-    val comparePdfALauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { viewModel.onComparePdfASelected(it) }
-    }
+    val comparePdfALauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri ->
+            uri?.let { viewModel.onComparePdfASelected(it) }
+        }
 
-    val comparePdfBLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { viewModel.onComparePdfBSelected(it) }
-    }
+    val comparePdfBLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri ->
+            uri?.let { viewModel.onComparePdfBSelected(it) }
+        }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
@@ -386,15 +405,15 @@ fun PdfToolsScreen(
     // ── Dialog de límite diario ────────────────────────
     if (uiState.showLimitDialog) {
         DailyLimitDialog(
-            usedCount       = uiState.toolUseCount,
-            limit           = uiState.toolUseLimit,
+            usedCount = uiState.toolUseCount,
+            limit = uiState.toolUseLimit,
             itemLabelPlural = stringResource(R.string.pdf_tools_daily_limit_label),
             isRewardedReady = isRewardedReady,
-            onWatchAd       = {
+            onWatchAd = {
                 activity?.let { viewModel.watchAdForTool(it, adNotAvailableMessage) }
             },
-            onDismiss       = { viewModel.dismissLimitDialog() },
-            onGetPremium    = { }
+            onDismiss = { viewModel.dismissLimitDialog() },
+            onGetPremium = { },
         )
     }
 
@@ -408,29 +427,31 @@ fun PdfToolsScreen(
         // MainActivity para toda la navegación -- no pasaba en Home/
         // Biblioteca/Ajustes/Seguridad porque esas pantallas no tienen su
         // propio Scaffold).
-        contentWindowInsets = WindowInsets.systemBars.only(
-            WindowInsetsSides.Horizontal
-        ),
-        containerColor = Color.Transparent
+        contentWindowInsets =
+            WindowInsets.systemBars.only(
+                WindowInsetsSides.Horizontal,
+            ),
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado
             // de banner que el resto de las pantallas -- ver
             // DocuSmartScreenHeader.
             item {
                 DocuSmartScreenHeader(
-                    adUnitId  = AdConstants.BANNER_TOOLS_ID,
-                    adManager = viewModel.adManager
+                    adUnitId = AdConstants.BANNER_TOOLS_ID,
+                    adManager = viewModel.adManager,
                 ) {
                     DocuSmartTopBanner(
-                        screenTitle    = stringResource(R.string.pdf_tools_title),
-                        screenSubtitle = stringResource(R.string.pdf_tools_subtitle)
+                        screenTitle = stringResource(R.string.pdf_tools_title),
+                        screenSubtitle = stringResource(R.string.pdf_tools_subtitle),
                     )
                 }
             }
@@ -440,7 +461,7 @@ fun PdfToolsScreen(
                 item {
                     PdfToolsMenu(
                         onToolSelected = { viewModel.selectTool(it) },
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        modifier = Modifier.padding(horizontal = 20.dp),
                     )
                 }
             }
@@ -450,17 +471,17 @@ fun PdfToolsScreen(
                 item {
                     TextButton(
                         onClick = { viewModel.reset() },
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(14.dp),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.pdf_tools_back_to_tools),
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
@@ -469,16 +490,20 @@ fun PdfToolsScreen(
                 if (!isPremium && uiState.toolUseCount > 0) {
                     item {
                         Text(
-                            text = stringResource(
-                                R.string.pdf_tools_usage_today,
-                                uiState.toolUseCount, uiState.toolUseLimit
-                            ),
+                            text =
+                                stringResource(
+                                    R.string.pdf_tools_usage_today,
+                                    uiState.toolUseCount,
+                                    uiState.toolUseLimit,
+                                ),
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (uiState.toolUseCount >= uiState.toolUseLimit)
-                                MaterialTheme.colorScheme.error
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 20.dp)
+                            color =
+                                if (uiState.toolUseCount >= uiState.toolUseLimit) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            modifier = Modifier.padding(horizontal = 20.dp),
                         )
                     }
                 }
@@ -495,7 +520,7 @@ fun PdfToolsScreen(
                             },
                             onSaveClick = { viewModel.saveToDownloads(context, saveErrorMessage) },
                             onNewOperation = { viewModel.reset() },
-                            modifier = Modifier.padding(horizontal = 20.dp)
+                            modifier = Modifier.padding(horizontal = 20.dp),
                         )
                     }
                 }
@@ -510,7 +535,7 @@ fun PdfToolsScreen(
                             },
                             onSaveClick = { viewModel.saveToDownloads(context, saveErrorMessage) },
                             onNewOperation = { viewModel.reset() },
-                            modifier = Modifier.padding(horizontal = 20.dp)
+                            modifier = Modifier.padding(horizontal = 20.dp),
                         )
                     }
                 }
@@ -519,273 +544,288 @@ fun PdfToolsScreen(
                     item {
                         Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                             when (uiState.selectedTool) {
-                                PdfTool.MERGE -> MergePdfScreen(
-                                    selectedPdfs = uiState.selectedPdfs,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdfs = {
-                                        multiPdfLauncher.launch(MIME_PDF)
-                                    },
-                                    onRemovePdf = { viewModel.removePdf(it) },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.SPLIT -> SplitPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    fromPage = uiState.splitFromPage,
-                                    toPage = uiState.splitToPage,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onFromPageChange = {
-                                        viewModel.onSplitFromPageChange(it)
-                                    },
-                                    onToPageChange = {
-                                        viewModel.onSplitToPageChange(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.COMPRESS -> CompressPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    quality = uiState.compressionQuality,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onQualityChange = {
-                                        viewModel.onCompressionQualityChange(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.ROTATE -> RotatePdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    degrees = uiState.rotationDegrees,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onDegreesChange = {
-                                        viewModel.onRotationDegreesChange(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.NUMBER_PAGES -> NumberPagesScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    format = uiState.pageNumberFormat,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onFormatChange = {
-                                        viewModel.onPageNumberFormatChange(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.WATERMARK -> WatermarkPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    watermarkText = uiState.watermarkText,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onWatermarkTextChange = {
-                                        viewModel.onWatermarkTextChange(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.REORDER_PAGES -> ReorderPagesScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    pageOrder = uiState.pageOrder,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onPagesLoaded = {
-                                        viewModel.onPagesLoaded(it)
-                                    },
-                                    onReorder = { from, to ->
-                                        viewModel.onReorderPage(from, to)
-                                    },
-                                    onRemovePage = {
-                                        viewModel.onRemovePage(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.COMPARE -> ComparePdfScreen(
-                                    pdfA = uiState.comparePdfA,
-                                    pdfB = uiState.comparePdfB,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdfA = {
-                                        comparePdfALauncher.launch(MIME_PDF)
-                                    },
-                                    onSelectPdfB = {
-                                        comparePdfBLauncher.launch(MIME_PDF)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.REDACT -> RedactPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    currentPage = uiState.redactionCurrentPage,
-                                    totalPages = uiState.redactionTotalPages,
-                                    rects = uiState.redactionRects,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onTotalPagesLoaded = {
-                                        viewModel.onRedactionTotalPagesLoaded(it)
-                                    },
-                                    onPageChange = {
-                                        viewModel.onRedactionPageChange(it)
-                                    },
-                                    onAddRect = {
-                                        viewModel.onAddRedactionRect(it)
-                                    },
-                                    onUndoLastRect = { viewModel.onUndoLastRedactionRect() },
-                                    onClearRects = { viewModel.onClearRedactionRects() },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.CROP -> CropPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    marginPercent = uiState.cropMarginPercent,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onMarginChange = {
-                                        viewModel.onCropMarginChange(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.EDIT_TEXT -> EditTextPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    searchText = uiState.editSearchText,
-                                    replaceText = uiState.editReplaceText,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onSearchTextChange = {
-                                        viewModel.onEditSearchTextChange(it)
-                                    },
-                                    onReplaceTextChange = {
-                                        viewModel.onEditReplaceTextChange(it)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.SIGN -> SignPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    pageNumber = uiState.signaturePageNumber,
-                                    totalPages = uiState.signatureTotalPages,
-                                    hasSignature = uiState.signatureImageBytes != null,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onTotalPagesLoaded = {
-                                        viewModel.onSignatureTotalPagesLoaded(it)
-                                    },
-                                    onPageChange = {
-                                        viewModel.onSignaturePageChange(it)
-                                    },
-                                    onSignatureCaptured = {
-                                        viewModel.onSignatureCaptured(it)
-                                    },
-                                    onClearSignature = { viewModel.onClearSignature() },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.FILL_FORM -> FillFormScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    formFields = uiState.formFields,
-                                    formFieldValues = uiState.formFieldValues,
-                                    formFieldsDetected = uiState.formFieldsDetected,
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onDetectFields = {
-                                        viewModel.onDetectFormFields(it)
-                                    },
-                                    onFieldValueChange = { name, value ->
-                                        viewModel.onFormFieldValueChange(name, value)
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.OCR -> OcrPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
-                                PdfTool.EXTRACT_IMAGES -> ExtractImagesPdfScreen(
-                                    selectedPdf = uiState.selectedPdfs.firstOrNull(),
-                                    isProcessing = uiState.isProcessing,
-                                    fileName = uiState.outputFileName,
-                                    onFileNameChange = {
-                                        viewModel.onOutputFileNameChange(it)
-                                    },
-                                    onSelectPdf = {
-                                        showPdfSourceChooser = true
-                                    },
-                                    onExecute = { viewModel.execute(pdfToolMessages) }
-                                )
+                                PdfTool.MERGE ->
+                                    MergePdfScreen(
+                                        selectedPdfs = uiState.selectedPdfs,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdfs = {
+                                            multiPdfLauncher.launch(MIME_PDF)
+                                        },
+                                        onRemovePdf = { viewModel.removePdf(it) },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.SPLIT ->
+                                    SplitPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        fromPage = uiState.splitFromPage,
+                                        toPage = uiState.splitToPage,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onFromPageChange = {
+                                            viewModel.onSplitFromPageChange(it)
+                                        },
+                                        onToPageChange = {
+                                            viewModel.onSplitToPageChange(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.COMPRESS ->
+                                    CompressPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        quality = uiState.compressionQuality,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onQualityChange = {
+                                            viewModel.onCompressionQualityChange(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.ROTATE ->
+                                    RotatePdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        degrees = uiState.rotationDegrees,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onDegreesChange = {
+                                            viewModel.onRotationDegreesChange(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.NUMBER_PAGES ->
+                                    NumberPagesScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        format = uiState.pageNumberFormat,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onFormatChange = {
+                                            viewModel.onPageNumberFormatChange(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.WATERMARK ->
+                                    WatermarkPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        watermarkText = uiState.watermarkText,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onWatermarkTextChange = {
+                                            viewModel.onWatermarkTextChange(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.REORDER_PAGES ->
+                                    ReorderPagesScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        pageOrder = uiState.pageOrder,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onPagesLoaded = {
+                                            viewModel.onPagesLoaded(it)
+                                        },
+                                        onReorder = { from, to ->
+                                            viewModel.onReorderPage(from, to)
+                                        },
+                                        onRemovePage = {
+                                            viewModel.onRemovePage(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.COMPARE ->
+                                    ComparePdfScreen(
+                                        pdfA = uiState.comparePdfA,
+                                        pdfB = uiState.comparePdfB,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdfA = {
+                                            comparePdfALauncher.launch(MIME_PDF)
+                                        },
+                                        onSelectPdfB = {
+                                            comparePdfBLauncher.launch(MIME_PDF)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.REDACT ->
+                                    RedactPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        currentPage = uiState.redactionCurrentPage,
+                                        totalPages = uiState.redactionTotalPages,
+                                        rects = uiState.redactionRects,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onTotalPagesLoaded = {
+                                            viewModel.onRedactionTotalPagesLoaded(it)
+                                        },
+                                        onPageChange = {
+                                            viewModel.onRedactionPageChange(it)
+                                        },
+                                        onAddRect = {
+                                            viewModel.onAddRedactionRect(it)
+                                        },
+                                        onUndoLastRect = { viewModel.onUndoLastRedactionRect() },
+                                        onClearRects = { viewModel.onClearRedactionRects() },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.CROP ->
+                                    CropPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        marginPercent = uiState.cropMarginPercent,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onMarginChange = {
+                                            viewModel.onCropMarginChange(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.EDIT_TEXT ->
+                                    EditTextPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        searchText = uiState.editSearchText,
+                                        replaceText = uiState.editReplaceText,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onSearchTextChange = {
+                                            viewModel.onEditSearchTextChange(it)
+                                        },
+                                        onReplaceTextChange = {
+                                            viewModel.onEditReplaceTextChange(it)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.SIGN ->
+                                    SignPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        pageNumber = uiState.signaturePageNumber,
+                                        totalPages = uiState.signatureTotalPages,
+                                        hasSignature = uiState.signatureImageBytes != null,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onTotalPagesLoaded = {
+                                            viewModel.onSignatureTotalPagesLoaded(it)
+                                        },
+                                        onPageChange = {
+                                            viewModel.onSignaturePageChange(it)
+                                        },
+                                        onSignatureCaptured = {
+                                            viewModel.onSignatureCaptured(it)
+                                        },
+                                        onClearSignature = { viewModel.onClearSignature() },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.FILL_FORM ->
+                                    FillFormScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        formFields = uiState.formFields,
+                                        formFieldValues = uiState.formFieldValues,
+                                        formFieldsDetected = uiState.formFieldsDetected,
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onDetectFields = {
+                                            viewModel.onDetectFormFields(it)
+                                        },
+                                        onFieldValueChange = { name, value ->
+                                            viewModel.onFormFieldValueChange(name, value)
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.OCR ->
+                                    OcrPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
+                                PdfTool.EXTRACT_IMAGES ->
+                                    ExtractImagesPdfScreen(
+                                        selectedPdf = uiState.selectedPdfs.firstOrNull(),
+                                        isProcessing = uiState.isProcessing,
+                                        fileName = uiState.outputFileName,
+                                        onFileNameChange = {
+                                            viewModel.onOutputFileNameChange(it)
+                                        },
+                                        onSelectPdf = {
+                                            showPdfSourceChooser = true
+                                        },
+                                        onExecute = { viewModel.execute(pdfToolMessages) },
+                                    )
                                 else -> {}
                             }
                         }
@@ -805,7 +845,7 @@ private fun ToolSuccessCard(
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit,
     onNewOperation: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     ToolSuccessCardShell(
         message = result.message,
@@ -815,20 +855,21 @@ private fun ToolSuccessCard(
         onShareClick = onShareClick,
         onSaveClick = onSaveClick,
         onNewOperation = onNewOperation,
-        modifier = modifier
+        modifier = modifier,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Rounded.PictureAsPdf,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -836,18 +877,20 @@ private fun ToolSuccessCard(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     // Hallazgo real de la revisión general
                     // 2026-09-16 (#30): "KB" hardcodeado sin
                     // stringResource, visible tras cualquiera de
                     // las herramientas.
-                    text = stringResource(
-                        R.string.pdf_tools_result_size_kb, result.outputFile.length() / 1024
-                    ),
+                    text =
+                        stringResource(
+                            R.string.pdf_tools_result_size_kb,
+                            result.outputFile.length() / 1024,
+                        ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -864,7 +907,7 @@ private fun MultiToolSuccessCard(
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit,
     onNewOperation: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     ToolSuccessCardShell(
         message = result.message,
@@ -874,32 +917,33 @@ private fun MultiToolSuccessCard(
         onShareClick = onShareClick,
         onSaveClick = onSaveClick,
         onNewOperation = onNewOperation,
-        modifier = modifier
+        modifier = modifier,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 200.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 200.dp),
             contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(result.outputFiles) { file ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Image,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp),
                     )
                     Text(
                         text = file.name,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -925,120 +969,124 @@ private fun ToolSuccessCardShell(
     onSaveClick: () -> Unit,
     onNewOperation: () -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Icon(
                 imageVector = Icons.Rounded.CheckCircle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(56.dp),
             )
 
             Text(
                 text = message,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                content = content
+                content = content,
             )
 
             if (savedToDownloads) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = stringResource(R.string.general_saved_downloads),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (!savedToDownloads) {
                     Button(
                         onClick = onSaveClick,
                         enabled = !isSaving,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = MaterialTheme.shapes.medium
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Download,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.pdf_tools_save_to_downloads),
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
 
                 OutlinedButton(
                     onClick = onShareClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = MaterialTheme.shapes.medium
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Share,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = shareLabel,
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
 
                 TextButton(
                     onClick = onNewOperation,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Refresh,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp),
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(R.string.pdf_tools_new_operation),
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }

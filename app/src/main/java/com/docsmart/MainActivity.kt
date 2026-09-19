@@ -12,6 +12,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -44,13 +45,13 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
 import javax.inject.Inject
-import androidx.appcompat.app.AppCompatActivity
+
 @AndroidEntryPoint
-
 class MainActivity : AppCompatActivity() {
-
     @Inject lateinit var adManager: AdManager
+
     @Inject lateinit var themeManager: ThemeManager
+
     @Inject lateinit var languageManager: LanguageManager
 
     // mutableStateOf, no un `var` plano: con android:launchMode="singleTask"
@@ -58,27 +59,31 @@ class MainActivity : AppCompatActivity() {
     // la Activity ya compuesta -- necesita disparar recomposición, no solo
     // quedar disponible para la próxima vez que se lea.
     private var externalFileUri by mutableStateOf<Uri?>(null)
+
     // HU-65: id del evento de Agenda a abrir directo al tocar su
     // notificación de recordatorio (AC3) -- mismo patrón que
     // `externalFileUri` de arriba (mutableStateOf, no un `var` plano, para
     // que onNewIntent() dispare recomposición con la Activity ya compuesta).
     private var pendingAgendaEventId by mutableStateOf<String?>(null)
+
     // Backlog UX #52: id de la nota a abrir directo al tocar su
     // notificación de recordatorio de repaso -- mismo patrón que
     // `pendingAgendaEventId` de arriba.
     private var pendingNoteId by mutableStateOf<String?>(null)
-    private var adsInitialized  = false
+    private var adsInitialized = false
+
     // Guarda de una sola vez para el LaunchedEffect(currentRoute) de más
     // abajo que difiere requestStoragePermissions() -- ver hallazgo O2.
     private var storagePermissionRequested = false
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        permissions.forEach { (permission, granted) ->
-            Timber.d("Permiso $permission: $granted")
+    private val permissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) { permissions ->
+            permissions.forEach { (permission, granted) ->
+                Timber.d("Permiso $permission: $granted")
+            }
         }
-    }
 
     override fun attachBaseContext(newBase: Context) {
         // ── Aplicar idioma guardado antes de crear la Activity ──
@@ -119,14 +124,16 @@ class MainActivity : AppCompatActivity() {
         // barra ya resuelve su contraste con MaterialTheme.colorScheme, así
         // que no hace falta el scrim del sistema -- se fuerza transparente.
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            ),
-            navigationBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT
-            )
+            statusBarStyle =
+                SystemBarStyle.auto(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                ),
+            navigationBarStyle =
+                SystemBarStyle.auto(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                ),
         )
         requestAdsConsentThenInitializeAds()
 
@@ -138,10 +145,11 @@ class MainActivity : AppCompatActivity() {
             val currentLanguage by languageManager.currentLanguage.collectAsState()
             val isSystemDark = isSystemInDarkTheme()
 
-            val isDarkTheme = when (currentTheme) {
-                AppTheme.DARK -> true
-                else -> false
-            }
+            val isDarkTheme =
+                when (currentTheme) {
+                    AppTheme.DARK -> true
+                    else -> false
+                }
             val useSystemTheme = currentTheme == AppTheme.SYSTEM
 
             // ── Reiniciar Activity al cambiar idioma ──
@@ -150,10 +158,11 @@ class MainActivity : AppCompatActivity() {
                 if (currentLanguage != previousLanguage) {
                     previousLanguage = currentLanguage
                     // Reiniciar para aplicar el nuevo idioma
-                    val intent = Intent(this@MainActivity, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    val intent =
+                        Intent(this@MainActivity, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                                 Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
+                        }
                     startActivity(intent)
                 }
             }
@@ -162,7 +171,7 @@ class MainActivity : AppCompatActivity() {
                 darkTheme = isDarkTheme,
                 useSystemTheme = useSystemTheme,
                 accentColor = currentAccentColor,
-                fontScale = currentFontScale.scale
+                fontScale = currentFontScale.scale,
             ) {
                 val navController = rememberNavController()
                 val currentBackStack by navController.currentBackStackEntryAsState()
@@ -246,9 +255,9 @@ class MainActivity : AppCompatActivity() {
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                            }
+                            },
                         )
-                    }
+                    },
                 ) { innerPadding ->
                     // El fondo comparte el mismo Box con padding que el
                     // contenido -- bug real 2026-09-06: cuando el fondo medía
@@ -263,15 +272,16 @@ class MainActivity : AppCompatActivity() {
                             DocuSmartAnimatedBackground(modifier = Modifier.fillMaxSize())
                         } else {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(backgroundColor)
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(backgroundColor),
                             )
                         }
                         DocuSmartNavGraph(
                             navController = navController,
                             themeManager = themeManager,
-                            languageManager = languageManager
+                            languageManager = languageManager,
                         )
                     }
                 }
@@ -318,7 +328,8 @@ class MainActivity : AppCompatActivity() {
         }
         return try {
             contentResolver.takePersistableUriPermission(
-                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION,
             )
             uri
         } catch (e: Exception) {
@@ -339,19 +350,25 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 if (ContextCompat.checkSelfPermission(
-                        this, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                        this, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
                     ) != PackageManager.PERMISSION_GRANTED
-                ) permissions.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+                ) {
+                    permissions.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+                }
             }
             if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.READ_MEDIA_IMAGES
+                    this, Manifest.permission.READ_MEDIA_IMAGES,
                 ) != PackageManager.PERMISSION_GRANTED
-            ) permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            ) {
+                permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            }
         } else {
             if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.READ_EXTERNAL_STORAGE
+                    this, Manifest.permission.READ_EXTERNAL_STORAGE,
                 ) != PackageManager.PERMISSION_GRANTED
-            ) permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            ) {
+                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
         }
         if (permissions.isNotEmpty()) {
             permissionLauncher.launch(permissions.toTypedArray())
@@ -368,18 +385,21 @@ class MainActivity : AppCompatActivity() {
     private fun requestAdsConsentThenInitializeAds() {
         if (isRunningUnderInstrumentation()) return
 
-        val debugSettings = if (BuildConfig.DEBUG) {
-            ConsentDebugSettings.Builder(this)
-                .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
-                // Sin registrar el dispositivo como debug device, la
-                // simulación de geografía EEA no toma efecto en un
-                // dispositivo real (confirmado: sin este ID, canRequestAds()
-                // resolvía como si no aplicara GDPR, ignorando el override).
-                // Mismo ID que ya se usaba para AdMob en testDeviceIds
-                // -- UMP logueó exactamente este mismo hash al iniciar.
-                .addTestDeviceHashedId("EB3ECF44CF3E05437B137D30F852213B")
-                .build()
-        } else null
+        val debugSettings =
+            if (BuildConfig.DEBUG) {
+                ConsentDebugSettings.Builder(this)
+                    .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                    // Sin registrar el dispositivo como debug device, la
+                    // simulación de geografía EEA no toma efecto en un
+                    // dispositivo real (confirmado: sin este ID, canRequestAds()
+                    // resolvía como si no aplicara GDPR, ignorando el override).
+                    // Mismo ID que ya se usaba para AdMob en testDeviceIds
+                    // -- UMP logueó exactamente este mismo hash al iniciar.
+                    .addTestDeviceHashedId("EB3ECF44CF3E05437B137D30F852213B")
+                    .build()
+            } else {
+                null
+            }
 
         val paramsBuilder = ConsentRequestParameters.Builder()
         debugSettings?.let { paramsBuilder.setConsentDebugSettings(it) }
@@ -400,7 +420,7 @@ class MainActivity : AppCompatActivity() {
             { requestConsentError ->
                 Timber.w("UMP: error actualizando info de consentimiento — ${requestConsentError.message}")
                 initializeAdsIfAllowed(consentInformation)
-            }
+            },
         )
     }
 
@@ -408,15 +428,16 @@ class MainActivity : AppCompatActivity() {
         if (adsInitialized || !consentInformation.canRequestAds()) return
         adsInitialized = true
 
-        val testDeviceIds = if (BuildConfig.DEBUG) {
-            listOf("EB3ECF44CF3E05437B137D30F852213B")
-        } else {
-            emptyList()
-        }
+        val testDeviceIds =
+            if (BuildConfig.DEBUG) {
+                listOf("EB3ECF44CF3E05437B137D30F852213B")
+            } else {
+                emptyList()
+            }
         MobileAds.setRequestConfiguration(
             RequestConfiguration.Builder()
                 .setTestDeviceIds(testDeviceIds)
-                .build()
+                .build(),
         )
         // MobileAds.initialize() debe llamarse desde el hilo principal (documentado
         // por Google) -- lanzarlo en Dispatchers.IO hacía que, en el camino rápido
@@ -447,6 +468,7 @@ class MainActivity : AppCompatActivity() {
         // HU-65: nombre de la extra que AgendaReminderReceiver pone en el
         // Intent de "abrir la app" de la notificación de recordatorio.
         const val EXTRA_OPEN_AGENDA_EVENT_ID = "open_agenda_event_id"
+
         // Backlog UX #52: mismo mecanismo, para NoteReminderReceiver.
         const val EXTRA_OPEN_NOTE_ID = "open_note_id"
     }

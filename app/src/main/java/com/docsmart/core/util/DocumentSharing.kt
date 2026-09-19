@@ -36,15 +36,20 @@ import java.io.File
 // abrirla) y la rama de FileProvider, pensada justo para este caso, nunca
 // se ejecutaba: "Compartir" fallaba en silencio para esos documentos. Se
 // decide ahora por el esquema real de la Uri, no por si algo lanza.
-fun shareDocument(context: Context, document: DocumentUiModel, chooserTitle: String) {
+fun shareDocument(
+    context: Context,
+    document: DocumentUiModel,
+    chooserTitle: String,
+) {
     try {
         val uri = resolveShareUri(context, document.id)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "*/*"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, document.name)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "*/*"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, document.name)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (e: Exception) {
         // Hallazgo real de esta ronda: el log original incluía
@@ -57,7 +62,7 @@ fun shareDocument(context: Context, document: DocumentUiModel, chooserTitle: Str
         // DownloadsSaver.
         Timber.e(
             RuntimeException("DocumentSharing: ${e.javaClass.simpleName}"),
-            "DocumentSharing: error compartiendo documento"
+            "DocumentSharing: error compartiendo documento",
         )
     }
 }
@@ -68,7 +73,10 @@ fun shareDocument(context: Context, document: DocumentUiModel, chooserTitle: Str
  * hace). Extraída como función propia, testeable sin necesidad de construir
  * un `Intent` real (el proyecto no usa Robolectric para tests unitarios).
  */
-internal fun resolveShareUri(context: Context, documentId: String): Uri {
+internal fun resolveShareUri(
+    context: Context,
+    documentId: String,
+): Uri {
     val parsed = Uri.parse(documentId)
     return when (parsed.scheme) {
         "content" -> parsed
@@ -76,13 +84,19 @@ internal fun resolveShareUri(context: Context, documentId: String): Uri {
         // proyecto por el mismo motivo -- exponer un file:// crudo a otra
         // app crashea en targetSdk 36 con FileUriExposedException): se
         // extrae la ruta real y se rearma vía FileProvider.
-        "file" -> FileProvider.getUriForFile(
-            context, "${context.packageName}.fileprovider", File(parsed.path ?: documentId)
-        )
+        "file" ->
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                File(parsed.path ?: documentId),
+            )
         // Sin esquema (o cualquier otro): documentId es una ruta de archivo
         // real de almacenamiento interno de la app.
-        else -> FileProvider.getUriForFile(
-            context, "${context.packageName}.fileprovider", File(documentId)
-        )
+        else ->
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                File(documentId),
+            )
     }
 }

@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.ContactPage
 import androidx.compose.material.icons.rounded.Email
-import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
@@ -75,7 +73,7 @@ fun QrWifiForm(
     showPassword: Boolean,
     onShowPasswordToggle: () -> Unit,
     security: QrWifiSecurity,
-    onSecurityChange: (QrWifiSecurity) -> Unit
+    onSecurityChange: (QrWifiSecurity) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(
@@ -86,13 +84,13 @@ fun QrWifiForm(
             leadingIcon = { Icon(Icons.Rounded.Wifi, null, tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,
             shape = MaterialTheme.shapes.large,
-            colors = qrOutlinedFieldColors()
+            colors = qrOutlinedFieldColors(),
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = stringResource(R.string.qr_wifi_security_label),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 QrWifiSecurity.entries.forEach { option ->
@@ -101,7 +99,7 @@ fun QrWifiForm(
                         onClick = { onSecurityChange(option) },
                         label = { Text(stringResource(option.labelRes())) },
                         colors = qrTypeChipColors(),
-                        border = qrTypeChipBorder(security == option)
+                        border = qrTypeChipBorder(security == option),
                     )
                 }
             }
@@ -119,7 +117,7 @@ fun QrWifiForm(
                         Icon(
                             if (showPassword) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
                             null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
@@ -127,17 +125,18 @@ fun QrWifiForm(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true,
                 shape = MaterialTheme.shapes.large,
-                colors = qrOutlinedFieldColors()
+                colors = qrOutlinedFieldColors(),
             )
         }
     }
 }
 
-private fun QrWifiSecurity.labelRes(): Int = when (this) {
-    QrWifiSecurity.WPA  -> R.string.qr_wifi_security_wpa
-    QrWifiSecurity.WEP  -> R.string.qr_wifi_security_wep
-    QrWifiSecurity.NONE -> R.string.qr_wifi_security_none
-}
+private fun QrWifiSecurity.labelRes(): Int =
+    when (this) {
+        QrWifiSecurity.WPA -> R.string.qr_wifi_security_wpa
+        QrWifiSecurity.WEP -> R.string.qr_wifi_security_wep
+        QrWifiSecurity.NONE -> R.string.qr_wifi_security_none
+    }
 
 @Composable
 fun QrContactForm(
@@ -146,7 +145,7 @@ fun QrContactForm(
     phone: String,
     onPhoneChange: (String) -> Unit,
     email: String,
-    onEmailChange: (String) -> Unit
+    onEmailChange: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(
@@ -157,7 +156,7 @@ fun QrContactForm(
             leadingIcon = { Icon(Icons.Rounded.Person, null, tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,
             shape = MaterialTheme.shapes.large,
-            colors = qrOutlinedFieldColors()
+            colors = qrOutlinedFieldColors(),
         )
         OutlinedTextField(
             value = phone,
@@ -168,7 +167,7 @@ fun QrContactForm(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             singleLine = true,
             shape = MaterialTheme.shapes.large,
-            colors = qrOutlinedFieldColors()
+            colors = qrOutlinedFieldColors(),
         )
         OutlinedTextField(
             value = email,
@@ -179,7 +178,7 @@ fun QrContactForm(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
             shape = MaterialTheme.shapes.large,
-            colors = qrOutlinedFieldColors()
+            colors = qrOutlinedFieldColors(),
         )
     }
 }
@@ -193,7 +192,7 @@ fun QrEventForm(
     start: LocalDateTime,
     onStartChange: (LocalDateTime) -> Unit,
     end: LocalDateTime,
-    onEndChange: (LocalDateTime) -> Unit
+    onEndChange: (LocalDateTime) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(
@@ -204,7 +203,7 @@ fun QrEventForm(
             leadingIcon = { Icon(Icons.Rounded.Title, null, tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,
             shape = MaterialTheme.shapes.large,
-            colors = qrOutlinedFieldColors()
+            colors = qrOutlinedFieldColors(),
         )
         OutlinedTextField(
             value = location,
@@ -214,17 +213,17 @@ fun QrEventForm(
             leadingIcon = { Icon(Icons.Rounded.LocationOn, null, tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,
             shape = MaterialTheme.shapes.large,
-            colors = qrOutlinedFieldColors()
+            colors = qrOutlinedFieldColors(),
         )
         QrDateTimeRow(
             label = stringResource(R.string.qr_label_event_start),
             value = start,
-            onValueChange = onStartChange
+            onValueChange = onStartChange,
         )
         QrDateTimeRow(
             label = stringResource(R.string.qr_label_event_end),
             value = end,
-            onValueChange = onEndChange
+            onValueChange = onEndChange,
         )
     }
 }
@@ -232,10 +231,11 @@ fun QrEventForm(
 // Mismo borde/color de acento que ya usan los OutlinedTextField existentes
 // de QrCreatorScreen (URL/Texto/Email/Teléfono) -- ver QrScreen.kt:1058-1061.
 @Composable
-private fun qrOutlinedFieldColors() = OutlinedTextFieldDefaults.colors(
-    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-    focusedBorderColor = MaterialTheme.colorScheme.primary
-)
+private fun qrOutlinedFieldColors() =
+    OutlinedTextFieldDefaults.colors(
+        unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+    )
 
 private val QR_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
 private val QR_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -248,7 +248,7 @@ private val QR_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:
 private fun QrDateTimeRow(
     label: String,
     value: LocalDateTime,
-    onValueChange: (LocalDateTime) -> Unit
+    onValueChange: (LocalDateTime) -> Unit,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -257,7 +257,7 @@ private fun QrDateTimeRow(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.weight(1f)) {
@@ -287,7 +287,7 @@ private fun QrDateTimeRow(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.general_cancel)) }
-            }
+            },
         ) { DatePicker(state = state) }
     }
 
@@ -297,12 +297,12 @@ private fun QrDateTimeRow(
             Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
                 Column(
                     modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TimePicker(state = state)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
                             Text(stringResource(R.string.general_cancel))

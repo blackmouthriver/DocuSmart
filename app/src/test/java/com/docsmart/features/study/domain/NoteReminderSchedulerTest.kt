@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test
  * `releaseAlarm()` (ambas `internal`) con un PendingIntent ya mockeado.
  */
 class NoteReminderSchedulerTest {
-
     private lateinit var context: Context
     private lateinit var alarmManager: AlarmManager
     private lateinit var scheduler: NoteReminderScheduler

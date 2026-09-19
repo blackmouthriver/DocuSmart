@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.VisibilityOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,7 +79,7 @@ fun RedactPdfScreen(
     onUndoLastRect: () -> Unit,
     onClearRects: () -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     var pageBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -92,26 +91,27 @@ fun RedactPdfScreen(
             return@LaunchedEffect
         }
         isLoadingPage = true
-        pageBitmap = withContext(Dispatchers.IO) {
-            loadPage(context, selectedPdf, currentPage - 1, onTotalPagesLoaded)
-        }
+        pageBitmap =
+            withContext(Dispatchers.IO) {
+                loadPage(context, selectedPdf, currentPage - 1, onTotalPagesLoaded)
+            }
         isLoadingPage = false
     }
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_redact),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_redact_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -119,7 +119,7 @@ fun RedactPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_redact_ready),
-            accentColor = ErrorRed
+            accentColor = ErrorRed,
         )
 
         if (selectedPdf != null) {
@@ -130,18 +130,18 @@ fun RedactPdfScreen(
                 isLoadingPage = isLoadingPage,
                 rectsForPage = rects.filter { it.pageNumber == currentPage },
                 onPageChange = onPageChange,
-                onAddRect = onAddRect
+                onAddRect = onAddRect,
             )
 
             RedactRectsSummary(
                 totalRects = rects.size,
                 onUndoLastRect = onUndoLastRect,
-                onClearRects = onClearRects
+                onClearRects = onClearRects,
             )
 
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -152,7 +152,7 @@ fun RedactPdfScreen(
             buttonLabel = stringResource(R.string.pdf_redact_execute),
             buttonIcon = Icons.Rounded.VisibilityOff,
             onExecute = onExecute,
-            accentColor = ErrorRed
+            accentColor = ErrorRed,
         )
     }
 }
@@ -165,54 +165,55 @@ private fun RedactPageEditor(
     isLoadingPage: Boolean,
     rectsForPage: List<RedactionRect>,
     onPageChange: (Int) -> Unit,
-    onAddRect: (RedactionRect) -> Unit
+    onAddRect: (RedactionRect) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // ── Navegación de páginas ──────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { onPageChange(currentPage - 1) }, enabled = currentPage > 1) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronLeft,
-                    contentDescription = stringResource(R.string.pdf_redact_prev_page)
+                    contentDescription = stringResource(R.string.pdf_redact_prev_page),
                 )
             }
             Text(
                 text = stringResource(R.string.pdf_redact_page_indicator, currentPage, totalPages),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             IconButton(onClick = { onPageChange(currentPage + 1) }, enabled = currentPage < totalPages) {
                 Icon(
                     imageVector = Icons.Rounded.ChevronRight,
-                    contentDescription = stringResource(R.string.pdf_redact_next_page)
+                    contentDescription = stringResource(R.string.pdf_redact_next_page),
                 )
             }
         }
 
         // ── Vista previa con overlay de dibujo ─────────
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
         ) {
             when {
                 isLoadingPage || pageBitmap == null -> {
                     Column(
                         modifier = Modifier.padding(48.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(32.dp), color = ErrorRed)
                         Text(
                             text = stringResource(R.string.pdf_redact_loading_preview),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -221,73 +222,76 @@ private fun RedactPageEditor(
                     var dragStart by remember(currentPage) { mutableStateOf<Offset?>(null) }
                     var dragCurrent by remember(currentPage) { mutableStateOf<Offset?>(null) }
 
-                    val redactCanvasDescription = stringResource(
-                        R.string.pdf_redact_canvas_desc, rectsForPage.size
-                    )
+                    val redactCanvasDescription =
+                        stringResource(
+                            R.string.pdf_redact_canvas_desc,
+                            rectsForPage.size,
+                        )
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
-                            // Hallazgo real de la auditoría general
-                            // 2026-09-17/18 (décima ronda, Alta -- H2):
-                            // la única forma de agregar una zona de
-                            // censura es el gesto de arrastre, sin
-                            // ninguna semántica -- TalkBack solo
-                            // anunciaba "Vista previa de la página" del
-                            // Image de abajo, sin indicar que el gesto
-                            // existe ni cuántas zonas ya hay marcadas.
-                            // No hay una alternativa accesible real para
-                            // marcar coordenadas arbitrarias sin un
-                            // gesto de arrastre (a diferencia de Firmar,
-                            // que sí admite escribir el nombre) -- se
-                            // documenta la limitación en el string en
-                            // vez de fingir que este cambio la resuelve
-                            // del todo, y al menos se anuncia el estado
-                            // (cuántas zonas hay) y la instrucción.
-                            .semantics(mergeDescendants = true) {
-                                contentDescription = redactCanvasDescription
-                            }
-                            .pointerInput(currentPage) {
-                                detectDragGestures(
-                                    onDragStart = { offset ->
-                                        dragStart = offset
-                                        dragCurrent = offset
-                                    },
-                                    onDrag = { change, _ -> dragCurrent = change.position },
-                                    onDragEnd = {
-                                        val start = dragStart
-                                        val end = dragCurrent
-                                        if (start != null && end != null) {
-                                            val xFrac = (min(start.x, end.x) / size.width).coerceIn(0f, 1f)
-                                            val yFrac = (min(start.y, end.y) / size.height).coerceIn(0f, 1f)
-                                            val wFrac = (abs(end.x - start.x) / size.width).coerceIn(0f, 1f)
-                                            val hFrac = (abs(end.y - start.y) / size.height).coerceIn(0f, 1f)
-                                            if (wFrac > MIN_RECT_FRACTION && hFrac > MIN_RECT_FRACTION) {
-                                                onAddRect(RedactionRect(currentPage, xFrac, yFrac, wFrac, hFrac))
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                                // Hallazgo real de la auditoría general
+                                // 2026-09-17/18 (décima ronda, Alta -- H2):
+                                // la única forma de agregar una zona de
+                                // censura es el gesto de arrastre, sin
+                                // ninguna semántica -- TalkBack solo
+                                // anunciaba "Vista previa de la página" del
+                                // Image de abajo, sin indicar que el gesto
+                                // existe ni cuántas zonas ya hay marcadas.
+                                // No hay una alternativa accesible real para
+                                // marcar coordenadas arbitrarias sin un
+                                // gesto de arrastre (a diferencia de Firmar,
+                                // que sí admite escribir el nombre) -- se
+                                // documenta la limitación en el string en
+                                // vez de fingir que este cambio la resuelve
+                                // del todo, y al menos se anuncia el estado
+                                // (cuántas zonas hay) y la instrucción.
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription = redactCanvasDescription
+                                }
+                                .pointerInput(currentPage) {
+                                    detectDragGestures(
+                                        onDragStart = { offset ->
+                                            dragStart = offset
+                                            dragCurrent = offset
+                                        },
+                                        onDrag = { change, _ -> dragCurrent = change.position },
+                                        onDragEnd = {
+                                            val start = dragStart
+                                            val end = dragCurrent
+                                            if (start != null && end != null) {
+                                                val xFrac = (min(start.x, end.x) / size.width).coerceIn(0f, 1f)
+                                                val yFrac = (min(start.y, end.y) / size.height).coerceIn(0f, 1f)
+                                                val wFrac = (abs(end.x - start.x) / size.width).coerceIn(0f, 1f)
+                                                val hFrac = (abs(end.y - start.y) / size.height).coerceIn(0f, 1f)
+                                                if (wFrac > MIN_RECT_FRACTION && hFrac > MIN_RECT_FRACTION) {
+                                                    onAddRect(RedactionRect(currentPage, xFrac, yFrac, wFrac, hFrac))
+                                                }
                                             }
-                                        }
-                                        dragStart = null
-                                        dragCurrent = null
-                                    },
-                                    onDragCancel = {
-                                        dragStart = null
-                                        dragCurrent = null
-                                    }
-                                )
-                            }
+                                            dragStart = null
+                                            dragCurrent = null
+                                        },
+                                        onDragCancel = {
+                                            dragStart = null
+                                            dragCurrent = null
+                                        },
+                                    )
+                                },
                     ) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = stringResource(R.string.pdf_redact_preview_desc),
                             contentScale = ContentScale.FillBounds,
-                            modifier = Modifier.matchParentSize()
+                            modifier = Modifier.matchParentSize(),
                         )
                         Canvas(modifier = Modifier.matchParentSize()) {
                             rectsForPage.forEach { rect ->
                                 drawRect(
                                     color = Color.Black.copy(alpha = 0.75f),
                                     topLeft = Offset(rect.xFrac * size.width, rect.yFrac * size.height),
-                                    size = Size(rect.wFrac * size.width, rect.hFrac * size.height)
+                                    size = Size(rect.wFrac * size.width, rect.hFrac * size.height),
                                 )
                             }
                             val start = dragStart
@@ -297,7 +301,7 @@ private fun RedactPageEditor(
                                     color = ErrorRed.copy(alpha = 0.4f),
                                     topLeft = Offset(min(start.x, end.x), min(start.y, end.y)),
                                     size = Size(abs(end.x - start.x), abs(end.y - start.y)),
-                                    style = Stroke(width = 2.dp.toPx())
+                                    style = Stroke(width = 2.dp.toPx()),
                                 )
                             }
                         }
@@ -311,7 +315,7 @@ private fun RedactPageEditor(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -320,17 +324,17 @@ private fun RedactPageEditor(
 private fun RedactRectsSummary(
     totalRects: Int,
     onUndoLastRect: () -> Unit,
-    onClearRects: () -> Unit
+    onClearRects: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = stringResource(R.string.pdf_redact_zones_marked, totalRects),
             style = MaterialTheme.typography.labelMedium,
-            color = if (totalRects > 0) ErrorRed else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (totalRects > 0) ErrorRed else MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row {
             TextButton(onClick = onUndoLastRect, enabled = totalRects > 0) {
@@ -351,7 +355,10 @@ private fun RedactRectsSummary(
 // excepción (y por lo tanto el leak) en cada intento. `.use{}` anidado +
 // `finally { file.delete() }`, con el chequeo explícito de 0 páginas antes
 // del coerceIn.
-private fun renderRedactPageBitmap(renderer: PdfRenderer, pageIndex: Int): Bitmap? {
+private fun renderRedactPageBitmap(
+    renderer: PdfRenderer,
+    pageIndex: Int,
+): Bitmap? {
     if (renderer.pageCount == 0) return null
     val safeIndex = pageIndex.coerceIn(0, renderer.pageCount - 1)
     return renderer.openPage(safeIndex).use { page ->
@@ -369,7 +376,7 @@ private fun loadPage(
     context: android.content.Context,
     pdfUri: Uri,
     pageIndex: Int,
-    onTotalPagesLoaded: (Int) -> Unit
+    onTotalPagesLoaded: (Int) -> Unit,
 ): Bitmap? {
     val file = File(context.cacheDir, "redact_preview_${System.currentTimeMillis()}.pdf")
     return try {

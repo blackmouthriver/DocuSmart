@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.Flow
 @Suppress("TooManyFunctions")
 @Dao
 interface NoteDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(note: NoteEntity)
 
@@ -57,7 +56,10 @@ interface NoteDao {
     fun observeLinkedCount(documentId: String): Flow<Int>
 
     @Query("UPDATE notes SET documentId = :newDocumentId WHERE documentId = :oldDocumentId")
-    suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String)
+    suspend fun updateDocumentId(
+        oldDocumentId: String,
+        newDocumentId: String,
+    )
 
     // Backlog UX #50, AC2: borrar el documento vinculado no borra la nota --
     // solo desvincula (documentId a null), el contenido escrito no se pierde.

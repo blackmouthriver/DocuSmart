@@ -15,7 +15,6 @@ import javax.crypto.spec.SecretKeySpec
  * Sin dependencias de Android — testeable como JVM puro.
  */
 object QrCrypto {
-
     const val PREFIX = "PROTECTED:"
 
     private const val ITERATIONS = 100_000
@@ -24,7 +23,10 @@ object QrCrypto {
     private const val IV_LENGTH_BYTES = 12
     private const val GCM_TAG_LENGTH_BITS = 128
 
-    fun encrypt(content: String, password: String): String {
+    fun encrypt(
+        content: String,
+        password: String,
+    ): String {
         val salt = ByteArray(SALT_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
         val iv = ByteArray(IV_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
         val key = deriveKey(password, salt)
@@ -37,11 +39,17 @@ object QrCrypto {
         return Base64.getEncoder().encodeToString(combined)
     }
 
-    /** Devuelve el contenido original, o null si la contraseña es incorrecta o los datos están corruptos. */
-    // Contraseña incorrecta o datos corruptos deben verse igual para quien llama:
-    // Base64/GCM/BadPadding/IndexOutOfBounds son todos "no se pudo descifrar".
+    /**
+     * Devuelve el contenido original, o null si la contraseña es incorrecta o los datos están corruptos.
+     *
+     * Contraseña incorrecta o datos corruptos deben verse igual para quien llama:
+     * Base64/GCM/BadPadding/IndexOutOfBounds son todos "no se pudo descifrar".
+     */
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
-    fun decrypt(encoded: String, password: String): String? {
+    fun decrypt(
+        encoded: String,
+        password: String,
+    ): String? {
         return try {
             val combined = Base64.getDecoder().decode(encoded)
             if (combined.size < SALT_LENGTH_BYTES + IV_LENGTH_BYTES) return null
@@ -59,7 +67,10 @@ object QrCrypto {
         }
     }
 
-    private fun deriveKey(password: String, salt: ByteArray): SecretKeySpec {
+    private fun deriveKey(
+        password: String,
+        salt: ByteArray,
+    ): SecretKeySpec {
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val spec = PBEKeySpec(password.toCharArray(), salt, ITERATIONS, KEY_LENGTH_BITS)
         val keyBytes = factory.generateSecret(spec).encoded

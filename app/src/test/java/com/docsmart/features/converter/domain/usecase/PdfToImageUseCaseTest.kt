@@ -24,7 +24,6 @@ import java.nio.file.Files
  * leer -- ocurre *antes* de tocar PdfRenderer.
  */
 class PdfToImageUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var context: Context
     private lateinit var useCase: PdfToImageUseCase
@@ -47,26 +46,28 @@ class PdfToImageUseCaseTest {
     }
 
     @Test
-    fun `invoke devuelve Error si el PDF de origen no se puede abrir`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `invoke devuelve Error si el PDF de origen no se puede abrir`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(uri)
+            val result = useCase(uri)
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
 
     @Test
-    fun `invoke no deja el archivo de cache en disco tras un error de lectura`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `invoke no deja el archivo de cache en disco tras un error de lectura`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
 
-        useCase(uri)
+            useCase(uri)
 
-        assertTrue(cacheDir.listFiles()?.isEmpty() != false)
-    }
+            assertTrue(cacheDir.listFiles()?.isEmpty() != false)
+        }
 }

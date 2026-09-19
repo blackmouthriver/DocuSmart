@@ -20,21 +20,22 @@ import javax.inject.Inject
  * sistema operativo.
  */
 @HiltViewModel
-class AppLibraryPickerViewModel @Inject constructor(
-    private val repository: DocumentRepository
-) : ViewModel() {
+class AppLibraryPickerViewModel
+    @Inject
+    constructor(
+        private val repository: DocumentRepository,
+    ) : ViewModel() {
+        private val _documents = MutableStateFlow<List<DocumentUiModel>>(emptyList())
+        val documents: StateFlow<List<DocumentUiModel>> = _documents.asStateFlow()
 
-    private val _documents = MutableStateFlow<List<DocumentUiModel>>(emptyList())
-    val documents: StateFlow<List<DocumentUiModel>> = _documents.asStateFlow()
+        private val _isLoading = MutableStateFlow(false)
+        val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _documents.value = repository.loadAllDocuments()
-            _isLoading.value = false
+        init {
+            viewModelScope.launch {
+                _isLoading.value = true
+                _documents.value = repository.loadAllDocuments()
+                _isLoading.value = false
+            }
         }
     }
-}

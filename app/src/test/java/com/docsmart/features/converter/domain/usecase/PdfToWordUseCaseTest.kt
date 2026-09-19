@@ -35,7 +35,6 @@ import java.nio.file.Files
  * lógica ajustada).
  */
 class PdfToWordUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
@@ -62,40 +61,42 @@ class PdfToWordUseCaseTest {
     }
 
     @Test
-    fun `lineas separadas por poco espacio quedan en el mismo parrafo, un salto grande crea uno nuevo`() = runTest {
-        stubResolver(createFormattedPdf())
+    fun `lineas separadas por poco espacio quedan en el mismo parrafo, un salto grande crea uno nuevo`() =
+        runTest {
+            stubResolver(createFormattedPdf())
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("docx", outputFile.extension)
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("docx", outputFile.extension)
 
-        val doc = XWPFDocument(outputFile.inputStream())
-        assertEquals(2, doc.paragraphs.size)
-        val primerParrafo = doc.paragraphs[0].text
-        assertTrue(primerParrafo.contains("Primera linea del primer parrafo."))
-        assertTrue(primerParrafo.contains("Continua en la misma linea logica."))
-    }
+            val doc = XWPFDocument(outputFile.inputStream())
+            assertEquals(2, doc.paragraphs.size)
+            val primerParrafo = doc.paragraphs[0].text
+            assertTrue(primerParrafo.contains("Primera linea del primer parrafo."))
+            assertTrue(primerParrafo.contains("Continua en la misma linea logica."))
+        }
 
     @Test
-    fun `preserva negrita, cursiva y tamano de fuente por fragmento real`() = runTest {
-        stubResolver(createFormattedPdf())
+    fun `preserva negrita, cursiva y tamano de fuente por fragmento real`() =
+        runTest {
+            stubResolver(createFormattedPdf())
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        val outputFile = (result as ConversionResult.Success).outputFile
-        val doc = XWPFDocument(outputFile.inputStream())
-        val segundoParrafo = doc.paragraphs[1]
+            val outputFile = (result as ConversionResult.Success).outputFile
+            val doc = XWPFDocument(outputFile.inputStream())
+            val segundoParrafo = doc.paragraphs[1]
 
-        val boldRun = segundoParrafo.runs.first { it.text().contains("negrita") }
-        assertTrue(boldRun.isBold)
-        assertTrue(!boldRun.isItalic)
+            val boldRun = segundoParrafo.runs.first { it.text().contains("negrita") }
+            assertTrue(boldRun.isBold)
+            assertTrue(!boldRun.isItalic)
 
-        val italicRun = segundoParrafo.runs.first { it.text().contains("cursiva") }
-        assertTrue(italicRun.isItalic)
-        assertEquals(16, italicRun.fontSize)
-    }
+            val italicRun = segundoParrafo.runs.first { it.text().contains("cursiva") }
+            assertTrue(italicRun.isItalic)
+            assertEquals(16, italicRun.fontSize)
+        }
 
     // Bug real reportado por el usuario 2026-09-03 (conversión desde un PDF
     // recibido por WhatsApp): dos fragmentos de texto en la MISMA línea,
@@ -103,38 +104,41 @@ class PdfToWordUseCaseTest {
     // literal entre ellos (así codifican el espaciado muchos generadores de
     // PDF) -- antes del fix quedaban pegados: "Funza,Cundinamarca,".
     @Test
-    fun `un hueco horizontal real entre fragmentos de la misma linea se convierte en espacio`() = runTest {
-        stubResolver(createSameLineGapPdf())
+    fun `un hueco horizontal real entre fragmentos de la misma linea se convierte en espacio`() =
+        runTest {
+            stubResolver(createSameLineGapPdf())
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        val outputFile = (result as ConversionResult.Success).outputFile
-        val doc = XWPFDocument(outputFile.inputStream())
-        val texto = doc.paragraphs.joinToString(" ") { it.text }
+            val outputFile = (result as ConversionResult.Success).outputFile
+            val doc = XWPFDocument(outputFile.inputStream())
+            val texto = doc.paragraphs.joinToString(" ") { it.text }
 
-        assertTrue(texto.contains("Funza, Cundinamarca,"))
-    }
-
-    @Test
-    fun `PDF sin texto extraible devuelve Error`() = runTest {
-        stubResolver(createBlankPdf())
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(texto.contains("Funza, Cundinamarca,"))
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `PDF sin texto extraible devuelve Error`() =
+        runTest {
+            stubResolver(createBlankPdf())
 
-        val result = useCase(uri, "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
+
+    @Test
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uri, "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -147,34 +151,56 @@ class PdfToWordUseCaseTest {
     private fun createFormattedPdf(): ByteArray {
         val out = ByteArrayOutputStream()
         val pdfDoc = PdfDocument(PdfWriter(out))
-        val normal = PdfFontFactory.createFont(
-            com.itextpdf.io.font.constants.StandardFonts.HELVETICA,
-            "", EmbeddingStrategy.PREFER_EMBEDDED
-        )
-        val bold = PdfFontFactory.createFont(
-            com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD,
-            "", EmbeddingStrategy.PREFER_EMBEDDED
-        )
-        val italic = PdfFontFactory.createFont(
-            com.itextpdf.io.font.constants.StandardFonts.HELVETICA_OBLIQUE,
-            "", EmbeddingStrategy.PREFER_EMBEDDED
-        )
+        val normal =
+            PdfFontFactory.createFont(
+                com.itextpdf.io.font.constants.StandardFonts.HELVETICA,
+                "",
+                EmbeddingStrategy.PREFER_EMBEDDED,
+            )
+        val bold =
+            PdfFontFactory.createFont(
+                com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD,
+                "",
+                EmbeddingStrategy.PREFER_EMBEDDED,
+            )
+        val italic =
+            PdfFontFactory.createFont(
+                com.itextpdf.io.font.constants.StandardFonts.HELVETICA_OBLIQUE,
+                "",
+                EmbeddingStrategy.PREFER_EMBEDDED,
+            )
 
         val page = pdfDoc.addNewPage()
         val canvas = PdfCanvas(page)
 
         // Gap de 14pt con tamaño 12 (< 1.6*12=19.2) -- misma línea lógica.
-        canvas.beginText().setFontAndSize(normal, 12f).moveText(50.0, 700.0)
-            .showText("Primera linea del primer parrafo.").endText()
-        canvas.beginText().setFontAndSize(normal, 12f).moveText(50.0, 686.0)
-            .showText("Continua en la misma linea logica.").endText()
+        canvas
+            .beginText()
+            .setFontAndSize(normal, 12f)
+            .moveText(50.0, 700.0)
+            .showText("Primera linea del primer parrafo.")
+            .endText()
+        canvas
+            .beginText()
+            .setFontAndSize(normal, 12f)
+            .moveText(50.0, 686.0)
+            .showText("Continua en la misma linea logica.")
+            .endText()
 
         // Gap de 40pt (> 1.6*12=19.2) -- nuevo párrafo.
-        canvas.beginText().setFontAndSize(bold, 12f).moveText(50.0, 646.0)
-            .showText("Este parrafo esta en negrita.").endText()
+        canvas
+            .beginText()
+            .setFontAndSize(bold, 12f)
+            .moveText(50.0, 646.0)
+            .showText("Este parrafo esta en negrita.")
+            .endText()
         // Gap de 14pt con tamaño 16 (< 1.6*16=25.6) -- misma línea lógica.
-        canvas.beginText().setFontAndSize(italic, 16f).moveText(50.0, 632.0)
-            .showText("Esta linea es cursiva y mas grande.").endText()
+        canvas
+            .beginText()
+            .setFontAndSize(italic, 16f)
+            .moveText(50.0, 632.0)
+            .showText("Esta linea es cursiva y mas grande.")
+            .endText()
 
         pdfDoc.close()
         return out.toByteArray()
@@ -183,10 +209,12 @@ class PdfToWordUseCaseTest {
     private fun createSameLineGapPdf(): ByteArray {
         val out = ByteArrayOutputStream()
         val pdfDoc = PdfDocument(PdfWriter(out))
-        val normal = PdfFontFactory.createFont(
-            com.itextpdf.io.font.constants.StandardFonts.HELVETICA,
-            "", EmbeddingStrategy.PREFER_EMBEDDED
-        )
+        val normal =
+            PdfFontFactory.createFont(
+                com.itextpdf.io.font.constants.StandardFonts.HELVETICA,
+                "",
+                EmbeddingStrategy.PREFER_EMBEDDED,
+            )
 
         val page = pdfDoc.addNewPage()
         val canvas = PdfCanvas(page)
@@ -195,10 +223,18 @@ class PdfToWordUseCaseTest {
         // "Cundinamarca," -- el hueco de 100pt entre el fin del primer
         // fragmento y el inicio del segundo es puramente un desplazamiento
         // de cursor, como hacen muchos conversores de WhatsApp/PDF.
-        canvas.beginText().setFontAndSize(normal, 12f).moveText(50.0, 700.0)
-            .showText("Funza,").endText()
-        canvas.beginText().setFontAndSize(normal, 12f).moveText(150.0, 700.0)
-            .showText("Cundinamarca,").endText()
+        canvas
+            .beginText()
+            .setFontAndSize(normal, 12f)
+            .moveText(50.0, 700.0)
+            .showText("Funza,")
+            .endText()
+        canvas
+            .beginText()
+            .setFontAndSize(normal, 12f)
+            .moveText(150.0, 700.0)
+            .showText("Cundinamarca,")
+            .endText()
 
         pdfDoc.close()
         return out.toByteArray()

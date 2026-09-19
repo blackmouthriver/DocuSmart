@@ -33,7 +33,6 @@ import java.nio.file.Files
  * `converter_error_empty_spreadsheet`. Corregido en esta ronda.
  */
 class ExcelToPdfUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: ExcelToPdfUseCase
@@ -56,97 +55,115 @@ class ExcelToPdfUseCaseTest {
     }
 
     @Test
-    fun `convierte una hoja con datos a un PDF con texto extraible`() = runTest {
-        stubResolver(createTestXlsx { sheet ->
-            sheet.createRow(0).apply { createCell(0).setCellValue("Nombre"); createCell(1).setCellValue("Edad") }
-            sheet.createRow(1).apply { createCell(0).setCellValue("Ana"); createCell(1).setCellValue("30") }
-        })
+    fun `convierte una hoja con datos a un PDF con texto extraible`() =
+        runTest {
+            stubResolver(
+                createTestXlsx { sheet ->
+                    sheet.createRow(0).apply {
+                        createCell(0).setCellValue("Nombre")
+                        createCell(1).setCellValue("Edad")
+                    }
+                    sheet.createRow(1).apply {
+                        createCell(0).setCellValue("Ana")
+                        createCell(1).setCellValue("30")
+                    }
+                },
+            )
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("pdf", outputFile.extension)
-        val text = extractPdfText(outputFile)
-        assertTrue(text.contains("Nombre"))
-        assertTrue(text.contains("Ana"))
-    }
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("pdf", outputFile.extension)
+            val text = extractPdfText(outputFile)
+            assertTrue(text.contains("Nombre"))
+            assertTrue(text.contains("Ana"))
+        }
 
     @Test
-    fun `todas las hojas del workbook se incluyen en el PDF, no solo la primera`() = runTest {
-        stubResolver(createTestXlsxMultiSheet("Hoja1" to "dato-uno", "Hoja2" to "dato-dos"))
+    fun `todas las hojas del workbook se incluyen en el PDF, no solo la primera`() =
+        runTest {
+            stubResolver(createTestXlsxMultiSheet("Hoja1" to "dato-uno", "Hoja2" to "dato-dos"))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val text = extractPdfText((result as ConversionResult.Success).outputFile)
-        assertTrue(text.contains("dato-uno"))
-        assertTrue(text.contains("dato-dos"))
-        assertTrue(text.contains("Hoja1"))
-        assertTrue(text.contains("Hoja2"))
-    }
+            assertTrue(result is ConversionResult.Success)
+            val text = extractPdfText((result as ConversionResult.Success).outputFile)
+            assertTrue(text.contains("dato-uno"))
+            assertTrue(text.contains("dato-dos"))
+            assertTrue(text.contains("Hoja1"))
+            assertTrue(text.contains("Hoja2"))
+        }
 
     // Bug real corregido en esta ronda: ver el comentario de la clase.
     @Test
-    fun `hoja sin ninguna celda con contenido real devuelve Error y no deja un PDF huerfano`() = runTest {
-        stubResolver(createTestXlsx { sheet ->
-            // La hoja existe y tiene filas, pero todas sus celdas están en
-            // blanco -- mismo escenario que "hoja vacía" para el usuario.
-            sheet.createRow(0)
-            sheet.createRow(1)
-        })
+    fun `hoja sin ninguna celda con contenido real devuelve Error y no deja un PDF huerfano`() =
+        runTest {
+            stubResolver(
+                createTestXlsx { sheet ->
+                    // La hoja existe y tiene filas, pero todas sus celdas están en
+                    // blanco -- mismo escenario que "hoja vacía" para el usuario.
+                    sheet.createRow(0)
+                    sheet.createRow(1)
+                },
+            )
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-        val orphanedPdfs = File(filesDir, "converted").listFiles { f -> f.extension == "pdf" }
-        assertTrue(orphanedPdfs.isNullOrEmpty(), "no debería quedar un .pdf huérfano: ${orphanedPdfs?.map { it.name }}")
-    }
+            assertTrue(result is ConversionResult.Error)
+            val orphanedPdfs = File(filesDir, "converted").listFiles { f -> f.extension == "pdf" }
+            assertTrue(orphanedPdfs.isNullOrEmpty(), "no debería quedar un .pdf huérfano: ${orphanedPdfs?.map { it.name }}")
+        }
 
     @Test
-    fun `workbook sin ninguna hoja con filas devuelve Error`() = runTest {
-        stubResolver(createTestXlsx { /* sin filas */ })
+    fun `workbook sin ninguna hoja con filas devuelve Error`() =
+        runTest {
+            stubResolver(createTestXlsx { /* sin filas */ })
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // Hallazgo real de la revisión de corrección 2026-09-16: evaluator.evaluate()
     // puede lanzar para UNA celda puntual (ej. referencia circular) -- sin el
     // try/catch por celda de formatCellSafely(), esa excepción abortaría TODA
     // la conversión en vez de solo esa celda.
     @Test
-    fun `una celda con referencia circular no aborta la conversion completa`() = runTest {
-        stubResolver(createTestXlsx { sheet ->
-            val row = sheet.createRow(0)
-            row.createCell(0).setCellValue("Dato normal")
-            // B1 y C1 se referencian mutuamente -- POI detecta el ciclo y
-            // lanza CircularReferenceException al evaluar cualquiera de las
-            // dos, dentro del propio use case (no se evalúa al escribir el
-            // fixture).
-            row.createCell(1).cellFormula = "C1"
-            row.createCell(2).cellFormula = "B1"
-        })
+    fun `una celda con referencia circular no aborta la conversion completa`() =
+        runTest {
+            stubResolver(
+                createTestXlsx { sheet ->
+                    val row = sheet.createRow(0)
+                    row.createCell(0).setCellValue("Dato normal")
+                    // B1 y C1 se referencian mutuamente -- POI detecta el ciclo y
+                    // lanza CircularReferenceException al evaluar cualquiera de las
+                    // dos, dentro del propio use case (no se evalúa al escribir el
+                    // fixture).
+                    row.createCell(1).cellFormula = "C1"
+                    row.createCell(2).cellFormula = "B1"
+                },
+            )
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success, "la conversión no debería abortar por una sola celda: $result")
-        val text = extractPdfText((result as ConversionResult.Success).outputFile)
-        assertTrue(text.contains("Dato normal"))
-    }
+            assertTrue(result is ConversionResult.Success, "la conversión no debería abortar por una sola celda: $result")
+            val text = extractPdfText((result as ConversionResult.Success).outputFile)
+            assertTrue(text.contains("Dato normal"))
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(uri, "salida")
+            val result = useCase(uri, "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -178,7 +195,11 @@ class ExcelToPdfUseCaseTest {
         val out = ByteArrayOutputStream()
         XSSFWorkbook().use { workbook ->
             sheets.forEach { (name, value) ->
-                workbook.createSheet(name).createRow(0).createCell(0).setCellValue(value)
+                workbook
+                    .createSheet(name)
+                    .createRow(0)
+                    .createCell(0)
+                    .setCellValue(value)
             }
             workbook.write(out)
         }

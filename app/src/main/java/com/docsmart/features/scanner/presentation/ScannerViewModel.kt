@@ -11,9 +11,11 @@ import kotlinx.coroutines.flow.update
 import timber.log.Timber
 import javax.inject.Inject
 
-enum class ScannerMode(val label: String) {
+enum class ScannerMode(
+    val label: String,
+) {
     DOCUMENT("Documento"),
-    PHOTO("Foto")
+    PHOTO("Foto"),
 }
 
 data class ScannerUiState(
@@ -21,38 +23,42 @@ data class ScannerUiState(
     val scannedPages: List<Uri> = emptyList(),
     val isPdf: Boolean = false,
     val isProcessing: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
 
 @HiltViewModel
-class ScannerViewModel @Inject constructor(
-    private val soundEffectPlayer: SoundEffectPlayer
-) : ViewModel() {
+class ScannerViewModel
+    @Inject
+    constructor(
+        private val soundEffectPlayer: SoundEffectPlayer,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow(ScannerUiState())
+        val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(ScannerUiState())
-    val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
+        fun setMode(mode: ScannerMode) {
+            _uiState.update { it.copy(selectedMode = mode) }
+        }
 
-    fun setMode(mode: ScannerMode) {
-        _uiState.update { it.copy(selectedMode = mode) }
-    }
+        fun onScanComplete(
+            pages: List<Uri>,
+            isPdf: Boolean = false,
+        ) {
+            Timber.d("ScannerViewModel: ${pages.size} páginas, isPdf=$isPdf")
+            if (pages.isNotEmpty()) soundEffectPlayer.playScan()
+            _uiState.update {
+                it.copy(
+                    scannedPages = pages,
+                    isPdf = isPdf,
+                    isProcessing = false,
+                )
+            }
+        }
 
-    fun onScanComplete(pages: List<Uri>, isPdf: Boolean = false) {
-        Timber.d("ScannerViewModel: ${pages.size} páginas, isPdf=$isPdf")
-        if (pages.isNotEmpty()) soundEffectPlayer.playScan()
-        _uiState.update {
-            it.copy(
-                scannedPages = pages,
-                isPdf = isPdf,
-                isProcessing = false
-            )
+        fun onError(error: String) {
+            _uiState.update { it.copy(error = error, isProcessing = false) }
+        }
+
+        fun reset() {
+            _uiState.update { ScannerUiState() }
         }
     }
-
-    fun onError(error: String) {
-        _uiState.update { it.copy(error = error, isProcessing = false) }
-    }
-
-    fun reset() {
-        _uiState.update { ScannerUiState() }
-    }
-}

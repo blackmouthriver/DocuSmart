@@ -28,16 +28,20 @@ import java.nio.file.Files
  * tocar PdfRenderer, así que sí es exercitable de punta a punta.
  */
 class CompressPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var context: Context
     private lateinit var useCase: CompressPdfUseCase
 
-    private val messages = CompressPdfMessages(
-        readError = "readError", emptyFile = "emptyFile", noPages = "noPages",
-        generateError = "generateError", alreadyOptimized = "ya optimo %1\$d KB",
-        success = "%1\$d -> %2\$d KB (%3\$d%%)", genericError = "error %1\$s"
-    )
+    private val messages =
+        CompressPdfMessages(
+            readError = "readError",
+            emptyFile = "emptyFile",
+            noPages = "noPages",
+            generateError = "generateError",
+            alreadyOptimized = "ya optimo %1\$d KB",
+            success = "%1\$d -> %2\$d KB (%3\$d%%)",
+            genericError = "error %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -78,48 +82,60 @@ class CompressPdfUseCaseTest {
 
     @Test
     fun `resultMessage usa el mensaje de exito cuando el archivo se redujo`() {
-        val message = useCase.resultMessage(
-            messages, keepOriginal = false, originalKb = 500L, finalKb = 200L, reduction = 60
-        )
+        val message =
+            useCase.resultMessage(
+                messages,
+                keepOriginal = false,
+                originalKb = 500L,
+                finalKb = 200L,
+                reduction = 60,
+            )
 
         assertEquals("500 -> 200 KB (60%)", message)
     }
 
     @Test
     fun `resultMessage usa el mensaje de ya optimizado cuando se conserva el original`() {
-        val message = useCase.resultMessage(
-            messages, keepOriginal = true, originalKb = 300L, finalKb = 300L, reduction = 0
-        )
+        val message =
+            useCase.resultMessage(
+                messages,
+                keepOriginal = true,
+                originalKb = 300L,
+                finalKb = 300L,
+                reduction = 0,
+            )
 
         assertEquals("ya optimo 300 KB", message)
     }
 
     @Test
-    fun `invoke devuelve Error de lectura si el PDF de origen no se puede abrir`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `invoke devuelve Error de lectura si el PDF de origen no se puede abrir`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(uri, messages = messages)
+            val result = useCase(uri, messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals(messages.readError, (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals(messages.readError, (result as PdfToolResult.Error).message)
+        }
 
     @Test
-    fun `invoke devuelve Error de lectura -no de archivo vacio- si el PDF de origen esta vacio`() = runTest {
-        // copyUriToCache() ya devuelve null cuando el input stream no aporta
-        // bytes, así que este camino sale por readError -- nunca llega a
-        // evaluarse el chequeo de emptyFile en invoke().
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } answers { ByteArrayInputStream(ByteArray(0)) }
-        every { context.contentResolver } returns resolver
+    fun `invoke devuelve Error de lectura -no de archivo vacio- si el PDF de origen esta vacio`() =
+        runTest {
+            // copyUriToCache() ya devuelve null cuando el input stream no aporta
+            // bytes, así que este camino sale por readError -- nunca llega a
+            // evaluarse el chequeo de emptyFile en invoke().
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } answers { ByteArrayInputStream(ByteArray(0)) }
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(uri, messages = messages)
+            val result = useCase(uri, messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals(messages.readError, (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals(messages.readError, (result as PdfToolResult.Error).message)
+        }
 }

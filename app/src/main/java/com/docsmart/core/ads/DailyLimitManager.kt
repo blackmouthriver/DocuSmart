@@ -15,302 +15,310 @@ import javax.inject.Singleton
  * Persiste contadores en SharedPreferences, se resetean cada día.
  */
 @Singleton
-class DailyLimitManager @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    companion object {
-        private const val PREFS_NAME        = "docusmart_daily_limits"
-        private const val KEY_DATE          = "current_date"
-        private const val KEY_CONVERSIONS   = "count_conversions"
-        private const val KEY_MERGE         = "count_merge"
-        private const val KEY_SPLIT         = "count_split"
-        private const val KEY_COMPRESS      = "count_compress"
-        private const val KEY_ROTATE        = "count_rotate"
-        private const val KEY_NUMBER_PAGES  = "count_number_pages"
-        private const val KEY_WATERMARK     = "count_watermark"
-        private const val KEY_REORDER_PAGES = "count_reorder_pages"
-        private const val KEY_COMPARE       = "count_compare"
-        private const val KEY_REDACT        = "count_redact"
-        private const val KEY_CROP          = "count_crop"
-        private const val KEY_EDIT_TEXT      = "count_edit_text"
-        private const val KEY_SIGN           = "count_sign"
-        private const val KEY_FILL_FORM       = "count_fill_form"
-        private const val KEY_OCR             = "count_ocr"
-        private const val KEY_EXTRACT_IMAGES  = "count_extract_images"
-        private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
-        private const val KEY_EXTRA_PDF_TOOLS   = "extra_pdf_tools"
-        // Backlog UX (pedido explícito del usuario 2026-09-06): "escaneos
-        // guardados" es un contador propio, independiente del de
-        // conversiones -- un usuario puede agotar sus 8 escaneos guardados
-        // del día sin que eso afecte sus 5 conversiones del Convertidor, y
-        // viceversa (dos límites distintos, cada uno con su propio anuncio
-        // recompensado).
-        private const val KEY_SCANS_SAVED       = "count_scans_saved"
-        private const val KEY_EXTRA_SCANS_SAVED = "extra_scans_saved"
-        // Hallazgo real de la auditoría general 2026-09-17 (séptima
-        // ronda, Media): el reseteo solo miraba la fecha de pared
-        // (`SimpleDateFormat`, ajustable por el usuario) -- cambiar la
-        // fecha/zona horaria del dispositivo y volver reseteaba los
-        // contadores a 0 sin límite, neutralizando por completo el
-        // propósito de negocio del límite diario. Se ancla con el mismo
-        // tipo de mecanismo de "reloj confiable" ya usado para el bloqueo
-        // de PIN (`SecurityManager.trustedNowMillis()`, sexta ronda): un
-        // primer intento de este fix solo comparaba `elapsedRealtime()`
-        // contra el último reseteo y permitía el reseteo sin más ante
-        // cualquier reinicio detectado -- exactamente el mismo bypass de
-        // 2 pasos (adelantar el reloj + reiniciar el dispositivo) que
-        // rompió el primer intento del fix de PIN, hallado por la revisión
-        // adversarial de esta ronda. `trustedNowMillis()` de abajo congela
-        // el ancla ante un reinicio en vez de confiar en el reloj de pared
-        // en ese momento, así que un reinicio ya no basta para saltarse la
-        // espera.
-        private const val KEY_ANCHOR_WALL = "reset_anchor_wall"
-        private const val KEY_ANCHOR_ELAPSED = "reset_anchor_elapsed"
-        private const val KEY_LAST_RESET_TRUSTED = "last_reset_trusted"
-        private const val MIN_REAL_MS_BETWEEN_RESETS = 20L * 60 * 60 * 1000
+class DailyLimitManager
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        companion object {
+            private const val PREFS_NAME = "docusmart_daily_limits"
+            private const val KEY_DATE = "current_date"
+            private const val KEY_CONVERSIONS = "count_conversions"
+            private const val KEY_MERGE = "count_merge"
+            private const val KEY_SPLIT = "count_split"
+            private const val KEY_COMPRESS = "count_compress"
+            private const val KEY_ROTATE = "count_rotate"
+            private const val KEY_NUMBER_PAGES = "count_number_pages"
+            private const val KEY_WATERMARK = "count_watermark"
+            private const val KEY_REORDER_PAGES = "count_reorder_pages"
+            private const val KEY_COMPARE = "count_compare"
+            private const val KEY_REDACT = "count_redact"
+            private const val KEY_CROP = "count_crop"
+            private const val KEY_EDIT_TEXT = "count_edit_text"
+            private const val KEY_SIGN = "count_sign"
+            private const val KEY_FILL_FORM = "count_fill_form"
+            private const val KEY_OCR = "count_ocr"
+            private const val KEY_EXTRACT_IMAGES = "count_extract_images"
+            private const val KEY_EXTRA_CONVERSIONS = "extra_conversions"
+            private const val KEY_EXTRA_PDF_TOOLS = "extra_pdf_tools"
 
-        // ── Límites diarios ───────────────────────────────────────────────────
-        const val LIMIT_CONVERSIONS = 5
-        const val LIMIT_PDF_TOOLS   = 3
-        const val LIMIT_SCANS_SAVED = 8
+            // Backlog UX (pedido explícito del usuario 2026-09-06): "escaneos
+            // guardados" es un contador propio, independiente del de
+            // conversiones -- un usuario puede agotar sus 8 escaneos guardados
+            // del día sin que eso afecte sus 5 conversiones del Convertidor, y
+            // viceversa (dos límites distintos, cada uno con su propio anuncio
+            // recompensado).
+            private const val KEY_SCANS_SAVED = "count_scans_saved"
+            private const val KEY_EXTRA_SCANS_SAVED = "extra_scans_saved"
 
-        // Mapa en vez de `when` -- este dispatcher crece una entrada por cada
-        // herramienta PDF nueva del backlog y ya había superado el umbral de
-        // complejidad ciclomática de detekt (15) como `when` con 13 ramas.
-        private val PDF_TOOL_KEYS = mapOf(
-            "MERGE"         to KEY_MERGE,
-            "SPLIT"         to KEY_SPLIT,
-            "COMPRESS"      to KEY_COMPRESS,
-            "ROTATE"        to KEY_ROTATE,
-            "NUMBER_PAGES"  to KEY_NUMBER_PAGES,
-            "WATERMARK"     to KEY_WATERMARK,
-            "REORDER_PAGES" to KEY_REORDER_PAGES,
-            "COMPARE"       to KEY_COMPARE,
-            "REDACT"        to KEY_REDACT,
-            "CROP"          to KEY_CROP,
-            "EDIT_TEXT"     to KEY_EDIT_TEXT,
-            "SIGN"          to KEY_SIGN,
-            "FILL_FORM"     to KEY_FILL_FORM,
-            "OCR"           to KEY_OCR,
-            // Hallazgo real de la auditoría general 2026-09-17: faltaba acá
-            // -- getPdfToolKey() caía al ?: KEY_CONVERSIONS para cualquier
-            // clave no mapeada, así que "Extraer imágenes" consumía y
-            // revisaba el contador del Convertidor en vez del propio, mismo
-            // bug ya corregido dos veces antes para NUMBER_PAGES/WATERMARK.
-            "EXTRACT_IMAGES" to KEY_EXTRACT_IMAGES
-        )
-    }
+            // Hallazgo real de la auditoría general 2026-09-17 (séptima
+            // ronda, Media): el reseteo solo miraba la fecha de pared
+            // (`SimpleDateFormat`, ajustable por el usuario) -- cambiar la
+            // fecha/zona horaria del dispositivo y volver reseteaba los
+            // contadores a 0 sin límite, neutralizando por completo el
+            // propósito de negocio del límite diario. Se ancla con el mismo
+            // tipo de mecanismo de "reloj confiable" ya usado para el bloqueo
+            // de PIN (`SecurityManager.trustedNowMillis()`, sexta ronda): un
+            // primer intento de este fix solo comparaba `elapsedRealtime()`
+            // contra el último reseteo y permitía el reseteo sin más ante
+            // cualquier reinicio detectado -- exactamente el mismo bypass de
+            // 2 pasos (adelantar el reloj + reiniciar el dispositivo) que
+            // rompió el primer intento del fix de PIN, hallado por la revisión
+            // adversarial de esta ronda. `trustedNowMillis()` de abajo congela
+            // el ancla ante un reinicio en vez de confiar en el reloj de pared
+            // en ese momento, así que un reinicio ya no basta para saltarse la
+            // espera.
+            private const val KEY_ANCHOR_WALL = "reset_anchor_wall"
+            private const val KEY_ANCHOR_ELAPSED = "reset_anchor_elapsed"
+            private const val KEY_LAST_RESET_TRUSTED = "last_reset_trusted"
+            private const val MIN_REAL_MS_BETWEEN_RESETS = 20L * 60 * 60 * 1000
 
-    private val prefs by lazy {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
+            // ── Límites diarios ───────────────────────────────────────────────────
+            const val LIMIT_CONVERSIONS = 5
+            const val LIMIT_PDF_TOOLS = 3
+            const val LIMIT_SCANS_SAVED = 8
 
-    // ── Verificar y resetear si cambió el día ─────────────────────────────────
-    private fun checkAndResetIfNewDay() {
-        // Hallazgo real de la auditoría general 2026-09-17 (B7): antes era
-        // una instancia compartida a nivel de clase -- `SimpleDateFormat` no
-        // es thread-safe (estado mutable interno), y este Singleton se
-        // inyecta en varios ViewModels que pueden revisar el límite diario
-        // en corrutinas concurrentes (Escáner/Convertidor/Herramientas PDF a
-        // la vez). Una instancia nueva por llamada es igual de barata que el
-        // resto de timestamps de la app (ver createOutputFile() en cada
-        // UseCase) y elimina el problema de raíz.
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val savedDate = prefs.getString(KEY_DATE, "")
-        if (savedDate == today) return
-
-        val trustedNow = trustedNowMillis()
-        val lastResetTrusted = prefs.getLong(KEY_LAST_RESET_TRUSTED, 0L)
-        // lastResetTrusted==0L cubre la primera vez que se llama (nunca
-        // hubo un reset registrado) -- se permite el reset y queda fijado
-        // como punto de partida. De ahí en más, trustedNow ya no puede
-        // avanzar por un simple cambio del reloj de pared ni por un
-        // reinicio del dispositivo (ver trustedNowMillis()), así que esta
-        // resta sí refleja tiempo real transcurrido.
-        val realTimeElapsedEnough = lastResetTrusted == 0L ||
-            trustedNow - lastResetTrusted >= MIN_REAL_MS_BETWEEN_RESETS
-        if (!realTimeElapsedEnough) {
-            Timber.w(
-                "DailyLimitManager: fecha cambió a $today pero no pasó suficiente tiempo real " +
-                    "desde el último reseteo -- se ignora (posible manipulación del reloj)"
-            )
-            return
+            // Mapa en vez de `when` -- este dispatcher crece una entrada por cada
+            // herramienta PDF nueva del backlog y ya había superado el umbral de
+            // complejidad ciclomática de detekt (15) como `when` con 13 ramas.
+            private val PDF_TOOL_KEYS =
+                mapOf(
+                    "MERGE" to KEY_MERGE,
+                    "SPLIT" to KEY_SPLIT,
+                    "COMPRESS" to KEY_COMPRESS,
+                    "ROTATE" to KEY_ROTATE,
+                    "NUMBER_PAGES" to KEY_NUMBER_PAGES,
+                    "WATERMARK" to KEY_WATERMARK,
+                    "REORDER_PAGES" to KEY_REORDER_PAGES,
+                    "COMPARE" to KEY_COMPARE,
+                    "REDACT" to KEY_REDACT,
+                    "CROP" to KEY_CROP,
+                    "EDIT_TEXT" to KEY_EDIT_TEXT,
+                    "SIGN" to KEY_SIGN,
+                    "FILL_FORM" to KEY_FILL_FORM,
+                    "OCR" to KEY_OCR,
+                    // Hallazgo real de la auditoría general 2026-09-17: faltaba acá
+                    // -- getPdfToolKey() caía al ?: KEY_CONVERSIONS para cualquier
+                    // clave no mapeada, así que "Extraer imágenes" consumía y
+                    // revisaba el contador del Convertidor en vez del propio, mismo
+                    // bug ya corregido dos veces antes para NUMBER_PAGES/WATERMARK.
+                    "EXTRACT_IMAGES" to KEY_EXTRACT_IMAGES,
+                )
         }
 
-        Timber.d("DailyLimitManager: nuevo día — reseteando contadores")
-        prefs.edit()
-            .putString(KEY_DATE,        today)
-            .putLong(KEY_LAST_RESET_TRUSTED, trustedNow)
-            .putInt(KEY_CONVERSIONS,    0)
-            .putInt(KEY_MERGE,          0)
-            .putInt(KEY_SPLIT,          0)
-            .putInt(KEY_COMPRESS,       0)
-            .putInt(KEY_ROTATE,         0)
-            .putInt(KEY_NUMBER_PAGES,   0)
-            .putInt(KEY_WATERMARK,      0)
-            .putInt(KEY_REORDER_PAGES,  0)
-            .putInt(KEY_COMPARE,        0)
-            .putInt(KEY_REDACT,         0)
-            .putInt(KEY_CROP,           0)
-            .putInt(KEY_EDIT_TEXT,      0)
-            .putInt(KEY_SIGN,           0)
-            .putInt(KEY_FILL_FORM,      0)
-            .putInt(KEY_OCR,            0)
-            .putInt(KEY_EXTRA_CONVERSIONS, 0)
-            .putInt(KEY_EXTRA_PDF_TOOLS, 0)
-            .putInt(KEY_SCANS_SAVED, 0)
-            .putInt(KEY_EXTRA_SCANS_SAVED, 0)
-            .apply()
-    }
-
-    // Reconstruye un "ahora" que no puede adelantarse solo por manipular el
-    // reloj de pared ni por reiniciar el dispositivo -- mismo tipo de ancla
-    // que `SecurityManager.trustedNowMillis()` (sexta ronda, bloqueo de
-    // PIN), reimplementada acá mismo (en vez de extraerla y compartirla)
-    // para no tocar ese código ya probado y en producción por un hallazgo
-    // de severidad Media.
-    //
-    // Mientras no haya reinicio, avanza como `elapsedRealtime()` real
-    // (inmune al reloj de pared). Si detecta un reinicio (elapsed actual
-    // menor al ancla guardada), NO confía en el reloj de pared de ese
-    // instante -- solo re-basa el punto de partida de `elapsedRealtime()`
-    // para el nuevo arranque y sigue devolviendo el mismo valor de ancla
-    // congelado hasta que pase tiempo real de verdad en este nuevo arranque.
-    // `minOf(currentWall, reconstruido)` es la parte que de verdad resiste
-    // el ataque: ante un reloj adelantado, siempre gana el valor más
-    // conservador (el que diga que pasó MENOS tiempo), nunca el que el
-    // usuario pueda inflar a su favor.
-    private fun trustedNowMillis(): Long {
-        val currentWall = System.currentTimeMillis()
-        val currentElapsed = elapsedRealtimeMillisSafe()
-        val anchorWall = prefs.getLong(KEY_ANCHOR_WALL, 0L)
-        val anchorElapsed = prefs.getLong(KEY_ANCHOR_ELAPSED, 0L)
-
-        return when {
-            anchorWall == 0L -> {
-                prefs.edit()
-                    .putLong(KEY_ANCHOR_WALL, currentWall)
-                    .putLong(KEY_ANCHOR_ELAPSED, currentElapsed)
-                    .apply()
-                currentWall
-            }
-            currentElapsed < anchorElapsed -> {
-                prefs.edit().putLong(KEY_ANCHOR_ELAPSED, currentElapsed).apply()
-                minOf(currentWall, anchorWall)
-            }
-            else -> minOf(currentWall, anchorWall + (currentElapsed - anchorElapsed))
+        private val prefs by lazy {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         }
-    }
 
-    // ── Verificar si puede realizar la operación ──────────────────────────────
-    fun canConvert(): Boolean {
-        checkAndResetIfNewDay()
-        val count  = prefs.getInt(KEY_CONVERSIONS, 0)
-        val extras = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
-        val canDo  = count < LIMIT_CONVERSIONS + extras
-        Timber.d("DailyLimitManager: canConvert=$canDo ($count/${LIMIT_CONVERSIONS + extras})")
-        return canDo
-    }
+        // ── Verificar y resetear si cambió el día ─────────────────────────────────
+        private fun checkAndResetIfNewDay() {
+            // Hallazgo real de la auditoría general 2026-09-17 (B7): antes era
+            // una instancia compartida a nivel de clase -- `SimpleDateFormat` no
+            // es thread-safe (estado mutable interno), y este Singleton se
+            // inyecta en varios ViewModels que pueden revisar el límite diario
+            // en corrutinas concurrentes (Escáner/Convertidor/Herramientas PDF a
+            // la vez). Una instancia nueva por llamada es igual de barata que el
+            // resto de timestamps de la app (ver createOutputFile() en cada
+            // UseCase) y elimina el problema de raíz.
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val savedDate = prefs.getString(KEY_DATE, "")
+            if (savedDate == today) return
 
-    fun canSaveScan(): Boolean {
-        checkAndResetIfNewDay()
-        val count  = prefs.getInt(KEY_SCANS_SAVED, 0)
-        val extras = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
-        val canDo  = count < LIMIT_SCANS_SAVED + extras
-        Timber.d("DailyLimitManager: canSaveScan=$canDo ($count/${LIMIT_SCANS_SAVED + extras})")
-        return canDo
-    }
+            val trustedNow = trustedNowMillis()
+            val lastResetTrusted = prefs.getLong(KEY_LAST_RESET_TRUSTED, 0L)
+            // lastResetTrusted==0L cubre la primera vez que se llama (nunca
+            // hubo un reset registrado) -- se permite el reset y queda fijado
+            // como punto de partida. De ahí en más, trustedNow ya no puede
+            // avanzar por un simple cambio del reloj de pared ni por un
+            // reinicio del dispositivo (ver trustedNowMillis()), así que esta
+            // resta sí refleja tiempo real transcurrido.
+            val realTimeElapsedEnough =
+                lastResetTrusted == 0L ||
+                    trustedNow - lastResetTrusted >= MIN_REAL_MS_BETWEEN_RESETS
+            if (!realTimeElapsedEnough) {
+                Timber.w(
+                    "DailyLimitManager: fecha cambió a $today pero no pasó suficiente tiempo real " +
+                        "desde el último reseteo -- se ignora (posible manipulación del reloj)",
+                )
+                return
+            }
 
-    fun canUsePdfTool(toolKey: String): Boolean {
-        checkAndResetIfNewDay()
-        val key    = getPdfToolKey(toolKey)
-        val count  = prefs.getInt(key, 0)
-        val extras = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
-        val canDo  = count < LIMIT_PDF_TOOLS + extras
-        Timber.d("DailyLimitManager: canUsePdfTool[$toolKey]=$canDo ($count/${LIMIT_PDF_TOOLS + extras})")
-        return canDo
-    }
+            Timber.d("DailyLimitManager: nuevo día — reseteando contadores")
+            prefs
+                .edit()
+                .putString(KEY_DATE, today)
+                .putLong(KEY_LAST_RESET_TRUSTED, trustedNow)
+                .putInt(KEY_CONVERSIONS, 0)
+                .putInt(KEY_MERGE, 0)
+                .putInt(KEY_SPLIT, 0)
+                .putInt(KEY_COMPRESS, 0)
+                .putInt(KEY_ROTATE, 0)
+                .putInt(KEY_NUMBER_PAGES, 0)
+                .putInt(KEY_WATERMARK, 0)
+                .putInt(KEY_REORDER_PAGES, 0)
+                .putInt(KEY_COMPARE, 0)
+                .putInt(KEY_REDACT, 0)
+                .putInt(KEY_CROP, 0)
+                .putInt(KEY_EDIT_TEXT, 0)
+                .putInt(KEY_SIGN, 0)
+                .putInt(KEY_FILL_FORM, 0)
+                .putInt(KEY_OCR, 0)
+                .putInt(KEY_EXTRA_CONVERSIONS, 0)
+                .putInt(KEY_EXTRA_PDF_TOOLS, 0)
+                .putInt(KEY_SCANS_SAVED, 0)
+                .putInt(KEY_EXTRA_SCANS_SAVED, 0)
+                .apply()
+        }
 
-    // ── Registrar uso ─────────────────────────────────────────────────────────
-    fun registerConversion() {
-        checkAndResetIfNewDay()
-        val current = prefs.getInt(KEY_CONVERSIONS, 0)
-        prefs.edit().putInt(KEY_CONVERSIONS, current + 1).apply()
-        Timber.d("DailyLimitManager: conversión registrada → ${current + 1}")
-    }
+        // Reconstruye un "ahora" que no puede adelantarse solo por manipular el
+        // reloj de pared ni por reiniciar el dispositivo -- mismo tipo de ancla
+        // que `SecurityManager.trustedNowMillis()` (sexta ronda, bloqueo de
+        // PIN), reimplementada acá mismo (en vez de extraerla y compartirla)
+        // para no tocar ese código ya probado y en producción por un hallazgo
+        // de severidad Media.
+        //
+        // Mientras no haya reinicio, avanza como `elapsedRealtime()` real
+        // (inmune al reloj de pared). Si detecta un reinicio (elapsed actual
+        // menor al ancla guardada), NO confía en el reloj de pared de ese
+        // instante -- solo re-basa el punto de partida de `elapsedRealtime()`
+        // para el nuevo arranque y sigue devolviendo el mismo valor de ancla
+        // congelado hasta que pase tiempo real de verdad en este nuevo arranque.
+        // `minOf(currentWall, reconstruido)` es la parte que de verdad resiste
+        // el ataque: ante un reloj adelantado, siempre gana el valor más
+        // conservador (el que diga que pasó MENOS tiempo), nunca el que el
+        // usuario pueda inflar a su favor.
+        private fun trustedNowMillis(): Long {
+            val currentWall = System.currentTimeMillis()
+            val currentElapsed = elapsedRealtimeMillisSafe()
+            val anchorWall = prefs.getLong(KEY_ANCHOR_WALL, 0L)
+            val anchorElapsed = prefs.getLong(KEY_ANCHOR_ELAPSED, 0L)
 
-    fun registerScanSaved() {
-        checkAndResetIfNewDay()
-        val current = prefs.getInt(KEY_SCANS_SAVED, 0)
-        prefs.edit().putInt(KEY_SCANS_SAVED, current + 1).apply()
-        Timber.d("DailyLimitManager: escaneo guardado registrado → ${current + 1}")
-    }
+            return when {
+                anchorWall == 0L -> {
+                    prefs
+                        .edit()
+                        .putLong(KEY_ANCHOR_WALL, currentWall)
+                        .putLong(KEY_ANCHOR_ELAPSED, currentElapsed)
+                        .apply()
+                    currentWall
+                }
+                currentElapsed < anchorElapsed -> {
+                    prefs.edit().putLong(KEY_ANCHOR_ELAPSED, currentElapsed).apply()
+                    minOf(currentWall, anchorWall)
+                }
+                else -> minOf(currentWall, anchorWall + (currentElapsed - anchorElapsed))
+            }
+        }
 
-    fun registerPdfTool(toolKey: String) {
-        checkAndResetIfNewDay()
-        val key     = getPdfToolKey(toolKey)
-        val current = prefs.getInt(key, 0)
-        prefs.edit().putInt(key, current + 1).apply()
-        Timber.d("DailyLimitManager: pdfTool[$toolKey] registrado → ${current + 1}")
-    }
+        // ── Verificar si puede realizar la operación ──────────────────────────────
+        fun canConvert(): Boolean {
+            checkAndResetIfNewDay()
+            val count = prefs.getInt(KEY_CONVERSIONS, 0)
+            val extras = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
+            val canDo = count < LIMIT_CONVERSIONS + extras
+            Timber.d("DailyLimitManager: canConvert=$canDo ($count/${LIMIT_CONVERSIONS + extras})")
+            return canDo
+        }
 
-    // ── Agregar conversión extra (reward por ver anuncio) ─────────────────────
-    fun addRewardedConversion() {
-        checkAndResetIfNewDay()
-        val current = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
-        prefs.edit().putInt(KEY_EXTRA_CONVERSIONS, current + 1).apply()
-        Timber.d("DailyLimitManager: +1 extra por rewarded → ${current + 1} extras")
-    }
+        fun canSaveScan(): Boolean {
+            checkAndResetIfNewDay()
+            val count = prefs.getInt(KEY_SCANS_SAVED, 0)
+            val extras = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
+            val canDo = count < LIMIT_SCANS_SAVED + extras
+            Timber.d("DailyLimitManager: canSaveScan=$canDo ($count/${LIMIT_SCANS_SAVED + extras})")
+            return canDo
+        }
 
-    // ── Agregar uso extra de herramienta PDF (reward por ver anuncio) ─────────
-    fun addRewardedPdfTool() {
-        checkAndResetIfNewDay()
-        val current = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
-        prefs.edit().putInt(KEY_EXTRA_PDF_TOOLS, current + 1).apply()
-        Timber.d("DailyLimitManager: +1 extra de herramienta PDF por rewarded → ${current + 1} extras")
-    }
+        fun canUsePdfTool(toolKey: String): Boolean {
+            checkAndResetIfNewDay()
+            val key = getPdfToolKey(toolKey)
+            val count = prefs.getInt(key, 0)
+            val extras = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
+            val canDo = count < LIMIT_PDF_TOOLS + extras
+            Timber.d("DailyLimitManager: canUsePdfTool[$toolKey]=$canDo ($count/${LIMIT_PDF_TOOLS + extras})")
+            return canDo
+        }
 
-    // ── Agregar escaneo guardado extra (reward por ver anuncio) ───────────────
-    fun addRewardedScanSave() {
-        checkAndResetIfNewDay()
-        val current = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
-        prefs.edit().putInt(KEY_EXTRA_SCANS_SAVED, current + 1).apply()
-        Timber.d("DailyLimitManager: +1 escaneo guardado extra por rewarded → ${current + 1} extras")
-    }
+        // ── Registrar uso ─────────────────────────────────────────────────────────
+        fun registerConversion() {
+            checkAndResetIfNewDay()
+            val current = prefs.getInt(KEY_CONVERSIONS, 0)
+            prefs.edit().putInt(KEY_CONVERSIONS, current + 1).apply()
+            Timber.d("DailyLimitManager: conversión registrada → ${current + 1}")
+        }
 
-    // ── Obtener contadores para mostrar en UI ─────────────────────────────────
-    fun getConversionCount(): Int {
-        checkAndResetIfNewDay()
-        return prefs.getInt(KEY_CONVERSIONS, 0)
-    }
+        fun registerScanSaved() {
+            checkAndResetIfNewDay()
+            val current = prefs.getInt(KEY_SCANS_SAVED, 0)
+            prefs.edit().putInt(KEY_SCANS_SAVED, current + 1).apply()
+            Timber.d("DailyLimitManager: escaneo guardado registrado → ${current + 1}")
+        }
 
-    fun getConversionLimit(): Int {
-        checkAndResetIfNewDay()
-        val extras = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
-        return LIMIT_CONVERSIONS + extras
-    }
+        fun registerPdfTool(toolKey: String) {
+            checkAndResetIfNewDay()
+            val key = getPdfToolKey(toolKey)
+            val current = prefs.getInt(key, 0)
+            prefs.edit().putInt(key, current + 1).apply()
+            Timber.d("DailyLimitManager: pdfTool[$toolKey] registrado → ${current + 1}")
+        }
 
-    fun getScanSavedCount(): Int {
-        checkAndResetIfNewDay()
-        return prefs.getInt(KEY_SCANS_SAVED, 0)
-    }
+        // ── Agregar conversión extra (reward por ver anuncio) ─────────────────────
+        fun addRewardedConversion() {
+            checkAndResetIfNewDay()
+            val current = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
+            prefs.edit().putInt(KEY_EXTRA_CONVERSIONS, current + 1).apply()
+            Timber.d("DailyLimitManager: +1 extra por rewarded → ${current + 1} extras")
+        }
 
-    fun getScanSavedLimit(): Int {
-        checkAndResetIfNewDay()
-        val extras = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
-        return LIMIT_SCANS_SAVED + extras
-    }
+        // ── Agregar uso extra de herramienta PDF (reward por ver anuncio) ─────────
+        fun addRewardedPdfTool() {
+            checkAndResetIfNewDay()
+            val current = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
+            prefs.edit().putInt(KEY_EXTRA_PDF_TOOLS, current + 1).apply()
+            Timber.d("DailyLimitManager: +1 extra de herramienta PDF por rewarded → ${current + 1} extras")
+        }
 
-    fun getPdfToolCount(toolKey: String): Int {
-        checkAndResetIfNewDay()
-        return prefs.getInt(getPdfToolKey(toolKey), 0)
-    }
+        // ── Agregar escaneo guardado extra (reward por ver anuncio) ───────────────
+        fun addRewardedScanSave() {
+            checkAndResetIfNewDay()
+            val current = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
+            prefs.edit().putInt(KEY_EXTRA_SCANS_SAVED, current + 1).apply()
+            Timber.d("DailyLimitManager: +1 escaneo guardado extra por rewarded → ${current + 1} extras")
+        }
 
-    fun getPdfToolLimit(): Int {
-        checkAndResetIfNewDay()
-        val extras = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
-        return LIMIT_PDF_TOOLS + extras
-    }
+        // ── Obtener contadores para mostrar en UI ─────────────────────────────────
+        fun getConversionCount(): Int {
+            checkAndResetIfNewDay()
+            return prefs.getInt(KEY_CONVERSIONS, 0)
+        }
 
-    private fun getPdfToolKey(toolKey: String): String = PDF_TOOL_KEYS[toolKey] ?: KEY_CONVERSIONS
-}
+        fun getConversionLimit(): Int {
+            checkAndResetIfNewDay()
+            val extras = prefs.getInt(KEY_EXTRA_CONVERSIONS, 0)
+            return LIMIT_CONVERSIONS + extras
+        }
+
+        fun getScanSavedCount(): Int {
+            checkAndResetIfNewDay()
+            return prefs.getInt(KEY_SCANS_SAVED, 0)
+        }
+
+        fun getScanSavedLimit(): Int {
+            checkAndResetIfNewDay()
+            val extras = prefs.getInt(KEY_EXTRA_SCANS_SAVED, 0)
+            return LIMIT_SCANS_SAVED + extras
+        }
+
+        fun getPdfToolCount(toolKey: String): Int {
+            checkAndResetIfNewDay()
+            return prefs.getInt(getPdfToolKey(toolKey), 0)
+        }
+
+        fun getPdfToolLimit(): Int {
+            checkAndResetIfNewDay()
+            val extras = prefs.getInt(KEY_EXTRA_PDF_TOOLS, 0)
+            return LIMIT_PDF_TOOLS + extras
+        }
+
+        private fun getPdfToolKey(toolKey: String): String = PDF_TOOL_KEYS[toolKey] ?: KEY_CONVERSIONS
+    }

@@ -28,22 +28,22 @@ fun MergePdfScreen(
     onSelectPdfs: () -> Unit,
     onRemovePdf: (Uri) -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_merge),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_merge_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -56,24 +56,24 @@ fun MergePdfScreen(
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(14.dp),
                 )
                 Text(
                     text = stringResource(R.string.pdf_merge_order_hint),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -83,62 +83,75 @@ fun MergePdfScreen(
             isProcessing = isProcessing,
             enabled = count >= 2,
             progressText = stringResource(R.string.pdf_merge_progress, count),
-            buttonLabel = if (count < 2) stringResource(R.string.pdf_merge_select_at_least_2)
-                          else stringResource(R.string.pdf_merge_execute, count),
+            buttonLabel =
+                if (count < 2) {
+                    stringResource(R.string.pdf_merge_select_at_least_2)
+                } else {
+                    stringResource(R.string.pdf_merge_execute, count)
+                },
             buttonIcon = Icons.Rounded.MergeType,
-            onExecute = onExecute
+            onExecute = onExecute,
         )
     }
 }
 
 @Composable
-private fun MergePdfSelectZone(isEmpty: Boolean, onSelectPdfs: () -> Unit) {
+private fun MergePdfSelectZone(
+    isEmpty: Boolean,
+    onSelectPdfs: () -> Unit,
+) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(if (isEmpty) 120.dp else 56.dp)
-            .clip(MaterialTheme.shapes.large)
-            .border(
-                width = 1.5.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                shape = MaterialTheme.shapes.large
-            )
-            .background(
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            )
-            .clickable { onSelectPdfs() },
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(if (isEmpty) 120.dp else 56.dp)
+                .clip(MaterialTheme.shapes.large)
+                .border(
+                    width = 1.5.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    shape = MaterialTheme.shapes.large,
+                )
+                .background(
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                )
+                .clickable { onSelectPdfs() },
+        contentAlignment = Alignment.Center,
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Rounded.Add,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
             Text(
-                text = stringResource(
-                    if (isEmpty) R.string.pdf_merge_select_prompt else R.string.pdf_merge_add_more
-                ),
+                text =
+                    stringResource(
+                        if (isEmpty) R.string.pdf_merge_select_prompt else R.string.pdf_merge_add_more,
+                    ),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
         }
     }
 }
 
 @Composable
-private fun SelectedPdfsList(selectedPdfs: List<Uri>, onRemovePdf: (Uri) -> Unit) {
+private fun SelectedPdfsList(
+    selectedPdfs: List<Uri>,
+    onRemovePdf: (Uri) -> Unit,
+) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column {
             selectedPdfs.forEachIndexed { index, uri ->
@@ -147,7 +160,7 @@ private fun SelectedPdfsList(selectedPdfs: List<Uri>, onRemovePdf: (Uri) -> Unit
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant
+                        color = MaterialTheme.colorScheme.outlineVariant,
                     )
                 }
             }
@@ -156,57 +169,63 @@ private fun SelectedPdfsList(selectedPdfs: List<Uri>, onRemovePdf: (Uri) -> Unit
 }
 
 @Composable
-private fun SelectedPdfRow(index: Int, uri: Uri, onRemovePdf: (Uri) -> Unit) {
+private fun SelectedPdfRow(
+    index: Int,
+    uri: Uri,
+    onRemovePdf: (Uri) -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(32.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.extraSmall
-                ),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(32.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.extraSmall,
+                    ),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "${index + 1}",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
         }
         Icon(
             imageVector = Icons.Rounded.PictureAsPdf,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(20.dp),
         )
         Text(
-            text = uri.lastPathSegment
-                ?.substringAfterLast("/")
-                ?: stringResource(R.string.pdf_merge_file_fallback, index + 1),
+            text =
+                uri.lastPathSegment
+                    ?.substringAfterLast("/")
+                    ?: stringResource(R.string.pdf_merge_file_fallback, index + 1),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         // Subido de 32dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
         IconButton(
             onClick = { onRemovePdf(uri) },
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(48.dp),
         ) {
             Icon(
                 imageVector = Icons.Rounded.Close,
                 contentDescription = stringResource(R.string.pdf_merge_remove_desc),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
             )
         }
     }
 }
-

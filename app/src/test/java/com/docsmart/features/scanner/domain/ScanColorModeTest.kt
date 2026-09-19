@@ -10,19 +10,34 @@ import org.junit.jupiter.api.Test
  * límite ya documentado para `ScanImageEditorTest`.
  */
 class ScanColorModeTest {
-
     @Test
     fun `Color es la matriz identidad -- AC3, sin filtro`() {
         val matrix = buildColorModeMatrix(ScanColorMode.COLOR)
 
         assertEquals(
             listOf(
-                1f, 0f, 0f, 0f, 0f,
-                0f, 1f, 0f, 0f, 0f,
-                0f, 0f, 1f, 0f, 0f,
-                0f, 0f, 0f, 1f, 0f
+                1f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
             ),
-            matrix.toList()
+            matrix.toList(),
         )
     }
 

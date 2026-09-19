@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test
  *   realmente persistidos, no confiar ciegamente en SharedPreferences.
  */
 class DownloadsAccessManagerTest {
-
     private lateinit var context: Context
     private lateinit var resolver: ContentResolver
     private lateinit var prefsBacking: MutableMap<String, String>
@@ -186,7 +185,7 @@ class DownloadsAccessManagerTest {
 
         assertNull(
             manager.linkedFolderUri.value,
-            "el permiso ya no esta en la lista real de SAF -> debe tratarse como no vinculado"
+            "el permiso ya no esta en la lista real de SAF -> debe tratarse como no vinculado",
         )
         assertTrue(prefsBacking.isEmpty(), "debe limpiar la preferencia obsoleta")
     }

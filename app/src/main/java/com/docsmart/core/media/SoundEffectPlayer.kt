@@ -25,84 +25,90 @@ import javax.inject.Singleton
  * perceptible; `SoundPool` precarga y reproduce con latencia mínima.
  */
 @Singleton
-class SoundEffectPlayer @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+class SoundEffectPlayer
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    private val _enabled = MutableStateFlow(loadEnabled())
-    val enabled: StateFlow<Boolean> = _enabled.asStateFlow()
+        private val _enabled = MutableStateFlow(loadEnabled())
+        val enabled: StateFlow<Boolean> = _enabled.asStateFlow()
 
-    // Bug real reportado por el usuario 2026-09-14: "no se escuchan los
-    // sonidos" -- confirmado con `dumpsys audio` en dispositivo real:
-    // USAGE_ASSISTANCE_SONIFICATION enruta al stream STREAM_SYSTEM, que en
-    // Android sigue el modo silencio/vibración del timbre (ringer), no el
-    // volumen de medios -- con el teléfono en silencio/vibración (un estado
-    // cotidiano, no un caso raro), STREAM_SYSTEM queda muteado y ningún
-    // sonido de esta clase se escucha nunca, sin importar el volumen de
-    // medios. USAGE_MEDIA enruta a STREAM_MUSIC en su lugar, el mismo
-    // volumen que ya gobierna el resto de audio de la app y el que el
-    // usuario realmente sube/baja para "escuchar más o menos la app".
-    private val soundPool = SoundPool.Builder()
-        .setMaxStreams(2)
-        .setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-        )
-        .build()
+        // Bug real reportado por el usuario 2026-09-14: "no se escuchan los
+        // sonidos" -- confirmado con `dumpsys audio` en dispositivo real:
+        // USAGE_ASSISTANCE_SONIFICATION enruta al stream STREAM_SYSTEM, que en
+        // Android sigue el modo silencio/vibración del timbre (ringer), no el
+        // volumen de medios -- con el teléfono en silencio/vibración (un estado
+        // cotidiano, no un caso raro), STREAM_SYSTEM queda muteado y ningún
+        // sonido de esta clase se escucha nunca, sin importar el volumen de
+        // medios. USAGE_MEDIA enruta a STREAM_MUSIC en su lugar, el mismo
+        // volumen que ya gobierna el resto de audio de la app y el que el
+        // usuario realmente sube/baja para "escuchar más o menos la app".
+        private val soundPool =
+            SoundPool
+                .Builder()
+                .setMaxStreams(2)
+                .setAudioAttributes(
+                    AudioAttributes
+                        .Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build(),
+                ).build()
 
-    // Bug real encontrado 2026-09-14 (repaso general, prioridad Baja):
-    // SoundPool.load() es asíncrono -- si play() se llama antes de que
-    // termine de decodificar ese sonido en concreto, SoundPool.play() no
-    // hace nada, sin error. Con estos WAV sintetizados de <150ms y este
-    // Singleton construido al arrancar el proceso, la ventana real es
-    // mínima (ver ScannerViewModel/ConverterViewModel/TrashViewModel/
-    // LibraryViewModel: el primer playX() posible llega segundos después,
-    // tras un flujo de cámara o de I/O), pero no es imposible en un
-    // dispositivo muy lento -- este listener cierra el hueco de verdad en
-    // vez de confiar en el timing.
-    private val loadedSoundIds = Collections.synchronizedSet(mutableSetOf<Int>())
+        // Bug real encontrado 2026-09-14 (repaso general, prioridad Baja):
+        // SoundPool.load() es asíncrono -- si play() se llama antes de que
+        // termine de decodificar ese sonido en concreto, SoundPool.play() no
+        // hace nada, sin error. Con estos WAV sintetizados de <150ms y este
+        // Singleton construido al arrancar el proceso, la ventana real es
+        // mínima (ver ScannerViewModel/ConverterViewModel/TrashViewModel/
+        // LibraryViewModel: el primer playX() posible llega segundos después,
+        // tras un flujo de cámara o de I/O), pero no es imposible en un
+        // dispositivo muy lento -- este listener cierra el hueco de verdad en
+        // vez de confiar en el timing.
+        private val loadedSoundIds = Collections.synchronizedSet(mutableSetOf<Int>())
 
-    init {
-        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
-            if (status == 0) {
-                loadedSoundIds.add(sampleId)
-            } else {
-                Timber.w("SoundEffectPlayer: fallo al cargar el sonido $sampleId (status=$status)")
+        init {
+            soundPool.setOnLoadCompleteListener { _, sampleId, status ->
+                if (status == 0) {
+                    loadedSoundIds.add(sampleId)
+                } else {
+                    Timber.w("SoundEffectPlayer: fallo al cargar el sonido $sampleId (status=$status)")
+                }
             }
         }
-    }
 
-    private val scanSoundId    = soundPool.load(context, R.raw.sound_scan, 1)
-    private val convertSoundId = soundPool.load(context, R.raw.sound_convert, 1)
-    private val deleteSoundId  = soundPool.load(context, R.raw.sound_delete, 1)
+        private val scanSoundId = soundPool.load(context, R.raw.sound_scan, 1)
+        private val convertSoundId = soundPool.load(context, R.raw.sound_convert, 1)
+        private val deleteSoundId = soundPool.load(context, R.raw.sound_delete, 1)
 
-    fun setEnabled(value: Boolean) {
-        _enabled.value = value
-        prefs.edit().putBoolean(KEY_ENABLED, value).apply()
-        Timber.d("SoundEffectPlayer: efectos de sonido ${if (value) "activados" else "desactivados"}")
-    }
-
-    fun playScan()    = play(scanSoundId)
-    fun playConvert() = play(convertSoundId)
-    fun playDelete()  = play(deleteSoundId)
-
-    private fun play(soundId: Int) {
-        if (!_enabled.value) return
-        if (soundId !in loadedSoundIds) {
-            Timber.w("SoundEffectPlayer: sonido $soundId aún no terminó de cargar, se omite")
-            return
+        fun setEnabled(value: Boolean) {
+            _enabled.value = value
+            prefs.edit().putBoolean(KEY_ENABLED, value).apply()
+            Timber.d("SoundEffectPlayer: efectos de sonido ${if (value) "activados" else "desactivados"}")
         }
-        soundPool.play(soundId, VOLUME, VOLUME, 1, 0, 1f)
-    }
 
-    private fun loadEnabled(): Boolean = prefs.getBoolean(KEY_ENABLED, true)
+        fun playScan() = play(scanSoundId)
 
-    private companion object {
-        const val PREFS_NAME = "docusmart_sound"
-        const val KEY_ENABLED = "sound_effects_enabled"
-        const val VOLUME = 0.7f
+        fun playConvert() = play(convertSoundId)
+
+        fun playDelete() = play(deleteSoundId)
+
+        private fun play(soundId: Int) {
+            if (!_enabled.value) return
+            if (soundId !in loadedSoundIds) {
+                Timber.w("SoundEffectPlayer: sonido $soundId aún no terminó de cargar, se omite")
+                return
+            }
+            soundPool.play(soundId, VOLUME, VOLUME, 1, 0, 1f)
+        }
+
+        private fun loadEnabled(): Boolean = prefs.getBoolean(KEY_ENABLED, true)
+
+        private companion object {
+            const val PREFS_NAME = "docusmart_sound"
+            const val KEY_ENABLED = "sound_effects_enabled"
+            const val VOLUME = 0.7f
+        }
     }
-}

@@ -17,7 +17,10 @@ import java.util.Locale
  * `connectedDebugAndroidTest`, borrando el override). Fijarlo en el propio
  * proceso de la app bajo prueba es inmune a todo eso.
  */
-fun forceLocale(context: Context, languageTag: String): Context {
+fun forceLocale(
+    context: Context,
+    languageTag: String,
+): Context {
     val locale = Locale.forLanguageTag(languageTag)
     val config = Configuration(context.resources.configuration)
     config.setLocale(locale)

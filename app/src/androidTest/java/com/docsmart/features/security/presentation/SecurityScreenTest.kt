@@ -47,29 +47,34 @@ import java.io.File
  * `ContextWrapper` es la vía estándar de Android para este caso.)
  */
 class SecurityScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private class IsolatedPrefsContext(
         base: Context,
         private val fakePrefs: SharedPreferences,
-        private val testFilesDir: File
+        private val testFilesDir: File,
     ) : ContextWrapper(base) {
-        override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences = fakePrefs
+        override fun getSharedPreferences(
+            name: String?,
+            mode: Int,
+        ): SharedPreferences = fakePrefs
+
         override fun getFilesDir(): File = testFilesDir
     }
 
     private fun buildViewModel(): SecurityViewModel {
         val realContext = InstrumentationRegistry.getInstrumentation().targetContext
-        val context = IsolatedPrefsContext(
-            base         = realContext,
-            fakePrefs    = fakeSharedPreferences(),
-            testFilesDir = File(realContext.cacheDir, "security_test_${System.currentTimeMillis()}")
-        )
+        val context =
+            IsolatedPrefsContext(
+                base = realContext,
+                fakePrefs = fakeSharedPreferences(),
+                testFilesDir = File(realContext.cacheDir, "security_test_${System.currentTimeMillis()}"),
+            )
 
         return SecurityViewModel(
-            securityManager    = SecurityManager(context), // real, no mock
+            // real, no mock
+            securityManager = SecurityManager(context),
             pdfPasswordUseCase = mockk<PdfPasswordUseCase>(relaxed = true),
             // Bug preexistente encontrado 2026-09-14: SecurityViewModel
             // ganó mediaDeletePermission (borrado con permiso de MediaStore)
@@ -90,7 +95,7 @@ class SecurityScreenTest {
             // ProcessLifecycleOwner, ver AppLifecycleTracker) -- se mockea
             // también acá para no registrar un observer real en el
             // singleton de proceso compartido entre tests instrumentados.
-            appLifecycleTracker = mockk(relaxed = true)
+            appLifecycleTracker = mockk(relaxed = true),
         )
     }
 
@@ -121,7 +126,7 @@ class SecurityScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
                 SecurityScreen(viewModel = viewModel)
             }
@@ -145,8 +150,10 @@ class SecurityScreenTest {
         // displayed" en vez de fallar por un PIN mal verificado. Se espera
         // explícitamente a que el texto exista.
         composeRule.waitUntil(timeoutMillis = 20_000) {
-            composeRule.onAllNodesWithText("Carpeta Segura")
-                .fetchSemanticsNodes().isNotEmpty()
+            composeRule
+                .onAllNodesWithText("Carpeta Segura")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
         composeRule.onNodeWithText("Carpeta Segura").assertIsDisplayed()
     }
@@ -176,7 +183,7 @@ class SecurityScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
                 SecurityScreen(viewModel = viewModel)
             }
@@ -192,8 +199,10 @@ class SecurityScreenTest {
         composeRule.onNodeWithText("9").performClick()
 
         composeRule.waitUntil(timeoutMillis = 20_000) {
-            composeRule.onAllNodesWithText("PIN incorrecto")
-                .fetchSemanticsNodes().isNotEmpty()
+            composeRule
+                .onAllNodesWithText("PIN incorrecto")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
         composeRule.onNodeWithText("PIN incorrecto").assertIsDisplayed()
     }

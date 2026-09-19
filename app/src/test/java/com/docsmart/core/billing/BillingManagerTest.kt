@@ -24,17 +24,18 @@ import org.junit.jupiter.api.Test
  * Premium a un usuario que sí había pagado, en cada arranque de la app.
  */
 class BillingManagerTest {
-
-    private fun purchaseOf(state: Int): Purchase = mockk {
-        every { purchaseState } returns state
-    }
+    private fun purchaseOf(state: Int): Purchase =
+        mockk {
+            every { purchaseState } returns state
+        }
 
     @Test
     fun `una consulta fallida no debe tratarse como que el usuario no tiene compras`() {
-        val outcome = evaluateRestoreOutcome(
-            responseCode = BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
-            purchasesList = emptyList()
-        )
+        val outcome =
+            evaluateRestoreOutcome(
+                responseCode = BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
+                purchasesList = emptyList(),
+            )
 
         assertEquals(RestoreOutcome.QueryFailed, outcome)
     }
@@ -43,20 +44,22 @@ class BillingManagerTest {
     fun `una consulta fallida se trata como fallo aunque la lista traiga compras`() {
         // Nunca debería pasar en la práctica, pero si billingResult.responseCode
         // indica fallo, no hay que confiar en el contenido de purchasesList.
-        val outcome = evaluateRestoreOutcome(
-            responseCode = BillingClient.BillingResponseCode.ERROR,
-            purchasesList = listOf(purchaseOf(Purchase.PurchaseState.PURCHASED))
-        )
+        val outcome =
+            evaluateRestoreOutcome(
+                responseCode = BillingClient.BillingResponseCode.ERROR,
+                purchasesList = listOf(purchaseOf(Purchase.PurchaseState.PURCHASED)),
+            )
 
         assertEquals(RestoreOutcome.QueryFailed, outcome)
     }
 
     @Test
     fun `una consulta exitosa sin compras compradas se trata como que no hay nada que restaurar`() {
-        val outcome = evaluateRestoreOutcome(
-            responseCode = BillingClient.BillingResponseCode.OK,
-            purchasesList = emptyList()
-        )
+        val outcome =
+            evaluateRestoreOutcome(
+                responseCode = BillingClient.BillingResponseCode.OK,
+                purchasesList = emptyList(),
+            )
 
         assertEquals(RestoreOutcome.NothingOwned, outcome)
     }
@@ -73,10 +76,11 @@ class BillingManagerTest {
     fun `una consulta exitosa con solo compras pendientes se trata como pendiente, no como que no hay nada`() {
         val pending = purchaseOf(Purchase.PurchaseState.PENDING)
 
-        val outcome = evaluateRestoreOutcome(
-            responseCode = BillingClient.BillingResponseCode.OK,
-            purchasesList = listOf(pending)
-        )
+        val outcome =
+            evaluateRestoreOutcome(
+                responseCode = BillingClient.BillingResponseCode.OK,
+                purchasesList = listOf(pending),
+            )
 
         assertTrue(outcome is RestoreOutcome.Pending)
         assertEquals(listOf(pending), (outcome as RestoreOutcome.Pending).purchases)
@@ -86,10 +90,11 @@ class BillingManagerTest {
     fun `una consulta exitosa con una compra activa la devuelve para restaurar`() {
         val purchase = purchaseOf(Purchase.PurchaseState.PURCHASED)
 
-        val outcome = evaluateRestoreOutcome(
-            responseCode = BillingClient.BillingResponseCode.OK,
-            purchasesList = listOf(purchase)
-        )
+        val outcome =
+            evaluateRestoreOutcome(
+                responseCode = BillingClient.BillingResponseCode.OK,
+                purchasesList = listOf(purchase),
+            )
 
         assertTrue(outcome is RestoreOutcome.Owned)
         assertEquals(listOf(purchase), (outcome as RestoreOutcome.Owned).purchases)
@@ -100,10 +105,11 @@ class BillingManagerTest {
         val pending = purchaseOf(Purchase.PurchaseState.PENDING)
         val purchased = purchaseOf(Purchase.PurchaseState.PURCHASED)
 
-        val outcome = evaluateRestoreOutcome(
-            responseCode = BillingClient.BillingResponseCode.OK,
-            purchasesList = listOf(pending, purchased)
-        )
+        val outcome =
+            evaluateRestoreOutcome(
+                responseCode = BillingClient.BillingResponseCode.OK,
+                purchasesList = listOf(pending, purchased),
+            )
 
         assertTrue(outcome is RestoreOutcome.Owned)
         assertEquals(listOf(purchased), (outcome as RestoreOutcome.Owned).purchases)

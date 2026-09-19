@@ -55,140 +55,147 @@ import com.docsmart.core.ui.theme.accentShadow
  */
 @Composable
 fun FileSourcePickerDialog(
-    title            : String,
-    onDismiss        : () -> Unit,
+    title: String,
+    onDismiss: () -> Unit,
     onChooseFromDevice: () -> Unit,
-    onChooseDocument : (DocumentUiModel) -> Unit,
-    filter           : (DocumentUiModel) -> Boolean = { true },
-    viewModel        : AppLibraryPickerViewModel = hiltViewModel()
+    onChooseDocument: (DocumentUiModel) -> Unit,
+    filter: (DocumentUiModel) -> Boolean = { true },
+    viewModel: AppLibraryPickerViewModel = hiltViewModel(),
 ) {
     val documents by viewModel.documents.collectAsStateWithLifecycle()
-    val isLoading  by viewModel.isLoading.collectAsStateWithLifecycle()
-    val filtered   = documents.filter(filter)
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val filtered = documents.filter(filter)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape            = MaterialTheme.shapes.large,
-        title            = { Text(title, style = MaterialTheme.typography.titleLarge) },
+        shape = MaterialTheme.shapes.large,
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text  = stringResource(R.string.filepicker_source_question),
+                    text = stringResource(R.string.filepicker_source_question),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
                 Card(
                     // H23 (auditoría de accesibilidad TalkBack 2026-09-18):
                     // sin role, TalkBack no anunciaba esta tarjeta como
                     // accionable.
-                    modifier = Modifier.fillMaxWidth()
-                        .clickable(role = Role.Button, onClick = onChooseFromDevice),
-                    shape    = MaterialTheme.shapes.medium,
-                    colors   = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    )
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clickable(role = Role.Button, onClick = onChooseFromDevice),
+                    shape = MaterialTheme.shapes.medium,
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        ),
                 ) {
                     Row(
-                        modifier              = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment     = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(Icons.Rounded.PhoneAndroid, null, tint = MaterialTheme.colorScheme.primary)
                         Column {
                             Text(
-                                text  = stringResource(R.string.filepicker_from_device),
+                                text = stringResource(R.string.filepicker_from_device),
                                 style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
-                                text  = stringResource(R.string.filepicker_browse_system_files),
+                                text = stringResource(R.string.filepicker_browse_system_files),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
 
                 Text(
-                    text     = stringResource(R.string.filepicker_from_library),
-                    style    = MaterialTheme.typography.titleSmall,
-                    color    = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(top = 8.dp)
+                    text = stringResource(R.string.filepicker_from_library),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
                 when {
-                    isLoading -> Box(
-                        modifier         = Modifier.fillMaxWidth().padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator(modifier = Modifier.size(24.dp)) }
+                    isLoading ->
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { CircularProgressIndicator(modifier = Modifier.size(24.dp)) }
 
-                    filtered.isEmpty() -> Text(
-                        text  = stringResource(R.string.filepicker_no_library_files),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    filtered.isEmpty() ->
+                        Text(
+                            text = stringResource(R.string.filepicker_no_library_files),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
 
-                    else -> LazyColumn(
-                        modifier            = Modifier.heightIn(max = 240.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(filtered, key = { it.id }) { document ->
-                            val shape = MaterialTheme.shapes.medium
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .accentShadow(shape = shape, elevation = 1.dp)
-                                    .clip(shape)
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .accentBorder(shape = shape)
-                                    // H23 (auditoría de accesibilidad
-                                    // TalkBack 2026-09-18): sin role,
-                                    // TalkBack no anunciaba esta fila como
-                                    // accionable.
-                                    .clickable(role = Role.Button) { onChooseDocument(document) }
-                            ) {
-                                Row(
-                                    modifier              = Modifier.fillMaxWidth().padding(12.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    verticalAlignment     = Alignment.CenterVertically
+                    else ->
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 240.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            items(filtered, key = { it.id }) { document ->
+                                val shape = MaterialTheme.shapes.medium
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .accentShadow(shape = shape, elevation = 1.dp)
+                                            .clip(shape)
+                                            .background(MaterialTheme.colorScheme.surface)
+                                            .accentBorder(shape = shape)
+                                            // H23 (auditoría de accesibilidad
+                                            // TalkBack 2026-09-18): sin role,
+                                            // TalkBack no anunciaba esta fila como
+                                            // accionable.
+                                            .clickable(role = Role.Button) { onChooseDocument(document) },
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(MaterialTheme.shapes.small)
-                                            .background(document.type.color.copy(alpha = 0.12f)),
-                                        contentAlignment = Alignment.Center
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Icon(
-                                            imageVector        = Icons.Rounded.InsertDriveFile,
-                                            contentDescription = null,
-                                            tint               = document.type.color,
-                                            modifier           = Modifier.size(16.dp)
-                                        )
-                                    }
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text     = document.name,
-                                            style    = MaterialTheme.typography.bodySmall,
-                                            color    = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text  = document.size,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .size(32.dp)
+                                                    .clip(MaterialTheme.shapes.small)
+                                                    .background(document.type.color.copy(alpha = 0.12f)),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.InsertDriveFile,
+                                                contentDescription = null,
+                                                tint = document.type.color,
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = document.name,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                            Text(
+                                                text = document.size,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
-        }
+        },
     )
 }

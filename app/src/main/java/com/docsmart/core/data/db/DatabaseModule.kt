@@ -15,40 +15,35 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
     @Provides
     @Singleton
-    fun provideDocuSmartDatabase(@ApplicationContext context: Context): DocuSmartDatabase =
-        Room.databaseBuilder(context, DocuSmartDatabase::class.java, "docsmart.db")
+    fun provideDocuSmartDatabase(
+        @ApplicationContext context: Context,
+    ): DocuSmartDatabase =
+        Room
+            .databaseBuilder(context, DocuSmartDatabase::class.java, "docsmart.db")
             .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
     @Provides
-    fun provideDocumentHistoryDao(database: DocuSmartDatabase): DocumentHistoryDao =
-        database.documentHistoryDao()
+    fun provideDocumentHistoryDao(database: DocuSmartDatabase): DocumentHistoryDao = database.documentHistoryDao()
 
     @Provides
-    fun provideTrashDao(database: DocuSmartDatabase): TrashDao =
-        database.trashDao()
+    fun provideTrashDao(database: DocuSmartDatabase): TrashDao = database.trashDao()
 
     @Provides
-    fun provideAnnotationDao(database: DocuSmartDatabase): AnnotationDao =
-        database.annotationDao()
+    fun provideAnnotationDao(database: DocuSmartDatabase): AnnotationDao = database.annotationDao()
 
     @Provides
-    fun providePageBookmarkDao(database: DocuSmartDatabase): PageBookmarkDao =
-        database.pageBookmarkDao()
+    fun providePageBookmarkDao(database: DocuSmartDatabase): PageBookmarkDao = database.pageBookmarkDao()
 
     @Provides
-    fun provideLastViewedPageDao(database: DocuSmartDatabase): LastViewedPageDao =
-        database.lastViewedPageDao()
+    fun provideLastViewedPageDao(database: DocuSmartDatabase): LastViewedPageDao = database.lastViewedPageDao()
 
     @Provides
-    fun provideNoteDao(database: DocuSmartDatabase): NoteDao =
-        database.noteDao()
+    fun provideNoteDao(database: DocuSmartDatabase): NoteDao = database.noteDao()
 
     @Provides
-    fun provideAgendaEventDao(database: DocuSmartDatabase): AgendaEventDao =
-        database.agendaEventDao()
+    fun provideAgendaEventDao(database: DocuSmartDatabase): AgendaEventDao = database.agendaEventDao()
 }

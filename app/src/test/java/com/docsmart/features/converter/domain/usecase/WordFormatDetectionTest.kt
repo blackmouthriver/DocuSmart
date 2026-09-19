@@ -17,7 +17,6 @@ import java.io.ByteArrayOutputStream
  * párrafos normales y una tabla 2x2.
  */
 class WordFormatDetectionTest {
-
     @Test
     fun `detecta OOXML en un docx real`() {
         val (format, _) = detectWordFormat(ByteArrayInputStream(createTestDocx()))

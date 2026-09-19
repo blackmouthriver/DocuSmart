@@ -33,16 +33,20 @@ import java.nio.file.Files
  * de texto que sigue ahí) mientras "PUBLICO" se conserva intacto.
  */
 class RedactPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: RedactPdfUseCase
 
-    private val messages = RedactPdfMessages(
-        emptyRectsError = "emptyRectsError", readError = "readError", noPages = "noPages",
-        generateError = "generateError", success = "success %1\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        RedactPdfMessages(
+            emptyRectsError = "emptyRectsError",
+            readError = "readError",
+            noPages = "noPages",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -61,62 +65,68 @@ class RedactPdfUseCaseTest {
     }
 
     @Test
-    fun `censurar la franja superior elimina el texto secreto y conserva el texto publico`() = runTest {
-        stubResolver(createTestPdf())
-        val rect = RedactionRect(pageNumber = 1, xFrac = 0f, yFrac = 0f, wFrac = 1f, hFrac = 0.3f)
+    fun `censurar la franja superior elimina el texto secreto y conserva el texto publico`() =
+        runTest {
+            stubResolver(createTestPdf())
+            val rect = RedactionRect(pageNumber = 1, xFrac = 0f, yFrac = 0f, wFrac = 1f, hFrac = 0.3f)
 
-        val result = useCase(mockk<Uri>(), rects = listOf(rect), messages = messages)
+            val result = useCase(mockk<Uri>(), rects = listOf(rect), messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val text = pageTextOf((result as PdfToolResult.Success).outputFile)
-        assertFalse(text.contains("SECRETO"))
-        assertTrue(text.contains("PUBLICO"))
-    }
-
-    @Test
-    fun `censurar sin marcar ninguna zona devuelve Error sin tocar el archivo`() = runTest {
-        val result = useCase(mockk<Uri>(), rects = emptyList(), messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("emptyRectsError", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val text = pageTextOf((result as PdfToolResult.Success).outputFile)
+            assertFalse(text.contains("SECRETO"))
+            assertTrue(text.contains("PUBLICO"))
+        }
 
     @Test
-    fun `una zona en una pagina fuera de rango se ignora sin fallar`() = runTest {
-        stubResolver(createTestPdf())
-        val rect = RedactionRect(pageNumber = 5, xFrac = 0f, yFrac = 0f, wFrac = 1f, hFrac = 0.3f)
+    fun `censurar sin marcar ninguna zona devuelve Error sin tocar el archivo`() =
+        runTest {
+            val result = useCase(mockk<Uri>(), rects = emptyList(), messages = messages)
 
-        val result = useCase(mockk<Uri>(), rects = listOf(rect), messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        val text = pageTextOf((result as PdfToolResult.Success).outputFile)
-        assertTrue(text.contains("SECRETO"))
-        assertTrue(text.contains("PUBLICO"))
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("emptyRectsError", (result as PdfToolResult.Error).message)
+        }
 
     @Test
-    fun `el mensaje de exito informa el numero de zonas censuradas`() = runTest {
-        stubResolver(createTestPdf())
-        val rects = listOf(
-            RedactionRect(1, 0f, 0f, 1f, 0.3f),
-            RedactionRect(1, 0f, 0.8f, 1f, 0.2f)
-        )
+    fun `una zona en una pagina fuera de rango se ignora sin fallar`() =
+        runTest {
+            stubResolver(createTestPdf())
+            val rect = RedactionRect(pageNumber = 5, xFrac = 0f, yFrac = 0f, wFrac = 1f, hFrac = 0.3f)
 
-        val result = useCase(mockk<Uri>(), rects = rects, messages = messages)
+            val result = useCase(mockk<Uri>(), rects = listOf(rect), messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("success 2", (result as PdfToolResult.Success).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val text = pageTextOf((result as PdfToolResult.Success).outputFile)
+            assertTrue(text.contains("SECRETO"))
+            assertTrue(text.contains("PUBLICO"))
+        }
 
     @Test
-    fun `censurar un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
-        val rect = RedactionRect(1, 0f, 0f, 1f, 0.3f)
+    fun `el mensaje de exito informa el numero de zonas censuradas`() =
+        runTest {
+            stubResolver(createTestPdf())
+            val rects =
+                listOf(
+                    RedactionRect(1, 0f, 0f, 1f, 0.3f),
+                    RedactionRect(1, 0f, 0.8f, 1f, 0.2f),
+                )
 
-        val result = useCase(mockk<Uri>(), rects = listOf(rect), messages = messages)
+            val result = useCase(mockk<Uri>(), rects = rects, messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("success 2", (result as PdfToolResult.Success).message)
+        }
+
+    @Test
+    fun `censurar un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+            val rect = RedactionRect(1, 0f, 0f, 1f, 0.3f)
+
+            val result = useCase(mockk<Uri>(), rects = listOf(rect), messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -132,8 +142,18 @@ class RedactPdfUseCaseTest {
         val font = PdfFontFactory.createFont()
         val page = pdfDoc.addNewPage()
         val canvas = PdfCanvas(page)
-        canvas.beginText().setFontAndSize(font, 24f).moveText(50.0, 700.0).showText("SECRETO").endText()
-        canvas.beginText().setFontAndSize(font, 24f).moveText(50.0, 50.0).showText("PUBLICO").endText()
+        canvas
+            .beginText()
+            .setFontAndSize(font, 24f)
+            .moveText(50.0, 700.0)
+            .showText("SECRETO")
+            .endText()
+        canvas
+            .beginText()
+            .setFontAndSize(font, 24f)
+            .moveText(50.0, 50.0)
+            .showText("PUBLICO")
+            .endText()
         pdfDoc.close()
         return out.toByteArray()
     }

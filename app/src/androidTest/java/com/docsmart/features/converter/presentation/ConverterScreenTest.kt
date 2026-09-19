@@ -45,7 +45,6 @@ import java.io.File
  * la UI real.
  */
 class ConverterScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -75,27 +74,28 @@ class ConverterScreenTest {
 
         return ConverterViewModel(
             convertImageToPdf = mockk(relaxed = true),
-            pdfToImage        = mockk(relaxed = true),
-            pdfToText         = mockk(relaxed = true),
-            pdfToWord         = mockk(relaxed = true),
-            pdfToHtml         = mockk(relaxed = true),
-            imageFormat       = ImageFormatUseCase(appContext), // real, no mock
-            wordToPdf         = mockk(relaxed = true),
-            wordToText        = mockk(relaxed = true),
-            wordToHtml        = mockk(relaxed = true),
-            excelToPdf        = mockk(relaxed = true),
-            excelToCsv        = mockk(relaxed = true),
-            excelToHtml       = mockk(relaxed = true),
-            pptToPdf          = mockk(relaxed = true),
-            pptToText         = mockk(relaxed = true),
-            adManager         = adManager,
+            pdfToImage = mockk(relaxed = true),
+            pdfToText = mockk(relaxed = true),
+            pdfToWord = mockk(relaxed = true),
+            pdfToHtml = mockk(relaxed = true),
+            // real, no mock
+            imageFormat = ImageFormatUseCase(appContext),
+            wordToPdf = mockk(relaxed = true),
+            wordToText = mockk(relaxed = true),
+            wordToHtml = mockk(relaxed = true),
+            excelToPdf = mockk(relaxed = true),
+            excelToCsv = mockk(relaxed = true),
+            excelToHtml = mockk(relaxed = true),
+            pptToPdf = mockk(relaxed = true),
+            pptToText = mockk(relaxed = true),
+            adManager = adManager,
             dailyLimitManager = dailyLimitManager,
-            premiumManager    = premiumManager,
+            premiumManager = premiumManager,
             // Bug preexistente encontrado 2026-09-14: ConverterViewModel
             // ganó soundEffectPlayer con los efectos de sonido (backlog
             // 2026-09-12) pero este builder nunca se actualizó, dejando
             // compileDebugAndroidTestKotlin roto para todo el módulo.
-            soundEffectPlayer = mockk(relaxed = true)
+            soundEffectPlayer = mockk(relaxed = true),
         )
     }
 
@@ -134,7 +134,7 @@ class ConverterScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
                 ConverterScreen(viewModel = viewModel)
             }
@@ -158,8 +158,10 @@ class ConverterScreenTest {
         // emulador de CI (swiftshader por software, 2 vCPU) un primer
         // intento con 10s todavía no alcanzaba.
         composeRule.waitUntilOrDump("CI_HANG_ConverterScreenTest_boton") {
-            composeRule.onAllNodesWithText("Convertir a WebP")
-                .fetchSemanticsNodes().isNotEmpty()
+            composeRule
+                .onAllNodesWithText("Convertir a WebP")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
 
         // "Convertir a WebP" (converter_to_format) es el texto real
@@ -173,8 +175,10 @@ class ConverterScreenTest {
         // pero es E/S real (comprimir + escribir a disco), así que se
         // espera con margen en vez de asumir que ya terminó tras waitForIdle().
         composeRule.waitUntilOrDump("CI_HANG_ConverterScreenTest_resultado") {
-            composeRule.onAllNodesWithText("¡Conversión exitosa!")
-                .fetchSemanticsNodes().isNotEmpty()
+            composeRule
+                .onAllNodesWithText("¡Conversión exitosa!")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
     }
 }

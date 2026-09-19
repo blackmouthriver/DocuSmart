@@ -1,6 +1,5 @@
 package com.docsmart.features.viewer.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -36,7 +35,7 @@ import com.docsmart.core.data.db.NoteEntity
 fun ViewerRenameDialog(
     currentName: String,
     onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     // Hallazgo real de la revisión general 2026-09-16: `remember` simple
     // perdía el texto tecleado al rotar el dispositivo (o si el sistema
@@ -58,7 +57,7 @@ fun ViewerRenameDialog(
                 supportingText = {
                     if (!isValid) Text(stringResource(R.string.viewer_rename_empty_error))
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         },
         confirmButton = {
@@ -68,7 +67,7 @@ fun ViewerRenameDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
-        }
+        },
     )
 }
 
@@ -83,7 +82,7 @@ fun ViewerRenameDialog(
 fun ViewerDeleteConfirmDialog(
     fileName: String,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -93,13 +92,13 @@ fun ViewerDeleteConfirmDialog(
             TextButton(onClick = onConfirm) {
                 Text(
                     text = stringResource(R.string.general_delete),
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
-        }
+        },
     )
 }
 
@@ -111,7 +110,10 @@ fun ViewerDeleteConfirmDialog(
  * contenido completo acá mismo.
  */
 @Composable
-fun ViewerLinkedNotesDialog(notes: List<NoteEntity>, onDismiss: () -> Unit) {
+fun ViewerLinkedNotesDialog(
+    notes: List<NoteEntity>,
+    onDismiss: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.viewer_linked_notes_title)) },
@@ -121,11 +123,11 @@ fun ViewerLinkedNotesDialog(notes: List<NoteEntity>, onDismiss: () -> Unit) {
                     Column {
                         Text(note.title, style = MaterialTheme.typography.titleSmall)
                         Text(
-                            text     = note.text,
-                            style    = MaterialTheme.typography.bodySmall,
-                            color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = note.text,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 4,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     }
@@ -134,6 +136,6 @@ fun ViewerLinkedNotesDialog(notes: List<NoteEntity>, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
-        }
+        },
     )
 }

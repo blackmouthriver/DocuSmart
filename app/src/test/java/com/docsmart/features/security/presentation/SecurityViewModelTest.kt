@@ -3,8 +3,8 @@ package com.docsmart.features.security.presentation
 import android.content.Context
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
-import com.docsmart.core.security.SecurityManager
 import com.docsmart.core.security.SecureMoveResult
+import com.docsmart.core.security.SecurityManager
 import com.docsmart.features.library.data.MediaDeletePermission
 import com.docsmart.features.security.domain.PdfPasswordMessages
 import com.docsmart.features.security.domain.PdfPasswordResult
@@ -54,19 +54,23 @@ import java.nio.file.Files
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SecurityViewModelTest {
-
     private lateinit var securityManager: SecurityManager
     private lateinit var pdfPasswordUseCase: PdfPasswordUseCase
     private lateinit var mediaDeletePermission: MediaDeletePermission
     private lateinit var documentIdentityMaintenance: com.docsmart.core.data.DocumentIdentityMaintenance
     private lateinit var secureFolder: File
 
-    private val testMessages = PdfPasswordMessages(
-        readError = "readError", emptyFile = "emptyFile",
-        protectSuccess = "protectSuccess", protectGenerateError = "protectGenerateError %1\$d",
-        protectError = "protectError %1\$s", removeSuccess = "removeSuccess",
-        removeGenerateError = "removeGenerateError %1\$d", removeError = "removeError %1\$s"
-    )
+    private val testMessages =
+        PdfPasswordMessages(
+            readError = "readError",
+            emptyFile = "emptyFile",
+            protectSuccess = "protectSuccess",
+            protectGenerateError = "protectGenerateError %1\$d",
+            protectError = "protectError %1\$s",
+            removeSuccess = "removeSuccess",
+            removeGenerateError = "removeGenerateError %1\$d",
+            removeError = "removeError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -94,14 +98,16 @@ class SecurityViewModelTest {
 
     private fun buildViewModel() =
         SecurityViewModel(
-            securityManager, pdfPasswordUseCase, mediaDeletePermission,
+            securityManager,
+            pdfPasswordUseCase,
+            mediaDeletePermission,
             documentIdentityMaintenance,
             // Hallazgo real de la revisión de seguridad adversarial de este
             // mismo lote (2026-09-16): ProcessLifecycleOwner real no se
             // inicializa en un test JVM plano -- AppLifecycleTracker
             // permite mockearlo en vez de romper la construcción del
             // ViewModel.
-            mockk<com.docsmart.core.util.AppLifecycleTracker>(relaxed = true)
+            mockk<com.docsmart.core.util.AppLifecycleTracker>(relaxed = true),
         )
 
     // Con UnconfinedTestDispatcher no hay garantía de cuántas emisiones
@@ -110,9 +116,7 @@ class SecurityViewModelTest {
     // puede o no alcanzar a observarse por separado del resultado final)
     // -- en vez de asumir un número exacto de awaitItem(), se espera hasta
     // que se cumpla la condición buscada.
-    private suspend fun ReceiveTurbine<SecurityUiState>.awaitUntil(
-        predicate: (SecurityUiState) -> Boolean
-    ): SecurityUiState {
+    private suspend fun ReceiveTurbine<SecurityUiState>.awaitUntil(predicate: (SecurityUiState) -> Boolean): SecurityUiState {
         var item = awaitItem()
         var attempts = 0
         while (!predicate(item) && attempts < 10) {
@@ -148,34 +152,36 @@ class SecurityViewModelTest {
     }
 
     @Test
-    fun `goToLocked cambia a LOCKED y limpia error`() = runTest {
-        val viewModel = buildViewModel()
-        every { securityManager.verifyPin("0000") } returns false
-        viewModel.verifyPin("0000", "PIN incorrecto", "bloqueado %1\$d s")
-        assertEquals("PIN incorrecto", viewModel.uiState.value.error)
+    fun `goToLocked cambia a LOCKED y limpia error`() =
+        runTest {
+            val viewModel = buildViewModel()
+            every { securityManager.verifyPin("0000") } returns false
+            viewModel.verifyPin("0000", "PIN incorrecto", "bloqueado %1\$d s")
+            assertEquals("PIN incorrecto", viewModel.uiState.value.error)
 
-        viewModel.goToLocked()
+            viewModel.goToLocked()
 
-        val state = viewModel.uiState.value
-        assertEquals(SecurityScreenState.LOCKED, state.screenState)
-        assertNull(state.error)
-    }
+            val state = viewModel.uiState.value
+            assertEquals(SecurityScreenState.LOCKED, state.screenState)
+            assertNull(state.error)
+        }
 
     @Test
-    fun `lockIfUnlocked bloquea cuando el estado es UNLOCKED (RF-SEC-08)`() = runTest {
-        every { securityManager.verifyPin("1234") } returns true
+    fun `lockIfUnlocked bloquea cuando el estado es UNLOCKED (RF-SEC-08)`() =
+        runTest {
+            every { securityManager.verifyPin("1234") } returns true
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem() // estado inicial (LOCKED)
-            viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
-            assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem() // estado inicial (LOCKED)
+                viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
+                assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
 
-            viewModel.lockIfUnlocked()
+                viewModel.lockIfUnlocked()
 
-            assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
+                assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
+            }
         }
-    }
 
     @Test
     fun `lockIfUnlocked no hace nada si el estado no es UNLOCKED`() {
@@ -190,53 +196,55 @@ class SecurityViewModelTest {
     }
 
     @Test
-    fun `resetPin llama a SecurityManager, limpia secureFiles y hasPin, y pasa a SETUP_PIN (RF-SEC-09)`() = runTest {
-        // Simula el caso real: el usuario estuvo desbloqueado (secureFiles con
-        // datos), luego RF-SEC-08 lo bloqueó automáticamente -- secureFiles
-        // sigue en el estado aunque la pantalla ya sea LOCKED. resetPin() debe
-        // limpiarlo igual, no solo cuando arranca vacío.
-        every { securityManager.hasPin() } returns true
-        every { securityManager.verifyPin("1234") } returns true
-        val secureFile = File(secureFolder, "documento.pdf").apply { writeText("x") }
-        every { securityManager.getSecureFiles() } returns listOf(secureFile)
+    fun `resetPin llama a SecurityManager, limpia secureFiles y hasPin, y pasa a SETUP_PIN (RF-SEC-09)`() =
+        runTest {
+            // Simula el caso real: el usuario estuvo desbloqueado (secureFiles con
+            // datos), luego RF-SEC-08 lo bloqueó automáticamente -- secureFiles
+            // sigue en el estado aunque la pantalla ya sea LOCKED. resetPin() debe
+            // limpiarlo igual, no solo cuando arranca vacío.
+            every { securityManager.hasPin() } returns true
+            every { securityManager.verifyPin("1234") } returns true
+            val secureFile = File(secureFolder, "documento.pdf").apply { writeText("x") }
+            every { securityManager.getSecureFiles() } returns listOf(secureFile)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            assertTrue(awaitItem().hasPin) // LOCKED inicial, con PIN ya configurado
-            viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
-            assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
-            viewModel.lockIfUnlocked()
-            assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                assertTrue(awaitItem().hasPin) // LOCKED inicial, con PIN ya configurado
+                viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
+                assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
+                viewModel.lockIfUnlocked()
+                assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
 
-            viewModel.resetPin()
+                viewModel.resetPin()
 
-            val reset = awaitItem()
-            assertEquals(SecurityScreenState.SETUP_PIN, reset.screenState)
-            assertFalse(reset.hasPin)
-            assertTrue(reset.secureFiles.isEmpty())
-            assertNull(reset.error)
+                val reset = awaitItem()
+                assertEquals(SecurityScreenState.SETUP_PIN, reset.screenState)
+                assertFalse(reset.hasPin)
+                assertTrue(reset.secureFiles.isEmpty())
+                assertNull(reset.error)
+            }
+            verify { securityManager.resetPinAndWipeFiles() }
         }
-        verify { securityManager.resetPinAndWipeFiles() }
-    }
 
     @Test
-    fun `verifyPin con PIN correcto desbloquea y carga los archivos seguros`() = runTest {
-        every { securityManager.verifyPin("1234") } returns true
-        val secureFile = File(secureFolder, "documento.pdf").apply { writeText("x") }
-        every { securityManager.getSecureFiles() } returns listOf(secureFile)
+    fun `verifyPin con PIN correcto desbloquea y carga los archivos seguros`() =
+        runTest {
+            every { securityManager.verifyPin("1234") } returns true
+            val secureFile = File(secureFolder, "documento.pdf").apply { writeText("x") }
+            every { securityManager.getSecureFiles() } returns listOf(secureFile)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                assertEquals(SecurityScreenState.LOCKED, awaitItem().screenState)
 
-            viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
+                viewModel.verifyPin("1234", "PIN incorrecto", "bloqueado %1\$d s")
 
-            val unlocked = awaitItem()
-            assertEquals(SecurityScreenState.UNLOCKED, unlocked.screenState)
-            assertEquals(listOf(secureFile), unlocked.secureFiles)
-            assertNull(unlocked.error)
+                val unlocked = awaitItem()
+                assertEquals(SecurityScreenState.UNLOCKED, unlocked.screenState)
+                assertEquals(listOf(secureFile), unlocked.secureFiles)
+                assertNull(unlocked.error)
+            }
         }
-    }
 
     @Test
     fun `verifyPin con PIN incorrecto muestra error y no desbloquea`() {
@@ -267,19 +275,20 @@ class SecurityViewModelTest {
     }
 
     @Test
-    fun `setupPin exitoso marca hasPin y desbloquea`() = runTest {
-        every { securityManager.setPin("1234") } returns true
+    fun `setupPin exitoso marca hasPin y desbloquea`() =
+        runTest {
+            every { securityManager.setPin("1234") } returns true
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            assertFalse(awaitItem().hasPin)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                assertFalse(awaitItem().hasPin)
 
-            viewModel.setupPin("1234", "no debería mostrarse")
+                viewModel.setupPin("1234", "no debería mostrarse")
 
-            assertTrue(awaitItem().hasPin)
-            assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
+                assertTrue(awaitItem().hasPin)
+                assertEquals(SecurityScreenState.UNLOCKED, awaitItem().screenState)
+            }
         }
-    }
 
     @Test
     fun `setupPin fallido muestra error y no cambia hasPin ni el estado de pantalla`() {
@@ -312,34 +321,44 @@ class SecurityViewModelTest {
     }
 
     @Test
-    fun `dismissSuccess limpia el successMessage`() = runTest {
-        val file = File(secureFolder.parentFile, "converted/foo.pdf").apply { parentFile?.mkdirs(); writeText("x") }
-        every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = true)
+    fun `dismissSuccess limpia el successMessage`() =
+        runTest {
+            val file =
+                File(secureFolder.parentFile, "converted/foo.pdf").apply {
+                    parentFile?.mkdirs()
+                    writeText("x")
+                }
+            every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = true)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem() // estado inicial
-            viewModel.importLocalFile(file, "ok", "error", "original conservado")
-            assertEquals("ok", awaitItem().successMessage)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem() // estado inicial
+                viewModel.importLocalFile(file, "ok", "error", "original conservado")
+                assertEquals("ok", awaitItem().successMessage)
+            }
+
+            viewModel.dismissSuccess()
+
+            assertNull(viewModel.uiState.value.successMessage)
         }
-
-        viewModel.dismissSuccess()
-
-        assertNull(viewModel.uiState.value.successMessage)
-    }
 
     @Test
-    fun `importLocalFile exitoso con original borrado muestra successMessage`() = runTest {
-        val file = File(secureFolder.parentFile, "converted/foo.pdf").apply { parentFile?.mkdirs(); writeText("x") }
-        every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = true)
+    fun `importLocalFile exitoso con original borrado muestra successMessage`() =
+        runTest {
+            val file =
+                File(secureFolder.parentFile, "converted/foo.pdf").apply {
+                    parentFile?.mkdirs()
+                    writeText("x")
+                }
+            every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = true)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.importLocalFile(file, "Archivo protegido", "Error", "Original conservado")
-            assertEquals("Archivo protegido", awaitItem().successMessage)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.importLocalFile(file, "Archivo protegido", "Error", "Original conservado")
+                assertEquals("Archivo protegido", awaitItem().successMessage)
+            }
         }
-    }
 
     // Pedido explícito del usuario 2026-09-12 (feedback de testers): este
     // aviso pasó de mostrarse como successMessage (mismo Snackbar genérico
@@ -347,90 +366,103 @@ class SecurityViewModelTest {
     // SecurityScreen muestra en un diálogo bloqueante -- ver
     // originalNotDeletedWarning en SecurityViewModel.
     @Test
-    fun `importLocalFile exitoso con original NO borrado muestra originalNotDeletedWarning`() = runTest {
-        val file = File(secureFolder.parentFile, "converted/foo.pdf").apply { parentFile?.mkdirs(); writeText("x") }
-        every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = false)
+    fun `importLocalFile exitoso con original NO borrado muestra originalNotDeletedWarning`() =
+        runTest {
+            val file =
+                File(secureFolder.parentFile, "converted/foo.pdf").apply {
+                    parentFile?.mkdirs()
+                    writeText("x")
+                }
+            every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = true, originalDeleted = false)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.importLocalFile(file, "Archivo protegido", "Error", "Original conservado")
-            val state = awaitItem()
-            assertEquals("Original conservado", state.originalNotDeletedWarning)
-            assertNull(state.successMessage)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.importLocalFile(file, "Archivo protegido", "Error", "Original conservado")
+                val state = awaitItem()
+                assertEquals("Original conservado", state.originalNotDeletedWarning)
+                assertNull(state.successMessage)
+            }
         }
-    }
 
     @Test
-    fun `importLocalFile fallido muestra error`() = runTest {
-        val file = File(secureFolder.parentFile, "converted/foo.pdf").apply { parentFile?.mkdirs(); writeText("x") }
-        every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = false, originalDeleted = false)
+    fun `importLocalFile fallido muestra error`() =
+        runTest {
+            val file =
+                File(secureFolder.parentFile, "converted/foo.pdf").apply {
+                    parentFile?.mkdirs()
+                    writeText("x")
+                }
+            every { securityManager.moveToSecure(file) } returns SecureMoveResult(success = false, originalDeleted = false)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.importLocalFile(file, "Archivo protegido", "Error al proteger", "Original conservado")
-            assertEquals("Error al proteger", awaitItem().error)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.importLocalFile(file, "Archivo protegido", "Error al proteger", "Original conservado")
+                assertEquals("Error al proteger", awaitItem().error)
+            }
         }
-    }
 
     // ── PDF Password ──────────────────────────────────────────────────────────
 
     @Test
-    fun `protectPdfWithPassword exitoso actualiza pdfOutputFile y successMessage`() = runTest {
-        val context = mockk<Context>(relaxed = true)
-        val uri = mockk<android.net.Uri>(relaxed = true)
-        val outputFile = File(secureFolder, "protegido.pdf")
-        coEvery {
-            pdfPasswordUseCase.protect(context, uri, "1234", "doc", testMessages)
-        } returns PdfPasswordResult.Success(outputFile, "PDF protegido")
+    fun `protectPdfWithPassword exitoso actualiza pdfOutputFile y successMessage`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            val outputFile = File(secureFolder, "protegido.pdf")
+            coEvery {
+                pdfPasswordUseCase.protect(context, uri, "1234", "doc", testMessages)
+            } returns PdfPasswordResult.Success(outputFile, "PDF protegido")
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem() // estado inicial
-            viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "Contraseña incorrecta")
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem() // estado inicial
+                viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "Contraseña incorrecta")
 
-            val result = awaitUntil { !it.isPdfProcessing }
-            assertEquals(outputFile, result.pdfOutputFile)
-            assertEquals("PDF protegido", result.successMessage)
+                val result = awaitUntil { !it.isPdfProcessing }
+                assertEquals(outputFile, result.pdfOutputFile)
+                assertEquals("PDF protegido", result.successMessage)
+            }
         }
-    }
 
     @Test
-    fun `protectPdfWithPassword con error del UseCase actualiza pdfPasswordError`() = runTest {
-        val context = mockk<Context>(relaxed = true)
-        val uri = mockk<android.net.Uri>(relaxed = true)
-        coEvery {
-            pdfPasswordUseCase.protect(context, uri, "1234", "doc", testMessages)
-        } returns PdfPasswordResult.Error("No se pudo leer el PDF")
+    fun `protectPdfWithPassword con error del UseCase actualiza pdfPasswordError`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            coEvery {
+                pdfPasswordUseCase.protect(context, uri, "1234", "doc", testMessages)
+            } returns PdfPasswordResult.Error("No se pudo leer el PDF")
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem() // estado inicial
-            viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "Contraseña incorrecta")
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem() // estado inicial
+                viewModel.protectPdfWithPassword(context, uri, "1234", "doc", testMessages, "Contraseña incorrecta")
 
-            val result = awaitUntil { !it.isPdfProcessing }
-            assertEquals("No se pudo leer el PDF", result.pdfPasswordError)
+                val result = awaitUntil { !it.isPdfProcessing }
+                assertEquals("No se pudo leer el PDF", result.pdfPasswordError)
+            }
         }
-    }
 
     @Test
-    fun `removePdfPassword con contraseña incorrecta usa wrongPasswordMessage`() = runTest {
-        val context = mockk<Context>(relaxed = true)
-        val uri = mockk<android.net.Uri>(relaxed = true)
-        coEvery {
-            pdfPasswordUseCase.removePassword(context, uri, "0000", "doc", testMessages)
-        } returns PdfPasswordResult.WrongPassword
+    fun `removePdfPassword con contraseña incorrecta usa wrongPasswordMessage`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            coEvery {
+                pdfPasswordUseCase.removePassword(context, uri, "0000", "doc", testMessages)
+            } returns PdfPasswordResult.WrongPassword
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem() // estado inicial
-            viewModel.removePdfPassword(context, uri, "0000", "doc", testMessages, "Contraseña incorrecta")
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem() // estado inicial
+                viewModel.removePdfPassword(context, uri, "0000", "doc", testMessages, "Contraseña incorrecta")
 
-            val result = awaitUntil { !it.isPdfProcessing }
-            assertEquals("Contraseña incorrecta", result.pdfPasswordError)
+                val result = awaitUntil { !it.isPdfProcessing }
+                assertEquals("Contraseña incorrecta", result.pdfPasswordError)
+            }
         }
-    }
 
     @Test
     fun `setPdfPasswordMode actualiza el modo y limpia error y resultado previos`() {
@@ -448,57 +480,60 @@ class SecurityViewModelTest {
     // ── Archivos ──────────────────────────────────────────────────────────────
 
     @Test
-    fun `deleteFile llama a SecurityManager y recarga secureFiles`() = runTest {
-        val file = File(secureFolder, "a.pdf")
-        every { securityManager.getSecureFiles() } returns listOf(file)
-        every { securityManager.deleteSecureFile(file) } returns true
+    fun `deleteFile llama a SecurityManager y recarga secureFiles`() =
+        runTest {
+            val file = File(secureFolder, "a.pdf")
+            every { securityManager.getSecureFiles() } returns listOf(file)
+            every { securityManager.deleteSecureFile(file) } returns true
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.deleteFile(file, "no se pudo eliminar")
-            assertEquals(listOf(file), awaitItem().secureFiles)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.deleteFile(file, "no se pudo eliminar")
+                assertEquals(listOf(file), awaitItem().secureFiles)
+            }
+            verify { securityManager.deleteSecureFile(file) }
         }
-        verify { securityManager.deleteSecureFile(file) }
-    }
 
     // Hallazgo real de la auditoría general 2026-09-17: deleteSecureFile()
     // puede devolver false sin lanzar excepción (File.delete() falla) --
     // antes se ignoraba el resultado y la metadata (favorito/alias/
     // anotaciones) se limpiaba igual aunque el archivo siguiera en disco.
     @Test
-    fun `deleteFile no limpia metadata ni notifica exito si el borrado real falla`() = runTest {
-        val file = File(secureFolder, "a.pdf")
-        every { securityManager.getSecureFiles() } returns listOf(file)
-        every { securityManager.deleteSecureFile(file) } returns false
+    fun `deleteFile no limpia metadata ni notifica exito si el borrado real falla`() =
+        runTest {
+            val file = File(secureFolder, "a.pdf")
+            every { securityManager.getSecureFiles() } returns listOf(file)
+            every { securityManager.deleteSecureFile(file) } returns false
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.deleteFile(file, "no se pudo eliminar")
-            assertEquals("no se pudo eliminar", awaitItem().error)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.deleteFile(file, "no se pudo eliminar")
+                assertEquals("no se pudo eliminar", awaitItem().error)
+            }
+            coVerify(exactly = 0) { documentIdentityMaintenance.onPermanentlyDeleted(any()) }
         }
-        coVerify(exactly = 0) { documentIdentityMaintenance.onPermanentlyDeleted(any()) }
-    }
 
     @Test
-    fun `restoreFile llama a SecurityManager y recarga secureFiles`() = runTest {
-        val context = mockk<Context>(relaxed = true)
-        every { context.filesDir } returns secureFolder.parentFile
-        val file = File(secureFolder, "a.pdf")
-        val destFile = File(secureFolder.parentFile, "converted/a.pdf")
-        every { securityManager.moveFromSecure(file, any()) } returns
-            SecureMoveResult(success = true, originalDeleted = true, destFile = destFile)
-        every { securityManager.getSecureFiles() } returns listOf(file)
+    fun `restoreFile llama a SecurityManager y recarga secureFiles`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            every { context.filesDir } returns secureFolder.parentFile
+            val file = File(secureFolder, "a.pdf")
+            val destFile = File(secureFolder.parentFile, "converted/a.pdf")
+            every { securityManager.moveFromSecure(file, any()) } returns
+                SecureMoveResult(success = true, originalDeleted = true, destFile = destFile)
+            every { securityManager.getSecureFiles() } returns listOf(file)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.restoreFile(file, context, "no se pudo restaurar", "no se pudo eliminar la copia")
-            assertEquals(listOf(file), awaitItem().secureFiles)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.restoreFile(file, context, "no se pudo restaurar", "no se pudo eliminar la copia")
+                assertEquals(listOf(file), awaitItem().secureFiles)
+            }
+            verify { securityManager.moveFromSecure(file, File(secureFolder.parentFile, "converted")) }
         }
-        verify { securityManager.moveFromSecure(file, File(secureFolder.parentFile, "converted")) }
-    }
 
     // Hallazgo real de la revisión adversarial de este mismo lote (M1): la
     // primera versión de restoreFile() solo miraba `originalDeleted`, no
@@ -506,37 +541,39 @@ class SecurityViewModelTest {
     // igual mostraba "Archivo restaurado, no se pudo borrar la copia" en vez
     // de un error real, mintiendo sobre un duplicado que nunca existió.
     @Test
-    fun `restoreFile muestra un error y no toca secureFiles si moveFromSecure falla por completo`() = runTest {
-        val context = mockk<Context>(relaxed = true)
-        every { context.filesDir } returns secureFolder.parentFile
-        val file = File(secureFolder, "a.pdf")
-        every { securityManager.moveFromSecure(file, any()) } returns
-            SecureMoveResult(success = false, originalDeleted = false, destFile = null)
+    fun `restoreFile muestra un error y no toca secureFiles si moveFromSecure falla por completo`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            every { context.filesDir } returns secureFolder.parentFile
+            val file = File(secureFolder, "a.pdf")
+            every { securityManager.moveFromSecure(file, any()) } returns
+                SecureMoveResult(success = false, originalDeleted = false, destFile = null)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.restoreFile(file, context, "no se pudo restaurar", "no se pudo eliminar la copia")
-            val afterFailure = awaitItem()
-            assertEquals("no se pudo restaurar", afterFailure.error)
-            assertNull(afterFailure.originalNotDeletedWarning)
-            assertTrue(afterFailure.secureFiles.isEmpty(), "no debe tocar secureFiles si la restauración falló")
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.restoreFile(file, context, "no se pudo restaurar", "no se pudo eliminar la copia")
+                val afterFailure = awaitItem()
+                assertEquals("no se pudo restaurar", afterFailure.error)
+                assertNull(afterFailure.originalNotDeletedWarning)
+                assertTrue(afterFailure.secureFiles.isEmpty(), "no debe tocar secureFiles si la restauración falló")
+            }
+            coVerify(exactly = 0) { documentIdentityMaintenance.onIdChanged(any(), any()) }
         }
-        coVerify(exactly = 0) { documentIdentityMaintenance.onIdChanged(any(), any()) }
-    }
 
     @Test
-    fun `reloadFiles recarga secureFiles desde SecurityManager`() = runTest {
-        val file = File(secureFolder, "a.pdf")
-        every { securityManager.getSecureFiles() } returns listOf(file)
+    fun `reloadFiles recarga secureFiles desde SecurityManager`() =
+        runTest {
+            val file = File(secureFolder, "a.pdf")
+            every { securityManager.getSecureFiles() } returns listOf(file)
 
-        val viewModel = buildViewModel()
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.reloadFiles()
-            assertEquals(listOf(file), awaitItem().secureFiles)
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.reloadFiles()
+                assertEquals(listOf(file), awaitItem().secureFiles)
+            }
         }
-    }
 
     // ── Biometría ─────────────────────────────────────────────────────────────
 

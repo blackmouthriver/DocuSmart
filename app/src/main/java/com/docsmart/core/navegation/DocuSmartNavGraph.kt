@@ -5,8 +5,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.core.content.FileProvider
-import com.docsmart.R
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,22 +14,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.docsmart.R
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.data.canonicalMediaUri
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.core.ui.theme.ThemeManager
+import com.docsmart.features.agenda.presentation.AgendaScreen
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.presentation.ConverterScreen
 import com.docsmart.features.home.presentation.HomeScreen
 import com.docsmart.features.library.presentation.LibraryScreen
+import com.docsmart.features.library.presentation.TrashScreen
 import com.docsmart.features.onboarding.presentation.OnboardingScreen
 import com.docsmart.features.onboarding.presentation.hasCompletedOnboarding
 import com.docsmart.features.pdftools.presentation.PdfToolsScreen
@@ -43,24 +46,21 @@ import com.docsmart.features.scanner.presentation.ScanResultDocumentActions
 import com.docsmart.features.scanner.presentation.ScanResultScreen
 import com.docsmart.features.scanner.presentation.ScannerScreen
 import com.docsmart.features.security.presentation.PdfPasswordScreen
+import com.docsmart.features.security.presentation.SecurityMenuScreen
 import com.docsmart.features.security.presentation.SecurityScreen
 import com.docsmart.features.settings.presentation.SettingsScreen
 import com.docsmart.features.splash.presentation.SplashDocuSmartScreen
 import com.docsmart.features.splash.presentation.SplashMouthBlackScreen
 import com.docsmart.features.study.presentation.StudyScreen
-import com.docsmart.features.agenda.presentation.AgendaScreen
-import java.io.File
-import com.docsmart.features.library.presentation.TrashScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
-import com.docsmart.features.security.presentation.SecurityMenuScreen
-import com.docsmart.core.analytics.DocuSmartAnalytics
 import timber.log.Timber
+import java.io.File
 
 @Composable
 fun DocuSmartNavGraph(
-    navController  : NavHostController,
-    themeManager   : ThemeManager,
-    languageManager: LanguageManager
+    navController: NavHostController,
+    themeManager: ThemeManager,
+    languageManager: LanguageManager,
 ) {
     // Antes no había ninguna transición configurada -- NavHost usaba el
     // comportamiento por defecto de Navigation-Compose (un corte seco entre
@@ -70,36 +70,37 @@ fun DocuSmartNavGraph(
     // pantallas del grafo sin tener que tocar cada `composable {}` una por
     // una. Es puramente de movimiento -- no cambia ningún color ni estilo.
     val transitionSpec = tween<Float>(280)
-    val slideSpec       = tween<androidx.compose.ui.unit.IntOffset>(280)
+    val slideSpec = tween<androidx.compose.ui.unit.IntOffset>(280)
 
     // logScreenView centralizado acá en vez de en cada pantalla individual
     // (~17 destinos) -- un único listener de Navigation-Compose cubre todo
     // el grafo sin tocar cada `composable {}` uno por uno.
     DisposableEffect(navController) {
-        val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, _ ->
-            destination.route?.let { route ->
-                DocuSmartAnalytics.logScreenView(screenNameForRoute(route))
+        val listener =
+            androidx.navigation.NavController.OnDestinationChangedListener { _, destination, _ ->
+                destination.route?.let { route ->
+                    DocuSmartAnalytics.logScreenView(screenNameForRoute(route))
+                }
             }
-        }
         navController.addOnDestinationChangedListener(listener)
         onDispose { navController.removeOnDestinationChangedListener(listener) }
     }
 
     NavHost(
-        navController      = navController,
-        startDestination   = NavRoutes.SplashMouthBlack.route,
-        enterTransition    = {
+        navController = navController,
+        startDestination = NavRoutes.SplashMouthBlack.route,
+        enterTransition = {
             slideInHorizontally(slideSpec) { it / 4 } + fadeIn(transitionSpec)
         },
-        exitTransition     = {
+        exitTransition = {
             slideOutHorizontally(slideSpec) { -it / 4 } + fadeOut(transitionSpec)
         },
         popEnterTransition = {
             slideInHorizontally(slideSpec) { -it / 4 } + fadeIn(transitionSpec)
         },
-        popExitTransition  = {
+        popExitTransition = {
             slideOutHorizontally(slideSpec) { it / 4 } + fadeOut(transitionSpec)
-        }
+        },
     ) {
         splashMouthBlackComposable(navController)
         splashDocuSmartComposable(navController)
@@ -110,52 +111,54 @@ fun DocuSmartNavGraph(
 
         // ── Converter ─────────────────────────────────────────────────────────
         composable(
-            route     = NavRoutes.Converter.route,
-            arguments = listOf(
-                navArgument("initialType") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                },
-                navArgument("initialFileUri") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                },
-                navArgument("initialFileCategory") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                }
-            )
+            route = NavRoutes.Converter.route,
+            arguments =
+                listOf(
+                    navArgument("initialType") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("initialFileUri") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("initialFileCategory") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
         ) { backStackEntry ->
             ConverterScreen(
-                initialType         = backStackEntry.arguments?.getString("initialType"),
-                initialFileUri      = backStackEntry.arguments?.getString("initialFileUri"),
+                initialType = backStackEntry.arguments?.getString("initialType"),
+                initialFileUri = backStackEntry.arguments?.getString("initialFileUri"),
                 initialFileCategory = backStackEntry.arguments?.getString("initialFileCategory"),
-                onOpenDocument      = { path -> navController.navigate(NavRoutes.Viewer.createRoute(path)) }
+                onOpenDocument = { path -> navController.navigate(NavRoutes.Viewer.createRoute(path)) },
             )
         }
 
         // ── PDF Tools ─────────────────────────────────────────────────────────
         composable(
-            route     = NavRoutes.PdfTools.route,
-            arguments = listOf(
-                navArgument("initialTool") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                },
-                navArgument("initialFileUri") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                }
-            )
+            route = NavRoutes.PdfTools.route,
+            arguments =
+                listOf(
+                    navArgument("initialTool") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("initialFileUri") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
         ) { backStackEntry ->
             PdfToolsScreen(
-                initialTool    = backStackEntry.arguments?.getString("initialTool"),
-                initialFileUri = backStackEntry.arguments?.getString("initialFileUri")
+                initialTool = backStackEntry.arguments?.getString("initialTool"),
+                initialFileUri = backStackEntry.arguments?.getString("initialFileUri"),
             )
         }
 
@@ -172,30 +175,31 @@ fun DocuSmartNavGraph(
         // ── Security Menu ─────────────────────────────────────────────────────
         composable(NavRoutes.Security.route) {
             SecurityMenuScreen(
-                onBack         = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 onSecureFolder = { navController.navigate(NavRoutes.SecureFolder.route) },
-                onPdfPassword  = { navController.navigate(NavRoutes.PdfPassword.route) }
+                onPdfPassword = { navController.navigate(NavRoutes.PdfPassword.route) },
             )
         }
 
         // ── Carpeta Segura ────────────────────────────────────────────────────
         composable(
-            route     = NavRoutes.SecureFolder.route,
-            arguments = listOf(
-                navArgument("pendingFileUri") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                }
-            )
+            route = NavRoutes.SecureFolder.route,
+            arguments =
+                listOf(
+                    navArgument("pendingFileUri") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
         ) { backStackEntry ->
             SecurityScreen(
-                onBack          = { navController.popBackStack() },
-                pendingFileUri  = backStackEntry.arguments?.getString("pendingFileUri"),
+                onBack = { navController.popBackStack() },
+                pendingFileUri = backStackEntry.arguments?.getString("pendingFileUri"),
                 // Hallazgo #53 (revisión general 2026-09-16): navega al Visor
                 // con la copia efímera de vista previa (ruta local en
                 // cacheDir), sin restaurar el archivo de Carpeta Segura.
-                onPreviewFile   = { path -> navController.navigate(NavRoutes.Viewer.createRoute(path)) }
+                onPreviewFile = { path -> navController.navigate(NavRoutes.Viewer.createRoute(path)) },
             )
         }
 
@@ -207,76 +211,81 @@ fun DocuSmartNavGraph(
         // ── Study ─────────────────────────────────────────────────────────────
         composable(
             route = NavRoutes.Study.route,
-            arguments = listOf(
-                navArgument("tab") {
-                    type = NavType.IntType
-                    defaultValue = 0
-                },
-                navArgument("openNoteId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
+            arguments =
+                listOf(
+                    navArgument("tab") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    },
+                    navArgument("openNoteId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
         ) { backStackEntry ->
             StudyScreen(
-                onBack       = { navController.popBackStack() },
-                initialTab   = backStackEntry.arguments?.getInt("tab") ?: 0,
-                openNoteId   = backStackEntry.arguments?.getString("openNoteId"),
-                onOpenAgenda = { navController.navigate(NavRoutes.Agenda.createRoute()) }
+                onBack = { navController.popBackStack() },
+                initialTab = backStackEntry.arguments?.getInt("tab") ?: 0,
+                openNoteId = backStackEntry.arguments?.getString("openNoteId"),
+                onOpenAgenda = { navController.navigate(NavRoutes.Agenda.createRoute()) },
             )
         }
 
         // ── Agenda (HU-65) ────────────────────────────────────────────────────
         composable(
             route = NavRoutes.Agenda.route,
-            arguments = listOf(navArgument("openEventId") {
-                type = NavType.StringType
-                nullable = true
-                defaultValue = null
-            })
+            arguments =
+                listOf(
+                    navArgument("openEventId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
         ) { backStackEntry ->
             AgendaScreen(
-                onBack      = { navController.popBackStack() },
-                openEventId = backStackEntry.arguments?.getString("openEventId")
+                onBack = { navController.popBackStack() },
+                openEventId = backStackEntry.arguments?.getString("openEventId"),
             )
         }
 
         // ── QR Reader ─────────────────────────────────────────────────────────
         composable(NavRoutes.QrReader.route) {
             QrReaderScreen(
-                onBack         = { navController.popBackStack() },
-                onHistoryClick = { navController.navigate(NavRoutes.QrHistory.route) }
+                onBack = { navController.popBackStack() },
+                onHistoryClick = { navController.navigate(NavRoutes.QrHistory.route) },
             )
         }
 
         // ── QR Creator ────────────────────────────────────────────────────────
         composable(
-            route     = NavRoutes.QrCreator.route,
-            arguments = listOf(
-                navArgument("initialFileUri") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                },
-                navArgument("initialFileType") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                },
-                navArgument("initialFileName") {
-                    type         = NavType.StringType
-                    nullable     = true
-                    defaultValue = null
-                }
-            )
+            route = NavRoutes.QrCreator.route,
+            arguments =
+                listOf(
+                    navArgument("initialFileUri") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("initialFileType") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("initialFileName") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
         ) { backStackEntry ->
             QrCreatorScreen(
-                onBack          = { navController.popBackStack() },
-                initialFileUri  = backStackEntry.arguments?.getString("initialFileUri"),
+                onBack = { navController.popBackStack() },
+                initialFileUri = backStackEntry.arguments?.getString("initialFileUri"),
                 initialFileType = backStackEntry.arguments?.getString("initialFileType"),
                 initialFileName = backStackEntry.arguments?.getString("initialFileName"),
-                onHistoryClick  = { navController.navigate(NavRoutes.QrHistory.route) }
+                onHistoryClick = { navController.navigate(NavRoutes.QrHistory.route) },
             )
         }
 
@@ -302,45 +311,46 @@ fun DocuSmartNavGraph(
 // "converter?initialType={initialType}&...", "viewer/{documentId}"), nunca
 // los valores reales -- se recorta antes del primer "?"/"/" para agrupar
 // todas las variantes de una misma pantalla bajo un solo nombre en Firebase.
-private val SCREEN_NAMES_BY_ROUTE = mapOf(
-    "splash_mouthblack" to "SplashMouthBlack",
-    "splash_docusmart"  to "SplashDocuSmart",
-    "onboarding"        to "Onboarding",
-    "home"              to "Home",
-    "library"           to "Library",
-    "viewer"            to "Viewer",
-    "converter"         to "Converter",
-    "pdf_tools"         to "PdfTools",
-    "settings"          to "Settings",
-    "premium"           to "Premium",
-    "scanner"           to "Scanner",
-    "scan_result"       to "ScanResult",
-    "security"          to "SecurityMenu",
-    "secure_folder"     to "SecureFolder",
-    "pdf_password"      to "PdfPassword",
-    "study"             to "Study",
-    "qr_reader"         to "QrReader",
-    "qr_creator"        to "QrCreator",
-    "qr_history"        to "QrHistory",
-    "trash"             to "Trash"
-)
+private val SCREEN_NAMES_BY_ROUTE =
+    mapOf(
+        "splash_mouthblack" to "SplashMouthBlack",
+        "splash_docusmart" to "SplashDocuSmart",
+        "onboarding" to "Onboarding",
+        "home" to "Home",
+        "library" to "Library",
+        "viewer" to "Viewer",
+        "converter" to "Converter",
+        "pdf_tools" to "PdfTools",
+        "settings" to "Settings",
+        "premium" to "Premium",
+        "scanner" to "Scanner",
+        "scan_result" to "ScanResult",
+        "security" to "SecurityMenu",
+        "secure_folder" to "SecureFolder",
+        "pdf_password" to "PdfPassword",
+        "study" to "Study",
+        "qr_reader" to "QrReader",
+        "qr_creator" to "QrCreator",
+        "qr_history" to "QrHistory",
+        "trash" to "Trash",
+    )
 
 private fun screenNameForRoute(route: String): String {
     val base = route.substringBefore("?").substringBefore("/")
     return SCREEN_NAMES_BY_ROUTE[base] ?: route
 }
 
-private fun DocumentType.toConverterCategoryOrNull(): String? = when (this) {
-    DocumentType.IMAGE                 -> "Imagen"
-    DocumentType.PDF, DocumentType.OCR -> "PDF" // OCR es un PDF escaneado
-    DocumentType.WORD                  -> "Word"
-    DocumentType.EXCEL                 -> "Excel"
-    DocumentType.POWERPOINT            -> "PowerPoint"
-    DocumentType.TEXT, DocumentType.ZIP -> null
-}
+private fun DocumentType.toConverterCategoryOrNull(): String? =
+    when (this) {
+        DocumentType.IMAGE -> "Imagen"
+        DocumentType.PDF, DocumentType.OCR -> "PDF" // OCR es un PDF escaneado
+        DocumentType.WORD -> "Word"
+        DocumentType.EXCEL -> "Excel"
+        DocumentType.POWERPOINT -> "PowerPoint"
+        DocumentType.TEXT, DocumentType.ZIP -> null
+    }
 
-private fun DocumentType.toQrFileType(): String =
-    if (this == DocumentType.IMAGE) "image" else "document"
+private fun DocumentType.toQrFileType(): String = if (this == DocumentType.IMAGE) "image" else "document"
 
 private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
     // Hallazgo real de la revisión adversarial de la octava ronda (Alta):
@@ -361,9 +371,9 @@ private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
             // `document.id` puede ser una ruta absoluta sin esquema (ver
             // comentario de `toContentUri()`), que `Uri.parse()` no
             // reconstruye como URI válido -- hay que normalizar siempre.
-            initialFileUri      = document.toContentUri().toString(),
-            initialFileCategory = document.type.toConverterCategoryOrNull()
-        )
+            initialFileUri = document.toContentUri().toString(),
+            initialFileCategory = document.type.toConverterCategoryOrNull(),
+        ),
     )
 }
 
@@ -378,7 +388,10 @@ private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
 // documento propio de la app (id = ruta absoluta) hay que envolverlo con
 // FileProvider ANTES de generar el QR, igual que ya hace
 // ViewerViewModel.shareableUri() para "Compartir".
-private fun safeShareableUriOrNull(context: Context, document: DocumentUiModel): Uri? {
+private fun safeShareableUriOrNull(
+    context: Context,
+    document: DocumentUiModel,
+): Uri? {
     if (document.id.startsWith("content://")) return Uri.parse(document.id)
     return try {
         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(document.id))
@@ -391,11 +404,16 @@ private fun safeShareableUriOrNull(context: Context, document: DocumentUiModel):
     }
 }
 
-private fun NavHostController.navigateToQrCreator(context: Context, document: DocumentUiModel) {
+private fun NavHostController.navigateToQrCreator(
+    context: Context,
+    document: DocumentUiModel,
+) {
     val safeUri = safeShareableUriOrNull(context, document)
     if (safeUri == null) {
         Toast.makeText(
-            context, context.getString(R.string.qr_document_not_shareable), Toast.LENGTH_SHORT
+            context,
+            context.getString(R.string.qr_document_not_shareable),
+            Toast.LENGTH_SHORT,
         ).show()
         return
     }
@@ -404,10 +422,10 @@ private fun NavHostController.navigateToQrCreator(context: Context, document: Do
     // documento).
     navigate(
         NavRoutes.QrCreator.createRoute(
-            initialFileUri  = safeUri.toString(),
+            initialFileUri = safeUri.toString(),
             initialFileType = document.type.toQrFileType(),
-            initialFileName = document.name
-        )
+            initialFileName = document.name,
+        ),
     )
 }
 
@@ -439,7 +457,7 @@ private fun NavGraphBuilder.splashMouthBlackComposable(navController: NavHostCon
                 navController.navigate(NavRoutes.SplashDocuSmart.route) {
                     popUpTo(NavRoutes.SplashMouthBlack.route) { inclusive = true }
                 }
-            }
+            },
         )
     }
 }
@@ -451,15 +469,17 @@ private fun NavGraphBuilder.splashDocuSmartComposable(navController: NavHostCont
         SplashDocuSmartScreen(
             onFinished = {
                 // Primera vez → Onboarding / Ya visto → Home
-                val destination = if (!hasCompletedOnboarding(context))
-                    NavRoutes.Onboarding.route
-                else
-                    NavRoutes.Home.route
+                val destination =
+                    if (!hasCompletedOnboarding(context)) {
+                        NavRoutes.Onboarding.route
+                    } else {
+                        NavRoutes.Home.route
+                    }
 
                 navController.navigate(destination) {
                     popUpTo(NavRoutes.SplashDocuSmart.route) { inclusive = true }
                 }
-            }
+            },
         )
     }
 }
@@ -484,7 +504,7 @@ private fun NavGraphBuilder.onboardingComposable(navController: NavHostControlle
                     popUpTo(NavRoutes.Home.route) { inclusive = false }
                     launchSingleTop = true
                 }
-            }
+            },
         )
     }
 }
@@ -500,8 +520,9 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                     // HomeScreen.kt openFileLauncher) -- sin esto, borrar
                     // este documento más tarde desde Biblioteca/Recientes
                     // fallaba en silencio.
-                    val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    val flags =
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     context.contentResolver.takePersistableUriPermission(pickedUri, flags)
                 } catch (e: Exception) {
                     Timber.e("Error permiso: ${e.message}")
@@ -526,16 +547,17 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
                 // loadDocumentsFromDownloads()/loadImagesFromMediaStore()
                 // para el MISMO archivo -- mismo `_id`, string distinto.
                 // canonicalMediaUri() normaliza ambos casos a la misma forma.
-                val resolved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    try {
-                        MediaStore.getMediaUri(context, pickedUri) ?: pickedUri
-                    } catch (e: Exception) {
-                        Timber.w("No se pudo resolver a Uri de MediaStore: ${e.message}")
+                val resolved =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        try {
+                            MediaStore.getMediaUri(context, pickedUri) ?: pickedUri
+                        } catch (e: Exception) {
+                            Timber.w("No se pudo resolver a Uri de MediaStore: ${e.message}")
+                            pickedUri
+                        }
+                    } else {
                         pickedUri
                     }
-                } else {
-                    pickedUri
-                }
                 val uri = canonicalMediaUri(resolved)
                 navController.navigate(NavRoutes.Viewer.createRoute(uri.toString()))
             },
@@ -555,40 +577,40 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
             // sin este guard a onStudy/onDocumentClick (tab/documentId
             // varían por toque) y a los atajos que navegan con un
             // documento (onConvertDocument y el resto, más abajo).
-            onScan      = { navController.navigate(NavRoutes.Scanner.route) { launchSingleTop = true } },
-            onConvert   = { navController.navigate(NavRoutes.Converter.createRoute()) { launchSingleTop = true } },
+            onScan = { navController.navigate(NavRoutes.Scanner.route) { launchSingleTop = true } },
+            onConvert = { navController.navigate(NavRoutes.Converter.createRoute()) { launchSingleTop = true } },
             // Acceso rápido "Img→PDF": abre el Convertidor ya en Imagen→PDF
             // en vez del genérico -- antes iba al mismo lugar que el botón
             // "Convertir" grande, sin ninguna diferencia real entre los dos.
             onQuickConvertImageToPdf = {
                 navController.navigate(
-                    NavRoutes.Converter.createRoute(ConversionType.IMAGE_TO_PDF.name)
+                    NavRoutes.Converter.createRoute(ConversionType.IMAGE_TO_PDF.name),
                 ) { launchSingleTop = true }
             },
-            onSecurity  = { navController.navigate(NavRoutes.Security.route) { launchSingleTop = true } },
+            onSecurity = { navController.navigate(NavRoutes.Security.route) { launchSingleTop = true } },
             // Sin launchSingleTop: `tab` varía según qué acceso rápido se
             // toque (Estudio/Notas/Pomodoro comparten esta misma lambda
             // con tabs distintos).
-            onStudy     = { tab -> navController.navigate(NavRoutes.Study.createRoute(tab)) },
-            onSeeAll    = { navController.navigate(NavRoutes.Library.route) { launchSingleTop = true } },
-            onQrReader  = { navController.navigate(NavRoutes.QrReader.route) { launchSingleTop = true } },
+            onStudy = { tab -> navController.navigate(NavRoutes.Study.createRoute(tab)) },
+            onSeeAll = { navController.navigate(NavRoutes.Library.route) { launchSingleTop = true } },
+            onQrReader = { navController.navigate(NavRoutes.QrReader.route) { launchSingleTop = true } },
             // Bug real corregido 2026-09-08: navegaba con `NavRoutes.QrCreator.route`,
             // la plantilla cruda de la ruta ("...&initialFileName={initialFileName}")
             // -- al no pasar por `createRoute()`, esos marcadores de posición
             // literales quedaban como el valor real del argumento (se veía el
             // texto "{initialFileName}" en la pantalla en vez de un campo vacío).
             onQrCreator = { navController.navigate(NavRoutes.QrCreator.createRoute()) { launchSingleTop = true } },
-            onTrash     = { navController.navigate(NavRoutes.Trash.route) { launchSingleTop = true } },
+            onTrash = { navController.navigate(NavRoutes.Trash.route) { launchSingleTop = true } },
             // Sin launchSingleTop: `documentId` varía según qué tarjeta de
             // Recientes se toque.
             onDocumentClick = { documentId ->
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
             },
-            onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
+            onConvertDocument = { doc -> navController.navigateToConvert(doc) },
             onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(context, doc) },
-            onMakeSearchableDocument   = { doc -> navController.navigateToOcr(doc) },
-            onSignDocument             = { doc -> navController.navigateToSign(doc) },
-            onMoveToSecureFolderDocument = { doc -> navController.navigateToSecureFolder(doc) }
+            onMakeSearchableDocument = { doc -> navController.navigateToOcr(doc) },
+            onSignDocument = { doc -> navController.navigateToSign(doc) },
+            onMoveToSecureFolderDocument = { doc -> navController.navigateToSecureFolder(doc) },
         )
     }
 }
@@ -599,7 +621,8 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
         val context = LocalContext.current
         LibraryScreen(
             onDocumentClick = { documentId ->
-                val isUri = documentId.startsWith("content://") ||
+                val isUri =
+                    documentId.startsWith("content://") ||
                         documentId.startsWith("file://") ||
                         documentId.startsWith("/")
                 if (isUri && documentId.startsWith("content://")) {
@@ -607,7 +630,7 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
                         val uri = Uri.parse(documentId)
                         context.contentResolver.takePersistableUriPermission(
                             uri,
-                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
                         )
                     } catch (e: Exception) {
                         Timber.w("No se pudo persistir permiso: ${e.message}")
@@ -615,12 +638,12 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
                 }
                 navController.navigate(NavRoutes.Viewer.createRoute(documentId))
             },
-            onTrashClick    = { navController.navigate(NavRoutes.Trash.route) },
-            onConvertClick  = { doc -> navController.navigateToConvert(doc) },
+            onTrashClick = { navController.navigate(NavRoutes.Trash.route) },
+            onConvertClick = { doc -> navController.navigateToConvert(doc) },
             onCreateQrClick = { doc -> navController.navigateToQrCreator(context, doc) },
-            onMakeSearchableClick   = { doc -> navController.navigateToOcr(doc) },
-            onSignClick             = { doc -> navController.navigateToSign(doc) },
-            onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) }
+            onMakeSearchableClick = { doc -> navController.navigateToOcr(doc) },
+            onSignClick = { doc -> navController.navigateToSign(doc) },
+            onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) },
         )
     }
 }
@@ -628,24 +651,30 @@ private fun NavGraphBuilder.libraryComposable(navController: NavHostController) 
 // ── Viewer ────────────────────────────────────────────────────────────────
 private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
     composable(
-        route     = NavRoutes.Viewer.route,
-        arguments = listOf(
-            navArgument("documentId") {
-                type         = NavType.StringType
-                nullable     = true
-                defaultValue = null
-            }
-        )
+        route = NavRoutes.Viewer.route,
+        arguments =
+            listOf(
+                navArgument("documentId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
     ) { backStackEntry ->
-        val encodedId  = backStackEntry.arguments
-            ?.getString("documentId") ?: return@composable
-        val documentId = if (encodedId.startsWith("content%3A"))
-            Uri.decode(encodedId) else encodedId
+        val encodedId =
+            backStackEntry.arguments
+                ?.getString("documentId") ?: return@composable
+        val documentId =
+            if (encodedId.startsWith("content%3A")) {
+                Uri.decode(encodedId)
+            } else {
+                encodedId
+            }
         Timber.d("Viewer: documentId final = $documentId")
         val context = LocalContext.current
         ViewerScreen(
             documentId = documentId,
-            onBack     = {
+            onBack = {
                 // Siempre intentar finish si el previous destination también es Viewer
                 val prevRoute = navController.previousBackStackEntry?.destination?.route
                 Timber.d("Viewer onBack: prevRoute=$prevRoute")
@@ -655,31 +684,31 @@ private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
                     navController.popBackStack()
                 }
             },
-            onConvertClick  = { doc -> navController.navigateToConvert(doc) },
+            onConvertClick = { doc -> navController.navigateToConvert(doc) },
             onCreateQrClick = { doc -> navController.navigateToQrCreator(context, doc) },
-            onMakeSearchableClick   = { doc -> navController.navigateToOcr(doc) },
-            onSignClick             = { doc -> navController.navigateToSign(doc) },
-            onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) }
+            onMakeSearchableClick = { doc -> navController.navigateToOcr(doc) },
+            onSignClick = { doc -> navController.navigateToSign(doc) },
+            onMoveToSecureFolderClick = { doc -> navController.navigateToSecureFolder(doc) },
         )
     }
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────
 private fun NavGraphBuilder.settingsComposable(
-    navController  : NavHostController,
-    themeManager   : ThemeManager,
-    languageManager: LanguageManager
+    navController: NavHostController,
+    themeManager: ThemeManager,
+    languageManager: LanguageManager,
 ) {
     composable(NavRoutes.Settings.route) {
         SettingsScreen(
-            themeManager      = themeManager,
-            languageManager   = languageManager,
-            onPremiumClick    = { navController.navigate(NavRoutes.Premium.route) },
-            onShowOnboarding  = {
+            themeManager = themeManager,
+            languageManager = languageManager,
+            onPremiumClick = { navController.navigate(NavRoutes.Premium.route) },
+            onShowOnboarding = {
                 navController.navigate(NavRoutes.Onboarding.route) {
                     popUpTo(NavRoutes.Settings.route) { inclusive = false }
                 }
-            }
+            },
         )
     }
 }
@@ -687,9 +716,10 @@ private fun NavGraphBuilder.settingsComposable(
 // ── Scanner ───────────────────────────────────────────────────────────────
 private fun NavGraphBuilder.scannerComposable(navController: NavHostController) {
     composable(NavRoutes.Scanner.route) { backStackEntry ->
-        val scanResultEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(NavRoutes.Scanner.route)
-        }
+        val scanResultEntry =
+            remember(backStackEntry) {
+                navController.getBackStackEntry(NavRoutes.Scanner.route)
+            }
         ScannerScreen(
             onBack = { navController.popBackStack() },
             onScanComplete = { uris ->
@@ -699,7 +729,7 @@ private fun NavGraphBuilder.scannerComposable(navController: NavHostController) 
                     uris.size == 1 && uris.first().toString().endsWith(".pdf")
                 DocuSmartAnalytics.logScanCompleted(uris.size)
                 navController.navigate(NavRoutes.ScanResult.route)
-            }
+            },
         )
     }
 }
@@ -707,19 +737,21 @@ private fun NavGraphBuilder.scannerComposable(navController: NavHostController) 
 // ── Scan Result ───────────────────────────────────────────────────────────
 private fun NavGraphBuilder.scanResultComposable(navController: NavHostController) {
     composable(NavRoutes.ScanResult.route) { backStackEntry ->
-        val scannerEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(NavRoutes.Scanner.route)
-        }
-        val uriStrings = scannerEntry.savedStateHandle
-            .get<List<String>>("scanned_uris") ?: emptyList()
+        val scannerEntry =
+            remember(backStackEntry) {
+                navController.getBackStackEntry(NavRoutes.Scanner.route)
+            }
+        val uriStrings =
+            scannerEntry.savedStateHandle
+                .get<List<String>>("scanned_uris") ?: emptyList()
         val isPdf = scannerEntry.savedStateHandle.get<Boolean>("is_pdf") ?: false
-        val uris  = uriStrings.map { Uri.parse(it) }
+        val uris = uriStrings.map { Uri.parse(it) }
         val context = LocalContext.current
         ScanResultScreen(
-            scannedUris    = uris,
-            isPdf          = isPdf,
-            onBack         = { navController.popBackStack() },
-            onDone         = {
+            scannedUris = uris,
+            isPdf = isPdf,
+            onBack = { navController.popBackStack() },
+            onDone = {
                 navController.navigate(NavRoutes.Home.route) {
                     popUpTo(NavRoutes.Scanner.route) { inclusive = true }
                 }
@@ -731,14 +763,15 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
             // sesión son siempre rutas absolutas (generados por la app),
             // nunca `content://`, así que no hace falta el permiso
             // persistente que sí necesita Library para MediaStore.
-            onOpenDocument         = { documentId -> navController.navigate(NavRoutes.Viewer.createRoute(documentId)) },
-            onConvertDocument      = { doc -> navController.navigateToConvert(doc) },
+            onOpenDocument = { documentId -> navController.navigate(NavRoutes.Viewer.createRoute(documentId)) },
+            onConvertDocument = { doc -> navController.navigateToConvert(doc) },
             onCreateQrFromDocument = { doc -> navController.navigateToQrCreator(context, doc) },
-            documentActions = ScanResultDocumentActions(
-                onMakeSearchable     = { doc -> navController.navigateToOcr(doc) },
-                onSign               = { doc -> navController.navigateToSign(doc) },
-                onMoveToSecureFolder = { doc -> navController.navigateToSecureFolder(doc) }
-            )
+            documentActions =
+                ScanResultDocumentActions(
+                    onMakeSearchable = { doc -> navController.navigateToOcr(doc) },
+                    onSign = { doc -> navController.navigateToSign(doc) },
+                    onMoveToSecureFolder = { doc -> navController.navigateToSecureFolder(doc) },
+                ),
         )
     }
 }

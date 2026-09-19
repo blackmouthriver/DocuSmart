@@ -9,7 +9,6 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files
 
@@ -26,13 +25,19 @@ import java.nio.file.Files
  * verifican que una imagen adjunta real termina embebida en el .docx.
  */
 class StudyNotesExporterTest {
-
-    private fun note(id: String, title: String, text: String, createdAt: Long) =
-        NoteEntity(id = id, title = title, text = text, createdAt = createdAt)
+    private fun note(
+        id: String,
+        title: String,
+        text: String,
+        createdAt: Long,
+    ) = NoteEntity(id = id, title = title, text = text, createdAt = createdAt)
 
     private fun noteWithImages(
-        id: String, title: String, text: String, createdAt: Long,
-        images: List<NoteImageEntity> = emptyList()
+        id: String,
+        title: String,
+        text: String,
+        createdAt: Long,
+        images: List<NoteImageEntity> = emptyList(),
     ) = NoteWithImages(note(id, title, text, createdAt), images)
 
     @Test
@@ -70,20 +75,25 @@ class StudyNotesExporterTest {
         val context = mockk<android.content.Context>()
         every { context.filesDir } returns tempDir
 
-        val note = noteWithImages(
-            "1", "Mi nota", "Primera línea\nSegunda línea", createdAt = System.currentTimeMillis()
-        )
+        val note =
+            noteWithImages(
+                "1",
+                "Mi nota",
+                "Primera línea\nSegunda línea",
+                createdAt = System.currentTimeMillis(),
+            )
 
         val file = StudyNotesExporter.exportAsWordFile(context, listOf(note))
 
         assertTrue(file.exists())
         assertTrue(file.length() > 0L, "el .docx generado no debe estar vacío")
 
-        val extractedText = FileInputStream(file).use { input ->
-            XWPFDocument(input).use { docx ->
-                docx.paragraphs.joinToString("\n") { it.text }
+        val extractedText =
+            FileInputStream(file).use { input ->
+                XWPFDocument(input).use { docx ->
+                    docx.paragraphs.joinToString("\n") { it.text }
+                }
             }
-        }
         assertTrue(extractedText.contains("Mi nota"))
         assertTrue(extractedText.contains("Primera línea"))
         assertTrue(extractedText.contains("Segunda línea"))
@@ -97,16 +107,18 @@ class StudyNotesExporterTest {
         val context = mockk<android.content.Context>()
         every { context.filesDir } returns tempDir
 
-        val notes = listOf(
-            noteWithImages("1", "Primera", "contenido 1", createdAt = 1000L),
-            noteWithImages("2", "Segunda", "contenido 2", createdAt = 2000L)
-        )
+        val notes =
+            listOf(
+                noteWithImages("1", "Primera", "contenido 1", createdAt = 1000L),
+                noteWithImages("2", "Segunda", "contenido 2", createdAt = 2000L),
+            )
 
         val file = StudyNotesExporter.exportAsWordFile(context, notes)
 
-        val extractedText = FileInputStream(file).use { input ->
-            XWPFDocument(input).use { docx -> docx.paragraphs.joinToString("\n") { it.text } }
-        }
+        val extractedText =
+            FileInputStream(file).use { input ->
+                XWPFDocument(input).use { docx -> docx.paragraphs.joinToString("\n") { it.text } }
+            }
         assertTrue(extractedText.indexOf("Primera") < extractedText.indexOf("Segunda"))
 
         tempDir.deleteRecursively()

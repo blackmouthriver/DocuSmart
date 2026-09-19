@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream
  * solo el mapeo nuevo hacia WordBlock/WordParagraph/WordRun.
  */
 class WordViewerExtractionTest {
-
     @Test
     fun `un run sin formato no tiene negrita, cursiva ni tamano explicito`() {
         val docx = buildDocx { doc -> doc.createParagraph().createRun().setText("Texto normal") }
@@ -37,12 +36,22 @@ class WordViewerExtractionTest {
 
     @Test
     fun `negrita y cursiva se preservan por run`() {
-        val docx = buildDocx { doc ->
-            val para = doc.createParagraph()
-            para.createRun().apply { setText("Normal "); isBold = false }
-            para.createRun().apply { setText("Negrita"); isBold = true }
-            para.createRun().apply { setText(" cursiva"); isItalic = true }
-        }
+        val docx =
+            buildDocx { doc ->
+                val para = doc.createParagraph()
+                para.createRun().apply {
+                    setText("Normal ")
+                    isBold = false
+                }
+                para.createRun().apply {
+                    setText("Negrita")
+                    isBold = true
+                }
+                para.createRun().apply {
+                    setText(" cursiva")
+                    isItalic = true
+                }
+            }
 
         val runs = (extractWordBlocks(docx).single() as WordParagraphBlock).paragraph.runs
 
@@ -55,12 +64,13 @@ class WordViewerExtractionTest {
 
     @Test
     fun `runs con texto en blanco se descartan`() {
-        val docx = buildDocx { doc ->
-            val para = doc.createParagraph()
-            para.createRun().setText("")
-            para.createRun().setText("  ")
-            para.createRun().setText("Real")
-        }
+        val docx =
+            buildDocx { doc ->
+                val para = doc.createParagraph()
+                para.createRun().setText("")
+                para.createRun().setText("  ")
+                para.createRun().setText("Real")
+            }
 
         val runs = (extractWordBlocks(docx).single() as WordParagraphBlock).paragraph.runs
 
@@ -70,12 +80,13 @@ class WordViewerExtractionTest {
 
     @Test
     fun `un parrafo con estilo Heading1 se reconoce como encabezado`() {
-        val docx = buildDocx { doc ->
-            doc.createParagraph().apply {
-                style = "Heading1"
-                createRun().setText("Titulo")
+        val docx =
+            buildDocx { doc ->
+                doc.createParagraph().apply {
+                    style = "Heading1"
+                    createRun().setText("Titulo")
+                }
             }
-        }
 
         val block = extractWordBlocks(docx).single() as WordParagraphBlock
 
@@ -93,13 +104,14 @@ class WordViewerExtractionTest {
 
     @Test
     fun `una tabla real se extrae como grilla, no como texto plano`() {
-        val docx = buildDocx { doc ->
-            val table = doc.createTable(2, 2)
-            table.getRow(0).getCell(0).text = "A1"
-            table.getRow(0).getCell(1).text = "B1"
-            table.getRow(1).getCell(0).text = "A2"
-            table.getRow(1).getCell(1).text = "B2"
-        }
+        val docx =
+            buildDocx { doc ->
+                val table = doc.createTable(2, 2)
+                table.getRow(0).getCell(0).text = "A1"
+                table.getRow(0).getCell(1).text = "B1"
+                table.getRow(1).getCell(0).text = "A2"
+                table.getRow(1).getCell(1).text = "B2"
+            }
 
         val block = extractWordBlocks(docx).single() as WordTableBlock
 
@@ -108,11 +120,16 @@ class WordViewerExtractionTest {
 
     @Test
     fun `parrafos y tablas se preservan en el orden real del documento`() {
-        val docx = buildDocx { doc ->
-            doc.createParagraph().createRun().setText("Antes de la tabla")
-            doc.createTable(1, 1).getRow(0).getCell(0).text = "Celda"
-            doc.createParagraph().createRun().setText("Después de la tabla")
-        }
+        val docx =
+            buildDocx { doc ->
+                doc.createParagraph().createRun().setText("Antes de la tabla")
+                doc
+                    .createTable(1, 1)
+                    .getRow(0)
+                    .getCell(0)
+                    .text = "Celda"
+                doc.createParagraph().createRun().setText("Después de la tabla")
+            }
 
         val blocks = extractWordBlocks(docx)
 
@@ -131,9 +148,10 @@ class WordViewerExtractionTest {
 
         assertTrue(blocks.isNotEmpty())
         assertTrue(blocks.all { it is WordParagraphBlock })
-        val allText = blocks.joinToString(" ") { block ->
-            (block as WordParagraphBlock).paragraph.runs.joinToString("") { it.text }
-        }
+        val allText =
+            blocks.joinToString(" ") { block ->
+                (block as WordParagraphBlock).paragraph.runs.joinToString("") { it.text }
+            }
         assertTrue(allText.contains("Titulo de prueba") || allText.contains("Celda A1"))
     }
 
@@ -149,9 +167,10 @@ class WordViewerExtractionTest {
     }
 
     private fun legacyDocStream(): ByteArrayInputStream {
-        val bytes = checkNotNull(javaClass.classLoader?.getResourceAsStream("fixtures/legacy-sample.doc")) {
-            "No se encontró fixtures/legacy-sample.doc en recursos de test"
-        }.use { it.readBytes() }
+        val bytes =
+            checkNotNull(javaClass.classLoader?.getResourceAsStream("fixtures/legacy-sample.doc")) {
+                "No se encontró fixtures/legacy-sample.doc en recursos de test"
+            }.use { it.readBytes() }
         return ByteArrayInputStream(bytes)
     }
 }

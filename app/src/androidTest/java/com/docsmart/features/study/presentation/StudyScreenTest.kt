@@ -66,25 +66,32 @@ import org.junit.Test
  * patrón ya usado en `LibraryScreenTest` para el permiso de almacenamiento.
  */
 class StudyScreenTest {
-
     @get:Rule
-    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
-        *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            arrayOf(Manifest.permission.POST_NOTIFICATIONS)
-        else emptyArray()
-    )
+    val permissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(
+            *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                emptyArray()
+            },
+        )
 
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private inner class IsolatedPrefsContext(base: Context) : ContextWrapper(base) {
+    private inner class IsolatedPrefsContext(
+        base: Context,
+    ) : ContextWrapper(base) {
         private val prefsByName = mutableMapOf<String, SharedPreferences>()
-        override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences =
-            prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
+
+        override fun getSharedPreferences(
+            name: String?,
+            mode: Int,
+        ): SharedPreferences = prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
     }
 
     private fun fakeSharedPreferences(): SharedPreferences {
-        val store  = mutableMapOf<String, Any?>()
+        val store = mutableMapOf<String, Any?>()
         val editor = mockk<SharedPreferences.Editor>()
         every { editor.putString(any(), any()) } answers {
             store[firstArg<String>()] = secondArg<String?>()
@@ -130,13 +137,14 @@ class StudyScreenTest {
     private fun setContentIsolated(content: @Composable () -> Unit) {
         composeRule.setContent {
             val baseContext = LocalContext.current
-            val isolatedContext = remember(baseContext) {
-                IsolatedPrefsContext(forceLocale(baseContext, "es-ES"))
-            }
+            val isolatedContext =
+                remember(baseContext) {
+                    IsolatedPrefsContext(forceLocale(baseContext, "es-ES"))
+                }
             CompositionLocalProvider(
                 LocalContext provides isolatedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
         }
     }

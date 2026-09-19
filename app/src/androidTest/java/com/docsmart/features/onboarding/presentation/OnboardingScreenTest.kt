@@ -46,17 +46,21 @@ import org.junit.Test
  * confirmar que `markOnboardingCompleted()` sí escribió.
  */
 class OnboardingScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private class IsolatedPrefsContext(base: Context) : ContextWrapper(base) {
+    private class IsolatedPrefsContext(
+        base: Context,
+    ) : ContextWrapper(base) {
         private val prefsByName = mutableMapOf<String, SharedPreferences>()
-        override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences =
-            prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
+
+        override fun getSharedPreferences(
+            name: String?,
+            mode: Int,
+        ): SharedPreferences = prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
 
         private fun fakeSharedPreferences(): SharedPreferences {
-            val store  = mutableMapOf<String, Any?>()
+            val store = mutableMapOf<String, Any?>()
             val editor = mockk<SharedPreferences.Editor>()
             every { editor.putBoolean(any(), any()) } answers {
                 store[firstArg<String>()] = secondArg<Boolean>()
@@ -108,7 +112,7 @@ class OnboardingScreenTest {
             CompositionLocalProvider(
                 LocalContext provides isolatedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
                 OnboardingScreen(onFinished = { finished = true }, viewModel = buildViewModel())
             }
@@ -151,7 +155,7 @@ class OnboardingScreenTest {
             CompositionLocalProvider(
                 LocalContext provides isolatedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
                 OnboardingScreen(onFinished = { finished = true }, viewModel = buildViewModel())
             }

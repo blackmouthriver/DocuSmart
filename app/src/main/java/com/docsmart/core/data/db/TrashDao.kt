@@ -7,7 +7,6 @@ import androidx.room.Query
 
 @Dao
 interface TrashDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: TrashEntry)
 

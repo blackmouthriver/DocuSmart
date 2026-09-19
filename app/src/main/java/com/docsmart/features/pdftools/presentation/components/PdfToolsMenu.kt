@@ -19,125 +19,126 @@ data class PdfToolItem(
     val icon: ImageVector,
     val titleRes: Int,
     val descriptionRes: Int,
-    val color: Color
+    val color: Color,
 )
 
-private val toolItems = listOf(
-    PdfToolItem(
-        tool = PdfTool.MERGE,
-        icon = Icons.Rounded.MergeType,
-        titleRes = R.string.pdf_merge,
-        descriptionRes = R.string.pdf_merge_desc,
-        color = DocuBlue
-    ),
-    PdfToolItem(
-        tool = PdfTool.SPLIT,
-        icon = Icons.Rounded.CallSplit,
-        titleRes = R.string.pdf_split,
-        descriptionRes = R.string.pdf_split_desc,
-        color = InfoCyan
-    ),
-    PdfToolItem(
-        tool = PdfTool.COMPRESS,
-        icon = Icons.Rounded.Compress,
-        titleRes = R.string.pdf_compress,
-        descriptionRes = R.string.pdf_compress_desc,
-        color = SuccessGreen
-    ),
-    PdfToolItem(
-        tool = PdfTool.ROTATE,
-        icon = Icons.Rounded.RotateRight,
-        titleRes = R.string.pdf_rotate,
-        descriptionRes = R.string.pdf_rotate_desc,
-        color = WarningAmber
-    ),
-    PdfToolItem(
-        tool = PdfTool.NUMBER_PAGES,
-        icon = Icons.Rounded.FormatListNumbered,
-        titleRes = R.string.pdf_number_pages,
-        descriptionRes = R.string.pdf_number_pages_desc,
-        color = IndigoAccent
-    ),
-    PdfToolItem(
-        tool = PdfTool.WATERMARK,
-        icon = Icons.Rounded.BrandingWatermark,
-        titleRes = R.string.pdf_watermark,
-        descriptionRes = R.string.pdf_watermark_desc,
-        color = ColorImage
-    ),
-    PdfToolItem(
-        tool = PdfTool.REORDER_PAGES,
-        icon = Icons.Rounded.Reorder,
-        titleRes = R.string.pdf_reorder_pages,
-        descriptionRes = R.string.pdf_reorder_pages_desc,
-        color = SlateGray
-    ),
-    PdfToolItem(
-        tool = PdfTool.COMPARE,
-        icon = Icons.Rounded.CompareArrows,
-        titleRes = R.string.pdf_compare,
-        descriptionRes = R.string.pdf_compare_desc,
-        color = ColorPowerPoint
-    ),
-    PdfToolItem(
-        tool = PdfTool.REDACT,
-        icon = Icons.Rounded.VisibilityOff,
-        titleRes = R.string.pdf_redact,
-        descriptionRes = R.string.pdf_redact_desc,
-        color = ErrorRed
-    ),
-    PdfToolItem(
-        tool = PdfTool.CROP,
-        icon = Icons.Rounded.Crop,
-        titleRes = R.string.pdf_crop,
-        descriptionRes = R.string.pdf_crop_desc,
-        color = PremiumGold
-    ),
-    PdfToolItem(
-        tool = PdfTool.EDIT_TEXT,
-        icon = Icons.Rounded.Edit,
-        titleRes = R.string.pdf_edit_text,
-        descriptionRes = R.string.pdf_edit_text_desc,
-        color = SmartBlue
-    ),
-    PdfToolItem(
-        tool = PdfTool.SIGN,
-        icon = Icons.Rounded.Draw,
-        titleRes = R.string.pdf_sign,
-        descriptionRes = R.string.pdf_sign_desc,
-        color = NavyDark
-    ),
-    PdfToolItem(
-        tool = PdfTool.FILL_FORM,
-        icon = Icons.Rounded.Checklist,
-        titleRes = R.string.pdf_fill_form,
-        descriptionRes = R.string.pdf_fill_form_desc,
-        color = ColorZip
-    ),
-    PdfToolItem(
-        tool = PdfTool.OCR,
-        icon = Icons.Rounded.FindInPage,
-        titleRes = R.string.pdf_ocr,
-        descriptionRes = R.string.pdf_ocr_desc,
-        color = ColorOcr
-    ),
-    PdfToolItem(
-        tool = PdfTool.EXTRACT_IMAGES,
-        icon = Icons.Rounded.Image,
-        titleRes = R.string.pdf_extract_images,
-        descriptionRes = R.string.pdf_extract_images_desc,
-        color = ColorImage
+private val toolItems =
+    listOf(
+        PdfToolItem(
+            tool = PdfTool.MERGE,
+            icon = Icons.Rounded.MergeType,
+            titleRes = R.string.pdf_merge,
+            descriptionRes = R.string.pdf_merge_desc,
+            color = DocuBlue,
+        ),
+        PdfToolItem(
+            tool = PdfTool.SPLIT,
+            icon = Icons.Rounded.CallSplit,
+            titleRes = R.string.pdf_split,
+            descriptionRes = R.string.pdf_split_desc,
+            color = InfoCyan,
+        ),
+        PdfToolItem(
+            tool = PdfTool.COMPRESS,
+            icon = Icons.Rounded.Compress,
+            titleRes = R.string.pdf_compress,
+            descriptionRes = R.string.pdf_compress_desc,
+            color = SuccessGreen,
+        ),
+        PdfToolItem(
+            tool = PdfTool.ROTATE,
+            icon = Icons.Rounded.RotateRight,
+            titleRes = R.string.pdf_rotate,
+            descriptionRes = R.string.pdf_rotate_desc,
+            color = WarningAmber,
+        ),
+        PdfToolItem(
+            tool = PdfTool.NUMBER_PAGES,
+            icon = Icons.Rounded.FormatListNumbered,
+            titleRes = R.string.pdf_number_pages,
+            descriptionRes = R.string.pdf_number_pages_desc,
+            color = IndigoAccent,
+        ),
+        PdfToolItem(
+            tool = PdfTool.WATERMARK,
+            icon = Icons.Rounded.BrandingWatermark,
+            titleRes = R.string.pdf_watermark,
+            descriptionRes = R.string.pdf_watermark_desc,
+            color = ColorImage,
+        ),
+        PdfToolItem(
+            tool = PdfTool.REORDER_PAGES,
+            icon = Icons.Rounded.Reorder,
+            titleRes = R.string.pdf_reorder_pages,
+            descriptionRes = R.string.pdf_reorder_pages_desc,
+            color = SlateGray,
+        ),
+        PdfToolItem(
+            tool = PdfTool.COMPARE,
+            icon = Icons.Rounded.CompareArrows,
+            titleRes = R.string.pdf_compare,
+            descriptionRes = R.string.pdf_compare_desc,
+            color = ColorPowerPoint,
+        ),
+        PdfToolItem(
+            tool = PdfTool.REDACT,
+            icon = Icons.Rounded.VisibilityOff,
+            titleRes = R.string.pdf_redact,
+            descriptionRes = R.string.pdf_redact_desc,
+            color = ErrorRed,
+        ),
+        PdfToolItem(
+            tool = PdfTool.CROP,
+            icon = Icons.Rounded.Crop,
+            titleRes = R.string.pdf_crop,
+            descriptionRes = R.string.pdf_crop_desc,
+            color = PremiumGold,
+        ),
+        PdfToolItem(
+            tool = PdfTool.EDIT_TEXT,
+            icon = Icons.Rounded.Edit,
+            titleRes = R.string.pdf_edit_text,
+            descriptionRes = R.string.pdf_edit_text_desc,
+            color = SmartBlue,
+        ),
+        PdfToolItem(
+            tool = PdfTool.SIGN,
+            icon = Icons.Rounded.Draw,
+            titleRes = R.string.pdf_sign,
+            descriptionRes = R.string.pdf_sign_desc,
+            color = NavyDark,
+        ),
+        PdfToolItem(
+            tool = PdfTool.FILL_FORM,
+            icon = Icons.Rounded.Checklist,
+            titleRes = R.string.pdf_fill_form,
+            descriptionRes = R.string.pdf_fill_form_desc,
+            color = ColorZip,
+        ),
+        PdfToolItem(
+            tool = PdfTool.OCR,
+            icon = Icons.Rounded.FindInPage,
+            titleRes = R.string.pdf_ocr,
+            descriptionRes = R.string.pdf_ocr_desc,
+            color = ColorOcr,
+        ),
+        PdfToolItem(
+            tool = PdfTool.EXTRACT_IMAGES,
+            icon = Icons.Rounded.Image,
+            titleRes = R.string.pdf_extract_images,
+            descriptionRes = R.string.pdf_extract_images_desc,
+            color = ColorImage,
+        ),
     )
-)
 
 @Composable
 fun PdfToolsMenu(
     onToolSelected: (PdfTool) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         toolItems.forEach { item ->
             DocuSmartToolCard(
@@ -145,7 +146,7 @@ fun PdfToolsMenu(
                 title = stringResource(item.titleRes),
                 description = stringResource(item.descriptionRes),
                 onClick = { onToolSelected(item.tool) },
-                iconTint = item.color
+                iconTint = item.color,
             )
         }
     }

@@ -13,7 +13,7 @@ enum class AgendaEventStatus { OVERDUE, TODAY, UPCOMING }
 fun classifyAgendaEvent(
     dateTimeMillis: Long,
     nowMillis: Long = System.currentTimeMillis(),
-    zoneId: ZoneId = ZoneId.systemDefault()
+    zoneId: ZoneId = ZoneId.systemDefault(),
 ): AgendaEventStatus {
     val eventDay = Instant.ofEpochMilli(dateTimeMillis).atZone(zoneId).toLocalDate()
     val today = Instant.ofEpochMilli(nowMillis).atZone(zoneId).toLocalDate()
@@ -24,15 +24,19 @@ fun classifyAgendaEvent(
     }
 }
 
-fun reminderTriggerMillis(dateTimeMillis: Long, reminderMinutesBefore: Int): Long =
-    dateTimeMillis - reminderMinutesBefore * 60_000L
+fun reminderTriggerMillis(
+    dateTimeMillis: Long,
+    reminderMinutesBefore: Int,
+): Long = dateTimeMillis - reminderMinutesBefore * 60_000L
 
 // Vista de calendario (backlog UX 2026-09-16, seguimiento de HU-65): día
 // calendario del evento en la zona horaria local, para agrupar eventos por
 // celda del grid mensual -- mismo criterio de "día calendario" que
 // classifyAgendaEvent (no depende de la hora exacta).
-fun agendaEventLocalDate(dateTimeMillis: Long, zoneId: ZoneId = ZoneId.systemDefault()): LocalDate =
-    Instant.ofEpochMilli(dateTimeMillis).atZone(zoneId).toLocalDate()
+fun agendaEventLocalDate(
+    dateTimeMillis: Long,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): LocalDate = Instant.ofEpochMilli(dateTimeMillis).atZone(zoneId).toLocalDate()
 
 // Opciones fijas de antelación (RF5) -- null = "sin recordatorio", 0 = justo
 // a la hora del evento. Números crudos en el dominio; las etiquetas

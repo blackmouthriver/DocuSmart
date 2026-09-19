@@ -25,22 +25,22 @@ fun ComparePdfScreen(
     onSelectPdfA: () -> Unit,
     onSelectPdfB: () -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_compare),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_compare_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -50,21 +50,21 @@ fun ComparePdfScreen(
             onSelectPdf = onSelectPdfA,
             readyText = stringResource(R.string.pdf_compare_ready),
             accentColor = ColorPowerPoint,
-            label = stringResource(R.string.pdf_compare_document_a)
+            label = stringResource(R.string.pdf_compare_document_a),
         )
         PdfSelectZone(
             selectedPdf = pdfB,
             onSelectPdf = onSelectPdfB,
             readyText = stringResource(R.string.pdf_compare_ready),
             accentColor = ColorPowerPoint,
-            label = stringResource(R.string.pdf_compare_document_b)
+            label = stringResource(R.string.pdf_compare_document_b),
         )
 
         // ── Nombre del archivo ────────────────────────
         if (pdfA != null && pdfB != null) {
             OutputFileNameField(
                 fileName = fileName,
-                onFileNameChange = onFileNameChange
+                onFileNameChange = onFileNameChange,
             )
         }
 
@@ -76,7 +76,7 @@ fun ComparePdfScreen(
             buttonLabel = stringResource(R.string.pdf_compare_execute),
             buttonIcon = Icons.Rounded.CompareArrows,
             onExecute = onExecute,
-            accentColor = ColorPowerPoint
+            accentColor = ColorPowerPoint,
         )
     }
 }

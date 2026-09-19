@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test
  * alcance de esta clase.
  */
 class PermissionHandlerTest {
-
     private lateinit var context: Context
     private lateinit var resolver: ContentResolver
     private lateinit var handler: PermissionHandler
@@ -59,9 +58,10 @@ class PermissionHandlerTest {
         // false) es lo que cubre este test.
         every {
             resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        } throws SecurityException(
-            "Permission Denial: taking Uri content://com.docsmart.fileprovider/contrato_confidencial.pdf"
-        )
+        } throws
+            SecurityException(
+                "Permission Denial: taking Uri content://com.docsmart.fileprovider/contrato_confidencial.pdf",
+            )
 
         val result = handler.takePersistableReadPermission(context, uri)
 

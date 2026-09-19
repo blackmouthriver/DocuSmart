@@ -23,225 +23,251 @@ import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
 data class CompressPdfMessages(
-    val readError       : String,
-    val emptyFile       : String,
-    val noPages         : String,
-    val generateError   : String,
-    val alreadyOptimized: String, // formato: %1$d KB
-    val success          : String, // formato: %1$d antes KB, %2$d después KB, %3$d reducción%
-    val genericError     : String  // formato: %1$s mensaje de excepción
+    val readError: String,
+    val emptyFile: String,
+    val noPages: String,
+    val generateError: String,
+    // formato: %1$d KB
+    val alreadyOptimized: String,
+    // formato: %1$d antes KB, %2$d después KB, %3$d reducción%
+    val success: String,
+    // formato: %1$s mensaje de excepción
+    val genericError: String,
 )
 
-class CompressPdfUseCase @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    companion object {
-        private const val TAG = "CompressPdfUseCase"
-    }
+class CompressPdfUseCase
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        companion object {
+            private const val TAG = "CompressPdfUseCase"
+        }
 
-    suspend operator fun invoke(
-        pdfUri        : Uri,
-        quality       : Int = 60,
-        outputFileName: String? = null,
-        messages      : CompressPdfMessages
-    ): PdfToolResult = withContext(Dispatchers.IO) {
-        var cacheFile: File? = null
-        // Hallazgo real de la revisión de correctitud adversarial de este
-        // mismo lote (2026-09-16): el fix original del #25 solo cubría el
-        // camino feliz de la rama keepOriginal (borrar outputFile ANTES de
-        // devolver originalOutput) -- si cacheFile!!.copyTo(originalOutput)
-        // lanzaba (ej. disco lleno) entre crear outputFile y ese borrado,
-        // el catch de abajo no tenía forma de referenciarlo y quedaba
-        // huérfano de nuevo, mismo bug que se corrigió en ComparePdfUseCase/
-        // OcrPdfUseCase con este mismo patrón (var afuera del try).
-        var outputFile: File? = null
-        try {
-            Timber.d("$TAG: iniciando compresión — calidad: $quality")
+        suspend operator fun invoke(
+            pdfUri: Uri,
+            quality: Int = 60,
+            outputFileName: String? = null,
+            messages: CompressPdfMessages,
+        ): PdfToolResult =
+            withContext(Dispatchers.IO) {
+                var cacheFile: File? = null
+                // Hallazgo real de la revisión de correctitud adversarial de este
+                // mismo lote (2026-09-16): el fix original del #25 solo cubría el
+                // camino feliz de la rama keepOriginal (borrar outputFile ANTES de
+                // devolver originalOutput) -- si cacheFile!!.copyTo(originalOutput)
+                // lanzaba (ej. disco lleno) entre crear outputFile y ese borrado,
+                // el catch de abajo no tenía forma de referenciarlo y quedaba
+                // huérfano de nuevo, mismo bug que se corrigió en ComparePdfUseCase/
+                // OcrPdfUseCase con este mismo patrón (var afuera del try).
+                var outputFile: File? = null
+                try {
+                    Timber.d("$TAG: iniciando compresión — calidad: $quality")
 
-            cacheFile = copyUriToCache(pdfUri)
-                ?: return@withContext PdfToolResult.Error(messages.readError)
+                    cacheFile = copyUriToCache(pdfUri)
+                        ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            if (cacheFile.length() == 0L)
-                return@withContext PdfToolResult.Error(messages.emptyFile)
-
-            val originalSize = cacheFile.length()
-            Timber.d("$TAG: tamaño original = ${originalSize / 1024} KB")
-
-            // Bug real corregido 2026-09-08: `renderer`/`fileDescriptor` antes
-            // se cerraban a mano solo en el camino feliz (o en el caso
-            // "sin páginas") -- si `renderAndCompressPages()` fallaba a
-            // mitad de proceso (ej. `OutOfMemoryError` con un PDF grande,
-            // que además ni siquiera hereda de `Exception` y no lo atrapa
-            // el catch de más abajo), ambos quedaban abiertos para siempre.
-            // `.use{}` los cierra pase lo que pase.
-            val pdfDocument = ParcelFileDescriptor.open(
-                cacheFile, ParcelFileDescriptor.MODE_READ_ONLY
-            ).use { fileDescriptor ->
-                PdfRenderer(fileDescriptor).use { renderer ->
-                    if (renderer.pageCount == 0) {
-                        return@withContext PdfToolResult.Error(messages.noPages)
+                    if (cacheFile.length() == 0L) {
+                        return@withContext PdfToolResult.Error(messages.emptyFile)
                     }
-                    Timber.d("$TAG: ${renderer.pageCount} páginas a comprimir")
-                    renderAndCompressPages(renderer, scaleFactorFor(quality), quality)
+
+                    val originalSize = cacheFile.length()
+                    Timber.d("$TAG: tamaño original = ${originalSize / 1024} KB")
+
+                    // Bug real corregido 2026-09-08: `renderer`/`fileDescriptor` antes
+                    // se cerraban a mano solo en el camino feliz (o en el caso
+                    // "sin páginas") -- si `renderAndCompressPages()` fallaba a
+                    // mitad de proceso (ej. `OutOfMemoryError` con un PDF grande,
+                    // que además ni siquiera hereda de `Exception` y no lo atrapa
+                    // el catch de más abajo), ambos quedaban abiertos para siempre.
+                    // `.use{}` los cierra pase lo que pase.
+                    val pdfDocument =
+                        ParcelFileDescriptor.open(
+                            cacheFile,
+                            ParcelFileDescriptor.MODE_READ_ONLY,
+                        ).use { fileDescriptor ->
+                            PdfRenderer(fileDescriptor).use { renderer ->
+                                if (renderer.pageCount == 0) {
+                                    return@withContext PdfToolResult.Error(messages.noPages)
+                                }
+                                Timber.d("$TAG: ${renderer.pageCount} páginas a comprimir")
+                                renderAndCompressPages(renderer, scaleFactorFor(quality), quality)
+                            }
+                        }
+
+                    val name = outputFileName ?: "Compressed_q$quality"
+                    outputFile = createOutputFile(name)
+
+                    FileOutputStream(outputFile!!).use { stream ->
+                        pdfDocument.writeTo(stream)
+                        stream.flush()
+                    }
+                    pdfDocument.close()
+
+                    if (outputFile!!.length() == 0L) {
+                        return@withContext PdfToolResult.Error(messages.generateError)
+                    }
+
+                    val newSize = outputFile!!.length()
+                    val originalKb = originalSize / 1024
+                    val newKb = newSize / 1024
+                    val reduction =
+                        if (originalSize > 0) {
+                            ((originalSize - newSize) * 100 / originalSize).toInt()
+                        } else {
+                            0
+                        }
+
+                    Timber.d("$TAG: $originalKb KB → $newKb KB ($reduction%)")
+
+                    val keepOriginal = newSize >= originalSize
+                    val finalFile =
+                        if (keepOriginal) {
+                            Timber.d("$TAG: comprimido mayor que original — usando original")
+                            val originalOutput = createOutputFile("${name}_optimizado")
+                            cacheFile!!.copyTo(originalOutput, overwrite = true)
+                            // Hallazgo real de la revisión general 2026-09-16 (#25):
+                            // outputFile (la versión comprimida, más grande) quedaba
+                            // huérfano en filesDir/pdftools/ para siempre -- nunca se
+                            // referenciaba en el resultado ni se borraba, caso común
+                            // con PDFs ya optimizados donde comprimir no reduce nada.
+                            outputFile!!.delete()
+                            originalOutput
+                        } else {
+                            outputFile!!
+                        }
+
+                    PdfToolResult.Success(
+                        outputFile = finalFile,
+                        message =
+                            resultMessage(
+                                messages,
+                                keepOriginal,
+                                originalKb,
+                                finalFile.length() / 1024,
+                                reduction,
+                            ),
+                    )
+                } catch (e: CancellationException) {
+                    // Hallazgo real de la revisión adversarial de correctitud sobre
+                    // el fix de cancelación cooperativa (ensureActive() en
+                    // renderAndCompressPages()): CancellationException hereda de
+                    // Exception, así que sin este catch específico antes del
+                    // genérico de abajo, cada cancelación real (navegar hacia
+                    // atrás) se registraba como un error de compresión -- ruido
+                    // falso en cualquier reporte de fallos. Se relanza tal cual.
+                    outputFile?.delete()
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "$TAG: error al comprimir: ${e.message}")
+                    outputFile?.delete()
+                    PdfToolResult.Error(
+                        message = String.format(messages.genericError, e.message ?: ""),
+                        cause = e,
+                    )
+                } finally {
+                    cacheFile?.delete()
                 }
             }
 
-            val name = outputFileName ?: "Compressed_q$quality"
-            outputFile = createOutputFile(name)
-
-            FileOutputStream(outputFile!!).use { stream ->
-                pdfDocument.writeTo(stream)
-                stream.flush()
-            }
-            pdfDocument.close()
-
-            if (outputFile!!.length() == 0L)
-                return@withContext PdfToolResult.Error(messages.generateError)
-
-            val newSize    = outputFile!!.length()
-            val originalKb = originalSize / 1024
-            val newKb      = newSize / 1024
-            val reduction  = if (originalSize > 0)
-                ((originalSize - newSize) * 100 / originalSize).toInt()
-            else 0
-
-            Timber.d("$TAG: $originalKb KB → $newKb KB ($reduction%)")
-
-            val keepOriginal = newSize >= originalSize
-            val finalFile = if (keepOriginal) {
-                Timber.d("$TAG: comprimido mayor que original — usando original")
-                val originalOutput = createOutputFile("${name}_optimizado")
-                cacheFile!!.copyTo(originalOutput, overwrite = true)
-                // Hallazgo real de la revisión general 2026-09-16 (#25):
-                // outputFile (la versión comprimida, más grande) quedaba
-                // huérfano en filesDir/pdftools/ para siempre -- nunca se
-                // referenciaba en el resultado ni se borraba, caso común
-                // con PDFs ya optimizados donde comprimir no reduce nada.
-                outputFile!!.delete()
-                originalOutput
-            } else {
-                outputFile!!
+        // internal (no private) para poder testearlas sin tocar PdfRenderer --
+        // ver CompressPdfUseCaseTest.
+        internal fun scaleFactorFor(quality: Int) =
+            when {
+                quality >= 80 -> 1.5f
+                quality >= 60 -> 1.2f
+                quality >= 40 -> 0.9f
+                else -> 0.6f
             }
 
-            PdfToolResult.Success(
-                outputFile = finalFile,
-                message    = resultMessage(
-                    messages, keepOriginal, originalKb, finalFile.length() / 1024, reduction
-                )
-            )
-
-        } catch (e: CancellationException) {
-            // Hallazgo real de la revisión adversarial de correctitud sobre
-            // el fix de cancelación cooperativa (ensureActive() en
-            // renderAndCompressPages()): CancellationException hereda de
-            // Exception, así que sin este catch específico antes del
-            // genérico de abajo, cada cancelación real (navegar hacia
-            // atrás) se registraba como un error de compresión -- ruido
-            // falso en cualquier reporte de fallos. Se relanza tal cual.
-            outputFile?.delete()
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "$TAG: error al comprimir: ${e.message}")
-            outputFile?.delete()
-            PdfToolResult.Error(
-                message = String.format(messages.genericError, e.message ?: ""),
-                cause   = e
-            )
-        } finally {
-            cacheFile?.delete()
-        }
-    }
-
-    // internal (no private) para poder testearlas sin tocar PdfRenderer --
-    // ver CompressPdfUseCaseTest.
-    internal fun scaleFactorFor(quality: Int) = when {
-        quality >= 80 -> 1.5f
-        quality >= 60 -> 1.2f
-        quality >= 40 -> 0.9f
-        else          -> 0.6f
-    }
-
-    internal fun resultMessage(
-        messages: CompressPdfMessages, keepOriginal: Boolean,
-        originalKb: Long, finalKb: Long, reduction: Int
-    ) =
-        if (keepOriginal)
+        internal fun resultMessage(
+            messages: CompressPdfMessages,
+            keepOriginal: Boolean,
+            originalKb: Long,
+            finalKb: Long,
+            reduction: Int,
+        ) = if (keepOriginal) {
             String.format(messages.alreadyOptimized, originalKb)
-        else
+        } else {
             String.format(messages.success, originalKb, finalKb, reduction)
-
-    private suspend fun renderAndCompressPages(
-        renderer   : PdfRenderer,
-        scaleFactor: Float,
-        quality    : Int
-    ): android.graphics.pdf.PdfDocument {
-        val pdfDocument = android.graphics.pdf.PdfDocument()
-
-        for (i in 0 until renderer.pageCount) {
-            // Hallazgo real de la auditoría general 2026-09-17 (quinta
-            // pasada): sin ningún punto de suspensión en este bucle,
-            // cancelar la corrutina (ej. el usuario navega hacia atrás
-            // mientras comprime) nunca se notaba hasta que todas las
-            // páginas terminaban solas en segundo plano.
-            coroutineContext.ensureActive()
-            val page   = renderer.openPage(i)
-            val width  = (page.width  * scaleFactor).toInt().coerceAtLeast(1)
-            val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)
-
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            bitmap.eraseColor(android.graphics.Color.WHITE)
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            page.close()
-
-            val compressed = recompressBitmap(bitmap, quality)
-
-            val pageInfo = android.graphics.pdf.PdfDocument.PageInfo
-                .Builder(width, height, i + 1).create()
-            val docPage  = pdfDocument.startPage(pageInfo)
-            docPage.canvas.drawBitmap(compressed, 0f, 0f, null)
-            pdfDocument.finishPage(docPage)
-
-            bitmap.recycle()
-            if (compressed !== bitmap) compressed.recycle()
-
-            Timber.d("$TAG: página ${i + 1} procesada")
         }
 
-        return pdfDocument
-    }
+        private suspend fun renderAndCompressPages(
+            renderer: PdfRenderer,
+            scaleFactor: Float,
+            quality: Int,
+        ): android.graphics.pdf.PdfDocument {
+            val pdfDocument = android.graphics.pdf.PdfDocument()
 
-    private fun recompressBitmap(bitmap: Bitmap, quality: Int): Bitmap {
-        return try {
-            val stream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
-            val bytes = stream.toByteArray()
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: bitmap
-        } catch (e: Exception) {
-            Timber.e("$TAG: error recomprimiendo: ${e.message}")
-            bitmap
+            for (i in 0 until renderer.pageCount) {
+                // Hallazgo real de la auditoría general 2026-09-17 (quinta
+                // pasada): sin ningún punto de suspensión en este bucle,
+                // cancelar la corrutina (ej. el usuario navega hacia atrás
+                // mientras comprime) nunca se notaba hasta que todas las
+                // páginas terminaban solas en segundo plano.
+                coroutineContext.ensureActive()
+                val page = renderer.openPage(i)
+                val width = (page.width * scaleFactor).toInt().coerceAtLeast(1)
+                val height = (page.height * scaleFactor).toInt().coerceAtLeast(1)
+
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                bitmap.eraseColor(android.graphics.Color.WHITE)
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                page.close()
+
+                val compressed = recompressBitmap(bitmap, quality)
+
+                val pageInfo =
+                    android.graphics.pdf.PdfDocument.PageInfo
+                        .Builder(width, height, i + 1).create()
+                val docPage = pdfDocument.startPage(pageInfo)
+                docPage.canvas.drawBitmap(compressed, 0f, 0f, null)
+                pdfDocument.finishPage(docPage)
+
+                bitmap.recycle()
+                if (compressed !== bitmap) compressed.recycle()
+
+                Timber.d("$TAG: página ${i + 1} procesada")
+            }
+
+            return pdfDocument
+        }
+
+        private fun recompressBitmap(
+            bitmap: Bitmap,
+            quality: Int,
+        ): Bitmap {
+            return try {
+                val stream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+                val bytes = stream.toByteArray()
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: bitmap
+            } catch (e: Exception) {
+                Timber.e("$TAG: error recomprimiendo: ${e.message}")
+                bitmap
+            }
+        }
+
+        private fun copyUriToCache(uri: Uri): File? {
+            return try {
+                val file = File(context.cacheDir, "compress_${System.currentTimeMillis()}.pdf")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output ->
+                        val bytes = input.copyTo(output)
+                        Timber.d("$TAG: copiados $bytes bytes al cache")
+                        if (bytes == 0L) return null
+                    }
+                } ?: return null
+                file
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: error copiando URI al cache")
+                null
+            }
+        }
+
+        private fun createOutputFile(name: String): File {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
+            return File(dir, "DocuSmart_${name}_$timestamp.pdf")
         }
     }
-
-    private fun copyUriToCache(uri: Uri): File? {
-        return try {
-            val file = File(context.cacheDir, "compress_${System.currentTimeMillis()}.pdf")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output ->
-                    val bytes = input.copyTo(output)
-                    Timber.d("$TAG: copiados $bytes bytes al cache")
-                    if (bytes == 0L) return null
-                }
-            } ?: return null
-            file
-        } catch (e: Exception) {
-            Timber.e(e, "$TAG: error copiando URI al cache")
-            null
-        }
-    }
-
-    private fun createOutputFile(name: String): File {
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val dir       = File(context.filesDir, "pdftools").apply { mkdirs() }
-        return File(dir, "DocuSmart_${name}_$timestamp.pdf")
-    }
-}

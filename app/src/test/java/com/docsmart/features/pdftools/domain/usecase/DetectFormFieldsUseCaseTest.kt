@@ -25,7 +25,6 @@ import java.nio.file.Files
  * criterio de alcance que RF-PDF-10 (solo texto, no imágenes existentes).
  */
 class DetectFormFieldsUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var context: Context
     private lateinit var useCase: DetectFormFieldsUseCase
@@ -39,33 +38,36 @@ class DetectFormFieldsUseCaseTest {
     }
 
     @Test
-    fun `detecta los campos de texto del formulario con su nombre y valor actual`() = runTest {
-        stubResolver(createPdfWithForm())
+    fun `detecta los campos de texto del formulario con su nombre y valor actual`() =
+        runTest {
+            stubResolver(createPdfWithForm())
 
-        val fields = useCase(mockk<Uri>())
+            val fields = useCase(mockk<Uri>())
 
-        assertEquals(2, fields.size)
-        assertTrue(fields.any { it.name == "nombre" && it.currentValue == "" })
-        assertTrue(fields.any { it.name == "email" && it.currentValue == "correo@ejemplo.com" })
-    }
-
-    @Test
-    fun `un PDF sin AcroForm devuelve lista vacia`() = runTest {
-        stubResolver(createPdfWithoutForm())
-
-        val fields = useCase(mockk<Uri>())
-
-        assertTrue(fields.isEmpty())
-    }
+            assertEquals(2, fields.size)
+            assertTrue(fields.any { it.name == "nombre" && it.currentValue == "" })
+            assertTrue(fields.any { it.name == "email" && it.currentValue == "correo@ejemplo.com" })
+        }
 
     @Test
-    fun `un archivo que no es un PDF valido devuelve lista vacia sin lanzar excepcion`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `un PDF sin AcroForm devuelve lista vacia`() =
+        runTest {
+            stubResolver(createPdfWithoutForm())
 
-        val fields = useCase(mockk<Uri>())
+            val fields = useCase(mockk<Uri>())
 
-        assertTrue(fields.isEmpty())
-    }
+            assertTrue(fields.isEmpty())
+        }
+
+    @Test
+    fun `un archivo que no es un PDF valido devuelve lista vacia sin lanzar excepcion`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val fields = useCase(mockk<Uri>())
+
+            assertTrue(fields.isEmpty())
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

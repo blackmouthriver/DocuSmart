@@ -20,22 +20,22 @@ import java.nio.file.Files
 
 /** Cubre RF-SEC-10/11 (HU-SEC-07/08, docs/requirements/security.md). */
 class PdfPasswordUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private val useCase = PdfPasswordUseCase()
 
-    private val messages = PdfPasswordMessages(
-        readError = "No se pudo leer el archivo",
-        emptyFile = "El archivo está vacío",
-        protectSuccess = "PDF protegido correctamente",
-        protectGenerateError = "El archivo protegido no se generó correctamente (%1\$d bytes)",
-        protectError = "No se pudo proteger el PDF: %1\$s",
-        removeSuccess = "Contraseña eliminada correctamente",
-        removeGenerateError = "El archivo sin contraseña no se generó correctamente (%1\$d bytes)",
-        removeError = "No se pudo procesar el PDF: %1\$s"
-    )
+    private val messages =
+        PdfPasswordMessages(
+            readError = "No se pudo leer el archivo",
+            emptyFile = "El archivo está vacío",
+            protectSuccess = "PDF protegido correctamente",
+            protectGenerateError = "El archivo protegido no se generó correctamente (%1\$d bytes)",
+            protectError = "No se pudo proteger el PDF: %1\$s",
+            removeSuccess = "Contraseña eliminada correctamente",
+            removeGenerateError = "El archivo sin contraseña no se generó correctamente (%1\$d bytes)",
+            removeError = "No se pudo procesar el PDF: %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -53,65 +53,70 @@ class PdfPasswordUseCaseTest {
     }
 
     @Test
-    fun `protect cifra un PDF valido y devuelve Success`() = runTest {
-        stubResolver(createMinimalPdf())
+    fun `protect cifra un PDF valido y devuelve Success`() =
+        runTest {
+            stubResolver(createMinimalPdf())
 
-        val result = useCase.protect(context, mockk<Uri>(), "1234", "documento", messages)
+            val result = useCase.protect(context, mockk<Uri>(), "1234", "documento", messages)
 
-        assertTrue(result is PdfPasswordResult.Success)
-        val success = result as PdfPasswordResult.Success
-        assertTrue(success.outputFile.exists())
-        assertTrue(success.outputFile.length() > 0)
-        assertEquals(messages.protectSuccess, success.message)
-    }
-
-    @Test
-    fun `protect devuelve Error si el archivo no se pudo abrir`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
-
-        val result = useCase.protect(context, uri, "1234", "documento", messages)
-
-        assertTrue(result is PdfPasswordResult.Error)
-        assertEquals(messages.readError, (result as PdfPasswordResult.Error).message)
-    }
+            assertTrue(result is PdfPasswordResult.Success)
+            val success = result as PdfPasswordResult.Success
+            assertTrue(success.outputFile.exists())
+            assertTrue(success.outputFile.length() > 0)
+            assertEquals(messages.protectSuccess, success.message)
+        }
 
     @Test
-    fun `protect devuelve Error si el archivo esta vacio`() = runTest {
-        stubResolver(ByteArray(0))
+    fun `protect devuelve Error si el archivo no se pudo abrir`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
 
-        val result = useCase.protect(context, mockk<Uri>(), "1234", "documento", messages)
+            val result = useCase.protect(context, uri, "1234", "documento", messages)
 
-        assertTrue(result is PdfPasswordResult.Error)
-        assertEquals(messages.emptyFile, (result as PdfPasswordResult.Error).message)
-    }
-
-    @Test
-    fun `removePassword con la contrasena correcta devuelve Success`() = runTest {
-        stubResolver(createMinimalPdf())
-        val protectResult = useCase.protect(context, mockk<Uri>(), "clave123", "doc", messages)
-        val protectedBytes = (protectResult as PdfPasswordResult.Success).outputFile.readBytes()
-
-        stubResolver(protectedBytes)
-        val result = useCase.removePassword(context, mockk<Uri>(), "clave123", "doc", messages)
-
-        assertTrue(result is PdfPasswordResult.Success)
-        assertEquals(messages.removeSuccess, (result as PdfPasswordResult.Success).message)
-    }
+            assertTrue(result is PdfPasswordResult.Error)
+            assertEquals(messages.readError, (result as PdfPasswordResult.Error).message)
+        }
 
     @Test
-    fun `removePassword con contrasena incorrecta devuelve WrongPassword`() = runTest {
-        stubResolver(createMinimalPdf())
-        val protectResult = useCase.protect(context, mockk<Uri>(), "clave123", "doc", messages)
-        val protectedBytes = (protectResult as PdfPasswordResult.Success).outputFile.readBytes()
+    fun `protect devuelve Error si el archivo esta vacio`() =
+        runTest {
+            stubResolver(ByteArray(0))
 
-        stubResolver(protectedBytes)
-        val result = useCase.removePassword(context, mockk<Uri>(), "clave-equivocada", "doc", messages)
+            val result = useCase.protect(context, mockk<Uri>(), "1234", "documento", messages)
 
-        assertEquals(PdfPasswordResult.WrongPassword, result)
-    }
+            assertTrue(result is PdfPasswordResult.Error)
+            assertEquals(messages.emptyFile, (result as PdfPasswordResult.Error).message)
+        }
+
+    @Test
+    fun `removePassword con la contrasena correcta devuelve Success`() =
+        runTest {
+            stubResolver(createMinimalPdf())
+            val protectResult = useCase.protect(context, mockk<Uri>(), "clave123", "doc", messages)
+            val protectedBytes = (protectResult as PdfPasswordResult.Success).outputFile.readBytes()
+
+            stubResolver(protectedBytes)
+            val result = useCase.removePassword(context, mockk<Uri>(), "clave123", "doc", messages)
+
+            assertTrue(result is PdfPasswordResult.Success)
+            assertEquals(messages.removeSuccess, (result as PdfPasswordResult.Success).message)
+        }
+
+    @Test
+    fun `removePassword con contrasena incorrecta devuelve WrongPassword`() =
+        runTest {
+            stubResolver(createMinimalPdf())
+            val protectResult = useCase.protect(context, mockk<Uri>(), "clave123", "doc", messages)
+            val protectedBytes = (protectResult as PdfPasswordResult.Success).outputFile.readBytes()
+
+            stubResolver(protectedBytes)
+            val result = useCase.removePassword(context, mockk<Uri>(), "clave-equivocada", "doc", messages)
+
+            assertEquals(PdfPasswordResult.WrongPassword, result)
+        }
 
     // Bug real de seguridad encontrado 2026-09-14 (repaso general):
     // openReaderOrNull() atrapaba CUALQUIER excepción al abrir el PDF (no
@@ -120,16 +125,17 @@ class PdfPasswordUseCaseTest {
     // hacía que el usuario reintentara indefinidamente una contraseña que
     // en realidad no era el problema.
     @Test
-    fun `removePassword con un archivo que no es un PDF valido devuelve Error, no WrongPassword`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `removePassword con un archivo que no es un PDF valido devuelve Error, no WrongPassword`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
 
-        val result = useCase.removePassword(context, mockk<Uri>(), "cualquier-contrasena", "doc", messages)
+            val result = useCase.removePassword(context, mockk<Uri>(), "cualquier-contrasena", "doc", messages)
 
-        assertTrue(
-            result is PdfPasswordResult.Error,
-            "un archivo corrupto no debería reportarse como contraseña incorrecta, resultado real: $result"
-        )
-    }
+            assertTrue(
+                result is PdfPasswordResult.Error,
+                "un archivo corrupto no debería reportarse como contraseña incorrecta, resultado real: $result",
+            )
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

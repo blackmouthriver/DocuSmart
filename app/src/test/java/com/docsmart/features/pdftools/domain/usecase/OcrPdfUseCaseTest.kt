@@ -14,16 +14,16 @@ import org.junit.jupiter.api.Test
  * Android/iText, extraídas específicamente para poder testearlas.
  */
 class OcrPdfUseCaseTest {
-
     @Test
     fun `mapOcrBoxToPdf convierte un box en la esquina superior izquierda del bitmap`() {
         // Página de 100x200 puntos, renderizada a escala 2x (bitmap de 200x400 px).
         // Un box en (0,0)-(20,10) px queda en la esquina superior-izquierda visual.
-        val placement = mapOcrBoxToPdf(
-            text = "Hola",
-            box = OcrBoxPx(left = 0, top = 0, right = 20, bottom = 10),
-            geometry = PdfPageGeometry(x = 0f, y = 0f, height = 200f, renderScale = 2f)
-        )
+        val placement =
+            mapOcrBoxToPdf(
+                text = "Hola",
+                box = OcrBoxPx(left = 0, top = 0, right = 20, bottom = 10),
+                geometry = PdfPageGeometry(x = 0f, y = 0f, height = 200f, renderScale = 2f),
+            )
 
         // x = 0/2 = 0
         assertEquals(0f, placement.x, 0.001f)
@@ -37,11 +37,12 @@ class OcrPdfUseCaseTest {
     fun `mapOcrBoxToPdf convierte un box cerca del pie de la pagina`() {
         // Bitmap de 200x400 px (escala 2x de una página de 100x200 pts).
         // Box en (10,390)-(50,400) px -- pegado al borde inferior del bitmap.
-        val placement = mapOcrBoxToPdf(
-            text = "Pie",
-            box = OcrBoxPx(left = 10, top = 390, right = 50, bottom = 400),
-            geometry = PdfPageGeometry(x = 0f, y = 0f, height = 200f, renderScale = 2f)
-        )
+        val placement =
+            mapOcrBoxToPdf(
+                text = "Pie",
+                box = OcrBoxPx(left = 10, top = 390, right = 50, bottom = 400),
+                geometry = PdfPageGeometry(x = 0f, y = 0f, height = 200f, renderScale = 2f),
+            )
 
         assertEquals(5f, placement.x, 0.001f)
         // yBaseline = 200 - 400/2 = 0 (base de la página, como se espera)
@@ -52,11 +53,12 @@ class OcrPdfUseCaseTest {
 
     @Test
     fun `mapOcrBoxToPdf respeta el origen de pagina cuando x e y no son cero`() {
-        val placement = mapOcrBoxToPdf(
-            text = "Offset",
-            box = OcrBoxPx(left = 0, top = 0, right = 10, bottom = 10),
-            geometry = PdfPageGeometry(x = 50f, y = 30f, height = 100f, renderScale = 1f)
-        )
+        val placement =
+            mapOcrBoxToPdf(
+                text = "Offset",
+                box = OcrBoxPx(left = 0, top = 0, right = 10, bottom = 10),
+                geometry = PdfPageGeometry(x = 50f, y = 30f, height = 100f, renderScale = 1f),
+            )
 
         assertEquals(50f, placement.x, 0.001f)
         assertEquals(30f + 100f - 10f, placement.yBaseline, 0.001f)

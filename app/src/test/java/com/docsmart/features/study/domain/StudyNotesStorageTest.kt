@@ -13,14 +13,17 @@ import org.junit.jupiter.api.Test
  * de más al cargar que invertía el orden real de las notas guardadas.
  */
 class StudyNotesStorageTest {
-
     @Test
     fun `guardar y cargar preserva comillas dobles sin corromper el texto`() {
         val store = fakePrefsStore()
         val context = fakeContextWithPrefs(store)
-        val note = SavedNote(
-            id = "1", title = "Cita", text = """Dijo "hola" y se fue""", dateTime = "24/08/2026 · 10:00"
-        )
+        val note =
+            SavedNote(
+                id = "1",
+                title = "Cita",
+                text = """Dijo "hola" y se fue""",
+                dateTime = "24/08/2026 · 10:00",
+            )
 
         StudyNotesStorage.saveNotes(context, listOf(note))
         val loaded = StudyNotesStorage.loadNotes(context)
@@ -32,9 +35,13 @@ class StudyNotesStorageTest {
     fun `guardar y cargar preserva saltos de linea reales`() {
         val store = fakePrefsStore()
         val context = fakeContextWithPrefs(store)
-        val note = SavedNote(
-            id = "1", title = "Lista", text = "Primero\nSegundo\nTercero", dateTime = "24/08/2026 · 10:00"
-        )
+        val note =
+            SavedNote(
+                id = "1",
+                title = "Lista",
+                text = "Primero\nSegundo\nTercero",
+                dateTime = "24/08/2026 · 10:00",
+            )
 
         StudyNotesStorage.saveNotes(context, listOf(note))
         val loaded = StudyNotesStorage.loadNotes(context)

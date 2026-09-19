@@ -40,7 +40,6 @@ import kotlinx.coroutines.sync.withLock
  * reiniciar el Pomodoro sigue siendo responsabilidad exclusiva del motor.
  */
 class PomodoroTimerService : Service() {
-
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
 
     // Revisión adversarial (ronda 14, seguridad + correctitud, encontrado por
@@ -67,8 +66,7 @@ class PomodoroTimerService : Service() {
                 } else {
                     stopSelf()
                 }
-            }
-            .launchIn(serviceScope)
+            }.launchIn(serviceScope)
 
         // Hallazgo real de la auditoría general 2026-09-18 (Alta): a
         // diferencia del collector de arriba (progreso, silencioso a
@@ -87,11 +85,14 @@ class PomodoroTimerService : Service() {
                     // servicio.
                     PomodoroEngine.consumeCompletionEvent()
                 }
-            }
-            .launchIn(serviceScope)
+            }.launchIn(serviceScope)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int = START_NOT_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -126,7 +127,7 @@ class PomodoroTimerService : Service() {
             flushPendingCompletionEvent(
                 replayCache = PomodoroEngine.completionEvents.replayCache,
                 postAlert = ::postCompletionAlert,
-                consume = PomodoroEngine::consumeCompletionEvent
+                consume = PomodoroEngine::consumeCompletionEvent,
             )
         } finally {
             alertMutex.unlock()
@@ -139,13 +140,16 @@ class PomodoroTimerService : Service() {
     }
 
     private fun buildNotification(state: PomodoroState): Notification {
-        val title = getString(
-            if (state.isBreak) R.string.study_break_label else R.string.study_study_label
-        )
-        val time = "${state.minutes.toString().padStart(2, '0')}:" +
-            state.seconds.toString().padStart(2, '0')
+        val title =
+            getString(
+                if (state.isBreak) R.string.study_break_label else R.string.study_study_label,
+            )
+        val time =
+            "${state.minutes.toString().padStart(2, '0')}:" +
+                state.seconds.toString().padStart(2, '0')
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat
+            .Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_pomodoro)
             .setContentTitle(title)
             .setContentText(getString(R.string.study_pomodoro_notification_text, time))
@@ -165,35 +169,40 @@ class PomodoroTimerService : Service() {
     // stopSelf() al terminar el bloque.
     private fun postCompletionAlert(wasBreak: Boolean) {
         val manager = getSystemService(NotificationManager::class.java) ?: return
-        val titleRes = if (wasBreak) {
-            R.string.study_pomodoro_break_complete_title
-        } else {
-            R.string.study_pomodoro_study_complete_title
-        }
-        val bodyRes = if (wasBreak) {
-            R.string.study_pomodoro_break_complete_body
-        } else {
-            R.string.study_pomodoro_study_complete_body
-        }
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID_ALERT)
-            .setSmallIcon(R.drawable.ic_notification_pomodoro)
-            .setContentTitle(getString(titleRes))
-            .setContentText(getString(bodyRes))
-            .setContentIntent(openAppPendingIntent())
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .build()
+        val titleRes =
+            if (wasBreak) {
+                R.string.study_pomodoro_break_complete_title
+            } else {
+                R.string.study_pomodoro_study_complete_title
+            }
+        val bodyRes =
+            if (wasBreak) {
+                R.string.study_pomodoro_break_complete_body
+            } else {
+                R.string.study_pomodoro_study_complete_body
+            }
+        val notification =
+            NotificationCompat
+                .Builder(this, CHANNEL_ID_ALERT)
+                .setSmallIcon(R.drawable.ic_notification_pomodoro)
+                .setContentTitle(getString(titleRes))
+                .setContentText(getString(bodyRes))
+                .setContentIntent(openAppPendingIntent())
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .build()
         manager.notify(NOTIFICATION_ID_ALERT, notification)
     }
 
-    private fun openAppPendingIntent(): PendingIntent = PendingIntent.getActivity(
-        this,
-        0,
-        Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        },
-        PendingIntent.FLAG_IMMUTABLE
-    )
+    private fun openAppPendingIntent(): PendingIntent =
+        PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE,
+        )
 
     private fun createNotificationChannelIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -203,8 +212,8 @@ class PomodoroTimerService : Service() {
                 NotificationChannel(
                     CHANNEL_ID,
                     getString(R.string.study_pomodoro_notification_channel),
-                    NotificationManager.IMPORTANCE_LOW
-                )
+                    NotificationManager.IMPORTANCE_LOW,
+                ),
             )
         }
     }
@@ -213,11 +222,12 @@ class PomodoroTimerService : Service() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = getSystemService(NotificationManager::class.java)
         if (manager != null && manager.getNotificationChannel(CHANNEL_ID_ALERT) == null) {
-            val channel = NotificationChannel(
-                CHANNEL_ID_ALERT,
-                getString(R.string.study_pomodoro_alert_channel),
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
+            val channel =
+                NotificationChannel(
+                    CHANNEL_ID_ALERT,
+                    getString(R.string.study_pomodoro_alert_channel),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                )
             channel.enableVibration(true)
             manager.createNotificationChannel(channel)
         }
@@ -246,7 +256,7 @@ class PomodoroTimerService : Service() {
 internal fun flushPendingCompletionEvent(
     replayCache: List<Boolean>,
     postAlert: (Boolean) -> Unit,
-    consume: () -> Unit
+    consume: () -> Unit,
 ) {
     val pending = replayCache.firstOrNull() ?: return
     postAlert(pending)

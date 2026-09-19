@@ -10,7 +10,6 @@ import com.itextpdf.kernel.colors.ColorConstants
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
-import com.itextpdf.layout.element.Image as PdfImage
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.properties.TextAlignment
 import org.apache.poi.util.Units
@@ -22,6 +21,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.itextpdf.layout.element.Image as PdfImage
 
 /**
  * RF-STU-08/backlog UX #51: exportar notas de Modo Estudio como texto
@@ -40,9 +40,9 @@ import java.util.Locale
  * no es un bug de esta clase).
  */
 object StudyNotesExporter {
-
     private const val EXPORT_DIR_NAME = "study_exports"
     private const val SEPARATOR = "────────────────────────"
+
     // A4 son ~595 puntos de ancho de página en iText7 -- se deja margen
     // para los márgenes por defecto del Document. 350pt en Word equivale
     // a poco menos de la mitad de una página carta, un tamaño legible sin
@@ -60,13 +60,19 @@ object StudyNotesExporter {
             "${note.title}\n${displayDate(note.createdAt)}\n\n${note.text}"
         }
 
-    fun exportAsTextFile(context: Context, notes: List<NoteWithImages>): File {
+    fun exportAsTextFile(
+        context: Context,
+        notes: List<NoteWithImages>,
+    ): File {
         val file = createOutputFile(context, "txt")
         file.writeText(buildPlainText(notes.map { it.note }))
         return file
     }
 
-    fun exportAsPdfFile(context: Context, notes: List<NoteWithImages>): File {
+    fun exportAsPdfFile(
+        context: Context,
+        notes: List<NoteWithImages>,
+    ): File {
         val file = createOutputFile(context, "pdf")
         val document = Document(PdfDocument(PdfWriter(file)))
         notes.forEach { noteWithImages ->
@@ -75,7 +81,7 @@ object StudyNotesExporter {
             document.add(
                 Paragraph(displayDate(note.createdAt))
                     .setFontSize(9f)
-                    .setFontColor(ColorConstants.GRAY)
+                    .setFontColor(ColorConstants.GRAY),
             )
             document.add(Paragraph(note.text).setFontSize(11f))
             addImagesToPdf(document, noteWithImages.images)
@@ -83,7 +89,7 @@ object StudyNotesExporter {
                 Paragraph(SEPARATOR)
                     .setFontSize(9f)
                     .setFontColor(ColorConstants.LIGHT_GRAY)
-                    .setTextAlignment(TextAlignment.CENTER)
+                    .setTextAlignment(TextAlignment.CENTER),
             )
         }
         document.close()
@@ -96,7 +102,10 @@ object StudyNotesExporter {
     // puede decodificar (archivo movido/corrupto) se salta en vez de
     // interrumpir la exportación del resto de la nota.
     @Suppress("TooGenericExceptionCaught")
-    private fun addImagesToPdf(document: Document, images: List<NoteImageEntity>) {
+    private fun addImagesToPdf(
+        document: Document,
+        images: List<NoteImageEntity>,
+    ) {
         images.sortedBy { it.position }.forEach { image ->
             try {
                 val imageData = ImageDataFactory.create(image.filePath)
@@ -112,7 +121,10 @@ object StudyNotesExporter {
     // la versión PDF de arriba, con el equivalente real de Apache POI
     // (`XWPFRun.setBold`/`setFontSize`/`setColor`, ya usado en
     // `WordToPdfUseCase`/`PdfToWordUseCase` del proyecto).
-    fun exportAsWordFile(context: Context, notes: List<NoteWithImages>): File {
+    fun exportAsWordFile(
+        context: Context,
+        notes: List<NoteWithImages>,
+    ): File {
         val file = createOutputFile(context, "docx")
         XWPFDocument().use { docx ->
             notes.forEachIndexed { index, noteWithImages ->
@@ -157,7 +169,10 @@ object StudyNotesExporter {
     // EMUs y el tamaño real de la imagen (para calcular el alto
     // proporcional) -- se lee con ImageIO en vez de asumir un tamaño fijo.
     @Suppress("TooGenericExceptionCaught")
-    private fun addImagesToWord(docx: XWPFDocument, images: List<NoteImageEntity>) {
+    private fun addImagesToWord(
+        docx: XWPFDocument,
+        images: List<NoteImageEntity>,
+    ) {
         images.sortedBy { it.position }.forEach { image ->
             try {
                 val file = File(image.filePath)
@@ -192,14 +207,18 @@ object StudyNotesExporter {
     // BitmapFactory ya detecta por firma de bytes (no por extensión) al
     // leer los bounds, mismo criterio que ya usa ImageDataFactory del
     // lado PDF.
-    private fun poiPictureType(mimeType: String?): Int = when (mimeType) {
-        "image/png" -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_PNG
-        "image/gif" -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_GIF
-        "image/bmp" -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_BMP
-        else -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_JPEG
-    }
+    private fun poiPictureType(mimeType: String?): Int =
+        when (mimeType) {
+            "image/png" -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_PNG
+            "image/gif" -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_GIF
+            "image/bmp" -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_BMP
+            else -> org.apache.poi.xwpf.usermodel.Document.PICTURE_TYPE_JPEG
+        }
 
-    private fun createOutputFile(context: Context, extension: String): File {
+    private fun createOutputFile(
+        context: Context,
+        extension: String,
+    ): File {
         val dir = File(context.filesDir, EXPORT_DIR_NAME).apply { mkdirs() }
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         return File(dir, "DocuSmart_Notas_$timestamp.$extension")

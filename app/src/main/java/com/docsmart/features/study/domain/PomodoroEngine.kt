@@ -21,11 +21,12 @@ data class PomodoroState(
     val seconds: Int = 0,
     val isRunning: Boolean = false,
     val isBreak: Boolean = false,
-    val pomodoroCount: Int = 0
+    val pomodoroCount: Int = 0,
 )
 
 internal const val POMODORO_STUDY_MINUTES = 25
 internal const val POMODORO_BREAK_MINUTES = 5
+
 // Hallazgo #56 (revisión general 2026-09-16): study_pomodoros_hint ya
 // prometía "Cada 4 pomodoros = descanso largo" desde el texto, pero esa
 // lógica nunca existió -- el descanso era siempre de 5 minutos. Valores de
@@ -43,38 +44,38 @@ internal const val POMODORO_LONG_BREAK_INTERVAL = 4
  * `isRunning = false` -- el llamador debe volver a iniciar el siguiente
  * bloque explícitamente, no se encadena solo.
  */
-internal fun tickPomodoro(current: PomodoroState): PomodoroState = when {
-    current.seconds > 0 -> current.copy(seconds = current.seconds - 1)
-    current.minutes > 0 -> current.copy(minutes = current.minutes - 1, seconds = 59)
-    !current.isBreak -> {
-        val newCount = current.pomodoroCount + 1
-        val isLongBreak = newCount % POMODORO_LONG_BREAK_INTERVAL == 0
-        current.copy(
-            isRunning = false,
-            pomodoroCount = newCount,
-            isBreak = true,
-            minutes = if (isLongBreak) POMODORO_LONG_BREAK_MINUTES else POMODORO_BREAK_MINUTES,
-            seconds = 0
-        )
+internal fun tickPomodoro(current: PomodoroState): PomodoroState =
+    when {
+        current.seconds > 0 -> current.copy(seconds = current.seconds - 1)
+        current.minutes > 0 -> current.copy(minutes = current.minutes - 1, seconds = 59)
+        !current.isBreak -> {
+            val newCount = current.pomodoroCount + 1
+            val isLongBreak = newCount % POMODORO_LONG_BREAK_INTERVAL == 0
+            current.copy(
+                isRunning = false,
+                pomodoroCount = newCount,
+                isBreak = true,
+                minutes = if (isLongBreak) POMODORO_LONG_BREAK_MINUTES else POMODORO_BREAK_MINUTES,
+                seconds = 0,
+            )
+        }
+        else ->
+            current.copy(
+                isRunning = false,
+                isBreak = false,
+                minutes = POMODORO_STUDY_MINUTES,
+                seconds = 0,
+            )
     }
-    else -> current.copy(
-        isRunning = false,
-        isBreak = false,
-        minutes = POMODORO_STUDY_MINUTES,
-        seconds = 0
-    )
-}
 
 // true si este tick cierra un bloque de ESTUDIO (no de descanso) -- el
 // momento exacto en el que cuenta como "un pomodoro completado" (RF-STU-09).
-internal fun tickCompletesStudyBlock(current: PomodoroState): Boolean =
-    current.seconds == 0 && current.minutes == 0 && !current.isBreak
+internal fun tickCompletesStudyBlock(current: PomodoroState): Boolean = current.seconds == 0 && current.minutes == 0 && !current.isBreak
 
 // Hallazgo real de la auditoría general 2026-09-18 (Alta -- fin de sesión
 // silencioso): análoga a tickCompletesStudyBlock pero para el cierre de un
 // bloque de DESCANSO, usada para disparar completionEvents desde tick().
-internal fun tickCompletesBreakBlock(current: PomodoroState): Boolean =
-    current.seconds == 0 && current.minutes == 0 && current.isBreak
+internal fun tickCompletesBreakBlock(current: PomodoroState): Boolean = current.seconds == 0 && current.minutes == 0 && current.isBreak
 
 /**
  * RF-STU-10: motor del Pomodoro, vivo fuera de la composición de
@@ -194,10 +195,11 @@ object PomodoroEngine {
         if (_state.value.isRunning) return
         if (!seededPomodoroCount) {
             seededPomodoroCount = true
-            val completedToday = pomodoroCountToday(
-                StudyStatsStorage.loadStats(context).pomodoroTimestamps,
-                System.currentTimeMillis()
-            )
+            val completedToday =
+                pomodoroCountToday(
+                    StudyStatsStorage.loadStats(context).pomodoroTimestamps,
+                    System.currentTimeMillis(),
+                )
             if (completedToday > _state.value.pomodoroCount) {
                 _state.value = _state.value.copy(pomodoroCount = completedToday)
             }
@@ -217,18 +219,19 @@ object PomodoroEngine {
         // el comentario en reset()/pause() sobre la condición de carrera.
         tickerJob?.cancel()
         lastTickElapsedRealtime = SystemClock.elapsedRealtime()
-        tickerJob = scope.launch {
-            while (_state.value.isRunning) {
-                delay(1000)
-                if (!_state.value.isRunning) break
-                val now = SystemClock.elapsedRealtime()
-                val elapsedSeconds = ((now - lastTickElapsedRealtime) / 1000L).toInt().coerceAtLeast(1)
-                lastTickElapsedRealtime += elapsedSeconds * 1000L
-                repeat(elapsedSeconds) {
-                    if (_state.value.isRunning) tick(context)
+        tickerJob =
+            scope.launch {
+                while (_state.value.isRunning) {
+                    delay(1000)
+                    if (!_state.value.isRunning) break
+                    val now = SystemClock.elapsedRealtime()
+                    val elapsedSeconds = ((now - lastTickElapsedRealtime) / 1000L).toInt().coerceAtLeast(1)
+                    lastTickElapsedRealtime += elapsedSeconds * 1000L
+                    repeat(elapsedSeconds) {
+                        if (_state.value.isRunning) tick(context)
+                    }
                 }
             }
-        }
     }
 
     private fun pause(context: Context) {

@@ -46,170 +46,192 @@ import javax.inject.Inject
  * resaltado/nota quede en el mismo lugar visual tanto en pantalla como en el
  * PDF aplanado que se comparte.
  */
-class FlattenAnnotationsPdfUseCase @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    companion object {
-        private const val TAG = "FlattenAnnotationsPdfUseCase"
-        private const val HIGHLIGHT_OPACITY = 0.35f
-        private const val NOTE_MARKER_RADIUS_PTS = 8f
-    }
-
-    @Suppress("TooGenericExceptionCaught")
-    suspend operator fun invoke(sourceUri: Uri, annotations: List<AnnotationEntity>): File? =
-        withContext(Dispatchers.IO) {
-            if (annotations.isEmpty()) return@withContext null
-            var cacheFile: File? = null
-            // Hallazgo real de la auditoría general 2026-09-17 (M9): antes
-            // `outputFile` era un `val` local al `try`, invisible para el
-            // `catch` -- si `PdfDocument(...).use {}` fallaba a mitad de
-            // camino (tras crear el archivo físico en filesDir/viewer_share),
-            // ese PDF parcial quedaba huérfano en disco para siempre.
-            var outputFile: File? = null
-            // Revisión adversarial de correctitud (ronda 11): el borrado de
-            // outputFile solo vivía en el catch de Exception -- el nuevo
-            // catch de CancellationException (usuario navega fuera mientras
-            // esto sigue en curso) lo saltaba por completo, dejando el PDF
-            // parcial huérfano. `committed` protege el único caso donde
-            // outputFile debe sobrevivir: cuando se devuelve como resultado.
-            var committed = false
-            try {
-                cacheFile = copyUriToCache(sourceUri) ?: return@withContext null
-                outputFile = createOutputFile()
-
-                PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
-                    flattenAnnotationsOntoDocument(pdf, annotations)
-                }
-
-                if (outputFile.length() == 0L) {
-                    return@withContext null
-                }
-                committed = true
-                outputFile
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: error aplanando anotaciones")
-                null
-            } finally {
-                cacheFile?.delete()
-                if (!committed) outputFile?.delete()
-            }
-        }
-
-    // Extraído de invoke() (revisión adversarial de correctitud, ronda 11)
-    // para bajar su complejidad ciclomática por debajo del límite de detekt
-    // tras agregar el manejo de `committed` -- mismo cuerpo, sin cambio de
-    // comportamiento.
-    private fun flattenAnnotationsOntoDocument(pdf: PdfDocument, annotations: List<AnnotationEntity>) {
-        val byPage = annotations.groupBy { it.page }
-        val gState = PdfExtGState().setFillOpacity(HIGHLIGHT_OPACITY)
-        for ((pageNumber, pageAnnotations) in byPage) {
-            if (pageNumber < 1 || pageNumber > pdf.numberOfPages) continue
-            val page = pdf.getPage(pageNumber)
-            pageAnnotations.forEach { annotation ->
-                when (annotation.type) {
-                    AnnotationType.HIGHLIGHT -> drawHighlight(page, annotation, gState)
-                    AnnotationType.NOTE      -> drawNote(page, annotation)
-                }
-            }
-        }
-    }
-
-    private fun drawHighlight(
-        page: com.itextpdf.kernel.pdf.PdfPage,
-        annotation: AnnotationEntity,
-        gState: PdfExtGState
+class FlattenAnnotationsPdfUseCase
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
     ) {
-        val raw = rawRectFor(page, annotation.xPts, annotation.yPts, annotation.widthPts, annotation.heightPts)
-        val canvas = PdfCanvas(page.newContentStreamAfter(), page.resources, page.document)
-        canvas.saveState()
-        canvas.setExtGState(gState)
-        canvas.setFillColor(argbToDeviceRgb(annotation.color))
-        canvas.rectangle(raw.x.toDouble(), raw.y.toDouble(), raw.width.toDouble(), raw.height.toDouble())
-        canvas.fill()
-        canvas.restoreState()
-    }
+        companion object {
+            private const val TAG = "FlattenAnnotationsPdfUseCase"
+            private const val HIGHLIGHT_OPACITY = 0.35f
+            private const val NOTE_MARKER_RADIUS_PTS = 8f
+        }
 
-    private fun drawNote(page: com.itextpdf.kernel.pdf.PdfPage, annotation: AnnotationEntity) {
-        // Marcador visual (círculo relleno pequeño) + PdfTextAnnotation nativa
-        // en el mismo punto -- doble representación: se ve como un ícono al
-        // mirar la página, y también aparece como comentario nativo del PDF.
-        // El punto de anclaje se transforma como un rect de tamaño cero -- el
-        // marcador es un círculo (mismo radio en ambos ejes), así que no hace
-        // falta transformar su extensión, solo su centro.
-        val rawCenter = rawRectFor(page, annotation.xPts, annotation.yPts, 0f, 0f)
-        val canvas = PdfCanvas(page.newContentStreamAfter(), page.resources, page.document)
-        canvas.saveState()
-        canvas.setFillColor(argbToDeviceRgb(annotation.color))
-        canvas.circle(rawCenter.x.toDouble(), rawCenter.y.toDouble(), NOTE_MARKER_RADIUS_PTS.toDouble())
-        canvas.fill()
-        canvas.restoreState()
+        @Suppress("TooGenericExceptionCaught")
+        suspend operator fun invoke(
+            sourceUri: Uri,
+            annotations: List<AnnotationEntity>,
+        ): File? =
+            withContext(Dispatchers.IO) {
+                if (annotations.isEmpty()) return@withContext null
+                var cacheFile: File? = null
+                // Hallazgo real de la auditoría general 2026-09-17 (M9): antes
+                // `outputFile` era un `val` local al `try`, invisible para el
+                // `catch` -- si `PdfDocument(...).use {}` fallaba a mitad de
+                // camino (tras crear el archivo físico en filesDir/viewer_share),
+                // ese PDF parcial quedaba huérfano en disco para siempre.
+                var outputFile: File? = null
+                // Revisión adversarial de correctitud (ronda 11): el borrado de
+                // outputFile solo vivía en el catch de Exception -- el nuevo
+                // catch de CancellationException (usuario navega fuera mientras
+                // esto sigue en curso) lo saltaba por completo, dejando el PDF
+                // parcial huérfano. `committed` protege el único caso donde
+                // outputFile debe sobrevivir: cuando se devuelve como resultado.
+                var committed = false
+                try {
+                    cacheFile = copyUriToCache(sourceUri) ?: return@withContext null
+                    outputFile = createOutputFile()
 
-        val rect = Rectangle(
-            rawCenter.x - NOTE_MARKER_RADIUS_PTS,
-            rawCenter.y - NOTE_MARKER_RADIUS_PTS,
-            NOTE_MARKER_RADIUS_PTS * 2,
-            NOTE_MARKER_RADIUS_PTS * 2
-        )
-        val textAnnotation = PdfTextAnnotation(rect)
-            .setContents(annotation.text)
-            .setColor(argbToDeviceRgb(annotation.color))
-        page.addAnnotation(textAnnotation)
-    }
+                    PdfDocument(PdfReader(cacheFile), PdfWriter(outputFile)).use { pdf ->
+                        flattenAnnotationsOntoDocument(pdf, annotations)
+                    }
 
-    private fun rawRectFor(
-        page: com.itextpdf.kernel.pdf.PdfPage,
-        xPts: Float, yPts: Float, widthPts: Float, heightPts: Float
-    ): RawPageRect {
-        val mediaBox = page.mediaBox
-        return visualRectToRawPageRect(
-            visual = PdfRectPts(xPts, yPts, widthPts, heightPts),
-            rotationDegrees = page.rotation,
-            rawPageWidthPts = mediaBox.width,
-            rawPageHeightPts = mediaBox.height
-        )
-    }
+                    if (outputFile.length() == 0L) {
+                        return@withContext null
+                    }
+                    committed = true
+                    outputFile
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "$TAG: error aplanando anotaciones")
+                    null
+                } finally {
+                    cacheFile?.delete()
+                    if (!committed) outputFile?.delete()
+                }
+            }
 
-    private fun argbToDeviceRgb(argb: Int): DeviceRgb {
-        val r = (argb shr 16) and 0xFF
-        val g = (argb shr 8) and 0xFF
-        val b = argb and 0xFF
-        return DeviceRgb(r, g, b)
-    }
+        // Extraído de invoke() (revisión adversarial de correctitud, ronda 11)
+        // para bajar su complejidad ciclomática por debajo del límite de detekt
+        // tras agregar el manejo de `committed` -- mismo cuerpo, sin cambio de
+        // comportamiento.
+        private fun flattenAnnotationsOntoDocument(
+            pdf: PdfDocument,
+            annotations: List<AnnotationEntity>,
+        ) {
+            val byPage = annotations.groupBy { it.page }
+            val gState = PdfExtGState().setFillOpacity(HIGHLIGHT_OPACITY)
+            for ((pageNumber, pageAnnotations) in byPage) {
+                if (pageNumber < 1 || pageNumber > pdf.numberOfPages) continue
+                val page = pdf.getPage(pageNumber)
+                pageAnnotations.forEach { annotation ->
+                    when (annotation.type) {
+                        AnnotationType.HIGHLIGHT -> drawHighlight(page, annotation, gState)
+                        AnnotationType.NOTE -> drawNote(page, annotation)
+                    }
+                }
+            }
+        }
 
-    @Suppress("TooGenericExceptionCaught")
-    private fun copyUriToCache(uri: Uri): File? {
-        val file = File(context.cacheDir, "flatten_annotations_${System.currentTimeMillis()}.pdf")
-        return try {
-            val copied = if (uri.scheme == "file") copyFileUriToCache(uri, file) else copyContentUriToCache(uri, file)
-            if (copied) file else null
-        } catch (e: Exception) {
-            Timber.e(e, "$TAG: error copiando URI al cache")
-            // Bug real encontrado por la revisión de seguridad HU-46: una
-            // excepción a mitad de la copia podía dejar un archivo parcial
-            // huérfano en cacheDir -- a diferencia del resto del método (que
-            // sí limpia en el camino normal), este catch nunca lo borraba.
-            if (file.exists()) file.delete()
-            null
+        private fun drawHighlight(
+            page: com.itextpdf.kernel.pdf.PdfPage,
+            annotation: AnnotationEntity,
+            gState: PdfExtGState,
+        ) {
+            val raw = rawRectFor(page, annotation.xPts, annotation.yPts, annotation.widthPts, annotation.heightPts)
+            val canvas = PdfCanvas(page.newContentStreamAfter(), page.resources, page.document)
+            canvas.saveState()
+            canvas.setExtGState(gState)
+            canvas.setFillColor(argbToDeviceRgb(annotation.color))
+            canvas.rectangle(raw.x.toDouble(), raw.y.toDouble(), raw.width.toDouble(), raw.height.toDouble())
+            canvas.fill()
+            canvas.restoreState()
+        }
+
+        private fun drawNote(
+            page: com.itextpdf.kernel.pdf.PdfPage,
+            annotation: AnnotationEntity,
+        ) {
+            // Marcador visual (círculo relleno pequeño) + PdfTextAnnotation nativa
+            // en el mismo punto -- doble representación: se ve como un ícono al
+            // mirar la página, y también aparece como comentario nativo del PDF.
+            // El punto de anclaje se transforma como un rect de tamaño cero -- el
+            // marcador es un círculo (mismo radio en ambos ejes), así que no hace
+            // falta transformar su extensión, solo su centro.
+            val rawCenter = rawRectFor(page, annotation.xPts, annotation.yPts, 0f, 0f)
+            val canvas = PdfCanvas(page.newContentStreamAfter(), page.resources, page.document)
+            canvas.saveState()
+            canvas.setFillColor(argbToDeviceRgb(annotation.color))
+            canvas.circle(rawCenter.x.toDouble(), rawCenter.y.toDouble(), NOTE_MARKER_RADIUS_PTS.toDouble())
+            canvas.fill()
+            canvas.restoreState()
+
+            val rect =
+                Rectangle(
+                    rawCenter.x - NOTE_MARKER_RADIUS_PTS,
+                    rawCenter.y - NOTE_MARKER_RADIUS_PTS,
+                    NOTE_MARKER_RADIUS_PTS * 2,
+                    NOTE_MARKER_RADIUS_PTS * 2,
+                )
+            val textAnnotation =
+                PdfTextAnnotation(rect)
+                    .setContents(annotation.text)
+                    .setColor(argbToDeviceRgb(annotation.color))
+            page.addAnnotation(textAnnotation)
+        }
+
+        private fun rawRectFor(
+            page: com.itextpdf.kernel.pdf.PdfPage,
+            xPts: Float,
+            yPts: Float,
+            widthPts: Float,
+            heightPts: Float,
+        ): RawPageRect {
+            val mediaBox = page.mediaBox
+            return visualRectToRawPageRect(
+                visual = PdfRectPts(xPts, yPts, widthPts, heightPts),
+                rotationDegrees = page.rotation,
+                rawPageWidthPts = mediaBox.width,
+                rawPageHeightPts = mediaBox.height,
+            )
+        }
+
+        private fun argbToDeviceRgb(argb: Int): DeviceRgb {
+            val r = (argb shr 16) and 0xFF
+            val g = (argb shr 8) and 0xFF
+            val b = argb and 0xFF
+            return DeviceRgb(r, g, b)
+        }
+
+        @Suppress("TooGenericExceptionCaught")
+        private fun copyUriToCache(uri: Uri): File? {
+            val file = File(context.cacheDir, "flatten_annotations_${System.currentTimeMillis()}.pdf")
+            return try {
+                val copied = if (uri.scheme == "file") copyFileUriToCache(uri, file) else copyContentUriToCache(uri, file)
+                if (copied) file else null
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: error copiando URI al cache")
+                // Bug real encontrado por la revisión de seguridad HU-46: una
+                // excepción a mitad de la copia podía dejar un archivo parcial
+                // huérfano en cacheDir -- a diferencia del resto del método (que
+                // sí limpia en el camino normal), este catch nunca lo borraba.
+                if (file.exists()) file.delete()
+                null
+            }
+        }
+
+        private fun copyFileUriToCache(
+            uri: Uri,
+            dest: File,
+        ): Boolean {
+            val src = uri.path?.let(::File)
+            if (src == null || !src.exists()) return false
+            src.copyTo(dest, overwrite = true)
+            return true
+        }
+
+        private fun copyContentUriToCache(
+            uri: Uri,
+            dest: File,
+        ): Boolean =
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                dest.outputStream().use { output -> input.copyTo(output) }
+            } != null
+
+        private fun createOutputFile(): File {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val dir = File(context.filesDir, "viewer_share").apply { mkdirs() }
+            return File(dir, "DocuSmart_anotado_$timestamp.pdf")
         }
     }
-
-    private fun copyFileUriToCache(uri: Uri, dest: File): Boolean {
-        val src = uri.path?.let(::File)
-        if (src == null || !src.exists()) return false
-        src.copyTo(dest, overwrite = true)
-        return true
-    }
-
-    private fun copyContentUriToCache(uri: Uri, dest: File): Boolean =
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            dest.outputStream().use { output -> input.copyTo(output) }
-        } != null
-
-    private fun createOutputFile(): File {
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val dir = File(context.filesDir, "viewer_share").apply { mkdirs() }
-        return File(dir, "DocuSmart_anotado_$timestamp.pdf")
-    }
-}

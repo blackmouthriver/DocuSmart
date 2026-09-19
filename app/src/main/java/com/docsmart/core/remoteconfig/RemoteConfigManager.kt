@@ -18,30 +18,34 @@ import javax.inject.Singleton
  * parámetros distintos en la consola de Firebase.
  */
 @Singleton
-class RemoteConfigManager @Inject constructor() {
-    private val remoteConfig = Firebase.remoteConfig.apply {
-        setConfigSettingsAsync(
-            remoteConfigSettings {
-                // En debug, fetch inmediato en cada refresh() para poder probar
-                // valores nuevos sin esperar la hora de caché de producción.
-                minimumFetchIntervalInSeconds = if (BuildConfig.DEBUG) 0L else 3600L
+class RemoteConfigManager
+    @Inject
+    constructor() {
+        private val remoteConfig =
+            Firebase.remoteConfig.apply {
+                setConfigSettingsAsync(
+                    remoteConfigSettings {
+                        // En debug, fetch inmediato en cada refresh() para poder probar
+                        // valores nuevos sin esperar la hora de caché de producción.
+                        minimumFetchIntervalInSeconds = if (BuildConfig.DEBUG) 0L else 3600L
+                    },
+                )
+                setDefaultsAsync(R.xml.remote_config_defaults)
             }
-        )
-        setDefaultsAsync(R.xml.remote_config_defaults)
+
+        /** Llamar al iniciar la app -- best-effort, nunca bloquea ni falla la app si no hay red. */
+        fun refresh() {
+            remoteConfig
+                .fetchAndActivate()
+                .addOnFailureListener { e -> Timber.w(e, "RemoteConfigManager: fetchAndActivate falló") }
+        }
+
+        fun isAnnualPlanHighlighted(): Boolean = remoteConfig.getBoolean(KEY_ANNUAL_HIGHLIGHTED)
+
+        fun showSavingsBadge(): Boolean = remoteConfig.getBoolean(KEY_SHOW_SAVINGS_BADGE)
+
+        companion object {
+            private const val KEY_ANNUAL_HIGHLIGHTED = "premium_annual_highlighted"
+            private const val KEY_SHOW_SAVINGS_BADGE = "premium_show_savings_badge"
+        }
     }
-
-    /** Llamar al iniciar la app -- best-effort, nunca bloquea ni falla la app si no hay red. */
-    fun refresh() {
-        remoteConfig.fetchAndActivate()
-            .addOnFailureListener { e -> Timber.w(e, "RemoteConfigManager: fetchAndActivate falló") }
-    }
-
-    fun isAnnualPlanHighlighted(): Boolean = remoteConfig.getBoolean(KEY_ANNUAL_HIGHLIGHTED)
-
-    fun showSavingsBadge(): Boolean = remoteConfig.getBoolean(KEY_SHOW_SAVINGS_BADGE)
-
-    companion object {
-        private const val KEY_ANNUAL_HIGHLIGHTED = "premium_annual_highlighted"
-        private const val KEY_SHOW_SAVINGS_BADGE = "premium_show_savings_badge"
-    }
-}

@@ -26,13 +26,13 @@ import com.docsmart.core.ui.theme.rememberAccentGradient
 
 @Composable
 fun DocuSmartTopBanner(
-    screenTitle   : String,
+    screenTitle: String,
     screenSubtitle: String = "",
-    modifier      : Modifier = Modifier,
+    modifier: Modifier = Modifier,
     // RF-VIS-07: slot opcional para un ícono de acción (ej. acceso a la
     // Papelera en Biblioteca) -- por defecto null, no afecta a las 9 pantallas
     // que ya usan este banner sin este parámetro.
-    actions       : (@Composable RowScope.() -> Unit)? = null,
+    actions: (@Composable RowScope.() -> Unit)? = null,
     // Bug real reportado por el usuario 2026-08-30: cada sub-pantalla
     // armaba su propia flecha de "volver" suelta al lado del banner (fuera
     // de su fondo azul, sin texto), y el banner terminaba sin usar el 100%
@@ -40,7 +40,7 @@ fun DocuSmartTopBanner(
     // flecha + "Volver" quedan integrados dentro del propio banner -- si es
     // `null` (pantallas de la barra inferior), el banner se ve exactamente
     // igual que antes.
-    onBack        : (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
 ) {
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): este
     // degradado estaba fijo en tonos de azul, ignorando el "Color de
@@ -50,32 +50,35 @@ fun DocuSmartTopBanner(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.large)
-                .background(brush = Brush.linearGradient(colors = bannerGradient))
-                .padding(horizontal = 20.dp, vertical = 18.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(brush = Brush.linearGradient(colors = bannerGradient))
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
         ) {
             // ── Círculos decorativos ──────────────────────────────────────────
             Box(
-                modifier = Modifier
-                    .size(130.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(x = 40.dp, y = (-25).dp)
-                    .background(
-                        color = Color.White.copy(alpha = 0.07f),
-                        shape = MaterialTheme.shapes.extraLarge
-                    )
+                modifier =
+                    Modifier
+                        .size(130.dp)
+                        .align(Alignment.TopEnd)
+                        .offset(x = 40.dp, y = (-25).dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.07f),
+                            shape = MaterialTheme.shapes.extraLarge,
+                        ),
             )
             Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 15.dp, y = 25.dp)
-                    .background(
-                        color = Color.White.copy(alpha = 0.05f),
-                        shape = MaterialTheme.shapes.extraLarge
-                    )
+                modifier =
+                    Modifier
+                        .size(70.dp)
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 15.dp, y = 25.dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.05f),
+                            shape = MaterialTheme.shapes.extraLarge,
+                        ),
             )
 
             // ── Contenido principal ────────────────────────────────────────────
@@ -88,49 +91,51 @@ fun DocuSmartTopBanner(
             Column {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     // Logo DocuSmart
                     Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(
-                                color = Color.White.copy(alpha = 0.18f),
-                                shape = MaterialTheme.shapes.medium
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(36.dp)
+                                .background(
+                                    color = Color.White.copy(alpha = 0.18f),
+                                    shape = MaterialTheme.shapes.medium,
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Image(
-                            painter           = painterResource(R.drawable.ic_docusmart_logo),
+                            painter = painterResource(R.drawable.ic_docusmart_logo),
                             // H1 (auditoría de accesibilidad TalkBack
                             // 2026-09-18): el texto visible "Docu"+"Smart" de
                             // al lado ya dice "DocuSmart" -- con
                             // contentDescription acá, TalkBack anunciaba el
                             // nombre repetido (logo + 2 Text).
                             contentDescription = null,
-                            modifier          = Modifier
-                                .size(24.dp)
-                                .padding(1.dp)
+                            modifier =
+                                Modifier
+                                    .size(24.dp)
+                                    .padding(1.dp),
                         )
                     }
 
                     // Marca "DocuSmart" -- a nivel con el logo, en la misma fila
                     Row(
-                        modifier              = Modifier.weight(1f),
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text  = "Docu",
+                            text = "Docu",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text  = "Smart",
+                            text = "Smart",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.Normal
+                            fontWeight = FontWeight.Normal,
                         )
                     }
 
@@ -141,12 +146,12 @@ fun DocuSmartTopBanner(
 
                 // Título de la pantalla -- centrado, a todo el ancho
                 Text(
-                    text       = screenTitle,
-                    style      = MaterialTheme.typography.titleLarge,
+                    text = screenTitle,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color      = Color.White,
-                    textAlign  = TextAlign.Center,
-                    modifier   = Modifier.fillMaxWidth()
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 // Subtítulo opcional -- centrado, igual que el título (pedido
                 // explícito del usuario 2026-09-07: primero se pidió
@@ -155,11 +160,11 @@ fun DocuSmartTopBanner(
                 if (screenSubtitle.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text      = screenSubtitle,
-                        style     = MaterialTheme.typography.bodySmall,
-                        color     = Color.White.copy(alpha = 0.72f),
+                        text = screenSubtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.72f),
                         textAlign = TextAlign.Center,
-                        modifier  = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -174,27 +179,28 @@ fun DocuSmartTopBanner(
         // degradado.
         if (onBack != null) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    // H17 (auditoría de accesibilidad TalkBack 2026-09-18):
-                    // el objetivo táctil real medía ~20-24dp de alto (por
-                    // debajo del mínimo de 48dp) -- se asegura el mínimo sin
-                    // tocar el tamaño visual del ícono/texto.
-                    .heightIn(min = 48.dp)
-                    .clickable(role = Role.Button, onClick = onBack)
+                modifier =
+                    Modifier
+                        .padding(top = 10.dp)
+                        // H17 (auditoría de accesibilidad TalkBack 2026-09-18):
+                        // el objetivo táctil real medía ~20-24dp de alto (por
+                        // debajo del mínimo de 48dp) -- se asegura el mínimo sin
+                        // tocar el tamaño visual del ícono/texto.
+                        .heightIn(min = 48.dp)
+                        .clickable(role = Role.Button, onClick = onBack),
             ) {
                 Icon(
-                    imageVector        = Icons.AutoMirrored.Rounded.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
                 )
                 Text(
-                    text  = stringResource(R.string.general_back),
+                    text = stringResource(R.string.general_back),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

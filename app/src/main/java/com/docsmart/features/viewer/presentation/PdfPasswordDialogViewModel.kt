@@ -25,26 +25,27 @@ import javax.inject.Inject
 // nuevo), y el diálogo en sí solo vive mientras `uiState.requiresPassword`
 // es true en esa misma visita a la pantalla.
 @HiltViewModel
-class PdfPasswordDialogViewModel @Inject constructor() : ViewModel() {
+class PdfPasswordDialogViewModel
+    @Inject
+    constructor() : ViewModel() {
+        var password by mutableStateOf("")
+            private set
 
-    var password by mutableStateOf("")
-        private set
+        var showPassword by mutableStateOf(false)
+            private set
 
-    var showPassword by mutableStateOf(false)
-        private set
+        fun onPasswordChange(value: String) {
+            password = value
+        }
 
-    fun onPasswordChange(value: String) {
-        password = value
+        fun onToggleShowPassword() {
+            showPassword = !showPassword
+        }
+
+        // Se llama tras un desbloqueo exitoso (o al cancelar) para no dejar la
+        // contraseña ya usada viva en memoria más de lo necesario.
+        fun clear() {
+            password = ""
+            showPassword = false
+        }
     }
-
-    fun onToggleShowPassword() {
-        showPassword = !showPassword
-    }
-
-    // Se llama tras un desbloqueo exitoso (o al cancelar) para no dejar la
-    // contraseña ya usada viva en memoria más de lo necesario.
-    fun clear() {
-        password = ""
-        showPassword = false
-    }
-}

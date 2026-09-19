@@ -67,50 +67,56 @@ fun PdfSelectZone(
     readyText: String,
     modifier: Modifier = Modifier,
     accentColor: Color = MaterialTheme.colorScheme.primary,
-    label: String? = null
+    label: String? = null,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         if (label != null) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .clip(MaterialTheme.shapes.large)
-                .border(
-                    width = if (selectedPdf != null) 1.dp else 1.5.dp,
-                    color = if (selectedPdf != null)
-                        accentColor
-                    else
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                    shape = MaterialTheme.shapes.large
-                )
-                .background(
-                    if (selectedPdf != null)
-                        accentColor.copy(alpha = 0.1f)
-                    else
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                )
-                .clickable { onSelectPdf() },
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .border(
+                        width = if (selectedPdf != null) 1.dp else 1.5.dp,
+                        color =
+                            if (selectedPdf != null) {
+                                accentColor
+                            } else {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                            },
+                        shape = MaterialTheme.shapes.large,
+                    )
+                    .background(
+                        if (selectedPdf != null) {
+                            accentColor.copy(alpha = 0.1f)
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                        },
+                    )
+                    .clickable { onSelectPdf() },
+            contentAlignment = Alignment.Center,
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector = if (selectedPdf != null)
-                        Icons.Rounded.CheckCircle
-                    else
-                        Icons.Rounded.FileOpen,
+                    imageVector =
+                        if (selectedPdf != null) {
+                            Icons.Rounded.CheckCircle
+                        } else {
+                            Icons.Rounded.FileOpen
+                        },
                     contentDescription = null,
                     tint = if (selectedPdf != null) accentColor else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 )
                 // Hallazgo real de la revisión general 2026-09-16 (#24):
                 // sin maxLines/overflow, un nombre de archivo largo
@@ -121,21 +127,26 @@ fun PdfSelectZone(
                 // bien; se replica el mismo criterio acá.
                 Column(modifier = Modifier.weight(1f, fill = false)) {
                     Text(
-                        text = if (selectedPdf != null) readyText
-                               else stringResource(R.string.pdf_tools_select_pdf_prompt),
+                        text =
+                            if (selectedPdf != null) {
+                                readyText
+                            } else {
+                                stringResource(R.string.pdf_tools_select_pdf_prompt)
+                            },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (selectedPdf != null) accentColor else MaterialTheme.colorScheme.primary,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                     if (selectedPdf != null) {
                         Text(
-                            text = selectedPdf.lastPathSegment
-                                ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
+                            text =
+                                selectedPdf.lastPathSegment
+                                    ?.substringAfterLast("/") ?: stringResource(R.string.pdf_tools_default_filename),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -158,47 +169,49 @@ fun PdfProcessingFooter(
     buttonIcon: ImageVector,
     onExecute: () -> Unit,
     modifier: Modifier = Modifier,
-    accentColor: Color = MaterialTheme.colorScheme.primary
+    accentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     if (isProcessing) {
         Column(
             modifier = modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 color = accentColor,
-                trackColor = accentColor.copy(alpha = 0.2f)
+                trackColor = accentColor.copy(alpha = 0.2f),
             )
             Text(
                 text = progressText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     } else {
         Button(
             onClick = onExecute,
             enabled = enabled,
-            modifier = modifier
-                .fillMaxWidth()
-                .height(52.dp),
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
             shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = accentColor,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = accentColor,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         ) {
             Icon(
                 imageVector = buttonIcon,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = buttonLabel,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
     }

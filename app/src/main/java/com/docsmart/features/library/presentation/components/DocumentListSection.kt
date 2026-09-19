@@ -23,18 +23,18 @@ import com.docsmart.core.util.shareDocument
 
 @Composable
 fun DocumentListSection(
-    documents      : List<DocumentUiModel>,
+    documents: List<DocumentUiModel>,
     onDocumentClick: (DocumentUiModel) -> Unit,
     onFavoriteClick: (String) -> Unit,
-    searchQuery    : String,
-    onRenameClick  : ((String, String) -> Unit)? = null,
-    onDeleteClick  : ((String) -> Unit)? = null,
-    onConvertClick : ((DocumentUiModel) -> Unit)? = null,
+    searchQuery: String,
+    onRenameClick: ((String, String) -> Unit)? = null,
+    onDeleteClick: ((String) -> Unit)? = null,
+    onConvertClick: ((DocumentUiModel) -> Unit)? = null,
     onCreateQrClick: ((DocumentUiModel) -> Unit)? = null,
-    onMakeSearchableClick   : ((DocumentUiModel) -> Unit)? = null,
-    onSignClick             : ((DocumentUiModel) -> Unit)? = null,
+    onMakeSearchableClick: ((DocumentUiModel) -> Unit)? = null,
+    onSignClick: ((DocumentUiModel) -> Unit)? = null,
     onMoveToSecureFolderClick: ((DocumentUiModel) -> Unit)? = null,
-    modifier       : Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     var documentToRename by remember { mutableStateOf<DocumentUiModel?>(null) }
@@ -42,11 +42,11 @@ fun DocumentListSection(
     documentToRename?.let { doc ->
         RenameDocumentDialog(
             currentName = doc.name,
-            onConfirm   = { newName ->
+            onConfirm = { newName ->
                 onRenameClick?.invoke(doc.id, newName)
                 documentToRename = null
             },
-            onDismiss = { documentToRename = null }
+            onDismiss = { documentToRename = null },
         )
     }
 
@@ -60,56 +60,64 @@ fun DocumentListSection(
         // ("%1$d documentos" fijo), sin sistema <plurals> -- "1 documentos"
         // es gramaticalmente incorrecto. Migrado a library_document_count_plural.
         Text(
-            text = if (searchQuery.isBlank())
-                pluralStringResource(R.plurals.library_document_count_plural, documents.size, documents.size)
-            else
-                stringResource(R.string.library_search_results_count, documents.size, searchQuery),
-            style    = MaterialTheme.typography.bodySmall,
-            color    = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp)
+            text =
+                if (searchQuery.isBlank()) {
+                    pluralStringResource(R.plurals.library_document_count_plural, documents.size, documents.size)
+                } else {
+                    stringResource(R.string.library_search_results_count, documents.size, searchQuery)
+                },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp),
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         if (documents.isEmpty()) {
             DocuSmartEmptyState(
-                icon        = Icons.Rounded.SearchOff,
-                title       = stringResource(R.string.library_no_results_title),
-                description = if (searchQuery.isBlank())
-                    stringResource(R.string.library_empty_category)
-                else
-                    stringResource(R.string.library_no_results_for_query, searchQuery),
-                modifier    = Modifier.padding(top = 32.dp)
+                icon = Icons.Rounded.SearchOff,
+                title = stringResource(R.string.library_no_results_title),
+                description =
+                    if (searchQuery.isBlank()) {
+                        stringResource(R.string.library_empty_category)
+                    } else {
+                        stringResource(R.string.library_no_results_for_query, searchQuery)
+                    },
+                modifier = Modifier.padding(top = 32.dp),
             )
         } else {
             val shape = MaterialTheme.shapes.large
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .accentShadow(shape = shape)
-                    .clip(shape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .accentBorder(shape = shape)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .accentShadow(shape = shape)
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .accentBorder(shape = shape),
             ) {
                 documents.forEachIndexed { index, document ->
                     val shareLabel = stringResource(R.string.home_share_document, document.name)
                     DocuSmartDocumentItem(
-                        document        = document,
-                        onClick         = { onDocumentClick(document) },
+                        document = document,
+                        onClick = { onDocumentClick(document) },
                         onFavoriteClick = { onFavoriteClick(document.id) },
-                        showDivider     = index < documents.size - 1,
-                        onOpenClick     = { onDocumentClick(document) },
-                        onRenameClick   = if (onRenameClick != null) {
-                            { documentToRename = document }
-                        } else null,
-                        onShareClick    = { shareDocument(context, document, shareLabel) },
-                        onConvertClick  = onConvertClick?.let  { cb -> { cb(document) } },
+                        showDivider = index < documents.size - 1,
+                        onOpenClick = { onDocumentClick(document) },
+                        onRenameClick =
+                            if (onRenameClick != null) {
+                                { documentToRename = document }
+                            } else {
+                                null
+                            },
+                        onShareClick = { shareDocument(context, document, shareLabel) },
+                        onConvertClick = onConvertClick?.let { cb -> { cb(document) } },
                         onCreateQrClick = onCreateQrClick?.let { cb -> { cb(document) } },
-                        onMakeSearchableClick    = onMakeSearchableClick?.let    { cb -> { cb(document) } },
-                        onSignClick              = onSignClick?.let              { cb -> { cb(document) } },
+                        onMakeSearchableClick = onMakeSearchableClick?.let { cb -> { cb(document) } },
+                        onSignClick = onSignClick?.let { cb -> { cb(document) } },
                         onMoveToSecureFolderClick = onMoveToSecureFolderClick?.let { cb -> { cb(document) } },
-                        onDeleteClick   = onDeleteClick?.let   { cb -> { cb(document.id) } }
+                        onDeleteClick = onDeleteClick?.let { cb -> { cb(document.id) } },
                     )
                 }
             }

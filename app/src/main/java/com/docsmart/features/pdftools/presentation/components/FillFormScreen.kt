@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -46,7 +45,7 @@ fun FillFormScreen(
     onDetectFields: (Uri) -> Unit,
     onFieldValueChange: (String, String) -> Unit,
     onExecute: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(selectedPdf) {
         if (selectedPdf != null) onDetectFields(selectedPdf)
@@ -54,18 +53,18 @@ fun FillFormScreen(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = stringResource(R.string.pdf_fill_form),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.pdf_fill_form_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -73,7 +72,7 @@ fun FillFormScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_fill_form_ready),
-            accentColor = ColorZip
+            accentColor = ColorZip,
         )
 
         if (selectedPdf != null) {
@@ -82,7 +81,7 @@ fun FillFormScreen(
             if (formFields.isNotEmpty()) {
                 OutputFileNameField(
                     fileName = fileName,
-                    onFileNameChange = onFileNameChange
+                    onFileNameChange = onFileNameChange,
                 )
             }
         }
@@ -94,7 +93,7 @@ fun FillFormScreen(
             buttonLabel = stringResource(R.string.pdf_fill_form_execute),
             buttonIcon = Icons.Rounded.Checklist,
             onExecute = onExecute,
-            accentColor = ColorZip
+            accentColor = ColorZip,
         )
     }
 }
@@ -104,33 +103,34 @@ private fun FillFormFieldsCard(
     formFields: List<FormFieldInfo>,
     formFieldValues: Map<String, String>,
     formFieldsDetected: Boolean,
-    onFieldValueChange: (String, String) -> Unit
+    onFieldValueChange: (String, String) -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             when {
                 !formFieldsDetected -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = ColorZip)
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = stringResource(R.string.pdf_fill_form_detecting),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -140,14 +140,14 @@ private fun FillFormFieldsCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
                 else -> {
                     Text(
                         text = stringResource(R.string.pdf_fill_form_fields_title, formFields.size),
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     formFields.forEach { field ->
                         OutlinedTextField(
@@ -157,13 +157,14 @@ private fun FillFormFieldsCard(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             shape = MaterialTheme.shapes.medium,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ColorZip,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            textStyle = MaterialTheme.typography.bodyMedium
+                            colors =
+                                OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = ColorZip,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                ),
+                            textStyle = MaterialTheme.typography.bodyMedium,
                         )
                     }
                 }

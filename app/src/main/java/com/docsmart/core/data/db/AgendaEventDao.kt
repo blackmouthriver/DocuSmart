@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AgendaEventDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(event: AgendaEventEntity)
 
@@ -28,7 +27,10 @@ interface AgendaEventDao {
     suspend fun getAllWithReminder(): List<AgendaEventEntity>
 
     @Query("UPDATE agenda_events SET documentId = :newDocumentId WHERE documentId = :oldDocumentId")
-    suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String)
+    suspend fun updateDocumentId(
+        oldDocumentId: String,
+        newDocumentId: String,
+    )
 
     // Borrar el documento vinculado no debe borrar el evento -- mismo
     // criterio ya usado para Notas (backlog UX #50, AC2), solo se limpia

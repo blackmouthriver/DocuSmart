@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.data.db.AgendaEventEntity
 import com.docsmart.features.agenda.domain.agendaEventLocalDate
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
@@ -51,7 +52,6 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-import kotlinx.coroutines.delay
 
 // Backlog UX 2026-09-16 (seguimiento de HU-65), pedido explícito del
 // usuario: vista de calendario mensual (no semanal/por horas tipo Teams
@@ -69,7 +69,7 @@ fun AgendaCalendarView(
     onNextMonth: () -> Unit,
     onSelectDate: (LocalDate) -> Unit,
     onEventClick: (AgendaEventEntity) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Lint real (NonObservableLocale): Locale.getDefault() no es observable
     // por Compose -- si el usuario cambia el idioma del sistema sin recrear
@@ -78,20 +78,22 @@ fun AgendaCalendarView(
     // PremiumScreen.kt/SettingsScreen.kt).
     val locale = LocalConfiguration.current.locales[0]
     val dayDetailFormat = remember(locale) { DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", locale) }
-    val eventDatesInMonth = remember(events, month) {
-        events.map { agendaEventLocalDate(it.dateTimeMillis) }.toSet()
-    }
-    val eventsForSelectedDay = remember(events, selectedDate) {
-        events.filter { agendaEventLocalDate(it.dateTimeMillis) == selectedDate }
-            .sortedBy { it.dateTimeMillis }
-    }
+    val eventDatesInMonth =
+        remember(events, month) {
+            events.map { agendaEventLocalDate(it.dateTimeMillis) }.toSet()
+        }
+    val eventsForSelectedDay =
+        remember(events, selectedDate) {
+            events.filter { agendaEventLocalDate(it.dateTimeMillis) == selectedDate }
+                .sortedBy { it.dateTimeMillis }
+        }
 
     Column(modifier = modifier.fillMaxWidth()) {
         MonthHeader(
             month = month,
             locale = locale,
             onPreviousMonth = onPreviousMonth,
-            onNextMonth = onNextMonth
+            onNextMonth = onNextMonth,
         )
         Spacer(Modifier.height(12.dp))
         WeekdayHeaderRow(locale = locale)
@@ -101,23 +103,24 @@ fun AgendaCalendarView(
             selectedDate = selectedDate,
             eventDatesInMonth = eventDatesInMonth,
             dayDetailFormat = dayDetailFormat,
-            onSelectDate = onSelectDate
+            onSelectDate = onSelectDate,
         )
         Spacer(Modifier.height(16.dp))
         HorizontalDivider()
         Spacer(Modifier.height(12.dp))
         Text(
-            text = selectedDate.format(dayDetailFormat)
-                .replaceFirstChar { it.uppercase() },
+            text =
+                selectedDate.format(dayDetailFormat)
+                    .replaceFirstChar { it.uppercase() },
             style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(8.dp))
         if (eventsForSelectedDay.isEmpty()) {
             Text(
                 text = stringResource(R.string.agenda_calendar_no_events_day),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -134,29 +137,29 @@ private fun MonthHeader(
     month: YearMonth,
     locale: Locale,
     onPreviousMonth: () -> Unit,
-    onNextMonth: () -> Unit
+    onNextMonth: () -> Unit,
 ) {
     val monthYearFormat = remember(locale) { DateTimeFormatter.ofPattern("MMMM yyyy", locale) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         IconButton(onClick = onPreviousMonth) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                contentDescription = stringResource(R.string.agenda_calendar_previous_month)
+                contentDescription = stringResource(R.string.agenda_calendar_previous_month),
             )
         }
         Text(
             text = month.atDay(1).format(monthYearFormat).replaceFirstChar { it.uppercase() },
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
         )
         IconButton(onClick = onNextMonth) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = stringResource(R.string.agenda_calendar_next_month)
+                contentDescription = stringResource(R.string.agenda_calendar_next_month),
             )
         }
     }
@@ -172,7 +175,7 @@ private fun WeekdayHeaderRow(locale: Locale) {
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -184,7 +187,7 @@ private fun MonthGrid(
     selectedDate: LocalDate,
     eventDatesInMonth: Set<LocalDate>,
     dayDetailFormat: DateTimeFormatter,
-    onSelectDate: (LocalDate) -> Unit
+    onSelectDate: (LocalDate) -> Unit,
 ) {
     val firstDayOfMonth = month.atDay(1)
     val leadingBlanks = (firstDayOfMonth.dayOfWeek.value - WEEK_START.value + DAYS_IN_WEEK) % DAYS_IN_WEEK
@@ -209,8 +212,9 @@ private fun MonthGrid(
     // de que el valor cambie para volver a programarse.
     LaunchedEffect(Unit) {
         while (true) {
-            val delayMs = Duration.between(LocalDateTime.now(), today.plusDays(1).atStartOfDay())
-                .toMillis().coerceAtLeast(1000L)
+            val delayMs =
+                Duration.between(LocalDateTime.now(), today.plusDays(1).atStartOfDay())
+                    .toMillis().coerceAtLeast(1000L)
             delay(delayMs)
             today = LocalDate.now()
         }
@@ -231,7 +235,7 @@ private fun MonthGrid(
                             isSelected = date == selectedDate,
                             hasEvents = date in eventDatesInMonth,
                             onClick = { onSelectDate(date) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
@@ -263,50 +267,54 @@ private fun CalendarDayCell(
     isSelected: Boolean,
     hasEvents: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val backgroundColor = when {
-        isSelected -> MaterialTheme.colorScheme.primary
-        isToday -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-        else -> Color.Transparent
-    }
+    val backgroundColor =
+        when {
+            isSelected -> MaterialTheme.colorScheme.primary
+            isToday -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            else -> Color.Transparent
+        }
     val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    val accessibleLabel = buildString {
-        append(dateLabel)
-        if (isToday) append(stringResource(R.string.agenda_calendar_day_today))
-        if (hasEvents) append(stringResource(R.string.agenda_calendar_day_has_events))
-    }
+    val accessibleLabel =
+        buildString {
+            append(dateLabel)
+            if (isToday) append(stringResource(R.string.agenda_calendar_day_today))
+            if (hasEvents) append(stringResource(R.string.agenda_calendar_day_has_events))
+        }
 
     Column(
-        modifier = modifier
-            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-            .aspectRatio(1f)
-            .padding(2.dp)
-            .clip(CircleShape)
-            .background(backgroundColor)
-            .selectable(selected = isSelected, onClick = onClick, role = Role.Button)
-            .semantics(mergeDescendants = true) { contentDescription = accessibleLabel },
+        modifier =
+            modifier
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                .aspectRatio(1f)
+                .padding(2.dp)
+                .clip(CircleShape)
+                .background(backgroundColor)
+                .selectable(selected = isSelected, onClick = onClick, role = Role.Button)
+                .semantics(mergeDescendants = true) { contentDescription = accessibleLabel },
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             text = day.toString(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-            color = textColor
+            color = textColor,
         )
         Box(
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(4.dp)
-                .clip(CircleShape)
-                .background(
-                    if (hasEvents) {
-                        if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                    } else {
-                        Color.Transparent
-                    }
-                )
+            modifier =
+                Modifier
+                    .padding(top = 2.dp)
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (hasEvents) {
+                            if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                        } else {
+                            Color.Transparent
+                        },
+                    ),
         )
     }
 }

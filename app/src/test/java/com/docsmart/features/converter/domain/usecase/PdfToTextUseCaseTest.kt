@@ -32,7 +32,6 @@ import java.nio.file.Files
  * y afectaba también la conversión de un solo archivo.
  */
 class PdfToTextUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
@@ -64,70 +63,75 @@ class PdfToTextUseCaseTest {
     }
 
     @Test
-    fun `extrae el texto real de un PDF de una pagina`() = runTest {
-        stubResolver(createPdf(listOf("Hola mundo")))
+    fun `extrae el texto real de un PDF de una pagina`() =
+        runTest {
+            stubResolver(createPdf(listOf("Hola mundo")))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val success = result as ConversionResult.Success
-        assertEquals(1, success.pageCount)
-        assertTrue(success.outputFile.readText().contains("Hola mundo"))
-    }
-
-    @Test
-    fun `cuenta correctamente las paginas de un PDF de varias paginas`() = runTest {
-        stubResolver(createPdf(listOf("Primera página", "Segunda página", "Tercera página")))
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Success)
-        assertEquals(3, (result as ConversionResult.Success).pageCount)
-    }
+            assertTrue(result is ConversionResult.Success)
+            val success = result as ConversionResult.Success
+            assertEquals(1, success.pageCount)
+            assertTrue(success.outputFile.readText().contains("Hola mundo"))
+        }
 
     @Test
-    fun `puede llamarse varias veces seguidas sin interferir entre si`() = runTest {
-        // RF-CONV-08: PdfToTextUseCase se invoca repetidamente dentro del
-        // mismo lote -- antes usaba un nombre de archivo de caché fijo
-        // ("temp_text.pdf"), frágil ante llamadas repetidas.
-        stubResolver(createPdf(listOf("Archivo A")))
-        val resultA = useCase(mockk<Uri>(), "salidaA")
+    fun `cuenta correctamente las paginas de un PDF de varias paginas`() =
+        runTest {
+            stubResolver(createPdf(listOf("Primera página", "Segunda página", "Tercera página")))
 
-        stubResolver(createPdf(listOf("Archivo B")))
-        val resultB = useCase(mockk<Uri>(), "salidaB")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(resultA is ConversionResult.Success)
-        assertTrue(resultB is ConversionResult.Success)
-        assertTrue((resultA as ConversionResult.Success).outputFile.readText().contains("Archivo A"))
-        assertTrue((resultB as ConversionResult.Success).outputFile.readText().contains("Archivo B"))
-    }
+            assertTrue(result is ConversionResult.Success)
+            assertEquals(3, (result as ConversionResult.Success).pageCount)
+        }
 
     @Test
-    fun `PDF sin texto extraible devuelve Error en vez de un txt vacio`() = runTest {
-        // Hallazgo real de la revisión general 2026-09-16 (#43), señalado
-        // acá mismo como nota pero sin corregir hasta ahora: el use case
-        // agregaba un encabezado "=== Página N ===" a CADA página antes de
-        // comprobar isBlank() sobre el string YA con encabezados -- esa
-        // rama nunca era alcanzable en la práctica. Corregido rastreando
-        // el texto real por separado de los encabezados.
-        stubResolver(createPdf(emptyList()))
+    fun `puede llamarse varias veces seguidas sin interferir entre si`() =
+        runTest {
+            // RF-CONV-08: PdfToTextUseCase se invoca repetidamente dentro del
+            // mismo lote -- antes usaba un nombre de archivo de caché fijo
+            // ("temp_text.pdf"), frágil ante llamadas repetidas.
+            stubResolver(createPdf(listOf("Archivo A")))
+            val resultA = useCase(mockk<Uri>(), "salidaA")
 
-        val result = useCase(mockk<Uri>(), "salida")
+            stubResolver(createPdf(listOf("Archivo B")))
+            val resultB = useCase(mockk<Uri>(), "salidaB")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(resultA is ConversionResult.Success)
+            assertTrue(resultB is ConversionResult.Success)
+            assertTrue((resultA as ConversionResult.Success).outputFile.readText().contains("Archivo A"))
+            assertTrue((resultB as ConversionResult.Success).outputFile.readText().contains("Archivo B"))
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `PDF sin texto extraible devuelve Error en vez de un txt vacio`() =
+        runTest {
+            // Hallazgo real de la revisión general 2026-09-16 (#43), señalado
+            // acá mismo como nota pero sin corregir hasta ahora: el use case
+            // agregaba un encabezado "=== Página N ===" a CADA página antes de
+            // comprobar isBlank() sobre el string YA con encabezados -- esa
+            // rama nunca era alcanzable en la práctica. Corregido rastreando
+            // el texto real por separado de los encabezados.
+            stubResolver(createPdf(emptyList()))
 
-        val result = useCase(uri, "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
+
+    @Test
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uri, "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

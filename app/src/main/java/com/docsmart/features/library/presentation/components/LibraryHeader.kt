@@ -16,17 +16,18 @@ fun LibraryHeader(
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit,
     totalDocuments: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
     ) {
         Text(
             text = stringResource(R.string.library_title),
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         // Hallazgo real de la auditoría general 2026-09-18 (Media, i18n):
         // concatenación manual de número + library_documents (string plano
@@ -36,14 +37,14 @@ fun LibraryHeader(
         Text(
             text = pluralStringResource(R.plurals.library_document_count_plural, totalDocuments, totalDocuments),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(16.dp))
         DocuSmartSearchBar(
             query = searchQuery,
             onQueryChange = onQueryChange,
             onClear = onClear,
-            placeholder = stringResource(R.string.library_search)
+            placeholder = stringResource(R.string.library_search),
         )
     }
 }

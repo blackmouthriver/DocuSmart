@@ -22,7 +22,6 @@ import java.io.File
 import java.nio.file.Files
 
 class WordToPdfUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: WordToPdfUseCase
@@ -45,33 +44,35 @@ class WordToPdfUseCaseTest {
     }
 
     @Test
-    fun `convierte un docx a PDF con parrafos y tablas`() = runTest {
-        stubResolver(createTestDocx(listOf("Primer párrafo"), listOf(listOf("A1", "B1"))))
+    fun `convierte un docx a PDF con parrafos y tablas`() =
+        runTest {
+            stubResolver(createTestDocx(listOf("Primer párrafo"), listOf(listOf("A1", "B1"))))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("pdf", outputFile.extension)
-        val extracted = extractPdfText(outputFile)
-        assertTrue(extracted.contains("Primer párrafo"))
-        assertTrue(extracted.contains("A1"))
-    }
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("pdf", outputFile.extension)
+            val extracted = extractPdfText(outputFile)
+            assertTrue(extracted.contains("Primer párrafo"))
+            assertTrue(extracted.contains("A1"))
+        }
 
     // RF-CONV-07: WordFormatDetectionTest.kt explica por qué el fixture es
     // un .doc real generado con Word y no un byte array sintético.
     @Test
-    fun `convierte un doc legado real (OLE2) a PDF`() = runTest {
-        stubResolver(legacyDocBytes())
+    fun `convierte un doc legado real (OLE2) a PDF`() =
+        runTest {
+            stubResolver(legacyDocBytes())
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        val extracted = extractPdfText(outputFile)
-        assertTrue(extracted.contains("Titulo de prueba"))
-        assertTrue(extracted.contains("Celda A1"))
-    }
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            val extracted = extractPdfText(outputFile)
+            assertTrue(extracted.contains("Titulo de prueba"))
+            assertTrue(extracted.contains("Celda A1"))
+        }
 
     // Hallazgo real de la auditoría general 2026-09-17 (B4): antes se
     // procesaban TODOS los párrafos y DESPUÉS todas las tablas (2 pasadas
@@ -79,31 +80,33 @@ class WordToPdfUseCaseTest {
     // final, sin importar su posición real en el documento. `bodyElements`
     // conserva el orden real.
     @Test
-    fun `conserva el orden real de parrafo, tabla y parrafo del documento original`() = runTest {
-        stubResolver(createInterleavedDocx())
+    fun `conserva el orden real de parrafo, tabla y parrafo del documento original`() =
+        runTest {
+            stubResolver(createInterleavedDocx())
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val extracted = extractPdfText((result as ConversionResult.Success).outputFile)
-        val introIndex = extracted.indexOf("Intro")
-        val tableIndex = extracted.indexOf("CeldaTabla")
-        val conclusionIndex = extracted.indexOf("Conclusion")
-        assertTrue(introIndex in 0 until tableIndex, "Intro debe aparecer antes que la tabla")
-        assertTrue(tableIndex in 0 until conclusionIndex, "la tabla debe aparecer antes que Conclusion")
-    }
+            assertTrue(result is ConversionResult.Success)
+            val extracted = extractPdfText((result as ConversionResult.Success).outputFile)
+            val introIndex = extracted.indexOf("Intro")
+            val tableIndex = extracted.indexOf("CeldaTabla")
+            val conclusionIndex = extracted.indexOf("Conclusion")
+            assertTrue(introIndex in 0 until tableIndex, "Intro debe aparecer antes que la tabla")
+            assertTrue(tableIndex in 0 until conclusionIndex, "la tabla debe aparecer antes que Conclusion")
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(uri, "salida")
+            val result = useCase(uri, "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -113,7 +116,10 @@ class WordToPdfUseCaseTest {
         every { context.contentResolver } returns resolver
     }
 
-    private fun createTestDocx(paragraphs: List<String>, tableRows: List<List<String>>): ByteArray {
+    private fun createTestDocx(
+        paragraphs: List<String>,
+        tableRows: List<List<String>>,
+    ): ByteArray {
         val out = ByteArrayOutputStream()
         XWPFDocument().use { doc ->
             paragraphs.forEach { text -> doc.createParagraph().createRun().setText(text) }

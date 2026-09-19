@@ -17,20 +17,20 @@ enum class QrWifiSecurity { WPA, WEP, NONE }
 data class QrWifiContent(
     val ssid: String,
     val password: String,
-    val security: QrWifiSecurity
+    val security: QrWifiSecurity,
 )
 
 data class QrContactContent(
     val name: String,
     val phone: String,
-    val email: String
+    val email: String,
 )
 
 data class QrEventContent(
     val title: String,
     val location: String,
     val start: LocalDateTime,
-    val end: LocalDateTime
+    val end: LocalDateTime,
 )
 
 /**
@@ -40,16 +40,18 @@ data class QrEventContent(
  * `P` -- una red abierta no tiene nada que descifrar.
  */
 fun QrWifiContent.toQrPayload(): String {
-    val type = when (security) {
-        QrWifiSecurity.WPA  -> "WPA"
-        QrWifiSecurity.WEP  -> "WEP"
-        QrWifiSecurity.NONE -> "nopass"
-    }
-    val passwordField = if (security == QrWifiSecurity.NONE) {
-        ""
-    } else {
-        "P:${escapeWifiField(password)};"
-    }
+    val type =
+        when (security) {
+            QrWifiSecurity.WPA -> "WPA"
+            QrWifiSecurity.WEP -> "WEP"
+            QrWifiSecurity.NONE -> "nopass"
+        }
+    val passwordField =
+        if (security == QrWifiSecurity.NONE) {
+            ""
+        } else {
+            "P:${escapeWifiField(password)};"
+        }
     return "WIFI:T:$type;S:${escapeWifiField(ssid)};$passwordField;"
 }
 
@@ -59,15 +61,16 @@ fun QrWifiContent.toQrPayload(): String {
  * separado en nombre/apellido), así que `N` lleva ese valor entero como
  * único componente -- sigue siendo un vCard válido.
  */
-fun QrContactContent.toQrPayload(): String = buildString {
-    append("BEGIN:VCARD\n")
-    append("VERSION:3.0\n")
-    append("N:${escapeVCardField(name)};;;;\n")
-    append("FN:${escapeVCardField(name)}\n")
-    if (phone.isNotBlank()) append("TEL:${escapeVCardField(phone)}\n")
-    if (email.isNotBlank()) append("EMAIL:${escapeVCardField(email)}\n")
-    append("END:VCARD")
-}
+fun QrContactContent.toQrPayload(): String =
+    buildString {
+        append("BEGIN:VCARD\n")
+        append("VERSION:3.0\n")
+        append("N:${escapeVCardField(name)};;;;\n")
+        append("FN:${escapeVCardField(name)}\n")
+        if (phone.isNotBlank()) append("TEL:${escapeVCardField(phone)}\n")
+        if (email.isNotBlank()) append("EMAIL:${escapeVCardField(email)}\n")
+        append("END:VCARD")
+    }
 
 // Bug real encontrado 2026-09-14 (revisión pre-fusión HU-43): sin Locale
 // explícito, DateTimeFormatter.ofPattern() usa los dígitos del locale por
@@ -94,17 +97,18 @@ private val ICAL_DATE_FORMAT: DateTimeFormatter =
  * tener que resolver la zona horaria del dispositivo que escanea, que
  * DocuSmart no puede conocer de antemano.
  */
-fun QrEventContent.toQrPayload(): String = buildString {
-    append("BEGIN:VCALENDAR\n")
-    append("VERSION:2.0\n")
-    append("BEGIN:VEVENT\n")
-    append("SUMMARY:${escapeVCardField(title)}\n")
-    append("DTSTART:${start.format(ICAL_DATE_TIME_FORMAT)}\n")
-    append("DTEND:${end.format(ICAL_DATE_TIME_FORMAT)}\n")
-    if (location.isNotBlank()) append("LOCATION:${escapeVCardField(location)}\n")
-    append("END:VEVENT\n")
-    append("END:VCALENDAR")
-}
+fun QrEventContent.toQrPayload(): String =
+    buildString {
+        append("BEGIN:VCALENDAR\n")
+        append("VERSION:2.0\n")
+        append("BEGIN:VEVENT\n")
+        append("SUMMARY:${escapeVCardField(title)}\n")
+        append("DTSTART:${start.format(ICAL_DATE_TIME_FORMAT)}\n")
+        append("DTEND:${end.format(ICAL_DATE_TIME_FORMAT)}\n")
+        if (location.isNotBlank()) append("LOCATION:${escapeVCardField(location)}\n")
+        append("END:VEVENT\n")
+        append("END:VCALENDAR")
+    }
 
 /**
  * Escape del formato `WIFI:` -- `\`, `;`, `,`, `:` y `"` son caracteres
@@ -164,17 +168,24 @@ internal fun unescapeReservedField(value: String): String =
     UNESCAPE_RESERVED_FIELD_PATTERN.replace(value) { match ->
         when (match.value) {
             "\\\\" -> "\\"
-            "\\;"  -> ";"
-            "\\,"  -> ","
-            "\\:"  -> ":"
+            "\\;" -> ";"
+            "\\," -> ","
+            "\\:" -> ":"
             "\\\"" -> "\""
-            "\\n"  -> "\n"
-            else   -> match.value
+            "\\n" -> "\n"
+            else -> match.value
         }
     }
 
-private fun extractWifiField(payload: String, key: String): String? =
-    Regex("$key:((?:\\\\.|[^;])*);").find(payload)?.groupValues?.get(1)?.let(::unescapeReservedField)
+private fun extractWifiField(
+    payload: String,
+    key: String,
+): String? =
+    Regex("$key:((?:\\\\.|[^;])*);")
+        .find(payload)
+        ?.groupValues
+        ?.get(1)
+        ?.let(::unescapeReservedField)
 
 /**
  * Hallazgo real de la revisión general 2026-09-16 (#5): el Lector propio de
@@ -188,11 +199,12 @@ fun parseWifiPayload(payload: String): QrWifiContent? {
     val ssid = extractWifiField(payload, "S")
     if (!payload.trim().startsWith("WIFI:", ignoreCase = true) || ssid == null) return null
     val password = extractWifiField(payload, "P") ?: ""
-    val security = when (extractWifiField(payload, "T")?.uppercase()) {
-        "WPA", "WPA2" -> QrWifiSecurity.WPA
-        "WEP"         -> QrWifiSecurity.WEP
-        else          -> QrWifiSecurity.NONE
-    }
+    val security =
+        when (extractWifiField(payload, "T")?.uppercase()) {
+            "WPA", "WPA2" -> QrWifiSecurity.WPA
+            "WEP" -> QrWifiSecurity.WEP
+            else -> QrWifiSecurity.NONE
+        }
     return QrWifiContent(ssid, password, security)
 }
 
@@ -204,16 +216,24 @@ fun parseVCardPayload(payload: String): QrContactContent? {
     payload.lines().forEach { line ->
         val idx = line.indexOf(':')
         if (idx <= 0) return@forEach
-        val key = line.substring(0, idx).substringBefore(';').trim().uppercase()
+        val key =
+            line
+                .substring(0, idx)
+                .substringBefore(';')
+                .trim()
+                .uppercase()
         val value = unescapeReservedField(line.substring(idx + 1).trim())
         when (key) {
-            "FN"    -> name = value
-            "TEL"   -> if (phone.isBlank()) phone = value
+            "FN" -> name = value
+            "TEL" -> if (phone.isBlank()) phone = value
             "EMAIL" -> if (email.isBlank()) email = value
         }
     }
-    return if (name.isBlank() && phone.isBlank() && email.isBlank()) null
-    else QrContactContent(name, phone, email)
+    return if (name.isBlank() && phone.isBlank() && email.isBlank()) {
+        null
+    } else {
+        QrContactContent(name, phone, email)
+    }
 }
 
 private fun parseIcalDateTime(value: String): LocalDateTime? {
@@ -222,7 +242,9 @@ private fun parseIcalDateTime(value: String): LocalDateTime? {
         LocalDateTime.parse(clean, ICAL_DATE_TIME_FORMAT)
     } catch (e: java.time.format.DateTimeParseException) {
         try {
-            java.time.LocalDate.parse(clean, ICAL_DATE_FORMAT).atStartOfDay()
+            java.time.LocalDate
+                .parse(clean, ICAL_DATE_FORMAT)
+                .atStartOfDay()
         } catch (e2: java.time.format.DateTimeParseException) {
             null
         }
@@ -238,13 +260,18 @@ fun parseVEventPayload(payload: String): QrEventContent? {
     payload.lines().forEach { line ->
         val idx = line.indexOf(':')
         if (idx <= 0) return@forEach
-        val key = line.substring(0, idx).substringBefore(';').trim().uppercase()
+        val key =
+            line
+                .substring(0, idx)
+                .substringBefore(';')
+                .trim()
+                .uppercase()
         val value = unescapeReservedField(line.substring(idx + 1).trim())
         when (key) {
-            "SUMMARY"  -> title = value
+            "SUMMARY" -> title = value
             "LOCATION" -> location = value
-            "DTSTART"  -> start = parseIcalDateTime(value)
-            "DTEND"    -> end = parseIcalDateTime(value)
+            "DTSTART" -> start = parseIcalDateTime(value)
+            "DTEND" -> end = parseIcalDateTime(value)
         }
     }
     return start?.let { s -> QrEventContent(title, location, s, end ?: s) }

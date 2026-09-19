@@ -32,7 +32,6 @@ import java.util.zip.ZipOutputStream
  * `PptToPdfUseCase`.
  */
 class PptToTextUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: PptToTextUseCase
@@ -53,41 +52,44 @@ class PptToTextUseCaseTest {
     }
 
     @Test
-    fun `genera un txt con el texto de cada diapositiva`() = runTest {
-        stubResolver(createTestPptx(listOf("Bienvenida", "Agenda del día")))
+    fun `genera un txt con el texto de cada diapositiva`() =
+        runTest {
+            stubResolver(createTestPptx(listOf("Bienvenida", "Agenda del día")))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("txt", outputFile.extension)
-        assertEquals(2, result.pageCount)
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("txt", outputFile.extension)
+            assertEquals(2, result.pageCount)
 
-        val text = outputFile.readText()
-        assertTrue(text.contains("Bienvenida"))
-        assertTrue(text.contains("Agenda del día"))
-    }
-
-    @Test
-    fun `presentacion sin texto devuelve Error`() = runTest {
-        stubResolver(createTestPptx(emptyList()))
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Error)
-    }
+            val text = outputFile.readText()
+            assertTrue(text.contains("Bienvenida"))
+            assertTrue(text.contains("Agenda del día"))
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `presentacion sin texto devuelve Error`() =
+        runTest {
+            stubResolver(createTestPptx(emptyList()))
 
-        val result = useCase(uri, "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
+
+    @Test
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uri, "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -103,14 +105,15 @@ class PptToTextUseCaseTest {
         ZipOutputStream(out).use { zip ->
             slidesText.forEachIndexed { index, text ->
                 zip.putNextEntry(ZipEntry("ppt/slides/slide${index + 1}.xml"))
-                val xml = """
+                val xml =
+                    """
                     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                     <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
                       <p:cSld><p:spTree><p:sp><p:txBody>
                         <a:p><a:r><a:rPr lang="es-ES" dirty="0"/><a:t>$text</a:t></a:r></a:p>
                       </p:txBody></p:sp></p:spTree></p:cSld>
                     </p:sld>
-                """.trimIndent()
+                    """.trimIndent()
                 zip.write(xml.toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
             }

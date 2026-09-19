@@ -28,11 +28,12 @@ internal enum class WordFileFormat { OOXML, OLE2, UNKNOWN }
  */
 internal fun detectWordFormat(input: InputStream): Pair<WordFileFormat, InputStream> {
     val buffered = BufferedInputStream(input)
-    val format = when (FileMagic.valueOf(buffered)) {
-        FileMagic.OOXML -> WordFileFormat.OOXML
-        FileMagic.OLE2  -> WordFileFormat.OLE2
-        else            -> WordFileFormat.UNKNOWN
-    }
+    val format =
+        when (FileMagic.valueOf(buffered)) {
+            FileMagic.OOXML -> WordFileFormat.OOXML
+            FileMagic.OLE2 -> WordFileFormat.OLE2
+            else -> WordFileFormat.UNKNOWN
+        }
     return format to buffered
 }
 
@@ -53,9 +54,15 @@ private val HWPF_CELL_MARK = Char(7).toString()
 // (es/en/de/pt/ru); un `.doc` creado en otro idioma simplemente no tendrá
 // sus encabezados detectados y caerá como párrafo normal -- degradado, no
 // roto, mismo nivel de fidelidad ya aceptado por RNF-CONV-02.
-private val HEADING_STYLE_NAME_PREFIXES = listOf(
-    "heading", "título", "titulo", "überschrift", "uberschrift", "заголовок"
-)
+private val HEADING_STYLE_NAME_PREFIXES =
+    listOf(
+        "heading",
+        "título",
+        "titulo",
+        "überschrift",
+        "uberschrift",
+        "заголовок",
+    )
 private val TITLE_STYLE_NAME_EXACT = listOf("title", "título", "titulo", "titel", "название")
 
 internal fun isHeadingStyleName(styleName: String): Boolean {
@@ -90,12 +97,13 @@ internal fun extractLegacyDocBlocks(input: InputStream): List<Pair<String, Boole
             val para = range.getParagraph(i)
             val text = para.text().replace(HWPF_CELL_MARK, "").trim()
             if (text.isBlank()) continue
-            val styleName = try {
-                styles.getStyleDescription(para.styleIndex.toInt())?.name ?: ""
-            } catch (e: Exception) {
-                Timber.w("extractLegacyDocBlocks: no se pudo leer el estilo del párrafo $i — ${e.message}")
-                ""
-            }
+            val styleName =
+                try {
+                    styles.getStyleDescription(para.styleIndex.toInt())?.name ?: ""
+                } catch (e: Exception) {
+                    Timber.w("extractLegacyDocBlocks: no se pudo leer el estilo del párrafo $i — ${e.message}")
+                    ""
+                }
             blocks.add(text to isHeadingStyleName(styleName))
         }
     }

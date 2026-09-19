@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test
  * a mano.
  */
 class TextSummarizerTest {
-
     @Test
     fun `documento mas corto que el resumen pedido devuelve todo tal cual`() {
-        val paragraphs = listOf(
-            "Esta es la primera oración del documento. Esta es la segunda oración."
-        )
+        val paragraphs =
+            listOf(
+                "Esta es la primera oración del documento. Esta es la segunda oración.",
+            )
 
         val result = TextSummarizer.summarize(paragraphs, maxSentences = 15)
 
@@ -34,14 +34,15 @@ class TextSummarizerTest {
     fun `elige las oraciones con palabras mas repetidas y las devuelve en orden original`() {
         // "gato"/"perro" se repiten varias veces (relevantes); las demás
         // oraciones son "relleno" con palabras que no se repiten.
-        val paragraphs = listOf(
-            "El gato duerme en el sofá todas las tardes soleadas de verano.",
-            "El clima estuvo templado ayer por la mañana en la ciudad.",
-            "El perro persigue al gato por el jardín trasero de la casa.",
-            "Compré manzanas y peras en el mercado local del barrio.",
-            "El gato y el perro son mejores amigos desde hace varios años.",
-            "La bicicleta nueva tiene un manubrio ajustable de color rojo."
-        )
+        val paragraphs =
+            listOf(
+                "El gato duerme en el sofá todas las tardes soleadas de verano.",
+                "El clima estuvo templado ayer por la mañana en la ciudad.",
+                "El perro persigue al gato por el jardín trasero de la casa.",
+                "Compré manzanas y peras en el mercado local del barrio.",
+                "El gato y el perro son mejores amigos desde hace varios años.",
+                "La bicicleta nueva tiene un manubrio ajustable de color rojo.",
+            )
 
         val result = TextSummarizer.summarize(paragraphs, maxSentences = 2)
 
@@ -59,9 +60,10 @@ class TextSummarizerTest {
 
     @Test
     fun `oraciones muy cortas se descartan como ruido`() {
-        val paragraphs = listOf(
-            "Sí. No. Ok. Esta es una oración real con suficiente longitud como para contar."
-        )
+        val paragraphs =
+            listOf(
+                "Sí. No. Ok. Esta es una oración real con suficiente longitud como para contar.",
+            )
 
         val result = TextSummarizer.summarize(paragraphs, maxSentences = 15)
 
@@ -71,9 +73,10 @@ class TextSummarizerTest {
 
     @Test
     fun `documento largo no supera el maximo de oraciones pedido`() {
-        val paragraphs = (1..50).map { i ->
-            "Esta es la oración número $i sobre un tema general de prueba para el resumen."
-        }
+        val paragraphs =
+            (1..50).map { i ->
+                "Esta es la oración número $i sobre un tema general de prueba para el resumen."
+            }
 
         val result = TextSummarizer.summarize(paragraphs, maxSentences = 10)
 

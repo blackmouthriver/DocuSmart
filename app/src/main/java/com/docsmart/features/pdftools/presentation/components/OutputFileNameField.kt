@@ -16,16 +16,16 @@ fun OutputFileNameField(
     // HU-53 (extraer imágenes): el nombre acá es la base de VARIOS archivos
     // .jpg/.png, no un único .pdf -- mostrar el sufijo ".pdf" sería
     // directamente incorrecto para esa herramienta.
-    showPdfSuffix: Boolean = true
+    showPdfSuffix: Boolean = true,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
             text = stringResource(R.string.pdf_tools_filename_label),
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         OutlinedTextField(
             value = fileName,
@@ -35,33 +35,37 @@ fun OutputFileNameField(
                 Text(
                     text = stringResource(R.string.pdf_tools_filename_placeholder),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
-            trailingIcon = if (showPdfSuffix) {
-                {
-                    Text(
-                        text = ".pdf",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp)
-                    )
-                }
-            } else null,
+            trailingIcon =
+                if (showPdfSuffix) {
+                    {
+                        Text(
+                            text = ".pdf",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 12.dp),
+                        )
+                    }
+                } else {
+                    null
+                },
             singleLine = true,
             shape = MaterialTheme.shapes.medium,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
-            ),
-            textStyle = MaterialTheme.typography.bodyMedium
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                ),
+            textStyle = MaterialTheme.typography.bodyMedium,
         )
         Text(
             text = stringResource(R.string.pdf_tools_filename_hint),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

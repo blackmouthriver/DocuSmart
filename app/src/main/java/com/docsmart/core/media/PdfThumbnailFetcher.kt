@@ -39,20 +39,20 @@ import kotlin.math.roundToInt
  */
 class PdfThumbnailFetcher(
     private val context: Context,
-    private val openDescriptor: () -> ParcelFileDescriptor
+    private val openDescriptor: () -> ParcelFileDescriptor,
 ) : Fetcher {
-
-    override suspend fun fetch(): FetchResult {
-        return openDescriptor().use { pfd ->
+    override suspend fun fetch(): FetchResult =
+        openDescriptor().use { pfd ->
             PdfRenderer(pfd).use { renderer ->
                 renderer.openPage(0).use { page ->
                     val scale = THUMBNAIL_WIDTH_PX.toFloat() / page.width
                     val height = (page.height * scale).roundToInt().coerceAtLeast(1)
-                    val bitmap = Bitmap.createBitmap(
-                        THUMBNAIL_WIDTH_PX,
-                        height,
-                        Bitmap.Config.ARGB_8888
-                    )
+                    val bitmap =
+                        Bitmap.createBitmap(
+                            THUMBNAIL_WIDTH_PX,
+                            height,
+                            Bitmap.Config.ARGB_8888,
+                        )
                     // Las páginas de PDF suelen tener zonas transparentes donde
                     // no hay contenido -- sin este fondo blanco se verían como
                     // recortes con huecos oscuros (hereda el fondo por defecto
@@ -62,16 +62,19 @@ class PdfThumbnailFetcher(
                     DrawableResult(
                         drawable = BitmapDrawable(context.resources, bitmap),
                         isSampled = true,
-                        dataSource = DataSource.DISK
+                        dataSource = DataSource.DISK,
                     )
                 }
             }
         }
-    }
 
     /** Para `content://` reales (MediaStore, SAF) -- Coil los deja pasar como `Uri`. */
     class UriFactory : Fetcher.Factory<Uri> {
-        override fun create(data: Uri, options: Options, imageLoader: ImageLoader): Fetcher? {
+        override fun create(
+            data: Uri,
+            options: Options,
+            imageLoader: ImageLoader,
+        ): Fetcher? {
             val mimeType = options.context.contentResolver.getType(data)
             if (!looksLikePdf(mimeType, data.toString())) return null
             return PdfThumbnailFetcher(options.context) {
@@ -83,7 +86,11 @@ class PdfThumbnailFetcher(
 
     /** Para `file://` de la app (`converted/`/`pdftools/`) -- Coil los mapea a `File` antes de llegar acá. */
     class FileFactory : Fetcher.Factory<File> {
-        override fun create(data: File, options: Options, imageLoader: ImageLoader): Fetcher? {
+        override fun create(
+            data: File,
+            options: Options,
+            imageLoader: ImageLoader,
+        ): Fetcher? {
             if (!looksLikePdf(mimeType = null, dataAsString = data.name)) return null
             return PdfThumbnailFetcher(options.context) {
                 ParcelFileDescriptor.open(data, ParcelFileDescriptor.MODE_READ_ONLY)
@@ -98,7 +105,9 @@ class PdfThumbnailFetcher(
         // renderizando la página a su resolución completa.
         const val THUMBNAIL_WIDTH_PX = 300
 
-        fun looksLikePdf(mimeType: String?, dataAsString: String): Boolean =
-            mimeType == "application/pdf" || dataAsString.endsWith(".pdf", ignoreCase = true)
+        fun looksLikePdf(
+            mimeType: String?,
+            dataAsString: String,
+        ): Boolean = mimeType == "application/pdf" || dataAsString.endsWith(".pdf", ignoreCase = true)
     }
 }

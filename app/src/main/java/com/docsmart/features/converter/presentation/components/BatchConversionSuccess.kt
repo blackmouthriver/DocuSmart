@@ -29,60 +29,62 @@ import com.docsmart.features.converter.domain.model.ConversionResult
 // un archivo corrupto en el lote no debe impedir ver el resultado de los demás.
 @Composable
 fun BatchConversionSuccess(
-    items               : List<BatchConversionItem>,
-    savedToDownloads    : Boolean,
+    items: List<BatchConversionItem>,
+    savedToDownloads: Boolean,
     // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): sin
     // esto, un doble-toque rápido en "Guardar todas" lanzaba
     // saveAllToDownloads() dos veces en paralelo.
-    isSaving            : Boolean = false,
-    onConvertAnother    : () -> Unit,
+    isSaving: Boolean = false,
+    onConvertAnother: () -> Unit,
     onSaveAllToDownloads: () -> Unit,
-    onOpenDocument      : (java.io.File) -> Unit,
-    modifier            : Modifier = Modifier
+    onOpenDocument: (java.io.File) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val shareLabel = stringResource(R.string.converter_share)
     val successCount = items.count { it.result is ConversionResult.Success }
 
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
-            modifier            = Modifier.fillMaxWidth().padding(20.dp),
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.extraLarge
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(64.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.extraLarge,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.CheckCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(36.dp),
                 )
             }
 
             Text(
-                text  = stringResource(R.string.converter_batch_success_title, successCount, items.size),
+                text = stringResource(R.string.converter_batch_success_title, successCount, items.size),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Column(
-                modifier            = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items.forEach { item ->
                     BatchResultRow(item = item, shareLabel = shareLabel, onOpenDocument = onOpenDocument)
@@ -90,52 +92,53 @@ fun BatchConversionSuccess(
             }
 
             Column(
-                modifier            = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (savedToDownloads) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment     = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.CheckCircle,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(16.dp),
                         )
                         Text(
-                            text  = stringResource(R.string.converter_saved_to_downloads),
+                            text = stringResource(R.string.converter_saved_to_downloads),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 } else if (successCount > 0) {
                     Button(
-                        onClick  = onSaveAllToDownloads,
-                        enabled  = !isSaving,
+                        onClick = onSaveAllToDownloads,
+                        enabled = !isSaving,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape    = MaterialTheme.shapes.medium,
-                        colors   = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
+                        shape = MaterialTheme.shapes.medium,
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                            ),
                     ) {
                         Icon(Icons.Rounded.Download, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text  = stringResource(R.string.converter_batch_save_all),
-                            style = MaterialTheme.typography.labelLarge
+                            text = stringResource(R.string.converter_batch_save_all),
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
 
                 TextButton(
-                    onClick  = onConvertAnother,
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = onConvertAnother,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text  = stringResource(R.string.converter_batch_convert_another),
-                        style = MaterialTheme.typography.labelLarge
+                        text = stringResource(R.string.converter_batch_convert_another),
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
@@ -147,52 +150,58 @@ fun BatchConversionSuccess(
 private fun BatchResultRow(
     item: BatchConversionItem,
     shareLabel: String,
-    onOpenDocument: (java.io.File) -> Unit
+    onOpenDocument: (java.io.File) -> Unit,
 ) {
     val context = LocalContext.current
     val result = item.result
 
     Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = MaterialTheme.shapes.medium,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(0.dp)
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
-            modifier              = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             when (result) {
                 is ConversionResult.Success -> {
                     val (fileIcon, fileColor) = formatIconForExtension(result.outputFile.extension)
                     Icon(fileIcon, null, tint = fileColor, modifier = Modifier.size(20.dp))
                 }
-                else -> Icon(
-                    Icons.Rounded.ErrorOutline, null,
-                    tint     = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(20.dp)
-                )
+                else ->
+                    Icon(
+                        Icons.Rounded.ErrorOutline,
+                        null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp),
+                    )
             }
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text     = item.originalFileName,
-                    style    = MaterialTheme.typography.labelLarge,
-                    color    = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
+                    text = item.originalFileName,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
                 )
                 Text(
-                    text  = when (result) {
-                        is ConversionResult.Success -> result.outputFile.name
-                        is ConversionResult.Error   -> result.message
-                        else                        -> ""
-                    },
-                    style    = MaterialTheme.typography.labelSmall,
-                    color    = if (result is ConversionResult.Error)
-                        MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    text =
+                        when (result) {
+                            is ConversionResult.Success -> result.outputFile.name
+                            is ConversionResult.Error -> result.message
+                            else -> ""
+                        },
+                    style = MaterialTheme.typography.labelSmall,
+                    color =
+                        if (result is ConversionResult.Error) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    maxLines = 1,
                 )
             }
 
@@ -205,18 +214,18 @@ private fun BatchResultRow(
                 // dos íconos no tenían contentDescription ni texto visible,
                 // así que tampoco eran accesibles para lectores de pantalla.
                 TooltipIconButton(
-                    onClick     = { onOpenDocument(result.outputFile) },
+                    onClick = { onOpenDocument(result.outputFile) },
                     tooltipText = stringResource(R.string.converter_view_document),
-                    icon        = Icons.Rounded.Visibility,
-                    tint        = MaterialTheme.colorScheme.primary,
-                    iconSize    = 18.dp
+                    icon = Icons.Rounded.Visibility,
+                    tint = MaterialTheme.colorScheme.primary,
+                    iconSize = 18.dp,
                 )
                 TooltipIconButton(
-                    onClick     = { shareFile(context, result.outputFile, shareLabel) },
+                    onClick = { shareFile(context, result.outputFile, shareLabel) },
                     tooltipText = stringResource(R.string.converter_share),
-                    icon        = Icons.Rounded.Share,
-                    tint        = MaterialTheme.colorScheme.primary,
-                    iconSize    = 18.dp
+                    icon = Icons.Rounded.Share,
+                    tint = MaterialTheme.colorScheme.primary,
+                    iconSize = 18.dp,
                 )
             }
         }

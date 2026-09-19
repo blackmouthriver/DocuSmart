@@ -2,7 +2,6 @@ package com.docsmart.features.viewer.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -54,76 +53,79 @@ import com.docsmart.features.viewer.presentation.MAX_NOTE_LENGTH
 // zoom/pan normal (AnnotationMode.NONE).
 @Composable
 fun ViewerAnnotationToolbar(
-    mode          : AnnotationMode,
-    selectedColor : Int,
+    mode: AnnotationMode,
+    selectedColor: Int,
     highlightColors: List<Int>,
     onColorSelected: (Int) -> Unit,
-    onNoteSelected : () -> Unit,
-    onDone         : () -> Unit,
-    modifier: Modifier = Modifier
+    onNoteSelected: () -> Unit,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier        = modifier.fillMaxWidth(),
-        color           = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text  = stringResource(R.string.viewer_annotate_toolbar_label),
+                    text = stringResource(R.string.viewer_annotate_toolbar_label),
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 // Hallazgo real de la revisión general 2026-09-16 (#15): los
                 // 4 círculos de color de resaltado no tenían
                 // contentDescription ni semántica de selección -- mismo
                 // criterio y mismo fix ya aplicado al selector de color del
                 // Creador de QR (hallazgo #7).
-                val highlightColorNames = listOf(
-                    stringResource(R.string.viewer_highlight_color_yellow),
-                    stringResource(R.string.viewer_highlight_color_green),
-                    stringResource(R.string.viewer_highlight_color_pink),
-                    stringResource(R.string.viewer_highlight_color_blue)
-                )
+                val highlightColorNames =
+                    listOf(
+                        stringResource(R.string.viewer_highlight_color_yellow),
+                        stringResource(R.string.viewer_highlight_color_green),
+                        stringResource(R.string.viewer_highlight_color_pink),
+                        stringResource(R.string.viewer_highlight_color_blue),
+                    )
                 highlightColors.forEachIndexed { index, colorArgb ->
                     val isSelected = mode == AnnotationMode.HIGHLIGHT && colorArgb == selectedColor
                     val colorName = highlightColorNames.getOrElse(index) { "" }
                     Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(Color(colorArgb))
-                            .border(
-                                width = if (isSelected) 2.5.dp else 0.dp,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                shape = CircleShape
-                            )
-                            .selectable(
-                                selected = isSelected,
-                                role = Role.RadioButton,
-                                onClick = { onColorSelected(colorArgb) }
-                            )
-                            .semantics { contentDescription = colorName }
+                        modifier =
+                            Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color(colorArgb))
+                                .border(
+                                    width = if (isSelected) 2.5.dp else 0.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    shape = CircleShape,
+                                )
+                                .selectable(
+                                    selected = isSelected,
+                                    role = Role.RadioButton,
+                                    onClick = { onColorSelected(colorArgb) },
+                                )
+                                .semantics { contentDescription = colorName },
                     )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FilterChip(
                     selected = mode == AnnotationMode.NOTE,
-                    onClick  = onNoteSelected,
+                    onClick = onNoteSelected,
                     leadingIcon = {
                         Icon(Icons.Rounded.EditNote, contentDescription = null, modifier = Modifier.size(18.dp))
                     },
-                    label = { Text(stringResource(R.string.viewer_annotate_note_chip)) }
+                    label = { Text(stringResource(R.string.viewer_annotate_note_chip)) },
                 )
                 TextButton(onClick = onDone) {
                     Text(stringResource(R.string.viewer_annotate_done))
@@ -136,7 +138,10 @@ fun ViewerAnnotationToolbar(
 // HU-46 RF2: diálogo para escribir el texto de una nota nueva, tras tocar
 // un punto del documento en modo Nota.
 @Composable
-fun ViewerNoteInputDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+fun ViewerNoteInputDialog(
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
     // Hallazgo real de la revisión general 2026-09-16: con `remember`
     // simple, rotar el dispositivo (o que el sistema recree la Activity por
     // memoria baja) recreaba la composición desde cero y perdía el texto
@@ -144,14 +149,14 @@ fun ViewerNoteInputDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon    = { Icon(Icons.Rounded.EditNote, contentDescription = null) },
-        title   = { Text(stringResource(R.string.viewer_annotate_note_dialog_title)) },
-        text    = {
+        icon = { Icon(Icons.Rounded.EditNote, contentDescription = null) },
+        title = { Text(stringResource(R.string.viewer_annotate_note_dialog_title)) },
+        text = {
             val atLimit = text.length >= MAX_NOTE_LENGTH
             OutlinedTextField(
-                value         = text,
+                value = text,
                 onValueChange = { if (it.length <= MAX_NOTE_LENGTH) text = it },
-                placeholder   = { Text(stringResource(R.string.viewer_annotate_note_dialog_placeholder)) },
+                placeholder = { Text(stringResource(R.string.viewer_annotate_note_dialog_placeholder)) },
                 // Hallazgo real de la revisión general 2026-09-16 (#18): al
                 // llegar al límite, onValueChange simplemente dejaba de
                 // aceptar más texto -- el teclado "no respondía" sin ningún
@@ -161,13 +166,17 @@ fun ViewerNoteInputDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
                 supportingText = {
                     Text(
                         stringResource(R.string.viewer_annotate_note_char_count, text.length, MAX_NOTE_LENGTH),
-                        color = if (atLimit) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        color =
+                            if (atLimit) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                 },
-                isError       = atLimit,
-                minLines      = 3,
-                modifier      = Modifier.fillMaxWidth()
+                isError = atLimit,
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
             )
         },
         confirmButton = {
@@ -177,7 +186,7 @@ fun ViewerNoteInputDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
-        }
+        },
     )
 }
 
@@ -186,8 +195,8 @@ fun ViewerNoteInputDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
 @Composable
 fun ViewerAnnotationDetailDialog(
     annotation: AnnotationEntity,
-    onDelete  : () -> Unit,
-    onDismiss : () -> Unit
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
     val isNote = annotation.type == AnnotationType.NOTE
     // Hallazgo real de la revisión general 2026-09-16 (#17): "Eliminar" acá
@@ -199,14 +208,17 @@ fun ViewerAnnotationDetailDialog(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            icon  = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            icon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text(stringResource(R.string.viewer_annotate_delete_confirm_title)) },
-            text  = {
+            text = {
                 Text(
                     stringResource(
-                        if (isNote) R.string.viewer_annotate_delete_confirm_note_body
-                        else R.string.viewer_annotate_delete_confirm_highlight_body
-                    )
+                        if (isNote) {
+                            R.string.viewer_annotate_delete_confirm_note_body
+                        } else {
+                            R.string.viewer_annotate_delete_confirm_highlight_body
+                        },
+                    ),
                 )
             },
             confirmButton = {
@@ -218,19 +230,22 @@ fun ViewerAnnotationDetailDialog(
                 TextButton(onClick = { showDeleteConfirm = false }) {
                     Text(stringResource(R.string.general_cancel))
                 }
-            }
+            },
         )
         return
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon  = { Icon(if (isNote) Icons.Rounded.EditNote else Icons.Rounded.HighlightAlt, contentDescription = null) },
+        icon = { Icon(if (isNote) Icons.Rounded.EditNote else Icons.Rounded.HighlightAlt, contentDescription = null) },
         title = {
             Text(
                 stringResource(
-                    if (isNote) R.string.viewer_annotate_note_detail_title
-                    else R.string.viewer_annotate_highlight_detail_title
-                )
+                    if (isNote) {
+                        R.string.viewer_annotate_note_detail_title
+                    } else {
+                        R.string.viewer_annotate_highlight_detail_title
+                    },
+                ),
             )
         },
         text = {
@@ -239,7 +254,7 @@ fun ViewerAnnotationDetailDialog(
             } else {
                 Text(
                     stringResource(R.string.viewer_annotate_highlight_detail_body),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
         },
@@ -252,7 +267,7 @@ fun ViewerAnnotationDetailDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
-        }
+        },
     )
 }
 
@@ -262,17 +277,17 @@ fun ViewerAnnotationDetailDialog(
 fun ViewerShareChoiceDialog(
     isFlattening: Boolean,
     onShareWithAnnotations: () -> Unit,
-    onShareOriginal       : () -> Unit,
-    onDismiss              : () -> Unit
+    onShareOriginal: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = { if (!isFlattening) onDismiss() },
         title = { Text(stringResource(R.string.viewer_share_choice_title)) },
-        text  = {
+        text = {
             if (isFlattening) {
                 Row(
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Text(stringResource(R.string.viewer_share_choice_preparing))
@@ -295,6 +310,6 @@ fun ViewerShareChoiceDialog(
                     Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.general_cancel))
                 }
             }
-        }
+        },
     )
 }

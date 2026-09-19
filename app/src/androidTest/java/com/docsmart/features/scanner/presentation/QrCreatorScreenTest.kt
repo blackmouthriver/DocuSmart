@@ -37,7 +37,6 @@ import org.junit.Test
  * anuncios (mismo patrón que el resto de pantallas de contenido).
  */
 class QrCreatorScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -60,7 +59,7 @@ class QrCreatorScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
         }
     }

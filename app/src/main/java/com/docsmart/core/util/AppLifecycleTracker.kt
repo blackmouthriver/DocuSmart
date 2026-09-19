@@ -16,12 +16,14 @@ import javax.inject.Singleton
  * necesitar un `@Module` nuevo -- mismo criterio que el resto del proyecto).
  */
 @Singleton
-class AppLifecycleTracker @Inject constructor() {
-    fun addObserver(observer: LifecycleEventObserver) {
-        ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
-    }
+class AppLifecycleTracker
+    @Inject
+    constructor() {
+        fun addObserver(observer: LifecycleEventObserver) {
+            ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
+        }
 
-    fun removeObserver(observer: LifecycleEventObserver) {
-        ProcessLifecycleOwner.get().lifecycle.removeObserver(observer)
+        fun removeObserver(observer: LifecycleEventObserver) {
+            ProcessLifecycleOwner.get().lifecycle.removeObserver(observer)
+        }
     }
-}

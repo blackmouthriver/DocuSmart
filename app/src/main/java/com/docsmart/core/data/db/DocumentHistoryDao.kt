@@ -7,7 +7,6 @@ import androidx.room.Query
 
 @Dao
 interface DocumentHistoryDao {
-
     // INSERT OR REPLACE en vez de @Upsert: para esta entidad de 2 columnas
     // es equivalente (reemplaza la fila completa por documentId), con SQL
     // generado más simple. @Upsert (insert + catch conflicto + update en dos
@@ -45,5 +44,8 @@ interface DocumentHistoryDao {
     // de archivo). Mismo patrón que AnnotationDao/PageBookmarkDao/
     // LastViewedPageDao.
     @Query("UPDATE document_history SET documentId = :newDocumentId WHERE documentId = :oldDocumentId")
-    suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String)
+    suspend fun updateDocumentId(
+        oldDocumentId: String,
+        newDocumentId: String,
+    )
 }

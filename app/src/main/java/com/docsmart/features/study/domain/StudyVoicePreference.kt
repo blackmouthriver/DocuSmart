@@ -14,12 +14,14 @@ object StudyVoicePreference {
     private const val PREFS_NAME = "study_voice"
     private const val KEY_VOICE_NAME = "voice_name"
 
-    fun save(context: Context, voiceName: String) {
+    fun save(
+        context: Context,
+        voiceName: String,
+    ) {
         prefs(context).edit().putString(KEY_VOICE_NAME, voiceName).apply()
     }
 
     fun load(context: Context): String? = prefs(context).getString(KEY_VOICE_NAME, null)
 
-    private fun prefs(context: Context) =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }

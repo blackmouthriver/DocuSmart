@@ -18,102 +18,107 @@ import javax.inject.Inject
 
 data class ReorderPagesMessages(
     val emptyOrderError: String,
-    val readError       : String,
-    val generateError   : String,
-    val success          : String, // formato: %1$d páginas
-    val genericError      : String  // formato: %1$s mensaje de excepción
+    val readError: String,
+    val generateError: String,
+    // formato: %1$d páginas
+    val success: String,
+    // formato: %1$s mensaje de excepción
+    val genericError: String,
 )
 
-class ReorderPagesUseCase @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    companion object {
-        private const val TAG = "ReorderPagesUseCase"
-    }
-
-    /**
-     * RF-PDF-08/HU-PDF-07: reordena y/o elimina páginas en un solo paso vía
-     * iText7 (`copyPagesTo`) -- `pageOrder` es la lista final de números de
-     * página **1-based del PDF original**, ya en el orden deseado; una
-     * página del original que no aparezca en la lista queda eliminada del
-     * resultado (AC2). No rasteriza (RNF-PDF-01), conserva el contenido
-     * original de cada página tal cual (mismo principio que Unir/Rotar).
-     */
-    suspend operator fun invoke(
-        pdfUri        : Uri,
-        pageOrder     : List<Int>,
-        outputFileName: String? = null,
-        messages      : ReorderPagesMessages
-    ): PdfToolResult = withContext(Dispatchers.IO) {
-        if (pageOrder.isEmpty()) {
-            return@withContext PdfToolResult.Error(messages.emptyOrderError)
+class ReorderPagesUseCase
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        companion object {
+            private const val TAG = "ReorderPagesUseCase"
         }
 
-        var cacheFile: File? = null
-        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
-        // outputFile era un `val` dentro del try -- el catch de abajo ni
-        // siquiera podía referenciarlo para borrarlo si copyPagesTo()
-        // lanzaba a mitad del loop, mismo patrón ya corregido en Compare/
-        // Compress/OCR (hallazgos #25-27).
-        var outputFile: File? = null
-        try {
-            cacheFile = copyUriToCache(pdfUri)
-                ?: return@withContext PdfToolResult.Error(messages.readError)
+        /**
+         * RF-PDF-08/HU-PDF-07: reordena y/o elimina páginas en un solo paso vía
+         * iText7 (`copyPagesTo`) -- `pageOrder` es la lista final de números de
+         * página **1-based del PDF original**, ya en el orden deseado; una
+         * página del original que no aparezca en la lista queda eliminada del
+         * resultado (AC2). No rasteriza (RNF-PDF-01), conserva el contenido
+         * original de cada página tal cual (mismo principio que Unir/Rotar).
+         */
+        suspend operator fun invoke(
+            pdfUri: Uri,
+            pageOrder: List<Int>,
+            outputFileName: String? = null,
+            messages: ReorderPagesMessages,
+        ): PdfToolResult =
+            withContext(Dispatchers.IO) {
+                if (pageOrder.isEmpty()) {
+                    return@withContext PdfToolResult.Error(messages.emptyOrderError)
+                }
 
-            outputFile = createOutputFile(outputFileName ?: "Reordered")
+                var cacheFile: File? = null
+                // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
+                // outputFile era un `val` dentro del try -- el catch de abajo ni
+                // siquiera podía referenciarlo para borrarlo si copyPagesTo()
+                // lanzaba a mitad del loop, mismo patrón ya corregido en Compare/
+                // Compress/OCR (hallazgos #25-27).
+                var outputFile: File? = null
+                try {
+                    cacheFile = copyUriToCache(pdfUri)
+                        ?: return@withContext PdfToolResult.Error(messages.readError)
 
-            // Bug real corregido 2026-09-08: `sourcePdf`/`destPdf` antes se
-            // cerraban a mano solo en el camino feliz -- si `copyPagesTo`
-            // fallaba a mitad del loop (ej. un `pageOrder` con un número de
-            // página fuera de rango para el PDF actual), ambos quedaban
-            // abiertos. `.use{}` los cierra pase lo que pase, mismo patrón
-            // ya usado en `RotatePdfUseCase`/`SplitPdfUseCase`.
-            PdfDocument(PdfReader(cacheFile)).use { sourcePdf ->
-                PdfDocument(PdfWriter(outputFile)).use { destPdf ->
-                    pageOrder.forEach { pageNumber ->
-                        sourcePdf.copyPagesTo(pageNumber, pageNumber, destPdf)
+                    outputFile = createOutputFile(outputFileName ?: "Reordered")
+
+                    // Bug real corregido 2026-09-08: `sourcePdf`/`destPdf` antes se
+                    // cerraban a mano solo en el camino feliz -- si `copyPagesTo`
+                    // fallaba a mitad del loop (ej. un `pageOrder` con un número de
+                    // página fuera de rango para el PDF actual), ambos quedaban
+                    // abiertos. `.use{}` los cierra pase lo que pase, mismo patrón
+                    // ya usado en `RotatePdfUseCase`/`SplitPdfUseCase`.
+                    PdfDocument(PdfReader(cacheFile)).use { sourcePdf ->
+                        PdfDocument(PdfWriter(outputFile)).use { destPdf ->
+                            pageOrder.forEach { pageNumber ->
+                                sourcePdf.copyPagesTo(pageNumber, pageNumber, destPdf)
+                            }
+                        }
                     }
+
+                    if (outputFile!!.length() == 0L) {
+                        return@withContext PdfToolResult.Error(messages.generateError)
+                    }
+
+                    Timber.d("$TAG: reorden exitoso — ${pageOrder.size} páginas, ${outputFile.length() / 1024} KB")
+
+                    PdfToolResult.Success(
+                        outputFile = outputFile,
+                        message = String.format(messages.success, pageOrder.size),
+                    )
+                } catch (e: Exception) {
+                    Timber.e(e, "$TAG: error al reordenar páginas")
+                    outputFile?.delete()
+                    PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
+                } finally {
+                    cacheFile?.delete()
                 }
             }
 
-            if (outputFile!!.length() == 0L) {
-                return@withContext PdfToolResult.Error(messages.generateError)
+        private fun copyUriToCache(uri: Uri): File? {
+            return try {
+                val file = File(context.cacheDir, "reorder_${System.currentTimeMillis()}.pdf")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    file.outputStream().use { output ->
+                        val bytes = input.copyTo(output)
+                        if (bytes == 0L) return null
+                    }
+                } ?: return null
+                file
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: error copiando URI al cache")
+                null
             }
+        }
 
-            Timber.d("$TAG: reorden exitoso — ${pageOrder.size} páginas, ${outputFile.length() / 1024} KB")
-
-            PdfToolResult.Success(
-                outputFile = outputFile,
-                message    = String.format(messages.success, pageOrder.size)
-            )
-        } catch (e: Exception) {
-            Timber.e(e, "$TAG: error al reordenar páginas")
-            outputFile?.delete()
-            PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
-        } finally {
-            cacheFile?.delete()
+        private fun createOutputFile(name: String): File {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
+            return File(dir, "DocuSmart_${name}_$timestamp.pdf")
         }
     }
-
-    private fun copyUriToCache(uri: Uri): File? {
-        return try {
-            val file = File(context.cacheDir, "reorder_${System.currentTimeMillis()}.pdf")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output ->
-                    val bytes = input.copyTo(output)
-                    if (bytes == 0L) return null
-                }
-            } ?: return null
-            file
-        } catch (e: Exception) {
-            Timber.e(e, "$TAG: error copiando URI al cache")
-            null
-        }
-    }
-
-    private fun createOutputFile(name: String): File {
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val dir = File(context.filesDir, "pdftools").apply { mkdirs() }
-        return File(dir, "DocuSmart_${name}_$timestamp.pdf")
-    }
-}

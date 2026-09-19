@@ -62,42 +62,40 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
-import com.docsmart.core.analytics.DocuSmartAnalytics
-import com.docsmart.core.pdf.PdfPageBitmap
-import com.docsmart.core.pdf.renderPdfPagesToBitmaps
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.docsmart.core.data.db.NoteEntity
 import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
+import com.docsmart.core.pdf.PdfPageBitmap
+import com.docsmart.core.pdf.renderPdfPagesToBitmaps
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
-import com.docsmart.core.ui.util.ReloadOnScreenResume
-import com.docsmart.core.ui.util.findActivity
-import com.docsmart.features.scanner.presentation.ScannerMode
-import com.docsmart.features.scanner.presentation.rememberDocumentScannerAction
-import com.docsmart.features.study.domain.PomodoroEngine
-import com.docsmart.features.study.domain.StudyNotesExporter
-import com.docsmart.features.study.domain.ReadingProgress
-import com.docsmart.features.study.domain.StudyReadingProgressStorage
-import com.docsmart.features.study.presentation.components.NoteLinkDocumentDialog
-import com.docsmart.features.study.domain.pageForParagraph
-import com.docsmart.features.study.domain.StudyStats
-import com.docsmart.features.study.domain.StudyStatsStorage
-import com.docsmart.features.study.domain.StudySummaryExporter
-import com.docsmart.features.study.domain.StudyVoicePreference
-import com.docsmart.features.study.domain.TextSummarizer
-import com.docsmart.features.study.domain.personaForVoice
-import com.docsmart.features.study.domain.millisToHoursAndMinutes
-import com.docsmart.features.study.domain.pomodoroCountsByWeekday
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.theme.rememberAccentGradient
+import com.docsmart.core.ui.util.ReloadOnScreenResume
+import com.docsmart.core.ui.util.findActivity
 import com.docsmart.core.util.DownloadsSaver
+import com.docsmart.features.scanner.presentation.ScannerMode
+import com.docsmart.features.scanner.presentation.rememberDocumentScannerAction
+import com.docsmart.features.study.domain.PomodoroEngine
+import com.docsmart.features.study.domain.ReadingProgress
+import com.docsmart.features.study.domain.StudyNotesExporter
+import com.docsmart.features.study.domain.StudyReadingProgressStorage
+import com.docsmart.features.study.domain.StudyStats
+import com.docsmart.features.study.domain.StudyStatsStorage
+import com.docsmart.features.study.domain.StudySummaryExporter
+import com.docsmart.features.study.domain.StudyVoicePreference
+import com.docsmart.features.study.domain.TextSummarizer
+import com.docsmart.features.study.domain.millisToHoursAndMinutes
+import com.docsmart.features.study.domain.pageForParagraph
+import com.docsmart.features.study.domain.personaForVoice
+import com.docsmart.features.study.domain.pomodoroCountsByWeekday
+import com.docsmart.features.study.presentation.components.NoteLinkDocumentDialog
 import com.itextpdf.kernel.geom.Vector
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
@@ -109,7 +107,6 @@ import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -127,9 +124,10 @@ import java.util.Locale
 fun StudyScreen(
     onBack: () -> Unit = {},
     initialTab: Int = 0,
-    openNoteId: String? = null, // #52: fuerza la pestaña Notas si viene seteado
+    // #52: fuerza la pestaña Notas si viene seteado
+    openNoteId: String? = null,
     onOpenAgenda: () -> Unit = {},
-    viewModel: StudyViewModel = hiltViewModel()
+    viewModel: StudyViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -173,7 +171,7 @@ fun StudyScreen(
     // "Retomar lectura" (2026-09-08): límites de página del documento activo,
     // para poder mostrar "página X de Y" y guardar el progreso por página.
     var pageBoundaries by rememberSaveable(
-        stateSaver = listSaver(save = { it }, restore = { it })
+        stateSaver = listSaver(save = { it }, restore = { it }),
     ) { mutableStateOf<List<Int>>(emptyList()) }
     // Pedido explícito del usuario 2026-09-08: en un dispositivo más lento la
     // extracción del PDF completo tardaba mucho más que en otro -- ahora
@@ -189,20 +187,21 @@ fun StudyScreen(
     // necesidad de salir y volver a entrar a la pestaña Lectura.
     var readingHistory by remember { mutableStateOf(StudyReadingProgressStorage.loadAll(context)) }
 
-    val extractionMessages = StudyExtractionMessages(
-        couldNotRead         = stringResource(R.string.study_extract_could_not_read),
-        pdfNoText            = stringResource(R.string.study_extract_pdf_no_text),
-        pdfErrorTemplate     = stringResource(R.string.study_extract_pdf_error),
-        genericErrorTemplate = stringResource(R.string.study_extract_generic_error),
-        defaultDocumentName  = stringResource(R.string.study_default_document_name),
-        outOfMemoryMessage   = stringResource(R.string.study_extract_out_of_memory)
-    )
+    val extractionMessages =
+        StudyExtractionMessages(
+            couldNotRead = stringResource(R.string.study_extract_could_not_read),
+            pdfNoText = stringResource(R.string.study_extract_pdf_no_text),
+            pdfErrorTemplate = stringResource(R.string.study_extract_pdf_error),
+            genericErrorTemplate = stringResource(R.string.study_extract_generic_error),
+            defaultDocumentName = stringResource(R.string.study_default_document_name),
+            outOfMemoryMessage = stringResource(R.string.study_extract_out_of_memory),
+        )
     // Se preserva con `rememberSaveable` para no perder una nota a medio
     // escribir (texto/resaltados) si el dispositivo rota mientras se
     // escribe -- ver comentario de `documentUri` más arriba.
     var notes by rememberSaveable { mutableStateOf("") }
     var highlights by rememberSaveable(
-        stateSaver = listSaver(save = { it.toList() }, restore = { it.toSet() })
+        stateSaver = listSaver(save = { it.toList() }, restore = { it.toSet() }),
     ) { mutableStateOf<Set<Int>>(emptySet()) }
     var isLoadingDoc by remember { mutableStateOf(false) }
 
@@ -241,10 +240,13 @@ fun StudyScreen(
 
     // ── Estadísticas (RF-STU-09) ──────────────────────
     var showStats by remember { mutableStateOf(false) }
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { /* No-op: el Pomodoro funciona igual sin el permiso, solo no se ve
-          la notificación mientras la app está en segundo plano. */ }
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) {
+        /* No-op: el Pomodoro funciona igual sin el permiso, solo no se ve
+          la notificación mientras la app está en segundo plano. */
+        }
 
     // ── Inicializar TTS ───────────────────────────────
     // Resuelto en scope de composable (no con context.getString() dentro del
@@ -253,72 +255,75 @@ fun StudyScreen(
     val ttsUnavailableMessage = stringResource(R.string.study_tts_unavailable)
     DisposableEffect(Unit) {
         var ttsInstance: TextToSpeech? = null
-        ttsInstance = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                // Antes forzaba español (Locale("es","ES")) sin importar el idioma
-                // configurado — mismo bug que ya se corrigió para el reconocimiento
-                // de voz, pero solo del lado de entrada, no de lectura en voz alta.
-                var languageInUse = Locale.getDefault()
-                val result = ttsInstance?.setLanguage(languageInUse)
-                var fallbackFailed = false
-                if (result == TextToSpeech.LANG_MISSING_DATA ||
-                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    // Hallazgo H2 de la auditoría (ronda 13, 2026-09-18): antes
-                    // este fallback no comprobaba su PROPIO resultado -- si
-                    // "es-ES" tampoco estaba disponible en el dispositivo,
-                    // seguía de largo como si hubiera funcionado, dejando
-                    // ttsReady=true con un idioma que en realidad nunca se
-                    // pudo setear.
-                    languageInUse = Locale("es", "ES")
-                    val fallbackResult = ttsInstance?.setLanguage(languageInUse)
-                    fallbackFailed = fallbackResult == TextToSpeech.LANG_MISSING_DATA ||
-                        fallbackResult == TextToSpeech.LANG_NOT_SUPPORTED
-                }
-                if (fallbackFailed) {
-                    ttsErrorMessage.value = ttsUnavailableMessage
-                } else {
-                    ttsInstance?.setSpeechRate(0.85f)
-                    ttsInstance?.setPitch(1.05f)
-
-                    // Bug real encontrado al verificar en dispositivo (2026-09-12):
-                    // ttsInstance.language.language puede devolver el código ISO
-                    // de 3 letras ("spa") mientras que voice.locale.language usa
-                    // 2 letras ("es") para el mismo idioma -- comparados directo,
-                    // ninguna voz coincidía nunca (0 voces encontradas en la
-                    // prueba real). Se normalizan ambos lados a ISO3 antes de
-                    // comparar.
-                    // Hallazgo H2: se filtra por `languageInUse` (el idioma
-                    // que REALMENTE quedó activo, sea el del dispositivo o el
-                    // fallback a español), no por Locale.getDefault() -- antes
-                    // quedaba desincronizado si hubo fallback.
-                    val currentIso3Language = runCatching { languageInUse.isO3Language }.getOrNull()
-                    val voices = ttsInstance?.voices
-                        ?.filter { voice ->
-                            !voice.isNetworkConnectionRequired &&
-                                runCatching { voice.locale.isO3Language }.getOrNull() == currentIso3Language
-                        }
-                        ?.sortedByDescending { it.quality }
-                        .orEmpty()
-                    availableVoices.value = voices
-                    val savedVoiceName = StudyVoicePreference.load(context)
-                    val matchedVoice = voices.find { it.name == savedVoiceName }
-                    if (matchedVoice != null) {
-                        ttsInstance?.voice = matchedVoice
+        ttsInstance =
+            TextToSpeech(context) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    // Antes forzaba español (Locale("es","ES")) sin importar el idioma
+                    // configurado — mismo bug que ya se corrigió para el reconocimiento
+                    // de voz, pero solo del lado de entrada, no de lectura en voz alta.
+                    var languageInUse = Locale.getDefault()
+                    val result = ttsInstance?.setLanguage(languageInUse)
+                    var fallbackFailed = false
+                    if (result == TextToSpeech.LANG_MISSING_DATA ||
+                        result == TextToSpeech.LANG_NOT_SUPPORTED
+                    ) {
+                        // Hallazgo H2 de la auditoría (ronda 13, 2026-09-18): antes
+                        // este fallback no comprobaba su PROPIO resultado -- si
+                        // "es-ES" tampoco estaba disponible en el dispositivo,
+                        // seguía de largo como si hubiera funcionado, dejando
+                        // ttsReady=true con un idioma que en realidad nunca se
+                        // pudo setear.
+                        languageInUse = Locale("es", "ES")
+                        val fallbackResult = ttsInstance?.setLanguage(languageInUse)
+                        fallbackFailed = fallbackResult == TextToSpeech.LANG_MISSING_DATA ||
+                            fallbackResult == TextToSpeech.LANG_NOT_SUPPORTED
                     }
-                    selectedVoice.value = matchedVoice ?: ttsInstance?.voice
+                    if (fallbackFailed) {
+                        ttsErrorMessage.value = ttsUnavailableMessage
+                    } else {
+                        ttsInstance?.setSpeechRate(0.85f)
+                        ttsInstance?.setPitch(1.05f)
 
-                    ttsRef.value = ttsInstance
-                    ttsReady.value = true
-                    Timber.d("TTS listo, ${voices.size} voces disponibles para $currentIso3Language")
+                        // Bug real encontrado al verificar en dispositivo (2026-09-12):
+                        // ttsInstance.language.language puede devolver el código ISO
+                        // de 3 letras ("spa") mientras que voice.locale.language usa
+                        // 2 letras ("es") para el mismo idioma -- comparados directo,
+                        // ninguna voz coincidía nunca (0 voces encontradas en la
+                        // prueba real). Se normalizan ambos lados a ISO3 antes de
+                        // comparar.
+                        // Hallazgo H2: se filtra por `languageInUse` (el idioma
+                        // que REALMENTE quedó activo, sea el del dispositivo o el
+                        // fallback a español), no por Locale.getDefault() -- antes
+                        // quedaba desincronizado si hubo fallback.
+                        val currentIso3Language = runCatching { languageInUse.isO3Language }.getOrNull()
+                        val voices =
+                            ttsInstance?.voices
+                                ?.filter { voice ->
+                                    !voice.isNetworkConnectionRequired &&
+                                        runCatching { voice.locale.isO3Language }.getOrNull() == currentIso3Language
+                                }
+                                ?.sortedByDescending { it.quality }
+                                .orEmpty()
+                        availableVoices.value = voices
+                        val savedVoiceName = StudyVoicePreference.load(context)
+                        val matchedVoice = voices.find { it.name == savedVoiceName }
+                        if (matchedVoice != null) {
+                            ttsInstance?.voice = matchedVoice
+                        }
+                        selectedVoice.value = matchedVoice ?: ttsInstance?.voice
+
+                        ttsRef.value = ttsInstance
+                        ttsReady.value = true
+                        Timber.d("TTS listo, ${voices.size} voces disponibles para $currentIso3Language")
+                    }
+                } else {
+                    // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): el motor
+                    // TTS no inicializó en absoluto -- antes no había ninguna rama
+                    // para este caso, así que "Leer todo" quedaba deshabilitado
+                    // para siempre sin ningún aviso visible.
+                    ttsErrorMessage.value = ttsUnavailableMessage
                 }
-            } else {
-                // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): el motor
-                // TTS no inicializó en absoluto -- antes no había ninguna rama
-                // para este caso, así que "Leer todo" quedaba deshabilitado
-                // para siempre sin ningún aviso visible.
-                ttsErrorMessage.value = ttsUnavailableMessage
             }
-        }
         onDispose {
             ttsInstance?.stop()
             ttsInstance?.shutdown()
@@ -326,8 +331,6 @@ fun StudyScreen(
             ttsReady.value = false
         }
     }
-
-
 
     // ── RF-STU-09: acumula tiempo de lectura en voz alta real. Se relanza
     // cada vez que isSpeaking cambia; mientras está en true, se suspende en
@@ -376,9 +379,10 @@ fun StudyScreen(
     // permiso, ver comentario en el launcher.
     LaunchedEffect(selectedTab) {
         if (selectedTab != 2 || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@LaunchedEffect
-        val granted = ContextCompat.checkSelfPermission(
-            context, android.Manifest.permission.POST_NOTIFICATIONS
-        ) == PackageManager.PERMISSION_GRANTED
+        val granted =
+            ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
         if (!granted) notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
     }
 
@@ -386,10 +390,13 @@ fun StudyScreen(
     // párrafo de retomo (viene de un progreso guardado), deja la lectura
     // lista para continuar ahí en vez de desde el principio. Compartida
     // entre el selector de documento normal y la lista "Continuar leyendo".
-    fun loadDocument(uri: Uri, resumeFromParagraph: Int?) {
+    fun loadDocument(
+        uri: Uri,
+        resumeFromParagraph: Int?,
+    ) {
         isLoadingDoc = true
         extractionComplete = false
-        documentUri  = uri
+        documentUri = uri
         documentText = emptyList()
         pageBoundaries = emptyList()
         summarySentences = null // documento nuevo -- el resumen anterior ya no aplica
@@ -413,40 +420,41 @@ fun StudyScreen(
             // defecto ("Sin documento") en vez del nombre real del PDF. Se
             // resuelve aparte y de una vez, sin esperar el texto.
             documentName = withContext(Dispatchers.IO) { resolveFileName(context, uri, extractionMessages) }
-            val result = extractTextFromUri(context, uri, extractionMessages) { partialParagraphs, partialBoundaries ->
-                // El callback llega desde Dispatchers.IO (extractPdfText corre
-                // ahí) -- se pasa a Main antes de tocar estado de Compose.
-                withContext(Dispatchers.Main) {
-                    documentText   = partialParagraphs
-                    pageBoundaries = partialBoundaries
-                    isLoadingDoc   = false
-                    // Bug real corregido 2026-09-08: con la extracción
-                    // incremental, el primer lote parcial (solo la página 1)
-                    // puede tener MUCHOS menos párrafos que el índice
-                    // guardado para retomar -- antes esto lo "recortaba" con
-                    // `coerceIn` para que entrara en ese lote chico, dejando
-                    // la lectura fija cerca del principio para siempre (el
-                    // `resumeApplied` ya no dejaba corregirlo después). Ahora
-                    // se espera a que llegue un lote que sí contenga ese
-                    // párrafo antes de aplicar el retomo.
-                    if (!resumeApplied) {
-                        when {
-                            resumeFromParagraph == null -> {
-                                resumeApplied = true
-                                currentSpeakingIndex.intValue = -1
+            val result =
+                extractTextFromUri(context, uri, extractionMessages) { partialParagraphs, partialBoundaries ->
+                    // El callback llega desde Dispatchers.IO (extractPdfText corre
+                    // ahí) -- se pasa a Main antes de tocar estado de Compose.
+                    withContext(Dispatchers.Main) {
+                        documentText = partialParagraphs
+                        pageBoundaries = partialBoundaries
+                        isLoadingDoc = false
+                        // Bug real corregido 2026-09-08: con la extracción
+                        // incremental, el primer lote parcial (solo la página 1)
+                        // puede tener MUCHOS menos párrafos que el índice
+                        // guardado para retomar -- antes esto lo "recortaba" con
+                        // `coerceIn` para que entrara en ese lote chico, dejando
+                        // la lectura fija cerca del principio para siempre (el
+                        // `resumeApplied` ya no dejaba corregirlo después). Ahora
+                        // se espera a que llegue un lote que sí contenga ese
+                        // párrafo antes de aplicar el retomo.
+                        if (!resumeApplied) {
+                            when {
+                                resumeFromParagraph == null -> {
+                                    resumeApplied = true
+                                    currentSpeakingIndex.intValue = -1
+                                }
+                                resumeFromParagraph < partialParagraphs.size -> {
+                                    resumeApplied = true
+                                    currentSpeakingIndex.intValue = resumeFromParagraph
+                                }
+                                // si no, seguir esperando más páginas -- todavía
+                                // no llegamos al párrafo donde había quedado
                             }
-                            resumeFromParagraph < partialParagraphs.size -> {
-                                resumeApplied = true
-                                currentSpeakingIndex.intValue = resumeFromParagraph
-                            }
-                            // si no, seguir esperando más páginas -- todavía
-                            // no llegamos al párrafo donde había quedado
                         }
                     }
                 }
-            }
-            documentText   = result.paragraphs
-            documentName   = result.fileName
+            documentText = result.paragraphs
+            documentName = result.fileName
             pageBoundaries = result.pageBoundaries
             if (!resumeApplied) {
                 currentSpeakingIndex.intValue = resumeFromParagraph
@@ -477,22 +485,24 @@ fun StudyScreen(
     // en silencio después de cerrar la app: al reabrir, tanto la extracción
     // de texto como el visor de PDF recibían SecurityException del
     // DownloadStorageProvider al intentar leer el mismo URI.
-    val docLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let {
-            @Suppress("TooGenericExceptionCaught")
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (e: Exception) {
-                Timber.w(e, "No se pudo tomar permiso persistente sobre $uri")
+    val docLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri?.let {
+                @Suppress("TooGenericExceptionCaught")
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (e: Exception) {
+                    Timber.w(e, "No se pudo tomar permiso persistente sobre $uri")
+                }
+                val saved = StudyReadingProgressStorage.findFor(context, uri.toString())
+                loadDocument(uri, resumeFromParagraph = saved?.paragraphIndex)
             }
-            val saved = StudyReadingProgressStorage.findFor(context, uri.toString())
-            loadDocument(uri, resumeFromParagraph = saved?.paragraphIndex)
         }
-    }
 
     // Re-extrae automáticamente si `documentUri` sobrevivió una rotación
     // (rememberSaveable) pero `documentText` no (ver comentario de más
@@ -515,6 +525,7 @@ fun StudyScreen(
     // de la función -- LocalContextGetResourceValueCall de lint marca ese
     // segundo patrón como un error real, no solo estilo.
     val voiceSampleTemplate = stringResource(R.string.study_voice_sample_phrase)
+
     fun previewVoice(voice: Voice) {
         val tts = ttsRef.value ?: return
         val persona = personaForVoice(voice.name)
@@ -531,24 +542,28 @@ fun StudyScreen(
         // está garantizado como seguro en todos los motores OEM. Se
         // despacha al hilo principal para eliminar esa duda.
         val mainHandler = Handler(Looper.getMainLooper())
-        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {
-                Timber.d("Reproduciendo muestra de voz: ${voice.name}")
-            }
-            override fun onDone(utteranceId: String?) {
-                mainHandler.post {
-                    if (voiceToRestore != null) tts.voice = voiceToRestore
-                    previewingVoiceName = null
+        tts.setOnUtteranceProgressListener(
+            object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {
+                    Timber.d("Reproduciendo muestra de voz: ${voice.name}")
                 }
-            }
-            @Deprecated("Deprecated in Java")
-            override fun onError(utteranceId: String?) {
-                mainHandler.post {
-                    if (voiceToRestore != null) tts.voice = voiceToRestore
-                    previewingVoiceName = null
+
+                override fun onDone(utteranceId: String?) {
+                    mainHandler.post {
+                        if (voiceToRestore != null) tts.voice = voiceToRestore
+                        previewingVoiceName = null
+                    }
                 }
-            }
-        })
+
+                @Deprecated("Deprecated in Java")
+                override fun onError(utteranceId: String?) {
+                    mainHandler.post {
+                        if (voiceToRestore != null) tts.voice = voiceToRestore
+                        previewingVoiceName = null
+                    }
+                }
+            },
+        )
         tts.speak(sampleText, TextToSpeech.QUEUE_FLUSH, null, "study_voice_preview")
     }
 
@@ -565,12 +580,12 @@ fun StudyScreen(
         // (esta pantalla también tiene Scaffold propio), dejando el
         // banner de título más abajo que en el resto de la app.
         contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         if (showStats) {
             StudyStatsDialog(
                 stats = remember(showStats) { StudyStatsStorage.loadStats(context) },
-                onDismiss = { showStats = false }
+                onDismiss = { showStats = false },
             )
         }
         if (showVoicePicker) {
@@ -599,13 +614,14 @@ fun StudyScreen(
                         previewingVoiceName = null
                     }
                     showVoicePicker = false
-                }
+                },
             )
         }
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             // ── Banner de anuncio + título ────────────
             // Seguimiento 2026-09-08 a pedido explícito del usuario: (1) el
@@ -617,40 +633,42 @@ fun StudyScreen(
             // a mano en vez de con el `onBack` de DocuSmartTopBanner, para
             // poder ponerlos en la misma fila).
             DocuSmartScreenHeader(
-                adUnitId  = AdConstants.BANNER_STUDY_ID,
-                adManager = viewModel.adManager
+                adUnitId = AdConstants.BANNER_STUDY_ID,
+                adManager = viewModel.adManager,
             ) {
                 Column {
                     DocuSmartTopBanner(
-                        screenTitle    = stringResource(R.string.study_title),
-                        screenSubtitle = documentName
+                        screenTitle = stringResource(R.string.study_title),
+                        screenSubtitle = documentName,
                     )
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp, bottom = 14.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp, bottom = 14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(
-                            verticalAlignment     = Alignment.CenterVertically,
+                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.clickable(role = Role.Button) {
-                                ttsRef.value?.stop()
-                                isSpeaking.value = false
-                                onBack()
-                            }
+                            modifier =
+                                Modifier.clickable(role = Role.Button) {
+                                    ttsRef.value?.stop()
+                                    isSpeaking.value = false
+                                    onBack()
+                                },
                         ) {
                             Icon(
-                                imageVector        = Icons.AutoMirrored.Rounded.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                 contentDescription = null,
-                                tint               = MaterialTheme.colorScheme.primary,
-                                modifier           = Modifier.size(18.dp)
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp),
                             )
                             Text(
-                                text  = stringResource(R.string.general_back),
+                                text = stringResource(R.string.general_back),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                         // Pedido explícito del usuario 2026-09-08: los
@@ -663,30 +681,32 @@ fun StudyScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             IconButton(
                                 onClick = { docLauncher.launch(arrayOf("application/pdf")) },
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                                modifier =
+                                    Modifier
+                                        .size(48.dp)
+                                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                             ) {
                                 Icon(
-                                    imageVector        = Icons.Rounded.FolderOpen,
+                                    imageVector = Icons.Rounded.FolderOpen,
                                     contentDescription = stringResource(R.string.qr_open_document),
-                                    tint               = MaterialTheme.colorScheme.primary,
-                                    modifier           = Modifier.size(18.dp)
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                             IconButton(
                                 onClick = { showStats = true },
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                                modifier =
+                                    Modifier
+                                        .size(48.dp)
+                                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                             ) {
                                 Icon(
-                                    imageVector        = Icons.Rounded.QueryStats,
+                                    imageVector = Icons.Rounded.QueryStats,
                                     contentDescription = stringResource(R.string.study_stats_icon_desc),
-                                    tint               = MaterialTheme.colorScheme.primary,
-                                    modifier           = Modifier.size(18.dp)
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                             // ── Agenda (HU-65, feedback real de testers de
@@ -695,16 +715,17 @@ fun StudyScreen(
                             // usuario, entrada visible desde acá.
                             IconButton(
                                 onClick = onOpenAgenda,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                                modifier =
+                                    Modifier
+                                        .size(48.dp)
+                                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                             ) {
                                 Icon(
-                                    imageVector        = Icons.Rounded.CalendarMonth,
+                                    imageVector = Icons.Rounded.CalendarMonth,
                                     contentDescription = stringResource(R.string.agenda_title),
-                                    tint               = MaterialTheme.colorScheme.primary,
-                                    modifier           = Modifier.size(18.dp)
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                         }
@@ -718,12 +739,13 @@ fun StudyScreen(
             // en Ajustes, mismo mecanismo que `AccentGradient.kt`) con el
             // texto en `primary`/`onSurfaceVariant` para mantener buen
             // contraste sobre ese fondo tintado.
-            val tabs = listOf(
-                stringResource(R.string.study_tab_reading),
-                stringResource(R.string.study_tab_notes),
-                stringResource(R.string.study_tab_pomodoro)
-                // "Resumen" oculta para el primer release, ver comentario junto a selectedTab.
-            )
+            val tabs =
+                listOf(
+                    stringResource(R.string.study_tab_reading),
+                    stringResource(R.string.study_tab_notes),
+                    stringResource(R.string.study_tab_pomodoro),
+                    // "Resumen" oculta para el primer release, ver comentario junto a selectedTab.
+                )
             // TabRow (vuelto a usar 2026-09-10, con "Resumen" oculto): con
             // 4 pestañas, TabRow forzaba el mismo ancho fijo y "Pomodoro" se
             // partía en 2 líneas -- por eso se había pasado a
@@ -737,13 +759,13 @@ fun StudyScreen(
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                contentColor   = MaterialTheme.colorScheme.primary
+                contentColor = MaterialTheme.colorScheme.primary,
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
-                        selectedContentColor   = MaterialTheme.colorScheme.primary,
+                        selectedContentColor = MaterialTheme.colorScheme.primary,
                         unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         text = {
                             // Hallazgo #57 (revisión general 2026-09-16):
@@ -752,12 +774,16 @@ fun StudyScreen(
                             // de mostrar "...".
                             Text(
                                 text = title,
-                                fontWeight = if (selectedTab == index)
-                                    FontWeight.Bold else FontWeight.Normal,
+                                fontWeight =
+                                    if (selectedTab == index) {
+                                        FontWeight.Bold
+                                    } else {
+                                        FontWeight.Normal
+                                    },
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
-                        }
+                        },
                     )
                 }
             }
@@ -773,230 +799,239 @@ fun StudyScreen(
                 // leyendo en ese momento (único que tiene sentido sin verlos
                 // en pantalla) -- sigue alimentando la lista de "Párrafos
                 // resaltados" de la pestaña Notas, sin tocarla.
-                0 -> ReadingTab(
-                    documentUri = documentUri,
-                    isLoading = isLoadingDoc,
-                    highlightedCount = highlights.size,
-                    isCurrentHighlighted = highlights.contains(currentSpeakingIndex.intValue),
-                    isSpeaking = isSpeaking.value,
-                    ttsReady = ttsReady.value,
-                    ttsErrorMessage = ttsErrorMessage.value,
-                    isExtractingMore = !extractionComplete,
-                    onToggleHighlightCurrent = {
-                        val index = currentSpeakingIndex.intValue
-                        if (index >= 0) {
-                            highlights = if (highlights.contains(index)) {
-                                highlights - index
+                0 ->
+                    ReadingTab(
+                        documentUri = documentUri,
+                        isLoading = isLoadingDoc,
+                        highlightedCount = highlights.size,
+                        isCurrentHighlighted = highlights.contains(currentSpeakingIndex.intValue),
+                        isSpeaking = isSpeaking.value,
+                        ttsReady = ttsReady.value,
+                        ttsErrorMessage = ttsErrorMessage.value,
+                        isExtractingMore = !extractionComplete,
+                        onToggleHighlightCurrent = {
+                            val index = currentSpeakingIndex.intValue
+                            if (index >= 0) {
+                                highlights =
+                                    if (highlights.contains(index)) {
+                                        highlights - index
+                                    } else {
+                                        highlights + index
+                                    }
+                            }
+                        },
+                        currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
+                        totalPages = pageBoundaries.size,
+                        onSpeakAll = {
+                            if (isSpeaking.value) {
+                                // "Retomar lectura" (2026-09-08): antes esto
+                                // reiniciaba `currentSpeakingIndex` a -1, así que
+                                // parar y volver a tocar "Leer todo" (en esta
+                                // misma sesión o en una futura) siempre empezaba
+                                // desde el principio. Ahora se deja tal cual --
+                                // "Leer todo" retoma desde ahí la próxima vez.
+                                ttsRef.value?.stop()
+                                isSpeaking.value = false
+                                waitingForMoreText.value = false
                             } else {
-                                highlights + index
-                            }
-                        }
-                    },
-                    currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
-                    totalPages = pageBoundaries.size,
-                    onSpeakAll = {
-                        if (isSpeaking.value) {
-                            // "Retomar lectura" (2026-09-08): antes esto
-                            // reiniciaba `currentSpeakingIndex` a -1, así que
-                            // parar y volver a tocar "Leer todo" (en esta
-                            // misma sesión o en una futura) siempre empezaba
-                            // desde el principio. Ahora se deja tal cual --
-                            // "Leer todo" retoma desde ahí la próxima vez.
-                            ttsRef.value?.stop()
-                            isSpeaking.value = false
-                            waitingForMoreText.value = false
-                        } else {
-                            val currentTts = ttsRef.value
-                            if (currentTts == null || !ttsReady.value || documentText.isEmpty()) {
-                                Timber.e("TTS no está listo")
-                                return@ReadingTab
-                            }
-                            // Bug real corregido 2026-09-08: "Leer todo" unía
-                            // TODOS los párrafos en un solo string y hacía
-                            // una única llamada a speak() -- Android limita
-                            // cada llamada a ~4000 caracteres
-                            // (TextToSpeech.getMaxSpeechInputLength()), así
-                            // que con cualquier documento largo esa llamada
-                            // fallaba en silencio y no se oía nada. Ahora se
-                            // encola un párrafo por llamada (ya probados
-                            // individualmente por "leer este párrafo", cada
-                            // uno bien por debajo del límite), con
-                            // QUEUE_ADD para que se reproduzcan en orden.
-                            //
-                            // "Retomar lectura": el punto de partida ya no es
-                            // siempre 0 -- si `currentSpeakingIndex` quedó en
-                            // un párrafo válido (por "Detener" o por venir de
-                            // "Continuar leyendo"), se sigue desde ahí.
-                            val startIndex = currentSpeakingIndex.intValue
-                                .takeIf { it in documentText.indices } ?: 0
-                            val uriString = documentUri?.toString()
-                            // Hallazgo real de la auditoría general
-                            // 2026-09-17 (B19, resto): UtteranceProgressListener
-                            // corre en un hilo interno del motor TTS, no
-                            // garantizado por Android -- se despacha cada
-                            // callback al hilo principal (mismo mecanismo ya
-                            // aplicado a previewVoice() más arriba), sin
-                            // tocar la lógica interna de ninguno de los 3
-                            // (mismo orden relativo de ejecución, solo se
-                            // corre en el hilo principal en vez del hilo del
-                            // motor TTS). Esto además vuelve seguros los
-                            // `tts.speak()` reentrantes de onDone() -- antes
-                            // se llamaban de vuelta al motor TTS desde su
-                            // propio hilo de callback.
-                            val mainHandler = Handler(Looper.getMainLooper())
-                            currentTts.setOnUtteranceProgressListener(
-                                object : UtteranceProgressListener() {
-                                    override fun onStart(utteranceId: String?) {
-                                        mainHandler.post {
-                                            val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
-                                            isSpeaking.value = true
-                                            if (index != null) {
-                                                currentSpeakingIndex.intValue = index
-                                                if (uriString != null) {
-                                                    StudyReadingProgressStorage.save(
-                                                        context,
-                                                        ReadingProgress(
-                                                            uri              = uriString,
-                                                            documentName     = documentName,
-                                                            paragraphIndex   = index,
-                                                            totalParagraphs  = documentText.size,
-                                                            currentPage      = pageForParagraph(index, pageBoundaries),
-                                                            totalPages       = pageBoundaries.size,
-                                                            lastReadAtMillis = System.currentTimeMillis()
+                                val currentTts = ttsRef.value
+                                if (currentTts == null || !ttsReady.value || documentText.isEmpty()) {
+                                    Timber.e("TTS no está listo")
+                                    return@ReadingTab
+                                }
+                                // Bug real corregido 2026-09-08: "Leer todo" unía
+                                // TODOS los párrafos en un solo string y hacía
+                                // una única llamada a speak() -- Android limita
+                                // cada llamada a ~4000 caracteres
+                                // (TextToSpeech.getMaxSpeechInputLength()), así
+                                // que con cualquier documento largo esa llamada
+                                // fallaba en silencio y no se oía nada. Ahora se
+                                // encola un párrafo por llamada (ya probados
+                                // individualmente por "leer este párrafo", cada
+                                // uno bien por debajo del límite), con
+                                // QUEUE_ADD para que se reproduzcan en orden.
+                                //
+                                // "Retomar lectura": el punto de partida ya no es
+                                // siempre 0 -- si `currentSpeakingIndex` quedó en
+                                // un párrafo válido (por "Detener" o por venir de
+                                // "Continuar leyendo"), se sigue desde ahí.
+                                val startIndex =
+                                    currentSpeakingIndex.intValue
+                                        .takeIf { it in documentText.indices } ?: 0
+                                val uriString = documentUri?.toString()
+                                // Hallazgo real de la auditoría general
+                                // 2026-09-17 (B19, resto): UtteranceProgressListener
+                                // corre en un hilo interno del motor TTS, no
+                                // garantizado por Android -- se despacha cada
+                                // callback al hilo principal (mismo mecanismo ya
+                                // aplicado a previewVoice() más arriba), sin
+                                // tocar la lógica interna de ninguno de los 3
+                                // (mismo orden relativo de ejecución, solo se
+                                // corre en el hilo principal en vez del hilo del
+                                // motor TTS). Esto además vuelve seguros los
+                                // `tts.speak()` reentrantes de onDone() -- antes
+                                // se llamaban de vuelta al motor TTS desde su
+                                // propio hilo de callback.
+                                val mainHandler = Handler(Looper.getMainLooper())
+                                currentTts.setOnUtteranceProgressListener(
+                                    object : UtteranceProgressListener() {
+                                        override fun onStart(utteranceId: String?) {
+                                            mainHandler.post {
+                                                val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
+                                                isSpeaking.value = true
+                                                if (index != null) {
+                                                    currentSpeakingIndex.intValue = index
+                                                    if (uriString != null) {
+                                                        StudyReadingProgressStorage.save(
+                                                            context,
+                                                            ReadingProgress(
+                                                                uri = uriString,
+                                                                documentName = documentName,
+                                                                paragraphIndex = index,
+                                                                totalParagraphs = documentText.size,
+                                                                currentPage = pageForParagraph(index, pageBoundaries),
+                                                                totalPages = pageBoundaries.size,
+                                                                lastReadAtMillis = System.currentTimeMillis(),
+                                                            ),
                                                         )
-                                                    )
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
-                                    override fun onDone(utteranceId: String?) {
-                                        mainHandler.post {
-                                            val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
-                                            if (index == null) return@post
-                                            // "Procesamiento incremental": `lastIndex`
-                                            // se calculó al tocar "Leer todo", pero
-                                            // si el PDF seguía extrayéndose de
-                                            // fondo puede que ya haya más párrafos
-                                            // ahora que cuando se armó la cola --
-                                            // se revisa el tamaño ACTUAL de
-                                            // `documentText`, no el de entonces.
-                                            val newLastIndex = documentText.lastIndex
-                                            when {
-                                                index < newLastIndex -> {
-                                                    ttsRef.value?.let { tts ->
-                                                        for (nextIndex in index + 1..newLastIndex) {
-                                                            tts.speak(
-                                                                documentText[nextIndex],
-                                                                TextToSpeech.QUEUE_ADD,
-                                                                null,
-                                                                "study_all_$nextIndex"
-                                                            )
+
+                                        override fun onDone(utteranceId: String?) {
+                                            mainHandler.post {
+                                                val index = utteranceId?.substringAfterLast('_')?.toIntOrNull()
+                                                if (index == null) return@post
+                                                // "Procesamiento incremental": `lastIndex`
+                                                // se calculó al tocar "Leer todo", pero
+                                                // si el PDF seguía extrayéndose de
+                                                // fondo puede que ya haya más párrafos
+                                                // ahora que cuando se armó la cola --
+                                                // se revisa el tamaño ACTUAL de
+                                                // `documentText`, no el de entonces.
+                                                val newLastIndex = documentText.lastIndex
+                                                when {
+                                                    index < newLastIndex -> {
+                                                        ttsRef.value?.let { tts ->
+                                                            for (nextIndex in index + 1..newLastIndex) {
+                                                                tts.speak(
+                                                                    documentText[nextIndex],
+                                                                    TextToSpeech.QUEUE_ADD,
+                                                                    null,
+                                                                    "study_all_$nextIndex",
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                    !extractionComplete -> {
+                                                        // No hay más texto disponible
+                                                        // TODAVÍA, pero el PDF sigue
+                                                        // procesándose -- esperar en
+                                                        // vez de dar la lectura por
+                                                        // terminada (ver LaunchedEffect
+                                                        // que retoma cuando llegue más).
+                                                        waitingForMoreText.value = true
+                                                    }
+                                                    else -> {
+                                                        // Terminó todo el documento --
+                                                        // ya no hay nada que retomar.
+                                                        isSpeaking.value = false
+                                                        currentSpeakingIndex.intValue = -1
+                                                        if (uriString != null) {
+                                                            StudyReadingProgressStorage.remove(context, uriString)
                                                         }
                                                     }
                                                 }
-                                                !extractionComplete -> {
-                                                    // No hay más texto disponible
-                                                    // TODAVÍA, pero el PDF sigue
-                                                    // procesándose -- esperar en
-                                                    // vez de dar la lectura por
-                                                    // terminada (ver LaunchedEffect
-                                                    // que retoma cuando llegue más).
-                                                    waitingForMoreText.value = true
-                                                }
-                                                else -> {
-                                                    // Terminó todo el documento --
-                                                    // ya no hay nada que retomar.
-                                                    isSpeaking.value = false
-                                                    currentSpeakingIndex.intValue = -1
-                                                    if (uriString != null) {
-                                                        StudyReadingProgressStorage.remove(context, uriString)
-                                                    }
-                                                }
                                             }
                                         }
-                                    }
-                                    override fun onError(utteranceId: String?) {
-                                        // No se resetea el índice -- si falla
-                                        // a mitad de un documento largo, "Leer
-                                        // todo" debe poder reintentar desde
-                                        // ahí, no desde el principio.
-                                        mainHandler.post { isSpeaking.value = false }
-                                    }
-                                }
-                            )
-                            documentText.withIndex().drop(startIndex).forEachIndexed { queuePos, (index, paragraph) ->
-                                currentTts.speak(
-                                    paragraph,
-                                    if (queuePos == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
-                                    null,
-                                    "study_all_$index"
+
+                                        override fun onError(utteranceId: String?) {
+                                            // No se resetea el índice -- si falla
+                                            // a mitad de un documento largo, "Leer
+                                            // todo" debe poder reintentar desde
+                                            // ahí, no desde el principio.
+                                            mainHandler.post { isSpeaking.value = false }
+                                        }
+                                    },
                                 )
+                                documentText.withIndex().drop(startIndex).forEachIndexed { queuePos, (index, paragraph) ->
+                                    currentTts.speak(
+                                        paragraph,
+                                        if (queuePos == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
+                                        null,
+                                        "study_all_$index",
+                                    )
+                                }
+                                isSpeaking.value = true
                             }
-                            isSpeaking.value = true
-                        }
-                    },
-                    onSelectDoc = { docLauncher.launch(arrayOf("application/pdf")) },
-                    readingHistory = readingHistory,
-                    onResumeDocument = { progress ->
-                        loadDocument(Uri.parse(progress.uri), resumeFromParagraph = progress.paragraphIndex)
-                    },
-                    onDeleteDocument = { progress ->
-                        StudyReadingProgressStorage.remove(context, progress.uri)
-                        readingHistory = StudyReadingProgressStorage.loadAll(context)
-                    },
-                    availableVoices = availableVoices.value,
-                    onVoiceSelectorClick = {
-                        // HU-64/RNF1: no tiene sentido escuchar una muestra
-                        // de otra voz mientras el documento se sigue
-                        // leyendo con la actual -- se pausa antes de abrir
-                        // el selector, mismo patrón ya usado para el botón
-                        // "Detener" de más arriba.
-                        if (isSpeaking.value) {
-                            ttsRef.value?.stop()
-                            isSpeaking.value = false
-                        }
-                        showVoicePicker = true
-                    }
-                )
+                        },
+                        onSelectDoc = { docLauncher.launch(arrayOf("application/pdf")) },
+                        readingHistory = readingHistory,
+                        onResumeDocument = { progress ->
+                            loadDocument(Uri.parse(progress.uri), resumeFromParagraph = progress.paragraphIndex)
+                        },
+                        onDeleteDocument = { progress ->
+                            StudyReadingProgressStorage.remove(context, progress.uri)
+                            readingHistory = StudyReadingProgressStorage.loadAll(context)
+                        },
+                        availableVoices = availableVoices.value,
+                        onVoiceSelectorClick = {
+                            // HU-64/RNF1: no tiene sentido escuchar una muestra
+                            // de otra voz mientras el documento se sigue
+                            // leyendo con la actual -- se pausa antes de abrir
+                            // el selector, mismo patrón ya usado para el botón
+                            // "Detener" de más arriba.
+                            if (isSpeaking.value) {
+                                ttsRef.value?.stop()
+                                isSpeaking.value = false
+                            }
+                            showVoicePicker = true
+                        },
+                    )
 
                 // ── Tab Notas ─────────────────────────
-                1 -> NotesTab(
-                    notes = notes,
-                    onNotesChange = { notes = it },
-                    highlights = highlights,
-                    documentText = documentText,
-                    openNoteId = openNoteId
-                )
+                1 ->
+                    NotesTab(
+                        notes = notes,
+                        onNotesChange = { notes = it },
+                        highlights = highlights,
+                        documentText = documentText,
+                        openNoteId = openNoteId,
+                    )
 
                 // ── Tab Pomodoro ──────────────────────
-                2 -> PomodoroTab(
-                    minutes = pomodoroState.minutes,
-                    seconds = pomodoroState.seconds,
-                    isRunning = pomodoroState.isRunning,
-                    isBreak = pomodoroState.isBreak,
-                    pomodoroCount = pomodoroState.pomodoroCount,
-                    onToggle = { PomodoroEngine.toggle(context) },
-                    onReset = { PomodoroEngine.reset(context) }
-                )
+                2 ->
+                    PomodoroTab(
+                        minutes = pomodoroState.minutes,
+                        seconds = pomodoroState.seconds,
+                        isRunning = pomodoroState.isRunning,
+                        isBreak = pomodoroState.isBreak,
+                        pomodoroCount = pomodoroState.pomodoroCount,
+                        onToggle = { PomodoroEngine.toggle(context) },
+                        onReset = { PomodoroEngine.reset(context) },
+                    )
 
                 // ── Tab Resumen (2026-09-08, 100% local) ──
-                3 -> SummaryTab(
-                    documentText     = documentText,
-                    documentName     = documentName,
-                    hasDocument      = documentUri != null,
-                    summarySentences = summarySentences,
-                    isSummarizing    = isSummarizing,
-                    onGenerate = {
-                        isSummarizing = true
-                        scope.launch {
-                            summarySentences = withContext(Dispatchers.Default) {
-                                TextSummarizer.summarize(documentText)
+                3 ->
+                    SummaryTab(
+                        documentText = documentText,
+                        documentName = documentName,
+                        hasDocument = documentUri != null,
+                        summarySentences = summarySentences,
+                        isSummarizing = isSummarizing,
+                        onGenerate = {
+                            isSummarizing = true
+                            scope.launch {
+                                summarySentences =
+                                    withContext(Dispatchers.Default) {
+                                        TextSummarizer.summarize(documentText)
+                                    }
+                                isSummarizing = false
                             }
-                            isSummarizing = false
-                        }
-                    },
-                    onSelectDoc = { docLauncher.launch(arrayOf("application/pdf")) }
-                )
+                        },
+                        onSelectDoc = { docLauncher.launch(arrayOf("application/pdf")) },
+                    )
             }
         }
     }
@@ -1013,40 +1048,44 @@ fun StudyScreen(
 // llegara a ver). Compartido entre Lectura (carga del documento) y Resumen
 // (generación).
 @Composable
-private fun LoadingIndicator(message: String, modifier: Modifier = Modifier) {
+private fun LoadingIndicator(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier.padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(modifier = Modifier.size(64.dp), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(
-                modifier    = Modifier.fillMaxSize(),
-                color       = MaterialTheme.colorScheme.primary,
-                strokeWidth = 5.dp
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 5.dp,
             )
             // El logo solo (sin fondo propio) se perdía contra el fondo
             // claro de la pantalla -- en todos los demás usos del logo en
             // la app siempre lleva un círculo de color detrás (ver banners),
             // así que se repite el mismo criterio acá.
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter            = painterResource(R.drawable.ic_docusmart_logo),
+                    painter = painterResource(R.drawable.ic_docusmart_logo),
                     contentDescription = null,
-                    modifier           = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }
         Text(
-            text      = message,
-            style     = MaterialTheme.typography.bodyMedium,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -1081,7 +1120,7 @@ private fun ReadingTab(
     onResumeDocument: (ReadingProgress) -> Unit,
     onDeleteDocument: (ReadingProgress) -> Unit,
     availableVoices: List<Voice> = emptyList(),
-    onVoiceSelectorClick: () -> Unit = {}
+    onVoiceSelectorClick: () -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -1092,62 +1131,71 @@ private fun ReadingTab(
             // abajo para su propia carga (para el usuario es un solo
             // "cargando documento", sin importar que sean 2 pasos técnicos
             // distintos).
-            isLoading -> LoadingIndicator(
-                stringResource(R.string.study_loading_document),
-                modifier = Modifier.align(Alignment.Center)
-            )
-            documentUri == null -> ReadingEmptyState(
-                readingHistory   = readingHistory,
-                onSelectDoc      = onSelectDoc,
-                onResumeDocument = onResumeDocument,
-                onDeleteDocument = onDeleteDocument
-            )
+            isLoading ->
+                LoadingIndicator(
+                    stringResource(R.string.study_loading_document),
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            documentUri == null ->
+                ReadingEmptyState(
+                    readingHistory = readingHistory,
+                    onSelectDoc = onSelectDoc,
+                    onResumeDocument = onResumeDocument,
+                    onDeleteDocument = onDeleteDocument,
+                )
             else -> {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // ── Barra TTS ─────────────────────
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        color = if (isSpeaking)
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                        else
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        shadowElevation = 2.dp
+                        color =
+                            if (isSpeaking) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            } else {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                            },
+                        shadowElevation = 2.dp,
                     ) {
                         Row(
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp, vertical = 10.dp
-                            ),
+                            modifier =
+                                Modifier.padding(
+                                    horizontal = 16.dp,
+                                    vertical = 10.dp,
+                                ),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(
-                                imageVector = if (isSpeaking)
-                                    Icons.Rounded.VolumeUp
-                                else
-                                    Icons.Rounded.RecordVoiceOver,
+                                imageVector =
+                                    if (isSpeaking) {
+                                        Icons.Rounded.VolumeUp
+                                    } else {
+                                        Icons.Rounded.RecordVoiceOver
+                                    },
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(20.dp),
                             )
                             Text(
                                 // "Retomar lectura" (2026-09-08): pedido
                                 // explícito del usuario, "llevar el número
                                 // de hojas leídas" -- mientras lee, muestra
                                 // la página actual en vez del texto genérico.
-                                text = when {
-                                    isSpeaking && totalPages > 0 ->
-                                        stringResource(R.string.study_reading_page, currentPage, totalPages)
-                                    isSpeaking -> stringResource(R.string.study_reading_document)
-                                    // "Procesamiento incremental": el PDF ya
-                                    // se puede leer pero el resto todavía se
-                                    // sigue extrayendo de fondo.
-                                    isExtractingMore ->
-                                        stringResource(R.string.study_extracting_more, totalPages)
-                                    else -> stringResource(R.string.study_highlighted_count, highlightedCount)
-                                },
+                                text =
+                                    when {
+                                        isSpeaking && totalPages > 0 ->
+                                            stringResource(R.string.study_reading_page, currentPage, totalPages)
+                                        isSpeaking -> stringResource(R.string.study_reading_document)
+                                        // "Procesamiento incremental": el PDF ya
+                                        // se puede leer pero el resto todavía se
+                                        // sigue extrayendo de fondo.
+                                        isExtractingMore ->
+                                            stringResource(R.string.study_extracting_more, totalPages)
+                                        else -> stringResource(R.string.study_highlighted_count, highlightedCount)
+                                    },
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
                             // ── Marcar el párrafo que se está leyendo ─
                             // (reemplaza el resaltado por-fila de antes --
@@ -1157,17 +1205,23 @@ private fun ReadingTab(
                             IconButton(
                                 onClick = onToggleHighlightCurrent,
                                 enabled = isSpeaking,
-                                modifier = Modifier.size(48.dp)
+                                modifier = Modifier.size(48.dp),
                             ) {
                                 Icon(
-                                    imageVector = if (isCurrentHighlighted)
-                                        Icons.Rounded.Bookmark
-                                    else
-                                        Icons.Rounded.BookmarkBorder,
+                                    imageVector =
+                                        if (isCurrentHighlighted) {
+                                            Icons.Rounded.Bookmark
+                                        } else {
+                                            Icons.Rounded.BookmarkBorder
+                                        },
                                     contentDescription = stringResource(R.string.study_mark_current_paragraph),
-                                    tint = if (isSpeaking) WarningAmber
-                                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                    modifier = Modifier.size(18.dp)
+                                    tint =
+                                        if (isSpeaking) {
+                                            WarningAmber
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                        },
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                             // ── Elegir voz (pedido explícito de testers
@@ -1184,13 +1238,13 @@ private fun ReadingTab(
                                 // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                                 IconButton(
                                     onClick = onVoiceSelectorClick,
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.size(48.dp),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.RecordVoiceOver,
                                         contentDescription = stringResource(R.string.study_choose_voice),
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }
@@ -1198,22 +1252,25 @@ private fun ReadingTab(
                             FilledTonalButton(
                                 onClick = onSpeakAll,
                                 shape = MaterialTheme.shapes.medium,
-                                enabled = ttsReady
+                                enabled = ttsReady,
                             ) {
                                 Icon(
-                                    imageVector = if (isSpeaking)
-                                        Icons.Rounded.Stop
-                                    else
-                                        Icons.Rounded.PlayArrow,
+                                    imageVector =
+                                        if (isSpeaking) {
+                                            Icons.Rounded.Stop
+                                        } else {
+                                            Icons.Rounded.PlayArrow
+                                        },
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                val speakButtonLabel = if (isSpeaking) {
-                                    stringResource(R.string.study_stop)
-                                } else {
-                                    stringResource(R.string.study_read_all)
-                                }
+                                val speakButtonLabel =
+                                    if (isSpeaking) {
+                                        stringResource(R.string.study_stop)
+                                    } else {
+                                        stringResource(R.string.study_read_all)
+                                    }
                                 Text(speakButtonLabel)
                             }
                         }
@@ -1227,15 +1284,15 @@ private fun ReadingTab(
                             text = ttsErrorMessage,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                         )
                     }
 
                     // ── PDF real, la voz lee de fondo ─
                     StudyPdfViewer(
-                        uri         = documentUri,
+                        uri = documentUri,
                         currentPage = currentPage,
-                        modifier    = Modifier.fillMaxWidth().weight(1f)
+                        modifier = Modifier.fillMaxWidth().weight(1f),
                     )
                 }
             }
@@ -1250,76 +1307,78 @@ private fun ReadingTab(
 // documento". Sin historial, exactamente el mismo estado vacío de siempre.
 @Composable
 private fun BoxScope.ReadingEmptyState(
-    readingHistory  : List<ReadingProgress>,
-    onSelectDoc     : () -> Unit,
+    readingHistory: List<ReadingProgress>,
+    onSelectDoc: () -> Unit,
     onResumeDocument: (ReadingProgress) -> Unit,
-    onDeleteDocument: (ReadingProgress) -> Unit
+    onDeleteDocument: (ReadingProgress) -> Unit,
 ) {
-    val emptyStateModifier = if (readingHistory.isEmpty()) {
-        Modifier.align(Alignment.Center)
-    } else {
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-    }
+    val emptyStateModifier =
+        if (readingHistory.isEmpty()) {
+            Modifier.align(Alignment.Center)
+        } else {
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+        }
     Column(
         modifier = emptyStateModifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(80.dp)
-                .background(
-                    // Bug real corregido 2026-09-04 (backlog UX §7,
-                    // HU-UX-06): fijo en tonos de azul, ignorando el "Color
-                    // de acento" elegido en Ajustes.
-                    brush = Brush.linearGradient(rememberAccentGradient()),
-                    shape = MaterialTheme.shapes.extraLarge
-                ),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(80.dp)
+                    .background(
+                        // Bug real corregido 2026-09-04 (backlog UX §7,
+                        // HU-UX-06): fijo en tonos de azul, ignorando el "Color
+                        // de acento" elegido en Ajustes.
+                        brush = Brush.linearGradient(rememberAccentGradient()),
+                        shape = MaterialTheme.shapes.extraLarge,
+                    ),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Rounded.MenuBook,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(40.dp),
             )
         }
         Text(
             text = stringResource(R.string.study_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = stringResource(R.string.study_empty_state_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
         if (readingHistory.isNotEmpty()) {
             Text(
-                text  = stringResource(R.string.study_continue_reading),
+                text = stringResource(R.string.study_continue_reading),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             readingHistory.forEach { progress ->
                 ReadingHistoryCard(
                     progress = progress,
-                    onClick  = { onResumeDocument(progress) },
-                    onDelete = { onDeleteDocument(progress) }
+                    onClick = { onResumeDocument(progress) },
+                    onDelete = { onDeleteDocument(progress) },
                 )
             }
         }
         Button(
             onClick = onSelectDoc,
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         ) {
             Icon(
                 imageVector = Icons.Rounded.FolderOpen,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.qr_open_document))
@@ -1333,62 +1392,68 @@ private fun BoxScope.ReadingEmptyState(
 // Pedido explícito del usuario 2026-09-08: además de retomar, poder quitar un
 // PDF de esta lista (no borra el archivo, solo el progreso guardado).
 @Composable
-private fun ReadingHistoryCard(progress: ReadingProgress, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun ReadingHistoryCard(
+    progress: ReadingProgress,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
     val shape = MaterialTheme.shapes.medium
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape, elevation = 1.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
-            .clickable(onClick = onClick)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 1.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+                .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector        = Icons.Rounded.MenuBook,
+                imageVector = Icons.Rounded.MenuBook,
                 contentDescription = null,
-                tint               = MaterialTheme.colorScheme.primary,
-                modifier           = Modifier.size(28.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text       = progress.documentName,
-                    style      = MaterialTheme.typography.bodyMedium,
+                    text = progress.documentName,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines   = 1,
-                    overflow   = TextOverflow.Ellipsis,
-                    color      = MaterialTheme.colorScheme.onSurface
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (progress.totalPages > 0) {
                     Text(
-                        text  = stringResource(
-                            R.string.study_resume_page_progress,
-                            progress.currentPage,
-                            progress.totalPages
-                        ),
+                        text =
+                            stringResource(
+                                R.string.study_resume_page_progress,
+                                progress.currentPage,
+                                progress.totalPages,
+                            ),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             Icon(
-                imageVector        = Icons.Rounded.PlayCircle,
+                imageVector = Icons.Rounded.PlayCircle,
                 contentDescription = stringResource(R.string.study_resume_reading),
-                tint               = MaterialTheme.colorScheme.primary,
-                modifier           = Modifier.size(28.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp),
             )
             // Subido de 28dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
             IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) {
                 Icon(
-                    imageVector        = Icons.Rounded.DeleteOutline,
+                    imageVector = Icons.Rounded.DeleteOutline,
                     contentDescription = stringResource(R.string.study_remove_from_history),
-                    tint               = MaterialTheme.colorScheme.error,
-                    modifier           = Modifier.size(20.dp)
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
@@ -1400,7 +1465,11 @@ private fun ReadingHistoryCard(progress: ReadingProgress, onClick: () -> Unit, o
 // extraído a core/pdf/PdfPageRenderer.kt al necesitarse acá también) pero
 // sin la lógica de resaltado de búsqueda -- Estudio no la necesita.
 @Composable
-private fun StudyPdfViewer(uri: Uri, currentPage: Int, modifier: Modifier = Modifier) {
+private fun StudyPdfViewer(
+    uri: Uri,
+    currentPage: Int,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     var pages by remember(uri) { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
     var loadError by remember(uri) { mutableStateOf(false) }
@@ -1421,22 +1490,23 @@ private fun StudyPdfViewer(uri: Uri, currentPage: Int, modifier: Modifier = Modi
     }
 
     LaunchedEffect(uri) {
-        pages = withContext(Dispatchers.IO) {
-            try {
-                renderPdfPagesToBitmaps(uri, context, cachePrefix = "study")
-            } catch (e: CancellationException) {
-                // Hallazgo H5 de la auditoría (ronda 13, 2026-09-18): si `uri`
-                // cambia mientras el render está en curso, la cancelación no
-                // debe quedar atrapada por el catch genérico de abajo --
-                // mismo mecanismo ya aplicado en otros puntos de este mismo
-                // archivo (ver líneas ~2764, ~3503, ~3576).
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Estudio: error renderizando PDF")
-                loadError = true
-                emptyList()
+        pages =
+            withContext(Dispatchers.IO) {
+                try {
+                    renderPdfPagesToBitmaps(uri, context, cachePrefix = "study")
+                } catch (e: CancellationException) {
+                    // Hallazgo H5 de la auditoría (ronda 13, 2026-09-18): si `uri`
+                    // cambia mientras el render está en curso, la cancelación no
+                    // debe quedar atrapada por el catch genérico de abajo --
+                    // mismo mecanismo ya aplicado en otros puntos de este mismo
+                    // archivo (ver líneas ~2764, ~3503, ~3576).
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Estudio: error renderizando PDF")
+                    loadError = true
+                    emptyList()
+                }
             }
-        }
     }
 
     // Hallazgo H6 de la auditoría (ronda 13, 2026-09-18): mismo fix ya
@@ -1454,84 +1524,89 @@ private fun StudyPdfViewer(uri: Uri, currentPage: Int, modifier: Modifier = Modi
     }
 
     when {
-        loadError -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text  = stringResource(R.string.viewer_error),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        pages.isEmpty() -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            LoadingIndicator(stringResource(R.string.study_loading_document))
-        }
-        else -> LazyColumn(
-            state = listState,
-            modifier = modifier
-                .onSizeChanged { containerSize = it }
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        val newScale = (scale * zoom).coerceIn(0.5f, 4f)
-                        val maxX = (containerSize.width  * (newScale - 1) / 2f).coerceAtLeast(0f)
-                        val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
-                        scale   = newScale
-                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
-                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
+        loadError ->
+            Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = stringResource(R.string.viewer_error),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        pages.isEmpty() ->
+            Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                LoadingIndicator(stringResource(R.string.study_loading_document))
+            }
+        else ->
+            LazyColumn(
+                state = listState,
+                modifier =
+                    modifier
+                        .onSizeChanged { containerSize = it }
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                val newScale = (scale * zoom).coerceIn(0.5f, 4f)
+                                val maxX = (containerSize.width * (newScale - 1) / 2f).coerceAtLeast(0f)
+                                val maxY = (containerSize.height * (newScale - 1) / 2f).coerceAtLeast(0f)
+                                scale = newScale
+                                offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
+                            }
+                        }
+                        .graphicsLayer(
+                            scaleX = scale,
+                            scaleY = scale,
+                            translationX = offsetX,
+                            translationY = offsetY,
+                        ),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                itemsIndexed(pages) { index, pageBitmap ->
+                    val shape = MaterialTheme.shapes.small
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .accentShadow(shape = shape, elevation = 2.dp)
+                                .clip(shape)
+                                .background(MaterialTheme.colorScheme.surface)
+                                .accentBorder(shape = shape),
+                    ) {
+                        Image(
+                            bitmap = pageBitmap.bitmap.asImageBitmap(),
+                            // Hallazgo real de la auditoría general 2026-09-17
+                            // (quinta pasada): sin contentDescription, TalkBack
+                            // no anuncia en qué página está durante "Leer todo"
+                            // -- justo una función pensada para accesibilidad.
+                            // Mismo string ya usado por el Visor principal.
+                            contentDescription = stringResource(R.string.viewer_page_content_desc, index + 1),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
-                .graphicsLayer(
-                    scaleX       = scale,
-                    scaleY       = scale,
-                    translationX = offsetX,
-                    translationY = offsetY
-                ),
-            contentPadding      = PaddingValues(top = 8.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            itemsIndexed(pages) { index, pageBitmap ->
-                val shape = MaterialTheme.shapes.small
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .accentShadow(shape = shape, elevation = 2.dp)
-                        .clip(shape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .accentBorder(shape = shape)
-                ) {
-                    Image(
-                        bitmap             = pageBitmap.bitmap.asImageBitmap(),
-                        // Hallazgo real de la auditoría general 2026-09-17
-                        // (quinta pasada): sin contentDescription, TalkBack
-                        // no anuncia en qué página está durante "Leer todo"
-                        // -- justo una función pensada para accesibilidad.
-                        // Mismo string ya usado por el Visor principal.
-                        contentDescription = stringResource(R.string.viewer_page_content_desc, index + 1),
-                        modifier           = Modifier.fillMaxWidth()
-                    )
-                }
             }
-        }
     }
 }
 
 // ── Tab de Notas ──────────────────────────────────────
 @Composable
 private fun NotesTab(
-    notes        : String,
+    notes: String,
     onNotesChange: (String) -> Unit,
-    highlights   : Set<Int>,
-    documentText : List<String>,
-    openNoteId   : String? = null,
-    viewModel    : NotesViewModel = hiltViewModel()
+    highlights: Set<Int>,
+    documentText: List<String>,
+    openNoteId: String? = null,
+    viewModel: NotesViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val savedNotes = uiState.notes
 
     // ── Estado ────────────────────────────────────────────────────────────────
-    var currentTitle  by remember { mutableStateOf("") }
-    var currentNote   by remember { mutableStateOf(notes) }
+    var currentTitle by remember { mutableStateOf("") }
+    var currentNote by remember { mutableStateOf(notes) }
     var showDeleteAll by remember { mutableStateOf(false) }
-    var isListening   by remember { mutableStateOf(false) }
+    var isListening by remember { mutableStateOf(false) }
     // Backlog UX #49: imágenes elegidas para la nota que se está escribiendo
     // todavía, se limpia al guardar (o al descartar una con la X).
     var currentImageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
@@ -1540,7 +1615,7 @@ private fun NotesTab(
     // elegido (NONE si no hay ninguno), `reminderAt` es la fecha/hora real
     // que se manda a guardar. Ambos se resetean juntos al guardar.
     var reminderChip by remember { mutableStateOf(NoteReminderChip.NONE) }
-    var reminderAt   by remember { mutableStateOf<Long?>(null) }
+    var reminderAt by remember { mutableStateOf<Long?>(null) }
     // RNF2: si el usuario negó POST_NOTIFICATIONS, la sección de
     // recordatorio queda deshabilitada -- sin esto se podría programar una
     // alarma cuya notificación nunca va a poder mostrarse, en silencio.
@@ -1548,13 +1623,14 @@ private fun NotesTab(
         mutableStateOf(
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(
-                    context, android.Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
+                    context, android.Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED,
         )
     }
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted -> notificationsGranted = granted }
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted -> notificationsGranted = granted }
     // Hallazgo real de la auditoría general 2026-09-17 (B20): a diferencia
     // de Agenda (canScheduleExactAlarms, ver AgendaScreen.kt), acá
     // notificationsGranted solo se actualizaba desde el diálogo del sistema
@@ -1564,63 +1640,73 @@ private fun NotesTab(
     ReloadOnScreenResume {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationsGranted = ContextCompat.checkSelfPermission(
-                context, android.Manifest.permission.POST_NOTIFICATIONS
+                context, android.Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
         }
     }
     val notesListState = rememberLazyListState()
 
     // ── Adjuntar imagen (galería o recorte escaneado) ────────────────────────
-    val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { uris -> if (uris.isNotEmpty()) currentImageUris = currentImageUris + uris }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetMultipleContents(),
+        ) { uris -> if (uris.isNotEmpty()) currentImageUris = currentImageUris + uris }
 
     // "Recorte escaneado" del pedido original (#49) -- mismo escáner de ML
     // Kit que ya usa Convertir/Escáner, en modo PHOTO (más liviano que
     // DOCUMENT, sin el flujo multi-página de escanear un documento entero)
     // y con pageLimit=1 porque acá se adjunta de a una imagen por vez.
-    val onScanImage = rememberDocumentScannerAction(
-        activity       = context.findActivity(),
-        mode           = ScannerMode.PHOTO,
-        pageLimit      = 1,
-        onPagesScanned = { pages -> currentImageUris = currentImageUris + pages },
-        onScanError    = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
-    )
+    val onScanImage =
+        rememberDocumentScannerAction(
+            activity = context.findActivity(),
+            mode = ScannerMode.PHOTO,
+            pageLimit = 1,
+            onPagesScanned = { pages -> currentImageUris = currentImageUris + pages },
+            onScanError = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() },
+        )
 
-    val dateFormatter = remember {
-        java.text.SimpleDateFormat("dd/MM/yyyy · HH:mm", java.util.Locale.getDefault())
-    }
+    val dateFormatter =
+        remember {
+            java.text.SimpleDateFormat("dd/MM/yyyy · HH:mm", java.util.Locale.getDefault())
+        }
 
     // ── Reconocimiento de voz ─────────────────────────────────────────────────
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        isListening = false
-        val matches = result.data
-            ?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
-        if (!matches.isNullOrEmpty()) {
-            val spoken = matches[0]
-            currentNote = if (currentNote.isBlank()) spoken
-            else "$currentNote $spoken"
-            onNotesChange(currentNote)
+    val speechLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+        ) { result ->
+            isListening = false
+            val matches =
+                result.data
+                    ?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+            if (!matches.isNullOrEmpty()) {
+                val spoken = matches[0]
+                currentNote =
+                    if (currentNote.isBlank()) {
+                        spoken
+                    } else {
+                        "$currentNote $spoken"
+                    }
+                onNotesChange(currentNote)
+            }
         }
-    }
 
     val voicePrompt = stringResource(R.string.study_voice_prompt)
 
     fun startVoiceInput() {
         try {
-            val intent = android.content.Intent(
-                android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-            ).apply {
-                putExtra(
-                    android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                    android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                )
-                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
-                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, voicePrompt)
-                putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-            }
+            val intent =
+                android.content.Intent(
+                    android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH,
+                ).apply {
+                    putExtra(
+                        android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                    )
+                    putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                    putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, voicePrompt)
+                    putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                }
             isListening = true
             speechLauncher.launch(intent)
         } catch (e: Exception) {
@@ -1633,9 +1719,9 @@ private fun NotesTab(
     if (showDeleteAll) {
         AlertDialog(
             onDismissRequest = { showDeleteAll = false },
-            shape            = MaterialTheme.shapes.large,
+            shape = MaterialTheme.shapes.large,
             title = { Text(stringResource(R.string.study_delete_all_notes_title)) },
-            text  = { Text(stringResource(R.string.study_delete_all_notes_body)) },
+            text = { Text(stringResource(R.string.study_delete_all_notes_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteAllNotes()
@@ -1644,7 +1730,7 @@ private fun NotesTab(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteAll = false }) { Text(stringResource(R.string.general_cancel)) }
-            }
+            },
         )
     }
 
@@ -1664,7 +1750,8 @@ private fun NotesTab(
         val noteIndex = savedNotes.indexOfFirst { it.note.id == targetId }
         if (noteIndex < 0) return@LaunchedEffect
         val highlightSectionCount = if (highlights.isEmpty() || documentText.isEmpty()) 0 else highlights.size + 2
-        val fixedItemsBeforeList = highlightSectionCount + 1 /* NoteEditorCard */ + 1 /* NotesListHeader */
+        // NoteEditorCard
+        val fixedItemsBeforeList = highlightSectionCount + 1 + 1 // NotesListHeader
         notesListState.animateScrollToItem(fixedItemsBeforeList + noteIndex)
     }
 
@@ -1675,7 +1762,6 @@ private fun NotesTab(
     // sin forma de hacer scroll para verlo. Ahora es una única `LazyColumn`
     // para toda la pestaña.
     LazyColumn(state = notesListState, modifier = Modifier.fillMaxSize()) {
-
         // ── Párrafos resaltados ───────────────────────────────────────────────
         // Extraída a highlightedParagraphsSection() (detekt: LongMethod).
         highlightedParagraphsSection(highlights, documentText)
@@ -1687,32 +1773,38 @@ private fun NotesTab(
         // Extraído a NoteEditorCard() (detekt: LongMethod).
         item {
             NoteEditorCard(
-                currentTitle   = currentTitle,
-                onTitleChange  = { currentTitle = it },
-                currentNote    = currentNote,
-                onNoteChange   = { currentNote = it; onNotesChange(it) },
-                isListening    = isListening,
-                onVoiceClick   = { startVoiceInput() },
-                imageUris      = currentImageUris,
+                currentTitle = currentTitle,
+                onTitleChange = { currentTitle = it },
+                currentNote = currentNote,
+                onNoteChange = {
+                    currentNote = it
+                    onNotesChange(it)
+                },
+                isListening = isListening,
+                onVoiceClick = { startVoiceInput() },
+                imageUris = currentImageUris,
                 onGalleryClick = { galleryLauncher.launch("image/*") },
-                onScanClick    = onScanImage,
-                onRemoveImage  = { uri -> currentImageUris = currentImageUris - uri },
-                reminderChip   = reminderChip,
-                reminderAt     = reminderAt,
-                onReminderChange = { chip, millis -> reminderChip = chip; reminderAt = millis },
-                notificationsGranted   = notificationsGranted,
+                onScanClick = onScanImage,
+                onRemoveImage = { uri -> currentImageUris = currentImageUris - uri },
+                reminderChip = reminderChip,
+                reminderAt = reminderAt,
+                onReminderChange = { chip, millis ->
+                    reminderChip = chip
+                    reminderAt = millis
+                },
+                notificationsGranted = notificationsGranted,
                 onRequestNotifications = {
                     notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                 },
                 onSave = { title, text ->
                     viewModel.createNote(title, text, currentImageUris, reminderAt)
-                    currentNote      = ""
-                    currentTitle     = ""
+                    currentNote = ""
+                    currentTitle = ""
                     currentImageUris = emptyList()
-                    reminderChip     = NoteReminderChip.NONE
-                    reminderAt       = null
+                    reminderChip = NoteReminderChip.NONE
+                    reminderAt = null
                     onNotesChange("")
-                }
+                },
             )
         }
 
@@ -1720,8 +1812,8 @@ private fun NotesTab(
         // Extraída a NotesListHeader()/NotesEmptyState() (detekt: LongMethod).
         item {
             NotesListHeader(
-                notes           = savedNotes,
-                onDeleteAllClick = { showDeleteAll = true }
+                notes = savedNotes,
+                onDeleteAllClick = { showDeleteAll = true },
             )
         }
 
@@ -1731,11 +1823,11 @@ private fun NotesTab(
             itemsIndexed(savedNotes, key = { _, note -> note.note.id }) { _, noteWithImages ->
                 NoteListItem(
                     noteWithImages = noteWithImages,
-                    dateFormatter  = dateFormatter,
-                    isHighlighted  = noteWithImages.note.id == openNoteId,
-                    onLinkClick    = { viewModel.showLinkDialog(noteWithImages.note.id) },
-                    onEditClick    = { viewModel.startEditingNote(noteWithImages.note.id) },
-                    onDeleteClick  = { viewModel.deleteNote(noteWithImages) }
+                    dateFormatter = dateFormatter,
+                    isHighlighted = noteWithImages.note.id == openNoteId,
+                    onLinkClick = { viewModel.showLinkDialog(noteWithImages.note.id) },
+                    onEditClick = { viewModel.startEditingNote(noteWithImages.note.id) },
+                    onDeleteClick = { viewModel.deleteNote(noteWithImages) },
                 )
             }
             item { Spacer(Modifier.height(16.dp)) }
@@ -1749,7 +1841,7 @@ private fun NotesTab(
         notificationsGranted = notificationsGranted,
         onRequestNotifications = {
             notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-        }
+        },
     )
 }
 
@@ -1762,15 +1854,15 @@ private fun NotesTabDialogs(
     savedNotes: List<NoteWithImages>,
     viewModel: NotesViewModel,
     notificationsGranted: Boolean,
-    onRequestNotifications: () -> Unit
+    onRequestNotifications: () -> Unit,
 ) {
     uiState.linkDocumentDialogForNoteId?.let { noteId ->
         val currentDocumentId = savedNotes.firstOrNull { it.note.id == noteId }?.note?.documentId
         NoteLinkDocumentDialog(
             currentDocumentId = currentDocumentId,
             onDismiss = { viewModel.dismissLinkDialog() },
-            onSelect  = { doc -> viewModel.linkDocument(noteId, doc.id) },
-            onUnlink  = { viewModel.linkDocument(noteId, null) }
+            onSelect = { doc -> viewModel.linkDocument(noteId, doc.id) },
+            onUnlink = { viewModel.linkDocument(noteId, null) },
         )
     }
 
@@ -1783,32 +1875,35 @@ private fun NotesTabDialogs(
             onDismiss = { viewModel.cancelEditingNote() },
             onSave = { title, text, reminderAt, keptImages, removedImages, newImageUris ->
                 viewModel.updateNote(noteId, title, text, reminderAt, keptImages, removedImages, newImageUris)
-            }
+            },
         )
     }
 }
 
 // Extraída de NotesTab() (detekt: LongMethod) -- párrafos resaltados del
 // documento actualmente en Lectura, con acceso rápido a citarlos en la nota.
-private fun LazyListScope.highlightedParagraphsSection(highlights: Set<Int>, documentText: List<String>) {
+private fun LazyListScope.highlightedParagraphsSection(
+    highlights: Set<Int>,
+    documentText: List<String>,
+) {
     if (highlights.isEmpty() || documentText.isEmpty()) return
     item {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment     = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector        = Icons.Rounded.Bookmarks,
+                imageVector = Icons.Rounded.Bookmarks,
                 contentDescription = null,
-                tint               = MaterialTheme.colorScheme.primary,
-                modifier           = Modifier.size(18.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
             )
             Text(
-                text       = stringResource(R.string.study_highlighted_paragraphs_count, highlights.size),
-                style      = MaterialTheme.typography.titleSmall,
+                text = stringResource(R.string.study_highlighted_paragraphs_count, highlights.size),
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
         }
     }
@@ -1816,19 +1911,19 @@ private fun LazyListScope.highlightedParagraphsSection(highlights: Set<Int>, doc
         if (index < documentText.size) {
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
-                shape    = MaterialTheme.shapes.medium,
-                colors   = CardDefaults.cardColors(containerColor = WarningAmber.copy(alpha = 0.1f))
+                shape = MaterialTheme.shapes.medium,
+                colors = CardDefaults.cardColors(containerColor = WarningAmber.copy(alpha = 0.1f)),
             ) {
                 Row(
-                    modifier              = Modifier.padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Icon(Icons.Rounded.Bookmark, null, tint = WarningAmber, modifier = Modifier.size(16.dp))
                     Text(
-                        text     = documentText[index],
-                        style    = MaterialTheme.typography.bodySmall,
-                        color    = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2
+                        text = documentText[index],
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
                     )
                 }
             }
@@ -1840,25 +1935,32 @@ private fun LazyListScope.highlightedParagraphsSection(highlights: Set<Int>, doc
 // Extraída de NotesTab() (detekt: LongMethod) -- contador + exportar todas/
 // eliminar todas.
 @Composable
-private fun NotesListHeader(notes: List<NoteWithImages>, onDeleteAllClick: () -> Unit) {
+private fun NotesListHeader(
+    notes: List<NoteWithImages>,
+    onDeleteAllClick: () -> Unit,
+) {
     Row(
-        modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment     = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector        = Icons.AutoMirrored.Rounded.Notes,
+                imageVector = Icons.AutoMirrored.Rounded.Notes,
                 contentDescription = null,
-                tint               = MaterialTheme.colorScheme.primary,
-                modifier           = Modifier.size(18.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
             )
             Text(
-                text       = if (notes.isEmpty()) stringResource(R.string.study_no_saved_notes)
-                else stringResource(R.string.study_saved_notes_count, notes.size),
-                style      = MaterialTheme.typography.titleSmall,
+                text =
+                    if (notes.isEmpty()) {
+                        stringResource(R.string.study_no_saved_notes)
+                    } else {
+                        stringResource(R.string.study_saved_notes_count, notes.size)
+                    },
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
         }
         if (notes.isNotEmpty()) {
@@ -1866,9 +1968,9 @@ private fun NotesListHeader(notes: List<NoteWithImages>, onDeleteAllClick: () ->
                 StudyExportNotesButton(notes = notes)
                 TextButton(onClick = onDeleteAllClick) {
                     Text(
-                        text  = stringResource(R.string.study_delete_all),
+                        text = stringResource(R.string.study_delete_all),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -1881,31 +1983,32 @@ private fun NotesListHeader(notes: List<NoteWithImages>, onDeleteAllClick: () ->
 @Composable
 private fun NotesEmptyState() {
     Column(
-        modifier            = Modifier.fillMaxWidth().padding(32.dp),
+        modifier = Modifier.fillMaxWidth().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(64.dp)
-                .background(
-                    brush = Brush.linearGradient(rememberAccentGradient()),
-                    shape = MaterialTheme.shapes.extraLarge
-                ),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(64.dp)
+                    .background(
+                        brush = Brush.linearGradient(rememberAccentGradient()),
+                        shape = MaterialTheme.shapes.extraLarge,
+                    ),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector        = Icons.Rounded.NoteAlt,
+                imageVector = Icons.Rounded.NoteAlt,
                 contentDescription = null,
-                tint               = Color.White,
-                modifier           = Modifier.size(30.dp)
+                tint = Color.White,
+                modifier = Modifier.size(30.dp),
             )
         }
         Text(
-            text      = stringResource(R.string.study_no_notes_yet),
-            style     = MaterialTheme.typography.bodyMedium,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            text = stringResource(R.string.study_no_notes_yet),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -1916,121 +2019,132 @@ private fun NotesEmptyState() {
 // llamarse en un @Composable) antes de invocar onSave().
 @Composable
 private fun NoteEditorCard(
-    currentTitle  : String,
-    onTitleChange : (String) -> Unit,
-    currentNote   : String,
-    onNoteChange  : (String) -> Unit,
-    isListening   : Boolean,
-    onVoiceClick  : () -> Unit,
-    imageUris     : List<Uri>,
+    currentTitle: String,
+    onTitleChange: (String) -> Unit,
+    currentNote: String,
+    onNoteChange: (String) -> Unit,
+    isListening: Boolean,
+    onVoiceClick: () -> Unit,
+    imageUris: List<Uri>,
     onGalleryClick: () -> Unit,
-    onScanClick   : () -> Unit,
-    onRemoveImage : (Uri) -> Unit,
-    reminderChip  : NoteReminderChip,
-    reminderAt    : Long?,
-    onReminderChange      : (NoteReminderChip, Long?) -> Unit,
-    notificationsGranted  : Boolean,
+    onScanClick: () -> Unit,
+    onRemoveImage: (Uri) -> Unit,
+    reminderChip: NoteReminderChip,
+    reminderAt: Long?,
+    onReminderChange: (NoteReminderChip, Long?) -> Unit,
+    notificationsGranted: Boolean,
     onRequestNotifications: () -> Unit,
-    onSave        : (title: String, text: String) -> Unit
+    onSave: (title: String, text: String) -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .accentShadow(shape = shape, elevation = 1.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .accentShadow(shape = shape, elevation = 1.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment     = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector        = Icons.Rounded.EditNote,
+                    imageVector = Icons.Rounded.EditNote,
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(20.dp)
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
                 )
                 Text(
-                    text       = stringResource(R.string.study_new_note),
-                    style      = MaterialTheme.typography.titleSmall,
+                    text = stringResource(R.string.study_new_note),
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color      = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
 
             // Campo título
             OutlinedTextField(
-                value         = currentTitle,
+                value = currentTitle,
                 onValueChange = onTitleChange,
-                modifier      = Modifier.fillMaxWidth(),
-                label         = { Text(stringResource(R.string.study_note_title_label)) },
-                placeholder   = { Text(stringResource(R.string.study_note_title_placeholder)) },
-                singleLine    = true,
-                leadingIcon   = {
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.study_note_title_label)) },
+                placeholder = { Text(stringResource(R.string.study_note_title_placeholder)) },
+                singleLine = true,
+                leadingIcon = {
                     Icon(
-                        imageVector        = Icons.Rounded.Title,
+                        imageVector = Icons.Rounded.Title,
                         contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(20.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
                     )
                 },
-                shape  = MaterialTheme.shapes.large,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                shape = MaterialTheme.shapes.large,
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
             )
 
             // Campo contenido + botón micrófono
             OutlinedTextField(
-                value         = currentNote,
+                value = currentNote,
                 onValueChange = onNoteChange,
-                modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
-                placeholder   = { Text(stringResource(R.string.study_note_content_placeholder)) },
-                trailingIcon  = {
+                modifier = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
+                placeholder = { Text(stringResource(R.string.study_note_content_placeholder)) },
+                trailingIcon = {
                     // Subido de 40dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                     IconButton(onClick = onVoiceClick, modifier = Modifier.size(48.dp)) {
                         Icon(
-                            imageVector        = if (isListening) Icons.Rounded.MicOff else Icons.Rounded.Mic,
+                            imageVector = if (isListening) Icons.Rounded.MicOff else Icons.Rounded.Mic,
                             contentDescription = stringResource(R.string.study_dictate_note),
-                            tint               = if (isListening) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.primary,
-                            modifier           = Modifier.size(22.dp)
+                            tint =
+                                if (isListening) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                            modifier = Modifier.size(22.dp),
                         )
                     }
                 },
-                shape  = MaterialTheme.shapes.large,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = if (isListening) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                shape = MaterialTheme.shapes.large,
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor =
+                            if (isListening) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
             )
 
             // Indicador de escucha activa
             if (isListening) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment     = Alignment.CenterVertically,
-                    modifier              = Modifier.padding(start = 4.dp)
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 4.dp),
                 ) {
                     Icon(
-                        imageVector        = Icons.Rounded.GraphicEq,
+                        imageVector = Icons.Rounded.GraphicEq,
                         contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.error,
-                        modifier           = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(
-                        text  = stringResource(R.string.study_listening),
+                        text = stringResource(R.string.study_listening),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -2041,18 +2155,18 @@ private fun NoteEditorCard(
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(onClick = onGalleryClick) {
                     Icon(
-                        imageVector        = Icons.Rounded.Image,
+                        imageVector = Icons.Rounded.Image,
                         contentDescription = null,
-                        modifier           = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.study_note_attach_image), style = MaterialTheme.typography.labelMedium)
                 }
                 TextButton(onClick = onScanClick) {
                     Icon(
-                        imageVector        = Icons.Rounded.DocumentScanner,
+                        imageVector = Icons.Rounded.DocumentScanner,
                         contentDescription = null,
-                        modifier           = Modifier.size(18.dp)
+                        modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.study_note_scan_image), style = MaterialTheme.typography.labelMedium)
@@ -2064,11 +2178,11 @@ private fun NoteEditorCard(
 
             // Backlog UX #52: "Recordarme repasar esto".
             NoteReminderSection(
-                reminderChip   = reminderChip,
-                reminderAt     = reminderAt,
-                onReminderChange       = onReminderChange,
-                notificationsGranted   = notificationsGranted,
-                onRequestNotifications = onRequestNotifications
+                reminderChip = reminderChip,
+                reminderAt = reminderAt,
+                onReminderChange = onReminderChange,
+                notificationsGranted = notificationsGranted,
+                onRequestNotifications = onRequestNotifications,
             )
 
             val untitledNoteLabel = stringResource(R.string.study_untitled_note)
@@ -2080,8 +2194,8 @@ private fun NoteEditorCard(
                     if (text.isNotBlank()) onSave(currentTitle.trim().ifBlank { untitledNoteLabel }, text)
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape    = MaterialTheme.shapes.medium,
-                enabled  = currentNote.trim().isNotBlank()
+                shape = MaterialTheme.shapes.medium,
+                enabled = currentNote.trim().isNotBlank(),
             ) {
                 Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -2096,7 +2210,10 @@ private fun NoteEditorCard(
 // ConverterScreen.SelectedImagesCarousel (URIs temporales del selector/
 // escáner, no archivos ya copiados a filesDir todavía).
 @Composable
-private fun NoteImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
+private fun NoteImagesCarousel(
+    uris: List<Uri>,
+    onRemove: (Uri) -> Unit,
+) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(uris, key = { it.toString() }) { uri ->
             Box(modifier = Modifier.size(72.dp)) {
@@ -2104,28 +2221,30 @@ private fun NoteImagesCarousel(uris: List<Uri>, onRemove: (Uri) -> Unit) {
                     model = uri,
                     contentDescription = stringResource(R.string.study_note_image_desc),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(MaterialTheme.shapes.medium)
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clip(MaterialTheme.shapes.medium),
                 )
                 IconButton(
                     onClick = { onRemove(uri) },
-                    modifier = Modifier.size(36.dp).align(Alignment.TopEnd)
+                    modifier = Modifier.size(36.dp).align(Alignment.TopEnd),
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                shape = MaterialTheme.shapes.extraSmall
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
                             contentDescription = stringResource(R.string.study_note_remove_image),
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(12.dp),
                         )
                     }
                 }
@@ -2167,41 +2286,41 @@ private fun formatNoteReminderDateTime(millis: Long): String =
 @Composable
 private fun NoteReminderSection(
     reminderChip: NoteReminderChip,
-    reminderAt  : Long?,
+    reminderAt: Long?,
     onReminderChange: (NoteReminderChip, Long?) -> Unit,
-    notificationsGranted  : Boolean,
-    onRequestNotifications: () -> Unit
+    notificationsGranted: Boolean,
+    onRequestNotifications: () -> Unit,
 ) {
     var showCustomPicker by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment     = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector        = Icons.Rounded.NotificationsActive,
+                imageVector = Icons.Rounded.NotificationsActive,
                 contentDescription = null,
-                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier           = Modifier.size(16.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp),
             )
             Text(
-                text  = stringResource(R.string.study_note_reminder_label),
+                text = stringResource(R.string.study_note_reminder_label),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         if (!notificationsGranted) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text     = stringResource(R.string.study_note_reminder_notifications_disabled),
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
+                    text = stringResource(R.string.study_note_reminder_notifications_disabled),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
                 )
                 TextButton(onClick = onRequestNotifications) {
                     Text(stringResource(R.string.study_note_reminder_enable_notifications))
@@ -2212,42 +2331,44 @@ private fun NoteReminderSection(
 
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             FilterChip(
                 selected = reminderChip == NoteReminderChip.NONE,
-                onClick  = { onReminderChange(NoteReminderChip.NONE, null) },
-                label    = { Text(stringResource(R.string.agenda_reminder_none), maxLines = 1) }
+                onClick = { onReminderChange(NoteReminderChip.NONE, null) },
+                label = { Text(stringResource(R.string.agenda_reminder_none), maxLines = 1) },
             )
             FilterChip(
                 selected = reminderChip == NoteReminderChip.TOMORROW,
-                onClick  = { onReminderChange(NoteReminderChip.TOMORROW, noteReminderPresetMillis(1)) },
-                label    = { Text(stringResource(R.string.study_note_reminder_tomorrow), maxLines = 1) }
+                onClick = { onReminderChange(NoteReminderChip.TOMORROW, noteReminderPresetMillis(1)) },
+                label = { Text(stringResource(R.string.study_note_reminder_tomorrow), maxLines = 1) },
             )
             FilterChip(
                 selected = reminderChip == NoteReminderChip.DAYS_3,
-                onClick  = { onReminderChange(NoteReminderChip.DAYS_3, noteReminderPresetMillis(3)) },
-                label    = { Text(stringResource(R.string.study_note_reminder_3_days), maxLines = 1) }
+                onClick = { onReminderChange(NoteReminderChip.DAYS_3, noteReminderPresetMillis(3)) },
+                label = { Text(stringResource(R.string.study_note_reminder_3_days), maxLines = 1) },
             )
             FilterChip(
                 selected = reminderChip == NoteReminderChip.WEEK_1,
-                onClick  = { onReminderChange(NoteReminderChip.WEEK_1, noteReminderPresetMillis(7)) },
-                label    = { Text(stringResource(R.string.study_note_reminder_1_week), maxLines = 1) }
+                onClick = { onReminderChange(NoteReminderChip.WEEK_1, noteReminderPresetMillis(7)) },
+                label = { Text(stringResource(R.string.study_note_reminder_1_week), maxLines = 1) },
             )
             FilterChip(
                 selected = reminderChip == NoteReminderChip.CUSTOM,
-                onClick  = { showCustomPicker = true },
-                label    = { Text(stringResource(R.string.study_note_reminder_custom), maxLines = 1) }
+                onClick = { showCustomPicker = true },
+                label = { Text(stringResource(R.string.study_note_reminder_custom), maxLines = 1) },
             )
         }
 
         if (reminderChip != NoteReminderChip.NONE && reminderAt != null) {
             Text(
-                text  = stringResource(
-                    R.string.study_note_reminder_scheduled_desc, formatNoteReminderDateTime(reminderAt)
-                ),
+                text =
+                    stringResource(
+                        R.string.study_note_reminder_scheduled_desc,
+                        formatNoteReminderDateTime(reminderAt),
+                    ),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
             // Hallazgo real de la auditoría general 2026-09-17: mismo
             // problema que en Agenda -- NoteReminderScheduler.schedule()
@@ -2257,18 +2378,18 @@ private fun NoteReminderSection(
             if (reminderAt <= System.currentTimeMillis()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.WarningAmber,
                         contentDescription = null,
                         tint = WarningAmber,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(14.dp),
                     )
                     Text(
                         text = stringResource(R.string.study_note_reminder_already_past),
                         style = MaterialTheme.typography.labelSmall,
-                        color = WarningAmber
+                        color = WarningAmber,
                     )
                 }
             }
@@ -2277,13 +2398,14 @@ private fun NoteReminderSection(
 
     if (showCustomPicker) {
         NoteReminderDateTimeDialog(
-            initialMillis = reminderAt?.takeIf { reminderChip == NoteReminderChip.CUSTOM }
-                ?: System.currentTimeMillis(),
+            initialMillis =
+                reminderAt?.takeIf { reminderChip == NoteReminderChip.CUSTOM }
+                    ?: System.currentTimeMillis(),
             onConfirm = { millis ->
                 onReminderChange(NoteReminderChip.CUSTOM, millis)
                 showCustomPicker = false
             },
-            onDismiss = { showCustomPicker = false }
+            onDismiss = { showCustomPicker = false },
         )
     }
 }
@@ -2297,12 +2419,12 @@ private fun NoteReminderSection(
 @Composable
 private fun NoteReminderDateTimeDialog(
     initialMillis: Long,
-    onConfirm    : (Long) -> Unit,
-    onDismiss    : () -> Unit
+    onConfirm: (Long) -> Unit,
+    onDismiss: () -> Unit,
 ) {
     var value by remember {
         mutableStateOf(
-            Instant.ofEpochMilli(initialMillis).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            Instant.ofEpochMilli(initialMillis).atZone(ZoneId.systemDefault()).toLocalDateTime(),
         )
     }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -2314,8 +2436,8 @@ private fun NoteReminderDateTimeDialog(
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    text  = stringResource(R.string.study_note_reminder_custom),
-                    style = MaterialTheme.typography.titleMedium
+                    text = stringResource(R.string.study_note_reminder_custom),
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.weight(1f)) {
@@ -2354,7 +2476,7 @@ private fun NoteReminderDateTimeDialog(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.general_cancel)) }
-            }
+            },
         ) { DatePicker(state = state) }
     }
 
@@ -2366,7 +2488,7 @@ private fun NoteReminderDateTimeDialog(
                     TimePicker(state = state)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
                             Text(stringResource(R.string.general_cancel))
@@ -2388,74 +2510,91 @@ private fun NoteReminderDateTimeDialog(
 @Composable
 private fun NoteListItem(
     noteWithImages: NoteWithImages,
-    dateFormatter : java.text.SimpleDateFormat,
+    dateFormatter: java.text.SimpleDateFormat,
     // Backlog UX #52, AC2: true si esta es la nota a la que apuntaba la
     // notificación de recordatorio recién tocada -- fondo tintado para que
     // sea fácil de encontrar en la lista tras el scroll automático.
-    isHighlighted : Boolean = false,
-    onLinkClick   : () -> Unit,
-    onEditClick   : () -> Unit,
-    onDeleteClick : () -> Unit
+    isHighlighted: Boolean = false,
+    onLinkClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
 ) {
     val note = noteWithImages.note
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 5.dp)
-            .accentShadow(shape = shape, elevation = 2.dp)
-            .clip(shape)
-            .background(
-                if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-                else MaterialTheme.colorScheme.surface
-            )
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 5.dp)
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(
+                    if (isHighlighted) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    },
+                )
+                .accentBorder(shape = shape),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             // Cabecera: título + acciones
             Row(
-                modifier              = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment     = Alignment.CenterVertically,
-                    modifier              = Modifier.weight(1f)
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f),
                 ) {
                     Icon(
-                        imageVector        = Icons.Rounded.NoteAlt,
+                        imageVector = Icons.Rounded.NoteAlt,
                         contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(
-                        text       = note.title,
-                        style      = MaterialTheme.typography.titleSmall,
+                        text = note.title,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color      = MaterialTheme.colorScheme.onSurface,
-                        maxLines   = 1,
-                        overflow   = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
                 // Backlog UX #50: vincular a un documento de la Biblioteca
                 // -- ícono resaltado en acento cuando ya tiene un vínculo.
                 IconButton(onClick = onLinkClick, modifier = Modifier.size(40.dp)) {
                     Icon(
-                        imageVector = if (note.documentId != null) Icons.Rounded.Link
-                        else Icons.Rounded.LinkOff,
-                        contentDescription = stringResource(
-                            if (note.documentId != null) R.string.note_linked_document_desc
-                            else R.string.note_link_document_title
-                        ),
-                        tint = if (note.documentId != null) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
+                        imageVector =
+                            if (note.documentId != null) {
+                                Icons.Rounded.Link
+                            } else {
+                                Icons.Rounded.LinkOff
+                            },
+                        contentDescription =
+                            stringResource(
+                                if (note.documentId != null) {
+                                    R.string.note_linked_document_desc
+                                } else {
+                                    R.string.note_link_document_title
+                                },
+                            ),
+                        tint =
+                            if (note.documentId != null) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        modifier = Modifier.size(16.dp),
                     )
                 }
                 // Backlog UX #51: exportar esta nota sola a PDF/Word --
@@ -2468,41 +2607,41 @@ private fun NoteListItem(
                 // un evento).
                 IconButton(onClick = onEditClick, modifier = Modifier.size(48.dp)) {
                     Icon(
-                        imageVector        = Icons.Rounded.Edit,
+                        imageVector = Icons.Rounded.Edit,
                         contentDescription = stringResource(R.string.study_edit_note_desc),
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
                 // Subido de 28dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
                 IconButton(onClick = onDeleteClick, modifier = Modifier.size(48.dp)) {
                     Icon(
-                        imageVector        = Icons.Rounded.DeleteOutline,
+                        imageVector = Icons.Rounded.DeleteOutline,
                         contentDescription = stringResource(R.string.study_delete_note_desc),
-                        tint               = MaterialTheme.colorScheme.error,
-                        modifier           = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
 
             // Fecha
             Text(
-                text  = dateFormatter.format(java.util.Date(note.createdAt)),
+                text = dateFormatter.format(java.util.Date(note.createdAt)),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             HorizontalDivider(
                 thickness = 0.5.dp,
-                color     = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.outlineVariant,
             )
 
             // Contenido
             Text(
-                text       = note.text,
-                style      = MaterialTheme.typography.bodyMedium,
-                color      = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 22.sp
+                text = note.text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 22.sp,
             )
 
             // Backlog UX #49: imágenes/recortes ya adjuntos a la nota
@@ -2517,10 +2656,11 @@ private fun NoteListItem(
                             model = File(image.filePath),
                             contentDescription = stringResource(R.string.study_note_image_desc),
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(MaterialTheme.shapes.medium)
-                                .clickable { expandedImagePath = image.filePath }
+                            modifier =
+                                Modifier
+                                    .size(64.dp)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .clickable { expandedImagePath = image.filePath },
                         )
                     }
                 }
@@ -2530,10 +2670,11 @@ private fun NoteListItem(
                             model = File(path),
                             contentDescription = stringResource(R.string.study_note_image_desc),
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.large)
-                                .clickable { expandedImagePath = null }
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.large)
+                                    .clickable { expandedImagePath = null },
                         )
                     }
                 }
@@ -2552,25 +2693,26 @@ private fun NoteListItem(
 // NoteImagesCarousel/NoteReminderSection tal cual, sin duplicar esa UI.
 @Composable
 private fun NoteEditDialog(
-    noteWithImages         : NoteWithImages,
-    notificationsGranted   : Boolean,
-    onRequestNotifications : () -> Unit,
-    onDismiss              : () -> Unit,
+    noteWithImages: NoteWithImages,
+    notificationsGranted: Boolean,
+    onRequestNotifications: () -> Unit,
+    onDismiss: () -> Unit,
     onSave: (
         title: String,
         text: String,
         reminderAt: Long?,
         keptImages: List<NoteImageEntity>,
         removedImages: List<NoteImageEntity>,
-        newImageUris: List<Uri>
-    ) -> Unit
+        newImageUris: List<Uri>,
+    ) -> Unit,
 ) {
     val note = noteWithImages.note
     var title by remember(note.id) { mutableStateOf(note.title) }
-    var text  by remember(note.id) { mutableStateOf(note.text) }
-    val originalImagesByUri = remember(note.id) {
-        noteWithImages.images.associateBy { Uri.fromFile(File(it.filePath)) }
-    }
+    var text by remember(note.id) { mutableStateOf(note.text) }
+    val originalImagesByUri =
+        remember(note.id) {
+            noteWithImages.images.associateBy { Uri.fromFile(File(it.filePath)) }
+        }
     var imageUris by remember(note.id) { mutableStateOf(originalImagesByUri.keys.toList()) }
     // Cualquier reminderAt existente se muestra como "Personalizada" -- no
     // hay forma de saber si el valor guardado vino de un preset (mañana/
@@ -2582,59 +2724,62 @@ private fun NoteEditDialog(
     var reminderAt by remember(note.id) { mutableStateOf(note.reminderAt) }
 
     val context = LocalContext.current
-    val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { uris -> if (uris.isNotEmpty()) imageUris = imageUris + uris }
-    val onScanImage = rememberDocumentScannerAction(
-        activity       = context.findActivity(),
-        mode           = ScannerMode.PHOTO,
-        pageLimit      = 1,
-        onPagesScanned = { pages -> imageUris = imageUris + pages },
-        onScanError    = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
-    )
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetMultipleContents(),
+        ) { uris -> if (uris.isNotEmpty()) imageUris = imageUris + uris }
+    val onScanImage =
+        rememberDocumentScannerAction(
+            activity = context.findActivity(),
+            mode = ScannerMode.PHOTO,
+            pageLimit = 1,
+            onPagesScanned = { pages -> imageUris = imageUris + pages },
+            onScanError = { message -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() },
+        )
     val untitledNoteLabel = stringResource(R.string.study_untitled_note)
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
             Column(
-                modifier = Modifier
-                    .padding(20.dp)
-                    .heightIn(max = 560.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier =
+                    Modifier
+                        .padding(20.dp)
+                        .heightIn(max = 560.dp)
+                        .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment     = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        imageVector        = Icons.Rounded.EditNote,
+                        imageVector = Icons.Rounded.EditNote,
                         contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(20.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
                     )
                     Text(
-                        text       = stringResource(R.string.study_edit_note),
-                        style      = MaterialTheme.typography.titleSmall,
+                        text = stringResource(R.string.study_edit_note),
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color      = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
 
                 OutlinedTextField(
-                    value         = title,
+                    value = title,
                     onValueChange = { title = it },
-                    modifier      = Modifier.fillMaxWidth(),
-                    label         = { Text(stringResource(R.string.study_note_title_label)) },
-                    singleLine    = true,
-                    shape         = MaterialTheme.shapes.large
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.study_note_title_label)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.large,
                 )
                 OutlinedTextField(
-                    value         = text,
+                    value = text,
                     onValueChange = { text = it },
-                    modifier      = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
-                    placeholder   = { Text(stringResource(R.string.study_note_content_placeholder)) },
-                    shape         = MaterialTheme.shapes.large
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 90.dp, max = 140.dp),
+                    placeholder = { Text(stringResource(R.string.study_note_content_placeholder)) },
+                    shape = MaterialTheme.shapes.large,
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -2643,7 +2788,7 @@ private fun NoteEditDialog(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             stringResource(R.string.study_note_attach_image),
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                     TextButton(onClick = onScanImage) {
@@ -2651,7 +2796,7 @@ private fun NoteEditDialog(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             stringResource(R.string.study_note_scan_image),
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                 }
@@ -2660,11 +2805,14 @@ private fun NoteEditDialog(
                 }
 
                 NoteReminderSection(
-                    reminderChip            = reminderChip,
-                    reminderAt              = reminderAt,
-                    onReminderChange        = { chip, millis -> reminderChip = chip; reminderAt = millis },
-                    notificationsGranted    = notificationsGranted,
-                    onRequestNotifications  = onRequestNotifications
+                    reminderChip = reminderChip,
+                    reminderAt = reminderAt,
+                    onReminderChange = { chip, millis ->
+                        reminderChip = chip
+                        reminderAt = millis
+                    },
+                    notificationsGranted = notificationsGranted,
+                    onRequestNotifications = onRequestNotifications,
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -2684,9 +2832,9 @@ private fun NoteEditDialog(
                                 reminderAt,
                                 keptImages,
                                 removedImages,
-                                newImageUris
+                                newImageUris,
                             )
-                        }
+                        },
                     ) { Text(stringResource(R.string.general_save)) }
                 }
             }
@@ -2731,7 +2879,7 @@ private fun StudyExportNotesButton(notes: List<NoteWithImages>) {
                     imageVector = Icons.Rounded.IosShare,
                     contentDescription = stringResource(R.string.study_export_notes),
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
@@ -2741,21 +2889,21 @@ private fun StudyExportNotesButton(notes: List<NoteWithImages>) {
                 onClick = {
                     expanded = false
                     exportAs(StudyExportFormat.TEXT)
-                }
+                },
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.study_export_as_pdf)) },
                 onClick = {
                     expanded = false
                     exportAs(StudyExportFormat.PDF)
-                }
+                },
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.note_export_as_word)) },
                 onClick = {
                     expanded = false
                     exportAs(StudyExportFormat.WORD)
-                }
+                },
             )
         }
     }
@@ -2788,10 +2936,10 @@ private fun StudyExportSingleNoteButton(note: NoteWithImages) {
                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
             } else {
                 Icon(
-                    imageVector        = Icons.Rounded.IosShare,
+                    imageVector = Icons.Rounded.IosShare,
                     contentDescription = stringResource(R.string.note_export_note_desc),
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier           = Modifier.size(16.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
@@ -2801,14 +2949,14 @@ private fun StudyExportSingleNoteButton(note: NoteWithImages) {
                 onClick = {
                     expanded = false
                     exportAs(StudyExportFormat.PDF)
-                }
+                },
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.note_export_as_word)) },
                 onClick = {
                     expanded = false
                     exportAs(StudyExportFormat.WORD)
-                }
+                },
             )
         }
     }
@@ -2822,23 +2970,29 @@ private fun StudyExportSingleNoteButton(note: NoteWithImages) {
 // Dispatchers.IO; solo el Intent final (rápido) vuelve al hilo que llamó.
 @Suppress("TooGenericExceptionCaught")
 private suspend fun shareStudyNotes(
-    context: Context, notes: List<NoteWithImages>, format: StudyExportFormat, shareTitle: String
+    context: Context,
+    notes: List<NoteWithImages>,
+    format: StudyExportFormat,
+    shareTitle: String,
 ) {
     try {
-        val (file, mimeType) = withContext(Dispatchers.IO) {
-            when (format) {
-                StudyExportFormat.TEXT -> StudyNotesExporter.exportAsTextFile(context, notes) to "text/plain"
-                StudyExportFormat.PDF  -> StudyNotesExporter.exportAsPdfFile(context, notes) to "application/pdf"
-                StudyExportFormat.WORD -> StudyNotesExporter.exportAsWordFile(context, notes) to
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        val (file, mimeType) =
+            withContext(Dispatchers.IO) {
+                when (format) {
+                    StudyExportFormat.TEXT -> StudyNotesExporter.exportAsTextFile(context, notes) to "text/plain"
+                    StudyExportFormat.PDF -> StudyNotesExporter.exportAsPdfFile(context, notes) to "application/pdf"
+                    StudyExportFormat.WORD ->
+                        StudyNotesExporter.exportAsWordFile(context, notes) to
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                }
             }
-        }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-            type = mimeType
-            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val intent =
+            android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         context.startActivity(android.content.Intent.createChooser(intent, shareTitle))
     } catch (e: CancellationException) {
         // Hallazgo real de la revisión adversarial de esta misma ronda
@@ -2858,20 +3012,24 @@ private suspend fun shareStudyNotes(
 
 // ── RF-STU-09: estadísticas de estudio ────────────────
 @Composable
-private fun StudyStatsDialog(stats: StudyStats, onDismiss: () -> Unit) {
+private fun StudyStatsDialog(
+    stats: StudyStats,
+    onDismiss: () -> Unit,
+) {
     val now = remember { System.currentTimeMillis() }
     val (hours, minutes) = remember(stats) { millisToHoursAndMinutes(stats.totalReadingMillis) }
     val weekdayCounts = remember(stats) { pomodoroCountsByWeekday(stats.pomodoroTimestamps, now) }
-    val weekdayLabels = remember {
-        val formatter = java.text.SimpleDateFormat("EEEEE", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
-        (0 until 7).map { offset ->
-            val label = formatter.format(calendar.time).uppercase(Locale.getDefault())
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-            label
+    val weekdayLabels =
+        remember {
+            val formatter = java.text.SimpleDateFormat("EEEEE", Locale.getDefault())
+            val calendar = Calendar.getInstance()
+            calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+            (0 until 7).map { offset ->
+                val label = formatter.format(calendar.time).uppercase(Locale.getDefault())
+                calendar.add(Calendar.DAY_OF_YEAR, 1)
+                label
+            }
         }
-    }
     val hasAnyStats = stats.totalReadingMillis > 0 || stats.pomodoroTimestamps.isNotEmpty()
 
     AlertDialog(
@@ -2886,19 +3044,20 @@ private fun StudyStatsDialog(stats: StudyStats, onDismiss: () -> Unit) {
                     StudyStatRow(
                         icon = Icons.Rounded.VolumeUp,
                         label = stringResource(R.string.study_stats_total_reading),
-                        value = stringResource(R.string.study_stats_reading_value, hours, minutes)
+                        value = stringResource(R.string.study_stats_reading_value, hours, minutes),
                     )
                     StudyStatRow(
                         icon = Icons.Rounded.EmojiEvents,
                         label = stringResource(R.string.study_stats_pomodoros_total),
-                        value = "${stats.pomodoroTimestamps.size}"
+                        value = "${stats.pomodoroTimestamps.size}",
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = stringResource(R.string.study_stats_pomodoros_this_week) +
-                                " (${weekdayCounts.sum()})",
+                            text =
+                                stringResource(R.string.study_stats_pomodoros_this_week) +
+                                    " (${weekdayCounts.sum()})",
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                         StudyWeekBars(labels = weekdayLabels, counts = weekdayCounts)
                     }
@@ -2907,7 +3066,7 @@ private fun StudyStatsDialog(stats: StudyStats, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
-        }
+        },
     )
 }
 
@@ -2930,7 +3089,7 @@ private fun VoiceSelectorDialog(
     previewingVoiceName: String?,
     onVoiceSelected: (Voice) -> Unit,
     onPreviewVoice: (Voice) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2938,59 +3097,66 @@ private fun VoiceSelectorDialog(
         text = {
             LazyColumn(
                 modifier = Modifier.heightIn(max = 360.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 items(voices, key = { it.name }) { voice ->
                     val persona = remember(voice.name) { personaForVoice(voice.name) }
                     val isSelected = voice.name == selectedVoice?.name
                     val isPreviewing = voice.name == previewingVoiceName
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.small)
-                            .clickable { onVoiceSelected(voice) }
-                            .padding(vertical = 8.dp, horizontal = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.small)
+                                .clickable { onVoiceSelected(voice) }
+                                .padding(vertical = 8.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Image(
                             painter = painterResource(persona.avatarDrawableRes),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .border(1.5.dp, persona.avatarColor, CircleShape)
+                            modifier =
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .border(1.5.dp, persona.avatarColor, CircleShape),
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = persona.name,
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             )
                             Text(
-                                text = stringResource(
-                                    R.string.study_voice_option_detail,
-                                    voice.locale.displayName,
-                                    voiceQualityLabel(voice.quality)
-                                ),
+                                text =
+                                    stringResource(
+                                        R.string.study_voice_option_detail,
+                                        voice.locale.displayName,
+                                        voiceQualityLabel(voice.quality),
+                                    ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                         IconButton(
                             onClick = { onPreviewVoice(voice) },
-                            enabled = !isPreviewing
+                            enabled = !isPreviewing,
                         ) {
                             Icon(
                                 imageVector = if (isPreviewing) Icons.Rounded.VolumeUp else Icons.Rounded.PlayArrow,
-                                contentDescription = stringResource(
-                                    if (isPreviewing) R.string.study_voice_preview_playing
-                                    else R.string.study_voice_preview
-                                ),
-                                tint = MaterialTheme.colorScheme.primary
+                                contentDescription =
+                                    stringResource(
+                                        if (isPreviewing) {
+                                            R.string.study_voice_preview_playing
+                                        } else {
+                                            R.string.study_voice_preview
+                                        },
+                                    ),
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         }
                         RadioButton(selected = isSelected, onClick = { onVoiceSelected(voice) })
@@ -3000,23 +3166,28 @@ private fun VoiceSelectorDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_close)) }
-        }
+        },
     )
 }
 
 @Composable
-private fun voiceQualityLabel(quality: Int): String = when (quality) {
-    Voice.QUALITY_VERY_HIGH -> stringResource(R.string.study_voice_quality_very_high)
-    Voice.QUALITY_HIGH      -> stringResource(R.string.study_voice_quality_high)
-    Voice.QUALITY_NORMAL    -> stringResource(R.string.study_voice_quality_normal)
-    else                    -> stringResource(R.string.study_voice_quality_low)
-}
+private fun voiceQualityLabel(quality: Int): String =
+    when (quality) {
+        Voice.QUALITY_VERY_HIGH -> stringResource(R.string.study_voice_quality_very_high)
+        Voice.QUALITY_HIGH -> stringResource(R.string.study_voice_quality_high)
+        Voice.QUALITY_NORMAL -> stringResource(R.string.study_voice_quality_normal)
+        else -> stringResource(R.string.study_voice_quality_low)
+    }
 
 @Composable
-private fun StudyStatRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+private fun StudyStatRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(22.dp))
         Text(text = label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
@@ -3025,31 +3196,35 @@ private fun StudyStatRow(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 }
 
 @Composable
-private fun StudyWeekBars(labels: List<String>, counts: IntArray) {
+private fun StudyWeekBars(
+    labels: List<String>,
+    counts: IntArray,
+) {
     val maxCount = (counts.maxOrNull() ?: 0).coerceAtLeast(1)
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         labels.forEachIndexed { index, label ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(text = "${counts[index]}", style = MaterialTheme.typography.labelSmall)
                 Box(
-                    modifier = Modifier
-                        .width(18.dp)
-                        .height((32 * counts[index] / maxCount).coerceAtLeast(4).dp)
-                        // Bug real corregido 2026-09-04 (backlog UX §7,
-                        // HU-UX-06): fijo en azul, ignorando el "Color de
-                        // acento" elegido en Ajustes.
-                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                    modifier =
+                        Modifier
+                            .width(18.dp)
+                            .height((32 * counts[index] / maxCount).coerceAtLeast(4).dp)
+                            // Bug real corregido 2026-09-04 (backlog UX §7,
+                            // HU-UX-06): fijo en azul, ignorando el "Color de
+                            // acento" elegido en Ajustes.
+                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)),
                 )
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -3065,7 +3240,7 @@ private fun PomodoroTab(
     isBreak: Boolean,
     pomodoroCount: Int,
     onToggle: () -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
 ) {
     // Bug real corregido 2026-09-08: mismo problema que se encontró y
     // corrigió en Notas -- este `Column` no tenía scroll, así que en
@@ -3081,16 +3256,18 @@ private fun PomodoroTab(
     // pasa a mostrar el total persistido (`StudyStatsStorage`, últimos 90
     // días) en vez del contador de la sesión actual.
     val context = LocalContext.current
-    val lifetimePomodoros = remember(pomodoroCount) {
-        StudyStatsStorage.loadStats(context).pomodoroTimestamps.size
-    }
+    val lifetimePomodoros =
+        remember(pomodoroCount) {
+            StudyStatsStorage.loadStats(context).pomodoroTimestamps.size
+        }
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         Spacer(Modifier.height(8.dp))
 
@@ -3108,36 +3285,51 @@ private fun PomodoroTab(
 private fun PomodoroTypeIndicator(isBreak: Boolean) {
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (isBreak) SuccessGreen.copy(alpha = 0.15f)
-        else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+        color =
+            if (isBreak) {
+                SuccessGreen.copy(alpha = 0.15f)
+            } else {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+            },
     ) {
         Text(
             text = if (isBreak) stringResource(R.string.study_break_label) else stringResource(R.string.study_study_label),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(
-                horizontal = 20.dp, vertical = 10.dp
-            )
+            modifier =
+                Modifier.padding(
+                    horizontal = 20.dp,
+                    vertical = 10.dp,
+                ),
         )
     }
 }
 
 @Composable
-private fun PomodoroClock(minutes: Int, seconds: Int, isRunning: Boolean, isBreak: Boolean) {
+private fun PomodoroClock(
+    minutes: Int,
+    seconds: Int,
+    isRunning: Boolean,
+    isBreak: Boolean,
+) {
     Box(
-        modifier = Modifier
-            .size(200.dp)
-            .background(
-                brush = Brush.radialGradient(
-                    colors = if (isBreak)
-                        listOf(SuccessGreen.copy(0.2f), Color.Transparent)
-                    else
-                        listOf(MaterialTheme.colorScheme.primary.copy(0.2f), Color.Transparent)
+        modifier =
+            Modifier
+                .size(200.dp)
+                .background(
+                    brush =
+                        Brush.radialGradient(
+                            colors =
+                                if (isBreak) {
+                                    listOf(SuccessGreen.copy(0.2f), Color.Transparent)
+                                } else {
+                                    listOf(MaterialTheme.colorScheme.primary.copy(0.2f), Color.Transparent)
+                                },
+                        ),
+                    shape = RoundedCornerShape(100.dp),
                 ),
-                shape = RoundedCornerShape(100.dp)
-            ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -3148,12 +3340,12 @@ private fun PomodoroClock(minutes: Int, seconds: Int, isRunning: Boolean, isBrea
                 text = "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}",
                 fontSize = 52.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary
+                color = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = if (isRunning) stringResource(R.string.study_in_progress) else stringResource(R.string.study_paused),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -3162,15 +3354,15 @@ private fun PomodoroClock(minutes: Int, seconds: Int, isRunning: Boolean, isBrea
 @Composable
 private fun PomodoroControls(
     isRunning: Boolean,
-    isBreak  : Boolean,
-    onToggle : () -> Unit,
-    onReset  : () -> Unit
+    isBreak: Boolean,
+    onToggle: () -> Unit,
+    onReset: () -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         OutlinedButton(
             onClick = onReset,
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.height(52.dp)
+            modifier = Modifier.height(52.dp),
         ) {
             Icon(Icons.Rounded.Refresh, null, Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
@@ -3181,20 +3373,25 @@ private fun PomodoroControls(
             onClick = onToggle,
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.height(52.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary
-            )
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = if (isBreak) SuccessGreen else MaterialTheme.colorScheme.primary,
+                ),
         ) {
             Icon(
-                imageVector = if (isRunning) Icons.Rounded.Pause
-                else Icons.Rounded.PlayArrow,
+                imageVector =
+                    if (isRunning) {
+                        Icons.Rounded.Pause
+                    } else {
+                        Icons.Rounded.PlayArrow
+                    },
                 contentDescription = null,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = if (isRunning) stringResource(R.string.study_pause) else stringResource(R.string.study_start),
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
     }
@@ -3204,41 +3401,42 @@ private fun PomodoroControls(
 private fun PomodoroCountCard(pomodoroCount: Int) {
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Rounded.EmojiEvents,
                 contentDescription = null,
                 tint = WarningAmber,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.study_pomodoros_completed),
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = stringResource(R.string.study_pomodoros_hint),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Text(
                 text = "$pomodoroCount",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = WarningAmber
+                color = WarningAmber,
             )
         }
     }
@@ -3249,26 +3447,28 @@ private fun PomodoroInfoCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-                .copy(alpha = 0.3f)
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.primaryContainer
+                        .copy(alpha = 0.3f),
+            ),
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Rounded.Info,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(16.dp),
             )
             Text(
                 text = stringResource(R.string.study_pomodoro_technique_info),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -3283,13 +3483,13 @@ private fun PomodoroInfoCard() {
 // el PDF de nuevo.
 @Composable
 private fun SummaryTab(
-    documentText    : List<String>,
-    documentName    : String,
-    hasDocument     : Boolean,
+    documentText: List<String>,
+    documentName: String,
+    hasDocument: Boolean,
     summarySentences: List<String>?,
-    isSummarizing   : Boolean,
-    onGenerate      : () -> Unit,
-    onSelectDoc     : () -> Unit
+    isSummarizing: Boolean,
+    onGenerate: () -> Unit,
+    onSelectDoc: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -3302,35 +3502,36 @@ private fun SummaryTab(
                 Column(
                     modifier = Modifier.align(Alignment.Center).padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                brush = Brush.linearGradient(rememberAccentGradient()),
-                                shape = MaterialTheme.shapes.extraLarge
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(80.dp)
+                                .background(
+                                    brush = Brush.linearGradient(rememberAccentGradient()),
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Summarize,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(40.dp),
                         )
                     }
                     Text(
                         text = stringResource(R.string.study_tab_summary),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = stringResource(R.string.study_empty_state_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                     Button(onClick = onSelectDoc, shape = MaterialTheme.shapes.medium) {
                         Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -3339,46 +3540,48 @@ private fun SummaryTab(
                     }
                 }
             }
-            isSummarizing -> LoadingIndicator(
-                stringResource(R.string.study_summarizing),
-                modifier = Modifier.align(Alignment.Center)
-            )
+            isSummarizing ->
+                LoadingIndicator(
+                    stringResource(R.string.study_summarizing),
+                    modifier = Modifier.align(Alignment.Center),
+                )
             summarySentences == null -> {
                 Column(
                     modifier = Modifier.align(Alignment.Center).padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     // Misma insignia circular con degradado de acento que el
                     // estado "sin documento" de arriba -- antes este estado
                     // usaba un ícono plano más chico, sin relación visual con
                     // el resto de la pantalla.
                     Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                brush = Brush.linearGradient(rememberAccentGradient()),
-                                shape = MaterialTheme.shapes.extraLarge
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(80.dp)
+                                .background(
+                                    brush = Brush.linearGradient(rememberAccentGradient()),
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Summarize,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(40.dp),
                         )
                     }
                     Text(
-                        text  = stringResource(R.string.study_summary_local_note),
+                        text = stringResource(R.string.study_summary_local_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                     Button(
                         onClick = onGenerate,
-                        shape   = MaterialTheme.shapes.medium,
-                        enabled = documentText.isNotEmpty()
+                        shape = MaterialTheme.shapes.medium,
+                        enabled = documentText.isNotEmpty(),
                     ) {
                         Icon(Icons.Rounded.Summarize, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -3386,16 +3589,17 @@ private fun SummaryTab(
                     }
                 }
             }
-            else -> SummaryResultView(
-                sentences        = summarySentences,
-                savedToDownloads = savedToDownloads,
-                onSave = {
-                    scope.launch {
-                        savedToDownloads = saveSummaryToDownloads(context, documentName, summarySentences)
-                    }
-                },
-                onShare = { shareSummary(context, documentName, summarySentences, shareTitle) }
-            )
+            else ->
+                SummaryResultView(
+                    sentences = summarySentences,
+                    savedToDownloads = savedToDownloads,
+                    onSave = {
+                        scope.launch {
+                            savedToDownloads = saveSummaryToDownloads(context, documentName, summarySentences)
+                        }
+                    },
+                    onShare = { shareSummary(context, documentName, summarySentences, shareTitle) },
+                )
         }
     }
 }
@@ -3404,53 +3608,53 @@ private fun SummaryTab(
 // generadas + la fila de guardar/compartir, una vez que ya hay resumen.
 @Composable
 private fun SummaryResultView(
-    sentences       : List<String>,
+    sentences: List<String>,
     savedToDownloads: Boolean,
-    onSave          : () -> Unit,
-    onShare         : () -> Unit
+    onSave: () -> Unit,
+    onShare: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector        = Icons.Rounded.Summarize,
+                    imageVector = Icons.Rounded.Summarize,
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
                 )
                 Text(
-                    text  = stringResource(R.string.study_summary_sentences_count, sentences.size),
+                    text = stringResource(R.string.study_summary_sentences_count, sentences.size),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
             IconButton(onClick = onSave) {
                 Icon(
                     imageVector = if (savedToDownloads) Icons.Rounded.CheckCircle else Icons.Rounded.Download,
                     contentDescription = stringResource(R.string.general_save),
-                    tint = if (savedToDownloads) SuccessGreen else MaterialTheme.colorScheme.primary
+                    tint = if (savedToDownloads) SuccessGreen else MaterialTheme.colorScheme.primary,
                 )
             }
             IconButton(onClick = onShare) {
                 Icon(
                     imageVector = Icons.Rounded.Share,
                     contentDescription = stringResource(R.string.general_share),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             // Cada punto clave en su propia tarjeta numerada -- antes era
             // solo un punto (bullet) suelto sobre el fondo, sin la misma
@@ -3459,38 +3663,40 @@ private fun SummaryResultView(
             itemsIndexed(sentences) { index, sentence ->
                 val shape = MaterialTheme.shapes.medium
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .accentShadow(shape = shape, elevation = 1.dp)
-                        .clip(shape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .accentBorder(shape = shape)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .accentShadow(shape = shape, elevation = 1.dp)
+                            .clip(shape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .accentBorder(shape = shape),
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                    MaterialTheme.shapes.extraLarge
-                                ),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(24.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                        MaterialTheme.shapes.extraLarge,
+                                    ),
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                text  = "${index + 1}",
+                                text = "${index + 1}",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                         Text(
-                            text  = sentence,
+                            text = sentence,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -3501,15 +3707,21 @@ private fun SummaryResultView(
 }
 
 @Suppress("TooGenericExceptionCaught")
-private fun shareSummary(context: Context, documentName: String, sentences: List<String>, shareTitle: String) {
+private fun shareSummary(
+    context: Context,
+    documentName: String,
+    sentences: List<String>,
+    shareTitle: String,
+) {
     try {
         val file = StudySummaryExporter.exportAsTextFile(context, documentName, sentences)
-        val uri  = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val intent =
+            android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         context.startActivity(android.content.Intent.createChooser(intent, shareTitle))
     } catch (e: Exception) {
         Timber.e(e, "Error compartiendo resumen de estudio")
@@ -3517,7 +3729,11 @@ private fun shareSummary(context: Context, documentName: String, sentences: List
 }
 
 @Suppress("TooGenericExceptionCaught")
-private suspend fun saveSummaryToDownloads(context: Context, documentName: String, sentences: List<String>): Boolean {
+private suspend fun saveSummaryToDownloads(
+    context: Context,
+    documentName: String,
+    sentences: List<String>,
+): Boolean {
     return try {
         val file = StudySummaryExporter.exportAsTextFile(context, documentName, sentences)
         DownloadsSaver.saveFile(context, file, "text/plain")
@@ -3534,18 +3750,20 @@ private suspend fun saveSummaryToDownloads(context: Context, documentName: Strin
 // esta pantalla) -- se quitan los mensajes que solo usaban las rutas de
 // Word/PPT/texto plano, ya eliminadas.
 data class StudyExtractionMessages(
-    val couldNotRead        : String,
-    val pdfNoText           : String,
-    val pdfErrorTemplate    : String, // formato: %1$s
-    val genericErrorTemplate: String, // formato: %1$s
-    val defaultDocumentName : String,
+    val couldNotRead: String,
+    val pdfNoText: String,
+    // formato: %1$s
+    val pdfErrorTemplate: String,
+    // formato: %1$s
+    val genericErrorTemplate: String,
+    val defaultDocumentName: String,
     // Ver N3 (décima ronda) más abajo, en extractTextFromUri().
-    val outOfMemoryMessage  : String
+    val outOfMemoryMessage: String,
 )
 
 data class StudyExtractionResult(
-    val paragraphs    : List<String>,
-    val fileName      : String,
+    val paragraphs: List<String>,
+    val fileName: String,
     // "Retomar lectura" (2026-09-08): cuántos párrafos acumulados hay al
     // terminar cada página del PDF -- permite traducir el índice de párrafo
     // que va leyendo la voz a un número de página real (`pageForParagraph`).
@@ -3558,7 +3776,7 @@ data class StudyExtractionResult(
     // de error en vez de avisar que el documento ya no existe, y la
     // entrada quedaba fantasma en `StudyReadingProgressStorage` para
     // siempre. Este flag deja distinguir ambos casos en el llamador.
-    val isError       : Boolean = false
+    val isError: Boolean = false,
 )
 
 // ── Extraer texto de un PDF ───────────────────────────
@@ -3573,43 +3791,44 @@ private suspend fun extractTextFromUri(
     context: Context,
     uri: Uri,
     messages: StudyExtractionMessages,
-    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> }
-): StudyExtractionResult = withContext(Dispatchers.IO) {
-    try {
-        val fileName = resolveFileName(context, uri, messages)
-        val (paragraphs, pageBoundaries, extractionFailed) = extractPdfText(context, uri, messages, onPageExtracted)
-        StudyExtractionResult(paragraphs, fileName, pageBoundaries, isError = extractionFailed)
-    } catch (e: CancellationException) {
-        // Hallazgo real de la auditoría general 2026-09-18 (Media): si el
-        // usuario navega fuera de Modo Lectura mientras una extracción
-        // larga está en curso, el catch genérico de abajo tragaba la
-        // CancellationException como isError = true, y loadDocument()
-        // borraba el progreso de "Continuar leyendo" de un documento que en
-        // realidad nunca falló. Mismo patrón ya aplicado en
-        // shareStudyNotes de este mismo archivo: relanzarla siempre, nunca
-        // tragarla.
-        throw e
-    } catch (e: Exception) {
-        Timber.e(e, "Error extrayendo texto")
-        StudyExtractionResult(
-            emptyList(),
-            String.format(messages.genericErrorTemplate, e.message ?: ""),
-            isError = true
-        )
-    } catch (e: OutOfMemoryError) {
-        // Hallazgo real de la auditoría general 2026-09-17/18 (décima
-        // ronda, Media -- N3): OutOfMemoryError no hereda de Exception --
-        // mismo patrón ya corregido en 11 conversores del Convertidor
-        // (P1, quinta ronda), nunca extendido a Lectura, que acumula
-        // todos los párrafos de un PDF grande en memoria.
-        Timber.e(e, "StudyScreen: sin memoria extrayendo el documento")
-        StudyExtractionResult(
-            emptyList(),
-            String.format(messages.genericErrorTemplate, messages.outOfMemoryMessage),
-            isError = true
-        )
+    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> },
+): StudyExtractionResult =
+    withContext(Dispatchers.IO) {
+        try {
+            val fileName = resolveFileName(context, uri, messages)
+            val (paragraphs, pageBoundaries, extractionFailed) = extractPdfText(context, uri, messages, onPageExtracted)
+            StudyExtractionResult(paragraphs, fileName, pageBoundaries, isError = extractionFailed)
+        } catch (e: CancellationException) {
+            // Hallazgo real de la auditoría general 2026-09-18 (Media): si el
+            // usuario navega fuera de Modo Lectura mientras una extracción
+            // larga está en curso, el catch genérico de abajo tragaba la
+            // CancellationException como isError = true, y loadDocument()
+            // borraba el progreso de "Continuar leyendo" de un documento que en
+            // realidad nunca falló. Mismo patrón ya aplicado en
+            // shareStudyNotes de este mismo archivo: relanzarla siempre, nunca
+            // tragarla.
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Error extrayendo texto")
+            StudyExtractionResult(
+                emptyList(),
+                String.format(messages.genericErrorTemplate, e.message ?: ""),
+                isError = true,
+            )
+        } catch (e: OutOfMemoryError) {
+            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+            // ronda, Media -- N3): OutOfMemoryError no hereda de Exception --
+            // mismo patrón ya corregido en 11 conversores del Convertidor
+            // (P1, quinta ronda), nunca extendido a Lectura, que acumula
+            // todos los párrafos de un PDF grande en memoria.
+            Timber.e(e, "StudyScreen: sin memoria extrayendo el documento")
+            StudyExtractionResult(
+                emptyList(),
+                String.format(messages.genericErrorTemplate, messages.outOfMemoryMessage),
+                isError = true,
+            )
+        }
     }
-}
 
 // RF: antes dividía por CADA salto de línea del PDF (`pageText.split("\n")`),
 // así que una oración larga que el PDF ajusta en 2-3 líneas visuales se
@@ -3629,10 +3848,10 @@ private suspend fun extractTextFromUri(
 // afuera del try para poder borrarlo en el finally, y .use{} cierra
 // pdfDoc pase lo que pase.
 private suspend fun extractPdfText(
-    context : Context,
-    uri     : Uri,
+    context: Context,
+    uri: Uri,
     messages: StudyExtractionMessages,
-    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> }
+    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit = { _, _ -> },
 ): Triple<List<String>, List<Int>, Boolean> {
     var cacheFile: File? = null
     return try {
@@ -3671,7 +3890,7 @@ private suspend fun extractPdfPages(
     pdfDoc: PdfDocument,
     paragraphs: MutableList<String>,
     pageBoundaries: MutableList<Int>,
-    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit
+    onPageExtracted: suspend (paragraphs: List<String>, pageBoundaries: List<Int>) -> Unit,
 ) {
     for (i in 1..pdfDoc.numberOfPages) {
         val listener = StudyPdfLineListener()
@@ -3687,7 +3906,10 @@ internal data class StudyPdfChunk(val text: String, val y: Float, val fontSize: 
 private class StudyPdfLineListener : IEventListener {
     val chunks = mutableListOf<StudyPdfChunk>()
 
-    override fun eventOccurred(data: IEventData?, type: EventType) {
+    override fun eventOccurred(
+        data: IEventData?,
+        type: EventType,
+    ) {
         val info = data as? TextRenderInfo ?: return
         if (info.text.isEmpty()) return
         val y = info.baseline.startPoint.get(Vector.I2)
@@ -3705,8 +3927,9 @@ internal fun groupPdfChunksIntoParagraphs(chunks: List<StudyPdfChunk>): List<Str
 
     chunks.forEach { chunk ->
         val sameLine = previousY != null && kotlin.math.abs(previousY!! - chunk.y) <= 1f
-        val isNewParagraph = previousY != null && !sameLine &&
-            (previousY!! - chunk.y) > 1.6f * chunk.fontSize
+        val isNewParagraph =
+            previousY != null && !sameLine &&
+                (previousY!! - chunk.y) > 1.6f * chunk.fontSize
         val isWrappedLine = previousY != null && !sameLine && !isNewParagraph
 
         if (isNewParagraph) {
@@ -3721,15 +3944,24 @@ internal fun groupPdfChunksIntoParagraphs(chunks: List<StudyPdfChunk>): List<Str
     return paragraphs.map { it.toString().trim() }.filter { it.length > 5 }
 }
 
-private fun resolveFileName(context: Context, uri: Uri, messages: StudyExtractionMessages): String {
+private fun resolveFileName(
+    context: Context,
+    uri: Uri,
+    messages: StudyExtractionMessages,
+): String {
     return try {
         var name = messages.defaultDocumentName
         context.contentResolver.query(
-            uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
-            null, null, null
+            uri,
+            arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null,
         )?.use { cursor ->
             if (cursor.moveToFirst()) name = cursor.getString(0) ?: name
         }
         name
-    } catch (e: Exception) { messages.defaultDocumentName }
+    } catch (e: Exception) {
+        messages.defaultDocumentName
+    }
 }

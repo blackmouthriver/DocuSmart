@@ -48,7 +48,6 @@ import java.io.File
  * barato y da protección de regresión genuina).
  */
 class ViewerSearchTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -65,11 +64,12 @@ class ViewerSearchTest {
 
         return ViewerViewModel(
             favoritesRepository = favoritesRepository,
-            searchPdfText       = SearchPdfTextUseCase(appContext), // real, no mock
-            documentHistoryDao  = mockk<DocumentHistoryDao>(relaxed = true),
-            documentRepository  = mockk<DocumentRepository>(relaxed = true),
-            trashRepository     = mockk<TrashRepository>(relaxed = true),
-            adManager           = adManager,
+            // real, no mock
+            searchPdfText = SearchPdfTextUseCase(appContext),
+            documentHistoryDao = mockk<DocumentHistoryDao>(relaxed = true),
+            documentRepository = mockk<DocumentRepository>(relaxed = true),
+            trashRepository = mockk<TrashRepository>(relaxed = true),
+            adManager = adManager,
             // Hallazgo real 2026-09-15 (CI): ViewerViewModel ganó estos dos
             // parámetros con HU-46 (migración de anotaciones) -- ver
             // ViewerScreenTest.kt para el mismo fix.
@@ -80,7 +80,7 @@ class ViewerSearchTest {
             pageBookmarkDao = mockk(relaxed = true),
             lastViewedPageDao = mockk(relaxed = true),
             // Backlog UX #50: notas de Modo Estudio vinculadas.
-            noteDao = mockk(relaxed = true)
+            noteDao = mockk(relaxed = true),
         )
     }
 
@@ -119,8 +119,8 @@ class ViewerSearchTest {
     @Test
     fun escribirTermino_muestraCoincidenciasYPermiteNavegarEntreEllas() {
         val searchTerm = "ClaveBuscada"
-        val pdfFile    = createSearchablePdf(searchTerm)
-        val viewModel  = buildViewModel()
+        val pdfFile = createSearchablePdf(searchTerm)
+        val viewModel = buildViewModel()
 
         setContentWithLocale {
             ViewerScreen(documentId = pdfFile.absolutePath, onBack = {}, viewModel = viewModel)

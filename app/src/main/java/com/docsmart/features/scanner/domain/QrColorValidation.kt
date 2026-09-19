@@ -8,12 +8,12 @@ package com.docsmart.features.scanner.domain
  * `android.graphics.Color` -- función pura, testeable como JVM unit test
  * normal (mismo criterio ya usado en `ScanColorMode.kt`/`QrContentFormat.kt`
  * para lógica de dominio que no necesita el framework de Android).
+ *
+ * Umbral mínimo de contraste -- más permisivo que el AA de WCAG para texto
+ * (4.5:1), pero por debajo de esto un código QR empieza a fallar de forma
+ * real en condiciones de luz/cámara variables (RNF1: debe seguir siendo
+ * legible por un lector estándar).
  */
-
-// Umbral mínimo de contraste -- más permisivo que el AA de WCAG para texto
-// (4.5:1), pero por debajo de esto un código QR empieza a fallar de forma
-// real en condiciones de luz/cámara variables (RNF1: debe seguir siendo
-// legible por un lector estándar).
 const val QR_MIN_CONTRAST_RATIO = 3.0
 
 /** Extrae los 3 canales de un color empaquetado (0xAARRGGBB o 0xRRGGBB). */
@@ -24,7 +24,11 @@ internal fun argbToRgb(argb: Int): Triple<Int, Int, Int> {
     return Triple(r, g, b)
 }
 
-private fun relativeLuminance(r: Int, g: Int, b: Int): Double {
+private fun relativeLuminance(
+    r: Int,
+    g: Int,
+    b: Int,
+): Double {
     fun channel(value: Int): Double {
         val normalized = value / 255.0
         return if (normalized <= 0.03928) {
@@ -41,7 +45,10 @@ private fun relativeLuminance(r: Int, g: Int, b: Int): Double {
  * (colores idénticos en luminancia), 21.0 es el máximo posible (blanco
  * puro contra negro puro).
  */
-fun contrastRatio(colorA: Int, colorB: Int): Double {
+fun contrastRatio(
+    colorA: Int,
+    colorB: Int,
+): Double {
     val (ra, ga, ba) = argbToRgb(colorA)
     val (rb, gb, bb) = argbToRgb(colorB)
     val luminanceA = relativeLuminance(ra, ga, ba)
@@ -52,5 +59,7 @@ fun contrastRatio(colorA: Int, colorB: Int): Double {
 }
 
 /** AC1: ¿este color de módulos es lo bastante legible sobre el fondo? */
-fun hasSufficientContrast(moduleColor: Int, backgroundColor: Int): Boolean =
-    contrastRatio(moduleColor, backgroundColor) >= QR_MIN_CONTRAST_RATIO
+fun hasSufficientContrast(
+    moduleColor: Int,
+    backgroundColor: Int,
+): Boolean = contrastRatio(moduleColor, backgroundColor) >= QR_MIN_CONTRAST_RATIO

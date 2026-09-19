@@ -13,7 +13,6 @@ import java.util.Calendar
  * por un mapa real ya usado en StudyNotesStorageTest.
  */
 class StudyStatsStorageTest {
-
     @Test
     fun `addReadingTime acumula milisegundos entre llamadas`() {
         val context = fakeContextWithPrefs(fakePrefsStore())

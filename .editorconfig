@@ -1,0 +1,15 @@
+root = true
+
+[*.{kt,kts}]
+# Funciones @Composable siguen la convención oficial de Jetpack Compose
+# (PascalCase, como un tipo/factory de UI) -- la regla standard-function-naming
+# de ktlint no es Compose-aware por defecto y marcaba ~277 falsos positivos
+# reales en este proyecto (ronda de formateo 2026-09-19).
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# Wildcard imports deliberadamente permitidos: este proyecto usa mucho
+# Jetpack Compose (Material3/foundation/animation), donde una sola pantalla
+# suele importar decenas de símbolos del mismo paquete -- expandir los ~151
+# imports con wildcard existentes a listas explícitas es solo ruido de
+# diff sin beneficio real de legibilidad para este codebase en particular.
+ktlint_standard_no-wildcard-imports = disabled

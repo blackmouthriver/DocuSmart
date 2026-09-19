@@ -31,17 +31,20 @@ import java.nio.file.Files
  * mismo patrón ya usado en NumberPagesUseCaseTest.
  */
 class WatermarkPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: WatermarkPdfUseCase
 
-    private val messages = WatermarkMessages(
-        emptyTextError = "emptyTextError", readError = "readError", noPages = "noPages",
-        generateError = "generateError", success = "success %1\$d",
-        genericError = "genericError %1\$s"
-    )
+    private val messages =
+        WatermarkMessages(
+            emptyTextError = "emptyTextError",
+            readError = "readError",
+            noPages = "noPages",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -60,43 +63,47 @@ class WatermarkPdfUseCaseTest {
     }
 
     @Test
-    fun `la marca de agua queda escrita como texto real en cada pagina`() = runTest {
-        stubResolver(createTestPdf(pages = 3))
+    fun `la marca de agua queda escrita como texto real en cada pagina`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 3))
 
-        val result = useCase(mockk<Uri>(), watermarkText = "CONFIDENCIAL", messages = messages)
+            val result = useCase(mockk<Uri>(), watermarkText = "CONFIDENCIAL", messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(3, texts.size)
-        texts.forEach { assertTrue(it.contains("CONFIDENCIAL"), "página sin marca de agua: '$it'") }
-    }
-
-    @Test
-    fun `conserva el total de paginas del original`() = runTest {
-        stubResolver(createTestPdf(pages = 5))
-
-        val result = useCase(mockk<Uri>(), watermarkText = "Borrador", messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(3, texts.size)
+            texts.forEach { assertTrue(it.contains("CONFIDENCIAL"), "página sin marca de agua: '$it'") }
+        }
 
     @Test
-    fun `texto de marca de agua vacio devuelve Error sin tocar el archivo`() = runTest {
-        val result = useCase(mockk<Uri>(), watermarkText = "   ", messages = messages)
+    fun `conserva el total de paginas del original`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 5))
 
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("emptyTextError", (result as PdfToolResult.Error).message)
-    }
+            val result = useCase(mockk<Uri>(), watermarkText = "Borrador", messages = messages)
+
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
+        }
 
     @Test
-    fun `marca de agua sobre un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `texto de marca de agua vacio devuelve Error sin tocar el archivo`() =
+        runTest {
+            val result = useCase(mockk<Uri>(), watermarkText = "   ", messages = messages)
 
-        val result = useCase(mockk<Uri>(), watermarkText = "Borrador", messages = messages)
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("emptyTextError", (result as PdfToolResult.Error).message)
+        }
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+    @Test
+    fun `marca de agua sobre un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(), watermarkText = "Borrador", messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // Bug real reportado por testers 2026-09-13: "no se ve la marca de agua"
     // -- el test anterior solo verificaba que el texto fuera extraíble, lo
@@ -108,7 +115,7 @@ class WatermarkPdfUseCaseTest {
     fun `la opacidad de la marca de agua es suficiente para verse`() {
         assertTrue(
             WatermarkPdfUseCase.WATERMARK_OPACITY >= 0.25f,
-            "opacidad demasiado baja para verse con claridad: ${WatermarkPdfUseCase.WATERMARK_OPACITY}"
+            "opacidad demasiado baja para verse con claridad: ${WatermarkPdfUseCase.WATERMARK_OPACITY}",
         )
     }
 
@@ -117,46 +124,48 @@ class WatermarkPdfUseCaseTest {
     // página -- invisible en cualquier PDF cuyo MediaBox no arranque en
     // (0,0) (común en escaneos o en un PDF ya procesado por Recortar/Rotar).
     @Test
-    fun `la marca de agua queda dentro del area visible aunque el MediaBox no arranque en cero`() = runTest {
-        stubResolver(createTestPdfWithOffsetMediaBox())
+    fun `la marca de agua queda dentro del area visible aunque el MediaBox no arranque en cero`() =
+        runTest {
+            stubResolver(createTestPdfWithOffsetMediaBox())
 
-        val result = useCase(mockk<Uri>(), watermarkText = "CONFIDENCIAL", messages = messages)
+            val result = useCase(mockk<Uri>(), watermarkText = "CONFIDENCIAL", messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val file = (result as PdfToolResult.Success).outputFile
-        val reader = PdfReader(file)
-        val pdf = PdfDocument(reader)
-        val page = pdf.getPage(1)
-        val pageSize = page.pageSize
+            assertTrue(result is PdfToolResult.Success)
+            val file = (result as PdfToolResult.Success).outputFile
+            val reader = PdfReader(file)
+            val pdf = PdfDocument(reader)
+            val page = pdf.getPage(1)
+            val pageSize = page.pageSize
 
-        val strategy = RegexBasedLocationExtractionStrategy("CONFIDENCIAL")
-        PdfCanvasProcessor(strategy).processPageContent(page)
-        val locations = strategy.resultantLocations
-        pdf.close()
+            val strategy = RegexBasedLocationExtractionStrategy("CONFIDENCIAL")
+            PdfCanvasProcessor(strategy).processPageContent(page)
+            val locations = strategy.resultantLocations
+            pdf.close()
 
-        assertTrue(locations.isNotEmpty(), "no se encontró la marca de agua en la página")
-        val rect = locations.first().rectangle
-        assertTrue(
-            rect.left >= pageSize.left && rect.right <= pageSize.right,
-            "marca de agua fuera del ancho visible: texto=$rect página=$pageSize"
-        )
-        assertTrue(
-            rect.bottom >= pageSize.bottom && rect.top <= pageSize.top,
-            "marca de agua fuera del alto visible: texto=$rect página=$pageSize"
-        )
-    }
+            assertTrue(locations.isNotEmpty(), "no se encontró la marca de agua en la página")
+            val rect = locations.first().rectangle
+            assertTrue(
+                rect.left >= pageSize.left && rect.right <= pageSize.right,
+                "marca de agua fuera del ancho visible: texto=$rect página=$pageSize",
+            )
+            assertTrue(
+                rect.bottom >= pageSize.bottom && rect.top <= pageSize.top,
+                "marca de agua fuera del alto visible: texto=$rect página=$pageSize",
+            )
+        }
 
     @Test
-    fun `texto largo no lanza excepcion, se ajusta el tamano de fuente`() = runTest {
-        stubResolver(createTestPdf(pages = 1))
-        val longText = "Este es un texto de marca de agua bastante largo para forzar el ajuste"
+    fun `texto largo no lanza excepcion, se ajusta el tamano de fuente`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 1))
+            val longText = "Este es un texto de marca de agua bastante largo para forzar el ajuste"
 
-        val result = useCase(mockk<Uri>(), watermarkText = longText, messages = messages)
+            val result = useCase(mockk<Uri>(), watermarkText = longText, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertTrue(texts.first().contains(longText))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertTrue(texts.first().contains(longText))
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -201,9 +210,10 @@ class WatermarkPdfUseCaseTest {
     private fun pageTextsOf(file: File): List<String> {
         val reader = PdfReader(file)
         val pdf = PdfDocument(reader)
-        val texts = (1..pdf.numberOfPages).map {
-            PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
-        }
+        val texts =
+            (1..pdf.numberOfPages).map {
+                PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
+            }
         pdf.close()
         return texts
     }

@@ -39,21 +39,25 @@ import androidx.lifecycle.LifecycleEventObserver
  * siempre el valor más reciente sin necesidad de reinstalarse.
  */
 @Composable
-fun ReloadOnScreenResume(enabled: Boolean = true, onResume: () -> Unit) {
+fun ReloadOnScreenResume(
+    enabled: Boolean = true,
+    onResume: () -> Unit,
+) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentEnabled = rememberUpdatedState(enabled)
     val currentOnResume = rememberUpdatedState(onResume)
     DisposableEffect(lifecycleOwner) {
         var isFirstResume = true
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                if (isFirstResume) {
-                    isFirstResume = false
-                } else if (currentEnabled.value) {
-                    currentOnResume.value()
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    if (isFirstResume) {
+                        isFirstResume = false
+                    } else if (currentEnabled.value) {
+                        currentOnResume.value()
+                    }
                 }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -83,14 +87,15 @@ fun SecureScreenEffect(enabled: Boolean) {
     // (ver el mismo desenvolvimiento manual en SecurityScreen.kt para
     // FragmentActivity) -- se recorre la cadena de ContextWrapper por las
     // dudas.
-    val activity = remember(context) {
-        var ctx = context
-        while (ctx is ContextWrapper) {
-            if (ctx is Activity) return@remember ctx
-            ctx = ctx.baseContext
-        }
-        ctx as? Activity
-    } ?: return
+    val activity =
+        remember(context) {
+            var ctx = context
+            while (ctx is ContextWrapper) {
+                if (ctx is Activity) return@remember ctx
+                ctx = ctx.baseContext
+            }
+            ctx as? Activity
+        } ?: return
     val currentEnabled = rememberUpdatedState(enabled)
     DisposableEffect(activity) {
         onDispose {

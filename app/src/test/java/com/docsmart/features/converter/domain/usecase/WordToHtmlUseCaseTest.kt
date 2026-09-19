@@ -19,7 +19,6 @@ import java.io.File
 import java.nio.file.Files
 
 class WordToHtmlUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: WordToHtmlUseCase
@@ -42,54 +41,58 @@ class WordToHtmlUseCaseTest {
     }
 
     @Test
-    fun `convierte un docx a HTML con parrafos`() = runTest {
-        stubResolver(createTestDocx(listOf("Primer párrafo", "Segundo párrafo")))
+    fun `convierte un docx a HTML con parrafos`() =
+        runTest {
+            stubResolver(createTestDocx(listOf("Primer párrafo", "Segundo párrafo")))
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val outputFile = (result as ConversionResult.Success).outputFile
-        assertEquals("html", outputFile.extension)
-        val html = outputFile.readText()
-        assertTrue(html.contains("<p>Primer párrafo</p>"))
-        assertTrue(html.contains("<p>Segundo párrafo</p>"))
-    }
+            assertTrue(result is ConversionResult.Success)
+            val outputFile = (result as ConversionResult.Success).outputFile
+            assertEquals("html", outputFile.extension)
+            val html = outputFile.readText()
+            assertTrue(html.contains("<p>Primer párrafo</p>"))
+            assertTrue(html.contains("<p>Segundo párrafo</p>"))
+        }
 
     // RF-CONV-07: WordFormatDetectionTest.kt explica por qué el fixture es
     // un .doc real generado con Word y no un byte array sintético.
     @Test
-    fun `convierte un doc legado real (OLE2) a HTML detectando el encabezado`() = runTest {
-        stubResolver(legacyDocBytes())
+    fun `convierte un doc legado real (OLE2) a HTML detectando el encabezado`() =
+        runTest {
+            stubResolver(legacyDocBytes())
 
-        val result = useCase(mockk<Uri>(), "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Success)
-        val html = (result as ConversionResult.Success).outputFile.readText()
-        assertTrue(html.contains("<h2>Titulo de prueba</h2>"))
-        assertTrue(html.contains("<p>Primer parrafo del documento legado.</p>"))
-        assertTrue(html.contains("Celda A1"))
-    }
-
-    @Test
-    fun `docx sin texto extraible devuelve Error`() = runTest {
-        stubResolver(createTestDocx(emptyList()))
-
-        val result = useCase(mockk<Uri>(), "salida")
-
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Success)
+            val html = (result as ConversionResult.Success).outputFile.readText()
+            assertTrue(html.contains("<h2>Titulo de prueba</h2>"))
+            assertTrue(html.contains("<p>Primer parrafo del documento legado.</p>"))
+            assertTrue(html.contains("Celda A1"))
+        }
 
     @Test
-    fun `archivo no legible devuelve Error`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `docx sin texto extraible devuelve Error`() =
+        runTest {
+            stubResolver(createTestDocx(emptyList()))
 
-        val result = useCase(uri, "salida")
+            val result = useCase(mockk<Uri>(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-    }
+            assertTrue(result is ConversionResult.Error)
+        }
+
+    @Test
+    fun `archivo no legible devuelve Error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
+
+            val result = useCase(uri, "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

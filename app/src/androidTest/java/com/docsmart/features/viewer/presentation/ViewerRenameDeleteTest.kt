@@ -49,13 +49,12 @@ import java.io.File
  * de construir real para lo que aporta acá.
  */
 class ViewerRenameDeleteTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun buildViewModel(
         documentRepository: DocumentRepository = mockk(relaxed = true),
-        trashRepository: TrashRepository = mockk(relaxed = true)
+        trashRepository: TrashRepository = mockk(relaxed = true),
     ): ViewerViewModel {
         val favoritesRepository = mockk<FavoritesRepository>(relaxed = true)
         every { favoritesRepository.isFavorite(any()) } returns false
@@ -69,11 +68,12 @@ class ViewerRenameDeleteTest {
 
         return ViewerViewModel(
             favoritesRepository = favoritesRepository,
-            searchPdfText       = SearchPdfTextUseCase(appContext), // real, no mock
-            documentHistoryDao  = mockk<DocumentHistoryDao>(relaxed = true),
-            documentRepository  = documentRepository,
-            trashRepository     = trashRepository,
-            adManager           = adManager,
+            // real, no mock
+            searchPdfText = SearchPdfTextUseCase(appContext),
+            documentHistoryDao = mockk<DocumentHistoryDao>(relaxed = true),
+            documentRepository = documentRepository,
+            trashRepository = trashRepository,
+            adManager = adManager,
             // Hallazgo real 2026-09-15 (CI): ViewerViewModel ganó estos dos
             // parámetros con HU-46 (migración de anotaciones) -- ver
             // ViewerScreenTest.kt para el mismo fix.
@@ -84,7 +84,7 @@ class ViewerRenameDeleteTest {
             pageBookmarkDao = mockk(relaxed = true),
             lastViewedPageDao = mockk(relaxed = true),
             // Backlog UX #50: notas de Modo Estudio vinculadas.
-            noteDao = mockk(relaxed = true)
+            noteDao = mockk(relaxed = true),
         )
     }
 

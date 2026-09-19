@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test
  * stream del timbre, mudo en silencio/vibración) en vez de `USAGE_MEDIA`.
  */
 class SoundEffectPlayerTest {
-
     private lateinit var context: Context
     private lateinit var prefsStore: MutableMap<String, Any?>
     private lateinit var soundPool: SoundPool

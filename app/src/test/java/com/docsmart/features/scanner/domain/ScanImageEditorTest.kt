@@ -16,19 +16,34 @@ import org.junit.jupiter.api.Test
  * bitmaps reales (`CompressPdfUseCase`, ver `pdf-tools.md`).
  */
 class ScanImageEditorTest {
-
     @Test
     fun `sin ajustes, la matriz de color es la identidad`() {
         val matrix = buildColorMatrix(brightness = 0, contrast = 0)
 
         assertEquals(
             listOf(
-                1f, 0f, 0f, 0f, 0f,
-                0f, 1f, 0f, 0f, 0f,
-                0f, 0f, 1f, 0f, 0f,
-                0f, 0f, 0f, 1f, 0f
+                1f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
             ),
-            matrix.toList()
+            matrix.toList(),
         )
     }
 

@@ -23,7 +23,6 @@ import java.io.File
  * llegar al `Fetcher`, por eso hacen falta dos factories separadas).
  */
 class PdfThumbnailFetcherTest {
-
     private val imageLoader = mockk<ImageLoader>()
 
     private fun optionsWithContext(context: Context): Options {

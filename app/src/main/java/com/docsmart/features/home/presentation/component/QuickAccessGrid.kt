@@ -27,37 +27,41 @@ import com.docsmart.core.ui.theme.*
 private const val QUICK_ACCESS_COLUMNS = 3
 
 data class QuickAccessItem(
-    val icon   : ImageVector,
-    val label  : String,
-    val color  : Color,
-    val onClick: () -> Unit
+    val icon: ImageVector,
+    val label: String,
+    val color: Color,
+    val onClick: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickAccessGrid(
-    onScanClick      : () -> Unit,
+    onScanClick: () -> Unit,
     onImageToPdfClick: () -> Unit,
-    onSafeBoxClick   : () -> Unit,
-    onStudyModeClick : () -> Unit,
-    onQrClick        : () -> Unit = {},
-    onQrReaderClick  : () -> Unit = {},  // ← leer QR
-    onQrCreatorClick : () -> Unit = {},  // ← crear QR
-    onNotesClick     : () -> Unit = {},  // ← NUEVO: notas de Estudio
-    onPomodoroClick  : () -> Unit = {},  // ← NUEVO: pomodoro de Estudio
-    onTrashClick     : () -> Unit = {},  // ← NUEVO: papelera de Biblioteca
-    modifier         : Modifier = Modifier
+    onSafeBoxClick: () -> Unit,
+    onStudyModeClick: () -> Unit,
+    // ← leer QR
+    onQrReaderClick: () -> Unit = {},
+    // ← crear QR
+    onQrCreatorClick: () -> Unit = {},
+    // ← NUEVO: notas de Estudio
+    onNotesClick: () -> Unit = {},
+    // ← NUEVO: pomodoro de Estudio
+    onPomodoroClick: () -> Unit = {},
+    // ← NUEVO: papelera de Biblioteca
+    onTrashClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     var showScannerSheet by remember { mutableStateOf(false) }
-    val sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     if (showScannerSheet) {
         ScannerBottomSheetContent(
-            sheetState        = sheetState,
-            onDismiss         = { showScannerSheet = false },
-            onScanClick       = onScanClick,
-            onQrReaderClick   = onQrReaderClick,
-            onQrCreatorClick  = onQrCreatorClick
+            sheetState = sheetState,
+            onDismiss = { showScannerSheet = false },
+            onScanClick = onScanClick,
+            onQrReaderClick = onQrReaderClick,
+            onQrCreatorClick = onQrCreatorClick,
         )
     }
 
@@ -65,83 +69,84 @@ fun QuickAccessGrid(
     // "Estudio" genérico, siempre abría en Lectura) y a Leer/Crear QR y
     // Papelera (antes Leer/Crear QR solo estaban dentro del hoja de Escanear,
     // y Papelera solo dentro de Biblioteca) -- pedido explícito del usuario.
-    val items = listOf(
-        QuickAccessItem(
-            icon    = Icons.Rounded.DocumentScanner,
-            label   = stringResource(R.string.home_scan),
-            color   = InfoCyan,
-            onClick = { showScannerSheet = true }
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.Image,
-            label   = stringResource(R.string.home_img_pdf),
-            color   = ColorPdf,
-            onClick = onImageToPdfClick
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.Lock,
-            label   = stringResource(R.string.home_security),
-            color   = PremiumGold,
-            onClick = onSafeBoxClick
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.MenuBook,
-            label   = stringResource(R.string.study_tab_reading),
-            color   = SuccessGreen,
-            onClick = onStudyModeClick
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.EditNote,
-            label   = stringResource(R.string.study_tab_notes),
-            color   = IndigoAccent,
-            onClick = onNotesClick
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.Timer,
-            label   = stringResource(R.string.study_tab_pomodoro),
-            color   = WarningAmber,
-            onClick = onPomodoroClick
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.QrCodeScanner,
-            label   = stringResource(R.string.home_qr_read),
-            color   = DocuBlue,
-            onClick = onQrReaderClick
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.QrCode,
-            label   = stringResource(R.string.home_qr_create),
-            color   = SmartBlue,
-            onClick = onQrCreatorClick
-        ),
-        QuickAccessItem(
-            icon    = Icons.Rounded.DeleteOutline,
-            label   = stringResource(R.string.library_trash),
-            color   = MaterialTheme.colorScheme.error,
-            onClick = onTrashClick
+    val items =
+        listOf(
+            QuickAccessItem(
+                icon = Icons.Rounded.DocumentScanner,
+                label = stringResource(R.string.home_scan),
+                color = InfoCyan,
+                onClick = { showScannerSheet = true },
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.Image,
+                label = stringResource(R.string.home_img_pdf),
+                color = ColorPdf,
+                onClick = onImageToPdfClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.Lock,
+                label = stringResource(R.string.home_security),
+                color = PremiumGold,
+                onClick = onSafeBoxClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.MenuBook,
+                label = stringResource(R.string.study_tab_reading),
+                color = SuccessGreen,
+                onClick = onStudyModeClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.EditNote,
+                label = stringResource(R.string.study_tab_notes),
+                color = IndigoAccent,
+                onClick = onNotesClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.Timer,
+                label = stringResource(R.string.study_tab_pomodoro),
+                color = WarningAmber,
+                onClick = onPomodoroClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.QrCodeScanner,
+                label = stringResource(R.string.home_qr_read),
+                color = DocuBlue,
+                onClick = onQrReaderClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.QrCode,
+                label = stringResource(R.string.home_qr_create),
+                color = SmartBlue,
+                onClick = onQrCreatorClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.DeleteOutline,
+                label = stringResource(R.string.library_trash),
+                color = MaterialTheme.colorScheme.error,
+                onClick = onTrashClick,
+            ),
         )
-    )
 
     Column(modifier = modifier) {
         Text(
-            text  = stringResource(R.string.home_quick_access),
+            text = stringResource(R.string.home_quick_access),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items.chunked(QUICK_ACCESS_COLUMNS).forEach { rowItems ->
                 Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     rowItems.forEach { item ->
                         DocuSmartQuickAccessCard(
-                            icon     = item.icon,
-                            label    = item.label,
-                            onClick  = item.onClick,
+                            icon = item.icon,
+                            label = item.label,
+                            onClick = item.onClick,
                             iconTint = item.color,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
                     // Última fila incompleta (9 items / 3 columnas = exacto,
@@ -164,101 +169,104 @@ fun QuickAccessGrid(
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun ScannerBottomSheetContent(
-    sheetState      : SheetState,
-    onDismiss       : () -> Unit,
-    onScanClick     : () -> Unit,
-    onQrReaderClick : () -> Unit,
-    onQrCreatorClick: () -> Unit
+    sheetState: SheetState,
+    onDismiss: () -> Unit,
+    onScanClick: () -> Unit,
+    onQrReaderClick: () -> Unit,
+    onQrCreatorClick: () -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState       = sheetState,
-        containerColor   = MaterialTheme.colorScheme.surface,
-        tonalElevation   = 0.dp
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
         ) {
             // Cabecera
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(InfoCyan.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .background(InfoCyan.copy(alpha = 0.12f), RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        imageVector        = Icons.Rounded.DocumentScanner,
+                        imageVector = Icons.Rounded.DocumentScanner,
                         contentDescription = null,
-                        tint               = InfoCyan,
-                        modifier           = Modifier.size(22.dp)
+                        tint = InfoCyan,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
                 Column {
                     Text(
-                        text       = stringResource(R.string.home_scanner_sheet_title),
-                        style      = MaterialTheme.typography.titleMedium,
+                        text = stringResource(R.string.home_scanner_sheet_title),
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color      = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text  = stringResource(R.string.home_scanner_sheet_subtitle),
+                        text = stringResource(R.string.home_scanner_sheet_subtitle),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
             HorizontalDivider(
-                modifier  = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = 20.dp),
                 thickness = 0.5.dp,
-                color     = MaterialTheme.colorScheme.outlineVariant
+                color = MaterialTheme.colorScheme.outlineVariant,
             )
 
             Spacer(Modifier.height(4.dp))
 
             // Opción 1 — Escanear documento
             ScannerOption(
-                icon     = Icons.Rounded.DocumentScanner,
-                title    = stringResource(R.string.home_scanner_option_scan_title),
+                icon = Icons.Rounded.DocumentScanner,
+                title = stringResource(R.string.home_scanner_option_scan_title),
                 subtitle = stringResource(R.string.home_scanner_option_scan_subtitle),
-                color    = InfoCyan,
-                onClick  = {
+                color = InfoCyan,
+                onClick = {
                     onDismiss()
                     onScanClick()
-                }
+                },
             )
 
             // Opción 2 — Leer QR
             ScannerOption(
-                icon     = Icons.Rounded.QrCodeScanner,
-                title    = stringResource(R.string.qr_reader_title),
+                icon = Icons.Rounded.QrCodeScanner,
+                title = stringResource(R.string.qr_reader_title),
                 subtitle = stringResource(R.string.home_scanner_option_qr_read_subtitle),
-                color    = MaterialTheme.colorScheme.primary,
-                onClick  = {
+                color = MaterialTheme.colorScheme.primary,
+                onClick = {
                     onDismiss()
                     onQrReaderClick()
-                }
+                },
             )
 
             // Opción 3 — Crear QR
             ScannerOption(
-                icon     = Icons.Rounded.QrCode,
-                title    = stringResource(R.string.qr_creator_title),
+                icon = Icons.Rounded.QrCode,
+                title = stringResource(R.string.qr_creator_title),
                 subtitle = stringResource(R.string.qr_creator_subtitle),
-                color    = SuccessGreen,
-                onClick  = {
+                color = SuccessGreen,
+                onClick = {
                     onDismiss()
                     onQrCreatorClick()
-                }
+                },
             )
         }
     }
@@ -266,53 +274,55 @@ private fun ScannerBottomSheetContent(
 
 @Composable
 private fun ScannerOption(
-    icon    : ImageVector,
-    title   : String,
+    icon: ImageVector,
+    title: String,
     subtitle: String,
-    color   : Color,
-    onClick : () -> Unit
+    color: Color,
+    onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            // H3 (auditoría de accesibilidad TalkBack 2026-09-18): sin role,
-            // TalkBack no anunciaba esta opción como accionable.
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                // H3 (auditoría de accesibilidad TalkBack 2026-09-18): sin role,
+                // TalkBack no anunciaba esta opción como accionable.
+                .clickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment     = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(color.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(44.dp)
+                    .background(color.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector        = icon,
+                imageVector = icon,
                 contentDescription = null,
-                tint               = color,
-                modifier           = Modifier.size(24.dp)
+                tint = color,
+                modifier = Modifier.size(24.dp),
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text       = title,
-                style      = MaterialTheme.typography.titleSmall,
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
-                color      = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text  = subtitle,
+                text = subtitle,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Icon(
-            imageVector        = Icons.Rounded.ChevronRight,
+            imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
-            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier           = Modifier.size(18.dp)
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
         )
     }
 }

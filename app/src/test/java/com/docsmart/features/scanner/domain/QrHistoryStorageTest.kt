@@ -12,15 +12,18 @@ import org.junit.jupiter.api.Test
  * mockeados con `fakeContextWithPrefs`).
  */
 class QrHistoryStorageTest {
-
     @Test
     fun `guardar y cargar preserva todos los campos de la entrada`() {
         val store = fakePrefsStore()
         val context = fakeContextWithPrefs(store)
-        val entry = QrHistoryEntry(
-            id = "1", content = "https://docsmart.app", typeName = "URL",
-            source = QrHistorySource.CREATED, createdAtMillis = 1_000L
-        )
+        val entry =
+            QrHistoryEntry(
+                id = "1",
+                content = "https://docsmart.app",
+                typeName = "URL",
+                source = QrHistorySource.CREATED,
+                createdAtMillis = 1_000L,
+            )
 
         QrHistoryStorage.save(context, entry)
         val loaded = QrHistoryStorage.loadAll(context)
@@ -51,9 +54,12 @@ class QrHistoryStorageTest {
             QrHistoryStorage.save(
                 context,
                 QrHistoryEntry(
-                    id = "$i", content = "c$i", typeName = "TEXT",
-                    source = QrHistorySource.SCANNED, createdAtMillis = i.toLong()
-                )
+                    id = "$i",
+                    content = "c$i",
+                    typeName = "TEXT",
+                    source = QrHistorySource.SCANNED,
+                    createdAtMillis = i.toLong(),
+                ),
             )
         }
         val loaded = QrHistoryStorage.loadAll(context)

@@ -1,14 +1,15 @@
 package com.docsmart.features.pdftools.presentation
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.app.Activity
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.util.DownloadsSaver
 import com.docsmart.features.pdftools.domain.model.PdfToolResult
@@ -21,13 +22,11 @@ import com.docsmart.features.pdftools.domain.usecase.CropPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.DetectFormFieldsUseCase
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.EditTextPdfUseCase
-import com.docsmart.features.pdftools.domain.usecase.ExtractImagesMessages
 import com.docsmart.features.pdftools.domain.usecase.ExtractImagesFromPdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.ExtractImagesMessages
 import com.docsmart.features.pdftools.domain.usecase.FillFormMessages
 import com.docsmart.features.pdftools.domain.usecase.FillFormUseCase
 import com.docsmart.features.pdftools.domain.usecase.FormFieldInfo
-import com.docsmart.features.pdftools.domain.usecase.SignPdfMessages
-import com.docsmart.features.pdftools.domain.usecase.SignPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.MergePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.MergePdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.NumberPagesMessages
@@ -42,11 +41,12 @@ import com.docsmart.features.pdftools.domain.usecase.ReorderPagesMessages
 import com.docsmart.features.pdftools.domain.usecase.ReorderPagesUseCase
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfMessages
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
+import com.docsmart.features.pdftools.domain.usecase.SignPdfMessages
+import com.docsmart.features.pdftools.domain.usecase.SignPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfMessages
 import com.docsmart.features.pdftools.domain.usecase.SplitPdfUseCase
 import com.docsmart.features.pdftools.domain.usecase.WatermarkMessages
 import com.docsmart.features.pdftools.domain.usecase.WatermarkPdfUseCase
-import com.docsmart.core.analytics.DocuSmartAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,31 +59,45 @@ import java.io.File
 import javax.inject.Inject
 
 enum class PdfTool {
-    NONE, MERGE, SPLIT, COMPRESS, ROTATE, NUMBER_PAGES, WATERMARK, REORDER_PAGES,
-    COMPARE, REDACT, CROP, EDIT_TEXT, SIGN, FILL_FORM, OCR, EXTRACT_IMAGES
+    NONE,
+    MERGE,
+    SPLIT,
+    COMPRESS,
+    ROTATE,
+    NUMBER_PAGES,
+    WATERMARK,
+    REORDER_PAGES,
+    COMPARE,
+    REDACT,
+    CROP,
+    EDIT_TEXT,
+    SIGN,
+    FILL_FORM,
+    OCR,
+    EXTRACT_IMAGES,
 }
 
 data class PdfToolMessages(
-    val merge        : MergePdfMessages,
-    val split        : SplitPdfMessages,
-    val compress     : CompressPdfMessages,
-    val rotate       : RotatePdfMessages,
-    val numberPages  : NumberPagesMessages,
-    val watermark    : WatermarkMessages,
-    val reorderPages : ReorderPagesMessages,
-    val compare      : ComparePdfMessages,
-    val redact       : RedactPdfMessages,
-    val crop         : CropPdfMessages,
-    val editText     : EditTextPdfMessages,
-    val sign         : SignPdfMessages,
-    val fillForm     : FillFormMessages,
-    val ocr          : OcrPdfMessages,
+    val merge: MergePdfMessages,
+    val split: SplitPdfMessages,
+    val compress: CompressPdfMessages,
+    val rotate: RotatePdfMessages,
+    val numberPages: NumberPagesMessages,
+    val watermark: WatermarkMessages,
+    val reorderPages: ReorderPagesMessages,
+    val compare: ComparePdfMessages,
+    val redact: RedactPdfMessages,
+    val crop: CropPdfMessages,
+    val editText: EditTextPdfMessages,
+    val sign: SignPdfMessages,
+    val fillForm: FillFormMessages,
+    val ocr: OcrPdfMessages,
     val extractImages: ExtractImagesMessages,
     // Hallazgo real #23: mensaje de último recurso cuando algo escapa sin
     // atrapar de runTool() (OutOfMemoryError u otra excepción no prevista
     // por el use case individual) -- distinto del genericError de cada
     // herramienta, que sí espera un mensaje de excepción interpolado.
-    val genericError : String
+    val genericError: String,
 )
 
 data class PdfToolsUiState(
@@ -122,563 +136,640 @@ data class PdfToolsUiState(
     // Hallazgo real de la auditoría general 2026-09-17 (M4): "Guardar en
     // Descargas" no tenía guard de re-entrada, a diferencia del botón
     // equivalente del Convertidor -- mismo criterio acá.
-    val isSaving: Boolean = false
+    val isSaving: Boolean = false,
 )
 
 @HiltViewModel
-class PdfToolsViewModel @Inject constructor(
-    private val mergePdf: MergePdfUseCase,
-    private val splitPdf: SplitPdfUseCase,
-    private val compressPdf: CompressPdfUseCase,
-    private val rotatePdf: RotatePdfUseCase,
-    private val numberPagesPdf: NumberPagesUseCase,
-    private val watermarkPdf: WatermarkPdfUseCase,
-    private val reorderPagesPdf: ReorderPagesUseCase,
-    private val comparePdf: ComparePdfUseCase,
-    private val redactPdf: RedactPdfUseCase,
-    private val cropPdf: CropPdfUseCase,
-    private val editTextPdf: EditTextPdfUseCase,
-    private val signPdf: SignPdfUseCase,
-    private val detectFormFields: DetectFormFieldsUseCase,
-    private val fillForm: FillFormUseCase,
-    private val ocrPdf: OcrPdfUseCase,
-    private val extractImagesFromPdf: ExtractImagesFromPdfUseCase,
-    private val dailyLimitManager: DailyLimitManager,
-    private val premiumManager: PremiumManager,
-    val adManager: AdManager
-) : ViewModel() {
-
-    companion object {
-        private const val TAG = "PdfToolsViewModel"
-    }
-
-    private val _uiState = MutableStateFlow(PdfToolsUiState())
-    val uiState: StateFlow<PdfToolsUiState> = _uiState.asStateFlow()
-
-    fun selectTool(tool: PdfTool) {
-        if (tool != PdfTool.NONE) DocuSmartAnalytics.logPdfTool(tool.name)
-        _uiState.update {
-            PdfToolsUiState(
-                selectedTool = tool,
-                toolUseCount = if (tool == PdfTool.NONE) 0 else dailyLimitManager.getPdfToolCount(tool.name),
-                toolUseLimit = dailyLimitManager.getPdfToolLimit()
-            )
+class PdfToolsViewModel
+    @Inject
+    constructor(
+        private val mergePdf: MergePdfUseCase,
+        private val splitPdf: SplitPdfUseCase,
+        private val compressPdf: CompressPdfUseCase,
+        private val rotatePdf: RotatePdfUseCase,
+        private val numberPagesPdf: NumberPagesUseCase,
+        private val watermarkPdf: WatermarkPdfUseCase,
+        private val reorderPagesPdf: ReorderPagesUseCase,
+        private val comparePdf: ComparePdfUseCase,
+        private val redactPdf: RedactPdfUseCase,
+        private val cropPdf: CropPdfUseCase,
+        private val editTextPdf: EditTextPdfUseCase,
+        private val signPdf: SignPdfUseCase,
+        private val detectFormFields: DetectFormFieldsUseCase,
+        private val fillForm: FillFormUseCase,
+        private val ocrPdf: OcrPdfUseCase,
+        private val extractImagesFromPdf: ExtractImagesFromPdfUseCase,
+        private val dailyLimitManager: DailyLimitManager,
+        private val premiumManager: PremiumManager,
+        val adManager: AdManager,
+    ) : ViewModel() {
+        companion object {
+            private const val TAG = "PdfToolsViewModel"
         }
-    }
 
-    // ── Ver anuncio para desbloquear un uso extra de la herramienta ───────────
-    fun watchAdForTool(activity: Activity, adNotAvailableMessage: String) {
-        _uiState.update { it.copy(showLimitDialog = false) }
-        adManager.showRewardedAd(
-            activity = activity,
-            onRewarded = {
-                dailyLimitManager.addRewardedPdfTool()
-                _uiState.update { it.copy(toolUseLimit = dailyLimitManager.getPdfToolLimit()) }
-                Timber.d("$TAG: +1 uso de herramienta por Rewarded Ad")
-            },
-            onFailed = {
-                _uiState.update { it.copy(errorMessage = adNotAvailableMessage) }
-            }
-        )
-    }
+        private val _uiState = MutableStateFlow(PdfToolsUiState())
+        val uiState: StateFlow<PdfToolsUiState> = _uiState.asStateFlow()
 
-    fun dismissLimitDialog() {
-        _uiState.update { it.copy(showLimitDialog = false) }
-    }
-
-    fun onPdfsSelected(uris: List<Uri>) {
-        _uiState.update { state ->
-            state.copy(
-                selectedPdfs = uris,
-                result = null,
-                errorMessage = null,
-                savedToDownloads = false,
-                outputFileName = "",
-                pageOrder = emptyList(),
-                redactionRects = emptyList(),
-                redactionCurrentPage = 1,
-                redactionTotalPages = 1,
-                signaturePageNumber = 1,
-                signatureTotalPages = 1,
-                signatureImageBytes = null,
-                formFields = emptyList(),
-                formFieldValues = emptyMap(),
-                formFieldsDetected = false
-            )
-        }
-    }
-
-    fun addPdfsToMerge(uris: List<Uri>) {
-        _uiState.update { state ->
-            val current = state.selectedPdfs.toMutableList()
-            uris.forEach { uri ->
-                if (!current.contains(uri)) current.add(uri)
-            }
-            state.copy(
-                selectedPdfs = current,
-                result = null,
-                errorMessage = null
-            )
-        }
-    }
-
-    fun removePdf(uri: Uri) {
-        _uiState.update { state ->
-            state.copy(
-                selectedPdfs = state.selectedPdfs.filter { it != uri }
-            )
-        }
-    }
-
-    fun onOutputFileNameChange(name: String) {
-        _uiState.update { it.copy(outputFileName = name) }
-    }
-
-    fun onSplitFromPageChange(page: Int) {
-        _uiState.update { it.copy(splitFromPage = page.coerceAtLeast(1)) }
-    }
-
-    fun onSplitToPageChange(page: Int) {
-        _uiState.update { it.copy(splitToPage = page.coerceAtLeast(1)) }
-    }
-
-    fun onCompressionQualityChange(quality: Int) {
-        _uiState.update { it.copy(compressionQuality = quality.coerceIn(20, 100)) }
-    }
-
-    fun onRotationDegreesChange(degrees: Int) {
-        _uiState.update { it.copy(rotationDegrees = degrees) }
-    }
-
-    fun onPageNumberFormatChange(format: PageNumberFormat) {
-        _uiState.update { it.copy(pageNumberFormat = format) }
-    }
-
-    fun onWatermarkTextChange(text: String) {
-        _uiState.update { it.copy(watermarkText = text) }
-    }
-
-    fun onPagesLoaded(totalPages: Int) {
-        _uiState.update { it.copy(pageOrder = (1..totalPages).toList()) }
-    }
-
-    fun onReorderPage(from: Int, to: Int) {
-        _uiState.update { state ->
-            val order = state.pageOrder
-            if (from !in order.indices || to !in order.indices) return@update state
-            val reordered = order.toMutableList()
-            val moved = reordered.removeAt(from)
-            reordered.add(to, moved)
-            state.copy(pageOrder = reordered)
-        }
-    }
-
-    fun onRemovePage(pageNumber: Int) {
-        _uiState.update { state ->
-            if (state.pageOrder.size <= 1) state
-            else state.copy(pageOrder = state.pageOrder.filter { it != pageNumber })
-        }
-    }
-
-    fun onComparePdfASelected(uri: Uri) {
-        _uiState.update {
-            it.copy(
-                comparePdfA = uri, result = null, errorMessage = null,
-                savedToDownloads = false, outputFileName = ""
-            )
-        }
-    }
-
-    fun onComparePdfBSelected(uri: Uri) {
-        _uiState.update {
-            it.copy(
-                comparePdfB = uri, result = null, errorMessage = null,
-                savedToDownloads = false, outputFileName = ""
-            )
-        }
-    }
-
-    fun onRedactionTotalPagesLoaded(total: Int) {
-        _uiState.update { it.copy(redactionTotalPages = total.coerceAtLeast(1)) }
-    }
-
-    fun onRedactionPageChange(page: Int) {
-        _uiState.update { it.copy(redactionCurrentPage = page.coerceIn(1, it.redactionTotalPages)) }
-    }
-
-    fun onAddRedactionRect(rect: RedactionRect) {
-        _uiState.update { it.copy(redactionRects = it.redactionRects + rect) }
-    }
-
-    fun onUndoLastRedactionRect() {
-        _uiState.update { it.copy(redactionRects = it.redactionRects.dropLast(1)) }
-    }
-
-    fun onClearRedactionRects() {
-        _uiState.update { it.copy(redactionRects = emptyList()) }
-    }
-
-    fun onCropMarginChange(percent: Int) {
-        _uiState.update { it.copy(cropMarginPercent = percent.coerceIn(0, 40)) }
-    }
-
-    fun onEditSearchTextChange(text: String) {
-        _uiState.update { it.copy(editSearchText = text) }
-    }
-
-    fun onEditReplaceTextChange(text: String) {
-        _uiState.update { it.copy(editReplaceText = text) }
-    }
-
-    fun onSignatureTotalPagesLoaded(total: Int) {
-        _uiState.update { it.copy(signatureTotalPages = total.coerceAtLeast(1)) }
-    }
-
-    fun onSignaturePageChange(page: Int) {
-        _uiState.update { it.copy(signaturePageNumber = page.coerceIn(1, it.signatureTotalPages)) }
-    }
-
-    fun onSignatureCaptured(bytes: ByteArray) {
-        _uiState.update { it.copy(signatureImageBytes = bytes) }
-    }
-
-    fun onClearSignature() {
-        _uiState.update { it.copy(signatureImageBytes = null) }
-    }
-
-    // Hallazgo real de la revisión general 2026-09-16 (#21): sin cancelar
-    // el Job anterior, un resultado tardío de detección de un PDF ya
-    // reemplazado podía llegar DESPUÉS del resultado del PDF seleccionado
-    // después, sobrescribiendo sus campos en la UI con los del PDF
-    // equivocado. Cancelar el Job previo antes de lanzar uno nuevo cierra
-    // la carrera sin necesidad de etiquetar/comparar URIs a mano.
-    private var detectFormFieldsJob: Job? = null
-
-    fun onDetectFormFields(uri: Uri) {
-        detectFormFieldsJob?.cancel()
-        _uiState.update { it.copy(formFieldsDetected = false) }
-        detectFormFieldsJob = viewModelScope.launch {
-            val fields = detectFormFields(uri)
+        fun selectTool(tool: PdfTool) {
+            if (tool != PdfTool.NONE) DocuSmartAnalytics.logPdfTool(tool.name)
             _uiState.update {
-                it.copy(
-                    formFields = fields,
-                    formFieldValues = fields.associate { field -> field.name to field.currentValue },
-                    formFieldsDetected = true
+                PdfToolsUiState(
+                    selectedTool = tool,
+                    toolUseCount = if (tool == PdfTool.NONE) 0 else dailyLimitManager.getPdfToolCount(tool.name),
+                    toolUseLimit = dailyLimitManager.getPdfToolLimit(),
                 )
             }
         }
-    }
 
-    fun onFormFieldValueChange(name: String, value: String) {
-        _uiState.update { it.copy(formFieldValues = it.formFieldValues + (name to value)) }
-    }
-
-    fun execute(messages: PdfToolMessages) {
-        val state = _uiState.value
-        val hasSelection = if (state.selectedTool == PdfTool.COMPARE) {
-            state.comparePdfA != null && state.comparePdfB != null
-        } else {
-            state.selectedPdfs.isNotEmpty()
-        }
-        // Hallazgo real de la auditoría general 2026-09-17 (state.isProcessing):
-        // la única protección contra doble-toque era que PdfProcessingFooter
-        // reemplaza el botón por una barra de progreso -- eso depende de que
-        // la recomposición de Compose llegue antes del segundo toque, no es
-        // sincrónico. Sin este guard, dos ejecuciones concurrentes podían
-        // saltarse el límite diario en 1 uso y generar el mismo nombre de
-        // archivo (createOutputFile() tiene granularidad de 1s), pisándose
-        // entre sí a mitad de escritura.
-        if (state.isProcessing || !hasSelection || state.selectedTool == PdfTool.NONE) return
-
-        if (!premiumManager.canPerform { dailyLimitManager.canUsePdfTool(state.selectedTool.name) }) {
-            _uiState.update { it.copy(showLimitDialog = true) }
-            Timber.d("$TAG: límite diario alcanzado para ${state.selectedTool}")
-            return
+        // ── Ver anuncio para desbloquear un uso extra de la herramienta ───────────
+        fun watchAdForTool(
+            activity: Activity,
+            adNotAvailableMessage: String,
+        ) {
+            _uiState.update { it.copy(showLimitDialog = false) }
+            adManager.showRewardedAd(
+                activity = activity,
+                onRewarded = {
+                    dailyLimitManager.addRewardedPdfTool()
+                    _uiState.update { it.copy(toolUseLimit = dailyLimitManager.getPdfToolLimit()) }
+                    Timber.d("$TAG: +1 uso de herramienta por Rewarded Ad")
+                },
+                onFailed = {
+                    _uiState.update { it.copy(errorMessage = adNotAvailableMessage) }
+                },
+            )
         }
 
-        // Hallazgo real de la revisión general 2026-09-16 (path traversal):
-        // saneado en este único punto para las 13 herramientas, ver
-        // sanitizeOutputFileName().
-        val customName = com.docsmart.core.util.sanitizeOutputFileName(state.outputFileName).ifBlank { null }
+        fun dismissLimitDialog() {
+            _uiState.update { it.copy(showLimitDialog = false) }
+        }
 
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isProcessing = true,
+        fun onPdfsSelected(uris: List<Uri>) {
+            _uiState.update { state ->
+                state.copy(
+                    selectedPdfs = uris,
                     result = null,
-                    errorMessage = null
+                    errorMessage = null,
+                    savedToDownloads = false,
+                    outputFileName = "",
+                    pageOrder = emptyList(),
+                    redactionRects = emptyList(),
+                    redactionCurrentPage = 1,
+                    redactionTotalPages = 1,
+                    signaturePageNumber = 1,
+                    signatureTotalPages = 1,
+                    signatureImageBytes = null,
+                    formFields = emptyList(),
+                    formFieldValues = emptyMap(),
+                    formFieldsDetected = false,
                 )
             }
+        }
 
-            // Hallazgo real de la revisión general 2026-09-16 (#23):
-            // runTool() no tenía ninguna protección propia -- un
-            // OutOfMemoryError (páginas de alta resolución en Comprimir/
-            // Recortar/etc.) u otra excepción no atrapada por el use case
-            // individual colgaba la corrutina para siempre, con
-            // isProcessing=true sin resetear y sin ningún mensaje.
-            val result = try {
-                runTool(state, customName, messages)
-            } catch (e: OutOfMemoryError) {
-                Timber.e(e, "$TAG: sin memoria ejecutando ${state.selectedTool}")
-                _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
-                return@launch
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: error inesperado ejecutando ${state.selectedTool}")
-                _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
-                return@launch
+        fun addPdfsToMerge(uris: List<Uri>) {
+            _uiState.update { state ->
+                val current = state.selectedPdfs.toMutableList()
+                uris.forEach { uri ->
+                    if (!current.contains(uri)) current.add(uri)
+                }
+                state.copy(
+                    selectedPdfs = current,
+                    result = null,
+                    errorMessage = null,
+                )
             }
-            if (result == null) {
-                // Bug real encontrado 2026-09-14 (repaso general): antes se
-                // salía con return@launch sin resetear isProcessing, dejando
-                // la UI bloqueada en estado de carga para siempre. Hoy solo
-                // es alcanzable si runAdvancedTool no encuentra una rama
-                // válida (p. ej. FIRMAR sin firma capturada), pero es un
-                // hueco real en la máquina de estados.
-                _uiState.update { it.copy(isProcessing = false) }
-                return@launch
+        }
+
+        fun removePdf(uri: Uri) {
+            _uiState.update { state ->
+                state.copy(
+                    selectedPdfs = state.selectedPdfs.filter { it != uri },
+                )
             }
+        }
 
-            Timber.d("Resultado: $result")
+        fun onOutputFileNameChange(name: String) {
+            _uiState.update { it.copy(outputFileName = name) }
+        }
 
-            if (result is PdfToolResult.Success || result is PdfToolResult.MultiSuccess) {
-                dailyLimitManager.registerPdfTool(state.selectedTool.name)
+        fun onSplitFromPageChange(page: Int) {
+            _uiState.update { it.copy(splitFromPage = page.coerceAtLeast(1)) }
+        }
+
+        fun onSplitToPageChange(page: Int) {
+            _uiState.update { it.copy(splitToPage = page.coerceAtLeast(1)) }
+        }
+
+        fun onCompressionQualityChange(quality: Int) {
+            _uiState.update { it.copy(compressionQuality = quality.coerceIn(20, 100)) }
+        }
+
+        fun onRotationDegreesChange(degrees: Int) {
+            _uiState.update { it.copy(rotationDegrees = degrees) }
+        }
+
+        fun onPageNumberFormatChange(format: PageNumberFormat) {
+            _uiState.update { it.copy(pageNumberFormat = format) }
+        }
+
+        fun onWatermarkTextChange(text: String) {
+            _uiState.update { it.copy(watermarkText = text) }
+        }
+
+        fun onPagesLoaded(totalPages: Int) {
+            _uiState.update { it.copy(pageOrder = (1..totalPages).toList()) }
+        }
+
+        fun onReorderPage(
+            from: Int,
+            to: Int,
+        ) {
+            _uiState.update { state ->
+                val order = state.pageOrder
+                if (from !in order.indices || to !in order.indices) return@update state
+                val reordered = order.toMutableList()
+                val moved = reordered.removeAt(from)
+                reordered.add(to, moved)
+                state.copy(pageOrder = reordered)
             }
+        }
 
+        fun onRemovePage(pageNumber: Int) {
+            _uiState.update { state ->
+                if (state.pageOrder.size <= 1) {
+                    state
+                } else {
+                    state.copy(pageOrder = state.pageOrder.filter { it != pageNumber })
+                }
+            }
+        }
+
+        fun onComparePdfASelected(uri: Uri) {
             _uiState.update {
                 it.copy(
-                    isProcessing = false,
-                    result = result,
-                    toolUseCount = dailyLimitManager.getPdfToolCount(state.selectedTool.name),
-                    errorMessage = if (result is PdfToolResult.Error)
-                        result.message
-                    else null
+                    comparePdfA = uri,
+                    result = null,
+                    errorMessage = null,
+                    savedToDownloads = false,
+                    outputFileName = "",
                 )
             }
         }
-    }
 
-    // Extraído de execute() para mantener su complejidad ciclomática bajo el
-    // umbral de detekt (15) -- este dispatcher crece un caso por cada
-    // herramienta nueva del backlog (RF-PDF-06/07/08...) y ya lo había
-    // superado con la séptima. Con la décimoprimera (RF-PDF-10) volvió a
-    // superarlo, así que se dividió en dos sub-dispatchers por categoría
-    // (herramientas de un solo archivo con parámetros simples vs. las que
-    // necesitan lógica propia) en vez de seguir baselineando el hallazgo.
-    private suspend fun runTool(
-        state: PdfToolsUiState,
-        customName: String?,
-        messages: PdfToolMessages
-    ): PdfToolResult? = when (state.selectedTool) {
-        PdfTool.MERGE, PdfTool.SPLIT, PdfTool.COMPRESS, PdfTool.ROTATE,
-        PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES,
-        PdfTool.EXTRACT_IMAGES ->
-            runBasicTool(state, customName, messages)
-        PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN,
-        PdfTool.FILL_FORM, PdfTool.OCR ->
-            runAdvancedTool(state, customName, messages)
-        PdfTool.NONE -> null
-    }
-
-    private suspend fun runBasicTool(
-        state: PdfToolsUiState,
-        customName: String?,
-        messages: PdfToolMessages
-    ): PdfToolResult? = when (state.selectedTool) {
-        PdfTool.MERGE -> mergePdf(
-            pdfUris = state.selectedPdfs,
-            outputFileName = customName,
-            messages = messages.merge
-        )
-        PdfTool.SPLIT -> splitPdf(
-            pdfUri = state.selectedPdfs.first(),
-            fromPage = state.splitFromPage,
-            toPage = state.splitToPage,
-            outputFileName = customName,
-            messages = messages.split
-        )
-        PdfTool.COMPRESS -> compressPdf(
-            pdfUri = state.selectedPdfs.first(),
-            quality = state.compressionQuality,
-            outputFileName = customName,
-            messages = messages.compress
-        )
-        PdfTool.ROTATE -> rotatePdf(
-            pdfUri = state.selectedPdfs.first(),
-            degrees = state.rotationDegrees,
-            outputFileName = customName,
-            messages = messages.rotate
-        )
-        PdfTool.NUMBER_PAGES -> numberPagesPdf(
-            pdfUri = state.selectedPdfs.first(),
-            format = state.pageNumberFormat,
-            outputFileName = customName,
-            messages = messages.numberPages
-        )
-        PdfTool.WATERMARK -> watermarkPdf(
-            pdfUri = state.selectedPdfs.first(),
-            watermarkText = state.watermarkText,
-            outputFileName = customName,
-            messages = messages.watermark
-        )
-        PdfTool.REORDER_PAGES -> reorderPagesPdf(
-            pdfUri = state.selectedPdfs.first(),
-            pageOrder = state.pageOrder,
-            outputFileName = customName,
-            messages = messages.reorderPages
-        )
-        PdfTool.EXTRACT_IMAGES -> extractImagesFromPdf(
-            pdfUri = state.selectedPdfs.first(),
-            outputFileName = customName,
-            messages = messages.extractImages
-        )
-        else -> null
-    }
-
-    private suspend fun runAdvancedTool(
-        state: PdfToolsUiState,
-        customName: String?,
-        messages: PdfToolMessages
-    ): PdfToolResult? = when (state.selectedTool) {
-        PdfTool.COMPARE -> {
-            val pdfA = state.comparePdfA
-            val pdfB = state.comparePdfB
-            if (pdfA != null && pdfB != null) {
-                comparePdf(pdfUriA = pdfA, pdfUriB = pdfB, outputFileName = customName, messages = messages.compare)
-            } else {
-                null
-            }
-        }
-        PdfTool.REDACT -> redactPdf(
-            pdfUri = state.selectedPdfs.first(),
-            rects = state.redactionRects,
-            outputFileName = customName,
-            messages = messages.redact
-        )
-        PdfTool.CROP -> cropPdf(
-            pdfUri = state.selectedPdfs.first(),
-            marginPercent = state.cropMarginPercent,
-            outputFileName = customName,
-            messages = messages.crop
-        )
-        PdfTool.EDIT_TEXT -> editTextPdf(
-            pdfUri = state.selectedPdfs.first(),
-            searchText = state.editSearchText,
-            replaceText = state.editReplaceText,
-            outputFileName = customName,
-            messages = messages.editText
-        )
-        PdfTool.SIGN -> {
-            val signature = state.signatureImageBytes
-            if (signature != null) {
-                signPdf(
-                    pdfUri = state.selectedPdfs.first(),
-                    signatureImageBytes = signature,
-                    pageNumber = state.signaturePageNumber,
-                    outputFileName = customName,
-                    messages = messages.sign
+        fun onComparePdfBSelected(uri: Uri) {
+            _uiState.update {
+                it.copy(
+                    comparePdfB = uri,
+                    result = null,
+                    errorMessage = null,
+                    savedToDownloads = false,
+                    outputFileName = "",
                 )
-            } else {
-                null
             }
         }
-        PdfTool.FILL_FORM -> fillForm(
-            pdfUri = state.selectedPdfs.first(),
-            values = state.formFieldValues,
-            outputFileName = customName,
-            messages = messages.fillForm
-        )
-        PdfTool.OCR -> ocrPdf(
-            pdfUri = state.selectedPdfs.first(),
-            outputFileName = customName,
-            messages = messages.ocr
-        )
-        else -> null
-    }
 
-    fun shareResult(context: Context, chooserTitle: String, errorMessage: String) {
-        when (val result = _uiState.value.result) {
-            is PdfToolResult.Success -> shareSingleFile(context, result.outputFile, chooserTitle, errorMessage)
-            is PdfToolResult.MultiSuccess -> shareMultipleFiles(context, result.outputFiles, chooserTitle, errorMessage)
-            else -> Unit
+        fun onRedactionTotalPagesLoaded(total: Int) {
+            _uiState.update { it.copy(redactionTotalPages = total.coerceAtLeast(1)) }
         }
-    }
 
-    private fun shareSingleFile(context: Context, file: File, chooserTitle: String, errorMessage: String) {
-        try {
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file
-            )
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/pdf"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(
-                Intent.createChooser(intent, chooserTitle)
-            )
-        } catch (e: Exception) {
-            Timber.e("Error compartiendo: ${e.message}")
-            _uiState.update {
-                it.copy(errorMessage = errorMessage)
-            }
+        fun onRedactionPageChange(page: Int) {
+            _uiState.update { it.copy(redactionCurrentPage = page.coerceIn(1, it.redactionTotalPages)) }
         }
-    }
 
-    private fun shareMultipleFiles(
-        context: Context, files: List<File>, chooserTitle: String, errorMessage: String
-    ) {
-        try {
-            val uris = ArrayList(files.map { file ->
-                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            })
-            val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                type = "image/*"
-                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(
-                Intent.createChooser(intent, chooserTitle)
-            )
-        } catch (e: Exception) {
-            Timber.e("Error compartiendo varios archivos: ${e.message}")
-            _uiState.update {
-                it.copy(errorMessage = errorMessage)
-            }
+        fun onAddRedactionRect(rect: RedactionRect) {
+            _uiState.update { it.copy(redactionRects = it.redactionRects + rect) }
         }
-    }
 
-    fun saveToDownloads(context: Context, errorMessage: String) {
-        if (_uiState.value.isSaving) return
-        when (val result = _uiState.value.result) {
-            is PdfToolResult.Success -> viewModelScope.launch {
-                _uiState.update { it.copy(isSaving = true) }
-                val saved = DownloadsSaver.saveFile(context, result.outputFile, "application/pdf")
-                _uiState.update { state ->
-                    if (saved) state.copy(savedToDownloads = true, isSaving = false)
-                    else state.copy(errorMessage = errorMessage, isSaving = false)
+        fun onUndoLastRedactionRect() {
+            _uiState.update { it.copy(redactionRects = it.redactionRects.dropLast(1)) }
+        }
+
+        fun onClearRedactionRects() {
+            _uiState.update { it.copy(redactionRects = emptyList()) }
+        }
+
+        fun onCropMarginChange(percent: Int) {
+            _uiState.update { it.copy(cropMarginPercent = percent.coerceIn(0, 40)) }
+        }
+
+        fun onEditSearchTextChange(text: String) {
+            _uiState.update { it.copy(editSearchText = text) }
+        }
+
+        fun onEditReplaceTextChange(text: String) {
+            _uiState.update { it.copy(editReplaceText = text) }
+        }
+
+        fun onSignatureTotalPagesLoaded(total: Int) {
+            _uiState.update { it.copy(signatureTotalPages = total.coerceAtLeast(1)) }
+        }
+
+        fun onSignaturePageChange(page: Int) {
+            _uiState.update { it.copy(signaturePageNumber = page.coerceIn(1, it.signatureTotalPages)) }
+        }
+
+        fun onSignatureCaptured(bytes: ByteArray) {
+            _uiState.update { it.copy(signatureImageBytes = bytes) }
+        }
+
+        fun onClearSignature() {
+            _uiState.update { it.copy(signatureImageBytes = null) }
+        }
+
+        // Hallazgo real de la revisión general 2026-09-16 (#21): sin cancelar
+        // el Job anterior, un resultado tardío de detección de un PDF ya
+        // reemplazado podía llegar DESPUÉS del resultado del PDF seleccionado
+        // después, sobrescribiendo sus campos en la UI con los del PDF
+        // equivocado. Cancelar el Job previo antes de lanzar uno nuevo cierra
+        // la carrera sin necesidad de etiquetar/comparar URIs a mano.
+        private var detectFormFieldsJob: Job? = null
+
+        fun onDetectFormFields(uri: Uri) {
+            detectFormFieldsJob?.cancel()
+            _uiState.update { it.copy(formFieldsDetected = false) }
+            detectFormFieldsJob =
+                viewModelScope.launch {
+                    val fields = detectFormFields(uri)
+                    _uiState.update {
+                        it.copy(
+                            formFields = fields,
+                            formFieldValues = fields.associate { field -> field.name to field.currentValue },
+                            formFieldsDetected = true,
+                        )
+                    }
+                }
+        }
+
+        fun onFormFieldValueChange(
+            name: String,
+            value: String,
+        ) {
+            _uiState.update { it.copy(formFieldValues = it.formFieldValues + (name to value)) }
+        }
+
+        fun execute(messages: PdfToolMessages) {
+            val state = _uiState.value
+            val hasSelection =
+                if (state.selectedTool == PdfTool.COMPARE) {
+                    state.comparePdfA != null && state.comparePdfB != null
+                } else {
+                    state.selectedPdfs.isNotEmpty()
+                }
+            // Hallazgo real de la auditoría general 2026-09-17 (state.isProcessing):
+            // la única protección contra doble-toque era que PdfProcessingFooter
+            // reemplaza el botón por una barra de progreso -- eso depende de que
+            // la recomposición de Compose llegue antes del segundo toque, no es
+            // sincrónico. Sin este guard, dos ejecuciones concurrentes podían
+            // saltarse el límite diario en 1 uso y generar el mismo nombre de
+            // archivo (createOutputFile() tiene granularidad de 1s), pisándose
+            // entre sí a mitad de escritura.
+            if (state.isProcessing || !hasSelection || state.selectedTool == PdfTool.NONE) return
+
+            if (!premiumManager.canPerform { dailyLimitManager.canUsePdfTool(state.selectedTool.name) }) {
+                _uiState.update { it.copy(showLimitDialog = true) }
+                Timber.d("$TAG: límite diario alcanzado para ${state.selectedTool}")
+                return
+            }
+
+            // Hallazgo real de la revisión general 2026-09-16 (path traversal):
+            // saneado en este único punto para las 13 herramientas, ver
+            // sanitizeOutputFileName().
+            val customName =
+                com.docsmart.core.util
+                    .sanitizeOutputFileName(state.outputFileName)
+                    .ifBlank { null }
+
+            viewModelScope.launch {
+                _uiState.update {
+                    it.copy(
+                        isProcessing = true,
+                        result = null,
+                        errorMessage = null,
+                    )
+                }
+
+                // Hallazgo real de la revisión general 2026-09-16 (#23):
+                // runTool() no tenía ninguna protección propia -- un
+                // OutOfMemoryError (páginas de alta resolución en Comprimir/
+                // Recortar/etc.) u otra excepción no atrapada por el use case
+                // individual colgaba la corrutina para siempre, con
+                // isProcessing=true sin resetear y sin ningún mensaje.
+                val result =
+                    try {
+                        runTool(state, customName, messages)
+                    } catch (e: OutOfMemoryError) {
+                        Timber.e(e, "$TAG: sin memoria ejecutando ${state.selectedTool}")
+                        _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
+                        return@launch
+                    } catch (e: Exception) {
+                        Timber.e(e, "$TAG: error inesperado ejecutando ${state.selectedTool}")
+                        _uiState.update { it.copy(isProcessing = false, errorMessage = messages.genericError) }
+                        return@launch
+                    }
+                if (result == null) {
+                    // Bug real encontrado 2026-09-14 (repaso general): antes se
+                    // salía con return@launch sin resetear isProcessing, dejando
+                    // la UI bloqueada en estado de carga para siempre. Hoy solo
+                    // es alcanzable si runAdvancedTool no encuentra una rama
+                    // válida (p. ej. FIRMAR sin firma capturada), pero es un
+                    // hueco real en la máquina de estados.
+                    _uiState.update { it.copy(isProcessing = false) }
+                    return@launch
+                }
+
+                Timber.d("Resultado: $result")
+
+                if (result is PdfToolResult.Success || result is PdfToolResult.MultiSuccess) {
+                    dailyLimitManager.registerPdfTool(state.selectedTool.name)
+                }
+
+                _uiState.update {
+                    it.copy(
+                        isProcessing = false,
+                        result = result,
+                        toolUseCount = dailyLimitManager.getPdfToolCount(state.selectedTool.name),
+                        errorMessage =
+                            if (result is PdfToolResult.Error) {
+                                result.message
+                            } else {
+                                null
+                            },
+                    )
                 }
             }
-            is PdfToolResult.MultiSuccess -> viewModelScope.launch {
-                _uiState.update { it.copy(isSaving = true) }
-                val allSaved = result.outputFiles.map { file ->
-                    DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
-                }.all { it }
-                _uiState.update { state ->
-                    if (allSaved) state.copy(savedToDownloads = true, isSaving = false)
-                    else state.copy(errorMessage = errorMessage, isSaving = false)
+        }
+
+        // Extraído de execute() para mantener su complejidad ciclomática bajo el
+        // umbral de detekt (15) -- este dispatcher crece un caso por cada
+        // herramienta nueva del backlog (RF-PDF-06/07/08...) y ya lo había
+        // superado con la séptima. Con la décimoprimera (RF-PDF-10) volvió a
+        // superarlo, así que se dividió en dos sub-dispatchers por categoría
+        // (herramientas de un solo archivo con parámetros simples vs. las que
+        // necesitan lógica propia) en vez de seguir baselineando el hallazgo.
+        private suspend fun runTool(
+            state: PdfToolsUiState,
+            customName: String?,
+            messages: PdfToolMessages,
+        ): PdfToolResult? =
+            when (state.selectedTool) {
+                PdfTool.MERGE, PdfTool.SPLIT, PdfTool.COMPRESS, PdfTool.ROTATE,
+                PdfTool.NUMBER_PAGES, PdfTool.WATERMARK, PdfTool.REORDER_PAGES,
+                PdfTool.EXTRACT_IMAGES,
+                ->
+                    runBasicTool(state, customName, messages)
+                PdfTool.COMPARE, PdfTool.REDACT, PdfTool.CROP, PdfTool.EDIT_TEXT, PdfTool.SIGN,
+                PdfTool.FILL_FORM, PdfTool.OCR,
+                ->
+                    runAdvancedTool(state, customName, messages)
+                PdfTool.NONE -> null
+            }
+
+        private suspend fun runBasicTool(
+            state: PdfToolsUiState,
+            customName: String?,
+            messages: PdfToolMessages,
+        ): PdfToolResult? =
+            when (state.selectedTool) {
+                PdfTool.MERGE ->
+                    mergePdf(
+                        pdfUris = state.selectedPdfs,
+                        outputFileName = customName,
+                        messages = messages.merge,
+                    )
+                PdfTool.SPLIT ->
+                    splitPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        fromPage = state.splitFromPage,
+                        toPage = state.splitToPage,
+                        outputFileName = customName,
+                        messages = messages.split,
+                    )
+                PdfTool.COMPRESS ->
+                    compressPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        quality = state.compressionQuality,
+                        outputFileName = customName,
+                        messages = messages.compress,
+                    )
+                PdfTool.ROTATE ->
+                    rotatePdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        degrees = state.rotationDegrees,
+                        outputFileName = customName,
+                        messages = messages.rotate,
+                    )
+                PdfTool.NUMBER_PAGES ->
+                    numberPagesPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        format = state.pageNumberFormat,
+                        outputFileName = customName,
+                        messages = messages.numberPages,
+                    )
+                PdfTool.WATERMARK ->
+                    watermarkPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        watermarkText = state.watermarkText,
+                        outputFileName = customName,
+                        messages = messages.watermark,
+                    )
+                PdfTool.REORDER_PAGES ->
+                    reorderPagesPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        pageOrder = state.pageOrder,
+                        outputFileName = customName,
+                        messages = messages.reorderPages,
+                    )
+                PdfTool.EXTRACT_IMAGES ->
+                    extractImagesFromPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        outputFileName = customName,
+                        messages = messages.extractImages,
+                    )
+                else -> null
+            }
+
+        private suspend fun runAdvancedTool(
+            state: PdfToolsUiState,
+            customName: String?,
+            messages: PdfToolMessages,
+        ): PdfToolResult? =
+            when (state.selectedTool) {
+                PdfTool.COMPARE -> {
+                    val pdfA = state.comparePdfA
+                    val pdfB = state.comparePdfB
+                    if (pdfA != null && pdfB != null) {
+                        comparePdf(pdfUriA = pdfA, pdfUriB = pdfB, outputFileName = customName, messages = messages.compare)
+                    } else {
+                        null
+                    }
+                }
+                PdfTool.REDACT ->
+                    redactPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        rects = state.redactionRects,
+                        outputFileName = customName,
+                        messages = messages.redact,
+                    )
+                PdfTool.CROP ->
+                    cropPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        marginPercent = state.cropMarginPercent,
+                        outputFileName = customName,
+                        messages = messages.crop,
+                    )
+                PdfTool.EDIT_TEXT ->
+                    editTextPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        searchText = state.editSearchText,
+                        replaceText = state.editReplaceText,
+                        outputFileName = customName,
+                        messages = messages.editText,
+                    )
+                PdfTool.SIGN -> {
+                    val signature = state.signatureImageBytes
+                    if (signature != null) {
+                        signPdf(
+                            pdfUri = state.selectedPdfs.first(),
+                            signatureImageBytes = signature,
+                            pageNumber = state.signaturePageNumber,
+                            outputFileName = customName,
+                            messages = messages.sign,
+                        )
+                    } else {
+                        null
+                    }
+                }
+                PdfTool.FILL_FORM ->
+                    fillForm(
+                        pdfUri = state.selectedPdfs.first(),
+                        values = state.formFieldValues,
+                        outputFileName = customName,
+                        messages = messages.fillForm,
+                    )
+                PdfTool.OCR ->
+                    ocrPdf(
+                        pdfUri = state.selectedPdfs.first(),
+                        outputFileName = customName,
+                        messages = messages.ocr,
+                    )
+                else -> null
+            }
+
+        fun shareResult(
+            context: Context,
+            chooserTitle: String,
+            errorMessage: String,
+        ) {
+            when (val result = _uiState.value.result) {
+                is PdfToolResult.Success -> shareSingleFile(context, result.outputFile, chooserTitle, errorMessage)
+                is PdfToolResult.MultiSuccess -> shareMultipleFiles(context, result.outputFiles, chooserTitle, errorMessage)
+                else -> Unit
+            }
+        }
+
+        private fun shareSingleFile(
+            context: Context,
+            file: File,
+            chooserTitle: String,
+            errorMessage: String,
+        ) {
+            try {
+                val uri =
+                    FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        file,
+                    )
+                val intent =
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                context.startActivity(
+                    Intent.createChooser(intent, chooserTitle),
+                )
+            } catch (e: Exception) {
+                Timber.e("Error compartiendo: ${e.message}")
+                _uiState.update {
+                    it.copy(errorMessage = errorMessage)
                 }
             }
-            else -> Unit
+        }
+
+        private fun shareMultipleFiles(
+            context: Context,
+            files: List<File>,
+            chooserTitle: String,
+            errorMessage: String,
+        ) {
+            try {
+                val uris =
+                    ArrayList(
+                        files.map { file ->
+                            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                        },
+                    )
+                val intent =
+                    Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                        type = "image/*"
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                context.startActivity(
+                    Intent.createChooser(intent, chooserTitle),
+                )
+            } catch (e: Exception) {
+                Timber.e("Error compartiendo varios archivos: ${e.message}")
+                _uiState.update {
+                    it.copy(errorMessage = errorMessage)
+                }
+            }
+        }
+
+        fun saveToDownloads(
+            context: Context,
+            errorMessage: String,
+        ) {
+            if (_uiState.value.isSaving) return
+            when (val result = _uiState.value.result) {
+                is PdfToolResult.Success ->
+                    viewModelScope.launch {
+                        _uiState.update { it.copy(isSaving = true) }
+                        val saved = DownloadsSaver.saveFile(context, result.outputFile, "application/pdf")
+                        _uiState.update { state ->
+                            if (saved) {
+                                state.copy(savedToDownloads = true, isSaving = false)
+                            } else {
+                                state.copy(errorMessage = errorMessage, isSaving = false)
+                            }
+                        }
+                    }
+                is PdfToolResult.MultiSuccess ->
+                    viewModelScope.launch {
+                        _uiState.update { it.copy(isSaving = true) }
+                        val allSaved =
+                            result.outputFiles
+                                .map { file ->
+                                    DownloadsSaver.saveFile(context, file, DownloadsSaver.mimeTypeForExtension(file.extension))
+                                }.all { it }
+                        _uiState.update { state ->
+                            if (allSaved) {
+                                state.copy(savedToDownloads = true, isSaving = false)
+                            } else {
+                                state.copy(errorMessage = errorMessage, isSaving = false)
+                            }
+                        }
+                    }
+                else -> Unit
+            }
+        }
+
+        fun reset() {
+            _uiState.update { PdfToolsUiState() }
+        }
+
+        fun dismissError() {
+            _uiState.update { it.copy(errorMessage = null) }
         }
     }
-
-    fun reset() {
-        _uiState.update { PdfToolsUiState() }
-    }
-
-    fun dismissError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
-}

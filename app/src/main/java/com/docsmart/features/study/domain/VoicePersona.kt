@@ -24,7 +24,7 @@ data class VoicePersona(
     // de personas reales. avatarColor se conserva como anillo de color
     // alrededor del avatar, mismo criterio de identidad por color que ya
     // tenía cada persona.
-    @DrawableRes val avatarDrawableRes: Int
+    @DrawableRes val avatarDrawableRes: Int,
 )
 
 // HU-64 (backlog UX 2026-09-16, feedback real de testers de la prueba
@@ -34,48 +34,69 @@ data class VoicePersona(
 // motor TTS. Los nombres quedan iguales en los 12 idiomas de la app a
 // propósito (son identidades de personaje, no texto de interfaz -- mismo
 // criterio que un nombre de asistente de voz, no se traduce).
-private val VOICE_PERSONAS = listOf(
-    VoicePersona(
-        "Sofía", isFeminine = true,
-        avatarColor = DocuBlue, avatarDrawableRes = R.drawable.voice_avatar_sofia
-    ),
-    VoicePersona(
-        "Mateo", isFeminine = false,
-        avatarColor = SuccessGreen, avatarDrawableRes = R.drawable.voice_avatar_mateo
-    ),
-    VoicePersona(
-        "Valentina", isFeminine = true,
-        avatarColor = ColorPowerPoint, avatarDrawableRes = R.drawable.voice_avatar_valentina
-    ),
-    VoicePersona(
-        "Diego", isFeminine = false,
-        avatarColor = IndigoAccent, avatarDrawableRes = R.drawable.voice_avatar_diego
-    ),
-    VoicePersona(
-        "Camila", isFeminine = true,
-        avatarColor = ErrorRed, avatarDrawableRes = R.drawable.voice_avatar_camila
-    ),
-    VoicePersona(
-        "Sebastián", isFeminine = false,
-        avatarColor = ColorOcr, avatarDrawableRes = R.drawable.voice_avatar_sebastian
-    ),
-    VoicePersona(
-        "Isabella", isFeminine = true,
-        avatarColor = PremiumGold, avatarDrawableRes = R.drawable.voice_avatar_isabella
-    ),
-    VoicePersona(
-        "Emilio", isFeminine = false,
-        avatarColor = SmartBlue, avatarDrawableRes = R.drawable.voice_avatar_emilio
-    ),
-    VoicePersona(
-        "Lucía", isFeminine = true,
-        avatarColor = ColorZip, avatarDrawableRes = R.drawable.voice_avatar_lucia
-    ),
-    VoicePersona(
-        "Nicolás", isFeminine = false,
-        avatarColor = SlateGray, avatarDrawableRes = R.drawable.voice_avatar_nicolas
+private val VOICE_PERSONAS =
+    listOf(
+        VoicePersona(
+            "Sofía",
+            isFeminine = true,
+            avatarColor = DocuBlue,
+            avatarDrawableRes = R.drawable.voice_avatar_sofia,
+        ),
+        VoicePersona(
+            "Mateo",
+            isFeminine = false,
+            avatarColor = SuccessGreen,
+            avatarDrawableRes = R.drawable.voice_avatar_mateo,
+        ),
+        VoicePersona(
+            "Valentina",
+            isFeminine = true,
+            avatarColor = ColorPowerPoint,
+            avatarDrawableRes = R.drawable.voice_avatar_valentina,
+        ),
+        VoicePersona(
+            "Diego",
+            isFeminine = false,
+            avatarColor = IndigoAccent,
+            avatarDrawableRes = R.drawable.voice_avatar_diego,
+        ),
+        VoicePersona(
+            "Camila",
+            isFeminine = true,
+            avatarColor = ErrorRed,
+            avatarDrawableRes = R.drawable.voice_avatar_camila,
+        ),
+        VoicePersona(
+            "Sebastián",
+            isFeminine = false,
+            avatarColor = ColorOcr,
+            avatarDrawableRes = R.drawable.voice_avatar_sebastian,
+        ),
+        VoicePersona(
+            "Isabella",
+            isFeminine = true,
+            avatarColor = PremiumGold,
+            avatarDrawableRes = R.drawable.voice_avatar_isabella,
+        ),
+        VoicePersona(
+            "Emilio",
+            isFeminine = false,
+            avatarColor = SmartBlue,
+            avatarDrawableRes = R.drawable.voice_avatar_emilio,
+        ),
+        VoicePersona(
+            "Lucía",
+            isFeminine = true,
+            avatarColor = ColorZip,
+            avatarDrawableRes = R.drawable.voice_avatar_lucia,
+        ),
+        VoicePersona(
+            "Nicolás",
+            isFeminine = false,
+            avatarColor = SlateGray,
+            avatarDrawableRes = R.drawable.voice_avatar_nicolas,
+        ),
     )
-)
 
 // Determinístico por String.hashCode() (algoritmo estable, documentado
 // por la especificación de Java) -- la misma voz técnica del dispositivo

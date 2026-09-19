@@ -12,6 +12,8 @@ import javax.inject.Inject
  * que el resto de pantallas de contenido (backlog UX 2026-08-30, HU-UX-07).
  */
 @HiltViewModel
-class SecurityMenuViewModel @Inject constructor(
-    val adManager: AdManager
-) : ViewModel()
+class SecurityMenuViewModel
+    @Inject
+    constructor(
+        val adManager: AdManager,
+    ) : ViewModel()

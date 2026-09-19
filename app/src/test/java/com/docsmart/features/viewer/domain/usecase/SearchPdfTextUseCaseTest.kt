@@ -34,7 +34,6 @@ import java.nio.file.Files
  * (verificar con `PdfTextExtractor` que el reemplazo es real).
  */
 class SearchPdfTextUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var context: Context
     private lateinit var useCase: SearchPdfTextUseCase
@@ -53,67 +52,74 @@ class SearchPdfTextUseCaseTest {
     }
 
     @Test
-    fun `busca solo en las paginas que contienen el texto`() = runTest {
-        stubResolver(createTestPdf(listOf("Contrato de arrendamiento", "Cláusula de pago", "Firma y fecha")))
+    fun `busca solo en las paginas que contienen el texto`() =
+        runTest {
+            stubResolver(createTestPdf(listOf("Contrato de arrendamiento", "Cláusula de pago", "Firma y fecha")))
 
-        val matches = useCase(contentUri(), "pago")
+            val matches = useCase(contentUri(), "pago")
 
-        assertEquals(listOf(2), matches.map { it.pageNumber })
-    }
-
-    @Test
-    fun `cada coincidencia trae una posicion real, no solo el numero de pagina`() = runTest {
-        stubResolver(createTestPdf(listOf("Cláusula de pago mensual")))
-
-        val matches = useCase(contentUri(), "pago")
-
-        val rect = matches.single().rects.single()
-        assertTrue(rect.widthPts > 0f, "el ancho real de la coincidencia debe ser mayor a 0")
-        assertTrue(rect.heightPts > 0f, "el alto real de la coincidencia debe ser mayor a 0")
-    }
+            assertEquals(listOf(2), matches.map { it.pageNumber })
+        }
 
     @Test
-    fun `la busqueda no distingue mayusculas de minusculas`() = runTest {
-        stubResolver(createTestPdf(listOf("Documento Confidencial")))
+    fun `cada coincidencia trae una posicion real, no solo el numero de pagina`() =
+        runTest {
+            stubResolver(createTestPdf(listOf("Cláusula de pago mensual")))
 
-        val matches = useCase(contentUri(), "confidencial")
+            val matches = useCase(contentUri(), "pago")
 
-        assertEquals(listOf(1), matches.map { it.pageNumber })
-    }
-
-    @Test
-    fun `devuelve todas las paginas cuando el texto aparece en varias`() = runTest {
-        stubResolver(createTestPdf(listOf("factura número 1", "resumen", "factura número 2")))
-
-        val matches = useCase(contentUri(), "factura")
-
-        assertEquals(listOf(1, 3), matches.map { it.pageNumber })
-    }
+            val rect = matches.single().rects.single()
+            assertTrue(rect.widthPts > 0f, "el ancho real de la coincidencia debe ser mayor a 0")
+            assertTrue(rect.heightPts > 0f, "el alto real de la coincidencia debe ser mayor a 0")
+        }
 
     @Test
-    fun `varias coincidencias en la misma pagina se devuelven todas`() = runTest {
-        stubResolver(createTestPdf(listOf("gato perro gato pajaro gato")))
+    fun `la busqueda no distingue mayusculas de minusculas`() =
+        runTest {
+            stubResolver(createTestPdf(listOf("Documento Confidencial")))
 
-        val matches = useCase(contentUri(), "gato")
+            val matches = useCase(contentUri(), "confidencial")
 
-        assertEquals(3, matches.single().rects.size)
-    }
-
-    @Test
-    fun `sin coincidencias devuelve lista vacia`() = runTest {
-        stubResolver(createTestPdf(listOf("texto sin relación")))
-
-        val matches = useCase(contentUri(), "inexistente")
-
-        assertTrue(matches.isEmpty())
-    }
+            assertEquals(listOf(1), matches.map { it.pageNumber })
+        }
 
     @Test
-    fun `query en blanco devuelve lista vacia sin tocar el archivo`() = runTest {
-        val matches = useCase(mockk<Uri>(), "   ")
+    fun `devuelve todas las paginas cuando el texto aparece en varias`() =
+        runTest {
+            stubResolver(createTestPdf(listOf("factura número 1", "resumen", "factura número 2")))
 
-        assertTrue(matches.isEmpty())
-    }
+            val matches = useCase(contentUri(), "factura")
+
+            assertEquals(listOf(1, 3), matches.map { it.pageNumber })
+        }
+
+    @Test
+    fun `varias coincidencias en la misma pagina se devuelven todas`() =
+        runTest {
+            stubResolver(createTestPdf(listOf("gato perro gato pajaro gato")))
+
+            val matches = useCase(contentUri(), "gato")
+
+            assertEquals(3, matches.single().rects.size)
+        }
+
+    @Test
+    fun `sin coincidencias devuelve lista vacia`() =
+        runTest {
+            stubResolver(createTestPdf(listOf("texto sin relación")))
+
+            val matches = useCase(contentUri(), "inexistente")
+
+            assertTrue(matches.isEmpty())
+        }
+
+    @Test
+    fun `query en blanco devuelve lista vacia sin tocar el archivo`() =
+        runTest {
+            val matches = useCase(mockk<Uri>(), "   ")
+
+            assertTrue(matches.isEmpty())
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

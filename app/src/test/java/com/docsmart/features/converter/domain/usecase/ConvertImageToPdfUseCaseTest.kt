@@ -32,7 +32,6 @@ import java.nio.file.Files
  * invoke() pero NO se había propagado a este método anidado.
  */
 class ConvertImageToPdfUseCaseTest {
-
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: ConvertImageToPdfUseCase
@@ -55,28 +54,30 @@ class ConvertImageToPdfUseCaseTest {
     }
 
     @Test
-    fun `lista de imagenes vacia devuelve Error sin tocar el sistema de archivos`() = runTest {
-        val result = useCase(emptyList(), "salida")
+    fun `lista de imagenes vacia devuelve Error sin tocar el sistema de archivos`() =
+        runTest {
+            val result = useCase(emptyList(), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-        assertTrue(File(filesDir, "converted").listFiles().isNullOrEmpty())
-    }
+            assertTrue(result is ConversionResult.Error)
+            assertTrue(File(filesDir, "converted").listFiles().isNullOrEmpty())
+        }
 
     @Test
-    fun `si todas las imagenes fallan al abrir su stream, devuelve Error sin dejar un PDF huerfano`() = runTest {
-        val uri = mockk<Uri>()
-        val resolver = mockk<ContentResolver>()
-        // openInputStream() devuelve null -- loadBitmapFromUri() corta antes
-        // de siquiera llamar a BitmapFactory (?.use{} con receptor null).
-        every { resolver.openInputStream(uri) } returns null
-        every { context.contentResolver } returns resolver
+    fun `si todas las imagenes fallan al abrir su stream, devuelve Error sin dejar un PDF huerfano`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            // openInputStream() devuelve null -- loadBitmapFromUri() corta antes
+            // de siquiera llamar a BitmapFactory (?.use{} con receptor null).
+            every { resolver.openInputStream(uri) } returns null
+            every { context.contentResolver } returns resolver
 
-        val result = useCase(listOf(uri), "salida")
+            val result = useCase(listOf(uri), "salida")
 
-        assertTrue(result is ConversionResult.Error)
-        val orphanedPdfs = File(filesDir, "converted").listFiles { f -> f.extension == "pdf" }
-        assertTrue(orphanedPdfs.isNullOrEmpty(), "no debería quedar un .pdf huérfano: ${orphanedPdfs?.map { it.name }}")
-    }
+            assertTrue(result is ConversionResult.Error)
+            val orphanedPdfs = File(filesDir, "converted").listFiles { f -> f.extension == "pdf" }
+            assertTrue(orphanedPdfs.isNullOrEmpty(), "no debería quedar un .pdf huérfano: ${orphanedPdfs?.map { it.name }}")
+        }
 
     // Bug real corregido en esta ronda: ver el comentario de la clase.
     // Se prueba loadBitmapFromUri() directamente (expuesta como `internal`

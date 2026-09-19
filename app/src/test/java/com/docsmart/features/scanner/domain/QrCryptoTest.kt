@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 
 /** Cubre RF-SEC-13/14 (HU-SEC-09/10, docs/requirements/security.md). */
 class QrCryptoTest {
-
     @Test
     fun `encrypt y decrypt con la misma contrasena recuperan el contenido original`() {
         val original = "https://ejemplo.com/documento-secreto"

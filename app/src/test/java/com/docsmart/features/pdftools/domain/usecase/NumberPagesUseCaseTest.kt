@@ -29,17 +29,20 @@ import java.nio.file.Files
  * PptToPdfUseCaseTest.
  */
 class NumberPagesUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: NumberPagesUseCase
 
-    private val messages = NumberPagesMessages(
-        readError = "readError", noPages = "noPages", generateError = "generateError",
-        success = "success %1\$d", genericError = "genericError %1\$s",
-        pageOfTotalTemplate = "Página %1\$d de %2\$d"
-    )
+    private val messages =
+        NumberPagesMessages(
+            readError = "readError",
+            noPages = "noPages",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+            pageOfTotalTemplate = "Página %1\$d de %2\$d",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -58,55 +61,71 @@ class NumberPagesUseCaseTest {
     }
 
     @Test
-    fun `formato PAGE_OF_TOTAL escribe Pagina X de N en cada pagina`() = runTest {
-        stubResolver(createTestPdf(pages = 3))
+    fun `formato PAGE_OF_TOTAL escribe Pagina X de N en cada pagina`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 3))
 
-        val result = useCase(
-            mockk<Uri>(), format = PageNumberFormat.PAGE_OF_TOTAL, messages = messages
-        )
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    format = PageNumberFormat.PAGE_OF_TOTAL,
+                    messages = messages,
+                )
 
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(listOf("Página 1 de 3", "Página 2 de 3", "Página 3 de 3"), texts)
-    }
-
-    @Test
-    fun `formato NUMBER_ONLY escribe solo el numero de pagina`() = runTest {
-        stubResolver(createTestPdf(pages = 2))
-
-        val result = useCase(
-            mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages
-        )
-
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(listOf("1", "2"), texts)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(listOf("Página 1 de 3", "Página 2 de 3", "Página 3 de 3"), texts)
+        }
 
     @Test
-    fun `formato NUMBER_OF_TOTAL escribe numero y total`() = runTest {
-        stubResolver(createTestPdf(pages = 2))
+    fun `formato NUMBER_ONLY escribe solo el numero de pagina`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 2))
 
-        val result = useCase(
-            mockk<Uri>(), format = PageNumberFormat.NUMBER_OF_TOTAL, messages = messages
-        )
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    format = PageNumberFormat.NUMBER_ONLY,
+                    messages = messages,
+                )
 
-        assertTrue(result is PdfToolResult.Success)
-        val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(listOf("1 / 2", "2 / 2"), texts)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(listOf("1", "2"), texts)
+        }
 
     @Test
-    fun `numerar conserva el total de paginas del original`() = runTest {
-        stubResolver(createTestPdf(pages = 5))
+    fun `formato NUMBER_OF_TOTAL escribe numero y total`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 2))
 
-        val result = useCase(
-            mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages
-        )
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    format = PageNumberFormat.NUMBER_OF_TOTAL,
+                    messages = messages,
+                )
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val texts = pageTextsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(listOf("1 / 2", "2 / 2"), texts)
+        }
+
+    @Test
+    fun `numerar conserva el total de paginas del original`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 5))
+
+            val result =
+                useCase(
+                    mockk<Uri>(),
+                    format = PageNumberFormat.NUMBER_ONLY,
+                    messages = messages,
+                )
+
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals(5, pageCountOf((result as PdfToolResult.Success).outputFile))
+        }
 
     // Revisión adversarial de correctitud (ronda 13): sin este test, un PDF
     // con /Rotate 90 o /Rotate 270 nunca se ejercitaba -- el bug real
@@ -118,39 +137,42 @@ class NumberPagesUseCaseTest {
     // para 270° cerca del borde IZQUIERDO (x < width/2) -- exactamente lo
     // que quedaba invertido en el bug real.
     @Test
-    fun `numerar una pagina rotada 90 grados ancla el numero cerca del borde derecho`() = runTest {
-        stubResolver(createTestPdf(pages = 1, rotation = 90))
+    fun `numerar una pagina rotada 90 grados ancla el numero cerca del borde derecho`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 1, rotation = 90))
 
-        val result = useCase(mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages)
+            val result = useCase(mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val file = (result as PdfToolResult.Success).outputFile
-        val x = firstGlyphX(file, pageNumber = 1)
-        val width = pageWidthOf(file)
-        assertTrue(x > width / 2f, "esperaba x=$x cerca del borde derecho (width=$width)")
-    }
-
-    @Test
-    fun `numerar una pagina rotada 270 grados ancla el numero cerca del borde izquierdo`() = runTest {
-        stubResolver(createTestPdf(pages = 1, rotation = 270))
-
-        val result = useCase(mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        val file = (result as PdfToolResult.Success).outputFile
-        val x = firstGlyphX(file, pageNumber = 1)
-        val width = pageWidthOf(file)
-        assertTrue(x < width / 2f, "esperaba x=$x cerca del borde izquierdo (width=$width)")
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val file = (result as PdfToolResult.Success).outputFile
+            val x = firstGlyphX(file, pageNumber = 1)
+            val width = pageWidthOf(file)
+            assertTrue(x > width / 2f, "esperaba x=$x cerca del borde derecho (width=$width)")
+        }
 
     @Test
-    fun `numerar un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `numerar una pagina rotada 270 grados ancla el numero cerca del borde izquierdo`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 1, rotation = 270))
 
-        val result = useCase(mockk<Uri>(), messages = messages)
+            val result = useCase(mockk<Uri>(), format = PageNumberFormat.NUMBER_ONLY, messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val file = (result as PdfToolResult.Success).outputFile
+            val x = firstGlyphX(file, pageNumber = 1)
+            val width = pageWidthOf(file)
+            assertTrue(x < width / 2f, "esperaba x=$x cerca del borde izquierdo (width=$width)")
+        }
+
+    @Test
+    fun `numerar un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(), messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -160,7 +182,10 @@ class NumberPagesUseCaseTest {
         every { context.contentResolver } returns resolver
     }
 
-    private fun createTestPdf(pages: Int, rotation: Int = 0): ByteArray {
+    private fun createTestPdf(
+        pages: Int,
+        rotation: Int = 0,
+    ): ByteArray {
         val out = ByteArrayOutputStream()
         val pdfDoc = PdfDocument(PdfWriter(out))
         repeat(pages) { pdfDoc.addNewPage().setRotation(rotation) }
@@ -181,15 +206,19 @@ class NumberPagesUseCaseTest {
     // de texto (`a b c d e f Tm`) en el content stream ya descomprimido,
     // en vez de un listener de eventos de iText (API más frágil, dio
     // NullPointerException en la primera versión de este test).
-    private fun firstGlyphX(file: File, pageNumber: Int): Float {
+    private fun firstGlyphX(
+        file: File,
+        pageNumber: Int,
+    ): Float {
         val reader = PdfReader(file)
         val pdf = PdfDocument(reader)
         val content = String(pdf.getPage(pageNumber).contentBytes, Charsets.ISO_8859_1)
         pdf.close()
         val number = """[-+]?[0-9]*\.?[0-9]+"""
         val tmPattern = Regex("($number)\\s+($number)\\s+($number)\\s+($number)\\s+($number)\\s+($number)\\s+Tm")
-        val match = tmPattern.find(content)
-            ?: error("No se encontró el operador Tm en el content stream: $content")
+        val match =
+            tmPattern.find(content)
+                ?: error("No se encontró el operador Tm en el content stream: $content")
         return match.groupValues[5].toFloat()
     }
 
@@ -204,9 +233,10 @@ class NumberPagesUseCaseTest {
     private fun pageTextsOf(file: File): List<String> {
         val reader = PdfReader(file)
         val pdf = PdfDocument(reader)
-        val texts = (1..pdf.numberOfPages).map {
-            PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
-        }
+        val texts =
+            (1..pdf.numberOfPages).map {
+                PdfTextExtractor.getTextFromPage(pdf.getPage(it)).trim()
+            }
         pdf.close()
         return texts
     }

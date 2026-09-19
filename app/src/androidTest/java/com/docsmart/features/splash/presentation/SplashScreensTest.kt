@@ -26,7 +26,6 @@ import org.junit.Test
  * depender de que la animación realmente corra.
  */
 class SplashScreensTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 

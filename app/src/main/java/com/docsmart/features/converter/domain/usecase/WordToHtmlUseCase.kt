@@ -16,120 +16,135 @@ import java.util.Locale
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
-class WordToHtmlUseCase @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
-    suspend operator fun invoke(
-        wordUri : Uri,
-        fileName: String? = null
-    ): ConversionResult = withContext(Dispatchers.IO) {
-        try {
-            // Hallazgo real de la auditoría general 2026-09-17/18 (décima
-            // ronda, Alta -- C1): ver el mismo hallazgo en
-            // WordToTextUseCase.kt/ExcelToHtmlUseCase.kt.
-            if (isPasswordProtectedOfficeUri(context, wordUri)) {
-                return@withContext ConversionResult.Error(
-                    context.getString(R.string.converter_error_password_protected)
-                )
+class WordToHtmlUseCase
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        suspend operator fun invoke(
+            wordUri: Uri,
+            fileName: String? = null,
+        ): ConversionResult =
+            withContext(Dispatchers.IO) {
+                try {
+                    // Hallazgo real de la auditoría general 2026-09-17/18 (décima
+                    // ronda, Alta -- C1): ver el mismo hallazgo en
+                    // WordToTextUseCase.kt/ExcelToHtmlUseCase.kt.
+                    if (isPasswordProtectedOfficeUri(context, wordUri)) {
+                        return@withContext ConversionResult.Error(
+                            context.getString(R.string.converter_error_password_protected),
+                        )
+                    }
+
+                    val paragraphs =
+                        extractParagraphs(wordUri)
+                            ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
+
+                    if (paragraphs.isEmpty()) {
+                        return@withContext ConversionResult.Error(
+                            context.getString(R.string.converter_error_empty_word_document),
+                        )
+                    }
+
+                    val outputDir = File(context.filesDir, "converted").apply { mkdirs() }
+                    val baseName = fileName ?: generateTimestamp()
+                    val outputFile = File(outputDir, "$baseName.html")
+                    outputFile.writeText(buildHtml(paragraphs))
+
+                    ConversionResult.Success(
+                        outputFile = outputFile,
+                        pageCount = 1,
+                        fileSizeKb = (outputFile.length() / 1024).toInt(),
+                    )
+                } catch (e: CancellationException) {
+                    // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
+                    // en ConvertImageToPdfUseCase.kt.
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "WordToHtmlUseCase: error")
+                    ConversionResult.Error(
+                        String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
+                    )
+                } catch (e: OutOfMemoryError) {
+                    // Hallazgo real de la auditoría general 2026-09-17 (quinta
+                    // pasada): OutOfMemoryError no hereda de Exception, así que el
+                    // catch de arriba nunca la atrapaba con un .docx/.doc grande.
+                    Timber.e(e, "WordToHtmlUseCase: sin memoria convirtiendo el documento")
+                    ConversionResult.Error(
+                        String.format(
+                            context.getString(R.string.converter_error_generic_format),
+                            context.getString(R.string.converter_error_unknown),
+                        ),
+                    )
+                }
             }
 
-            val paragraphs = extractParagraphs(wordUri)
-                ?: return@withContext ConversionResult.Error(context.getString(R.string.converter_error_read_word))
-
-            if (paragraphs.isEmpty())
-                return@withContext ConversionResult.Error(
-                    context.getString(R.string.converter_error_empty_word_document)
-                )
-
-            val outputDir  = File(context.filesDir, "converted").apply { mkdirs() }
-            val baseName   = fileName ?: generateTimestamp()
-            val outputFile = File(outputDir, "$baseName.html")
-            outputFile.writeText(buildHtml(paragraphs))
-
-            ConversionResult.Success(
-                outputFile = outputFile,
-                pageCount  = 1,
-                fileSizeKb = (outputFile.length() / 1024).toInt()
-            )
-        } catch (e: CancellationException) {
-            // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
-            // en ConvertImageToPdfUseCase.kt.
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "WordToHtmlUseCase: error")
-            ConversionResult.Error(
-                String.format(context.getString(R.string.converter_error_generic_format), e.message ?: "")
-            )
-        } catch (e: OutOfMemoryError) {
-            // Hallazgo real de la auditoría general 2026-09-17 (quinta
-            // pasada): OutOfMemoryError no hereda de Exception, así que el
-            // catch de arriba nunca la atrapaba con un .docx/.doc grande.
-            Timber.e(e, "WordToHtmlUseCase: sin memoria convirtiendo el documento")
-            ConversionResult.Error(
-                String.format(
-                    context.getString(R.string.converter_error_generic_format),
-                    context.getString(R.string.converter_error_unknown)
-                )
-            )
-        }
-    }
-
-    /** Detecta OOXML (.docx) vs OLE2 (.doc legado, RF-CONV-07 — ver
-     *  `WordFormatDetection.kt`) y extrae cada párrafo con su texto y si
-     *  es encabezado. Para `.docx` lee `word/document.xml` a mano (no usa
-     *  POI); para `.doc` reutiliza `extractLegacyDocBlocks()`. */
-    private fun extractParagraphs(wordUri: Uri): List<Pair<String, Boolean>>? =
-        context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
-            val (format, input) = detectWordFormat(rawInput)
-            if (format == WordFileFormat.OLE2) {
-                extractLegacyDocBlocks(input)
-            } else {
-                extractDocxParagraphs(input)
+        /** Detecta OOXML (.docx) vs OLE2 (.doc legado, RF-CONV-07 — ver
+         *  `WordFormatDetection.kt`) y extrae cada párrafo con su texto y si
+         *  es encabezado. Para `.docx` lee `word/document.xml` a mano (no usa
+         *  POI); para `.doc` reutiliza `extractLegacyDocBlocks()`. */
+        private fun extractParagraphs(wordUri: Uri): List<Pair<String, Boolean>>? =
+            context.contentResolver.openInputStream(wordUri)?.use { rawInput ->
+                val (format, input) = detectWordFormat(rawInput)
+                if (format == WordFileFormat.OLE2) {
+                    extractLegacyDocBlocks(input)
+                } else {
+                    extractDocxParagraphs(input)
+                }
             }
-        }
 
-    private fun extractDocxParagraphs(input: java.io.InputStream): List<Pair<String, Boolean>> {
-        val paragraphs = mutableListOf<Pair<String, Boolean>>() // texto, esHeading
-        val zip   = ZipInputStream(input)
-        var entry = zip.nextEntry
-        while (entry != null) {
-            if (entry.name == "word/document.xml") {
-                paragraphs.addAll(parseDocumentXml(zip.readEntrySafely().toString(Charsets.UTF_8)))
-                break
+        private fun extractDocxParagraphs(input: java.io.InputStream): List<Pair<String, Boolean>> {
+            val paragraphs = mutableListOf<Pair<String, Boolean>>() // texto, esHeading
+            val zip = ZipInputStream(input)
+            var entry = zip.nextEntry
+            while (entry != null) {
+                if (entry.name == "word/document.xml") {
+                    paragraphs.addAll(parseDocumentXml(zip.readEntrySafely().toString(Charsets.UTF_8)))
+                    break
+                }
+                entry = zip.nextEntry
             }
-            entry = zip.nextEntry
+            return paragraphs
         }
-        return paragraphs
-    }
 
-    private fun parseDocumentXml(xml: String): List<Pair<String, Boolean>> {
-        val paraRegex = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
-        return paraRegex.findAll(xml).mapNotNull { match ->
-            val paraXml   = match.value
-            val isHeading = paraXml.contains(Regex(
-                "w:val=\"(Heading|heading|Title|title|H[123456])"
-            ))
-            val text = paraXml
-                .replace(Regex("<w:rPr>.*?</w:rPr>", RegexOption.DOT_MATCHES_ALL), "")
-                .replace(Regex("<w:pPr>.*?</w:pPr>", RegexOption.DOT_MATCHES_ALL), "")
-                .replace(Regex("<[^>]+>"), "")
-                .replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
-                .replace(Regex("\\s+"), " ").trim()
-            if (text.isNotBlank()) Pair(text, isHeading) else null
-        }.toList()
-    }
+        private fun parseDocumentXml(xml: String): List<Pair<String, Boolean>> {
+            val paraRegex = Regex("<w:p[ >](.*?)</w:p>", RegexOption.DOT_MATCHES_ALL)
+            return paraRegex
+                .findAll(xml)
+                .mapNotNull { match ->
+                    val paraXml = match.value
+                    val isHeading =
+                        paraXml.contains(
+                            Regex(
+                                "w:val=\"(Heading|heading|Title|title|H[123456])",
+                            ),
+                        )
+                    val text =
+                        paraXml
+                            .replace(Regex("<w:rPr>.*?</w:rPr>", RegexOption.DOT_MATCHES_ALL), "")
+                            .replace(Regex("<w:pPr>.*?</w:pPr>", RegexOption.DOT_MATCHES_ALL), "")
+                            .replace(Regex("<[^>]+>"), "")
+                            .replace("&amp;", "&")
+                            .replace("&lt;", "<")
+                            .replace("&gt;", ">")
+                            .replace(Regex("\\s+"), " ")
+                            .trim()
+                    if (text.isNotBlank()) Pair(text, isHeading) else null
+                }.toList()
+        }
 
-    // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada,
-    // #26, latente -- WORD_TO_HTML está oculto de la grilla hoy):
-    // `lang="es"` y el título quedaban hardcodeados en español pese al
-    // idioma configurado -- este es el CONTENIDO real del HTML que el
-    // usuario recibe, no un mensaje de error. `lang` usa el idioma activo
-    // de la app (no el del documento fuente, imposible de detectar acá).
-    private fun buildHtml(paragraphs: List<Pair<String, Boolean>>): String {
-        val htmlLang = Locale.getDefault().language
-        val title    = context.getString(R.string.converter_html_title_word)
-        val sb = StringBuilder()
-        sb.appendLine("""<!DOCTYPE html>
+        // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada,
+        // #26, latente -- WORD_TO_HTML está oculto de la grilla hoy):
+        // `lang="es"` y el título quedaban hardcodeados en español pese al
+        // idioma configurado -- este es el CONTENIDO real del HTML que el
+        // usuario recibe, no un mensaje de error. `lang` usa el idioma activo
+        // de la app (no el del documento fuente, imposible de detectar acá).
+        private fun buildHtml(paragraphs: List<Pair<String, Boolean>>): String {
+            val htmlLang = Locale.getDefault().language
+            val title = context.getString(R.string.converter_html_title_word)
+            val sb = StringBuilder()
+            sb.appendLine(
+                """<!DOCTYPE html>
 <html lang="$htmlLang"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>$title</title>
@@ -138,17 +153,20 @@ class WordToHtmlUseCase @Inject constructor(
   h1, h2 { color: #1D4ED8; border-bottom: 1px solid #dbeafe; padding-bottom: 6px; }
   p { margin: 8px 0; }
 </style>
-</head><body>""")
+</head><body>""",
+            )
 
-        paragraphs.forEach { (text, isHeading) ->
-            val escaped = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-            if (isHeading) sb.appendLine("<h2>$escaped</h2>")
-            else           sb.appendLine("<p>$escaped</p>")
+            paragraphs.forEach { (text, isHeading) ->
+                val escaped = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                if (isHeading) {
+                    sb.appendLine("<h2>$escaped</h2>")
+                } else {
+                    sb.appendLine("<p>$escaped</p>")
+                }
+            }
+            sb.appendLine("</body></html>")
+            return sb.toString()
         }
-        sb.appendLine("</body></html>")
-        return sb.toString()
-    }
 
-    private fun generateTimestamp() =
-        SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-}
+        private fun generateTimestamp() = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    }

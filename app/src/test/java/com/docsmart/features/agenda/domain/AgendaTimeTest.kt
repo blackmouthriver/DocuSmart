@@ -8,11 +8,17 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 
 class AgendaTimeTest {
-
     private val zone = ZoneOffset.UTC
 
-    private fun millisOf(date: LocalDate, time: LocalTime = LocalTime.NOON): Long =
-        LocalDateTime.of(date, time).atZone(zone).toInstant().toEpochMilli()
+    private fun millisOf(
+        date: LocalDate,
+        time: LocalTime = LocalTime.NOON,
+    ): Long =
+        LocalDateTime
+            .of(date, time)
+            .atZone(zone)
+            .toInstant()
+            .toEpochMilli()
 
     @Test
     fun `un evento de un dia anterior es vencido sin importar la hora`() {

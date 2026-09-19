@@ -2,14 +2,20 @@ package com.docsmart.core.navegation
 
 import android.net.Uri
 
-sealed class NavRoutes(val route: String) {
+sealed class NavRoutes(
+    val route: String,
+) {
     data object SplashMouthBlack : NavRoutes("splash_mouthblack")
-    data object SplashDocuSmart  : NavRoutes("splash_docusmart")
-    data object Home        : NavRoutes("home")
-    data object Library     : NavRoutes("library")
+
+    data object SplashDocuSmart : NavRoutes("splash_docusmart")
+
+    data object Home : NavRoutes("home")
+
+    data object Library : NavRoutes("library")
+
     data object Converter : NavRoutes(
         "converter?initialType={initialType}&initialFileUri={initialFileUri}" +
-            "&initialFileCategory={initialFileCategory}"
+            "&initialFileCategory={initialFileCategory}",
     ) {
         // Acceso rápido "Img→PDF" de Home: abre el Convertidor con un tipo ya
         // preseleccionado (nombre de ConversionType, p.ej. "IMAGE_TO_PDF") en
@@ -27,20 +33,22 @@ sealed class NavRoutes(val route: String) {
         // elija cuál de esos destinos quiere, sin tener que volver a
         // buscarlo.
         fun createRoute(
-            initialType       : String? = null,
-            initialFileUri    : String? = null,
-            initialFileCategory: String? = null
+            initialType: String? = null,
+            initialFileUri: String? = null,
+            initialFileCategory: String? = null,
         ): String {
-            val params = buildList {
-                initialType?.let { add("initialType=$it") }
-                initialFileUri?.let { add("initialFileUri=${Uri.encode(it)}") }
-                initialFileCategory?.let { add("initialFileCategory=${Uri.encode(it)}") }
-            }
+            val params =
+                buildList {
+                    initialType?.let { add("initialType=$it") }
+                    initialFileUri?.let { add("initialFileUri=${Uri.encode(it)}") }
+                    initialFileCategory?.let { add("initialFileCategory=${Uri.encode(it)}") }
+                }
             return if (params.isEmpty()) "converter" else "converter?${params.joinToString("&")}"
         }
     }
+
     data object PdfTools : NavRoutes(
-        "pdf_tools?initialTool={initialTool}&initialFileUri={initialFileUri}"
+        "pdf_tools?initialTool={initialTool}&initialFileUri={initialFileUri}",
     ) {
         // Acceso directo a OCR/Firmar desde un archivo ya elegido (backlog
         // UX 2026-08-30/09-10, HU-42): salta el menú de herramientas y el
@@ -48,20 +56,31 @@ sealed class NavRoutes(val route: String) {
         // ya cargados. `initialTool` es el nombre del enum `PdfTool`
         // (p.ej. "OCR"/"SIGN"). `initialTool = null` (la entrada genérica
         // desde el menú principal) sigue funcionando igual que antes.
-        fun createRoute(initialTool: String? = null, initialFileUri: String? = null): String {
-            val params = buildList {
-                initialTool?.let { add("initialTool=$it") }
-                initialFileUri?.let { add("initialFileUri=${Uri.encode(it)}") }
-            }
+        fun createRoute(
+            initialTool: String? = null,
+            initialFileUri: String? = null,
+        ): String {
+            val params =
+                buildList {
+                    initialTool?.let { add("initialTool=$it") }
+                    initialFileUri?.let { add("initialFileUri=${Uri.encode(it)}") }
+                }
             return if (params.isEmpty()) "pdf_tools" else "pdf_tools?${params.joinToString("&")}"
         }
     }
-    data object Settings    : NavRoutes("settings")
-    data object Premium     : NavRoutes("premium")
-    data object Scanner     : NavRoutes("scanner")
-    data object ScanResult  : NavRoutes("scan_result")
-    data object Security    : NavRoutes("security")
-    data object PdfPassword : NavRoutes("pdf_password")  // ← NUEVA
+
+    data object Settings : NavRoutes("settings")
+
+    data object Premium : NavRoutes("premium")
+
+    data object Scanner : NavRoutes("scanner")
+
+    data object ScanResult : NavRoutes("scan_result")
+
+    data object Security : NavRoutes("security")
+
+    data object PdfPassword : NavRoutes("pdf_password") // ← NUEVA
+
     data object Study : NavRoutes("study?tab={tab}&openNoteId={openNoteId}") {
         // Acceso rápido a una pestaña específica de Estudio (Lectura=0,
         // Notas=1, Pomodoro=2) desde Home -- antes solo había un punto de
@@ -69,16 +88,22 @@ sealed class NavRoutes(val route: String) {
         // `openNoteId` (backlog UX #52): abre directo la nota específica al
         // tocar su notificación de recordatorio de repaso, mismo mecanismo
         // que `Agenda.createRoute(openEventId)` (HU-65).
-        fun createRoute(tab: Int = 0, openNoteId: String? = null): String {
+        fun createRoute(
+            tab: Int = 0,
+            openNoteId: String? = null,
+        ): String {
             val base = "study?tab=$tab"
             return openNoteId?.let { "$base&openNoteId=${Uri.encode(it)}" } ?: base
         }
     }
-    data object QrReader    : NavRoutes("qr_reader")
-    data object QrHistory   : NavRoutes("qr_history") // HU-44
+
+    data object QrReader : NavRoutes("qr_reader")
+
+    data object QrHistory : NavRoutes("qr_history") // HU-44
+
     data object QrCreator : NavRoutes(
         "qr_creator?initialFileUri={initialFileUri}&initialFileType={initialFileType}" +
-            "&initialFileName={initialFileName}"
+            "&initialFileName={initialFileName}",
     ) {
         // Acceso rápido "Crear QR" desde el menú "⋮" de un archivo ya elegido
         // (backlog UX 2026-08-30, HU-UX-01): salta el picker de contenido y
@@ -86,19 +111,22 @@ sealed class NavRoutes(val route: String) {
         // o "document" -- decide qué chip preseleccionar (Imagen/Documento),
         // ya que ambos comparten el mismo mecanismo de adjuntar un archivo.
         fun createRoute(
-            initialFileUri : String? = null,
+            initialFileUri: String? = null,
             initialFileType: String? = null,
-            initialFileName: String? = null
+            initialFileName: String? = null,
         ): String {
-            val params = buildList {
-                initialFileUri?.let { add("initialFileUri=${Uri.encode(it)}") }
-                initialFileType?.let { add("initialFileType=$it") }
-                initialFileName?.let { add("initialFileName=${Uri.encode(it)}") }
-            }
+            val params =
+                buildList {
+                    initialFileUri?.let { add("initialFileUri=${Uri.encode(it)}") }
+                    initialFileType?.let { add("initialFileType=$it") }
+                    initialFileName?.let { add("initialFileName=${Uri.encode(it)}") }
+                }
             return if (params.isEmpty()) "qr_creator" else "qr_creator?${params.joinToString("&")}"
         }
     }
-    data object Onboarding  : NavRoutes("onboarding")
+
+    data object Onboarding : NavRoutes("onboarding")
+
     data object SecureFolder : NavRoutes("secure_folder?pendingFileUri={pendingFileUri}") {
         // Acceso directo "Mover a Carpeta Segura" desde un archivo ya
         // elegido (backlog UX 2026-08-30/09-10, HU-42): el archivo queda
@@ -110,18 +138,18 @@ sealed class NavRoutes(val route: String) {
         fun createRoute(pendingFileUri: String? = null): String =
             pendingFileUri?.let { "secure_folder?pendingFileUri=${Uri.encode(it)}" } ?: "secure_folder"
     }
-    data object Trash        : NavRoutes("trash") // RF-VIS-07
+
+    data object Trash : NavRoutes("trash") // RF-VIS-07
+
     data object Agenda : NavRoutes("agenda?openEventId={openEventId}") {
         // HU-65: `openEventId` permite abrir directo el editor de un evento
         // puntual al tocar su notificación de recordatorio (AC3), en vez de
         // caer siempre en la lista genérica -- mismo mecanismo que
         // `Study.createRoute(tab)`.
-        fun createRoute(openEventId: String? = null): String =
-            openEventId?.let { "agenda?openEventId=${Uri.encode(it)}" } ?: "agenda"
+        fun createRoute(openEventId: String? = null): String = openEventId?.let { "agenda?openEventId=${Uri.encode(it)}" } ?: "agenda"
     }
+
     data object Viewer : NavRoutes("viewer/{documentId}") {
-        fun createRoute(documentId: String): String {
-            return "viewer/${Uri.encode(documentId)}"
-        }
+        fun createRoute(documentId: String): String = "viewer/${Uri.encode(documentId)}"
     }
 }

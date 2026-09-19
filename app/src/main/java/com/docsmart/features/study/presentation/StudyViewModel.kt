@@ -13,6 +13,8 @@ import javax.inject.Inject
  * 2026-08-30, HU-UX-07).
  */
 @HiltViewModel
-class StudyViewModel @Inject constructor(
-    val adManager: AdManager
-) : ViewModel()
+class StudyViewModel
+    @Inject
+    constructor(
+        val adManager: AdManager,
+    ) : ViewModel()

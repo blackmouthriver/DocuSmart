@@ -43,7 +43,7 @@ fun ConversionSuccess(
     onConvertAnother: () -> Unit,
     onSaveToDownloads: () -> Unit,
     onOpenDocument: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val shareLabel = stringResource(R.string.converter_share)
@@ -51,35 +51,38 @@ fun ConversionSuccess(
 
     val shape = MaterialTheme.shapes.large
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .accentShadow(shape = shape)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .accentBorder(shape = shape)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // ── Ícono de éxito ────────────────────────
             Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.extraLarge
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(64.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.extraLarge,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.CheckCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(36.dp),
                 )
             }
 
@@ -87,47 +90,51 @@ fun ConversionSuccess(
             Text(
                 text = stringResource(R.string.converter_success_title),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             // ── Detalles del archivo ──────────────────
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                elevation = CardDefaults.cardElevation(0.dp)
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                elevation = CardDefaults.cardElevation(0.dp),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = fileIcon,
                             contentDescription = null,
                             tint = fileColor,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
                         )
                         Text(
                             text = result.outputFile.name,
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     Text(
-                        text = stringResource(
-                            R.string.converter_success_page_count_size,
-                            result.pageCount, result.fileSizeKb
-                        ),
+                        text =
+                            stringResource(
+                                R.string.converter_success_page_count_size,
+                                result.pageCount,
+                                result.fileSizeKb,
+                            ),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     // Hallazgo real de la revisión general 2026-09-16
                     // (#45): PDF→Imagen con varias páginas genera un
@@ -136,11 +143,13 @@ fun ConversionSuccess(
                     // de verlas/guardarlas/compartirlas desde esta pantalla.
                     if (result.extraFiles.isNotEmpty()) {
                         Text(
-                            text = stringResource(
-                                R.string.converter_success_extra_files, result.extraFiles.size
-                            ),
+                            text =
+                                stringResource(
+                                    R.string.converter_success_extra_files,
+                                    result.extraFiles.size,
+                                ),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -150,18 +159,18 @@ fun ConversionSuccess(
             if (savedToDownloads) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = stringResource(R.string.converter_saved_to_downloads),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -175,7 +184,7 @@ fun ConversionSuccess(
                 onConvertAnother = onConvertAnother,
                 onSaveToDownloads = onSaveToDownloads,
                 onOpenDocument = onOpenDocument,
-                context = context
+                context = context,
             )
         }
     }
@@ -193,11 +202,11 @@ private fun ConversionSuccessButtons(
     onConvertAnother: () -> Unit,
     onSaveToDownloads: () -> Unit,
     onOpenDocument: () -> Unit,
-    context: Context
+    context: Context,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         // Pedido explícito del usuario 2026-09-12 (feedback de
         // testers): antes de esto, tras convertir solo se podía
@@ -206,23 +215,25 @@ private fun ConversionSuccessButtons(
         // acción principal (botón lleno), Guardar pasa a contorno.
         Button(
             onClick = onOpenDocument,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
             shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ),
         ) {
             Icon(
                 imageVector = Icons.Rounded.Visibility,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = stringResource(R.string.converter_view_document),
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
 
@@ -230,20 +241,21 @@ private fun ConversionSuccessButtons(
             OutlinedButton(
                 onClick = onSaveToDownloads,
                 enabled = !isSaving,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = MaterialTheme.shapes.medium
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                shape = MaterialTheme.shapes.medium,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Download,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.converter_save),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
         }
@@ -254,39 +266,43 @@ private fun ConversionSuccessButtons(
                 // si había extraFiles (PDF→Imagen con varias páginas), el
                 // resto quedaba sin ninguna forma de compartirse.
                 val allFiles = listOf(result.outputFile) + result.extraFiles
-                if (allFiles.size > 1) shareFiles(context, allFiles, shareLabel)
-                else shareFile(context, result.outputFile, shareLabel)
+                if (allFiles.size > 1) {
+                    shareFiles(context, allFiles, shareLabel)
+                } else {
+                    shareFile(context, result.outputFile, shareLabel)
+                }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = MaterialTheme.shapes.medium
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+            shape = MaterialTheme.shapes.medium,
         ) {
             Icon(
                 imageVector = Icons.Rounded.Share,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = shareLabel,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
 
         TextButton(
             onClick = onConvertAnother,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(
                 imageVector = Icons.Rounded.Add,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.converter_convert_another),
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
     }
@@ -299,22 +315,27 @@ private fun ConversionSuccessButtons(
 // el MIME equivocados para el resto (Excel→CSV, Word→HTML, PPT→Texto...).
 internal fun formatIconForExtension(extension: String): Pair<ImageVector, Color> =
     when (extension.lowercase()) {
-        "pdf"                         -> Icons.Rounded.PictureAsPdf   to ColorPdf
+        "pdf" -> Icons.Rounded.PictureAsPdf to ColorPdf
         "jpg", "jpeg", "png",
-        "webp", "bmp"                 -> Icons.Rounded.Image          to ColorImage
-        "doc", "docx"                 -> Icons.Rounded.Description    to ColorWord
-        "xls", "xlsx", "csv"          -> Icons.Rounded.TableChart     to ColorExcel
-        "ppt", "pptx"                 -> Icons.Rounded.Slideshow      to ColorPowerPoint
-        "txt"                         -> Icons.Rounded.TextSnippet    to ColorText
-        "html"                        -> Icons.Rounded.Code           to ColorOcr
-        else                          -> Icons.Rounded.InsertDriveFile to ColorText
+        "webp", "bmp",
+        -> Icons.Rounded.Image to ColorImage
+        "doc", "docx" -> Icons.Rounded.Description to ColorWord
+        "xls", "xlsx", "csv" -> Icons.Rounded.TableChart to ColorExcel
+        "ppt", "pptx" -> Icons.Rounded.Slideshow to ColorPowerPoint
+        "txt" -> Icons.Rounded.TextSnippet to ColorText
+        "html" -> Icons.Rounded.Code to ColorOcr
+        else -> Icons.Rounded.InsertDriveFile to ColorText
     }
 
 // ── Fix Sentinel: manejo de errores en FileProvider ───
 // Antes: si el archivo no existía o FileProvider fallaba
 // la app crasheaba sin mensaje al usuario
 // Ahora: captura la excepción y loguea con Timber
-internal fun shareFile(context: Context, file: File, shareLabel: String) {
+internal fun shareFile(
+    context: Context,
+    file: File,
+    shareLabel: String,
+) {
     try {
         // ── Verificar que el archivo existe antes de compartir
         if (!file.exists()) {
@@ -322,26 +343,28 @@ internal fun shareFile(context: Context, file: File, shareLabel: String) {
             return
         }
 
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        val uri =
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file,
+            )
 
-        val mimeType = MimeTypeMap.getSingleton()
-            .getMimeTypeFromExtension(file.extension.lowercase()) ?: "*/*"
+        val mimeType =
+            MimeTypeMap.getSingleton()
+                .getMimeTypeFromExtension(file.extension.lowercase()) ?: "*/*"
 
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = mimeType
-            putExtra(Intent.EXTRA_STREAM, uri)
-            // ── Permisos explícitos para el receptor ──
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(Intent.EXTRA_STREAM, uri)
+                // ── Permisos explícitos para el receptor ──
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
 
         context.startActivity(Intent.createChooser(intent, shareLabel))
         Timber.d("shareFile: compartiendo ${file.name}")
-
     } catch (e: IllegalArgumentException) {
         // FileProvider no encontró el archivo en las rutas configuradas
         Timber.e(e, "shareFile: archivo fuera de rutas FileProvider")
@@ -354,7 +377,11 @@ internal fun shareFile(context: Context, file: File, shareLabel: String) {
 // shareFile() para compartir outputFile + extraFiles juntos (PDF→Imagen
 // con varias páginas) en un solo Intent, en vez de perder el resto de las
 // páginas generadas.
-internal fun shareFiles(context: Context, files: List<File>, shareLabel: String) {
+internal fun shareFiles(
+    context: Context,
+    files: List<File>,
+    shareLabel: String,
+) {
     try {
         val existing = files.filter { it.exists() }
         if (existing.isEmpty()) {
@@ -362,17 +389,20 @@ internal fun shareFiles(context: Context, files: List<File>, shareLabel: String)
             return
         }
 
-        val uris = existing.map { file ->
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        }
-        val mimeType = MimeTypeMap.getSingleton()
-            .getMimeTypeFromExtension(existing.first().extension.lowercase()) ?: "*/*"
+        val uris =
+            existing.map { file ->
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            }
+        val mimeType =
+            MimeTypeMap.getSingleton()
+                .getMimeTypeFromExtension(existing.first().extension.lowercase()) ?: "*/*"
 
-        val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-            type = mimeType
-            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = mimeType
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
 
         context.startActivity(Intent.createChooser(intent, shareLabel))
         Timber.d("shareFiles: compartiendo ${existing.size} archivos")

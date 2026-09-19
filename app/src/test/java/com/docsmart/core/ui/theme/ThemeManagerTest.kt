@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
  * fake respaldado por un mapa real ya usado en StudyNotesStorageTest.
  */
 class ThemeManagerTest {
-
     @Test
     fun `sin nada guardado, el tema es Sistema y el acento es Azul por defecto`() {
         val manager = ThemeManager(fakeContextWithPrefs(fakePrefsStore()))

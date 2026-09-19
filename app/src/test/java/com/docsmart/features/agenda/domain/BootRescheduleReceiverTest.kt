@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test
  * un reinicio del dispositivo (HU-65 / backlog UX #52).
  */
 class BootRescheduleReceiverTest {
-
     private lateinit var agendaEventDao: AgendaEventDao
     private lateinit var reminderScheduler: ReminderScheduler
     private lateinit var noteDao: NoteDao
@@ -35,45 +34,51 @@ class BootRescheduleReceiverTest {
         noteReminderScheduler = mockk(relaxed = true)
     }
 
-    private fun agendaEvent(id: String) = AgendaEventEntity(
-        id = id,
-        title = "Evento $id",
-        dateTimeMillis = System.currentTimeMillis() + 3_600_000,
-        reminderMinutesBefore = 10,
-        createdAt = System.currentTimeMillis()
-    )
+    private fun agendaEvent(id: String) =
+        AgendaEventEntity(
+            id = id,
+            title = "Evento $id",
+            dateTimeMillis = System.currentTimeMillis() + 3_600_000,
+            reminderMinutesBefore = 10,
+            createdAt = System.currentTimeMillis(),
+        )
 
-    private fun note(id: String, reminderAt: Long?) = NoteEntity(
+    private fun note(
+        id: String,
+        reminderAt: Long?,
+    ) = NoteEntity(
         id = id,
         title = "Nota $id",
         text = "contenido",
         createdAt = System.currentTimeMillis(),
-        reminderAt = reminderAt
+        reminderAt = reminderAt,
     )
 
     @Test
-    fun `reprograma cada evento de Agenda devuelto por el DAO`() = runTest {
-        val event1 = agendaEvent("evt-1")
-        val event2 = agendaEvent("evt-2")
-        coEvery { agendaEventDao.getAllWithReminder() } returns listOf(event1, event2)
-        coEvery { noteDao.getAllWithReminder() } returns emptyList()
+    fun `reprograma cada evento de Agenda devuelto por el DAO`() =
+        runTest {
+            val event1 = agendaEvent("evt-1")
+            val event2 = agendaEvent("evt-2")
+            coEvery { agendaEventDao.getAllWithReminder() } returns listOf(event1, event2)
+            coEvery { noteDao.getAllWithReminder() } returns emptyList()
 
-        rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+            rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
 
-        coVerify(exactly = 1) { reminderScheduler.schedule(event1) }
-        coVerify(exactly = 1) { reminderScheduler.schedule(event2) }
-    }
+            coVerify(exactly = 1) { reminderScheduler.schedule(event1) }
+            coVerify(exactly = 1) { reminderScheduler.schedule(event2) }
+        }
 
     @Test
-    fun `reprograma cada nota con recordatorio devuelta por el DAO`() = runTest {
-        coEvery { agendaEventDao.getAllWithReminder() } returns emptyList()
-        val reminderAt = System.currentTimeMillis() + 60_000
-        coEvery { noteDao.getAllWithReminder() } returns listOf(note("note-1", reminderAt))
+    fun `reprograma cada nota con recordatorio devuelta por el DAO`() =
+        runTest {
+            coEvery { agendaEventDao.getAllWithReminder() } returns emptyList()
+            val reminderAt = System.currentTimeMillis() + 60_000
+            coEvery { noteDao.getAllWithReminder() } returns listOf(note("note-1", reminderAt))
 
-        rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+            rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
 
-        coVerify(exactly = 1) { noteReminderScheduler.schedule("note-1", "Nota note-1", reminderAt) }
-    }
+            coVerify(exactly = 1) { noteReminderScheduler.schedule("note-1", "Nota note-1", reminderAt) }
+        }
 
     // Defensivo: el DAO ya filtra por `reminderAt IS NOT NULL`, pero si
     // alguna vez devolviera una fila con reminderAt nulo (ej. un cambio de
@@ -81,23 +86,25 @@ class BootRescheduleReceiverTest {
     // rescheduleAllReminders no debe llamar a noteReminderScheduler.schedule()
     // con un triggerAtMillis inventado.
     @Test
-    fun `no programa una nota sin reminderAt aunque el DAO la incluya por error`() = runTest {
-        coEvery { agendaEventDao.getAllWithReminder() } returns emptyList()
-        coEvery { noteDao.getAllWithReminder() } returns listOf(note("note-sin-recordatorio", reminderAt = null))
+    fun `no programa una nota sin reminderAt aunque el DAO la incluya por error`() =
+        runTest {
+            coEvery { agendaEventDao.getAllWithReminder() } returns emptyList()
+            coEvery { noteDao.getAllWithReminder() } returns listOf(note("note-sin-recordatorio", reminderAt = null))
 
-        rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+            rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
 
-        coVerify(exactly = 0) { noteReminderScheduler.schedule(any(), any(), any()) }
-    }
+            coVerify(exactly = 0) { noteReminderScheduler.schedule(any(), any(), any()) }
+        }
 
     @Test
-    fun `sin eventos ni notas pendientes no llama a ningun scheduler`() = runTest {
-        coEvery { agendaEventDao.getAllWithReminder() } returns emptyList()
-        coEvery { noteDao.getAllWithReminder() } returns emptyList()
+    fun `sin eventos ni notas pendientes no llama a ningun scheduler`() =
+        runTest {
+            coEvery { agendaEventDao.getAllWithReminder() } returns emptyList()
+            coEvery { noteDao.getAllWithReminder() } returns emptyList()
 
-        rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+            rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
 
-        coVerify(exactly = 0) { reminderScheduler.schedule(any()) }
-        coVerify(exactly = 0) { noteReminderScheduler.schedule(any(), any(), any()) }
-    }
+            coVerify(exactly = 0) { reminderScheduler.schedule(any()) }
+            coVerify(exactly = 0) { noteReminderScheduler.schedule(any(), any(), any()) }
+        }
 }

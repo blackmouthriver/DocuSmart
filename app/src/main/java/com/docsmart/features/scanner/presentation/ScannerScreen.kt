@@ -32,7 +32,7 @@ fun ScannerScreen(
     onBack: () -> Unit,
     onScanComplete: (List<Uri>) -> Unit,
     viewModel: ScannerViewModel = hiltViewModel(),
-    scanSessionViewModel: ScanSessionViewModel = hiltViewModel()
+    scanSessionViewModel: ScanSessionViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -52,38 +52,40 @@ fun ScannerScreen(
     // para mezclarse con la próxima sesión real. Se limpia acá, mismo
     // criterio que "Volver al inicio" en ScanResultScreen (no-op seguro
     // si no había nada que limpiar).
-    val scannerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val scanResult = GmsDocumentScanningResult
-                .fromActivityResultIntent(result.data)
+    val scannerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartIntentSenderForResult(),
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val scanResult =
+                    GmsDocumentScanningResult
+                        .fromActivityResultIntent(result.data)
 
-            // RF-SCAN-06/07: se dejó de pedir RESULT_FORMAT_PDF -- ML Kit
-            // solo hace el recorte/corrección de perspectiva y devuelve las
-            // páginas como imágenes; el PDF final lo arma el conversor
-            // propio de DocuSmart (ConvertImageToPdfUseCase, ya usado en
-            // Conversión), que es el mismo paso donde ahora se puede
-            // ajustar brillo/contraste/escala de cada página antes de
-            // generarlo. Antes, pedir también PDF hacía que esa rama
-            // siempre "ganara" y las páginas nunca se usaran de verdad.
-            val pages = scanResult?.pages?.mapNotNull { it.imageUri } ?: emptyList()
+                // RF-SCAN-06/07: se dejó de pedir RESULT_FORMAT_PDF -- ML Kit
+                // solo hace el recorte/corrección de perspectiva y devuelve las
+                // páginas como imágenes; el PDF final lo arma el conversor
+                // propio de DocuSmart (ConvertImageToPdfUseCase, ya usado en
+                // Conversión), que es el mismo paso donde ahora se puede
+                // ajustar brillo/contraste/escala de cada página antes de
+                // generarlo. Antes, pedir también PDF hacía que esa rama
+                // siempre "ganara" y las páginas nunca se usaran de verdad.
+                val pages = scanResult?.pages?.mapNotNull { it.imageUri } ?: emptyList()
 
-            Timber.d("Escáner: ${pages.size} páginas")
+                Timber.d("Escáner: ${pages.size} páginas")
 
-            if (pages.isNotEmpty()) {
-                viewModel.onScanComplete(pages, isPdf = false)
-                onScanComplete(pages)
+                if (pages.isNotEmpty()) {
+                    viewModel.onScanComplete(pages, isPdf = false)
+                    onScanComplete(pages)
+                } else {
+                    scanSessionViewModel.clearSession()
+                    onBack()
+                }
             } else {
+                Timber.d("Escáner: cancelado")
                 scanSessionViewModel.clearSession()
                 onBack()
             }
-        } else {
-            Timber.d("Escáner: cancelado")
-            scanSessionViewModel.clearSession()
-            onBack()
         }
-    }
 
     // H1 (auditoría, corrección real): `LaunchedEffect(Unit)` se vuelve a
     // ejecutar cada vez que se recompone esta pantalla desde cero, y
@@ -110,14 +112,14 @@ fun ScannerScreen(
             mode = uiState.selectedMode,
             onLaunched = { intentSender ->
                 scannerLauncher.launch(
-                    IntentSenderRequest.Builder(intentSender).build()
+                    IntentSenderRequest.Builder(intentSender).build(),
                 )
             },
             onError = { message ->
                 val error = String.format(scannerStartErrorTemplate, message)
                 Timber.e("Error escáner: $error")
                 viewModel.onError(error)
-            }
+            },
         )
     }
 
@@ -127,30 +129,32 @@ fun ScannerScreen(
     val bannerGradient = rememberAccentGradient()
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(brush = Brush.linearGradient(colors = bannerGradient)),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(brush = Brush.linearGradient(colors = bannerGradient)),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(
-                        color = Color.White.copy(alpha = 0.15f),
-                        shape = MaterialTheme.shapes.extraLarge
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(80.dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.15f),
+                            shape = MaterialTheme.shapes.extraLarge,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.DocumentScanner,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(40.dp),
                 )
             }
 
@@ -158,43 +162,45 @@ fun ScannerScreen(
                 text = stringResource(R.string.scanner_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
             )
 
             Text(
                 text = stringResource(R.string.scanner_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
 
             if (uiState.error != null) {
                 Card(
                     shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
                 ) {
                     Text(
                         text = uiState.error ?: "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.padding(12.dp),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
                 OutlinedButton(
                     onClick = onBack,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
-                    )
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.White,
+                        ),
                 ) {
                     Text(stringResource(R.string.general_back))
                 }
             } else {
                 CircularProgressIndicator(
                     color = Color.White,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
             }
         }

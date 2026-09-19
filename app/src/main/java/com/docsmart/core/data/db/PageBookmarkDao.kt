@@ -8,18 +8,23 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PageBookmarkDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(bookmark: PageBookmarkEntity)
 
     @Query("DELETE FROM page_bookmarks WHERE documentId = :documentId AND page = :page")
-    suspend fun delete(documentId: String, page: Int)
+    suspend fun delete(
+        documentId: String,
+        page: Int,
+    )
 
     @Query("DELETE FROM page_bookmarks WHERE documentId = :documentId")
     suspend fun deleteByDocument(documentId: String)
 
     @Query("UPDATE page_bookmarks SET documentId = :newDocumentId WHERE documentId = :oldDocumentId")
-    suspend fun updateDocumentId(oldDocumentId: String, newDocumentId: String)
+    suspend fun updateDocumentId(
+        oldDocumentId: String,
+        newDocumentId: String,
+    )
 
     // Flow: la lista de marcadores del Visor se actualiza sola al marcar/
     // desmarcar, mismo criterio que AnnotationDao.observeByDocument().

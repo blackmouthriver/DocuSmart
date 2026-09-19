@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -56,7 +55,6 @@ import org.junit.Test
  * real de la instalación de desarrollo.
  */
 class SettingsScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -64,10 +62,15 @@ class SettingsScreenTest {
     // cualquier nombre de SharedPreferences -- ThemeManager y LanguageManager
     // usan namespaces distintos ("docusmart_theme"/"docusmart_language"),
     // cada uno necesita su propio backing store aislado, no solo uno.
-    private inner class IsolatedPrefsContext(base: Context) : ContextWrapper(base) {
+    private inner class IsolatedPrefsContext(
+        base: Context,
+    ) : ContextWrapper(base) {
         private val prefsByName = mutableMapOf<String, SharedPreferences>()
-        override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences =
-            prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
+
+        override fun getSharedPreferences(
+            name: String?,
+            mode: Int,
+        ): SharedPreferences = prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
     }
 
     // Bug real corregido 2026-09-09: solo simulaba getString/putString --
@@ -78,7 +81,7 @@ class SettingsScreenTest {
     // restablecerConfiguracion_... tanto en el emulador de CI como en
     // Firebase Test Lab.
     private fun fakeSharedPreferences(): SharedPreferences {
-        val store  = mutableMapOf<String, Any?>()
+        val store = mutableMapOf<String, Any?>()
         val editor = mockk<SharedPreferences.Editor>()
         every { editor.putString(any(), any()) } answers {
             store[firstArg<String>()] = secondArg<String?>()
@@ -143,7 +146,7 @@ class SettingsScreenTest {
             soundEffectPlayer = soundEffectPlayer,
             downloadsAccessManager = downloadsAccessManager,
             trashRepository = trashRepository,
-            securityManager = securityManager
+            securityManager = securityManager,
         )
     }
 
@@ -165,7 +168,7 @@ class SettingsScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
         }
     }
@@ -235,7 +238,8 @@ class SettingsScreenTest {
         // identificar la lista -- el carrusel de colores de acento agregó un
         // segundo nodo con scroll (LazyRow anidado dentro de la LazyColumn),
         // por eso se usa el testTag propio de la lista principal.
-        composeRule.onNodeWithTag("settings_list")
+        composeRule
+            .onNodeWithTag("settings_list")
             .performScrollToNode(hasText("Restablecer configuración"))
 
         composeRule.onNodeWithText("Restablecer configuración").performClick()

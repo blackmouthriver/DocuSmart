@@ -15,9 +15,8 @@ private const val EPS = 0.01f
  * anotación "se mueve" cada vez que se recalcula su posición en pantalla.
  */
 class AnnotationCoordinatesTest {
-
     // Página de 600×800 puntos PDF, mostrada a 300px de ancho → escala 0.5.
-    private val displayScale  = 0.5f
+    private val displayScale = 0.5f
     private val pageHeightPts = 800f
 
     @Test
@@ -33,7 +32,7 @@ class AnnotationCoordinatesTest {
 
     @Test
     fun `screenDragToPdfRect da el mismo resultado sin importar el orden de los dos puntos`() {
-        val forward  = screenDragToPdfRect(100f, 150f, 300f, 250f, displayScale, pageHeightPts)
+        val forward = screenDragToPdfRect(100f, 150f, 300f, 250f, displayScale, pageHeightPts)
         val backward = screenDragToPdfRect(300f, 250f, 100f, 150f, displayScale, pageHeightPts)
 
         assertEquals(forward, backward)
@@ -75,18 +74,26 @@ class AnnotationCoordinatesTest {
 
     @Test
     fun `isValidHighlightSize - justo por debajo del umbral se rechaza`() {
-        val justBelow = PdfRectPts(
-            xPts = 0f, yPts = 0f, widthPts = MIN_HIGHLIGHT_SIZE_PTS - 0.01f, heightPts = MIN_HIGHLIGHT_SIZE_PTS
-        )
+        val justBelow =
+            PdfRectPts(
+                xPts = 0f,
+                yPts = 0f,
+                widthPts = MIN_HIGHLIGHT_SIZE_PTS - 0.01f,
+                heightPts = MIN_HIGHLIGHT_SIZE_PTS,
+            )
 
         assertFalse(isValidHighlightSize(justBelow))
     }
 
     @Test
     fun `isValidHighlightSize - justo en el umbral se acepta (inclusive)`() {
-        val atThreshold = PdfRectPts(
-            xPts = 0f, yPts = 0f, widthPts = MIN_HIGHLIGHT_SIZE_PTS, heightPts = MIN_HIGHLIGHT_SIZE_PTS
-        )
+        val atThreshold =
+            PdfRectPts(
+                xPts = 0f,
+                yPts = 0f,
+                widthPts = MIN_HIGHLIGHT_SIZE_PTS,
+                heightPts = MIN_HIGHLIGHT_SIZE_PTS,
+            )
 
         assertTrue(isValidHighlightSize(atThreshold))
     }
@@ -118,7 +125,7 @@ class AnnotationCoordinatesTest {
 
         assertEquals(10f, raw.x, EPS)
         assertEquals(10f, raw.y, EPS)
-        assertEquals(10f, raw.width, EPS)  // ancho crudo = alto visual
+        assertEquals(10f, raw.width, EPS) // ancho crudo = alto visual
         assertEquals(20f, raw.height, EPS) // alto crudo = ancho visual
     }
 
@@ -126,9 +133,13 @@ class AnnotationCoordinatesTest {
     fun `visualRectToRawPageRect con rotacion 180 refleja ambos ejes sin intercambiarlos`() {
         val visual = PdfRectPts(xPts = 10f, yPts = 20f, widthPts = 30f, heightPts = 40f)
 
-        val raw = visualRectToRawPageRect(
-            visual, rotationDegrees = 180, rawPageWidthPts = 200f, rawPageHeightPts = 300f
-        )
+        val raw =
+            visualRectToRawPageRect(
+                visual,
+                rotationDegrees = 180,
+                rawPageWidthPts = 200f,
+                rawPageHeightPts = 300f,
+            )
 
         assertEquals(160f, raw.x, EPS)
         assertEquals(240f, raw.y, EPS)
@@ -140,9 +151,13 @@ class AnnotationCoordinatesTest {
     fun `visualRectToRawPageRect con rotacion 270 intercambia ejes en sentido opuesto a 90`() {
         val visual = PdfRectPts(xPts = 10f, yPts = 20f, widthPts = 30f, heightPts = 40f)
 
-        val raw = visualRectToRawPageRect(
-            visual, rotationDegrees = 270, rawPageWidthPts = 200f, rawPageHeightPts = 300f
-        )
+        val raw =
+            visualRectToRawPageRect(
+                visual,
+                rotationDegrees = 270,
+                rawPageWidthPts = 200f,
+                rawPageHeightPts = 300f,
+            )
 
         assertEquals(20f, raw.x, EPS)
         assertEquals(260f, raw.y, EPS)
@@ -155,15 +170,27 @@ class AnnotationCoordinatesTest {
         val visual = PdfRectPts(xPts = 10f, yPts = 180f, widthPts = 20f, heightPts = 10f)
 
         // -270 y 450 son ambos equivalentes a 90 grados.
-        val fromNegative = visualRectToRawPageRect(
-            visual, rotationDegrees = -270, rawPageWidthPts = 200f, rawPageHeightPts = 300f
-        )
-        val fromOver360 = visualRectToRawPageRect(
-            visual, rotationDegrees = 450, rawPageWidthPts = 200f, rawPageHeightPts = 300f
-        )
-        val expected = visualRectToRawPageRect(
-            visual, rotationDegrees = 90, rawPageWidthPts = 200f, rawPageHeightPts = 300f
-        )
+        val fromNegative =
+            visualRectToRawPageRect(
+                visual,
+                rotationDegrees = -270,
+                rawPageWidthPts = 200f,
+                rawPageHeightPts = 300f,
+            )
+        val fromOver360 =
+            visualRectToRawPageRect(
+                visual,
+                rotationDegrees = 450,
+                rawPageWidthPts = 200f,
+                rawPageHeightPts = 300f,
+            )
+        val expected =
+            visualRectToRawPageRect(
+                visual,
+                rotationDegrees = 90,
+                rawPageWidthPts = 200f,
+                rawPageHeightPts = 300f,
+            )
 
         assertEquals(expected, fromNegative)
         assertEquals(expected, fromOver360)

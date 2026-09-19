@@ -27,13 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -97,22 +97,24 @@ private const val MIME_PDF = "application/pdf"
 private enum class ScanExportFormat(val label: String, val extension: String, val mimeType: String) {
     PDF("PDF", "pdf", MIME_PDF),
     JPG("JPG", "jpg", "image/jpeg"),
-    WEBP("WebP", "webp", "image/webp")
+    WEBP("WebP", "webp", "image/webp"),
 }
 
-private fun ScanExportFormat.toImageConversionType(): ConversionType? = when (this) {
-    ScanExportFormat.PDF  -> null
-    ScanExportFormat.JPG  -> ConversionType.IMAGE_TO_JPG
-    ScanExportFormat.WEBP -> ConversionType.IMAGE_TO_WEBP
-}
+private fun ScanExportFormat.toImageConversionType(): ConversionType? =
+    when (this) {
+        ScanExportFormat.PDF -> null
+        ScanExportFormat.JPG -> ConversionType.IMAGE_TO_JPG
+        ScanExportFormat.WEBP -> ConversionType.IMAGE_TO_WEBP
+    }
 
-private fun mimeTypeForExtension(extension: String): String = when (extension.lowercase()) {
-    "pdf"         -> MIME_PDF
-    "jpg", "jpeg" -> "image/jpeg"
-    "webp"        -> "image/webp"
-    "png"         -> "image/png"
-    else          -> "application/octet-stream"
-}
+private fun mimeTypeForExtension(extension: String): String =
+    when (extension.lowercase()) {
+        "pdf" -> MIME_PDF
+        "jpg", "jpeg" -> "image/jpeg"
+        "webp" -> "image/webp"
+        "png" -> "image/png"
+        else -> "application/octet-stream"
+    }
 
 // Backlog UX 2026-08-30/09-10 (HU-42): accesos directos a OCR/Firmar/
 // Carpeta Segura desde el menú "⋮" de la lista de sesión -- agrupados acá
@@ -122,7 +124,7 @@ private fun mimeTypeForExtension(extension: String): String = when (extension.lo
 data class ScanResultDocumentActions(
     val onMakeSearchable: (DocumentUiModel) -> Unit = {},
     val onSign: (DocumentUiModel) -> Unit = {},
-    val onMoveToSecureFolder: (DocumentUiModel) -> Unit = {}
+    val onMoveToSecureFolder: (DocumentUiModel) -> Unit = {},
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,7 +142,7 @@ fun ScanResultScreen(
     documentActions: ScanResultDocumentActions = ScanResultDocumentActions(),
     converterViewModel: ConverterViewModel = hiltViewModel(),
     editorViewModel: ScanImageEditorViewModel = hiltViewModel(),
-    scanSessionViewModel: ScanSessionViewModel = hiltViewModel()
+    scanSessionViewModel: ScanSessionViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -191,24 +193,25 @@ fun ScanResultScreen(
     var colorFilteredUris by remember(scannedUris) { mutableStateOf(scannedUris) }
 
     val defaultNameTemplate = stringResource(R.string.scan_result_default_name_prefix)
-    val shareChooserTitle   = stringResource(R.string.scan_result_share_format, selectedFormat.label)
+    val shareChooserTitle = stringResource(R.string.scan_result_share_format, selectedFormat.label)
 
     LaunchedEffect(editableUris, pageColorModes) {
-        colorFilteredUris = coroutineScope {
-            editableUris.mapIndexed { index, uri ->
-                val mode = pageColorModes.getOrElse(index) { ScanColorMode.COLOR }
-                async {
-                    if (mode == ScanColorMode.COLOR) {
-                        uri
-                    } else {
-                        val key = uri to mode
-                        colorModeCache[key]
-                            ?: editorViewModel.applyColorMode(uri, mode)?.also { colorModeCache[key] = it }
-                            ?: uri
+        colorFilteredUris =
+            coroutineScope {
+                editableUris.mapIndexed { index, uri ->
+                    val mode = pageColorModes.getOrElse(index) { ScanColorMode.COLOR }
+                    async {
+                        if (mode == ScanColorMode.COLOR) {
+                            uri
+                        } else {
+                            val key = uri to mode
+                            colorModeCache[key]
+                                ?: editorViewModel.applyColorMode(uri, mode)?.also { colorModeCache[key] = it }
+                                ?: uri
+                        }
                     }
-                }
-            }.awaitAll()
-        }
+                }.awaitAll()
+            }
     }
 
     // ── Inicializar según tipo de resultado ───────────
@@ -233,15 +236,16 @@ fun ScanResultScreen(
         activity = activity,
         onPremiumClick = onPremiumClick,
         viewModels = ScanResultViewModels(editorViewModel, converterViewModel, scanSessionViewModel),
-        callbacks = ScanResultEffectCallbacks(
-            onEditingIndexChange = { editingIndex = it },
-            onEditableUrisChange = { editableUris = it },
-            onColorModeChange = { index, mode ->
-                pageColorModes = pageColorModes.toMutableList().apply { set(index, mode) }
-            },
-            onSavedFileChange = { savedFile = it },
-            onSessionFinalized = { sessionFinalized = true }
-        )
+        callbacks =
+            ScanResultEffectCallbacks(
+                onEditingIndexChange = { editingIndex = it },
+                onEditableUrisChange = { editableUris = it },
+                onColorModeChange = { index, mode ->
+                    pageColorModes = pageColorModes.toMutableList().apply { set(index, mode) }
+                },
+                onSavedFileChange = { savedFile = it },
+                onSessionFinalized = { sessionFinalized = true },
+            ),
     )
 
     // Bug real reportado por el usuario 2026-08-30 (backlog UX §9): esta
@@ -274,124 +278,135 @@ fun ScanResultScreen(
 
     // "Agregar página" (backlog UX 2026-09-06) -- ver ScanAddPageSection.
     // HU-41: la página nueva hereda el modo de color "default" vigente.
-    val addPageLauncherState = rememberAddPageLauncher(activity) { uri ->
-        editableUris = editableUris + uri
-        pageColorModes = pageColorModes + defaultColorMode
-    }
+    val addPageLauncherState =
+        rememberAddPageLauncher(activity) { uri ->
+            editableUris = editableUris + uri
+            pageColorModes = pageColorModes + defaultColorMode
+        }
 
     ScanResultBody(
-        headerArgs = ScanResultHeaderArgs(
-            isPremium = isPremium,
-            adManager = converterViewModel.adManager,
-            scannedUris = scannedUris,
-            onBack = onBack
-        ),
-        previewArgs = ScanPreviewArgs(
-            isPdf = isPdf,
-            editableUris = editableUris,
-            pageColorModes = pageColorModes,
-            defaultColorMode = defaultColorMode,
-            onEditPage = { index -> editingIndex = index },
-            onDefaultColorModeSelected = { mode ->
-                defaultColorMode = mode
-                pageColorModes = List(pageColorModes.size) { mode }
-            },
-            sessionFinalized = sessionFinalized
-        ),
-        addPageArgs = buildScanAddPageArgs(
-            pageCount = editableUris.size,
-            isPremium = isPremium,
-            isRewardedReady = isRewardedReady,
-            launcherState = addPageLauncherState,
-            activity = activity,
-            adManager = converterViewModel.adManager,
-            onPremiumClick = onPremiumClick
-        ),
-        batchArgs = ScanBatchDisplayArgs(
-            hasBatchResult = hasBatchResult,
-            items = uiState.batchResults,
-            savedToDownloads = uiState.batchSavedToDownloads,
-            // Hallazgo real de la auditoría general 2026-09-17 (quinta
-            // pasada, S3): BatchConversionSuccess ya recibe este guard
-            // visual en el Convertidor (evita doble-toque real en
-            // "Guardar todas") pero acá nunca se pasaba, dejando el botón
-            // sin feedback de carga -- inconsistente con el mismo
-            // componente compartido.
-            isSaving = uiState.isSaving,
-            onConvertAnother = scanAgainAction,
-            onSaveAllToDownloads = {
-                if (scanSessionViewModel.requestScanSaveSlot()) {
-                    converterViewModel.saveAllToDownloads(context)
-                }
-            },
-            onDone = goHomeAction,
-            onOpenDocument = { file -> onOpenDocument(file.absolutePath) }
-        ),
-        sessionArgs = ScanSessionDisplayArgs(
-            sessionFinalized = sessionFinalized,
-            scannedFiles = scannedSessionFiles,
-            shareChooserTitle = shareChooserTitle,
-            context = context,
-            onScanAnother = scanAgainAction,
-            onDone = goHomeAction,
-            rowActions = ScanSessionRowActions(
-                onOpen = onOpenDocument,
-                onToggleFavorite = { id -> scanSessionViewModel.toggleFavorite(id) },
-                onRename = { id, newName -> scanSessionViewModel.renameDocument(id, newName) },
-                onDelete = { id -> scanSessionViewModel.deleteDocument(id) },
-                onConvert = onConvertDocument,
-                onCreateQr = onCreateQrFromDocument,
-                onMakeSearchable = documentActions.onMakeSearchable,
-                onSign = documentActions.onSign,
-                onMoveToSecureFolder = documentActions.onMoveToSecureFolder
-            )
-        ),
-        defaultFlowArgs = ScanDefaultFlowArgs(
-            hasAnyResult = hasAnyResult,
-            formatArgs = ScanFormatSectionArgs(
-                selectedFormat = selectedFormat,
-                onFormatSelected = { selectedFormat = it },
-                highResEnabled = highResEnabled,
-                onHighResToggle = { highResEnabled = it },
+        headerArgs =
+            ScanResultHeaderArgs(
                 isPremium = isPremium,
-                onPremiumClick = onPremiumClick
-            ),
-            fileName = fileName,
-            onFileNameChange = { fileName = it },
-            actionsState = ScanResultActionsState(
-                isPdf = isPdf,
+                adManager = converterViewModel.adManager,
                 scannedUris = scannedUris,
-                hasResult = hasSingleResult,
-                isConverting = uiState.isConverting,
-                fileName = fileName,
-                defaultNameTemplate = defaultNameTemplate,
-                shareChooserTitle = shareChooserTitle,
-                savedFile = savedFile,
-                savedToDownloads = savedToDownloads,
-                isPreparingShare = isPreparingShare,
-                format = selectedFormat
+                onBack = onBack,
             ),
-            callbacks = ScanResultActionsCallbacks(
-                onSavedToDownloadsChange = { savedToDownloads = it },
-                onPreparingShareChange = { isPreparingShare = it },
-                onGenerate = {
-                    converterViewModel.generateFromScan(
-                        context = context,
-                        imageType = selectedFormat.toImageConversionType(),
-                        highResolution = highResEnabled,
-                        fileName = fileName
-                    )
+        previewArgs =
+            ScanPreviewArgs(
+                isPdf = isPdf,
+                editableUris = editableUris,
+                pageColorModes = pageColorModes,
+                defaultColorMode = defaultColorMode,
+                onEditPage = { index -> editingIndex = index },
+                onDefaultColorModeSelected = { mode ->
+                    defaultColorMode = mode
+                    pageColorModes = List(pageColorModes.size) { mode }
                 },
-                onScanAgain = scanAgainAction,
+                sessionFinalized = sessionFinalized,
+            ),
+        addPageArgs =
+            buildScanAddPageArgs(
+                pageCount = editableUris.size,
+                isPremium = isPremium,
+                isRewardedReady = isRewardedReady,
+                launcherState = addPageLauncherState,
+                activity = activity,
+                adManager = converterViewModel.adManager,
+                onPremiumClick = onPremiumClick,
+            ),
+        batchArgs =
+            ScanBatchDisplayArgs(
+                hasBatchResult = hasBatchResult,
+                items = uiState.batchResults,
+                savedToDownloads = uiState.batchSavedToDownloads,
+                // Hallazgo real de la auditoría general 2026-09-17 (quinta
+                // pasada, S3): BatchConversionSuccess ya recibe este guard
+                // visual en el Convertidor (evita doble-toque real en
+                // "Guardar todas") pero acá nunca se pasaba, dejando el botón
+                // sin feedback de carga -- inconsistente con el mismo
+                // componente compartido.
+                isSaving = uiState.isSaving,
+                onConvertAnother = scanAgainAction,
+                onSaveAllToDownloads = {
+                    if (scanSessionViewModel.requestScanSaveSlot()) {
+                        converterViewModel.saveAllToDownloads(context)
+                    }
+                },
                 onDone = goHomeAction,
-                onFinalized = { file ->
-                    scanSessionViewModel.addFile(file, context)
-                    scanSessionViewModel.registerScanSaved()
-                    sessionFinalized = true
-                },
-                onRequestSaveSlot = { scanSessionViewModel.requestScanSaveSlot() }
-            )
-        )
+                onOpenDocument = { file -> onOpenDocument(file.absolutePath) },
+            ),
+        sessionArgs =
+            ScanSessionDisplayArgs(
+                sessionFinalized = sessionFinalized,
+                scannedFiles = scannedSessionFiles,
+                shareChooserTitle = shareChooserTitle,
+                context = context,
+                onScanAnother = scanAgainAction,
+                onDone = goHomeAction,
+                rowActions =
+                    ScanSessionRowActions(
+                        onOpen = onOpenDocument,
+                        onToggleFavorite = { id -> scanSessionViewModel.toggleFavorite(id) },
+                        onRename = { id, newName -> scanSessionViewModel.renameDocument(id, newName) },
+                        onDelete = { id -> scanSessionViewModel.deleteDocument(id) },
+                        onConvert = onConvertDocument,
+                        onCreateQr = onCreateQrFromDocument,
+                        onMakeSearchable = documentActions.onMakeSearchable,
+                        onSign = documentActions.onSign,
+                        onMoveToSecureFolder = documentActions.onMoveToSecureFolder,
+                    ),
+            ),
+        defaultFlowArgs =
+            ScanDefaultFlowArgs(
+                hasAnyResult = hasAnyResult,
+                formatArgs =
+                    ScanFormatSectionArgs(
+                        selectedFormat = selectedFormat,
+                        onFormatSelected = { selectedFormat = it },
+                        highResEnabled = highResEnabled,
+                        onHighResToggle = { highResEnabled = it },
+                        isPremium = isPremium,
+                        onPremiumClick = onPremiumClick,
+                    ),
+                fileName = fileName,
+                onFileNameChange = { fileName = it },
+                actionsState =
+                    ScanResultActionsState(
+                        isPdf = isPdf,
+                        scannedUris = scannedUris,
+                        hasResult = hasSingleResult,
+                        isConverting = uiState.isConverting,
+                        fileName = fileName,
+                        defaultNameTemplate = defaultNameTemplate,
+                        shareChooserTitle = shareChooserTitle,
+                        savedFile = savedFile,
+                        savedToDownloads = savedToDownloads,
+                        isPreparingShare = isPreparingShare,
+                        format = selectedFormat,
+                    ),
+                callbacks =
+                    ScanResultActionsCallbacks(
+                        onSavedToDownloadsChange = { savedToDownloads = it },
+                        onPreparingShareChange = { isPreparingShare = it },
+                        onGenerate = {
+                            converterViewModel.generateFromScan(
+                                context = context,
+                                imageType = selectedFormat.toImageConversionType(),
+                                highResolution = highResEnabled,
+                                fileName = fileName,
+                            )
+                        },
+                        onScanAgain = scanAgainAction,
+                        onDone = goHomeAction,
+                        onFinalized = { file ->
+                            scanSessionViewModel.addFile(file, context)
+                            scanSessionViewModel.registerScanSaved()
+                            sessionFinalized = true
+                        },
+                        onRequestSaveSlot = { scanSessionViewModel.requestScanSaveSlot() },
+                    ),
+            ),
     )
 }
 
@@ -406,7 +421,7 @@ private fun ScanResultBody(
     addPageArgs: ScanAddPageArgs,
     batchArgs: ScanBatchDisplayArgs,
     sessionArgs: ScanSessionDisplayArgs,
-    defaultFlowArgs: ScanDefaultFlowArgs
+    defaultFlowArgs: ScanDefaultFlowArgs,
 ) {
     Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
         LazyColumn(
@@ -415,7 +430,7 @@ private fun ScanResultBody(
             // horizontal que el resto de las pantallas. Seguimiento mismo
             // día: 12dp arriba (no 0) para que no quede pegado al borde.
             contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             scanResultContent(
                 headerArgs = headerArgs,
@@ -423,7 +438,7 @@ private fun ScanResultBody(
                 addPageArgs = addPageArgs,
                 batchArgs = batchArgs,
                 sessionArgs = sessionArgs,
-                defaultFlowArgs = defaultFlowArgs
+                defaultFlowArgs = defaultFlowArgs,
             )
         }
     }
@@ -434,7 +449,7 @@ private fun ScanResultBody(
 private data class ScanResultViewModels(
     val editorViewModel: ScanImageEditorViewModel,
     val converterViewModel: ConverterViewModel,
-    val scanSessionViewModel: ScanSessionViewModel
+    val scanSessionViewModel: ScanSessionViewModel,
 )
 
 // Callbacks para mutar el estado local de ScanResultScreen desde
@@ -446,7 +461,7 @@ private data class ScanResultEffectCallbacks(
     // selector dentro de ScanImageEditorDialog.
     val onColorModeChange: (index: Int, mode: ScanColorMode) -> Unit,
     val onSavedFileChange: (File?) -> Unit,
-    val onSessionFinalized: () -> Unit
+    val onSessionFinalized: () -> Unit,
 )
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- todos los
@@ -465,7 +480,7 @@ private fun ScanResultSideEffects(
     activity: Activity?,
     onPremiumClick: () -> Unit,
     viewModels: ScanResultViewModels,
-    callbacks: ScanResultEffectCallbacks
+    callbacks: ScanResultEffectCallbacks,
 ) {
     ScanPageEditDialog(
         editingIndex = editingIndex,
@@ -481,10 +496,10 @@ private fun ScanResultSideEffects(
             // no-op seguro en cualquier otro caso.
             viewModels.editorViewModel.deleteCachedFile(editableUris[index])
             callbacks.onEditableUrisChange(
-                editableUris.toMutableList().apply { set(index, result) }
+                editableUris.toMutableList().apply { set(index, result) },
             )
         },
-        onColorModeChanged = callbacks.onColorModeChange
+        onColorModeChanged = callbacks.onColorModeChange,
     )
 
     // Bug real encontrado 2026-09-14 (repaso general): las 3 rutas de
@@ -525,7 +540,7 @@ private fun ScanResultSideEffects(
         onFinalized = {
             viewModels.scanSessionViewModel.registerScanSaved()
             callbacks.onSessionFinalized()
-        }
+        },
     )
 
     // Bug real reportado por el usuario 2026-09-06: "Generar" no dejaba
@@ -540,7 +555,7 @@ private fun ScanResultSideEffects(
         isRewardedReady = isRewardedReady,
         onWatchAd = { activity?.let { viewModels.converterViewModel.watchAdForConversion(it) } },
         onDismiss = { viewModels.converterViewModel.dismissLimitDialog() },
-        onGetPremium = onPremiumClick
+        onGetPremium = onPremiumClick,
     )
 
     // Backlog UX (pedido explícito del usuario 2026-09-06): límite diario
@@ -550,7 +565,7 @@ private fun ScanResultSideEffects(
     ScanSaveLimitDialogHost(
         scanSessionViewModel = viewModels.scanSessionViewModel,
         activity = activity,
-        onPremiumClick = onPremiumClick
+        onPremiumClick = onPremiumClick,
     )
 }
 
@@ -565,7 +580,7 @@ private fun ScanPageEditDialog(
     editorViewModel: ScanImageEditorViewModel,
     onDismiss: () -> Unit,
     onApplied: (index: Int, result: Uri) -> Unit,
-    onColorModeChanged: (index: Int, mode: ScanColorMode) -> Unit
+    onColorModeChanged: (index: Int, mode: ScanColorMode) -> Unit,
 ) {
     val index = editingIndex ?: return
     ScanImageEditorDialog(
@@ -578,7 +593,7 @@ private fun ScanPageEditDialog(
                 uri = editableUris[index],
                 brightness = brightness,
                 contrast = contrast,
-                scalePercent = scalePercent
+                scalePercent = scalePercent,
             ) { result ->
                 if (result != null) {
                     onApplied(index, result)
@@ -587,7 +602,7 @@ private fun ScanPageEditDialog(
                 }
                 onDismiss()
             }
-        }
+        },
     )
 }
 
@@ -605,7 +620,7 @@ private fun ScanBatchSessionSync(
     batchSavedToDownloads: Boolean,
     batchResults: List<BatchConversionItem>,
     scanSessionViewModel: ScanSessionViewModel,
-    onFinalized: () -> Unit
+    onFinalized: () -> Unit,
 ) {
     val context = LocalContext.current
     LaunchedEffect(batchSavedToDownloads) {
@@ -628,7 +643,7 @@ private fun ScanDailyLimitDialog(
     isRewardedReady: Boolean,
     onWatchAd: () -> Unit,
     onDismiss: () -> Unit,
-    onGetPremium: () -> Unit
+    onGetPremium: () -> Unit,
 ) {
     if (!uiState.showLimitDialog) return
     DailyLimitDialog(
@@ -638,7 +653,7 @@ private fun ScanDailyLimitDialog(
         isRewardedReady = isRewardedReady,
         onWatchAd = onWatchAd,
         onDismiss = onDismiss,
-        onGetPremium = onGetPremium
+        onGetPremium = onGetPremium,
     )
 }
 
@@ -652,7 +667,7 @@ private fun ScanSaveLimitDialog(
     isRewardedReady: Boolean,
     onWatchAd: () -> Unit,
     onDismiss: () -> Unit,
-    onGetPremium: () -> Unit
+    onGetPremium: () -> Unit,
 ) {
     if (!state.showLimitDialog) return
     DailyLimitDialog(
@@ -662,7 +677,7 @@ private fun ScanSaveLimitDialog(
         isRewardedReady = isRewardedReady,
         onWatchAd = onWatchAd,
         onDismiss = onDismiss,
-        onGetPremium = onGetPremium
+        onGetPremium = onGetPremium,
     )
 }
 
@@ -672,7 +687,7 @@ private fun ScanSaveLimitDialog(
 private fun ScanSaveLimitDialogHost(
     scanSessionViewModel: ScanSessionViewModel,
     activity: Activity?,
-    onPremiumClick: () -> Unit
+    onPremiumClick: () -> Unit,
 ) {
     val state by scanSessionViewModel.saveLimitState.collectAsStateWithLifecycle()
     val isRewardedReady by scanSessionViewModel.adManager.isRewardedReady.collectAsStateWithLifecycle()
@@ -681,7 +696,7 @@ private fun ScanSaveLimitDialogHost(
         isRewardedReady = isRewardedReady,
         onWatchAd = { activity?.let { scanSessionViewModel.watchAdForScanSave(it) } },
         onDismiss = { scanSessionViewModel.dismissScanLimitDialog() },
-        onGetPremium = onPremiumClick
+        onGetPremium = onPremiumClick,
     )
 }
 
@@ -689,7 +704,7 @@ private data class ScanResultHeaderArgs(
     val isPremium: Boolean,
     val adManager: AdManager,
     val scannedUris: List<Uri>,
-    val onBack: () -> Unit
+    val onBack: () -> Unit,
 )
 
 private data class ScanPreviewArgs(
@@ -701,7 +716,7 @@ private data class ScanPreviewArgs(
     val defaultColorMode: ScanColorMode,
     val onEditPage: (Int) -> Unit,
     val onDefaultColorModeSelected: (ScanColorMode) -> Unit,
-    val sessionFinalized: Boolean
+    val sessionFinalized: Boolean,
 )
 
 // Backlog UX (pedido explícito del usuario 2026-09-06): "Agregar página"
@@ -717,7 +732,7 @@ private data class ScanAddPageArgs(
     val isAddingPage: Boolean,
     val onAddPageDirect: () -> Unit,
     val onWatchAdForPage: () -> Unit,
-    val onPremiumClick: () -> Unit
+    val onPremiumClick: () -> Unit,
 )
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- arma ScanAddPageArgs.
@@ -731,25 +746,26 @@ private fun buildScanAddPageArgs(
     launcherState: AddPageLauncherState,
     activity: Activity?,
     adManager: AdManager,
-    onPremiumClick: () -> Unit
-): ScanAddPageArgs = ScanAddPageArgs(
-    pageCount = pageCount,
-    pageLimit = SCAN_DEFAULT_PAGE_LIMIT,
-    isPremium = isPremium,
-    isRewardedReady = isRewardedReady,
-    isAddingPage = launcherState.isLaunching,
-    onAddPageDirect = launcherState.launch,
-    onWatchAdForPage = {
-        activity?.let {
-            adManager.showRewardedAd(
-                activity = it,
-                onRewarded = launcherState.launch,
-                onFailed = { Timber.w("ScanResultScreen: anuncio para agregar página no disponible") }
-            )
-        }
-    },
-    onPremiumClick = onPremiumClick
-)
+    onPremiumClick: () -> Unit,
+): ScanAddPageArgs =
+    ScanAddPageArgs(
+        pageCount = pageCount,
+        pageLimit = SCAN_DEFAULT_PAGE_LIMIT,
+        isPremium = isPremium,
+        isRewardedReady = isRewardedReady,
+        isAddingPage = launcherState.isLaunching,
+        onAddPageDirect = launcherState.launch,
+        onWatchAdForPage = {
+            activity?.let {
+                adManager.showRewardedAd(
+                    activity = it,
+                    onRewarded = launcherState.launch,
+                    onFailed = { Timber.w("ScanResultScreen: anuncio para agregar página no disponible") },
+                )
+            }
+        },
+        onPremiumClick = onPremiumClick,
+    )
 
 private data class ScanBatchDisplayArgs(
     val hasBatchResult: Boolean,
@@ -759,7 +775,7 @@ private data class ScanBatchDisplayArgs(
     val onConvertAnother: () -> Unit,
     val onSaveAllToDownloads: () -> Unit,
     val onDone: () -> Unit,
-    val onOpenDocument: (java.io.File) -> Unit
+    val onOpenDocument: (java.io.File) -> Unit,
 )
 
 // Extraído aparte de ScanSessionDisplayArgs (LongParameterList de detekt,
@@ -776,7 +792,7 @@ private data class ScanSessionRowActions(
     val onCreateQr: (DocumentUiModel) -> Unit,
     val onMakeSearchable: (DocumentUiModel) -> Unit,
     val onSign: (DocumentUiModel) -> Unit,
-    val onMoveToSecureFolder: (DocumentUiModel) -> Unit
+    val onMoveToSecureFolder: (DocumentUiModel) -> Unit,
 )
 
 private data class ScanSessionDisplayArgs(
@@ -786,7 +802,7 @@ private data class ScanSessionDisplayArgs(
     val context: Context,
     val onScanAnother: () -> Unit,
     val onDone: () -> Unit,
-    val rowActions: ScanSessionRowActions
+    val rowActions: ScanSessionRowActions,
 )
 
 private data class ScanFormatSectionArgs(
@@ -795,7 +811,7 @@ private data class ScanFormatSectionArgs(
     val highResEnabled: Boolean,
     val onHighResToggle: (Boolean) -> Unit,
     val isPremium: Boolean,
-    val onPremiumClick: () -> Unit
+    val onPremiumClick: () -> Unit,
 )
 
 private data class ScanResultActionsCallbacks(
@@ -805,7 +821,7 @@ private data class ScanResultActionsCallbacks(
     val onScanAgain: () -> Unit,
     val onDone: () -> Unit,
     val onFinalized: (File) -> Unit,
-    val onRequestSaveSlot: () -> Boolean
+    val onRequestSaveSlot: () -> Boolean,
 )
 
 private data class ScanDefaultFlowArgs(
@@ -814,7 +830,7 @@ private data class ScanDefaultFlowArgs(
     val fileName: String,
     val onFileNameChange: (String) -> Unit,
     val actionsState: ScanResultActionsState,
-    val callbacks: ScanResultActionsCallbacks
+    val callbacks: ScanResultActionsCallbacks,
 )
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- todo el contenido
@@ -827,7 +843,7 @@ private fun LazyListScope.scanResultContent(
     addPageArgs: ScanAddPageArgs,
     batchArgs: ScanBatchDisplayArgs,
     sessionArgs: ScanSessionDisplayArgs,
-    defaultFlowArgs: ScanDefaultFlowArgs
+    defaultFlowArgs: ScanDefaultFlowArgs,
 ) {
     // Pedido explícito del usuario 2026-09-07: mismo margen/espaciado de
     // banner que el resto de las pantallas -- ad+banner van en un solo
@@ -842,7 +858,7 @@ private fun LazyListScope.scanResultContent(
             DocuSmartTopBanner(
                 screenTitle = stringResource(R.string.scanner_result_title),
                 screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, headerArgs.scannedUris.size),
-                onBack = headerArgs.onBack
+                onBack = headerArgs.onBack,
             )
         }
     }
@@ -855,7 +871,7 @@ private fun LazyListScope.scanResultContent(
             ScanPreviewSection(
                 uris = previewArgs.editableUris,
                 colorModes = previewArgs.pageColorModes,
-                onEditPage = previewArgs.onEditPage
+                onEditPage = previewArgs.onEditPage,
             )
         }
         // HU-41 (RF1/RF2): modo de color por defecto del documento --
@@ -865,7 +881,7 @@ private fun LazyListScope.scanResultContent(
             ScanColorModeSection(
                 previewUri = previewArgs.editableUris.firstOrNull(),
                 selected = previewArgs.defaultColorMode,
-                onSelect = previewArgs.onDefaultColorModeSelected
+                onSelect = previewArgs.onDefaultColorModeSelected,
             )
         }
         item {
@@ -884,7 +900,7 @@ private fun LazyListScope.scanResultContent(
             context = sessionArgs.context,
             onScanAnother = sessionArgs.onScanAnother,
             onDone = sessionArgs.onDone,
-            rowActions = sessionArgs.rowActions
+            rowActions = sessionArgs.rowActions,
         )
     } else if (batchArgs.hasBatchResult) {
         // ── Resultado de exportar varias páginas como imágenes ──
@@ -895,7 +911,7 @@ private fun LazyListScope.scanResultContent(
                 isSaving = batchArgs.isSaving,
                 onConvertAnother = batchArgs.onConvertAnother,
                 onSaveAllToDownloads = batchArgs.onSaveAllToDownloads,
-                onOpenDocument = batchArgs.onOpenDocument
+                onOpenDocument = batchArgs.onOpenDocument,
             )
         }
         // Bug real reportado por el usuario 2026-09-06: este resultado de
@@ -915,7 +931,7 @@ private fun LazyListScope.scanResultContent(
             fileName = defaultFlowArgs.fileName,
             onFileNameChange = defaultFlowArgs.onFileNameChange,
             actionsState = defaultFlowArgs.actionsState,
-            callbacks = defaultFlowArgs.callbacks
+            callbacks = defaultFlowArgs.callbacks,
         )
     }
 }
@@ -930,7 +946,7 @@ private fun LazyListScope.scanConfigAndActionItems(
     fileName: String,
     onFileNameChange: (String) -> Unit,
     actionsState: ScanResultActionsState,
-    callbacks: ScanResultActionsCallbacks
+    callbacks: ScanResultActionsCallbacks,
 ) {
     if (!hasAnyResult) {
         item {
@@ -940,7 +956,7 @@ private fun LazyListScope.scanConfigAndActionItems(
                 highResEnabled = formatArgs.highResEnabled,
                 onHighResToggle = formatArgs.onHighResToggle,
                 isPremium = formatArgs.isPremium,
-                onPremiumClick = formatArgs.onPremiumClick
+                onPremiumClick = formatArgs.onPremiumClick,
             )
         }
     }
@@ -949,7 +965,7 @@ private fun LazyListScope.scanConfigAndActionItems(
         ScanFilenameField(
             fileName = fileName,
             onFileNameChange = onFileNameChange,
-            extension = actionsState.format.extension
+            extension = actionsState.format.extension,
         )
     }
 
@@ -962,7 +978,7 @@ private fun LazyListScope.scanConfigAndActionItems(
             onScanAgain = callbacks.onScanAgain,
             onDone = callbacks.onDone,
             onFinalized = callbacks.onFinalized,
-            onRequestSaveSlot = callbacks.onRequestSaveSlot
+            onRequestSaveSlot = callbacks.onRequestSaveSlot,
         )
     }
 }
@@ -975,7 +991,7 @@ private fun LazyListScope.scanSessionFinalizedItem(
     context: Context,
     onScanAnother: () -> Unit,
     onDone: () -> Unit,
-    rowActions: ScanSessionRowActions
+    rowActions: ScanSessionRowActions,
 ) {
     item {
         ScanSessionFinalizedSection(
@@ -983,7 +999,7 @@ private fun LazyListScope.scanSessionFinalizedItem(
             onShareFile = { document -> shareFile(context, File(document.id), shareChooserTitle) },
             onScanAnother = onScanAnother,
             onDone = onDone,
-            rowActions = rowActions
+            rowActions = rowActions,
         )
     }
 }
@@ -1004,7 +1020,7 @@ private fun ScanSessionFinalizedSection(
     onShareFile: (DocumentUiModel) -> Unit,
     onScanAnother: () -> Unit,
     onDone: () -> Unit,
-    rowActions: ScanSessionRowActions
+    rowActions: ScanSessionRowActions,
 ) {
     var documentToRename by remember { mutableStateOf<DocumentUiModel?>(null) }
 
@@ -1015,7 +1031,7 @@ private fun ScanSessionFinalizedSection(
                 rowActions.onRename(doc.id, newName)
                 documentToRename = null
             },
-            onDismiss = { documentToRename = null }
+            onDismiss = { documentToRename = null },
         )
     }
 
@@ -1025,15 +1041,16 @@ private fun ScanSessionFinalizedSection(
         Text(
             text = stringResource(R.string.scan_session_title),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .accentShadow(listShape)
-                .clip(listShape)
-                .background(MaterialTheme.colorScheme.surface)
-                .accentBorder(listShape)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .accentShadow(listShape)
+                    .clip(listShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .accentBorder(listShape),
         ) {
             scannedFiles.forEachIndexed { index, document ->
                 DocuSmartDocumentItem(
@@ -1049,7 +1066,7 @@ private fun ScanSessionFinalizedSection(
                     onMakeSearchableClick = { rowActions.onMakeSearchable(document) },
                     onSignClick = { rowActions.onSign(document) },
                     onMoveToSecureFolderClick = { rowActions.onMoveToSecureFolder(document) },
-                    onDeleteClick = { rowActions.onDelete(document.id) }
+                    onDeleteClick = { rowActions.onDelete(document.id) },
                 )
             }
         }
@@ -1057,7 +1074,7 @@ private fun ScanSessionFinalizedSection(
             text = stringResource(R.string.scan_session_scan_another),
             modifier = Modifier.accentShadow(buttonShape).accentBorder(buttonShape),
             onClick = onScanAnother,
-            leadingIcon = Icons.Rounded.DocumentScanner
+            leadingIcon = Icons.Rounded.DocumentScanner,
         )
         TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.scanner_back))
@@ -1071,12 +1088,12 @@ private fun ScanSessionFinalizedSection(
 private fun ScanPreviewSection(
     uris: List<Uri>,
     colorModes: List<ScanColorMode>,
-    onEditPage: (Int) -> Unit
+    onEditPage: (Int) -> Unit,
 ) {
     Text(
         text = stringResource(R.string.scan_result_preview),
         style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface
+        color = MaterialTheme.colorScheme.onSurface,
     )
     Spacer(Modifier.height(8.dp))
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1087,7 +1104,7 @@ private fun ScanPreviewSection(
                 // HU-41: la miniatura refleja el modo de color vigente de
                 // esta página -- lo que se ve acá es lo que queda guardado.
                 colorMode = colorModes.getOrElse(index) { ScanColorMode.COLOR },
-                onEditClick = { onEditPage(index) }
+                onEditClick = { onEditPage(index) },
             )
         }
     }
@@ -1108,24 +1125,25 @@ private fun ScanPreviewSection(
 // éxito (vía el propio `ActivityResultLauncher`) o de error.
 private data class AddPageLauncherState(
     val isLaunching: Boolean,
-    val launch: () -> Unit
+    val launch: () -> Unit,
 )
 
 @Composable
 private fun rememberAddPageLauncher(
     activity: Activity?,
-    onPageAdded: (Uri) -> Unit
+    onPageAdded: (Uri) -> Unit,
 ): AddPageLauncherState {
     var isLaunching by remember { mutableStateOf(false) }
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        isLaunching = false
-        if (result.resultCode == Activity.RESULT_OK) {
-            GmsDocumentScanningResult.fromActivityResultIntent(result.data)
-                ?.pages?.firstOrNull()?.imageUri?.let(onPageAdded)
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartIntentSenderForResult(),
+        ) { result ->
+            isLaunching = false
+            if (result.resultCode == Activity.RESULT_OK) {
+                GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+                    ?.pages?.firstOrNull()?.imageUri?.let(onPageAdded)
+            }
         }
-    }
     val launch: () -> Unit = launch@{
         if (isLaunching) return@launch
         val act = activity ?: return@launch
@@ -1140,7 +1158,7 @@ private fun rememberAddPageLauncher(
             onError = { message ->
                 isLaunching = false
                 Timber.e("Error agregando página: $message")
-            }
+            },
         )
     }
     return AddPageLauncherState(isLaunching, launch)
@@ -1160,9 +1178,12 @@ private fun ScanAddPageSection(args: ScanAddPageArgs) {
             pageCount = args.pageCount,
             pageLimit = args.pageLimit,
             isRewardedReady = args.isRewardedReady,
-            onWatchAd = { showLimitDialog = false; args.onWatchAdForPage() },
+            onWatchAd = {
+                showLimitDialog = false
+                args.onWatchAdForPage()
+            },
             onDismiss = { showLimitDialog = false },
-            onGetPremium = args.onPremiumClick
+            onGetPremium = args.onPremiumClick,
         )
     }
 
@@ -1170,7 +1191,7 @@ private fun ScanAddPageSection(args: ScanAddPageArgs) {
         Text(
             text = stringResource(R.string.scan_page_count, args.pageCount, args.pageLimit),
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         DocuSmartSecondaryButton(
             text = stringResource(R.string.scan_add_page),
@@ -1185,7 +1206,7 @@ private fun ScanAddPageSection(args: ScanAddPageArgs) {
                     showLimitDialog = true
                 }
             },
-            leadingIcon = Icons.Rounded.AddPhotoAlternate
+            leadingIcon = Icons.Rounded.AddPhotoAlternate,
         )
     }
 }
@@ -1202,23 +1223,24 @@ private fun ScanPageLimitDialog(
     isRewardedReady: Boolean,
     onWatchAd: () -> Unit,
     onDismiss: () -> Unit,
-    onGetPremium: () -> Unit
+    onGetPremium: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = MaterialTheme.shapes.extraLarge,
         icon = {
             Icon(
-                Icons.Rounded.PostAdd, null,
+                Icons.Rounded.PostAdd,
+                null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
         },
         title = {
             Text(
                 stringResource(R.string.scan_page_limit_title),
                 style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         },
         text = {
@@ -1226,33 +1248,36 @@ private fun ScanPageLimitDialog(
                 stringResource(R.string.scan_page_limit_body, pageCount, pageLimit),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         },
         confirmButton = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
                     onClick = onWatchAd,
                     enabled = isRewardedReady,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.PlayCircle, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         stringResource(
-                            if (isRewardedReady) R.string.daily_limit_watch_ad
-                            else R.string.daily_limit_ad_not_ready
-                        )
+                            if (isRewardedReady) {
+                                R.string.daily_limit_watch_ad
+                            } else {
+                                R.string.daily_limit_ad_not_ready
+                            },
+                        ),
                     )
                 }
                 OutlinedButton(
                     onClick = onGetPremium,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Icon(Icons.Rounded.Star, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -1260,11 +1285,11 @@ private fun ScanPageLimitDialog(
                 }
                 TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.general_cancel)) }
             }
         },
-        dismissButton = {}
+        dismissButton = {},
     )
 }
 
@@ -1274,13 +1299,13 @@ private fun ScanPageLimitDialog(
 private fun ScanFilenameField(
     fileName: String,
     onFileNameChange: (String) -> Unit,
-    extension: String = "pdf"
+    extension: String = "pdf",
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = stringResource(R.string.scan_result_filename_label),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         OutlinedTextField(
             value = fileName,
@@ -1289,23 +1314,23 @@ private fun ScanFilenameField(
             placeholder = {
                 Text(
                     text = stringResource(R.string.scan_result_filename_placeholder),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
             trailingIcon = {
                 Text(
                     text = ".$extension",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp)
+                    modifier = Modifier.padding(end = 12.dp),
                 )
             },
             singleLine = true,
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         )
         Text(
             text = stringResource(R.string.scan_result_filename_hint),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -1321,13 +1346,13 @@ private fun ScanFormatSection(
     highResEnabled: Boolean,
     onHighResToggle: (Boolean) -> Unit,
     isPremium: Boolean,
-    onPremiumClick: () -> Unit
+    onPremiumClick: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             text = stringResource(R.string.scan_result_export_format_label),
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ScanExportFormat.entries.forEach { format ->
@@ -1335,50 +1360,53 @@ private fun ScanFormatSection(
                     selected = selectedFormat == format,
                     onClick = { onFormatSelected(format) },
                     label = { Text(format.label) },
-                    colors = accentFilterChipColors()
+                    colors = accentFilterChipColors(),
                 )
             }
         }
 
         if (selectedFormat == ScanExportFormat.PDF) {
-            val highResClickable = if (isPremium) {
-                Modifier
-            } else {
-                Modifier.clickable(onClick = onPremiumClick)
-            }
+            val highResClickable =
+                if (isPremium) {
+                    Modifier
+                } else {
+                    Modifier.clickable(onClick = onPremiumClick)
+                }
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(highResClickable)
-                    .padding(vertical = 4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(highResClickable)
+                        .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.scan_result_high_res_title),
                             style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         if (!isPremium) {
                             Icon(
                                 imageVector = Icons.Rounded.Lock,
-                                contentDescription = stringResource(
-                                    R.string.scan_result_high_res_premium_content_desc
-                                ),
+                                contentDescription =
+                                    stringResource(
+                                        R.string.scan_result_high_res_premium_content_desc,
+                                    ),
                                 tint = PremiumGold,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(16.dp),
                             )
                         }
                     }
                     Text(
                         text = stringResource(R.string.scan_result_high_res_desc),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Switch(
@@ -1386,7 +1414,7 @@ private fun ScanFormatSection(
                     onCheckedChange = { checked ->
                         if (isPremium) onHighResToggle(checked) else onPremiumClick()
                     },
-                    enabled = isPremium
+                    enabled = isPremium,
                 )
             }
         }
@@ -1407,7 +1435,7 @@ private data class ScanResultActionsState(
     val savedFile: File?,
     val savedToDownloads: Boolean,
     val isPreparingShare: Boolean,
-    val format: ScanExportFormat
+    val format: ScanExportFormat,
 )
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- guardar/compartir/
@@ -1422,7 +1450,7 @@ private fun ScanResultActions(
     onScanAgain: () -> Unit,
     onDone: () -> Unit,
     onFinalized: (File) -> Unit,
-    onRequestSaveSlot: () -> Boolean
+    onRequestSaveSlot: () -> Boolean,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1446,25 +1474,25 @@ private fun ScanResultActions(
             if (state.savedToDownloads) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = stringResource(R.string.general_saved_downloads),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             } else if (isSaving) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             } else {
@@ -1483,8 +1511,9 @@ private fun ScanResultActions(
                                     // construir la ruta de salida -- mismo
                                     // saneo ya aplicado en Herramientas PDF/
                                     // Convertidor/Renombrar.
-                                    val name = com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
-                                        .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
+                                    val name =
+                                        com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
+                                            .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
                                     // Hallazgo real de la auditoría general
                                     // 2026-09-17 (B10): esta rama es
                                     // inalcanzable hoy (ML Kit ya no
@@ -1503,18 +1532,23 @@ private fun ScanResultActions(
                                     // que ya usan las conversiones imagen→
                                     // PDF) para poder tratarlo igual que
                                     // savedFile.
-                                    val pdfFile = if (state.savedFile == null && state.isPdf) {
-                                        copyUriToConvertedDir(context, state.scannedUris.first(), name)
-                                    } else {
-                                        null
-                                    }
-                                    val success = when {
-                                        state.savedFile != null -> DownloadsSaver.saveFile(
-                                            context, state.savedFile, mimeTypeForExtension(state.savedFile.extension)
-                                        )
-                                        pdfFile != null -> DownloadsSaver.saveFile(context, pdfFile, MIME_PDF)
-                                        else -> false
-                                    }
+                                    val pdfFile =
+                                        if (state.savedFile == null && state.isPdf) {
+                                            copyUriToConvertedDir(context, state.scannedUris.first(), name)
+                                        } else {
+                                            null
+                                        }
+                                    val success =
+                                        when {
+                                            state.savedFile != null ->
+                                                DownloadsSaver.saveFile(
+                                                    context,
+                                                    state.savedFile,
+                                                    mimeTypeForExtension(state.savedFile.extension),
+                                                )
+                                            pdfFile != null -> DownloadsSaver.saveFile(context, pdfFile, MIME_PDF)
+                                            else -> false
+                                        }
                                     if (pdfFile != null && !success) pdfFile.delete()
                                     onSavedToDownloadsChange(success)
                                     val finalizedFile = state.savedFile ?: pdfFile
@@ -1525,7 +1559,7 @@ private fun ScanResultActions(
                             }
                         }
                     },
-                    leadingIcon = Icons.Rounded.Download
+                    leadingIcon = Icons.Rounded.Download,
                 )
             }
 
@@ -1533,7 +1567,7 @@ private fun ScanResultActions(
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             } else {
@@ -1565,7 +1599,7 @@ private fun ScanResultActions(
                             }
                         }
                     },
-                    leadingIcon = Icons.Rounded.Share
+                    leadingIcon = Icons.Rounded.Share,
                 )
             }
 
@@ -1576,13 +1610,13 @@ private fun ScanResultActions(
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     Text(
                         text = stringResource(R.string.scan_result_generating_format, state.format.label),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -1591,17 +1625,18 @@ private fun ScanResultActions(
                 text = stringResource(R.string.scan_result_generate_format, state.format.label),
                 modifier = accentButtonModifier,
                 onClick = onGenerate,
-                leadingIcon = if (state.format == ScanExportFormat.PDF) {
-                    Icons.Rounded.PictureAsPdf
-                } else {
-                    Icons.Rounded.Image
-                }
+                leadingIcon =
+                    if (state.format == ScanExportFormat.PDF) {
+                        Icons.Rounded.PictureAsPdf
+                    } else {
+                        Icons.Rounded.Image
+                    },
             )
             DocuSmartSecondaryButton(
                 text = stringResource(R.string.scanner_again),
                 modifier = accentButtonModifier,
                 onClick = onScanAgain,
-                leadingIcon = Icons.Rounded.DocumentScanner
+                leadingIcon = Icons.Rounded.DocumentScanner,
             )
             // Bug real reportado por el usuario 2026-09-06: antes de generar,
             // la única forma de salir era el "Volver" del banner (que
@@ -1619,18 +1654,21 @@ private fun ScanResultActions(
 // selector del sistema (ver shareFileAwaitingSelection) -- el llamador la
 // usa para decidir si corresponde finalizar la sesión de escaneo.
 private suspend fun shareScanResult(
-    context: Context, lifecycleOwner: LifecycleOwner, state: ScanResultActionsState
+    context: Context,
+    lifecycleOwner: LifecycleOwner,
+    state: ScanResultActionsState,
 ): Boolean =
     when {
         state.savedFile != null ->
             shareFileAwaitingSelection(context, lifecycleOwner, state.savedFile, state.shareChooserTitle)
         state.isPdf -> {
-            val cacheFile = copyUriToCache(
-                context,
-                state.scannedUris.first(),
-                com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
-                    .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) }
-            )
+            val cacheFile =
+                copyUriToCache(
+                    context,
+                    state.scannedUris.first(),
+                    com.docsmart.core.util.sanitizeOutputFileName(state.fileName)
+                        .ifBlank { String.format(state.defaultNameTemplate, generateTimestamp()) },
+                )
             if (cacheFile != null) {
                 shareFileAwaitingSelection(context, lifecycleOwner, cacheFile, state.shareChooserTitle)
             } else {
@@ -1649,31 +1687,34 @@ private fun ScanPageThumbnail(
     uri: Uri,
     pageNumber: Int,
     colorMode: ScanColorMode,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
 ) {
     Box(modifier = Modifier.size(120.dp, 160.dp)) {
         val shape = MaterialTheme.shapes.medium
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .accentShadow(shape = shape, elevation = 2.dp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surface)
-                .accentBorder(shape = shape)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .accentShadow(shape = shape, elevation = 2.dp)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .accentBorder(shape = shape),
         ) {
             AsyncImage(
                 model = uri,
                 contentDescription = stringResource(R.string.scan_result_page_content_desc, pageNumber),
                 contentScale = ContentScale.Crop,
                 // HU-41: sin filtro en modo Color (AC3), igual que antes.
-                colorFilter = if (colorMode == ScanColorMode.COLOR) {
-                    null
-                } else {
-                    ColorFilter.colorMatrix(ColorMatrix(buildColorModeMatrix(colorMode)))
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(MaterialTheme.shapes.medium)
+                colorFilter =
+                    if (colorMode == ScanColorMode.COLOR) {
+                        null
+                    } else {
+                        ColorFilter.colorMatrix(ColorMatrix(buildColorModeMatrix(colorMode)))
+                    },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.medium),
             )
         }
         // Pedido explícito del usuario 2026-09-12 (feedback de testers): el
@@ -1687,24 +1728,25 @@ private fun ScanPageThumbnail(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
-                .background(Color.Black.copy(alpha = 0.6f))
-                .clickable(onClick = onEditClick)
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .clickable(onClick = onEditClick),
         ) {
             Icon(
                 imageVector = Icons.Rounded.Tune,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(14.dp),
             )
             Text(
                 text = stringResource(R.string.scan_edit_button_label),
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White
+                color = Color.White,
             )
         }
     }
@@ -1725,6 +1767,7 @@ private val SCAN_EDIT_SCALE_OPTIONS = listOf(100, 75, 50, 25)
 // cambios), así que el valor mostrado en pantalla (0..100) se convierte
 // a ese rango interno antes de usarlo -- ver `displayToInternal()`.
 private const val SCAN_EDIT_DISPLAY_NEUTRAL = 50f
+
 private fun displayToInternal(display: Float): Int = ((display - SCAN_EDIT_DISPLAY_NEUTRAL) * 2f).roundToInt()
 
 // Extraído de ScanImageEditorDialog -- fila de chips de porcentaje para
@@ -1735,7 +1778,7 @@ private fun displayToInternal(display: Float): Int = ((display - SCAN_EDIT_DISPL
 private fun PercentChipRow(
     options: List<Int>,
     selected: Int,
-    onSelect: (Int) -> Unit
+    onSelect: (Int) -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { percent ->
@@ -1743,7 +1786,7 @@ private fun PercentChipRow(
                 selected = selected == percent,
                 onClick = { onSelect(percent) },
                 label = { Text("$percent%") },
-                colors = accentFilterChipColors()
+                colors = accentFilterChipColors(),
             )
         }
     }
@@ -1758,7 +1801,7 @@ private fun ScanImageEditorDialog(
     colorMode: ScanColorMode,
     onColorModeChange: (ScanColorMode) -> Unit,
     onDismiss: () -> Unit,
-    onApply: (brightness: Int, contrast: Int, scalePercent: Int) -> Unit
+    onApply: (brightness: Int, contrast: Int, scalePercent: Int) -> Unit,
 ) {
     var brightnessDisplay by remember { mutableFloatStateOf(SCAN_EDIT_DISPLAY_NEUTRAL) }
     var contrastDisplay by remember { mutableFloatStateOf(SCAN_EDIT_DISPLAY_NEUTRAL) }
@@ -1777,29 +1820,31 @@ private fun ScanImageEditorDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(20.dp),
             ) {
                 Text(
                     text = stringResource(R.string.scan_edit_title),
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(16.dp))
 
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
                 ) {
                     // Bug real reportado por el usuario 2026-09-06: "Escala" no
                     // se veía hacer nada -- el bake final sí reducía la imagen
@@ -1810,12 +1855,14 @@ private fun ScanImageEditorDialog(
                         model = uri,
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxWidth(scalePercent / 100f)
-                            .fillMaxHeight(scalePercent / 100f),
-                        colorFilter = ColorFilter.colorMatrix(
-                            ColorMatrix(buildColorMatrix(brightness, contrast))
-                        )
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(scalePercent / 100f)
+                                .fillMaxHeight(scalePercent / 100f),
+                        colorFilter =
+                            ColorFilter.colorMatrix(
+                                ColorMatrix(buildColorMatrix(brightness, contrast)),
+                            ),
                     )
                 }
 
@@ -1823,7 +1870,7 @@ private fun ScanImageEditorDialog(
                 Text(
                     text = stringResource(R.string.scan_edit_brightness, brightnessDisplay.roundToInt()),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 // Hallazgo real de la auditoría general 2026-09-17
                 // (séptima ronda, Media -- A5): el Slider en sí no tenía
@@ -1836,48 +1883,48 @@ private fun ScanImageEditorDialog(
                     value = brightnessDisplay,
                     onValueChange = { brightnessDisplay = it },
                     valueRange = 0f..100f,
-                    modifier = Modifier.semantics { contentDescription = brightnessDesc }
+                    modifier = Modifier.semantics { contentDescription = brightnessDesc },
                 )
 
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.scan_edit_contrast, contrastDisplay.roundToInt()),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 val contrastDesc = stringResource(R.string.scan_edit_contrast, contrastDisplay.roundToInt())
                 Slider(
                     value = contrastDisplay,
                     onValueChange = { contrastDisplay = it },
                     valueRange = 0f..100f,
-                    modifier = Modifier.semantics { contentDescription = contrastDesc }
+                    modifier = Modifier.semantics { contentDescription = contrastDesc },
                 )
 
                 Spacer(Modifier.height(16.dp))
                 Text(
                     text = stringResource(R.string.scan_edit_scale),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(8.dp))
                 PercentChipRow(
                     options = SCAN_EDIT_SCALE_OPTIONS,
                     selected = scalePercent,
-                    onSelect = { scalePercent = it }
+                    onSelect = { scalePercent = it },
                 )
 
                 Spacer(Modifier.height(16.dp))
                 ScanColorModeSection(
                     previewUri = uri,
                     selected = pendingColorMode,
-                    onSelect = { pendingColorMode = it }
+                    onSelect = { pendingColorMode = it },
                 )
 
                 Spacer(Modifier.height(20.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(stringResource(R.string.general_cancel))
                     }
@@ -1886,7 +1933,7 @@ private fun ScanImageEditorDialog(
                             if (pendingColorMode != colorMode) onColorModeChange(pendingColorMode)
                             onApply(brightness, contrast, scalePercent)
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Text(stringResource(R.string.scan_edit_apply))
                     }
@@ -1900,22 +1947,23 @@ private fun ScanImageEditorDialog(
 private suspend fun copyUriToCache(
     context: Context,
     uri: Uri,
-    fileName: String
-): File? = withContext(Dispatchers.IO) {
-    try {
-        val cacheDir = File(context.cacheDir, "scanner").apply { mkdirs() }
-        val cacheFile = File(cacheDir, "$fileName.pdf")
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            cacheFile.outputStream().use { output ->
-                input.copyTo(output)
+    fileName: String,
+): File? =
+    withContext(Dispatchers.IO) {
+        try {
+            val cacheDir = File(context.cacheDir, "scanner").apply { mkdirs() }
+            val cacheFile = File(cacheDir, "$fileName.pdf")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                cacheFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
             }
+            if (cacheFile.exists() && cacheFile.length() > 0) cacheFile else null
+        } catch (e: Exception) {
+            Timber.e(e, "Error copiando URI al cache: ${e.message}")
+            null
         }
-        if (cacheFile.exists() && cacheFile.length() > 0) cacheFile else null
-    } catch (e: Exception) {
-        Timber.e(e, "Error copiando URI al cache: ${e.message}")
-        null
     }
-}
 
 // B10: mismo copiado que copyUriToCache(), pero a filesDir/converted (no
 // cacheDir) -- el resultado se agrega a la sesión de escaneo vía
@@ -1925,25 +1973,29 @@ private suspend fun copyUriToCache(
 private suspend fun copyUriToConvertedDir(
     context: Context,
     uri: Uri,
-    fileName: String
-): File? = withContext(Dispatchers.IO) {
-    try {
-        val convertedDir = File(context.filesDir, "converted").apply { mkdirs() }
-        val outputFile = File(convertedDir, "$fileName.pdf")
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            outputFile.outputStream().use { output ->
-                input.copyTo(output)
+    fileName: String,
+): File? =
+    withContext(Dispatchers.IO) {
+        try {
+            val convertedDir = File(context.filesDir, "converted").apply { mkdirs() }
+            val outputFile = File(convertedDir, "$fileName.pdf")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                outputFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
             }
+            if (outputFile.exists() && outputFile.length() > 0) outputFile else null
+        } catch (e: Exception) {
+            Timber.e(e, "Error copiando URI a converted/: ${e.message}")
+            null
         }
-        if (outputFile.exists() && outputFile.length() > 0) outputFile else null
-    } catch (e: Exception) {
-        Timber.e(e, "Error copiando URI a converted/: ${e.message}")
-        null
     }
-}
 
 // ── Compartir archivo via FileProvider ────────────────
-private fun buildShareIntentOrNull(context: Context, file: File): Intent? {
+private fun buildShareIntentOrNull(
+    context: Context,
+    file: File,
+): Intent? {
     if (!file.exists()) {
         // H5 (revisión adversarial de seguridad, ronda 11): ni siquiera
         // file.name debe loguearse -- es el nombre real que el usuario le
@@ -1962,7 +2014,11 @@ private fun buildShareIntentOrNull(context: Context, file: File): Intent? {
     }
 }
 
-private fun shareFile(context: Context, file: File, chooserTitle: String) {
+private fun shareFile(
+    context: Context,
+    file: File,
+    chooserTitle: String,
+) {
     try {
         val intent = buildShareIntentOrNull(context, file) ?: return
         context.startActivity(Intent.createChooser(intent, chooserTitle))
@@ -1993,7 +2049,10 @@ private fun shareFile(context: Context, file: File, chooserTitle: String) {
 // así que el primer ON_RESUME tras abrir el chooser, si el broadcast
 // todavía no llegó, se toma como cancelación.
 private suspend fun shareFileAwaitingSelection(
-    context: Context, lifecycleOwner: LifecycleOwner, file: File, chooserTitle: String
+    context: Context,
+    lifecycleOwner: LifecycleOwner,
+    file: File,
+    chooserTitle: String,
 ): Boolean {
     val intent = buildShareIntentOrNull(context, file) ?: return false
     return try {
@@ -2006,41 +2065,54 @@ private suspend fun shareFileAwaitingSelection(
             // cancelación) para no dejar el receiver ni el observer vivos.
             lateinit var receiver: BroadcastReceiver
             lateinit var lifecycleObserver: LifecycleEventObserver
+
             fun cleanup() {
-                try { context.unregisterReceiver(receiver) } catch (e: IllegalArgumentException) {
+                try {
+                    context.unregisterReceiver(receiver)
+                } catch (e: IllegalArgumentException) {
                     Timber.v(e, "shareFileAwaitingSelection: receiver ya estaba desregistrado")
                 }
                 lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
             }
-            receiver = object : BroadcastReceiver() {
-                override fun onReceive(ctx: Context, received: Intent) {
-                    cleanup()
-                    if (cont.isActive) cont.resume(true, onCancellation = null)
+            receiver =
+                object : BroadcastReceiver() {
+                    override fun onReceive(
+                        ctx: Context,
+                        received: Intent,
+                    ) {
+                        cleanup()
+                        if (cont.isActive) cont.resume(true, onCancellation = null)
+                    }
                 }
-            }
             ContextCompat.registerReceiver(
-                context, receiver, IntentFilter(action), ContextCompat.RECEIVER_NOT_EXPORTED
+                context,
+                receiver,
+                IntentFilter(action),
+                ContextCompat.RECEIVER_NOT_EXPORTED,
             )
             var sawFirstResume = false
-            lifecycleObserver = LifecycleEventObserver { _, event ->
-                if (event != Lifecycle.Event.ON_RESUME) return@LifecycleEventObserver
-                // El primer ON_RESUME es el de esta misma pantalla al
-                // componer el observer -- se ignora, el que importa es el
-                // siguiente (tras volver del chooser del sistema).
-                if (!sawFirstResume) {
-                    sawFirstResume = true
-                    return@LifecycleEventObserver
+            lifecycleObserver =
+                LifecycleEventObserver { _, event ->
+                    if (event != Lifecycle.Event.ON_RESUME) return@LifecycleEventObserver
+                    // El primer ON_RESUME es el de esta misma pantalla al
+                    // componer el observer -- se ignora, el que importa es el
+                    // siguiente (tras volver del chooser del sistema).
+                    if (!sawFirstResume) {
+                        sawFirstResume = true
+                        return@LifecycleEventObserver
+                    }
+                    cleanup()
+                    if (cont.isActive) cont.resume(false, onCancellation = null)
                 }
-                cleanup()
-                if (cont.isActive) cont.resume(false, onCancellation = null)
-            }
             lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
             cont.invokeOnCancellation { cleanup() }
-            val pendingIntent = PendingIntent.getBroadcast(
-                context, System.nanoTime().toInt(),
-                Intent(action).setPackage(context.packageName),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val pendingIntent =
+                PendingIntent.getBroadcast(
+                    context,
+                    System.nanoTime().toInt(),
+                    Intent(action).setPackage(context.packageName),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
             context.startActivity(Intent.createChooser(intent, chooserTitle, pendingIntent.intentSender))
             Timber.d("shareFileAwaitingSelection: compartiendo ${file.name}")
         }
@@ -2057,6 +2129,4 @@ private suspend fun shareFileAwaitingSelection(
     }
 }
 
-
-private fun generateTimestamp(): String =
-    SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+private fun generateTimestamp(): String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())

@@ -4,6 +4,7 @@ import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import org.junit.jupiter.api.Test
 
@@ -21,24 +22,30 @@ import org.junit.jupiter.api.Test
  * `jacocoTestReport`/Kover ya apuntan a esa misma carpeta para cobertura.
  */
 class ArchitectureTest {
-
-    private val importedClasses = ClassFileImporter()
-        .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-        .importPackages("com.docsmart")
+    private val importedClasses =
+        ClassFileImporter()
+            .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+            .importPackages("com.docsmart")
 
     @Test
     fun `domain no depende de presentation`() {
         noClasses()
-            .that().resideInAPackage("..domain..")
-            .should().dependOnClassesThat().resideInAPackage("..presentation..")
+            .that()
+            .resideInAPackage("..domain..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("..presentation..")
             .check(importedClasses)
     }
 
     @Test
     fun `data no depende de presentation`() {
         noClasses()
-            .that().resideInAPackage("..data..")
-            .should().dependOnClassesThat().resideInAPackage("..presentation..")
+            .that()
+            .resideInAPackage("..data..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("..presentation..")
             .check(importedClasses)
     }
 
@@ -52,12 +59,13 @@ class ArchitectureTest {
     // paquete puntual en vez de debilitar la regla para paquetes reales de
     // Compose (`androidx.compose.ui..`, `androidx.compose.runtime.Composable`,
     // etc.), que sí importan si aparecen en domain/data.
-    private val realComposeUsage = DescribedPredicate.describe<JavaClass>(
-        "reside in a real (no generado por el compilador) androidx.compose.."
-    ) { javaClass ->
-        val pkg = javaClass.packageName
-        pkg.startsWith("androidx.compose") && !pkg.startsWith("androidx.compose.runtime.internal")
-    }
+    private val realComposeUsage =
+        DescribedPredicate.describe<JavaClass>(
+            "reside in a real (no generado por el compilador) androidx.compose..",
+        ) { javaClass ->
+            val pkg = javaClass.packageName
+            pkg.startsWith("androidx.compose") && !pkg.startsWith("androidx.compose.runtime.internal")
+        }
 
     @Test
     fun `domain y data no dependen de Jetpack Compose`() {
@@ -68,10 +76,56 @@ class ArchitectureTest {
         // usa para excepciones puntuales ya evaluadas, en vez de debilitar
         // la regla para todo el proyecto.
         noClasses()
-            .that().resideInAPackage("..domain..")
-            .or().resideInAPackage("..data..")
-            .and().haveNameNotMatching(".*VoicePersona.*")
-            .should().dependOnClassesThat(realComposeUsage)
+            .that()
+            .resideInAPackage("..domain..")
+            .or()
+            .resideInAPackage("..data..")
+            .and()
+            .haveNameNotMatching(".*VoicePersona.*")
+            .should()
+            .dependOnClassesThat(realComposeUsage)
+            .check(importedClasses)
+    }
+
+    // 3 reglas agregadas 2026-09-19 (pedido explícito del usuario de ampliar
+    // ArchUnit), verificadas contra el código real antes de escribirlas --
+    // mismo criterio que las 3 de arriba, no aspiracionales.
+
+    @Test
+    fun `toda clase Repository vive en un paquete data`() {
+        classes()
+            .that()
+            .haveSimpleNameEndingWith("Repository")
+            .should()
+            .resideInAPackage("..data..")
+            .check(importedClasses)
+    }
+
+    @Test
+    fun `todo UseCase vive en un paquete domain`() {
+        classes()
+            .that()
+            .haveSimpleNameEndingWith("UseCase")
+            .should()
+            .resideInAPackage("..domain..")
+            .check(importedClasses)
+    }
+
+    @Test
+    fun `todo ViewModel vive en un paquete presentation`() {
+        // Única excepción real: AppLibraryPickerViewModel vive en
+        // core.ui.components a propósito -- es compartido entre las
+        // pantallas de Seguridad y Herramientas PDF para el selector "desde
+        // mi biblioteca" (documentado en su propio KDoc), no encaja dentro
+        // de una única feature/presentation. Mismo criterio que la
+        // excepción de VoicePersona.kt arriba.
+        classes()
+            .that()
+            .haveSimpleNameEndingWith("ViewModel")
+            .and()
+            .haveNameNotMatching(".*AppLibraryPickerViewModel.*")
+            .should()
+            .resideInAPackage("..presentation..")
             .check(importedClasses)
     }
 }

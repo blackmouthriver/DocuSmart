@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
  * de URL, y el usuario no veía el botón de "abrir en el navegador".
  */
 class QrContentTypeTest {
-
     @Test
     fun `URL en minusculas se detecta como URL`() {
         assertEquals(QrContentType.URL, detectQrContentType("https://docusmart.app"))
@@ -80,7 +79,7 @@ class QrContentTypeTest {
     fun `payload vCard se detecta como CONTACT`() {
         assertEquals(
             QrContentType.CONTACT,
-            detectQrContentType("BEGIN:VCARD\nVERSION:3.0\nFN:Ana\nEND:VCARD")
+            detectQrContentType("BEGIN:VCARD\nVERSION:3.0\nFN:Ana\nEND:VCARD"),
         )
     }
 
@@ -90,8 +89,8 @@ class QrContentTypeTest {
             QrContentType.EVENT,
             detectQrContentType(
                 "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Reunión\n" +
-                    "DTSTART:20260101T100000\nDTEND:20260101T110000\nEND:VEVENT\nEND:VCALENDAR"
-            )
+                    "DTSTART:20260101T100000\nDTEND:20260101T110000\nEND:VEVENT\nEND:VCALENDAR",
+            ),
         )
     }
 }

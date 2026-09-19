@@ -50,19 +50,21 @@ import org.junit.Test
  * import); se flaguea aparte como código muerto, no se toca acá.
  */
 class HomeScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private lateinit var trashRepository: TrashRepository
     private lateinit var favoritesRepository: FavoritesRepository
 
-    private fun documentFixture(id: String, name: String) = DocumentUiModel(
-        id   = id,
+    private fun documentFixture(
+        id: String,
+        name: String,
+    ) = DocumentUiModel(
+        id = id,
         name = name,
         type = DocumentType.PDF,
         size = "1.0 MB",
-        date = "Hoy"
+        date = "Hoy",
     )
 
     private fun buildViewModel(documents: List<DocumentUiModel>): HomeViewModel {
@@ -73,17 +75,17 @@ class HomeScreenTest {
         val repository = mockk<DocumentRepository>(relaxed = true)
         coEvery { repository.loadRecentlyOpened(5) } returns documents
 
-        trashRepository     = mockk(relaxed = true)
+        trashRepository = mockk(relaxed = true)
         favoritesRepository = mockk(relaxed = true)
 
         return HomeViewModel(
-            adManager           = adManager,
-            repository          = repository,
-            trashRepository     = trashRepository,
+            adManager = adManager,
+            repository = repository,
+            trashRepository = trashRepository,
             favoritesRepository = favoritesRepository,
             // deleteError ahora se localiza vía context.getString() (fix
             // 2026-09-14 del bug de mensajes hardcodeados en español).
-            context             = InstrumentationRegistry.getInstrumentation().targetContext
+            context = InstrumentationRegistry.getInstrumentation().targetContext,
         )
     }
 
@@ -101,7 +103,7 @@ class HomeScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
-                LocalOnBackPressedDispatcherOwner provides composeRule.activity
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
         }
     }

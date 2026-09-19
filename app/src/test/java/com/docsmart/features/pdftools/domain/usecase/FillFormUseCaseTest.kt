@@ -31,16 +31,20 @@ import java.nio.file.Files
  * salida, no solo que el mensaje de éxito lo dice.
  */
 class FillFormUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: FillFormUseCase
 
-    private val messages = FillFormMessages(
-        emptyValuesError = "emptyValuesError", readError = "readError", noFieldsError = "noFieldsError",
-        generateError = "generateError", success = "success %1\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        FillFormMessages(
+            emptyValuesError = "emptyValuesError",
+            readError = "readError",
+            noFieldsError = "noFieldsError",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -59,55 +63,60 @@ class FillFormUseCaseTest {
     }
 
     @Test
-    fun `rellenar campos existentes escribe los valores de verdad en el PDF de salida`() = runTest {
-        stubResolver(createPdfWithForm())
-        val values = mapOf("nombre" to "Ana Torres", "email" to "ana@ejemplo.com")
+    fun `rellenar campos existentes escribe los valores de verdad en el PDF de salida`() =
+        runTest {
+            stubResolver(createPdfWithForm())
+            val values = mapOf("nombre" to "Ana Torres", "email" to "ana@ejemplo.com")
 
-        val result = useCase(mockk<Uri>(), values = values, messages = messages)
+            val result = useCase(mockk<Uri>(), values = values, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("success 2", (result as PdfToolResult.Success).message)
-        val text = pageTextOf(result.outputFile)
-        assertTrue(text.contains("Ana Torres"))
-        assertTrue(text.contains("ana@ejemplo.com"))
-    }
-
-    @Test
-    fun `valores vacios devuelve Error sin tocar el archivo`() = runTest {
-        val result = useCase(mockk<Uri>(), values = emptyMap(), messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("emptyValuesError", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("success 2", (result as PdfToolResult.Success).message)
+            val text = pageTextOf(result.outputFile)
+            assertTrue(text.contains("Ana Torres"))
+            assertTrue(text.contains("ana@ejemplo.com"))
+        }
 
     @Test
-    fun `un PDF sin AcroForm devuelve Error especifico`() = runTest {
-        stubResolver(createPdfWithoutForm())
+    fun `valores vacios devuelve Error sin tocar el archivo`() =
+        runTest {
+            val result = useCase(mockk<Uri>(), values = emptyMap(), messages = messages)
 
-        val result = useCase(mockk<Uri>(), values = mapOf("nombre" to "Ana"), messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("noFieldsError", (result as PdfToolResult.Error).message)
-    }
-
-    @Test
-    fun `nombres de campo que no existen en el formulario no rellenan nada y devuelven Error`() = runTest {
-        stubResolver(createPdfWithForm())
-
-        val result = useCase(mockk<Uri>(), values = mapOf("campoInexistente" to "x"), messages = messages)
-
-        assertTrue(result is PdfToolResult.Error)
-        assertEquals("noFieldsError", (result as PdfToolResult.Error).message)
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("emptyValuesError", (result as PdfToolResult.Error).message)
+        }
 
     @Test
-    fun `rellenar un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `un PDF sin AcroForm devuelve Error especifico`() =
+        runTest {
+            stubResolver(createPdfWithoutForm())
 
-        val result = useCase(mockk<Uri>(), values = mapOf("nombre" to "Ana"), messages = messages)
+            val result = useCase(mockk<Uri>(), values = mapOf("nombre" to "Ana"), messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("noFieldsError", (result as PdfToolResult.Error).message)
+        }
+
+    @Test
+    fun `nombres de campo que no existen en el formulario no rellenan nada y devuelven Error`() =
+        runTest {
+            stubResolver(createPdfWithForm())
+
+            val result = useCase(mockk<Uri>(), values = mapOf("campoInexistente" to "x"), messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+            assertEquals("noFieldsError", (result as PdfToolResult.Error).message)
+        }
+
+    @Test
+    fun `rellenar un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(), values = mapOf("nombre" to "Ana"), messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 

@@ -74,10 +74,17 @@ internal fun InputStream.readBoundedBytes(maxBytes: Long = MAX_ZIP_ENTRY_BYTES):
 // entrada esperada y el use case termina con un mensaje engañoso
 // ("hoja vacía"/"sin texto") en vez de avisar que el formato no está
 // soportado en los hechos.
-private val OLE2_SIGNATURE = byteArrayOf(
-    0xD0.toByte(), 0xCF.toByte(), 0x11.toByte(), 0xE0.toByte(),
-    0xA1.toByte(), 0xB1.toByte(), 0x1A.toByte(), 0xE1.toByte()
-)
+private val OLE2_SIGNATURE =
+    byteArrayOf(
+        0xD0.toByte(),
+        0xCF.toByte(),
+        0x11.toByte(),
+        0xE0.toByte(),
+        0xA1.toByte(),
+        0xB1.toByte(),
+        0x1A.toByte(),
+        0xE1.toByte(),
+    )
 
 internal fun ByteArray.isLegacyOle2(): Boolean =
     size >= OLE2_SIGNATURE.size && copyOfRange(0, OLE2_SIGNATURE.size).contentEquals(OLE2_SIGNATURE)
@@ -88,7 +95,10 @@ internal fun ByteArray.isLegacyOle2(): Boolean =
  * mismo stream con mark/reset, para no depender de que el proveedor de
  * contenido soporte esa operación.
  */
-internal fun isLegacyOle2Uri(context: Context, uri: Uri): Boolean {
+internal fun isLegacyOle2Uri(
+    context: Context,
+    uri: Uri,
+): Boolean {
     val header = ByteArray(OLE2_SIGNATURE.size)
     val read = context.contentResolver.openInputStream(uri)?.use { it.read(header) } ?: return false
     return read == OLE2_SIGNATURE.size && header.isLegacyOle2()
@@ -108,8 +118,11 @@ internal fun isLegacyOle2Uri(context: Context, uri: Uri): Boolean {
 // "EncryptedPackage" -- distinguirlo alcanza para dar el mensaje
 // correcto sin necesitar la contraseña (no se intenta descifrar nada).
 @Suppress("TooGenericExceptionCaught", "SwallowedException")
-internal fun isPasswordProtectedOfficeUri(context: Context, uri: Uri): Boolean {
-    return try {
+internal fun isPasswordProtectedOfficeUri(
+    context: Context,
+    uri: Uri,
+): Boolean =
+    try {
         context.contentResolver.openInputStream(uri)?.use { input ->
             POIFSFileSystem(input).use { fs ->
                 fs.root.any { entry -> entry.name.equals("EncryptedPackage", ignoreCase = true) }
@@ -121,4 +134,3 @@ internal fun isPasswordProtectedOfficeUri(context: Context, uri: Uri): Boolean {
         // casos, acá solo interesa la pregunta puntual "¿está cifrado?".
         false
     }
-}

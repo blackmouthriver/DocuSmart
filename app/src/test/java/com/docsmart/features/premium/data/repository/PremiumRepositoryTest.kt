@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test
  * Remote Config, no un valor fijo en el código.
  */
 class PremiumRepositoryTest {
-
     @Test
     fun `plan anual destacado y badge de ahorro visible por defecto`() {
         val remoteConfig = mockk<RemoteConfigManager>()
@@ -25,7 +24,7 @@ class PremiumRepositoryTest {
         val plans = PremiumRepository(remoteConfig).getAvailablePlans()
 
         val monthly = plans.single { it.id == "monthly" }
-        val annual  = plans.single { it.id == "annual" }
+        val annual = plans.single { it.id == "annual" }
         assertTrue(annual.isPopular)
         assertTrue(!monthly.isPopular)
         assertEquals(R.string.premium_savings_44, annual.savingsLabelRes)
@@ -40,7 +39,7 @@ class PremiumRepositoryTest {
         val plans = PremiumRepository(remoteConfig).getAvailablePlans()
 
         val monthly = plans.single { it.id == "monthly" }
-        val annual  = plans.single { it.id == "annual" }
+        val annual = plans.single { it.id == "annual" }
         assertTrue(monthly.isPopular)
         assertTrue(!annual.isPopular)
     }

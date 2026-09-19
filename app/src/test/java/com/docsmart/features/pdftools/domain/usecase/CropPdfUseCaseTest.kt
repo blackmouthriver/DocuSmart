@@ -32,16 +32,19 @@ import java.nio.file.Files
  * pese a haberse reducido el área visible.
  */
 class CropPdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: CropPdfUseCase
 
-    private val messages = CropPdfMessages(
-        readError = "readError", noPages = "noPages", generateError = "generateError",
-        success = "success %1\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        CropPdfMessages(
+            readError = "readError",
+            noPages = "noPages",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -60,62 +63,67 @@ class CropPdfUseCaseTest {
     }
 
     @Test
-    fun `recortar con margen del 10 por ciento reduce el tamano de pagina proporcionalmente`() = runTest {
-        stubResolver(createLabeledPdf())
+    fun `recortar con margen del 10 por ciento reduce el tamano de pagina proporcionalmente`() =
+        runTest {
+            stubResolver(createLabeledPdf())
 
-        val result = useCase(mockk<Uri>(), marginPercent = 10, messages = messages)
+            val result = useCase(mockk<Uri>(), marginPercent = 10, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val size = pageSizeOf((result as PdfToolResult.Success).outputFile)
-        // LETTER = 612x792 -- 10% de margen a cada lado quita 20% del ancho/alto total
-        assertEquals(612f * 0.8f, size.width, 0.5f)
-        assertEquals(792f * 0.8f, size.height, 0.5f)
-    }
-
-    @Test
-    fun `el texto de la pagina sigue siendo extraible tras recortar`() = runTest {
-        stubResolver(createLabeledPdf())
-
-        val result = useCase(mockk<Uri>(), marginPercent = 10, messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        val text = pageTextOf((result as PdfToolResult.Success).outputFile)
-        assertTrue(text.contains("CONTENIDO_PAGINA"))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val size = pageSizeOf((result as PdfToolResult.Success).outputFile)
+            // LETTER = 612x792 -- 10% de margen a cada lado quita 20% del ancho/alto total
+            assertEquals(612f * 0.8f, size.width, 0.5f)
+            assertEquals(792f * 0.8f, size.height, 0.5f)
+        }
 
     @Test
-    fun `margen de 0 por ciento no cambia el tamano de la pagina`() = runTest {
-        stubResolver(createLabeledPdf())
+    fun `el texto de la pagina sigue siendo extraible tras recortar`() =
+        runTest {
+            stubResolver(createLabeledPdf())
 
-        val result = useCase(mockk<Uri>(), marginPercent = 0, messages = messages)
+            val result = useCase(mockk<Uri>(), marginPercent = 10, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val size = pageSizeOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(612f, size.width, 0.5f)
-        assertEquals(792f, size.height, 0.5f)
-    }
-
-    @Test
-    fun `un margen fuera de rango se ajusta al maximo permitido sin generar un rectangulo invalido`() = runTest {
-        stubResolver(createLabeledPdf())
-
-        val result = useCase(mockk<Uri>(), marginPercent = 90, messages = messages)
-
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals("success 40", (result as PdfToolResult.Success).message)
-        val size = pageSizeOf(result.outputFile)
-        assertTrue(size.width > 0f)
-        assertTrue(size.height > 0f)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val text = pageTextOf((result as PdfToolResult.Success).outputFile)
+            assertTrue(text.contains("CONTENIDO_PAGINA"))
+        }
 
     @Test
-    fun `recortar un archivo que no es un PDF valido devuelve Error`() = runTest {
-        stubResolver("esto no es un pdf".toByteArray())
+    fun `margen de 0 por ciento no cambia el tamano de la pagina`() =
+        runTest {
+            stubResolver(createLabeledPdf())
 
-        val result = useCase(mockk<Uri>(), marginPercent = 10, messages = messages)
+            val result = useCase(mockk<Uri>(), marginPercent = 0, messages = messages)
 
-        assertTrue(result is PdfToolResult.Error)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val size = pageSizeOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(612f, size.width, 0.5f)
+            assertEquals(792f, size.height, 0.5f)
+        }
+
+    @Test
+    fun `un margen fuera de rango se ajusta al maximo permitido sin generar un rectangulo invalido`() =
+        runTest {
+            stubResolver(createLabeledPdf())
+
+            val result = useCase(mockk<Uri>(), marginPercent = 90, messages = messages)
+
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("success 40", (result as PdfToolResult.Success).message)
+            val size = pageSizeOf(result.outputFile)
+            assertTrue(size.width > 0f)
+            assertTrue(size.height > 0f)
+        }
+
+    @Test
+    fun `recortar un archivo que no es un PDF valido devuelve Error`() =
+        runTest {
+            stubResolver("esto no es un pdf".toByteArray())
+
+            val result = useCase(mockk<Uri>(), marginPercent = 10, messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+        }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
@@ -131,7 +139,12 @@ class CropPdfUseCaseTest {
         val font = PdfFontFactory.createFont()
         val page = pdfDoc.addNewPage(PageSize.LETTER)
         val canvas = PdfCanvas(page)
-        canvas.beginText().setFontAndSize(font, 24f).moveText(50.0, 400.0).showText("CONTENIDO_PAGINA").endText()
+        canvas
+            .beginText()
+            .setFontAndSize(font, 24f)
+            .moveText(50.0, 400.0)
+            .showText("CONTENIDO_PAGINA")
+            .endText()
         pdfDoc.close()
         return out.toByteArray()
     }

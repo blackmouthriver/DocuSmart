@@ -1,11 +1,11 @@
 package com.docsmart.features.scanner.domain
 
-import java.time.LocalDateTime
-import java.util.Locale
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
+import java.util.Locale
 
 /**
  * HU-43 (backlog UX 2026-08-30/09-14): verifica que los payloads generados
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test
  * el lector nativo de la cámara -- RNF1.
  */
 class QrContentFormatTest {
-
     private lateinit var originalLocale: Locale
 
     @BeforeEach
@@ -36,7 +35,7 @@ class QrContentFormatTest {
         Locale.setDefault(Locale.forLanguageTag("ar-SA"))
 
         val start = LocalDateTime.of(2026, 12, 25, 9, 0)
-        val end   = LocalDateTime.of(2026, 12, 25, 10, 30)
+        val end = LocalDateTime.of(2026, 12, 25, 10, 30)
         val payload = QrEventContent("Reunión", "Oficina", start, end).toQrPayload()
 
         assert(payload.contains("DTSTART:20261225T090000")) {
@@ -74,7 +73,7 @@ class QrContentFormatTest {
 
         assertEquals(
             "BEGIN:VCARD\nVERSION:3.0\nN:Ana Pérez;;;;\nFN:Ana Pérez\nTEL:+573000000\nEMAIL:ana@ejemplo.com\nEND:VCARD",
-            payload
+            payload,
         )
     }
 
@@ -97,27 +96,27 @@ class QrContentFormatTest {
     @Test
     fun `Evento arma un VEVENT valido con fecha-hora en formato iCalendar`() {
         val start = LocalDateTime.of(2026, 12, 25, 9, 0)
-        val end   = LocalDateTime.of(2026, 12, 25, 10, 30)
+        val end = LocalDateTime.of(2026, 12, 25, 10, 30)
         val payload = QrEventContent("Reunión", "Oficina", start, end).toQrPayload()
 
         assertEquals(
             "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Reunión\n" +
                 "DTSTART:20261225T090000\nDTEND:20261225T103000\nLOCATION:Oficina\n" +
                 "END:VEVENT\nEND:VCALENDAR",
-            payload
+            payload,
         )
     }
 
     @Test
     fun `Evento sin lugar omite el campo LOCATION`() {
         val start = LocalDateTime.of(2026, 1, 1, 0, 0)
-        val end   = LocalDateTime.of(2026, 1, 1, 1, 0)
+        val end = LocalDateTime.of(2026, 1, 1, 1, 0)
         val payload = QrEventContent("Año nuevo", "", start, end).toQrPayload()
 
         assertEquals(
             "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Año nuevo\n" +
                 "DTSTART:20260101T000000\nDTEND:20260101T010000\nEND:VEVENT\nEND:VCALENDAR",
-            payload
+            payload,
         )
     }
 
@@ -194,7 +193,7 @@ class QrContentFormatTest {
     @Test
     fun `parseVEventPayload hace roundtrip con toQrPayload`() {
         val start = LocalDateTime.of(2026, 12, 25, 9, 0)
-        val end   = LocalDateTime.of(2026, 12, 25, 10, 30)
+        val end = LocalDateTime.of(2026, 12, 25, 10, 30)
         val original = QrEventContent("Reunión", "Oficina", start, end)
 
         val parsed = parseVEventPayload(original.toQrPayload())
@@ -211,8 +210,9 @@ class QrContentFormatTest {
 
     @Test
     fun `parseVEventPayload sin DTEND usa DTSTART como fin`() {
-        val payload = "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Puntual\n" +
-            "DTSTART:20260101T100000\nEND:VEVENT\nEND:VCALENDAR"
+        val payload =
+            "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Puntual\n" +
+                "DTSTART:20260101T100000\nEND:VEVENT\nEND:VCALENDAR"
 
         val parsed = parseVEventPayload(payload)
 
@@ -226,8 +226,9 @@ class QrContentFormatTest {
     // "Agregar al calendario" no hacía nada, sin aviso.
     @Test
     fun `parseVEventPayload con evento de todo el dia -sin hora- usa medianoche`() {
-        val payload = "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Feriado\n" +
-            "DTSTART;VALUE=DATE:20261225\nDTEND;VALUE=DATE:20261226\nEND:VEVENT\nEND:VCALENDAR"
+        val payload =
+            "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Feriado\n" +
+                "DTSTART;VALUE=DATE:20261225\nDTEND;VALUE=DATE:20261226\nEND:VEVENT\nEND:VCALENDAR"
 
         val parsed = parseVEventPayload(payload)
 

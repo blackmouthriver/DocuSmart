@@ -27,16 +27,19 @@ import java.nio.file.Files
  * queda escrito como metadato `/Rotate` que cualquier lector de PDF respeta.
  */
 class RotatePdfUseCaseTest {
-
     private lateinit var cacheDir: File
     private lateinit var filesDir: File
     private lateinit var context: Context
     private lateinit var useCase: RotatePdfUseCase
 
-    private val messages = RotatePdfMessages(
-        readError = "readError", noPages = "noPages", generateError = "generateError",
-        success = "success %1\$d", genericError = "genericError %1\$s"
-    )
+    private val messages =
+        RotatePdfMessages(
+            readError = "readError",
+            noPages = "noPages",
+            generateError = "generateError",
+            success = "success %1\$d",
+            genericError = "genericError %1\$s",
+        )
 
     @BeforeEach
     fun setUp() {
@@ -55,25 +58,27 @@ class RotatePdfUseCaseTest {
     }
 
     @Test
-    fun `rotar 90 grados escribe la rotacion en todas las paginas`() = runTest {
-        stubResolver(createTestPdf(pages = 3))
+    fun `rotar 90 grados escribe la rotacion en todas las paginas`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 3))
 
-        val result = useCase(mockk<Uri>(), degrees = 90, messages = messages)
+            val result = useCase(mockk<Uri>(), degrees = 90, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        val rotations = pageRotationsOf((result as PdfToolResult.Success).outputFile)
-        assertEquals(listOf(90, 90, 90), rotations)
-    }
+            assertTrue(result is PdfToolResult.Success)
+            val rotations = pageRotationsOf((result as PdfToolResult.Success).outputFile)
+            assertEquals(listOf(90, 90, 90), rotations)
+        }
 
     @Test
-    fun `rotar 270 grados sobre una pagina ya rotada 180 acumula 90`() = runTest {
-        stubResolver(createTestPdf(pages = 1, initialRotation = 180))
+    fun `rotar 270 grados sobre una pagina ya rotada 180 acumula 90`() =
+        runTest {
+            stubResolver(createTestPdf(pages = 1, initialRotation = 180))
 
-        val result = useCase(mockk<Uri>(), degrees = 270, messages = messages)
+            val result = useCase(mockk<Uri>(), degrees = 270, messages = messages)
 
-        assertTrue(result is PdfToolResult.Success)
-        assertEquals(listOf(90), pageRotationsOf((result as PdfToolResult.Success).outputFile))
-    }
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals(listOf(90), pageRotationsOf((result as PdfToolResult.Success).outputFile))
+        }
 
     // Nota: no se agrega acá un test de "PDF de 0 páginas" (hallazgo #28)
     // -- iText no permite crear/cerrar de forma confiable un PdfDocument
@@ -91,7 +96,10 @@ class RotatePdfUseCaseTest {
         every { context.contentResolver } returns resolver
     }
 
-    private fun createTestPdf(pages: Int, initialRotation: Int = 0): ByteArray {
+    private fun createTestPdf(
+        pages: Int,
+        initialRotation: Int = 0,
+    ): ByteArray {
         val out = ByteArrayOutputStream()
         val pdfDoc = PdfDocument(PdfWriter(out))
         repeat(pages) {

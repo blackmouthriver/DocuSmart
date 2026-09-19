@@ -7,7 +7,6 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -29,7 +28,6 @@ import java.time.YearMonth
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AgendaViewModelTest {
-
     private lateinit var adManager: AdManager
     private lateinit var repository: AgendaRepository
 
@@ -54,54 +52,57 @@ class AgendaViewModelTest {
     // fechas absolutas) para no depender del día real en que corren.
 
     @Test
-    fun `goToNextMonth conserva el mismo dia si existe en el mes nuevo`() = runTest {
-        val viewModel = buildViewModel()
-        val thisMonth = YearMonth.now()
-        viewModel.selectDate(thisMonth.atDay(1))
+    fun `goToNextMonth conserva el mismo dia si existe en el mes nuevo`() =
+        runTest {
+            val viewModel = buildViewModel()
+            val thisMonth = YearMonth.now()
+            viewModel.selectDate(thisMonth.atDay(1))
 
-        viewModel.uiState.test {
-            awaitItem() // estado inicial tras selectDate
-            viewModel.goToNextMonth()
-            val afterNext = awaitItem()
-            val nextMonth = thisMonth.plusMonths(1)
-            assertEquals(nextMonth, afterNext.calendarMonth)
-            assertEquals(nextMonth.atDay(1), afterNext.selectedDate)
+            viewModel.uiState.test {
+                awaitItem() // estado inicial tras selectDate
+                viewModel.goToNextMonth()
+                val afterNext = awaitItem()
+                val nextMonth = thisMonth.plusMonths(1)
+                assertEquals(nextMonth, afterNext.calendarMonth)
+                assertEquals(nextMonth.atDay(1), afterNext.selectedDate)
+            }
         }
-    }
 
     @Test
-    fun `goToNextMonth recorta el dia al ultimo del mes nuevo si no existe`() = runTest {
-        val viewModel = buildViewModel()
-        val thisMonth = YearMonth.now()
-        val lastDay = thisMonth.atEndOfMonth()
-        viewModel.selectDate(lastDay)
+    fun `goToNextMonth recorta el dia al ultimo del mes nuevo si no existe`() =
+        runTest {
+            val viewModel = buildViewModel()
+            val thisMonth = YearMonth.now()
+            val lastDay = thisMonth.atEndOfMonth()
+            viewModel.selectDate(lastDay)
 
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.goToNextMonth()
-            val afterNext = awaitItem()
-            val nextMonth = thisMonth.plusMonths(1)
-            val expectedDay = minOf(lastDay.dayOfMonth, nextMonth.lengthOfMonth())
-            assertEquals(nextMonth, afterNext.calendarMonth)
-            assertEquals(nextMonth.atDay(expectedDay), afterNext.selectedDate)
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.goToNextMonth()
+                val afterNext = awaitItem()
+                val nextMonth = thisMonth.plusMonths(1)
+                val expectedDay = minOf(lastDay.dayOfMonth, nextMonth.lengthOfMonth())
+                assertEquals(nextMonth, afterNext.calendarMonth)
+                assertEquals(nextMonth.atDay(expectedDay), afterNext.selectedDate)
+            }
         }
-    }
 
     @Test
-    fun `goToPreviousMonth tambien actualiza selectedDate`() = runTest {
-        val viewModel = buildViewModel()
-        val thisMonth = YearMonth.now()
-        val lastDay = thisMonth.atEndOfMonth()
-        viewModel.selectDate(lastDay)
+    fun `goToPreviousMonth tambien actualiza selectedDate`() =
+        runTest {
+            val viewModel = buildViewModel()
+            val thisMonth = YearMonth.now()
+            val lastDay = thisMonth.atEndOfMonth()
+            viewModel.selectDate(lastDay)
 
-        viewModel.uiState.test {
-            awaitItem()
-            viewModel.goToPreviousMonth()
-            val afterPrevious = awaitItem()
-            val previousMonth = thisMonth.minusMonths(1)
-            val expectedDay = minOf(lastDay.dayOfMonth, previousMonth.lengthOfMonth())
-            assertEquals(previousMonth, afterPrevious.calendarMonth)
-            assertEquals(previousMonth.atDay(expectedDay), afterPrevious.selectedDate)
+            viewModel.uiState.test {
+                awaitItem()
+                viewModel.goToPreviousMonth()
+                val afterPrevious = awaitItem()
+                val previousMonth = thisMonth.minusMonths(1)
+                val expectedDay = minOf(lastDay.dayOfMonth, previousMonth.lengthOfMonth())
+                assertEquals(previousMonth, afterPrevious.calendarMonth)
+                assertEquals(previousMonth.atDay(expectedDay), afterPrevious.selectedDate)
+            }
         }
-    }
 }

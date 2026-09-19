@@ -34,7 +34,6 @@ import org.junit.Test
  * (`getMockDocument`), sin tocar ContentResolver ni archivos reales.
  */
 class ViewerScreenTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -72,7 +71,7 @@ class ViewerScreenTest {
             pageBookmarkDao = mockk(relaxed = true),
             lastViewedPageDao = mockk(relaxed = true),
             // Backlog UX #50: notas de Modo Estudio vinculadas.
-            noteDao = mockk(relaxed = true)
+            noteDao = mockk(relaxed = true),
         )
     }
 

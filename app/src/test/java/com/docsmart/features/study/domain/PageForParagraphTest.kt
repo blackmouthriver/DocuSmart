@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test
  * con 3 párrafos y página 2 con 2 párrafos más da `pageBoundaries = [3, 5]`.
  */
 class PageForParagraphTest {
-
     @Test
     fun `parrafo dentro de la primera pagina`() {
         assertEquals(1, pageForParagraph(0, listOf(3, 5, 8)))
