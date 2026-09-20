@@ -1,8 +1,8 @@
 package com.docsmart.core.ui.test
 
 import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToLog
 
 /**
@@ -26,7 +26,8 @@ fun ComposeTestRule.waitUntilOrDump(
     try {
         waitUntil(timeoutMillis = timeoutMillis, condition = condition)
     } catch (e: ComposeTimeoutException) {
-        onRoot().printToLog(tag)
+        // Con un diálogo abierto hay más de una raíz: onRoot() lanzaría y taparía el fallo real.
+        onAllNodes(isRoot()).printToLog(tag)
         throw e
     }
 }

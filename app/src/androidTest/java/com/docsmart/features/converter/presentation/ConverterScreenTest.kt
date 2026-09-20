@@ -9,6 +9,7 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -19,6 +20,7 @@ import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
 import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.converter.domain.model.ConversionType
 import com.docsmart.features.converter.domain.usecase.ImageFormatUseCase
@@ -135,6 +137,7 @@ class ConverterScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalResources provides localizedContext.resources,
+                LocalDensity provides testViewportDensity(),
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {

@@ -132,6 +132,8 @@ fun StudyScreen(
     // Ir a Inicio desde cualquier vista de Modo Estudio.
     onHome: () -> Unit = {},
     viewModel: StudyViewModel = hiltViewModel(),
+    // Inyectable para pruebas sin Hilt (NotesTab lo necesita).
+    notesViewModel: NotesViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -975,6 +977,7 @@ fun StudyScreen(
                         highlights = highlights,
                         documentText = documentText,
                         openNoteId = openNoteId,
+                        viewModel = notesViewModel,
                     )
 
                 // ── Tab Pomodoro ──────────────────────

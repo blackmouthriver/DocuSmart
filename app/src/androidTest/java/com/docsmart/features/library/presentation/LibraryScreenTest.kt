@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -24,6 +25,7 @@ import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
 import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.DownloadsAccessManager
@@ -134,6 +136,7 @@ class LibraryScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalResources provides localizedContext.resources,
+                LocalDensity provides testViewportDensity(),
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }

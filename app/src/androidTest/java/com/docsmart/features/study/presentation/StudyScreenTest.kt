@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -23,9 +24,14 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.data.db.NoteEntity
+import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
+import com.docsmart.features.study.data.NoteRepository
 import com.docsmart.features.study.domain.PomodoroEngine
 import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -122,6 +128,21 @@ class StudyScreenTest {
         return prefs
     }
 
+    // Repositorio de notas en memoria: NotesTab usa NotesViewModel (Hilt en producción).
+    private fun buildNotesViewModel(): NotesViewModel {
+        val notes = MutableStateFlow<List<NoteWithImages>>(emptyList())
+        val repository = mockk<NoteRepository>(relaxed = true)
+        every { repository.observeAll() } returns notes
+        coEvery { repository.createNote(any(), any(), any(), any(), any()) } coAnswers {
+            val entity = NoteEntity(id = "n${notes.value.size}", title = firstArg(), text = secondArg(), createdAt = 1L)
+            notes.value = notes.value + NoteWithImages(entity, emptyList())
+        }
+        coEvery { repository.deleteNote(any()) } coAnswers {
+            notes.value = notes.value - firstArg<NoteWithImages>()
+        }
+        return NotesViewModel(repository)
+    }
+
     private fun buildViewModel(): StudyViewModel {
         val adManager = mockk<AdManager>(relaxed = true)
         every { adManager.isPremium } returns MutableStateFlow(true)
@@ -145,6 +166,7 @@ class StudyScreenTest {
             CompositionLocalProvider(
                 LocalContext provides isolatedContext,
                 LocalResources provides isolatedContext.resources,
+                LocalDensity provides testViewportDensity(),
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
@@ -160,7 +182,7 @@ class StudyScreenTest {
     @Test
     fun guardarNota_apareceEnLaLista_eliminarlaVacíaLaLista() {
         setContentIsolated {
-            StudyScreen(initialTab = 1, viewModel = buildViewModel())
+            StudyScreen(initialTab = 1, viewModel = buildViewModel(), notesViewModel = buildNotesViewModel())
         }
         waitForText("Título de la nota")
 
@@ -181,7 +203,7 @@ class StudyScreenTest {
         PomodoroEngine.reset(appContext)
 
         setContentIsolated {
-            StudyScreen(initialTab = 2, viewModel = buildViewModel())
+            StudyScreen(initialTab = 2, viewModel = buildViewModel(), notesViewModel = buildNotesViewModel())
         }
         waitForText("Iniciar")
 

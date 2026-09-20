@@ -1,6 +1,12 @@
 package com.docsmart.features.viewer.presentation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -9,6 +15,8 @@ import androidx.compose.ui.test.performClick
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
@@ -75,9 +83,22 @@ class ViewerScreenTest {
         )
     }
 
+    // Fuerza español (el emulador de CI arranca en inglés) y ajusta la densidad a pantallas chicas.
+    private fun setContentWithLocale(content: @Composable () -> Unit) {
+        composeRule.setContent {
+            val baseContext = LocalContext.current
+            val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalResources provides localizedContext.resources,
+                LocalDensity provides testViewportDensity(),
+            ) { content() }
+        }
+    }
+
     @Test
     fun abrirDocumento_muestraElNombreDelArchivoEnLaBarraSuperior() {
-        composeRule.setContent {
+        setContentWithLocale {
             ViewerScreen(documentId = "1", onBack = {}, viewModel = buildViewModel())
         }
 
@@ -87,7 +108,7 @@ class ViewerScreenTest {
     @Test
     fun tocarFavorito_llamaAToggleFavoriteConElIdDelDocumentoAbierto() {
         val viewModel = buildViewModel()
-        composeRule.setContent {
+        setContentWithLocale {
             ViewerScreen(documentId = "1", onBack = {}, viewModel = viewModel)
         }
         composeRule.waitForIdle()

@@ -9,6 +9,7 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -18,6 +19,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.security.SecurityManager
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
 import com.docsmart.features.security.domain.PdfPasswordUseCase
 import io.mockk.Runs
 import io.mockk.every
@@ -127,6 +129,7 @@ class SecurityScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalResources provides localizedContext.resources,
+                LocalDensity provides testViewportDensity(),
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
@@ -185,6 +188,7 @@ class SecurityScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalResources provides localizedContext.resources,
+                LocalDensity provides testViewportDensity(),
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
@@ -223,6 +227,14 @@ class SecurityScreenTest {
             store[firstArg<String>()] = secondArg<Boolean>()
             editor
         }
+        every { editor.putInt(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Int>()
+            editor
+        }
+        every { editor.putLong(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Long>()
+            editor
+        }
         every { editor.remove(any()) } answers {
             store.remove(firstArg<String>())
             editor
@@ -233,6 +245,12 @@ class SecurityScreenTest {
         every { prefs.edit() } returns editor
         every { prefs.getString(any(), any()) } answers {
             (store[firstArg<String>()] as? String) ?: secondArg()
+        }
+        every { prefs.getInt(any(), any()) } answers {
+            (store[firstArg<String>()] as? Int) ?: secondArg()
+        }
+        every { prefs.getLong(any(), any()) } answers {
+            (store[firstArg<String>()] as? Long) ?: secondArg()
         }
         every { prefs.getBoolean(any(), any()) } answers {
             (store[firstArg<String>()] as? Boolean) ?: secondArg()

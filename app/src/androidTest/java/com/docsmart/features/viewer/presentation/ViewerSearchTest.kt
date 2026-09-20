@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -18,6 +19,7 @@ import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.db.DocumentHistoryDao
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
 import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.viewer.domain.usecase.SearchPdfTextUseCase
@@ -110,6 +112,7 @@ class ViewerSearchTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalResources provides localizedContext.resources,
+                LocalDensity provides testViewportDensity(),
             ) { content() }
         }
     }
@@ -134,7 +137,7 @@ class ViewerSearchTest {
         waitForText(pdfFile.name)
 
         composeRule.onNodeWithContentDescription("Buscar en documento").performClick()
-        composeRule.onNodeWithText("Buscar en documento...").performTextInput(searchTerm)
+        composeRule.onNodeWithText("Buscar en documento…").performTextInput(searchTerm)
 
         // searchInPdf() corre en una corrutina real (SearchPdfTextUseCase
         // real, no mockeado) -- se espera explícitamente el resultado en vez

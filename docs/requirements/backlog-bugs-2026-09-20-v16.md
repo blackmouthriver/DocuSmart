@@ -17,3 +17,15 @@ Punto de partida: tras la ronda 18 la cobertura de SonarCloud subió a ~52% (New
 ## Pendiente
 - Estabilizar las 13 pruebas anteriores restantes (cada una que pase suma cobertura).
 - ScanResultScreen (1070 líneas sin cubrir), StudyScreen (1763), QrScreen (667), ViewerScreen (653), DocuSmartNavGraph, SecurityScreen, SettingsScreen, MainActivity, receivers de recordatorios, PomodoroTimerService, Theme/Type/Shape.
+
+
+## Actualización — estabilización de las 13 pruebas restantes
+Causas encontradas (cada una en su prueba, no un solo defecto):
+- **Contenido bajo el pliegue** (Converter, Library ×3, QrCreator ×2, Settings, Study/Pomodoro): la prueba hacía clic en botones que en 320x640 dp quedan fuera de pantalla y `performClick` no desplaza. Se añadió `testViewportDensity()` (LocaleTestUtils): si el alto en dp es menor que 900, escala la densidad para que quepa; en un teléfono real no cambia nada.
+- **Mock incompleto** (Security ×2): el fake de SharedPreferences no tenía `putInt/getInt/putLong/getLong` (SecurityManager los usa) → `setPin` fallaba y la pantalla quedaba en "Configurar PIN".
+- **Hilt en tests** (Study, guardarNota): `NotesTab` usaba `hiltViewModel()`; `StudyScreen` ahora acepta `notesViewModel` inyectable y la prueba usa un repositorio de notas en memoria (ahora cubre el flujo real de crear/guardar/eliminar nota).
+- **Locale sin forzar** (ViewerScreen favorito): la prueba no forzaba español.
+- **Texto incorrecto** (ViewerSearch): buscaba "Buscar en documento..." (tres puntos) y el string real usa "…".
+- `waitUntilOrDump` ya no lanza con varias raíces.
+
+Herramienta: AVD local `DocuSmart_CI` (320x640@160, animaciones desactivadas, `-s emulator-5554`); un diálogo "System UI isn't responding" en ese AVD sale por saturación de RAM/CPU local (cerrar Gradle: `./gradlew --stop`).

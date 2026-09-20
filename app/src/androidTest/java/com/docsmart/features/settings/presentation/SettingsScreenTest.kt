@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -24,6 +25,7 @@ import com.docsmart.core.ads.AdManager
 import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
 import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.core.ui.theme.AccentColor
 import com.docsmart.core.ui.theme.AppTheme
@@ -169,6 +171,7 @@ class SettingsScreenTest {
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalResources provides localizedContext.resources,
+                LocalDensity provides testViewportDensity(),
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) { content() }
