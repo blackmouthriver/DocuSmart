@@ -4,7 +4,6 @@
   <CurrentIssues>
     <ID>CyclomaticComplexMethod:ConverterViewModel.kt$ConverterViewModel$private suspend fun runConversionForUri( type: ConversionType, uri: Uri, fileName: String, ): ConversionResult</ID>
     <ID>CyclomaticComplexMethod:ExcelToHtmlUseCase.kt$ExcelToHtmlUseCase$suspend operator fun invoke( excelUri: Uri, fileName: String? = null, ): ConversionResult</ID>
-    <ID>CyclomaticComplexMethod:MainActivity.kt$MainActivity$override fun onCreate(savedInstanceState: Bundle?)</ID>
     <ID>CyclomaticComplexMethod:ViewerMimeTypes.kt$internal fun resolveMimeTypeByExtension(fileName: String): String?</ID>
     <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$fun unlockPdfWithPassword(password: String)</ID>
     <ID>CyclomaticComplexMethod:ViewerViewModel.kt$ViewerViewModel$private fun isPdfPasswordProtected( uri: Uri, context: Context, originalId: String = "", ): Boolean</ID>
@@ -89,8 +88,6 @@
     <ID>MaxLineLength:TrashRepository.kt$TrashRepository$Timber.w("TrashRepository: no se pudo confirmar si un documento sigue existiendo: ${e.javaClass.simpleName}")</ID>
     <ID>MaxLineLength:TrashRepository.kt$TrashRepository$if (intentSender != null) return@withContext BulkDeleteOutcome.NeedsPermission(intentSender, mediaFiles)</ID>
     <ID>MaxLineLength:TrashViewModelTest.kt$TrashViewModelTest$private fun doc(id: String)</ID>
-    <ID>MaxLineLength:Type.kt$displayMedium = Typography().displayMedium.copy(fontFamily = PlusJakartaSans, fontWeight = FontWeight.ExtraBold)</ID>
-    <ID>MaxLineLength:Type.kt$headlineSmall = Typography().headlineSmall.copy(fontFamily = PlusJakartaSans, fontWeight = FontWeight.ExtraBold)</ID>
     <ID>MaxLineLength:ViewerScreen.kt$fun sheetMatches(sheet: ExcelSheetModel)</ID>
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"1" to DocumentUiModel("1", "Contrato_Servicios_2024.pdf", DocumentType.PDF, "2.4 MB", "01/05/2026", true)</ID>
     <ID>MaxLineLength:ViewerViewModel.kt$ViewerViewModel$"10" to DocumentUiModel("10", "Reporte_Ventas.xlsx", DocumentType.EXCEL, "2.2 MB", "22/04/2026", true)</ID>
@@ -226,6 +223,7 @@
     <ID>TooManyFunctions:ViewerScreen.kt$com.docsmart.features.viewer.presentation.ViewerScreen.kt</ID>
     <ID>TooManyFunctions:ViewerViewModel.kt$ViewerViewModel : ViewModel</ID>
     <ID>UnusedParameter:SecurityScreen.kt$onPdfPassword: () -&gt; Unit = {}</ID>
+    <ID>UnusedPrivateProperty:MainActivity.kt$MainActivity$val isSystemDark = isSystemInDarkTheme()</ID>
     <ID>UnusedPrivateProperty:SettingsScreen.kt$var showShareDialog by remember { mutableStateOf(false) }</ID>
     <ID>UseCheckOrError:AgendaViewModelTest.kt$AgendaViewModelTest$throw IllegalStateException("db")</ID>
     <ID>UseCheckOrError:NotesViewModelTest.kt$NotesViewModelTest$throw IllegalStateException("db")</ID>
