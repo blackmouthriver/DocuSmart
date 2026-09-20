@@ -38,7 +38,7 @@ import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
-import com.docsmart.core.ui.theme.rememberAccentGradient
+import com.docsmart.core.ui.theme.rememberBannerGradient
 import com.docsmart.core.ui.util.SecureScreenEffect
 import timber.log.Timber
 import java.io.File
@@ -380,7 +380,7 @@ private fun PinUnlockScreen(
 
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): fondo fijo
     // en tonos de azul, ignorando el "Color de acento" elegido en Ajustes.
-    val securityBannerGradient = rememberAccentGradient()
+    val securityBannerGradient = rememberBannerGradient()
 
     Box(
         modifier =
@@ -605,7 +605,7 @@ private fun SetupPinScreen(
 
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): fondo fijo
     // en tonos de azul, ignorando el "Color de acento" elegido en Ajustes.
-    val pinBannerGradient = rememberAccentGradient()
+    val pinBannerGradient = rememberBannerGradient()
 
     Box(
         modifier =

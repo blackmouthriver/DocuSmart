@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.rememberAccentGradient
+import com.docsmart.core.ui.theme.rememberBannerGradient
 
 @Composable
 fun DocuSmartTopBanner(
@@ -51,7 +51,7 @@ fun DocuSmartTopBanner(
     // degradado estaba fijo en tonos de azul, ignorando el "Color de
     // acento" elegido en Ajustes -- este banner lo comparten 9 pantallas,
     // así que el fix aplica a todas de una sola vez.
-    val bannerGradient = rememberAccentGradient()
+    val bannerGradient = rememberBannerGradient()
 
     Column(modifier = modifier.fillMaxWidth()) {
         Box(

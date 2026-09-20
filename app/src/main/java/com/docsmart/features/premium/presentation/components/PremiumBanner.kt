@@ -24,7 +24,7 @@ fun PremiumBanner(
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): este
     // degradado estaba fijo en tonos de azul, ignorando el "Color de
     // acento" elegido en Ajustes.
-    val bannerGradient = rememberAccentGradient()
+    val bannerGradient = rememberBannerGradient()
 
     Box(
         modifier =

@@ -12,7 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.PremiumGold
@@ -155,12 +159,8 @@ private fun PlanCard(
                                 Text(
                                     text = stringResource(labelRes),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color =
-                                        if (plan.isPopular) {
-                                            PremiumGold
-                                        } else {
-                                            MaterialTheme.colorScheme.primary
-                                        },
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = savingsBadgeTextColor(plan.isPopular),
                                     modifier =
                                         Modifier.padding(
                                             horizontal = 6.dp,
@@ -211,4 +211,15 @@ private fun PlanCard(
             }
         }
     }
+}
+
+// Contraste: amarillo sobre su propio fondo amarillo claro se leía mal en tema
+// claro (visto en el teléfono) -- se oscurece hacia marrón en claro y se
+// conserva el dorado en oscuro. Para planes no populares se usa el par
+// onPrimaryContainer, diseñado para el primaryContainer de fondo.
+@Composable
+private fun savingsBadgeTextColor(isPopular: Boolean): Color {
+    if (!isPopular) return MaterialTheme.colorScheme.onPrimaryContainer
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    return if (isDark) PremiumGold else lerp(PremiumGold, Color.Black, 0.55f)
 }

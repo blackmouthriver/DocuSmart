@@ -89,9 +89,9 @@ fun DocuSmartQuickAccessCard(
             Box(
                 modifier =
                     Modifier
-                        .size(40.dp) // ← reducido de 48dp a 40dp
+                        .size(44.dp)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(iconTint.copy(alpha = 0.12f)),
+                        .background(iconTint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -106,8 +106,7 @@ fun DocuSmartQuickAccessCard(
                     // abajo, que ya usa null para este mismo patrón.
                     contentDescription = null,
                     tint = iconTint,
-                    // ← reducido de 28dp a 22dp
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(24.dp),
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
@@ -115,6 +114,7 @@ fun DocuSmartQuickAccessCard(
                 text = label,
                 // ← labelMedium → labelSmall
                 style = MaterialTheme.typography.labelSmall,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

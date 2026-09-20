@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -31,6 +32,55 @@ fun rememberAccentGradient(): List<Color> {
             lerp(primary, Color.White, 0.12f),
             primary,
             lerp(primary, Color.Black, 0.22f),
+        )
+    }
+}
+
+private const val MIN_WHITE_TEXT_CONTRAST = 5f
+private const val DARKEN_STEP = 0.05f
+private const val MAX_DARKEN_STEPS = 20
+
+private fun contrastWithWhite(color: Color): Float = 1.05f / (color.luminance() + 0.05f)
+
+/**
+ * Oscurece [color] de a poco hasta que el texto blanco encima tenga contraste
+ * suficiente (>= 5:1, margen sobre el 4.5:1 de WCAG AA porque el degradado
+ * aclara un poco su primera parada). Rediseño UI 2026-09-20: en modo
+ * oscuro `primary` es un tono claro (celeste/cian/etc.) y el texto blanco
+ * de los banners quedaba casi ilegible (~2.5:1) -- se veía en Inicio con
+ * el acento cian del usuario.
+ */
+fun darkenForWhiteText(color: Color): Color {
+    var result = color
+    var steps = 0
+    while (contrastWithWhite(result) < MIN_WHITE_TEXT_CONTRAST && steps < MAX_DARKEN_STEPS) {
+        result = lerp(result, Color.Black, DARKEN_STEP)
+        steps++
+    }
+    return result
+}
+
+/**
+ * Igual que [rememberAccentGradient] pero garantiza que el texto blanco
+ * puesto encima se lea (para banners con título/subtítulo blancos). El
+ * fondo animado y la pastilla de la barra inferior siguen con el degradado
+ * original, porque ahí no hay texto blanco encima.
+ */
+@Composable
+fun rememberBannerGradient(): List<Color> {
+    val scheme = MaterialTheme.colorScheme
+    // En oscuro `primary` es un tono claro y pastel: oscurecerlo hacia negro lo
+    // dejaba grisáceo/apagado (visto en el teléfono con el acento cian). El
+    // `primaryContainer` del acento ya es la versión profunda y saturada del
+    // mismo tono, pensada justo para esto.
+    val isDark = scheme.background.luminance() < 0.5f
+    val base = if (isDark) scheme.primaryContainer else scheme.primary
+    return remember(base) {
+        val safe = darkenForWhiteText(base)
+        listOf(
+            lerp(safe, Color.White, 0.08f),
+            safe,
+            lerp(safe, Color.Black, 0.22f),
         )
     }
 }
@@ -79,10 +129,12 @@ fun Modifier.accentShadow(
 fun Modifier.accentBorder(
     shape: Shape,
     width: Dp = 1.dp,
-    darken: Float = 0.3f,
-    alpha: Float = 0.4f,
+    accentMix: Float = 0.25f,
 ): Modifier {
-    val color = lerp(MaterialTheme.colorScheme.primary, Color.Black, darken).copy(alpha = alpha)
+    // Rediseño UI 2026-09-20: el borde era el acento oscurecido al 40% de
+    // opacidad -- con 9 tarjetas juntas (y acentos vivos como el cian) se veía
+    // recargado. Ahora es el borde neutro del tema con solo un toque de acento.
+    val color = lerp(MaterialTheme.colorScheme.outline, MaterialTheme.colorScheme.primary, accentMix)
     return this.border(width = width, color = color, shape = shape)
 }
 
