@@ -40,6 +40,8 @@ fun QuickAccessGrid(
     onImageToPdfClick: () -> Unit,
     onSafeBoxClick: () -> Unit,
     onStudyModeClick: () -> Unit,
+    // ← NUEVO: menú de Modo Estudio (Lectura, Notas, Pomodoro y Agenda)
+    onStudyMenuClick: () -> Unit = {},
     // ← leer QR
     onQrReaderClick: () -> Unit = {},
     // ← crear QR
@@ -48,6 +50,8 @@ fun QuickAccessGrid(
     onNotesClick: () -> Unit = {},
     // ← NUEVO: pomodoro de Estudio
     onPomodoroClick: () -> Unit = {},
+    // ← NUEVO: agenda y calendario
+    onAgendaClick: () -> Unit = {},
     // ← NUEVO: papelera de Biblioteca
     onTrashClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -90,6 +94,12 @@ fun QuickAccessGrid(
                 onClick = onSafeBoxClick,
             ),
             QuickAccessItem(
+                icon = Icons.Rounded.School,
+                label = stringResource(R.string.study_title),
+                color = DocuBlue,
+                onClick = onStudyMenuClick,
+            ),
+            QuickAccessItem(
                 icon = Icons.Rounded.MenuBook,
                 label = stringResource(R.string.study_tab_reading),
                 color = SuccessGreen,
@@ -106,6 +116,12 @@ fun QuickAccessGrid(
                 label = stringResource(R.string.study_tab_pomodoro),
                 color = WarningAmber,
                 onClick = onPomodoroClick,
+            ),
+            QuickAccessItem(
+                icon = Icons.Rounded.CalendarMonth,
+                label = stringResource(R.string.home_agenda),
+                color = MaterialTheme.colorScheme.tertiary,
+                onClick = onAgendaClick,
             ),
             QuickAccessItem(
                 icon = Icons.Rounded.QrCodeScanner,

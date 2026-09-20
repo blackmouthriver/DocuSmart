@@ -31,6 +31,8 @@ fun HomeScreen(
     onSecurity: () -> Unit = {},
     // ← tab inicial: Lectura=0, Notas=1, Pomodoro=2
     onStudy: (Int) -> Unit = {},
+    // ← acceso rápido a la Agenda (antes solo se llegaba desde Modo Estudio)
+    onAgenda: () -> Unit = {},
     onDocumentClick: (String) -> Unit = {},
     onSeeAll: () -> Unit = {},
     onQrReader: () -> Unit = {},
@@ -150,8 +152,10 @@ fun HomeScreen(
                 onImageToPdfClick = onQuickConvertImageToPdf,
                 onSafeBoxClick = onSecurity,
                 onStudyModeClick = { onStudy(0) },
+                onStudyMenuClick = { onStudy(-1) },
                 onNotesClick = { onStudy(1) },
                 onPomodoroClick = { onStudy(2) },
+                onAgendaClick = onAgenda,
                 onQrReaderClick = onQrReader,
                 onQrCreatorClick = onQrCreator,
                 onTrashClick = onTrash,

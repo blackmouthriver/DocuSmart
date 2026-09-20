@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_agenda">日程</string>
+    <string name="study_menu_subtitle">选择你想做的事</string>
+    <string name="study_menu_prompt">你想做什么？</string>
+    <string name="study_menu_reading_desc">朗读你的 PDF，并从上次停下的地方继续</string>
+    <string name="study_menu_notes_desc">写笔记、添加提醒并查看已保存的笔记</string>
+    <string name="study_menu_pomodoro_desc">以 25 分钟为一个学习块，并查看你的统计数据</string>
+    <string name="study_menu_agenda_desc">用列表或日历整理你的事件和提醒</string>
+    <string name="study_reading_intro">DocuSmart 帮你朗读 PDF</string>
+    <string name="study_reading_helper">DocuSmart 为你提供朗读文档的助手</string>
+    <string name="study_reading_finished">你已读完整个文档</string>
+    <string name="study_read_again">重新朗读</string>
+</resources>

@@ -74,6 +74,7 @@ import com.docsmart.features.agenda.presentation.components.AgendaLinkDocumentDi
 fun AgendaScreen(
     onBack: () -> Unit,
     openEventId: String? = null,
+    onHome: (() -> Unit)? = null,
     viewModel: AgendaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -165,6 +166,7 @@ fun AgendaScreen(
                         screenTitle = stringResource(R.string.agenda_title),
                         screenSubtitle = stringResource(R.string.agenda_subtitle),
                         onBack = onBack,
+                        onHome = onHome,
                     )
                 }
             }

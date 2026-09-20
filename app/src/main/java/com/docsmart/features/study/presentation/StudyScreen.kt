@@ -10,6 +10,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -31,7 +32,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -52,7 +52,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -130,6 +129,8 @@ fun StudyScreen(
     // #52: fuerza la pestaña Notas si viene seteado
     openNoteId: String? = null,
     onOpenAgenda: () -> Unit = {},
+    // Ir a Inicio desde cualquier vista de Modo Estudio.
+    onHome: () -> Unit = {},
     viewModel: StudyViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -142,7 +143,7 @@ fun StudyScreen(
     // oculta. TextSummarizer y SummaryTab quedan intactos, solo sin punto
     // de entrada desde la UI; reactivar es agregar de nuevo el 4to string
     // en `tabs` y volver este coerceIn a (0, 3).
-    var selectedTab by remember { mutableIntStateOf(if (openNoteId != null) 1 else initialTab.coerceIn(0, 2)) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(initialStudyTab(openNoteId, initialTab)) }
     // ── Resumen automático (2026-09-08, 100% local -- ver TextSummarizer) ──
     var summarySentences by remember { mutableStateOf<List<String>?>(null) }
     var isSummarizing by remember { mutableStateOf(false) }
@@ -244,6 +245,11 @@ fun StudyScreen(
     // re-marque como "leyendo" una lectura que el usuario ya detuvo.
     val ttsQueuedUpTo = remember { mutableIntStateOf(-1) }
     val ttsSession = remember { mutableIntStateOf(0) }
+    // Mayor índice de párrafo que ya empezó a sonar en esta lectura: en una lectura
+    // secuencial los índices solo suben, así que un retroceso es una repetición y se
+    // corta. `readingFinished` = terminó todo el documento (ofrece "Volver a leer").
+    val ttsHighestStarted = remember { mutableIntStateOf(-1) }
+    val readingFinished = remember { mutableStateOf(false) }
     // Extracción en curso: al elegir otro documento mientras el anterior
     // seguía extrayéndose, las dos corrutinas escribían a la vez sobre el mismo
     // `documentText` (párrafos de un documento mezclados con los del otro).
@@ -254,6 +260,24 @@ fun StudyScreen(
         ttsRef.value?.stop()
         isSpeaking.value = false
         waitingForMoreText.value = false
+    }
+
+    // Terminó de leer TODO el documento: se detiene el motor, se invalida
+    // cualquier callback pendiente (ttsSession) y se avisa al usuario en vez de
+    // dejar que la lectura vuelva a empezar sola. Solo "Volver a leer" la
+    // reanuda, desde el principio.
+    fun finishReading(uriString: String?) {
+        ttsSession.intValue += 1
+        ttsRef.value?.stop()
+        waitingForMoreText.value = false
+        isSpeaking.value = false
+        currentSpeakingIndex.intValue = -1
+        ttsHighestStarted.intValue = -1
+        readingFinished.value = true
+        if (uriString != null) {
+            StudyReadingProgressStorage.remove(context, uriString)
+            readingHistory = StudyReadingProgressStorage.loadAll(context)
+        }
     }
 
     // ── Pomodoro (RF-STU-10: vive en PomodoroEngine, no en remember{},
@@ -404,10 +428,7 @@ fun StudyScreen(
             TtsQueueOutcome.WAIT_FOR_MORE_TEXT -> Unit
             TtsQueueOutcome.FINISHED -> {
                 // Terminó de extraer y no quedó nada más por leer.
-                waitingForMoreText.value = false
-                isSpeaking.value = false
-                currentSpeakingIndex.intValue = -1
-                if (uriString != null) StudyReadingProgressStorage.remove(context, uriString)
+                finishReading(uriString)
             }
         }
     }
@@ -440,6 +461,8 @@ fun StudyScreen(
         loadJob?.cancel()
         stopReading()
         ttsQueuedUpTo.intValue = -1
+        ttsHighestStarted.intValue = -1
+        readingFinished.value = false
         isLoadingDoc = true
         extractionComplete = false
         documentUri = uri
@@ -615,6 +638,12 @@ fun StudyScreen(
         tts.speak(sampleText, TextToSpeech.QUEUE_FLUSH, null, "study_voice_preview")
     }
 
+    // Atrás del sistema desde una vista interna vuelve al menú (no sale de Modo Estudio).
+    BackHandler(enabled = selectedTab != STUDY_TAB_MENU) {
+        stopReading()
+        selectedTab = STUDY_TAB_MENU
+    }
+
     Scaffold(
         // Fondo animado global (backlog UX 2026-09-06): transparente para
         // dejar ver la capa pintada una sola vez en MainActivity. Bug real
@@ -680,162 +709,50 @@ fun StudyScreen(
             // propia fila, a la altura de "Volver" (que por eso se arma acá
             // a mano en vez de con el `onBack` de DocuSmartTopBanner, para
             // poder ponerlos en la misma fila).
+            // Rediseño de acceso (2026-09-19, feedback de testers: "Modo Estudio es
+            // confuso"): en vez de pestañas + 3 íconos sueltos, Modo Estudio abre
+            // en un menú (Lectura, Notas, Pomodoro, Agenda y calendario). Cada vista
+            // lleva su banner de anuncio, el banner de color y "Volver" (al menú)
+            // + "Inicio" (a Home). Los atajos de Inicio abren directo la vista.
+            val currentView = studyViewForTab(selectedTab)
             DocuSmartScreenHeader(
                 adUnitId = AdConstants.BANNER_STUDY_ID,
                 adManager = viewModel.adManager,
             ) {
-                Column {
-                    DocuSmartTopBanner(
-                        screenTitle = stringResource(R.string.study_title),
-                        screenSubtitle = documentName,
-                    )
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(top = 10.dp, bottom = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier =
-                                Modifier.clickable(role = Role.Button) {
-                                    stopReading()
-                                    onBack()
-                                },
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.general_back),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        // Pedido explícito del usuario 2026-09-08: los
-                        // íconos quedaban sueltos, sin ningún fondo que los
-                        // distinguiera del resto de la fila -- ahora cada
-                        // uno lleva su propio círculo (borde + fondo
-                        // tintado, contraste con el color del ícono).
-                        // Botones subidos de 36dp a 48dp (auditoría de
-                        // testers 2026-09-12, "botones pequeños").
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            IconButton(
-                                onClick = { docLauncher.launch(arrayOf("application/pdf")) },
-                                modifier =
-                                    Modifier
-                                        .size(48.dp)
-                                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.FolderOpen,
-                                    contentDescription = stringResource(R.string.qr_open_document),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                            IconButton(
-                                onClick = { showStats = true },
-                                modifier =
-                                    Modifier
-                                        .size(48.dp)
-                                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.QueryStats,
-                                    contentDescription = stringResource(R.string.study_stats_icon_desc),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                            // ── Agenda (HU-65, feedback real de testers de
-                            // la prueba cerrada 2026-09-16): pantalla propia,
-                            // no una pestaña más -- decisión explícita del
-                            // usuario, entrada visible desde acá.
-                            IconButton(
-                                onClick = onOpenAgenda,
-                                modifier =
-                                    Modifier
-                                        .size(48.dp)
-                                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.CalendarMonth,
-                                    contentDescription = stringResource(R.string.agenda_title),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── Tabs ──────────────────────────────────
-            // Seguimiento 2026-09-08: antes quedaba blanco plano -- ahora
-            // usa `primaryContainer` (ya recoloreado por el acento elegido
-            // en Ajustes, mismo mecanismo que `AccentGradient.kt`) con el
-            // texto en `primary`/`onSurfaceVariant` para mantener buen
-            // contraste sobre ese fondo tintado.
-            val tabs =
-                listOf(
-                    stringResource(R.string.study_tab_reading),
-                    stringResource(R.string.study_tab_notes),
-                    stringResource(R.string.study_tab_pomodoro),
-                    // "Resumen" oculta para el primer release, ver comentario junto a selectedTab.
-                )
-            // TabRow (vuelto a usar 2026-09-10, con "Resumen" oculto): con
-            // 4 pestañas, TabRow forzaba el mismo ancho fijo y "Pomodoro" se
-            // partía en 2 líneas -- por eso se había pasado a
-            // ScrollableTabRow, que mide cada pestaña por su contenido (sin
-            // llenar el ancho, dejando un hueco vacío a la derecha con solo
-            // 3 pestañas). Con 3 pestañas cada una tiene más espacio y
-            // "Pomodoro" entra en una sola línea, así que TabRow (ancho
-            // fijo, reparte el espacio total) evita el hueco. Si "Resumen"
-            // vuelve a activarse (ver `tabs` arriba), hay que volver a
-            // ScrollableTabRow para no reintroducir el corte de línea.
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                contentColor = MaterialTheme.colorScheme.primary,
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        selectedContentColor = MaterialTheme.colorScheme.primary,
-                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        text = {
-                            // Hallazgo #57 (revisión general 2026-09-16):
-                            // maxLines=1 sin overflow=Ellipsis recortaba el
-                            // texto en seco con FontScale.EXTRA_LARGE en vez
-                            // de mostrar "...".
-                            Text(
-                                text = title,
-                                fontWeight =
-                                    if (selectedTab == index) {
-                                        FontWeight.Bold
-                                    } else {
-                                        FontWeight.Normal
-                                    },
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                DocuSmartTopBanner(
+                    // En Lectura el título es "Lectura" (no "Modo Estudio"): pedido del usuario.
+                    screenTitle =
+                        stringResource(
+                            if (currentView == StudyView.READING) R.string.study_tab_reading else R.string.study_title,
+                        ),
+                    screenSubtitle =
+                        when (currentView) {
+                            StudyView.MENU -> stringResource(R.string.study_menu_subtitle)
+                            StudyView.READING -> documentName
+                            StudyView.NOTES -> stringResource(R.string.study_tab_notes)
+                            StudyView.POMODORO -> stringResource(R.string.study_tab_pomodoro)
                         },
-                    )
-                }
+                    onBack = {
+                        stopReading()
+                        if (currentView == StudyView.MENU) onBack() else selectedTab = STUDY_TAB_MENU
+                    },
+                    onHome = {
+                        stopReading()
+                        onHome()
+                    },
+                )
             }
 
             when (selectedTab) {
+                // ── Menú de Modo Estudio ──────────────
+                STUDY_TAB_MENU ->
+                    StudyMenu(
+                        onReading = { selectedTab = STUDY_TAB_READING },
+                        onNotes = { selectedTab = STUDY_TAB_NOTES },
+                        onPomodoro = { selectedTab = STUDY_TAB_POMODORO },
+                        onAgenda = onOpenAgenda,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 // ── Tab Lectura ───────────────────────
                 // Rediseñado 2026-09-08 a pedido explícito del usuario: antes
                 // mostraba los párrafos extraídos como la vista principal --
@@ -856,6 +773,7 @@ fun StudyScreen(
                         ttsReady = ttsReady.value,
                         ttsErrorMessage = ttsErrorMessage.value,
                         isExtractingMore = !extractionComplete,
+                        readingFinished = readingFinished.value,
                         onToggleHighlightCurrent = {
                             val index = currentSpeakingIndex.intValue
                             if (index >= 0) {
@@ -904,6 +822,8 @@ fun StudyScreen(
                                     currentSpeakingIndex.intValue
                                         .takeIf { it in documentText.indices } ?: 0
                                 val uriString = documentUri?.toString()
+                                readingFinished.value = false
+                                ttsHighestStarted.intValue = -1
                                 // Ronda 16: se congela la lista que se encola ahora y se
                                 // recuerda hasta dónde llegó la cola (ver
                                 // ttsQueueStepAfterUtterance), y se invalida cualquier
@@ -932,6 +852,12 @@ fun StudyScreen(
                                             mainHandler.post {
                                                 if (ttsSession.intValue != session) return@post
                                                 val index = parseUtteranceIndex(utteranceId)
+                                                if (index != null && index < ttsHighestStarted.intValue) {
+                                                    // Retrocedió a un párrafo ya leído: es una repetición.
+                                                    finishReading(uriString)
+                                                    return@post
+                                                }
+                                                if (index != null) ttsHighestStarted.intValue = index
                                                 isSpeaking.value = true
                                                 if (index != null) {
                                                     currentSpeakingIndex.intValue = index
@@ -992,13 +918,7 @@ fun StudyScreen(
                                                     }
                                                     // Terminó todo el documento -- ya no hay nada
                                                     // que retomar.
-                                                    TtsQueueOutcome.FINISHED -> {
-                                                        isSpeaking.value = false
-                                                        currentSpeakingIndex.intValue = -1
-                                                        if (uriString != null) {
-                                                            StudyReadingProgressStorage.remove(context, uriString)
-                                                        }
-                                                    }
+                                                    TtsQueueOutcome.FINISHED -> finishReading(uriString)
                                                 }
                                             }
                                         }
@@ -1067,6 +987,7 @@ fun StudyScreen(
                         pomodoroCount = pomodoroState.pomodoroCount,
                         onToggle = { PomodoroEngine.toggle(context) },
                         onReset = { PomodoroEngine.reset(context) },
+                        onShowStats = { showStats = true },
                     )
 
                 // ── Tab Resumen (2026-09-08, 100% local) ──
@@ -1168,6 +1089,7 @@ private fun ReadingTab(
     // botón "Leer todo" en vez de dejarlo deshabilitado sin explicación.
     ttsErrorMessage: String?,
     isExtractingMore: Boolean,
+    readingFinished: Boolean,
     currentPage: Int,
     totalPages: Int,
     onToggleHighlightCurrent: () -> Unit,
@@ -1197,11 +1119,23 @@ private fun ReadingTab(
                 ReadingEmptyState(
                     readingHistory = readingHistory,
                     onSelectDoc = onSelectDoc,
+                    onVoiceSelectorClick = onVoiceSelectorClick,
+                    voiceEnabled = availableVoices.isNotEmpty(),
                     onResumeDocument = onResumeDocument,
                     onDeleteDocument = onDeleteDocument,
                 )
             else -> {
                 Column(modifier = Modifier.fillMaxSize()) {
+                    // ── Abrir otro documento / Elegir voz ─
+                    // Rediseño 2026-09-19 (feedback: "el botón de voz no se ve"): dos
+                    // botones con texto en vez de íconos sueltos. La voz sigue
+                    // habilitada solo si el motor reportó voces (el diálogo también
+                    // deja escuchar una muestra con una sola voz -- HU-64).
+                    ReadingActionButtons(
+                        onSelectDoc = onSelectDoc,
+                        onVoiceSelectorClick = onVoiceSelectorClick,
+                        voiceEnabled = availableVoices.isNotEmpty(),
+                    )
                     // ── Barra TTS ─────────────────────
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -1240,6 +1174,7 @@ private fun ReadingTab(
                                 // la página actual en vez del texto genérico.
                                 text =
                                     when {
+                                        readingFinished -> stringResource(R.string.study_reading_finished)
                                         isSpeaking && totalPages > 0 ->
                                             stringResource(R.string.study_reading_page, currentPage, totalPages)
                                         isSpeaking -> stringResource(R.string.study_reading_document)
@@ -1281,30 +1216,6 @@ private fun ReadingTab(
                                     modifier = Modifier.size(18.dp),
                                 )
                             }
-                            // ── Elegir voz (pedido explícito de testers
-                            // 2026-09-12, ampliado en HU-64 2026-09-16) --
-                            // antes solo se mostraba con 2+ voces
-                            // instaladas ("si hay una no tiene sentido un
-                            // selector"), pero ahora el diálogo también
-                            // deja escuchar una muestra con nombre/avatar
-                            // de personaje, lo cual aporta valor real
-                            // incluso con una sola voz disponible. Solo se
-                            // oculta si el motor no reportó NINGUNA voz
-                            // para el idioma actual.
-                            if (availableVoices.isNotEmpty()) {
-                                // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
-                                IconButton(
-                                    onClick = onVoiceSelectorClick,
-                                    modifier = Modifier.size(48.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.RecordVoiceOver,
-                                        contentDescription = stringResource(R.string.study_choose_voice),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                            }
                             // ── Botón leer todo ───────
                             FilledTonalButton(
                                 onClick = onSpeakAll,
@@ -1323,10 +1234,10 @@ private fun ReadingTab(
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 val speakButtonLabel =
-                                    if (isSpeaking) {
-                                        stringResource(R.string.study_stop)
-                                    } else {
-                                        stringResource(R.string.study_read_all)
+                                    when {
+                                        isSpeaking -> stringResource(R.string.study_stop)
+                                        readingFinished -> stringResource(R.string.study_read_again)
+                                        else -> stringResource(R.string.study_read_all)
                                     }
                                 Text(speakButtonLabel)
                             }
@@ -1366,6 +1277,8 @@ private fun ReadingTab(
 private fun BoxScope.ReadingEmptyState(
     readingHistory: List<ReadingProgress>,
     onSelectDoc: () -> Unit,
+    onVoiceSelectorClick: () -> Unit,
+    voiceEnabled: Boolean,
     onResumeDocument: (ReadingProgress) -> Unit,
     onDeleteDocument: (ReadingProgress) -> Unit,
 ) {
@@ -1401,17 +1314,48 @@ private fun BoxScope.ReadingEmptyState(
             )
         }
         Text(
-            text = stringResource(R.string.study_title),
+            text = stringResource(R.string.study_tab_reading),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = stringResource(R.string.study_empty_state_desc),
+            text = stringResource(R.string.study_reading_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        Button(
+            onClick = onSelectDoc,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.FolderOpen,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.qr_open_document))
+        }
+        Text(
+            text = stringResource(R.string.study_reading_helper),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        OutlinedButton(
+            onClick = onVoiceSelectorClick,
+            enabled = voiceEnabled,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.RecordVoiceOver,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.study_choose_voice))
+        }
         if (readingHistory.isNotEmpty()) {
             Text(
                 text = stringResource(R.string.study_continue_reading),
@@ -1428,17 +1372,39 @@ private fun BoxScope.ReadingEmptyState(
                 )
             }
         }
-        Button(
+    }
+}
+
+// Fila de acciones de Lectura con un documento abierto: abrir otro PDF y
+// elegir la voz (botones con texto, más visibles que los íconos de antes).
+@Composable
+private fun ReadingActionButtons(
+    onSelectDoc: () -> Unit,
+    onVoiceSelectorClick: () -> Unit,
+    voiceEnabled: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedButton(
             onClick = onSelectDoc,
             shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.weight(1f),
         ) {
-            Icon(
-                imageVector = Icons.Rounded.FolderOpen,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.qr_open_document))
+            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.qr_open_document), maxLines = 2, textAlign = TextAlign.Center)
+        }
+        FilledTonalButton(
+            onClick = onVoiceSelectorClick,
+            enabled = voiceEnabled,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.weight(1f),
+        ) {
+            Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.study_choose_voice), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -3294,6 +3260,7 @@ private fun PomodoroTab(
     pomodoroCount: Int,
     onToggle: () -> Unit,
     onReset: () -> Unit,
+    onShowStats: () -> Unit,
 ) {
     // Bug real corregido 2026-09-08: mismo problema que se encontró y
     // corrigió en Notas -- este `Column` no tenía scroll, así que en
@@ -3329,6 +3296,16 @@ private fun PomodoroTab(
         PomodoroClock(minutes, seconds, isRunning, isBreak)
         PomodoroControls(isRunning, isBreak, onToggle, onReset)
         PomodoroCountCard(lifetimePomodoros)
+        // Estadísticas de estudio (antes un ícono suelto en el encabezado).
+        OutlinedButton(
+            onClick = onShowStats,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Rounded.QueryStats, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.study_stats_icon_desc), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
 
         Spacer(Modifier.height(8.dp))
     }

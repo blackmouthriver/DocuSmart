@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_agenda">Ежедневник</string>
+    <string name="study_menu_subtitle">Выберите, что хотите сделать</string>
+    <string name="study_menu_prompt">Что вы хотите сделать?</string>
+    <string name="study_menu_reading_desc">Слушайте PDF вслух и продолжайте с того места, где остановились</string>
+    <string name="study_menu_notes_desc">Пишите заметки, добавляйте напоминания и просматривайте сохранённые</string>
+    <string name="study_menu_pomodoro_desc">Занимайтесь блоками по 25 минут и смотрите статистику</string>
+    <string name="study_menu_agenda_desc">Планируйте события и напоминания в списке или календаре</string>
+    <string name="study_reading_intro">DocuSmart прочитает ваши PDF вместо вас</string>
+    <string name="study_reading_helper">DocuSmart предлагает помощника, который читает ваши документы</string>
+    <string name="study_reading_finished">Вы дочитали документ до конца</string>
+    <string name="study_read_again">Прочитать снова</string>
+</resources>

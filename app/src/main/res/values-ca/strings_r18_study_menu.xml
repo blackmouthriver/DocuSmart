@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_agenda">Agenda</string>
+    <string name="study_menu_subtitle">Tria què vols fer</string>
+    <string name="study_menu_prompt">Què vols fer?</string>
+    <string name="study_menu_reading_desc">Escolta els teus PDF en veu alta i continua on ho vas deixar</string>
+    <string name="study_menu_notes_desc">Escriu notes, afegeix recordatoris i revisa les que has desat</string>
+    <string name="study_menu_pomodoro_desc">Estudia en blocs de 25 minuts i mira les teves estadístiques</string>
+    <string name="study_menu_agenda_desc">Organitza els teus esdeveniments i recordatoris en llista o calendari</string>
+    <string name="study_reading_intro">DocuSmart t\'ajuda a llegir els teus PDF</string>
+    <string name="study_reading_helper">DocuSmart t\'ofereix un ajudant per llegir els teus documents</string>
+    <string name="study_reading_finished">Has acabat de llegir el document</string>
+    <string name="study_read_again">Torna a llegir</string>
+</resources>

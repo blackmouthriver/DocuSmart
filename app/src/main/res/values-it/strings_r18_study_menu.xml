@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_agenda">Agenda</string>
+    <string name="study_menu_subtitle">Scegli cosa vuoi fare</string>
+    <string name="study_menu_prompt">Cosa vuoi fare?</string>
+    <string name="study_menu_reading_desc">Ascolta i tuoi PDF ad alta voce e riprendi da dove avevi lasciato</string>
+    <string name="study_menu_notes_desc">Scrivi note, aggiungi promemoria e rivedi quelle salvate</string>
+    <string name="study_menu_pomodoro_desc">Studia in blocchi da 25 minuti e guarda le tue statistiche</string>
+    <string name="study_menu_agenda_desc">Organizza eventi e promemoria in elenco o calendario</string>
+    <string name="study_reading_intro">DocuSmart legge per te i tuoi PDF</string>
+    <string name="study_reading_helper">DocuSmart ti offre un assistente per leggere i tuoi documenti</string>
+    <string name="study_reading_finished">Hai finito di leggere il documento</string>
+    <string name="study_read_again">Rileggi</string>
+</resources>

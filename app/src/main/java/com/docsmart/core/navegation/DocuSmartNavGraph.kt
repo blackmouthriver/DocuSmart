@@ -229,6 +229,12 @@ fun DocuSmartNavGraph(
                 initialTab = backStackEntry.arguments?.getInt("tab") ?: 0,
                 openNoteId = backStackEntry.arguments?.getString("openNoteId"),
                 onOpenAgenda = { navController.navigate(NavRoutes.Agenda.createRoute()) },
+                onHome = {
+                    navController.navigate(NavRoutes.Home.route) {
+                        popUpTo(NavRoutes.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
             )
         }
 
@@ -247,6 +253,12 @@ fun DocuSmartNavGraph(
             AgendaScreen(
                 onBack = { navController.popBackStack() },
                 openEventId = backStackEntry.arguments?.getString("openEventId"),
+                onHome = {
+                    navController.navigate(NavRoutes.Home.route) {
+                        popUpTo(NavRoutes.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
             )
         }
 
@@ -602,6 +614,7 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
             // toque (Estudio/Notas/Pomodoro comparten esta misma lambda
             // con tabs distintos).
             onStudy = { tab -> navController.navigate(NavRoutes.Study.createRoute(tab)) },
+            onAgenda = { navController.navigate(NavRoutes.Agenda.createRoute()) { launchSingleTop = true } },
             onSeeAll = { navController.navigate(NavRoutes.Library.route) { launchSingleTop = true } },
             onQrReader = { navController.navigate(NavRoutes.QrReader.route) { launchSingleTop = true } },
             // Bug real corregido 2026-09-08: navegaba con `NavRoutes.QrCreator.route`,

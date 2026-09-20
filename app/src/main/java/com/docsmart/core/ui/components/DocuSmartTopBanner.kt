@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -41,6 +43,9 @@ fun DocuSmartTopBanner(
     // `null` (pantallas de la barra inferior), el banner se ve exactamente
     // igual que antes.
     onBack: (() -> Unit)? = null,
+    // Opcional: "Inicio" a la derecha de "Volver" (vistas anidadas como las de
+    // Modo Estudio y Agenda, para volver a Inicio sin repetir "Volver").
+    onHome: (() -> Unit)? = null,
 ) {
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): este
     // degradado estaba fijo en tonos de azul, ignorando el "Color de
@@ -177,32 +182,60 @@ fun DocuSmartTopBanner(
         // (`primary`) en vez de blanco fijo, ya que el fondo de acá es el
         // normal de la pantalla (claro u oscuro según el tema), no el
         // degradado.
-        if (onBack != null) {
+        if (onBack != null || onHome != null) {
             Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier =
-                    Modifier
-                        .padding(top = 10.dp)
-                        // H17 (auditoría de accesibilidad TalkBack 2026-09-18):
-                        // el objetivo táctil real medía ~20-24dp de alto (por
-                        // debajo del mínimo de 48dp) -- se asegura el mínimo sin
-                        // tocar el tamaño visual del ícono/texto.
-                        .heightIn(min = 48.dp)
-                        .clickable(role = Role.Button, onClick = onBack),
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(
-                    text = stringResource(R.string.general_back),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                if (onBack != null) {
+                    BannerNavAction(
+                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                        label = stringResource(R.string.general_back),
+                        onClick = onBack,
+                    )
+                } else {
+                    Spacer(Modifier)
+                }
+                if (onHome != null) {
+                    BannerNavAction(
+                        icon = Icons.Rounded.Home,
+                        label = stringResource(R.string.nav_home),
+                        onClick = onHome,
+                    )
+                }
             }
         }
+    }
+}
+
+// H17 (auditoría de accesibilidad TalkBack 2026-09-18): el objetivo táctil
+// real medía ~20-24dp de alto (por debajo del mínimo de 48dp) -- se asegura
+// el mínimo sin tocar el tamaño visual del ícono/texto.
+@Composable
+private fun BannerNavAction(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier =
+            Modifier
+                .heightIn(min = 48.dp)
+                .clickable(role = Role.Button, onClick = onClick),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
