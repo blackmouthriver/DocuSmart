@@ -87,14 +87,14 @@ class ExcelToCsvUseCase
                     // POI -- pero antes caía en el catch genérico de abajo y
                     // mostraba texto técnico crudo sin traducir en vez de un
                     // mensaje claro sobre la contraseña.
-                    Timber.w(e, "ExcelToCsvUseCase: archivo protegido con contraseña")
+                    Timber.w("ExcelToCsvUseCase: archivo protegido con contraseña: ${e.javaClass.simpleName}")
                     ConversionResult.Error(context.getString(R.string.converter_error_password_protected))
                 } catch (e: CancellationException) {
                     // Hallazgo 1 (auditoría del Convertidor): ver el mismo hallazgo
                     // en ConvertImageToPdfUseCase.kt.
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error convirtiendo Excel a CSV")
+                    Timber.e("Error convirtiendo Excel a CSV: ${e.javaClass.simpleName}")
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
                     )
@@ -128,7 +128,7 @@ class ExcelToCsvUseCase
             try {
                 dataFormatter.formatCellValue(cell, evaluator).trim()
             } catch (e: Exception) {
-                Timber.w(e, "formatCellSafely: no se pudo formatear una celda, se usa el texto crudo")
+                Timber.w("formatCellSafely: celda sin formato, se usa el texto crudo: ${e.javaClass.simpleName}")
                 cell.toString().trim()
             }
 

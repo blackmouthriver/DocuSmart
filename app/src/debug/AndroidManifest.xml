@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Solo debug (pruebas instrumentadas): la suite corre en un solo proceso y
+         acumula bitmaps de ~560 pruebas; con el heap de 192 MB del emulador de CI
+         terminaba en OutOfMemoryError. Release no se ve afectado. -->
+    <application android:largeHeap="true" tools:replace="android:largeHeap" />
+</manifest>

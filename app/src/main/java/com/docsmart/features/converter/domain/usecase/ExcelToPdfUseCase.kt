@@ -86,7 +86,7 @@ class ExcelToPdfUseCase
                     // Hallazgo real de la auditoría general 2026-09-17/18 (décima
                     // ronda, Alta -- C1): ver el mismo hallazgo en
                     // ExcelToCsvUseCase.kt.
-                    Timber.w(e, "ExcelToPdfUseCase: archivo protegido con contraseña")
+                    Timber.w("ExcelToPdfUseCase: archivo protegido con contraseña: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     ConversionResult.Error(context.getString(R.string.converter_error_password_protected))
                 } catch (e: CancellationException) {
@@ -95,7 +95,7 @@ class ExcelToPdfUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error convirtiendo Excel a PDF")
+                    Timber.e("Error convirtiendo Excel a PDF: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
@@ -200,7 +200,7 @@ class ExcelToPdfUseCase
             try {
                 dataFormatter.formatCellValue(cell, evaluator).trim()
             } catch (e: Exception) {
-                Timber.w(e, "formatCellSafely: no se pudo formatear una celda, se usa el texto crudo")
+                Timber.w("formatCellSafely: celda sin formato, se usa el texto crudo: ${e.javaClass.simpleName}")
                 cell.toString().trim()
             }
 

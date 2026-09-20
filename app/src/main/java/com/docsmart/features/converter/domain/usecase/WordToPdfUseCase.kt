@@ -86,7 +86,7 @@ class WordToPdfUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error convirtiendo Word a PDF")
+                    Timber.e("Error convirtiendo Word a PDF: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),

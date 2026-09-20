@@ -70,7 +70,7 @@ class WordToTextUseCase
                     // en ConvertImageToPdfUseCase.kt.
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error convirtiendo Word a texto")
+                    Timber.e("Error convirtiendo Word a texto: ${e.javaClass.simpleName}")
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
                     )

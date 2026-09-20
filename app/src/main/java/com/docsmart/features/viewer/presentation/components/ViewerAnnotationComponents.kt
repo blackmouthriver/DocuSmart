@@ -155,7 +155,10 @@ fun ViewerNoteInputDialog(
             val atLimit = text.length >= MAX_NOTE_LENGTH
             OutlinedTextField(
                 value = text,
-                onValueChange = { if (it.length <= MAX_NOTE_LENGTH) text = it },
+                // Bug real: al PEGAR un texto más largo que el tope, el `if` descartaba el
+                // pegado completo (el campo no cambiaba y el usuario no veía nada). Se recorta
+                // al límite para conservar al menos los primeros MAX_NOTE_LENGTH caracteres.
+                onValueChange = { text = it.take(MAX_NOTE_LENGTH) },
                 placeholder = { Text(stringResource(R.string.viewer_annotate_note_dialog_placeholder)) },
                 // Hallazgo real de la revisión general 2026-09-16 (#18): al
                 // llegar al límite, onValueChange simplemente dejaba de

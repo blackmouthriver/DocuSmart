@@ -175,7 +175,7 @@ class ExcelToHtmlUseCase
                     // en ConvertImageToPdfUseCase.kt.
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "ExcelToHtmlUseCase: error")
+                    Timber.e("ExcelToHtmlUseCase: error: ${e.javaClass.simpleName}")
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
                     )

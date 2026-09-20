@@ -115,7 +115,7 @@ class PptToPdfUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "Error convirtiendo PowerPoint a PDF")
+                    Timber.e("Error convirtiendo PowerPoint a PDF: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),

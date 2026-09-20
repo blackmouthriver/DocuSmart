@@ -124,7 +124,7 @@ class PdfToImageUseCase
                     // OutOfMemoryError no hereda de Exception -- sin este catch,
                     // una página de alta resolución (width*2 x height*2) sin
                     // memoria suficiente crasheaba toda la conversión.
-                    Timber.e(e, "Sin memoria convirtiendo PDF a imagen")
+                    Timber.e("Sin memoria convirtiendo PDF a imagen: ${e.javaClass.simpleName}")
                     cleanupOrphanPages(outputFiles, context.getString(R.string.converter_error_unknown))
                 } finally {
                     cacheFile?.delete()

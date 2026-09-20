@@ -63,7 +63,11 @@ class PomodoroTimerService : Service() {
             .onEach { state ->
                 when (pomodoroServiceActionFor(state.isRunning)) {
                     PomodoroServiceAction.UPDATE_NOTIFICATION -> updateNotification(state)
-                    PomodoroServiceAction.STOP_SERVICE -> stopSelf()
+                    // Se relee el estado justo antes de parar: si el usuario ya volvió a
+                    // iniciar (doble toque pausar/iniciar), este stopSelf() atrasado
+                    // mataría el servicio con el cronómetro corriendo.
+                    PomodoroServiceAction.STOP_SERVICE ->
+                        if (!PomodoroEngine.state.value.isRunning) stopSelf()
                 }
             }.launchIn(serviceScope)
 
@@ -91,7 +95,13 @@ class PomodoroTimerService : Service() {
         intent: Intent?,
         flags: Int,
         startId: Int,
-    ): Int = START_NOT_STICKY
+    ): Int {
+        // Cada startForegroundService() debe responderse con startForeground(), también
+        // cuando llega a una instancia ya creada (si no, Android tumba la app con
+        // ForegroundServiceDidNotStartInTimeException). Es la misma notificación de onCreate().
+        startForeground(NOTIFICATION_ID, buildNotification(PomodoroEngine.state.value))
+        return START_NOT_STICKY
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 

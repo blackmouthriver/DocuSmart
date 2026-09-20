@@ -66,13 +66,12 @@ import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
 import com.docsmart.features.scanner.domain.QrWifiContent
 import com.docsmart.features.scanner.domain.QrWifiSecurity
+import com.docsmart.features.scanner.domain.encodeQrMatrix
 import com.docsmart.features.scanner.domain.hasSufficientContrast
+import com.docsmart.features.scanner.domain.qrPixelScale
+import com.docsmart.features.scanner.domain.renderQrPixels
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.MultiFormatWriter
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -91,6 +90,10 @@ import java.util.concurrent.Executors
 @Suppress("UnsafeOptInUsageError")
 private fun ImageProxy.toMediaImageOrNull() = image
 
+private fun isCameraPermissionGranted(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) ==
+        android.content.pm.PackageManager.PERMISSION_GRANTED
+
 // ── Pantalla: Leer QR con cámara ─────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,18 +102,18 @@ fun QrReaderScreen(
     // HU-44: acceso al Historial de QR desde el banner.
     onHistoryClick: () -> Unit = {},
     viewModel: QrViewModel = hiltViewModel(),
+    // Costuras de prueba (ronda 20): permiten mostrar el resultado de un QR ya leído (o el
+    // diálogo de QR protegido) y fijar el permiso de cámara sin usar cámara ni ML Kit.
+    // En producción se quedan en sus valores por defecto.
+    initialResult: String? = null,
+    initialProtectedContent: String? = null,
+    cameraPermissionChecker: (Context) -> Boolean = ::isCameraPermissionGranted,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
 
-    var hasCameraPermission by remember {
-        mutableStateOf(
-            androidx.core.content.ContextCompat.checkSelfPermission(
-                context, android.Manifest.permission.CAMERA,
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED,
-        )
-    }
+    var hasCameraPermission by remember { mutableStateOf(cameraPermissionChecker(context)) }
 
     // Hallazgo real de la auditoría (Media): `hasCameraPermission` solo se
     // calculaba una vez al componer la pantalla -- si el usuario revocaba el
@@ -124,9 +127,7 @@ fun QrReaderScreen(
         val observer =
             androidx.lifecycle.LifecycleEventObserver { _, event ->
                 if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                    hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-                        context, android.Manifest.permission.CAMERA,
-                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    hasCameraPermission = cameraPermissionChecker(context)
                 }
             }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -176,8 +177,10 @@ fun QrReaderScreen(
     // pantalla con un QR ya escaneado perdía el resultado completo y volvía
     // a mostrar la vista de cámara -- mismo criterio ya usado arriba para
     // `permissionRequestedOnce`/`permissionPermanentlyDenied`.
-    var qrResult by rememberSaveable { mutableStateOf<String?>(null) }
-    var qrType by rememberSaveable { mutableStateOf(QrContentType.TEXT) }
+    var qrResult by rememberSaveable { mutableStateOf(initialResult) }
+    var qrType by rememberSaveable {
+        mutableStateOf(initialResult?.let { detectQrContentType(it) } ?: QrContentType.TEXT)
+    }
     var isScanning by remember { mutableStateOf(true) }
     var copiedMsg by remember { mutableStateOf(false) }
     var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -189,7 +192,7 @@ fun QrReaderScreen(
     var imageLoading by remember { mutableStateOf(false) }
 
     // ── QR protegido (HU-SEC-09/10) ───────────────────
-    var pendingProtectedContent by remember { mutableStateOf<String?>(null) }
+    var pendingProtectedContent by remember { mutableStateOf(initialProtectedContent) }
     // Revisión adversarial de seguridad (ronda 11): una contraseña en texto
     // plano no debe sobrevivir en el Bundle de onSaveInstanceState (puede
     // persistir tras restaurar el proceso, y en algunos fabricantes llega a
@@ -200,7 +203,8 @@ fun QrReaderScreen(
     var qrPasswordError by remember { mutableStateOf<String?>(null) }
 
     val executor = remember { Executors.newSingleThreadExecutor() }
-    val scanner = remember { BarcodeScanning.getClient() }
+    // Lazy: el detector de ML Kit solo se crea si de verdad se muestra la cámara.
+    val scannerLazy = remember { lazy { BarcodeScanning.getClient() } }
     val scope = rememberCoroutineScope()
 
     // Bug real encontrado 2026-09-14 (repaso general): ni el executor de
@@ -224,7 +228,7 @@ fun QrReaderScreen(
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
             }
-            scanner.close()
+            if (scannerLazy.isInitialized()) scannerLazy.value.close()
         }
     }
     val wrongQrPasswordMessage = stringResource(R.string.pdf_pw_wrong_password)
@@ -434,7 +438,7 @@ fun QrReaderScreen(
                                                         mediaImage,
                                                         imageProxy.imageInfo.rotationDegrees,
                                                     )
-                                                scanner.process(image)
+                                                scannerLazy.value.process(image)
                                                     .addOnSuccessListener { barcodes ->
                                                         barcodes.firstOrNull()?.rawValue?.let { value ->
                                                             isScanning = false
@@ -1975,37 +1979,17 @@ internal suspend fun generateQrBitmap(
 ): Bitmap? =
     withContext(Dispatchers.IO) {
         try {
-            val size = 512
-            // Hallazgo real de la auditoría general 2026-09-17 (quinta
-            // pasada): sin CHARACTER_SET, ZXing codifica el modo byte en
-            // ISO-8859-1 por defecto, que sustituye en silencio cualquier
-            // carácter fuera de ese charset (emojis, cirílico, árabe,
-            // chino/japonés/coreano) por "?" -- causa raíz real de fallas
-            // reportadas por usuarios (ej. contraseñas Wi-Fi con emoji que
-            // quedan corruptas sin ningún error visible).
-            val hints =
-                buildMap {
-                    put(EncodeHintType.CHARACTER_SET, "UTF-8")
-                    if (logo != null) put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
-                }
-            val bitMatrix = MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints)
-            // ARGB_8888 (antes RGB_565, sin canal alfa) -- necesario para
-            // poder dibujar el logo encima con un Canvas normal sin perder
-            // su transparencia si el PNG del logo la tiene.
-            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-            for (x in 0 until size) {
-                for (y in 0 until size) {
-                    bitmap.setPixel(
-                        x,
-                        y,
-                        if (bitMatrix[x, y]) {
-                            moduleColor
-                        } else {
-                            android.graphics.Color.WHITE
-                        },
-                    )
-                }
-            }
+            // Antes: tamaño fijo 512 px y UTF-8 siempre -- un QR denso caía a 2-3 px
+            // por módulo (ilegible al imprimir). encodeQrMatrix/qrPixelScale/
+            // renderQrPixels (QrContentFormat.kt) eligen el nivel de corrección,
+            // la zona de silencio y un mínimo de 8 px por módulo; null si no cabe.
+            val matrix = encodeQrMatrix(content, hasLogo = logo != null) ?: return@withContext null
+            val scale = qrPixelScale(matrix.width)
+            val side = matrix.width * scale
+            val pixels = renderQrPixels(matrix, scale, moduleColor, android.graphics.Color.WHITE)
+            // ARGB_8888 mutable: hace falta canal alfa y un Canvas para el logo.
+            val bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+            bitmap.setPixels(pixels, 0, side, 0, 0, side, side)
             logo?.let { overlayQrLogo(bitmap, it) }
             bitmap
         } catch (e: Exception) {

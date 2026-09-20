@@ -93,7 +93,9 @@ class WatermarkPdfUseCase
                 // fuera del alcance de este lote -- se valida ANTES de generar el PDF
                 // y se devuelve un mensaje claro en su lugar.
                 if (watermarkText.any { it.code > MAX_WINANSI_CODE_POINT }) {
-                    return@withContext PdfToolResult.Error(context.getString(R.string.pdf_watermark_unsupported_chars_error))
+                    return@withContext PdfToolResult.Error(
+                        context.getString(R.string.pdf_watermark_unsupported_chars_error),
+                    )
                 }
 
                 var cacheFile: File? = null
@@ -159,7 +161,7 @@ class WatermarkPdfUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error al aplicar marca de agua")
+                    Timber.e("$TAG: error al aplicar marca de agua: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
                 } finally {
@@ -223,12 +225,16 @@ class WatermarkPdfUseCase
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     file.outputStream().use { output ->
                         val bytes = input.copyTo(output)
-                        if (bytes == 0L) return null
+                        if (bytes == 0L) {
+                            // Evita dejar el archivo vacío huérfano en cacheDir.
+                            file.delete()
+                            return null
+                        }
                     }
                 } ?: return null
                 file
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
                 null
             }
         }

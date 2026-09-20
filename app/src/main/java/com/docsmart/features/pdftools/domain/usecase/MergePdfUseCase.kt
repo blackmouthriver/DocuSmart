@@ -117,7 +117,7 @@ class MergePdfUseCase
                     outputFile.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error al unir PDFs")
+                    Timber.e("$TAG: error al unir PDFs: ${e.javaClass.simpleName}")
                     // Hallazgo real de la revisión general 2026-09-16 (cuarta
                     // pasada): outputFile SÍ está en scope acá (a diferencia de
                     // las otras herramientas), pero nunca se borraba si
@@ -169,7 +169,7 @@ class MergePdfUseCase
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.w(e, "$TAG: no se pudo abrir/copiar un archivo (protegido o corrupto)")
+                Timber.w("$TAG: no se pudo abrir/copiar un archivo (protegido o corrupto): ${e.javaClass.simpleName}")
                 null
             }
 
@@ -198,12 +198,16 @@ class MergePdfUseCase
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     file.outputStream().use { output ->
                         val bytes = input.copyTo(output)
-                        if (bytes == 0L) return null
+                        if (bytes == 0L) {
+                            // Evita dejar el archivo vacío huérfano en cacheDir.
+                            file.delete()
+                            return null
+                        }
                     }
                 } ?: return null
                 file
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
                 null
             }
         }

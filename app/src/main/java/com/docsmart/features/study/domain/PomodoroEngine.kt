@@ -162,10 +162,10 @@ object PomodoroEngine {
     private var seededPomodoroCount = false
 
     fun toggle(context: Context) {
-        if (_state.value.isRunning) pause(context) else start(context)
+        if (_state.value.isRunning) pause() else start(context)
     }
 
-    fun reset(context: Context) {
+    fun reset() {
         // Bug real encontrado 2026-09-14 (repaso general, confirmado en
         // vivo: iniciar→pausar→reanudar rápido corría el cronómetro al
         // doble de velocidad): reset()/pause() solo cambiaban isRunning,
@@ -188,7 +188,10 @@ object PomodoroEngine {
         // corrige. No se toca la bandera acá: si ya estaba sembrada, sigue
         // sembrada (reset manual real, sin reabrir la siembra); si nunca
         // se sembró, el próximo start() lo hace desde datos reales.
-        stopService(context)
+        //
+        // El servicio se detiene solo: su colector de `state` llama stopSelf()
+        // apenas ve isRunning=false (ver PomodoroTimerService.onCreate).
+        // Antes esto llamaba context.stopService() -- ver el comentario en pause().
     }
 
     private fun start(context: Context) {
@@ -234,11 +237,20 @@ object PomodoroEngine {
             }
     }
 
-    private fun pause(context: Context) {
+    // Hallazgo real (ronda 20, confirmado en un emulador): iniciar -> pausar ->
+    // iniciar en menos de un segundo (doble toque) mataba la app con
+    // ForegroundServiceDidNotStartInTimeException. start() lanza el servicio con
+    // startForegroundService(); si pause() llamaba context.stopService() antes de
+    // que el servicio alcanzara startForeground() ("Bringing down service while
+    // still waiting for start foreground"), el siguiente start() dejaba un
+    // ServiceRecord sin startForeground y Android tumbaba el proceso. Ahora el
+    // motor NUNCA detiene el servicio: el propio servicio hace startForeground()
+    // en onCreate() y su colector de `state` llama stopSelf() cuando isRunning
+    // pasa a false, así que no hay carrera posible.
+    private fun pause() {
         tickerJob?.cancel()
         tickerJob = null
         _state.value = _state.value.copy(isRunning = false)
-        stopService(context)
     }
 
     // Hallazgo real de la auditoría general 2026-09-17 (M13): tick() corre en
@@ -254,7 +266,7 @@ object PomodoroEngine {
     // resultado si `_state` sigue siendo exactamente el `current` que este
     // tick leyó -- si cambió mientras tanto (pause/reset ganó la carrera),
     // este tick se descarta entero, sin duplicar tampoco sus side effects
-    // (StudyStatsStorage/DocuSmartAnalytics/stopService).
+    // (StudyStatsStorage/DocuSmartAnalytics).
     private fun tick(context: Context) {
         val current = _state.value
         if (!current.isRunning) return
@@ -271,7 +283,6 @@ object PomodoroEngine {
         // esperando "Iniciar") -- ese bloque todavía no logueó su propio
         // inicio.
         if (current.isBreak && !next.isBreak) studySessionLogged = false
-        if (!next.isRunning) stopService(context)
     }
 
     private fun startService(context: Context) {
@@ -281,9 +292,5 @@ object PomodoroEngine {
         } else {
             context.startService(intent)
         }
-    }
-
-    private fun stopService(context: Context) {
-        context.stopService(Intent(context, PomodoroTimerService::class.java))
     }
 }

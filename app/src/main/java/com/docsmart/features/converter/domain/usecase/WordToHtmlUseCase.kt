@@ -61,7 +61,7 @@ class WordToHtmlUseCase
                     // en ConvertImageToPdfUseCase.kt.
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "WordToHtmlUseCase: error")
+                    Timber.e("WordToHtmlUseCase: error: ${e.javaClass.simpleName}")
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
                     )

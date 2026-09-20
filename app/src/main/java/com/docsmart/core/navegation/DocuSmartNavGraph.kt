@@ -379,7 +379,7 @@ internal fun shouldFinishActivityOnViewerBack(previousRoute: String?): Boolean {
     return previousRoute == null || previousRoute.startsWith("viewer")
 }
 
-private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
+internal fun NavHostController.navigateToConvert(document: DocumentUiModel) {
     // Hallazgo real de la revisión adversarial de la octava ronda (Alta):
     // el fix de G6 le agregó `launchSingleTop=true` a esta función, pero
     // sus argumentos VARÍAN por llamada (un `document` distinto cada vez,
@@ -415,7 +415,7 @@ private fun NavHostController.navigateToConvert(document: DocumentUiModel) {
 // documento propio de la app (id = ruta absoluta) hay que envolverlo con
 // FileProvider ANTES de generar el QR, igual que ya hace
 // ViewerViewModel.shareableUri() para "Compartir".
-private fun safeShareableUriOrNull(
+internal fun safeShareableUriOrNull(
     context: Context,
     document: DocumentUiModel,
 ): Uri? {
@@ -431,7 +431,7 @@ private fun safeShareableUriOrNull(
     }
 }
 
-private fun NavHostController.navigateToQrCreator(
+internal fun NavHostController.navigateToQrCreator(
     context: Context,
     document: DocumentUiModel,
 ) {
@@ -464,15 +464,15 @@ private fun NavHostController.navigateToQrCreator(
 // Ver nota de navigateToConvert() más arriba -- mismo motivo en las 3
 // funciones de abajo, se revierte launchSingleTop (argumentos varían por
 // documento).
-private fun NavHostController.navigateToOcr(document: DocumentUiModel) {
+internal fun NavHostController.navigateToOcr(document: DocumentUiModel) {
     navigate(NavRoutes.PdfTools.createRoute(initialTool = "OCR", initialFileUri = document.toContentUri().toString()))
 }
 
-private fun NavHostController.navigateToSign(document: DocumentUiModel) {
+internal fun NavHostController.navigateToSign(document: DocumentUiModel) {
     navigate(NavRoutes.PdfTools.createRoute(initialTool = "SIGN", initialFileUri = document.toContentUri().toString()))
 }
 
-private fun NavHostController.navigateToSecureFolder(document: DocumentUiModel) {
+internal fun NavHostController.navigateToSecureFolder(document: DocumentUiModel) {
     navigate(NavRoutes.SecureFolder.createRoute(pendingFileUri = document.toContentUri().toString()))
 }
 

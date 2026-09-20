@@ -59,7 +59,14 @@ object DownloadsSaver {
                     val uri =
                         resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                             ?: return@withContext false
-                    resolver.openOutputStream(uri)?.use { output ->
+                    // Sin flujo de salida no se copió nada: antes se devolvía true igual.
+                    val stream = resolver.openOutputStream(uri)
+                    if (stream == null) {
+                        // No dejar una fila IS_PENDING huérfana en Descargas.
+                        runCatching { resolver.delete(uri, null, null) }
+                        return@withContext false
+                    }
+                    stream.use { output ->
                         FileInputStream(file).use { input -> input.copyTo(output) }
                     }
                     values.clear()

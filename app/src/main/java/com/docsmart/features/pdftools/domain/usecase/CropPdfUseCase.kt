@@ -123,7 +123,7 @@ class CropPdfUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error al recortar PDF")
+                    Timber.e("$TAG: error al recortar PDF: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     PdfToolResult.Error(String.format(messages.genericError, e.message ?: ""), e)
                 } finally {
@@ -137,12 +137,16 @@ class CropPdfUseCase
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     file.outputStream().use { output ->
                         val bytes = input.copyTo(output)
-                        if (bytes == 0L) return null
+                        if (bytes == 0L) {
+                            // Evita dejar el archivo vacío huérfano en cacheDir.
+                            file.delete()
+                            return null
+                        }
                     }
                 } ?: return null
                 file
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
                 null
             }
         }

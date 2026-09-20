@@ -91,7 +91,7 @@ class ExtractImagesFromPdfUseCase
                         message = String.format(messages.success, savedFiles.size),
                     )
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error al extraer imágenes")
+                    Timber.e("$TAG: error al extraer imágenes: ${e.javaClass.simpleName}")
                     savedFiles.forEach { it.delete() }
                     PdfToolResult.Error(
                         message = String.format(messages.genericError, e.message ?: ""),
@@ -137,7 +137,7 @@ class ExtractImagesFromPdfUseCase
             try {
                 image.imageBytes?.takeIf { it.isNotEmpty() }
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: no se pudo decodificar una imagen (página $pageNumber)")
+                Timber.e("$TAG: no se pudo decodificar una imagen (página $pageNumber): ${e.javaClass.simpleName}")
                 null
             }
 
@@ -177,9 +177,15 @@ class ExtractImagesFromPdfUseCase
                 val file = File(context.cacheDir, "extractimg_${System.currentTimeMillis()}.pdf")
                 val input = context.contentResolver.openInputStream(uri) ?: return null
                 val bytes = input.use { inStream -> file.outputStream().use { inStream.copyTo(it) } }
-                if (bytes == 0L) null else file
+                if (bytes == 0L) {
+                    // Evita dejar el archivo vacío huérfano en cacheDir.
+                    file.delete()
+                    null
+                } else {
+                    file
+                }
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
                 null
             }
         }

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.docsmart.R
+import com.docsmart.core.ui.components.AppLibraryPickerViewModel
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
@@ -106,6 +107,8 @@ fun SecurityScreen(
     // LaunchedEffect más abajo), sin restaurar el archivo de Carpeta Segura.
     onPreviewFile: (String) -> Unit = {},
     viewModel: SecurityViewModel = hiltViewModel(),
+    // Inyectable para pruebas instrumentadas (sin Hilt): null = el de Hilt, solo al abrir el selector.
+    pickerViewModel: AppLibraryPickerViewModel? = null,
 ) {
     val uiState = viewModel.uiState.collectAsState().value
     val context = LocalContext.current
@@ -272,6 +275,7 @@ fun SecurityScreen(
                                 fileProtectedOriginalKept,
                             )
                         },
+                        pickerViewModel = pickerViewModel,
                     )
                 }
             }
@@ -712,6 +716,7 @@ private fun SecureFolderContent(
     onToggleBiometric: () -> Unit,
     onImportFile: (Uri) -> Unit,
     onImportLocalFile: (java.io.File) -> Unit,
+    pickerViewModel: AppLibraryPickerViewModel? = null,
 ) {
     var showImportDialog by remember { mutableStateOf(false) }
 
@@ -731,6 +736,7 @@ private fun SecureFolderContent(
     // que no se pasa `filter`.
     if (showImportDialog) {
         FileSourcePickerDialog(
+            viewModel = pickerViewModel ?: hiltViewModel(),
             title = stringResource(R.string.security_protect_file_dialog_title),
             onDismiss = { showImportDialog = false },
             onChooseFromDevice = {

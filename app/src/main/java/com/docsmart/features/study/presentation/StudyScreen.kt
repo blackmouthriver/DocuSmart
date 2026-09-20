@@ -989,7 +989,7 @@ fun StudyScreen(
                         isBreak = pomodoroState.isBreak,
                         pomodoroCount = pomodoroState.pomodoroCount,
                         onToggle = { PomodoroEngine.toggle(context) },
-                        onReset = { PomodoroEngine.reset(context) },
+                        onReset = { PomodoroEngine.reset() },
                         onShowStats = { showStats = true },
                     )
 
@@ -1080,7 +1080,7 @@ private fun LoadingIndicator(
 // URI para dibujar el PDF). Reemplaza a ReadingParagraphRow (fila por
 // párrafo, sin uso ahora que no hay párrafos individuales que tocar).
 @Composable
-private fun ReadingTab(
+internal fun ReadingTab(
     documentUri: Uri?,
     isLoading: Boolean,
     highlightedCount: Int,
@@ -1622,7 +1622,7 @@ private fun StudyPdfViewer(
 
 // ── Tab de Notas ──────────────────────────────────────
 @Composable
-private fun NotesTab(
+internal fun NotesTab(
     notes: String,
     onNotesChange: (String) -> Unit,
     highlights: Set<Int>,
@@ -2295,7 +2295,7 @@ private fun NoteImagesCarousel(
 // ninguno/personalizado) -- separado de `reminderAt` (la fecha/hora real en
 // millis) solo para saber qué FilterChip resaltar, ambos viven juntos en
 // NotesTab y se resetean a la vez al guardar la nota.
-private enum class NoteReminderChip { NONE, TOMORROW, DAYS_3, WEEK_1, CUSTOM }
+internal enum class NoteReminderChip { NONE, TOMORROW, DAYS_3, WEEK_1, CUSTOM }
 
 // Ronda 17: noteReminderPresetMillis() vive ahora en StudyScreenLogic.kt.
 
@@ -2305,7 +2305,7 @@ private enum class NoteReminderChip { NONE, TOMORROW, DAYS_3, WEEK_1, CUSTOM }
 // queda deshabilitada con una explicación en vez de dejar programar una
 // alarma cuya notificación nunca va a poder mostrarse.
 @Composable
-private fun NoteReminderSection(
+internal fun NoteReminderSection(
     reminderChip: NoteReminderChip,
     reminderAt: Long?,
     onReminderChange: (NoteReminderChip, Long?) -> Unit,
@@ -2717,7 +2717,7 @@ private fun NoteListItem(
 // (Coil la carga igual que cualquier otro Uri) para poder reutilizar
 // NoteImagesCarousel/NoteReminderSection tal cual, sin duplicar esa UI.
 @Composable
-private fun NoteEditDialog(
+internal fun NoteEditDialog(
     noteWithImages: NoteWithImages,
     notificationsGranted: Boolean,
     onRequestNotifications: () -> Unit,
@@ -3035,7 +3035,7 @@ private suspend fun shareStudyNotes(
 
 // ── RF-STU-09: estadísticas de estudio ────────────────
 @Composable
-private fun StudyStatsDialog(
+internal fun StudyStatsDialog(
     stats: StudyStats,
     onDismiss: () -> Unit,
 ) {
@@ -3106,7 +3106,7 @@ private fun StudyStatsDialog(
 // (ver VoicePersona.kt) y un botón para escuchar una muestra sin cambiar
 // todavía la voz de lectura.
 @Composable
-private fun VoiceSelectorDialog(
+internal fun VoiceSelectorDialog(
     voices: List<Voice>,
     selectedVoice: Voice?,
     previewingVoiceName: String?,
@@ -3255,7 +3255,7 @@ private fun StudyWeekBars(
 
 // ── Tab Pomodoro ──────────────────────────────────────
 @Composable
-private fun PomodoroTab(
+internal fun PomodoroTab(
     minutes: Int,
     seconds: Int,
     isRunning: Boolean,

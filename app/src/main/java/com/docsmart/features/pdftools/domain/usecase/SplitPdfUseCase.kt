@@ -132,7 +132,7 @@ class SplitPdfUseCase
                     outputFile?.delete()
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "$TAG: error al dividir PDF")
+                    Timber.e("$TAG: error al dividir PDF: ${e.javaClass.simpleName}")
                     outputFile?.delete()
                     PdfToolResult.Error(
                         message = String.format(messages.genericError, e.message ?: ""),
@@ -149,12 +149,16 @@ class SplitPdfUseCase
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     file.outputStream().use { output ->
                         val bytes = input.copyTo(output)
-                        if (bytes == 0L) return null
+                        if (bytes == 0L) {
+                            // Evita dejar el archivo vacío huérfano en cacheDir.
+                            file.delete()
+                            return null
+                        }
                     }
                 } ?: return null
                 file
             } catch (e: Exception) {
-                Timber.e(e, "$TAG: error copiando URI al cache")
+                Timber.e("$TAG: error copiando URI al cache: ${e.javaClass.simpleName}")
                 null
             }
         }

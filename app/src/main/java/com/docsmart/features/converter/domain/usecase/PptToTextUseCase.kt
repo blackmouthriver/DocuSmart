@@ -70,7 +70,7 @@ class PptToTextUseCase
                     // en ConvertImageToPdfUseCase.kt.
                     throw e
                 } catch (e: Exception) {
-                    Timber.e(e, "PptToTextUseCase: error")
+                    Timber.e("PptToTextUseCase: error: ${e.javaClass.simpleName}")
                     ConversionResult.Error(
                         String.format(context.getString(R.string.converter_error_generic_format), e.message ?: ""),
                     )

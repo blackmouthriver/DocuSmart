@@ -115,6 +115,8 @@ fun ViewerScreen(
     onSignClick: (DocumentUiModel) -> Unit = {},
     onMoveToSecureFolderClick: (DocumentUiModel) -> Unit = {},
     viewModel: ViewerViewModel = hiltViewModel(),
+    // Inyectable para pruebas instrumentadas sin Hilt; null = el de Hilt de siempre.
+    passwordDialogViewModel: PdfPasswordDialogViewModel? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
@@ -217,6 +219,7 @@ fun ViewerScreen(
                 // Usar onBack — el NavGraph decide si popBackStack o finish()
                 onBack()
             },
+            dialogViewModel = passwordDialogViewModel ?: hiltViewModel(),
         )
     }
     Box(
@@ -665,6 +668,7 @@ private fun ImageViewerContent(
 ) {
     val context = LocalContext.current
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var loadFailed by remember { mutableStateOf(false) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -678,15 +682,25 @@ private fun ImageViewerContent(
                         BitmapFactory.decodeStream(stream)
                     }
                 } catch (e: Exception) {
-                    Timber.e("Error cargando imagen: ${e.message}")
+                    Timber.e("Error cargando imagen: ${e.javaClass.simpleName}")
                     null
                 }
             }
+        // Bug real: una imagen corrupta/ilegible dejaba el spinner para siempre.
+        if (bitmap == null) loadFailed = true
     }
 
     if (bitmap == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            if (loadFailed) {
+                Text(
+                    text = stringResource(R.string.viewer_error),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
         }
         return
     }
@@ -845,11 +859,15 @@ private fun PdfViewerContent(
                 try {
                     renderPdfPagesToBitmaps(uri, context)
                 } catch (e: Exception) {
-                    Timber.e("Error renderizando PDF: ${e.message}")
+                    Timber.e("Error renderizando PDF: ${e.javaClass.simpleName}")
                     loadError = true
                     emptyList()
                 }
             }
+        // Bug real: si el archivo ya no existe / está vacío / no tiene páginas,
+        // renderPdfPagesToBitmaps devuelve lista vacía SIN lanzar -- el Visor
+        // se quedaba para siempre en "Renderizando documento…" sin salida.
+        if (pages.isEmpty()) loadError = true
         onPageChanged(0, pages.size)
     }
 
@@ -2161,7 +2179,7 @@ private fun PdfPasswordDialog(
     isLoading: Boolean,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
-    dialogViewModel: PdfPasswordDialogViewModel = hiltViewModel(),
+    dialogViewModel: PdfPasswordDialogViewModel,
 ) {
     // Hallazgo real de la auditoría general 2026-09-17 (B12): la contraseña
     // ya no vive en `rememberSaveable` (Bundle de `onSaveInstanceState`) --

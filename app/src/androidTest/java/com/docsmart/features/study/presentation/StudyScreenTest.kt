@@ -200,7 +200,7 @@ class StudyScreenTest {
     @Test
     fun pomodoro_iniciarYPausar_cambianElEstadoDelBoton() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        PomodoroEngine.reset(appContext)
+        PomodoroEngine.reset()
 
         setContentIsolated {
             StudyScreen(initialTab = 2, viewModel = buildViewModel(), notesViewModel = buildNotesViewModel())
@@ -216,6 +216,6 @@ class StudyScreenTest {
         waitForText("pausado")
 
         composeRule.onNodeWithText("Reiniciar").performClick()
-        PomodoroEngine.reset(appContext)
+        PomodoroEngine.reset()
     }
 }
