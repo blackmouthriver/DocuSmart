@@ -158,11 +158,8 @@ class StudyScreenTest {
     @Test
     fun guardarNota_apareceEnLaLista_eliminarlaVacíaLaLista() {
         setContentIsolated {
-            StudyScreen(viewModel = buildViewModel())
+            StudyScreen(initialTab = 1, viewModel = buildViewModel())
         }
-        waitForText("Notas")
-
-        composeRule.onNodeWithText("Notas").performClick()
         waitForText("Título de la nota")
 
         composeRule.onNodeWithText("Título de la nota").performTextInput("Mi nota de prueba")

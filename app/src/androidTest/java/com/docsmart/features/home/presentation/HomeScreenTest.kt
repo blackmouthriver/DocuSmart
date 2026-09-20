@@ -9,11 +9,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.data.FavoritesRepository
@@ -114,12 +117,22 @@ class HomeScreenTest {
         }
     }
 
+    // Recientes vive al final de un LazyColumn: se desplaza hasta el documento
+    // (solo se compone lo visible) y espera a que el ViewModel lo cargue.
+    private fun waitForRecent(text: String) {
+        composeRule.waitUntilOrDump("CI_HANG_HomeScreenTest") {
+            runCatching {
+                composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(text))
+            }.isSuccess
+        }
+    }
+
     @Test
     fun verRecientes_muestraLosDocumentosRecientes() {
         val viewModel = buildViewModel(listOf(documentFixture("doc1", "Contrato.pdf")))
 
         setContentWithLocale { HomeScreen(viewModel = viewModel) }
-        waitForText("Contrato.pdf")
+        waitForRecent("Contrato.pdf")
 
         composeRule.onNodeWithText("Contrato.pdf").assertIsDisplayed()
     }
@@ -130,7 +143,7 @@ class HomeScreenTest {
         coEvery { favoritesRepository.toggleFavorite("doc1") } returns true
 
         setContentWithLocale { HomeScreen(viewModel = viewModel) }
-        waitForText("Contrato.pdf")
+        waitForRecent("Contrato.pdf")
 
         composeRule.onNodeWithContentDescription("Agregar a favoritos").performClick()
         composeRule.waitForIdle()
@@ -160,7 +173,7 @@ class HomeScreenTest {
         coEvery { trashRepository.moveToTrash("doc1") } returns true
 
         setContentWithLocale { HomeScreen(viewModel = viewModel) }
-        waitForText("Contrato.pdf")
+        waitForRecent("Contrato.pdf")
 
         composeRule.onNodeWithContentDescription("Más opciones").performClick()
         waitForText("Eliminar")

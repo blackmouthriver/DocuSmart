@@ -154,6 +154,7 @@
     <ID>SwallowedException:ViewerViewModel.kt$ViewerViewModel$e: Exception</ID>
     <ID>ThrowsCount:ScanImageEditor.kt$ScanImageEditor$private fun writeToCache(bitmap: Bitmap): File</ID>
     <ID>TooGenericExceptionCaught:AgendaViewModel.kt$AgendaViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AppLibraryPickerViewModel.kt$AppLibraryPickerViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:BootRescheduleReceiver.kt$BootRescheduleReceiver$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ComparePdfUseCase.kt$ComparePdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:CompressPdfUseCase.kt$CompressPdfUseCase$e: Exception</ID>

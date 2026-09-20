@@ -32,9 +32,15 @@ fun canonicalMediaUri(uri: Uri): Uri {
             ContentUris.parseId(uri),
         )
     } catch (e: UnsupportedOperationException) {
-        // ContentUris.parseId() lanza esto si el último segmento del Uri no
-        // es un ID numérico válido -- Uri de autoridad "media" pero con otra
-        // forma inesperada, se deja sin normalizar en vez de fallar.
+        // ContentUris.parseId() lanza esto si el Uri no es jerárquico -- Uri
+        // de autoridad "media" pero con otra forma inesperada, se deja sin
+        // normalizar en vez de fallar.
+        uri
+    } catch (e: NumberFormatException) {
+        // Ronda 18: parseId() hace Long.parseLong() del último segmento, así
+        // que un Uri de colección ("content://media/external/images/media")
+        // lanza NumberFormatException, no UnsupportedOperationException --
+        // antes ese caso tumbaba la app en vez de dejar el Uri sin normalizar.
         uri
     }
 }

@@ -391,7 +391,7 @@ private fun loadPage(
             }
         }
     } catch (e: Exception) {
-        Timber.e(e, "RedactPdfScreen: error generando vista previa de página")
+        Timber.e("RedactPdfScreen: error generando vista previa de página: ${e.javaClass.simpleName}")
         null
     } finally {
         file.delete()

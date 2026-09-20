@@ -275,7 +275,7 @@ private fun loadFirstPage(
             PdfRenderer(fd).use { renderer -> renderFirstPageBitmap(renderer) }
         }
     } catch (e: Exception) {
-        Timber.e(e, "CropPdfScreen: error generando vista previa")
+        Timber.e("CropPdfScreen: error generando vista previa: ${e.javaClass.simpleName}")
         null
     } finally {
         file.delete()

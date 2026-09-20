@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.features.library.data.DocumentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -34,8 +36,21 @@ class AppLibraryPickerViewModel
         init {
             viewModelScope.launch {
                 _isLoading.value = true
-                _documents.value = repository.loadAllDocuments()
-                _isLoading.value = false
+                // Ronda 18 (Media): una excepción de Room/MediaStore en
+                // loadAllDocuments() (trashDao.getAll() corre fuera de su
+                // try interno) tumbaba la app por la corrutina sin manejador,
+                // y aun capturada dejaba el spinner girando para siempre. Se
+                // registra solo el tipo (CrashlyticsTree reenvía >= WARN) y
+                // el `finally` garantiza apagar el indicador de carga.
+                try {
+                    _documents.value = repository.loadAllDocuments()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e("AppLibraryPickerViewModel: no se pudo cargar la biblioteca (${e.javaClass.simpleName})")
+                } finally {
+                    _isLoading.value = false
+                }
             }
         }
     }

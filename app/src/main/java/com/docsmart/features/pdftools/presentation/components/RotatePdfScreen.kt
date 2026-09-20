@@ -94,7 +94,7 @@ fun RotatePdfScreen(
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.e(e, "RotatePdfScreen: error generando vista previa")
+                    Timber.e("RotatePdfScreen: error generando vista previa: ${e.javaClass.simpleName}")
                     null
                 } finally {
                     file.delete()

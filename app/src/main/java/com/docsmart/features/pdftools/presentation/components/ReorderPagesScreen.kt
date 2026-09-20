@@ -196,7 +196,7 @@ private suspend fun loadThumbnails(
             }
         }
     } catch (e: Exception) {
-        Timber.e(e, "ReorderPagesScreen: error generando miniaturas")
+        Timber.e("ReorderPagesScreen: error generando miniaturas: ${e.javaClass.simpleName}")
         emptyMap()
     } finally {
         file.delete()

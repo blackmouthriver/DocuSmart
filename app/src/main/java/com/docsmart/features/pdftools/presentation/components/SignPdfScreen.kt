@@ -382,7 +382,7 @@ private fun loadTotalPages(
             }
         }
     } catch (e: Exception) {
-        Timber.e(e, "SignPdfScreen: error obteniendo el total de páginas")
+        Timber.e("SignPdfScreen: error obteniendo el total de páginas: ${e.javaClass.simpleName}")
     } finally {
         file.delete()
     }
