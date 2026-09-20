@@ -8,6 +8,7 @@ import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -111,6 +112,7 @@ class OnboardingScreenTest {
         composeRule.setContent {
             CompositionLocalProvider(
                 LocalContext provides isolatedContext,
+                LocalResources provides isolatedContext.resources,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {
@@ -154,6 +156,7 @@ class OnboardingScreenTest {
         composeRule.setContent {
             CompositionLocalProvider(
                 LocalContext provides isolatedContext,
+                LocalResources provides isolatedContext.resources,
                 LocalActivityResultRegistryOwner provides composeRule.activity,
                 LocalOnBackPressedDispatcherOwner provides composeRule.activity,
             ) {

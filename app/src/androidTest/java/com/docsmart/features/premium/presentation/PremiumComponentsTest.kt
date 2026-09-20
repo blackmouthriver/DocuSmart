@@ -10,6 +10,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -67,7 +68,7 @@ class PremiumComponentsTest {
         composeRule.setContent {
             val baseContext = LocalContext.current
             val localized = remember(baseContext) { forceLocale(baseContext, "es-ES") }
-            CompositionLocalProvider(LocalContext provides localized) {
+            CompositionLocalProvider(LocalContext provides localized, LocalResources provides localized.resources) {
                 MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) { content() } }
             }
         }

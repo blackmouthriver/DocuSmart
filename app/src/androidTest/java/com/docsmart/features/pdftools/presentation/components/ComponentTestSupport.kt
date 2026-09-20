@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -59,7 +60,7 @@ internal fun ComposeContentTestRule.setEsContent(
     setContent {
         val base = LocalContext.current
         val localized = remember(base) { overrideContext ?: forceLocale(base, "es-ES") }
-        CompositionLocalProvider(LocalContext provides localized) {
+        CompositionLocalProvider(LocalContext provides localized, LocalResources provides localized.resources) {
             Column(
                 modifier =
                     Modifier

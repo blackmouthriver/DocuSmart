@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import com.docsmart.core.ui.test.forceLocale
@@ -35,6 +36,7 @@ internal fun AndroidComposeTestRule<ActivityScenarioRule<ComponentActivity>, Com
             }
         CompositionLocalProvider(
             LocalContext provides localizedContext,
+            LocalResources provides localizedContext.resources,
             LocalActivityResultRegistryOwner provides rule.activity,
             LocalOnBackPressedDispatcherOwner provides rule.activity,
         ) { content() }

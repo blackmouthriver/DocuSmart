@@ -63,7 +63,7 @@ class ScanColorModeSectionTest {
         }
 
         labels.forEach { (mode, label) ->
-            composeRule.onNodeWithText(str(label)).performClick()
+            composeRule.onNodeWithText(str(label)).performScrollTo().performClick()
             composeRule.waitForIdle()
             composeRule.onNodeWithText(str(label)).assertIsSelected()
             assertEquals(mode, selected)

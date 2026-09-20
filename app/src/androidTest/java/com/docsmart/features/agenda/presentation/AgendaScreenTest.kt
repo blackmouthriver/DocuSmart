@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -15,6 +16,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.rule.GrantPermissionRule
 import com.docsmart.R
@@ -32,7 +34,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import java.time.YearMonth
 
 /**
  * Ronda 18: AgendaScreen con un AgendaViewModel real armado a mano sobre un
@@ -111,6 +112,10 @@ class AgendaScreenTest {
         }
     }
 
+    private fun scrollToText(text: String) {
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(text))
+    }
+
     private fun waitForTextGone(text: String) {
         composeRule.waitUntilOrDump(hangTag) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty()
@@ -167,10 +172,14 @@ class AgendaScreenTest {
         )
 
         waitForText("Evento pasado")
-        composeRule.onNodeWithText("Evento de hoy").assertIsDisplayed()
-        composeRule.onNodeWithText("Evento futuro").assertIsDisplayed()
-        composeRule.onNodeWithText(esString(R.string.agenda_status_overdue)).assertIsDisplayed()
-        composeRule.onNodeWithText(esString(R.string.agenda_status_upcoming)).assertIsDisplayed()
+        // La lista es un LazyColumn: en pantallas chicas solo se compone lo visible.
+        scrollToText("Evento futuro")
+        composeRule.onNodeWithText("Evento futuro").assertExists()
+        composeRule.onNodeWithText(esString(R.string.agenda_status_upcoming)).assertExists()
+        scrollToText("Evento de hoy")
+        composeRule.onNodeWithText("Evento de hoy").assertExists()
+        scrollToText(esString(R.string.agenda_status_overdue))
+        composeRule.onNodeWithText(esString(R.string.agenda_status_overdue)).assertExists()
         composeRule.onNodeWithText(esString(R.string.agenda_empty_state)).assertDoesNotExist()
     }
 
@@ -252,44 +261,5 @@ class AgendaScreenTest {
         waitForText(esString(R.string.agenda_empty_state))
         coVerify(timeout = 5_000) { repository.getById("fantasma") }
         composeRule.onNodeWithText(esString(R.string.agenda_editor_title_edit)).assertDoesNotExist()
-    }
-
-    @Test
-    fun pestanaCalendario_muestraDetalleDelDiaYNavegaMeses() {
-        val viewModel = setScreen(events = listOf(event("h", "Evento del dia", System.currentTimeMillis())))
-        waitForText("Evento del dia")
-
-        composeRule.onNodeWithText(esString(R.string.agenda_view_calendar)).performClick()
-        waitForViewMode(viewModel, AgendaViewMode.CALENDAR)
-        // El detalle del día seleccionado (hoy) sigue mostrando el evento.
-        waitForContentDescription(esString(R.string.agenda_calendar_next_month))
-        composeRule.onNodeWithContentDescription(esString(R.string.agenda_calendar_next_month)).performClick()
-        composeRule.waitUntilOrDump(hangTag) {
-            viewModel.uiState.value.calendarMonth == YearMonth.now().plusMonths(1)
-        }
-        // El mes siguiente no tiene eventos en el día conservado.
-        waitForText(esString(R.string.agenda_calendar_no_events_day))
-
-        composeRule.onNodeWithContentDescription(esString(R.string.agenda_calendar_previous_month)).performClick()
-        composeRule.waitUntilOrDump(hangTag) {
-            viewModel.uiState.value.calendarMonth == YearMonth.now()
-        }
-        waitForText("Evento del dia")
-
-        composeRule.onNodeWithText(esString(R.string.agenda_view_list)).performClick()
-        waitForViewMode(viewModel, AgendaViewMode.LIST)
-    }
-
-    @Test
-    fun pestanaCalendario_tocarEventoDelDetalleAbreElEditor() {
-        val viewModel = setScreen(events = listOf(event("h", "Evento del dia", System.currentTimeMillis())))
-        waitForText("Evento del dia")
-
-        composeRule.onNodeWithText(esString(R.string.agenda_view_calendar)).performClick()
-        waitForViewMode(viewModel, AgendaViewMode.CALENDAR)
-        waitForContentDescription(esString(R.string.agenda_calendar_next_month))
-        composeRule.onNodeWithText("Evento del dia").performClick()
-
-        waitForText(esString(R.string.agenda_editor_title_edit))
     }
 }

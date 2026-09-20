@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -36,7 +37,10 @@ class SplashScreensTest {
         composeRule.setContent {
             val baseContext = LocalContext.current
             val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
-            CompositionLocalProvider(LocalContext provides localizedContext) { content() }
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalResources provides localizedContext.resources,
+            ) { content() }
         }
     }
 

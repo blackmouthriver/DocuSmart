@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -41,7 +42,7 @@ class LanguagePickerDialogTest {
         composeRule.setContent {
             val baseContext = LocalContext.current
             val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
-            CompositionLocalProvider(LocalContext provides localizedContext) {
+            CompositionLocalProvider(LocalContext provides localizedContext, LocalResources provides localizedContext.resources) {
                 MaterialTheme {
                     LanguagePickerDialog(
                         currentLanguage = current.value,

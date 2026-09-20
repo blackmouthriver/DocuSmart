@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
@@ -116,7 +117,7 @@ class PremiumScreenTest {
             // necesitan el Activity real (compra) usan el contexto original.
             val context =
                 remember(baseContext) { if (localized) forceLocale(baseContext, "es-ES") else baseContext }
-            CompositionLocalProvider(LocalContext provides context) {
+            CompositionLocalProvider(LocalContext provides context, LocalResources provides context.resources) {
                 MaterialTheme { PremiumScreen(onClose = onClose, viewModel = viewModel) }
             }
         }

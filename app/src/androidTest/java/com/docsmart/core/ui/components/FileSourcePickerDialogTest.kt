@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -63,7 +64,7 @@ class FileSourcePickerDialogTest {
         composeRule.setContent {
             val baseContext = LocalContext.current
             val localizedContext = remember(baseContext) { forceLocale(baseContext, "es-ES") }
-            CompositionLocalProvider(LocalContext provides localizedContext) {
+            CompositionLocalProvider(LocalContext provides localizedContext, LocalResources provides localizedContext.resources) {
                 MaterialTheme {
                     FileSourcePickerDialog(
                         title = "Elegir PDF",

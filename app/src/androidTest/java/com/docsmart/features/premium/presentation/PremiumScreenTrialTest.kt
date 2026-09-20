@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -73,7 +74,7 @@ class PremiumScreenTrialTest {
         composeRule.setContent {
             val baseContext = LocalContext.current
             val localized = remember(baseContext) { forceLocale(baseContext, "es-ES") }
-            CompositionLocalProvider(LocalContext provides localized) {
+            CompositionLocalProvider(LocalContext provides localized, LocalResources provides localized.resources) {
                 MaterialTheme { PremiumScreen(viewModel = viewModel) }
             }
         }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ui.test.forceLocale
@@ -36,6 +37,7 @@ internal fun AndroidComposeTestRule<*, ComponentActivity>.setContentEs(content: 
         val localizedContext = remember(baseContext) { forceLocale(baseContext, TEST_LANGUAGE_TAG) }
         CompositionLocalProvider(
             LocalContext provides localizedContext,
+            LocalResources provides localizedContext.resources,
             LocalActivityResultRegistryOwner provides activity,
             LocalOnBackPressedDispatcherOwner provides activity,
         ) { content() }

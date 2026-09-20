@@ -9,6 +9,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -40,7 +41,7 @@ class HomeComponentsTest {
         composeRule.setContent {
             val baseContext = LocalContext.current
             val localized = remember(baseContext) { forceLocale(baseContext, "es-ES") }
-            CompositionLocalProvider(LocalContext provides localized) {
+            CompositionLocalProvider(LocalContext provides localized, LocalResources provides localized.resources) {
                 MaterialTheme {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
                         QuickAccessGrid(
