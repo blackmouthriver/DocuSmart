@@ -484,8 +484,8 @@ dependencies {
     // buildHealth: NavController/NavGraph (navigation-common) y el motor de
     // navegación en runtime (navigation-runtime) usados directo, no solo vía
     // los componentes de navigation-compose.
-    implementation("androidx.navigation:navigation-common:2.8.4")
-    implementation("androidx.navigation:navigation-runtime:2.8.4")
+    implementation("androidx.navigation:navigation-common:2.10.1")
+    implementation("androidx.navigation:navigation-runtime:2.10.1")
 
     // ── Lifecycle / ViewModel ─────────────────────────────────────────────────
     implementation(libs.androidx.lifecycle.viewmodel.compose)
