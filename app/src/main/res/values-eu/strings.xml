@@ -1022,6 +1022,8 @@
     <string name="study_delete_all_notes_body">Ziur zaude ohar guztiak ezabatu nahi dituzula? Ekintza hau ezin da desegin.</string>
     <string name="study_highlighted_paragraphs_count">Nabarmendutako paragrafoak (%1$d)</string>
     <string name="study_mark_current_paragraph">Markatu uneko paragrafoa</string>
+    <string name="study_listened_percent">%1$d %% entzunda</string>
+    <string name="study_voice_chip">Ahotsa: %1$s</string>
     <string name="study_new_note">Ohar berria</string>
     <string name="study_note_title_label">Oharraren izenburua</string>
     <string name="study_note_title_placeholder">Adib.: 3. kapituluko funtsezko kontzeptuak</string>

@@ -19,6 +19,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -40,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -77,6 +79,7 @@ import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.theme.rememberAccentGradient
+import com.docsmart.core.ui.theme.rememberBannerGradient
 import com.docsmart.core.ui.util.ReloadOnScreenResume
 import com.docsmart.core.ui.util.findActivity
 import com.docsmart.core.util.DownloadsSaver
@@ -725,14 +728,32 @@ fun StudyScreen(
                     // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
                     compact = currentView != StudyView.MENU,
                     // En Lectura el título es "Lectura" (no "Modo Estudio"): pedido del usuario.
+                    // Rediseño 2026-09-21: con un documento abierto el título es el
+                    // archivo y el subtítulo su página; sin repetir "Lectura".
                     screenTitle =
-                        stringResource(
-                            if (currentView == StudyView.READING) R.string.study_tab_reading else R.string.study_title,
-                        ),
+                        when {
+                            currentView == StudyView.READING && documentUri != null -> documentName
+                            currentView == StudyView.READING -> stringResource(R.string.study_tab_reading)
+                            else -> stringResource(R.string.study_title)
+                        },
                     screenSubtitle =
                         when (currentView) {
                             StudyView.MENU -> stringResource(R.string.study_menu_subtitle)
-                            StudyView.READING -> documentName
+                            StudyView.READING ->
+                                if (documentUri != null && pageBoundaries.isNotEmpty()) {
+                                    stringResource(
+                                        R.string.viewer_bottom_bar_page_format,
+                                        pageForParagraph(
+                                            currentSpeakingIndex.intValue.coerceAtLeast(0),
+                                            pageBoundaries,
+                                        ),
+                                        pageBoundaries.size,
+                                    )
+                                } else if (documentUri != null) {
+                                    stringResource(R.string.study_tab_reading)
+                                } else {
+                                    documentName
+                                }
                             StudyView.NOTES -> stringResource(R.string.study_tab_notes)
                             StudyView.POMODORO -> stringResource(R.string.study_tab_pomodoro)
                         },
@@ -791,6 +812,7 @@ fun StudyScreen(
                         },
                         currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
                         totalPages = pageBoundaries.size,
+                        selectedVoiceName = selectedVoice.value?.let { personaForVoice(it.name).name },
                         onSpeakAll = {
                             if (isSpeaking.value) {
                                 // "Retomar lectura" (2026-09-08): antes esto
@@ -1105,6 +1127,7 @@ internal fun ReadingTab(
     onDeleteDocument: (ReadingProgress) -> Unit,
     availableVoices: List<Voice> = emptyList(),
     onVoiceSelectorClick: () -> Unit = {},
+    selectedVoiceName: String? = null,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -1131,145 +1154,266 @@ internal fun ReadingTab(
                 )
             else -> {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // ── Abrir otro documento / Elegir voz ─
-                    // Rediseño 2026-09-19 (feedback: "el botón de voz no se ve"): dos
-                    // botones con texto en vez de íconos sueltos. La voz sigue
-                    // habilitada solo si el motor reportó voces (el diálogo también
-                    // deja escuchar una muestra con una sola voz -- HU-64).
-                    ReadingActionButtons(
-                        onSelectDoc = onSelectDoc,
-                        onVoiceSelectorClick = onVoiceSelectorClick,
-                        voiceEnabled = availableVoices.isNotEmpty(),
+                    ReadingInfoStrip(
+                        currentPage = currentPage,
+                        totalPages = totalPages,
+                        readingFinished = readingFinished,
+                        highlightedCount = highlightedCount,
+                        voiceName = selectedVoiceName,
                     )
-                    // ── Barra TTS ─────────────────────
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color =
-                            if (isSpeaking) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                            } else {
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                            },
-                        shadowElevation = 2.dp,
-                    ) {
-                        Row(
-                            modifier =
-                                Modifier.padding(
-                                    horizontal = 16.dp,
-                                    vertical = 10.dp,
-                                ),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector =
-                                    if (isSpeaking) {
-                                        Icons.Rounded.VolumeUp
-                                    } else {
-                                        Icons.Rounded.RecordVoiceOver
-                                    },
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Text(
-                                // "Retomar lectura" (2026-09-08): pedido
-                                // explícito del usuario, "llevar el número
-                                // de hojas leídas" -- mientras lee, muestra
-                                // la página actual en vez del texto genérico.
-                                text =
-                                    when {
-                                        readingFinished -> stringResource(R.string.study_reading_finished)
-                                        isSpeaking && totalPages > 0 ->
-                                            stringResource(R.string.study_reading_page, currentPage, totalPages)
-                                        isSpeaking -> stringResource(R.string.study_reading_document)
-                                        // "Procesamiento incremental": el PDF ya
-                                        // se puede leer pero el resto todavía se
-                                        // sigue extrayendo de fondo.
-                                        isExtractingMore ->
-                                            stringResource(R.string.study_extracting_more, totalPages)
-                                        else -> stringResource(R.string.study_highlighted_count, highlightedCount)
-                                    },
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f),
-                            )
-                            // ── Marcar el párrafo que se está leyendo ─
-                            // (reemplaza el resaltado por-fila de antes --
-                            // ya no hay filas de párrafo que tocar, así que
-                            // "marcar" pasa a aplicar al que suena ahora)
-                            // Subido de 36dp a 48dp (auditoría de testers 2026-09-12, "botones pequeños").
-                            IconButton(
-                                onClick = onToggleHighlightCurrent,
-                                enabled = isSpeaking,
-                                modifier = Modifier.size(48.dp),
-                            ) {
-                                Icon(
-                                    imageVector =
-                                        if (isCurrentHighlighted) {
-                                            Icons.Rounded.Bookmark
-                                        } else {
-                                            Icons.Rounded.BookmarkBorder
-                                        },
-                                    contentDescription = stringResource(R.string.study_mark_current_paragraph),
-                                    tint =
-                                        if (isSpeaking) {
-                                            WarningAmber
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                                        },
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                            // ── Botón leer todo ───────
-                            FilledTonalButton(
-                                onClick = onSpeakAll,
-                                shape = MaterialTheme.shapes.medium,
-                                enabled = ttsReady,
-                            ) {
-                                Icon(
-                                    imageVector =
-                                        if (isSpeaking) {
-                                            Icons.Rounded.Stop
-                                        } else {
-                                            Icons.Rounded.PlayArrow
-                                        },
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                val speakButtonLabel =
-                                    when {
-                                        isSpeaking -> stringResource(R.string.study_stop)
-                                        readingFinished -> stringResource(R.string.study_read_again)
-                                        else -> stringResource(R.string.study_read_all)
-                                    }
-                                Text(speakButtonLabel)
-                            }
-                        }
-                    }
-                    // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): aviso
-                    // visible cerca del botón "Leer todo" cuando el motor TTS
-                    // no pudo inicializarse -- antes el botón quedaba
-                    // deshabilitado para siempre sin ninguna explicación.
-                    if (!ttsReady && ttsErrorMessage != null) {
-                        Text(
-                            text = ttsErrorMessage,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        )
-                    }
-
                     // ── PDF real, la voz lee de fondo ─
+                    // Rediseño 2026-09-21: el documento ocupa todo el alto disponible;
+                    // los controles (abrir, voz, marcar y leer) viven en un reproductor
+                    // fijo abajo, al alcance del pulgar, en vez de tres franjas arriba.
                     StudyPdfViewer(
                         uri = documentUri,
                         currentPage = currentPage,
                         modifier = Modifier.fillMaxWidth().weight(1f),
                     )
+                    ReadingPlayerBar(
+                        isSpeaking = isSpeaking,
+                        ttsReady = ttsReady,
+                        ttsErrorMessage = ttsErrorMessage,
+                        isExtractingMore = isExtractingMore,
+                        readingFinished = readingFinished,
+                        isCurrentHighlighted = isCurrentHighlighted,
+                        currentPage = currentPage,
+                        totalPages = totalPages,
+                        voiceEnabled = availableVoices.isNotEmpty(),
+                        onToggleHighlightCurrent = onToggleHighlightCurrent,
+                        onSpeakAll = onSpeakAll,
+                        onSelectDoc = onSelectDoc,
+                        onVoiceSelectorClick = onVoiceSelectorClick,
+                    )
                 }
             }
         }
+    }
+}
+
+// Datos del libro en una tira de chips (rediseño 2026-09-21): avance, marcadores
+// y voz activa. Sin tiempos restantes: el motor de voz no reporta duración.
+@Composable
+private fun ReadingInfoStrip(
+    currentPage: Int,
+    totalPages: Int,
+    readingFinished: Boolean,
+    highlightedCount: Int,
+    voiceName: String?,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (totalPages > 0) {
+            val percent = (listenedFraction(currentPage, totalPages, readingFinished) * 100).toInt()
+            ReadingInfoChip(stringResource(R.string.study_listened_percent, percent))
+        }
+        ReadingInfoChip(stringResource(R.string.study_highlighted_count, highlightedCount))
+        if (voiceName != null) {
+            ReadingInfoChip(stringResource(R.string.study_voice_chip, voiceName))
+        }
+    }
+}
+
+@Composable
+private fun ReadingInfoChip(text: String) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+    }
+}
+
+// Reproductor fijo de Lectura (rediseño 2026-09-21): panel con el degradado del
+// banner (contraste garantizado con texto blanco), estado y progreso arriba, y
+// abajo abrir / voz / marcar y el botón grande de leer.
+@Composable
+private fun ReadingPlayerBar(
+    isSpeaking: Boolean,
+    ttsReady: Boolean,
+    ttsErrorMessage: String?,
+    isExtractingMore: Boolean,
+    readingFinished: Boolean,
+    isCurrentHighlighted: Boolean,
+    currentPage: Int,
+    totalPages: Int,
+    voiceEnabled: Boolean,
+    onToggleHighlightCurrent: () -> Unit,
+    onSpeakAll: () -> Unit,
+    onSelectDoc: () -> Unit,
+    onVoiceSelectorClick: () -> Unit,
+) {
+    val gradient = rememberBannerGradient()
+    val panelShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .shadow(8.dp, panelShape)
+                .clip(panelShape)
+                .background(Brush.linearGradient(gradient))
+                .padding(horizontal = 12.dp)
+                .padding(top = 12.dp, bottom = 8.dp),
+    ) {
+        ReadingStatusLine(
+            isSpeaking = isSpeaking,
+            isExtractingMore = isExtractingMore,
+            readingFinished = readingFinished,
+            currentPage = currentPage,
+            totalPages = totalPages,
+        )
+        ReadingProgressLine(
+            isExtractingMore = isExtractingMore,
+            fraction = listenedFraction(currentPage, totalPages, readingFinished),
+            hasPages = totalPages > 0,
+        )
+        // Hallazgo H3 (ronda 13, 2026-09-18): si el motor TTS no pudo iniciar,
+        // se explica aquí en vez de dejar "Leer todo" deshabilitado sin motivo.
+        if (!ttsReady && ttsErrorMessage != null) {
+            Text(
+                text = ttsErrorMessage,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onSelectDoc, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    Icons.Rounded.FolderOpen,
+                    contentDescription = stringResource(R.string.qr_open_document),
+                    tint = Color.White,
+                )
+            }
+            IconButton(onClick = onVoiceSelectorClick, enabled = voiceEnabled, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    Icons.Rounded.RecordVoiceOver,
+                    contentDescription = stringResource(R.string.study_choose_voice),
+                    tint = Color.White.copy(alpha = if (voiceEnabled) 1f else 0.45f),
+                )
+            }
+            // Marca el párrafo que suena ahora (alimenta "Párrafos resaltados" de Notas).
+            IconButton(
+                onClick = onToggleHighlightCurrent,
+                enabled = isSpeaking,
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(
+                    imageVector = if (isCurrentHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                    contentDescription = stringResource(R.string.study_mark_current_paragraph),
+                    tint = Color.White.copy(alpha = if (isSpeaking) 1f else 0.45f),
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            Button(
+                onClick = onSpeakAll,
+                shape = RoundedCornerShape(50),
+                enabled = ttsReady,
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = gradient[1],
+                        disabledContainerColor = Color.White.copy(alpha = 0.4f),
+                        disabledContentColor = Color.White,
+                    ),
+            ) {
+                Icon(
+                    imageVector = if (isSpeaking) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    when {
+                        isSpeaking -> stringResource(R.string.study_stop)
+                        readingFinished -> stringResource(R.string.study_read_again)
+                        else -> stringResource(R.string.study_read_all)
+                    },
+                )
+            }
+        }
+    }
+}
+
+// Estado de la lectura; sin texto cuando no pasa nada (los datos en reposo van
+// en la tira de chips de arriba).
+@Composable
+private fun ReadingStatusLine(
+    isSpeaking: Boolean,
+    isExtractingMore: Boolean,
+    readingFinished: Boolean,
+    currentPage: Int,
+    totalPages: Int,
+) {
+    val text =
+        when {
+            readingFinished -> stringResource(R.string.study_reading_finished)
+            isSpeaking && totalPages > 0 -> stringResource(R.string.study_reading_page, currentPage, totalPages)
+            isSpeaking -> stringResource(R.string.study_reading_document)
+            // El PDF ya se puede leer pero el resto se sigue extrayendo.
+            isExtractingMore -> stringResource(R.string.study_extracting_more, totalPages)
+            else -> null
+        }
+    if (text != null) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.White,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+    }
+}
+
+// Fracción ya escuchada: la página actual (1-based) aún no está completa, por eso
+// se cuentan las anteriores; al terminar la lectura es 100 %.
+internal fun listenedFraction(
+    currentPage: Int,
+    totalPages: Int,
+    readingFinished: Boolean,
+): Float =
+    when {
+        totalPages <= 0 -> 0f
+        readingFinished -> 1f
+        else -> ((currentPage - 1).coerceAtLeast(0).toFloat() / totalPages).coerceIn(0f, 1f)
+    }
+
+// Barra fina de progreso: avance de páginas al leer; indeterminada mientras se
+// termina de extraer el texto del resto del documento.
+@Composable
+private fun ReadingProgressLine(
+    isExtractingMore: Boolean,
+    fraction: Float,
+    hasPages: Boolean,
+) {
+    val lineModifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(4.dp).clip(RoundedCornerShape(50))
+    val track = Color.White.copy(alpha = 0.3f)
+    if (isExtractingMore) {
+        LinearProgressIndicator(modifier = lineModifier, color = Color.White, trackColor = track)
+    } else if (hasPages) {
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = lineModifier,
+            color = Color.White,
+            trackColor = track,
+        )
     }
 }
 
@@ -1376,40 +1520,6 @@ private fun BoxScope.ReadingEmptyState(
                     onDelete = { onDeleteDocument(progress) },
                 )
             }
-        }
-    }
-}
-
-// Fila de acciones de Lectura con un documento abierto: abrir otro PDF y
-// elegir la voz (botones con texto, más visibles que los íconos de antes).
-@Composable
-private fun ReadingActionButtons(
-    onSelectDoc: () -> Unit,
-    onVoiceSelectorClick: () -> Unit,
-    voiceEnabled: Boolean,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        OutlinedButton(
-            onClick = onSelectDoc,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.weight(1f),
-        ) {
-            Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.qr_open_document), maxLines = 2, textAlign = TextAlign.Center)
-        }
-        FilledTonalButton(
-            onClick = onVoiceSelectorClick,
-            enabled = voiceEnabled,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.weight(1f),
-        ) {
-            Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.study_choose_voice), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

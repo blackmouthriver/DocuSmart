@@ -1009,6 +1009,8 @@
     <string name="study_delete_all_notes_body">Are you sure you want to delete all notes? This action cannot be undone.</string>
     <string name="study_highlighted_paragraphs_count">Highlighted paragraphs (%1$d)</string>
     <string name="study_mark_current_paragraph">Mark current paragraph</string>
+    <string name="study_listened_percent">%1$d %% listened</string>
+    <string name="study_voice_chip">Voice: %1$s</string>
     <string name="study_new_note">New note</string>
     <string name="study_note_title_label">Note title</string>
     <string name="study_note_title_placeholder">E.g.: Key concepts from chapter 3</string>

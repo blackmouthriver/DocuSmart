@@ -18,6 +18,7 @@ import androidx.compose.ui.test.center
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -197,8 +198,8 @@ class StudyReadingTest {
         composeRule.onNodeWithText(esString(R.string.study_highlighted_count, 0)).assertExists()
         composeRule.onNodeWithText(esString(R.string.study_read_all)).assertIsEnabled()
         composeRule.onAllNodesWithContentDescription(mark).assertCountEquals(1)
-        composeRule.onNodeWithText(esString(R.string.study_choose_voice)).assertIsNotEnabled()
-        composeRule.onNodeWithText(esString(R.string.qr_open_document)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_choose_voice)).assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription(esString(R.string.qr_open_document)).performClick()
         assertEquals(1, openClicks)
 
         update { state.highlightedCount = 3 }
@@ -242,7 +243,7 @@ class StudyReadingTest {
         composeRule.onNodeWithText(esString(R.string.study_read_again)).assertIsNotEnabled()
 
         update { state.voices = listOf(voice("es-es-x-a-local"), voice("es-es-x-b-local")) }
-        composeRule.onNodeWithText(esString(R.string.study_choose_voice)).assertIsEnabled().performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_choose_voice)).assertIsEnabled().performClick()
         assertEquals(1, voiceClicks)
     }
 
@@ -334,7 +335,7 @@ class StudyReadingTest {
         exerciseSpeakButtonIfPossible()
 
         // Elegir otro documento con el primero ya abierto (cancela la carga anterior).
-        composeRule.onNodeWithText(esString(R.string.qr_open_document)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.qr_open_document)).performClick()
         env.registry.respond(Activity.RESULT_OK, Intent().setData(Uri.fromFile(second)))
         composeRule.waitForTextExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
         waitForExtractionDone()

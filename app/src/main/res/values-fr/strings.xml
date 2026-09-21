@@ -1012,6 +1012,8 @@
     <string name="study_delete_all_notes_body">Es-tu sûr de vouloir supprimer toutes les notes ? Cette action est irréversible.</string>
     <string name="study_highlighted_paragraphs_count">Paragraphes surlignés (%1$d)</string>
     <string name="study_mark_current_paragraph">Marquer le paragraphe actuel</string>
+    <string name="study_listened_percent">%1$d %% écouté</string>
+    <string name="study_voice_chip">Voix : %1$s</string>
     <string name="study_new_note">Nouvelle note</string>
     <string name="study_note_title_label">Titre de la note</string>
     <string name="study_note_title_placeholder">Ex : Concepts clés du chapitre 3</string>
