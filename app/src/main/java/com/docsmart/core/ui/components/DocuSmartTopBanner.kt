@@ -46,7 +46,16 @@ fun DocuSmartTopBanner(
     // Opcional: "Inicio" a la derecha de "Volver" (vistas anidadas como las de
     // Modo Estudio y Agenda, para volver a Inicio sin repetir "Volver").
     onHome: (() -> Unit)? = null,
+    // Rediseño 2026-09-20 (Fase 1): variante compacta para pantallas
+    // secundarias -- una sola fila (logo + título a la izquierda) en vez del
+    // banner alto centrado, para que el contenido suba. Por defecto false:
+    // las pantallas que ya usan el banner no cambian.
+    compact: Boolean = false,
 ) {
+    if (compact) {
+        CompactTopBanner(screenTitle, screenSubtitle, modifier, actions, onBack, onHome)
+        return
+    }
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): este
     // degradado estaba fijo en tonos de azul, ignorando el "Color de
     // acento" elegido en Ajustes -- este banner lo comparten 9 pantallas,
@@ -182,30 +191,7 @@ fun DocuSmartTopBanner(
         // (`primary`) en vez de blanco fijo, ya que el fondo de acá es el
         // normal de la pantalla (claro u oscuro según el tema), no el
         // degradado.
-        if (onBack != null || onHome != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (onBack != null) {
-                    BannerNavAction(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        label = stringResource(R.string.general_back),
-                        onClick = onBack,
-                    )
-                } else {
-                    Spacer(Modifier)
-                }
-                if (onHome != null) {
-                    BannerNavAction(
-                        icon = Icons.Rounded.Home,
-                        label = stringResource(R.string.nav_home),
-                        onClick = onHome,
-                    )
-                }
-            }
-        }
+        BannerNavRow(onBack = onBack, onHome = onHome)
     }
 }
 
@@ -237,5 +223,96 @@ private fun BannerNavAction(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
         )
+    }
+}
+
+// Fila "Volver" / "Inicio" debajo del banner; compartida por la variante normal
+// y la compacta para no duplicar la lógica.
+@Composable
+private fun BannerNavRow(
+    onBack: (() -> Unit)?,
+    onHome: (() -> Unit)?,
+) {
+    if (onBack == null && onHome == null) return
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (onBack != null) {
+            BannerNavAction(
+                icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                label = stringResource(R.string.general_back),
+                onClick = onBack,
+            )
+        } else {
+            Spacer(Modifier)
+        }
+        if (onHome != null) {
+            BannerNavAction(
+                icon = Icons.Rounded.Home,
+                label = stringResource(R.string.nav_home),
+                onClick = onHome,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactTopBanner(
+    screenTitle: String,
+    screenSubtitle: String,
+    modifier: Modifier,
+    actions: (@Composable RowScope.() -> Unit)?,
+    onBack: (() -> Unit)?,
+    onHome: (() -> Unit)?,
+) {
+    val bannerGradient = rememberBannerGradient()
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(brush = Brush.linearGradient(colors = bannerGradient))
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.18f),
+                            shape = MaterialTheme.shapes.medium,
+                        ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_docusmart_logo),
+                    // El título de al lado ya nombra la pantalla.
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = screenTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+                if (screenSubtitle.isNotBlank()) {
+                    Text(
+                        text = screenSubtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.78f),
+                    )
+                }
+            }
+            actions?.invoke(this)
+        }
+        BannerNavRow(onBack = onBack, onHome = onHome)
     }
 }

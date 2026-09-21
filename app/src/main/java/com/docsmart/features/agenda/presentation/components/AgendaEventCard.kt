@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material3.Icon
@@ -34,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.data.db.AgendaEventEntity
+import com.docsmart.core.ui.components.DocuSmartStatusChip
+import com.docsmart.core.ui.components.StatusTone
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.WarningAmber
 import com.docsmart.features.agenda.domain.AgendaEventStatus
@@ -138,17 +139,15 @@ fun AgendaEventCard(
                     modifier = Modifier.size(16.dp),
                 )
             }
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = accentColor.copy(alpha = 0.15f),
-            ) {
-                Text(
-                    text = statusLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accentColor,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                )
-            }
+            DocuSmartStatusChip(
+                label = statusLabel,
+                tone =
+                    when (status) {
+                        AgendaEventStatus.OVERDUE -> StatusTone.WARNING
+                        AgendaEventStatus.TODAY -> StatusTone.SUCCESS
+                        AgendaEventStatus.UPCOMING -> StatusTone.ACCENT
+                    },
+            )
         }
     }
 }
