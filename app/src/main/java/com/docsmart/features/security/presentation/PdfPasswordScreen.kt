@@ -36,6 +36,7 @@ import com.docsmart.features.security.domain.PdfPasswordMessages
 @Composable
 fun PdfPasswordScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     viewModel: SecurityViewModel = hiltViewModel(),
 ) {
     val uiState = viewModel.uiState.collectAsState().value
@@ -100,6 +101,7 @@ fun PdfPasswordScreen(
                     screenTitle = stringResource(R.string.security_pdf_password),
                     screenSubtitle = stringResource(R.string.pdf_pw_screen_subtitle),
                     onBack = onBack,
+                    onHome = onHome,
                 )
             }
 

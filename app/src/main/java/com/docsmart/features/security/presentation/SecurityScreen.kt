@@ -96,6 +96,7 @@ private fun OriginalNotDeletedWarningDialog(
 @Composable
 fun SecurityScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     onPdfPassword: () -> Unit = {},
     // Acceso directo "Mover a Carpeta Segura" desde un archivo ya elegido
     // (backlog UX 2026-08-30/09-10, HU-42): el archivo queda pendiente y
@@ -249,6 +250,7 @@ fun SecurityScreen(
                     SecureFolderContent(
                         uiState = uiState,
                         onBack = onBack,
+                        onHome = onHome,
                         onDeleteFile = { file -> viewModel.deleteFile(file, deleteErrorMessage) },
                         onRestoreFile = { file ->
                             viewModel.restoreFile(file, context, restoreErrorMessage, restoreOriginalKept)
@@ -707,6 +709,7 @@ private fun SetupPinScreen(
 private fun SecureFolderContent(
     uiState: SecurityUiState,
     onBack: () -> Unit,
+    onHome: (() -> Unit)?,
     onDeleteFile: (java.io.File) -> Unit,
     onRestoreFile: (java.io.File) -> Unit,
     onPreviewFile: (java.io.File) -> Unit,
@@ -764,6 +767,7 @@ private fun SecureFolderContent(
                 screenTitle = stringResource(R.string.security_secure_folder),
                 screenSubtitle = stringResource(R.string.security_files_protected_count, uiState.secureFiles.size),
                 onBack = onBack,
+                onHome = onHome,
             )
         }
 

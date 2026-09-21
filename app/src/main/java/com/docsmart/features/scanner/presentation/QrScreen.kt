@@ -99,6 +99,7 @@ private fun isCameraPermissionGranted(context: Context): Boolean =
 @Composable
 fun QrReaderScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     // HU-44: acceso al Historial de QR desde el banner.
     onHistoryClick: () -> Unit = {},
     viewModel: QrViewModel = hiltViewModel(),
@@ -345,6 +346,7 @@ fun QrReaderScreen(
                 screenTitle = stringResource(R.string.qr_reader_title),
                 screenSubtitle = stringResource(R.string.qr_reader_subtitle),
                 onBack = onBack,
+                onHome = onHome,
                 actions = {
                     IconButton(onClick = onHistoryClick) {
                         Icon(
@@ -880,6 +882,7 @@ private val QrLocalDateTimeSaver =
 @Composable
 fun QrCreatorScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     // Atajo "Crear QR" desde el menú "⋮" de un archivo ya elegido (backlog
     // UX 2026-08-30, HU-UX-01) -- `initialFileType` es "image" o "document",
     // decide qué chip preseleccionar ya que ambos comparten el mismo
@@ -1121,6 +1124,7 @@ fun QrCreatorScreen(
                 screenTitle = stringResource(R.string.qr_creator_title),
                 screenSubtitle = stringResource(R.string.qr_creator_subtitle),
                 onBack = onBack,
+                onHome = onHome,
                 actions = {
                     IconButton(onClick = onHistoryClick) {
                         Icon(
@@ -1131,8 +1135,6 @@ fun QrCreatorScreen(
                     }
                 },
             )
-
-            Spacer(Modifier.height(4.dp))
 
             // ── Selector de tipo ──────────────────────────────────────────────
             // Pedido explícito del usuario 2026-09-08: los chips sin

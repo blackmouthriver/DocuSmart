@@ -43,7 +43,9 @@ fun ViewerBottomBar(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .navigationBarsPadding()
+                        // Sin navigationBarsPadding(): MainActivity ya reserva el
+                        // inset de la barra de navegación (antes se sumaba y dejaba
+                        // ~48dp en blanco bajo el indicador de página).
                         .height(48.dp)
                         .padding(horizontal = 4.dp),
             ) {

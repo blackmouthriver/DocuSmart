@@ -26,6 +26,7 @@ import com.docsmart.core.ui.theme.accentShadow
 @Composable
 fun SecurityMenuScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     onSecureFolder: () -> Unit = {},
     onPdfPassword: () -> Unit = {},
     viewModel: SecurityMenuViewModel = hiltViewModel(),
@@ -59,6 +60,7 @@ fun SecurityMenuScreen(
                 screenTitle = stringResource(R.string.security_title),
                 screenSubtitle = stringResource(R.string.security_subtitle),
                 onBack = onBack,
+                onHome = onHome,
             )
         }
 

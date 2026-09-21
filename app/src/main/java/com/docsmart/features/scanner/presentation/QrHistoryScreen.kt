@@ -91,7 +91,10 @@ import java.util.Locale
  * patrón que Notas/Progreso de lectura de Estudio).
  */
 @Composable
-fun QrHistoryScreen(onBack: () -> Unit = {}) {
+fun QrHistoryScreen(
+    onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
     var entries by remember { mutableStateOf(QrHistoryStorage.loadAll(context)) }
     var pendingDelete by remember { mutableStateOf<QrHistoryEntry?>(null) }
@@ -134,6 +137,7 @@ fun QrHistoryScreen(onBack: () -> Unit = {}) {
             screenTitle = stringResource(R.string.qr_history_title),
             screenSubtitle = stringResource(R.string.qr_history_subtitle),
             onBack = onBack,
+            onHome = onHome,
             actions = {
                 if (entries.isNotEmpty()) {
                     IconButton(onClick = { pendingClearAll = true }) {

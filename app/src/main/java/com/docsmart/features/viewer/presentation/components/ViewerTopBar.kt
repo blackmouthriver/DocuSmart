@@ -53,6 +53,8 @@ fun ViewerTopBar(
     // documento -- el ítem del menú "⋮" solo aparece si hay al menos una.
     linkedNotesCount: Int = 0,
     onOpenLinkedNotesClick: () -> Unit = {},
+    // Vistas secundarias: acceso a Inicio desde el menú "⋮" (la barra ya está llena).
+    onHomeClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -168,6 +170,7 @@ fun ViewerTopBar(
                             onRename = onRenameClick,
                             onDelete = onDeleteClick,
                             onOpenLinkedNotes = onOpenLinkedNotesClick,
+                            onHome = onHomeClick,
                         ),
                 )
             }
@@ -186,6 +189,7 @@ private data class ViewerMenuActions(
     val onRename: () -> Unit,
     val onDelete: () -> Unit,
     val onOpenLinkedNotes: () -> Unit,
+    val onHome: (() -> Unit)? = null,
 )
 
 @Composable
@@ -208,6 +212,16 @@ private fun ViewerMoreOptionsMenu(
             expanded = menuExpanded,
             onDismissRequest = { menuExpanded = false },
         ) {
+            actions.onHome?.let { goHome ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.nav_home)) },
+                    leadingIcon = { Icon(Icons.Rounded.Home, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        goHome()
+                    },
+                )
+            }
             // Atajos "Convertir"/"Crear QR" desde el documento ya abierto
             // (backlog UX 2026-08-30, HU-UX-01/02, AC5) -- van antes de
             // Renombrar/Eliminar por ser acciones no destructivas, igual

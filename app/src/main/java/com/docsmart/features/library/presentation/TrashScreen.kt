@@ -61,6 +61,7 @@ import com.docsmart.core.ui.theme.accentShadow
 @Composable
 fun TrashScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     viewModel: TrashViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -129,6 +130,7 @@ fun TrashScreen(
             screenTitle = stringResource(R.string.trash_title),
             screenSubtitle = stringResource(R.string.trash_subtitle),
             onBack = onBack,
+            onHome = onHome,
         )
 
         if (uiState.items.isNotEmpty()) {

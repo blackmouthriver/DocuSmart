@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -106,6 +107,7 @@ import androidx.compose.ui.geometry.Size as ComposeSize
 fun ViewerScreen(
     documentId: String,
     onBack: () -> Unit,
+    onHome: (() -> Unit)? = null,
     // Atajos "Convertir"/"Crear QR" desde el menú del Visor (backlog UX
     // 2026-08-30, HU-UX-01/02, AC5) -- reciben el documento actualmente
     // abierto para poder precargarlo en la pantalla de destino.
@@ -222,195 +224,216 @@ fun ViewerScreen(
             dialogViewModel = passwordDialogViewModel ?: hiltViewModel(),
         )
     }
-    Box(
+    // Rediseño 2026-09-20: el anuncio va ARRIBA (como en el resto de la app) y el
+    // documento se dibuja entre las barras, sin quedar tapado por ellas. Para
+    // usuarios free el anuncio queda fijo en vez de ocultarse con los controles,
+    // así al tocar el documento no se re-ajusta ni "salta".
+    Column(
         modifier =
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
     ) {
-        when {
-            uiState.requiresPassword -> {
-                // No mostrar nada mientras se pide contraseña — el dialog ya se muestra arriba
-            }
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            uiState.error != null -> {
-                Column(
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.BrokenImage,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = uiState.error ?: stringResource(R.string.viewer_error),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onBack) {
-                        Text(stringResource(R.string.viewer_back))
-                    }
-                }
-            }
-            uiState.document != null -> {
-                val fileUri = uiState.fileUri
-                val mime = (uiState.mimeType ?: "").lowercase()
-                val fileName = (uiState.document?.name ?: "").lowercase()
-                // Hallazgo real de la auditoría general 2026-09-17 (M10):
-                // android.util.Log.d ignora el árbol de Timber -- a
-                // diferencia del resto del logging de la app, esto seguía
-                // imprimiendo fileUri (dato potencialmente sensible) también
-                // en builds de release.
-                Timber.d(
-                    "document!=null fileUri=$fileUri mime=$mime fileName=$fileName " +
-                        "requiresPassword=${uiState.requiresPassword} error=${uiState.error}",
-                )
-
-                when {
-                    mime.contains("image") ||
-                        fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
-                        fileName.endsWith(".png") || fileName.endsWith(".webp") ||
-                        fileName.endsWith(".gif") -> {
-                        ImageViewerContent(
-                            uri = fileUri,
-                            onTap = { viewModel.toggleControls() },
-                        )
-                    }
-                    mime.contains("pdf") || fileName.endsWith(".pdf") -> {
-                        // key fuerza recrear el composable cuando cambia la URI (ej: después de desencriptar)
-                        key(fileUri?.toString()) {
-                            PdfViewerContent(
-                                uri = fileUri,
-                                // Backlog UX #47/#48: un salto pendiente
-                                // (marcador tocado o última página vista al
-                                // abrir) tiene prioridad sobre el resultado
-                                // de búsqueda -- ambos son mutuamente
-                                // excluyentes en la práctica (no se puede
-                                // buscar y tocar un marcador en el mismo
-                                // instante), así que el orden solo importa
-                                // el primer frame tras cualquiera de los dos.
-                                targetPage =
-                                    uiState.pendingPageJump
-                                        ?: uiState.pdfSearchMatches
-                                            .getOrNull(uiState.pdfSearchIndex)
-                                            ?.minus(1),
-                                onTargetPageConsumed = { viewModel.onPageJumpConsumed() },
-                                highlights = uiState.pdfSearchHighlights,
-                                onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
-                                onTap = { viewModel.toggleControls() },
-                                annotationMode = uiState.annotationMode,
-                                selectedHighlightColor = uiState.selectedHighlightColor,
-                                documentAnnotations = uiState.annotations,
-                                onHighlightDrawn = { page, rect -> viewModel.addHighlight(page, rect) },
-                                onNoteRequested = { page, anchor -> viewModel.requestAddNote(page, anchor) },
-                                onAnnotationTap = { annotation -> viewModel.viewAnnotation(annotation) },
-                            )
-                        }
-                    }
-                    mime.contains("word") || mime.contains("msword") ||
-                        mime.contains("wordprocessingml") ||
-                        fileName.endsWith(".doc") || fileName.endsWith(".docx") -> {
-                        WordViewerContent(
-                            uri = fileUri,
-                            searchQuery = searchQuery,
-                            onTap = { viewModel.toggleControls() },
-                        )
-                    }
-                    mime.contains("excel") || mime.contains("spreadsheet") ||
-                        mime.contains("ms-excel") || mime.contains("sheet") ||
-                        fileName.endsWith(".xls") || fileName.endsWith(".xlsx") -> {
-                        ExcelViewerContent(
-                            uri = fileUri,
-                            searchQuery = searchQuery,
-                            onTap = { viewModel.toggleControls() },
-                        )
-                    }
-                    mime.contains("powerpoint") || mime.contains("presentation") ||
-                        fileName.endsWith(".ppt") || fileName.endsWith(".pptx") -> {
-                        PptViewerContent(
-                            uri = fileUri,
-                            searchQuery = searchQuery,
-                            onTap = { viewModel.toggleControls() },
-                        )
-                    }
-                    mime.contains("text") ||
-                        fileName.endsWith(".txt") || fileName.endsWith(".md") ||
-                        fileName.endsWith(".csv") -> {
-                        TextViewerContent(
-                            uri = fileUri,
-                            searchQuery = searchQuery,
-                            onTap = { viewModel.toggleControls() },
-                        )
-                    }
-                    else -> {
-                        UnsupportedFormatContent(
-                            mimeType = mime,
-                            fileName = uiState.document?.name ?: "",
-                            fileUri = fileUri,
-                            onTap = { viewModel.toggleControls() },
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── TopBar + SearchBar (extraído a ViewerTopBarSection -- LongMethod
-        // de detekt tras agregar los accesos de HU-42) ───────────────────────
-        uiState.document?.let { doc ->
-            ViewerTopBarSection(
-                doc = doc,
-                uiState = uiState,
-                onBack = onBack,
-                viewModel = viewModel,
-                search =
-                    ViewerSearchState(
-                        query = searchQuery,
-                        active = showSearch,
-                        onQueryChange = { searchQuery = it },
-                        onActiveChange = { showSearch = it },
-                    ),
-                documentActions =
-                    ViewerDocumentActions(
-                        onConvert = onConvertClick,
-                        onCreateQr = onCreateQrClick,
-                        onMakeSearchable = onMakeSearchableClick,
-                        onSign = onSignClick,
-                        onMoveToSecureFolder = onMoveToSecureFolderClick,
-                    ),
+        if (!isPremium && uiState.document != null) {
+            DocuSmartBannerAd(
+                adUnitId = AdConstants.BANNER_VIEWER_ID,
+                adManager = viewModel.adManager,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
+        val isPdfDocument =
+            (uiState.mimeType ?: "").contains("pdf", ignoreCase = true) ||
+                (uiState.document?.name ?: "").endsWith(".pdf", ignoreCase = true)
+        val searchToolsHeight =
+            when {
+                showSearch && isPdfDocument -> VIEWER_SEARCH_BAR_HEIGHT + VIEWER_PDF_SEARCH_RESULTS_HEIGHT
+                showSearch -> VIEWER_SEARCH_BAR_HEIGHT
+                uiState.showAnnotationToolbar -> VIEWER_ANNOTATION_TOOLS_HEIGHT
+                else -> 0.dp
+            }
+        val topInset by animateDpAsState(
+            targetValue =
+                if (uiState.showControls && uiState.document != null) {
+                    VIEWER_TOP_BAR_HEIGHT + searchToolsHeight
+                } else {
+                    0.dp
+                },
+            label = "viewerTopInset",
+        )
+        val bottomInset by animateDpAsState(
+            targetValue = if (uiState.showControls && uiState.totalPages > 0) VIEWER_BOTTOM_BAR_HEIGHT else 0.dp,
+            label = "viewerBottomInset",
+        )
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(modifier = Modifier.fillMaxSize().padding(top = topInset, bottom = bottomInset)) {
+                when {
+                    uiState.requiresPassword -> {
+                        // No mostrar nada mientras se pide contraseña — el dialog ya se muestra arriba
+                    }
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    uiState.error != null -> {
+                        Column(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.BrokenImage,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = uiState.error ?: stringResource(R.string.viewer_error),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = onBack) {
+                                Text(stringResource(R.string.viewer_back))
+                            }
+                        }
+                    }
+                    uiState.document != null -> {
+                        val fileUri = uiState.fileUri
+                        val mime = (uiState.mimeType ?: "").lowercase()
+                        val fileName = (uiState.document?.name ?: "").lowercase()
+                        // Hallazgo real de la auditoría general 2026-09-17 (M10):
+                        // android.util.Log.d ignora el árbol de Timber -- a
+                        // diferencia del resto del logging de la app, esto seguía
+                        // imprimiendo fileUri (dato potencialmente sensible) también
+                        // en builds de release.
+                        Timber.d(
+                            "document!=null fileUri=$fileUri mime=$mime fileName=$fileName " +
+                                "requiresPassword=${uiState.requiresPassword} error=${uiState.error}",
+                        )
 
-        Column(modifier = Modifier.align(Alignment.BottomCenter)) {
-            // ── AdMob — solo para usuarios free (backlog UX §8), oculto/
-            // visible junto con el resto de los controles del Visor en vez
-            // de fijo (rompería el modo de lectura inmersiva) ────────────
-            if (!isPremium && uiState.showControls) {
-                // Hallazgo real de la auditoría general 2026-09-17 (octava
-                // ronda, Baja-Media -- G4, cierra el pendiente de la quinta
-                // pasada): el banner vive abajo (junto a ViewerBottomBar, a
-                // propósito, para no tapar el documento en modo inmersivo)
-                // pero sin margen lateral, a diferencia del resto de la
-                // app (16dp). Ambos comparten esta misma Column vertical
-                // sin superponerse, así que agregar el margen no rompe nada.
-                DocuSmartBannerAd(
-                    adUnitId = AdConstants.BANNER_VIEWER_ID,
-                    adManager = viewModel.adManager,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                        when {
+                            mime.contains("image") ||
+                                fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
+                                fileName.endsWith(".png") || fileName.endsWith(".webp") ||
+                                fileName.endsWith(".gif") -> {
+                                ImageViewerContent(
+                                    uri = fileUri,
+                                    onTap = { viewModel.toggleControls() },
+                                )
+                            }
+                            mime.contains("pdf") || fileName.endsWith(".pdf") -> {
+                                // key fuerza recrear el composable cuando cambia la URI (ej: después de desencriptar)
+                                key(fileUri?.toString()) {
+                                    PdfViewerContent(
+                                        uri = fileUri,
+                                        // Backlog UX #47/#48: un salto pendiente
+                                        // (marcador tocado o última página vista al
+                                        // abrir) tiene prioridad sobre el resultado
+                                        // de búsqueda -- ambos son mutuamente
+                                        // excluyentes en la práctica (no se puede
+                                        // buscar y tocar un marcador en el mismo
+                                        // instante), así que el orden solo importa
+                                        // el primer frame tras cualquiera de los dos.
+                                        targetPage =
+                                            uiState.pendingPageJump
+                                                ?: uiState.pdfSearchMatches
+                                                    .getOrNull(uiState.pdfSearchIndex)
+                                                    ?.minus(1),
+                                        onTargetPageConsumed = { viewModel.onPageJumpConsumed() },
+                                        highlights = uiState.pdfSearchHighlights,
+                                        onPageChanged = { page, total -> viewModel.onPageChanged(page, total) },
+                                        onTap = { viewModel.toggleControls() },
+                                        annotationMode = uiState.annotationMode,
+                                        selectedHighlightColor = uiState.selectedHighlightColor,
+                                        documentAnnotations = uiState.annotations,
+                                        onHighlightDrawn = { page, rect -> viewModel.addHighlight(page, rect) },
+                                        onNoteRequested = { page, anchor -> viewModel.requestAddNote(page, anchor) },
+                                        onAnnotationTap = { annotation -> viewModel.viewAnnotation(annotation) },
+                                    )
+                                }
+                            }
+                            mime.contains("word") || mime.contains("msword") ||
+                                mime.contains("wordprocessingml") ||
+                                fileName.endsWith(".doc") || fileName.endsWith(".docx") -> {
+                                WordViewerContent(
+                                    uri = fileUri,
+                                    searchQuery = searchQuery,
+                                    onTap = { viewModel.toggleControls() },
+                                )
+                            }
+                            mime.contains("excel") || mime.contains("spreadsheet") ||
+                                mime.contains("ms-excel") || mime.contains("sheet") ||
+                                fileName.endsWith(".xls") || fileName.endsWith(".xlsx") -> {
+                                ExcelViewerContent(
+                                    uri = fileUri,
+                                    searchQuery = searchQuery,
+                                    onTap = { viewModel.toggleControls() },
+                                )
+                            }
+                            mime.contains("powerpoint") || mime.contains("presentation") ||
+                                fileName.endsWith(".ppt") || fileName.endsWith(".pptx") -> {
+                                PptViewerContent(
+                                    uri = fileUri,
+                                    searchQuery = searchQuery,
+                                    onTap = { viewModel.toggleControls() },
+                                )
+                            }
+                            mime.contains("text") ||
+                                fileName.endsWith(".txt") || fileName.endsWith(".md") ||
+                                fileName.endsWith(".csv") -> {
+                                TextViewerContent(
+                                    uri = fileUri,
+                                    searchQuery = searchQuery,
+                                    onTap = { viewModel.toggleControls() },
+                                )
+                            }
+                            else -> {
+                                UnsupportedFormatContent(
+                                    mimeType = mime,
+                                    fileName = uiState.document?.name ?: "",
+                                    fileUri = fileUri,
+                                    onTap = { viewModel.toggleControls() },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── TopBar + SearchBar (extraído a ViewerTopBarSection -- LongMethod
+            // de detekt tras agregar los accesos de HU-42) ───────────────────────
+            uiState.document?.let { doc ->
+                ViewerTopBarSection(
+                    doc = doc,
+                    uiState = uiState,
+                    onBack = onBack,
+                    onHome = onHome,
+                    viewModel = viewModel,
+                    search =
+                        ViewerSearchState(
+                            query = searchQuery,
+                            active = showSearch,
+                            onQueryChange = { searchQuery = it },
+                            onActiveChange = { showSearch = it },
+                        ),
+                    documentActions =
+                        ViewerDocumentActions(
+                            onConvert = onConvertClick,
+                            onCreateQr = onCreateQrClick,
+                            onMakeSearchable = onMakeSearchableClick,
+                            onSign = onSignClick,
+                            onMoveToSecureFolder = onMoveToSecureFolderClick,
+                        ),
                 )
             }
+
             ViewerBottomBar(
+                modifier = Modifier.align(Alignment.BottomCenter),
                 currentPage = uiState.currentPage,
                 totalPages = uiState.totalPages,
                 visible = uiState.showControls,
@@ -418,15 +441,15 @@ fun ViewerScreen(
                 onToggleBookmark = { viewModel.toggleBookmarkCurrentPage() },
                 onShowBookmarks = { viewModel.showBookmarksSheet() },
             )
-        }
 
-        if (uiState.showBookmarksSheet) {
-            ViewerBookmarksSheet(
-                bookmarkedPages = uiState.bookmarkedPages.sorted(),
-                onNavigate = { page -> viewModel.navigateToBookmark(page) },
-                onRemove = { page -> viewModel.removeBookmark(page) },
-                onDismiss = { viewModel.dismissBookmarksSheet() },
-            )
+            if (uiState.showBookmarksSheet) {
+                ViewerBookmarksSheet(
+                    bookmarkedPages = uiState.bookmarkedPages.sorted(),
+                    onNavigate = { page -> viewModel.navigateToBookmark(page) },
+                    onRemove = { page -> viewModel.removeBookmark(page) },
+                    onDismiss = { viewModel.dismissBookmarksSheet() },
+                )
+            }
         }
     }
 }
@@ -463,6 +486,7 @@ private fun BoxScope.ViewerTopBarSection(
     doc: DocumentUiModel,
     uiState: ViewerUiState,
     onBack: () -> Unit,
+    onHome: (() -> Unit)?,
     viewModel: ViewerViewModel,
     search: ViewerSearchState,
     documentActions: ViewerDocumentActions,
@@ -511,6 +535,7 @@ private fun BoxScope.ViewerTopBarSection(
         isFavorite = uiState.isFavorite,
         visible = uiState.showControls,
         onBackClick = onBack,
+        onHomeClick = onHome,
         onFavoriteClick = { viewModel.toggleFavorite() },
         onShareClick = { viewModel.shareDocument(context) },
         onSearchClick = {
@@ -602,8 +627,23 @@ private fun BoxScope.ViewerTopBarSection(
 // Espacio superior que el contenido reserva para librar la barra de herramientas
 // flotante (56dp + un margen). Antes eran 100dp/92dp porque la barra sumaba además
 // el inset de la barra de estado, que MainActivity ya reserva.
-private val VIEWER_TOP_CLEARANCE = 64.dp
-private val VIEWER_TOP_CLEARANCE_ZOOM = 60.dp
+private val VIEWER_TOP_CLEARANCE = 8.dp
+private val VIEWER_TOP_CLEARANCE_ZOOM = 8.dp
+private val VIEWER_BOTTOM_CLEARANCE = 8.dp
+
+// Alturas de las barras superpuestas (ViewerTopBar y ViewerBottomBar): el área del
+// documento reserva ese espacio mientras están visibles, así ninguna página queda
+// tapada por ellas (antes el documento ocupaba toda la pantalla por debajo y se
+// compensaba con márgenes fijos de 100dp).
+private val VIEWER_TOP_BAR_HEIGHT = 56.dp
+private val VIEWER_BOTTOM_BAR_HEIGHT = 48.dp
+
+// Herramientas que se apilan bajo la barra superior: la búsqueda (medida en el
+// teléfono: ~68dp), la barra de resultados que solo tienen los PDF (~57dp) y la
+// barra de anotación.
+private val VIEWER_SEARCH_BAR_HEIGHT = 72.dp
+private val VIEWER_PDF_SEARCH_RESULTS_HEIGHT = 60.dp
+private val VIEWER_ANNOTATION_TOOLS_HEIGHT = 64.dp
 
 // ── Barra de búsqueda inline ──────────────────────────────────────────────────
 @Composable
@@ -736,7 +776,7 @@ private fun ImageViewerContent(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(top = VIEWER_TOP_CLEARANCE_ZOOM, bottom = 92.dp),
+                        .padding(top = VIEWER_TOP_CLEARANCE_ZOOM, bottom = VIEWER_BOTTOM_CLEARANCE),
             )
         }
     }
@@ -966,7 +1006,13 @@ private fun PdfViewerContent(
     LazyColumn(
         state = listState,
         modifier = columnModifier,
-        contentPadding = PaddingValues(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 8.dp, end = 8.dp),
+        contentPadding =
+            PaddingValues(
+                top = VIEWER_TOP_CLEARANCE,
+                bottom = VIEWER_BOTTOM_CLEARANCE,
+                start = 8.dp,
+                end = 8.dp,
+            ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         itemsIndexed(pages) { index, pageBitmap ->
@@ -1436,7 +1482,13 @@ private fun WordViewerContent(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 20.dp, end = 20.dp),
+            contentPadding =
+                PaddingValues(
+                    top = VIEWER_TOP_CLEARANCE,
+                    bottom = VIEWER_BOTTOM_CLEARANCE,
+                    start = 20.dp,
+                    end = 20.dp,
+                ),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             if (searchQuery.isNotBlank()) {
@@ -1684,7 +1736,7 @@ private fun ExcelViewerContent(
         onTap = onTap,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(Modifier.height(100.dp))
+            Spacer(Modifier.height(VIEWER_TOP_CLEARANCE))
             // Pestañas de hojas -- solo si hay más de una, para no meter
             // ruido visual en el caso más común de un solo Excel simple.
             if (sheets.size > 1) {
@@ -1696,7 +1748,7 @@ private fun ExcelViewerContent(
             }
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 100.dp),
+                contentPadding = PaddingValues(bottom = VIEWER_BOTTOM_CLEARANCE),
             ) {
                 if (searchQuery.isNotBlank()) {
                     item {
@@ -1953,7 +2005,13 @@ private fun PptViewerContent(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 16.dp, end = 16.dp),
+            contentPadding =
+                PaddingValues(
+                    top = VIEWER_TOP_CLEARANCE,
+                    bottom = VIEWER_BOTTOM_CLEARANCE,
+                    start = 16.dp,
+                    end = 16.dp,
+                ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (searchQuery.isNotBlank()) {
@@ -2119,7 +2177,7 @@ private fun TextViewerBody(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 20.dp, end = 20.dp),
+                .padding(top = VIEWER_TOP_CLEARANCE, bottom = VIEWER_BOTTOM_CLEARANCE, start = 20.dp, end = 20.dp),
     ) {
         if (searchQuery.isBlank()) {
             Text(
