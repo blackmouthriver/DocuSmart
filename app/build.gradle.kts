@@ -449,7 +449,7 @@ dependencies {
     // el código fuente sí referencia directo (ContextCompat, FileProvider,
     // PermissionChecker, ComponentActivity...) -- se declaran explícitas para
     // no depender de que otra dependencia de nivel superior siga trayéndolas.
-    implementation("androidx.core:core:1.18.0")
+    implementation("androidx.core:core:1.19.0")
     implementation("androidx.activity:activity:1.13.0")
     implementation("androidx.annotation:annotation:1.9.1")
     implementation("androidx.collection:collection:1.5.0")
