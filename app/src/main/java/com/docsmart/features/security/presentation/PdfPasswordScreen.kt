@@ -75,9 +75,7 @@ fun PdfPasswordScreen(
         // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
         // detalle completo).
         contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         containerColor = Color.Transparent,
     ) { innerPadding ->
         LazyColumn(
@@ -97,6 +95,8 @@ fun PdfPasswordScreen(
             // ── Header ───────────────────────────────────────────────────────
             item {
                 DocuSmartTopBanner(
+                    // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                    compact = true,
                     screenTitle = stringResource(R.string.security_pdf_password),
                     screenSubtitle = stringResource(R.string.pdf_pw_screen_subtitle),
                     onBack = onBack,

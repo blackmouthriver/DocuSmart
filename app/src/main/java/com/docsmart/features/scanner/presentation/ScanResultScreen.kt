@@ -828,6 +828,8 @@ private fun LazyListScope.scanResultContent(
                 Spacer(Modifier.height(8.dp))
             }
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.scanner_result_title),
                 screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, headerArgs.scannedUris.size),
                 onBack = headerArgs.onBack,

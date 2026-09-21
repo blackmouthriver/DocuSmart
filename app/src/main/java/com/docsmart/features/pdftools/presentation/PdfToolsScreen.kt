@@ -450,6 +450,8 @@ fun PdfToolsScreen(
                     adManager = viewModel.adManager,
                 ) {
                     DocuSmartTopBanner(
+                        // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                        compact = uiState.selectedTool != PdfTool.NONE,
                         screenTitle = stringResource(R.string.pdf_tools_title),
                         screenSubtitle = stringResource(R.string.pdf_tools_subtitle),
                     )

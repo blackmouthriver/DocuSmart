@@ -206,9 +206,7 @@ fun SecurityScreen(
         // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
         // detalle completo).
         contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         containerColor = Color.Transparent,
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
@@ -761,6 +759,8 @@ private fun SecureFolderContent(
     ) {
         item {
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.security_secure_folder),
                 screenSubtitle = stringResource(R.string.security_files_protected_count, uiState.secureFiles.size),
                 onBack = onBack,

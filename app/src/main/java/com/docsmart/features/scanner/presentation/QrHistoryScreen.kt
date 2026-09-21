@@ -129,6 +129,8 @@ fun QrHistoryScreen(onBack: () -> Unit = {}) {
 
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         DocuSmartTopBanner(
+            // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+            compact = true,
             screenTitle = stringResource(R.string.qr_history_title),
             screenSubtitle = stringResource(R.string.qr_history_subtitle),
             onBack = onBack,

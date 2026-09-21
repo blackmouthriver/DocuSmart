@@ -722,6 +722,8 @@ fun StudyScreen(
                 adManager = viewModel.adManager,
             ) {
                 DocuSmartTopBanner(
+                    // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                    compact = currentView != StudyView.MENU,
                     // En Lectura el título es "Lectura" (no "Modo Estudio"): pedido del usuario.
                     screenTitle =
                         stringResource(

@@ -260,9 +260,7 @@ fun QrReaderScreen(
         // reserva MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt
         // para el detalle completo).
         contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         // fondo animado global (backlog UX 2026-09-06)
         containerColor = Color.Transparent,
     ) { innerPadding ->
@@ -342,6 +340,8 @@ fun QrReaderScreen(
             // explícito del usuario) -- reemplaza el TopAppBar plano de
             // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.qr_reader_title),
                 screenSubtitle = stringResource(R.string.qr_reader_subtitle),
                 onBack = onBack,
@@ -1079,9 +1079,7 @@ fun QrCreatorScreen(
         // reserva MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt
         // para el detalle completo).
         contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         // fondo animado global (backlog UX 2026-09-06)
         containerColor = Color.Transparent,
     ) { innerPadding ->
@@ -1118,6 +1116,8 @@ fun QrCreatorScreen(
             // explícito del usuario) -- reemplaza el TopAppBar plano de
             // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.qr_creator_title),
                 screenSubtitle = stringResource(R.string.qr_creator_subtitle),
                 onBack = onBack,
