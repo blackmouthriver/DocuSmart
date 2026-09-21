@@ -73,74 +73,85 @@ fun QuickAccessGrid(
     // "Estudio" genérico, siempre abría en Lectura) y a Leer/Crear QR y
     // Papelera (antes Leer/Crear QR solo estaban dentro del hoja de Escanear,
     // y Papelera solo dentro de Biblioteca) -- pedido explícito del usuario.
-    val items =
+    // Rediseño 2026-09-21: los accesos rápidos se agrupan por intención (Documentos,
+    // Estudio, Protección) en vez de una sola lista de 11 tarjetas iguales.
+    val sections =
         listOf(
-            QuickAccessItem(
-                icon = Icons.Rounded.DocumentScanner,
-                label = stringResource(R.string.home_scan),
-                color = InfoCyan,
-                onClick = { showScannerSheet = true },
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.Image,
-                label = stringResource(R.string.home_img_pdf),
-                color = ColorPdf,
-                onClick = onImageToPdfClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.Lock,
-                label = stringResource(R.string.home_security),
-                color = PremiumGold,
-                onClick = onSafeBoxClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.School,
-                label = stringResource(R.string.study_title),
-                color = MaterialTheme.colorScheme.primary,
-                onClick = onStudyMenuClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.MenuBook,
-                label = stringResource(R.string.study_tab_reading),
-                color = SuccessGreen,
-                onClick = onStudyModeClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.EditNote,
-                label = stringResource(R.string.study_tab_notes),
-                color = IndigoAccent,
-                onClick = onNotesClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.Timer,
-                label = stringResource(R.string.study_tab_pomodoro),
-                color = WarningAmber,
-                onClick = onPomodoroClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.CalendarMonth,
-                label = stringResource(R.string.home_agenda),
-                color = MaterialTheme.colorScheme.tertiary,
-                onClick = onAgendaClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.QrCodeScanner,
-                label = stringResource(R.string.home_qr_read),
-                color = MaterialTheme.colorScheme.primary,
-                onClick = onQrReaderClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.QrCode,
-                label = stringResource(R.string.home_qr_create),
-                color = MaterialTheme.colorScheme.primary,
-                onClick = onQrCreatorClick,
-            ),
-            QuickAccessItem(
-                icon = Icons.Rounded.DeleteOutline,
-                label = stringResource(R.string.library_trash),
-                color = MaterialTheme.colorScheme.error,
-                onClick = onTrashClick,
-            ),
+            R.string.home_section_documents to
+                listOf(
+                    QuickAccessItem(
+                        icon = Icons.Rounded.DocumentScanner,
+                        label = stringResource(R.string.home_scan),
+                        color = InfoCyan,
+                        onClick = { showScannerSheet = true },
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.Image,
+                        label = stringResource(R.string.home_img_pdf),
+                        color = ColorPdf,
+                        onClick = onImageToPdfClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.QrCodeScanner,
+                        label = stringResource(R.string.home_qr_read),
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = onQrReaderClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.QrCode,
+                        label = stringResource(R.string.home_qr_create),
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = onQrCreatorClick,
+                    ),
+                ),
+            R.string.home_section_study to
+                listOf(
+                    QuickAccessItem(
+                        icon = Icons.Rounded.School,
+                        label = stringResource(R.string.study_title),
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = onStudyMenuClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.MenuBook,
+                        label = stringResource(R.string.study_tab_reading),
+                        color = SuccessGreen,
+                        onClick = onStudyModeClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.EditNote,
+                        label = stringResource(R.string.study_tab_notes),
+                        color = IndigoAccent,
+                        onClick = onNotesClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.Timer,
+                        label = stringResource(R.string.study_tab_pomodoro),
+                        color = WarningAmber,
+                        onClick = onPomodoroClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.CalendarMonth,
+                        label = stringResource(R.string.home_agenda),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        onClick = onAgendaClick,
+                    ),
+                ),
+            R.string.home_section_protection to
+                listOf(
+                    QuickAccessItem(
+                        icon = Icons.Rounded.Lock,
+                        label = stringResource(R.string.home_security),
+                        color = PremiumGold,
+                        onClick = onSafeBoxClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.DeleteOutline,
+                        label = stringResource(R.string.library_trash),
+                        color = MaterialTheme.colorScheme.error,
+                        onClick = onTrashClick,
+                    ),
+                ),
         )
 
     Column(modifier = modifier) {
@@ -149,28 +160,33 @@ fun QuickAccessGrid(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items.chunked(QUICK_ACCESS_COLUMNS).forEach { rowItems ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    rowItems.forEach { item ->
-                        DocuSmartQuickAccessCard(
-                            icon = item.icon,
-                            label = item.label,
-                            onClick = item.onClick,
-                            iconTint = item.color,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    // Última fila incompleta (9 items / 3 columnas = exacto,
-                    // pero si se agrega un décimo acceso más adelante esto
-                    // evita que la fila se estire de más) -- rellena con
-                    // espacios vacíos del mismo peso.
-                    repeat(QUICK_ACCESS_COLUMNS - rowItems.size) {
-                        Spacer(modifier = Modifier.weight(1f))
+        sections.forEach { (titleRes, sectionItems) ->
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                sectionItems.chunked(QUICK_ACCESS_COLUMNS).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        rowItems.forEach { item ->
+                            DocuSmartQuickAccessCard(
+                                icon = item.icon,
+                                label = item.label,
+                                onClick = item.onClick,
+                                iconTint = item.color,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        // Última fila incompleta de la sección: se rellena con espacios
+                        // vacíos del mismo peso para que las tarjetas no se estiren.
+                        repeat(QUICK_ACCESS_COLUMNS - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }

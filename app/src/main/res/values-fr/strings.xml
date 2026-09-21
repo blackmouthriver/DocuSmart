@@ -675,6 +675,13 @@
          avant il était écrit "44%%" car quelqu'un l'avait échappé comme s'il
          devait passer par String.format, affichant le "%" en double à l'écran). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Économise 44 %</string>
+    <string name="home_section_documents">Documents</string>
+    <string name="home_section_study">Étude</string>
+    <string name="home_section_protection">Protection</string>
+    <string name="pdf_tools_section_organize">Organiser</string>
+    <string name="pdf_tools_section_edit">Modifier</string>
+    <string name="pdf_tools_section_sign_protect">Signer et protéger</string>
+    <string name="pdf_tools_section_extract">Extraire et optimiser</string>
     <string name="premium_feature_state_unlocked">Débloqué</string>
     <string name="premium_feature_state_locked">Verrouillé</string>
     <string name="premium_trial_badge">%1$d jours gratuits</string>

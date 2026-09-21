@@ -663,6 +663,13 @@
     <string name="premium_period_month">pro Monat</string>
     <string name="premium_period_year">pro Jahr</string>
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44 % sparen</string>
+    <string name="home_section_documents">Dokumente</string>
+    <string name="home_section_study">Lernen</string>
+    <string name="home_section_protection">Schutz</string>
+    <string name="pdf_tools_section_organize">Organisieren</string>
+    <string name="pdf_tools_section_edit">Bearbeiten</string>
+    <string name="pdf_tools_section_sign_protect">Signieren &amp; schützen</string>
+    <string name="pdf_tools_section_extract">Extrahieren &amp; optimieren</string>
     <string name="premium_feature_state_unlocked">Freigeschaltet</string>
     <string name="premium_feature_state_locked">Gesperrt</string>
     <string name="premium_trial_badge">%1$d Tage gratis</string>

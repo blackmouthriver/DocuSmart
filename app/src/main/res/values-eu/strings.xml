@@ -677,6 +677,13 @@
          antes decía "44%%" porque alguien lo escapó como si fuera a pasar
          por String.format, mostrando el "%" duplicado en pantalla). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">%44 aurreztu</string>
+    <string name="home_section_documents">Dokumentuak</string>
+    <string name="home_section_study">Ikasketa</string>
+    <string name="home_section_protection">Babesa</string>
+    <string name="pdf_tools_section_organize">Antolatu</string>
+    <string name="pdf_tools_section_edit">Editatu</string>
+    <string name="pdf_tools_section_sign_protect">Sinatu eta babestu</string>
+    <string name="pdf_tools_section_extract">Atera eta optimizatu</string>
     <string name="premium_feature_state_unlocked">Desblokeatuta</string>
     <string name="premium_feature_state_locked">Blokeatuta</string>
     <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene

@@ -670,6 +670,13 @@
          escapato come se dovesse passare per String.format, mostrando il
          "%" duplicato a schermo). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Risparmia il 44%</string>
+    <string name="home_section_documents">Documenti</string>
+    <string name="home_section_study">Studio</string>
+    <string name="home_section_protection">Protezione</string>
+    <string name="pdf_tools_section_organize">Organizza</string>
+    <string name="pdf_tools_section_edit">Modifica</string>
+    <string name="pdf_tools_section_sign_protect">Firma e proteggi</string>
+    <string name="pdf_tools_section_extract">Estrai e ottimizza</string>
     <string name="premium_feature_state_unlocked">Sbloccato</string>
     <string name="premium_feature_state_locked">Bloccato</string>
     <string name="premium_trial_badge">%1$d giorni gratis</string>

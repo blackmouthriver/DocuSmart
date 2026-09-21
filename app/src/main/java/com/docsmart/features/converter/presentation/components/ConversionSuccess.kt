@@ -3,16 +3,22 @@ package com.docsmart.features.converter.presentation.components
 import android.content.Context
 import android.content.Intent
 import android.webkit.MimeTypeMap
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -67,24 +73,7 @@ fun ConversionSuccess(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // ── Ícono de éxito ────────────────────────
-            Box(
-                modifier =
-                    Modifier
-                        .size(64.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = MaterialTheme.shapes.extraLarge,
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp),
-                )
-            }
+            SuccessBadge()
 
             // ── Título ────────────────────────────────
             Text(
@@ -193,6 +182,36 @@ fun ConversionSuccess(
 // Extraído de ConversionSuccess (detekt: LongMethod) -- la columna de 4
 // botones (Ver documento/Guardar/Compartir/Convertir otro) es una unidad
 // visual propia, sin lógica compartida con el resto de la card.
+// Rediseño 2026-09-21: el ícono de éxito aparece con un rebote suave en vez de
+// estar ya dibujado; refuerza que la conversión terminó sin añadir espera.
+@Composable
+private fun SuccessBadge() {
+    val scale = remember { Animatable(0.6f) }
+    LaunchedEffect(Unit) {
+        scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+    }
+    Box(
+        modifier =
+            Modifier
+                .size(64.dp)
+                .graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value
+                }.background(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.extraLarge,
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.CheckCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(36.dp),
+        )
+    }
+}
+
 @Composable
 private fun ConversionSuccessButtons(
     result: ConversionResult.Success,

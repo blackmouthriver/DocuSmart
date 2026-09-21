@@ -131,6 +131,69 @@ fun DocuSmartQuickAccessCard(
     }
 }
 
+// ── Tile compacto de herramienta (rejilla de 2 columnas) ──
+// Rediseño 2026-09-21: las 15 herramientas PDF eran tarjetas anchas de una
+// columna (~96dp cada una); el tile vertical de dos columnas las agrupa por tarea
+// y reduce el desplazamiento sin quitar el título ni la descripción.
+@Composable
+fun DocuSmartToolTile(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    iconTint: Color = Color.Unspecified,
+) {
+    val shape = MaterialTheme.shapes.large
+    val baseTint = iconTint.takeOrElse { MaterialTheme.colorScheme.primary }
+    val iconBackground = lerp(MaterialTheme.colorScheme.surface, baseTint, 0.14f)
+    val tint = ensureIconContrast(baseTint, iconBackground)
+    Box(
+        modifier =
+            modifier
+                .accentShadow(shape = shape)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+                .clickable(role = Role.Button, onClick = onClick),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(44.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(tint.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
 // ── Card de herramienta PDF ───────────────────────────
 // Uso: pantalla PDF Tools
 @Composable

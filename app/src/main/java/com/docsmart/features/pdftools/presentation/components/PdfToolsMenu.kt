@@ -3,6 +3,8 @@ package com.docsmart.features.pdftools.presentation.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -10,7 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.components.cards.DocuSmartToolCard
+import com.docsmart.core.ui.components.cards.DocuSmartToolTile
 import com.docsmart.core.ui.theme.*
 import com.docsmart.features.pdftools.presentation.PdfTool
 
@@ -131,6 +133,29 @@ private val toolItems =
         ),
     )
 
+// Rediseño 2026-09-21: las herramientas se agrupan por tarea en secciones con
+// título, en vez de una lista plana de 15 tarjetas.
+private val toolSections =
+    listOf(
+        R.string.pdf_tools_section_organize to
+            listOf(
+                PdfTool.MERGE,
+                PdfTool.SPLIT,
+                PdfTool.REORDER_PAGES,
+                PdfTool.ROTATE,
+                PdfTool.CROP,
+                PdfTool.NUMBER_PAGES,
+            ),
+        R.string.pdf_tools_section_edit to
+            listOf(PdfTool.EDIT_TEXT, PdfTool.WATERMARK, PdfTool.FILL_FORM),
+        R.string.pdf_tools_section_sign_protect to
+            listOf(PdfTool.SIGN, PdfTool.REDACT),
+        R.string.pdf_tools_section_extract to
+            listOf(PdfTool.OCR, PdfTool.EXTRACT_IMAGES, PdfTool.COMPARE, PdfTool.COMPRESS),
+    )
+
+private const val TOOL_COLUMNS = 2
+
 @Composable
 fun PdfToolsMenu(
     onToolSelected: (PdfTool) -> Unit,
@@ -140,14 +165,35 @@ fun PdfToolsMenu(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        toolItems.forEach { item ->
-            DocuSmartToolCard(
-                icon = item.icon,
-                title = stringResource(item.titleRes),
-                description = stringResource(item.descriptionRes),
-                onClick = { onToolSelected(item.tool) },
-                iconTint = item.color,
+        toolSections.forEach { (titleRes, tools) ->
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 4.dp),
             )
+            tools.mapNotNull { tool -> toolItems.firstOrNull { it.tool == tool } }
+                .chunked(TOOL_COLUMNS)
+                .forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        rowItems.forEach { item ->
+                            DocuSmartToolTile(
+                                icon = item.icon,
+                                title = stringResource(item.titleRes),
+                                description = stringResource(item.descriptionRes),
+                                onClick = { onToolSelected(item.tool) },
+                                iconTint = item.color,
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                            )
+                        }
+                        repeat(TOOL_COLUMNS - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
         }
     }
 }
