@@ -1,12 +1,11 @@
 package com.docsmart.features.scanner.presentation
 
 import android.net.Uri
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +31,7 @@ import com.docsmart.features.scanner.domain.buildColorModeMatrix
 // en el chip es exactamente lo que queda guardado (AC1). Reutilizado tanto
 // para el modo "por defecto" del documento (ScanColorModeSection, debajo)
 // como para el override por página dentro de ScanImageEditorDialog (RF2).
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ScanColorModeChipRow(
     previewUri: Uri?,
@@ -44,9 +44,10 @@ fun ScanColorModeChipRow(
     // teléfono típico y el último chip queda totalmente fuera de pantalla,
     // sin scroll para alcanzarlo -- a diferencia de ScanFormatSection/
     // PercentChipRow, cuyas etiquetas son cortas y sí entran siempre.
-    Row(
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         ScanColorMode.entries.forEach { mode ->
             FilterChip(

@@ -75,7 +75,10 @@ fun DocuSmartSecondaryButton(
         colors =
             ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
+                // Antes `primary` sobre `primaryContainer`: en oscuro con el acento Azul eran
+                // 2,6:1 (visto en Resultado de escaneo); `onPrimaryContainer` es el par
+                // diseñado para ese fondo y da >=4,5:1 en los 10 acentos.
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
