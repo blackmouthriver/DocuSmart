@@ -121,7 +121,12 @@ private fun PremiumFeatureItem(
                 } else {
                     Icons.Rounded.Lock
                 },
-            contentDescription = null,
+            // El estado bloqueado/desbloqueado solo lo comunicaba el icono: TalkBack leía
+            // el título y la descripción pero no si la función estaba disponible.
+            contentDescription =
+                stringResource(
+                    if (isUnlocked) R.string.premium_feature_state_unlocked else R.string.premium_feature_state_locked,
+                ),
             tint =
                 if (isUnlocked) {
                     SuccessGreen

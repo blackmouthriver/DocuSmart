@@ -672,6 +672,8 @@
     <string name="premium_period_month">per month</string>
     <string name="premium_period_year">per year</string>
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Save 44%</string>
+    <string name="premium_feature_state_unlocked">Unlocked</string>
+    <string name="premium_feature_state_locked">Locked</string>
     <string name="premium_trial_badge">%1$d days free</string>
     <string name="premium_start_trial">Start %1$d days free</string>
     <string name="premium_trial_active_message">Free trial active — you\'ll be charged on %1$s</string>

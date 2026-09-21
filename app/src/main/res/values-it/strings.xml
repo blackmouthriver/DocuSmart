@@ -670,6 +670,8 @@
          escapato come se dovesse passare per String.format, mostrando il
          "%" duplicato a schermo). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Risparmia il 44%</string>
+    <string name="premium_feature_state_unlocked">Sbloccato</string>
+    <string name="premium_feature_state_locked">Bloccato</string>
     <string name="premium_trial_badge">%1$d giorni gratis</string>
     <string name="premium_start_trial">Inizia %1$d giorni gratis</string>
     <string name="premium_trial_active_message">Prova gratuita attiva — addebito il %1$s</string>

@@ -663,6 +663,8 @@
     <string name="premium_period_month">pro Monat</string>
     <string name="premium_period_year">pro Jahr</string>
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44 % sparen</string>
+    <string name="premium_feature_state_unlocked">Freigeschaltet</string>
+    <string name="premium_feature_state_locked">Gesperrt</string>
     <string name="premium_trial_badge">%1$d Tage gratis</string>
     <string name="premium_start_trial">%1$d Tage gratis testen</string>
     <string name="premium_trial_active_message">Kostenlose Testphase aktiv — Abbuchung am %1$s</string>

@@ -34,6 +34,9 @@ fun DocuSmartFilterChip(
         },
         modifier =
             modifier
+                // Zona táctil de 48dp aunque el chip se dibuje de 36dp: la altura fija
+                // de abajo impedía que Material la ampliara (medido en el teléfono: 44dp).
+                .minimumInteractiveComponentSize()
                 .height(36.dp) // ← altura fija igual para todos
                 .widthIn(min = 118.dp),
         // ← ancho mínimo igual para todos

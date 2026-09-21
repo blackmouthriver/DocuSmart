@@ -13,8 +13,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -294,79 +296,101 @@ private fun OnboardingSlideContent(
                             ),
                     ),
         )
-        Column(
+        // Rediseño 2026-09-20 (Fase 3): el contenido se centra en el área que queda
+        // SOBRE los controles inferiores (puntos + botones, fijos en OnboardingScreen).
+        // Antes la columna ocupaba toda la pantalla y en pantallas bajas (~640dp) el
+        // texto y el botón "Vincular carpeta" quedaban debajo de esos controles.
+        // Es desplazable para que tampoco se corte con letra grande, y más compacta
+        // (icono y separaciones menores) cuando el alto disponible es poco.
+        BoxWithConstraints(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+                    .padding(bottom = OnboardingControlsReserve),
         ) {
-            Spacer(Modifier.weight(1f))
-
-            // Ícono principal
-            Box(
+            val compact = maxHeight < ONBOARDING_COMPACT_HEIGHT
+            val iconBox = if (compact) 96.dp else 140.dp
+            val iconSize = if (compact) 52.dp else 72.dp
+            val titleGap = if (compact) 20.dp else 48.dp
+            val bodyGap = if (compact) 12.dp else 20.dp
+            Column(
                 modifier =
                     Modifier
-                        .size(140.dp)
-                        .background(
-                            Color.White.copy(alpha = 0.15f),
-                            RoundedCornerShape(40.dp),
-                        ),
-                contentAlignment = Alignment.Center,
+                        .fillMaxWidth()
+                        .heightIn(min = maxHeight)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 32.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                Icon(
-                    imageVector = slide.icon,
-                    contentDescription = null,
-                    tint = slide.iconColor,
-                    modifier = Modifier.size(72.dp),
+                // Ícono principal
+                Box(
+                    modifier =
+                        Modifier
+                            .size(iconBox)
+                            .background(
+                                Color.White.copy(alpha = 0.15f),
+                                RoundedCornerShape(40.dp),
+                            ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = slide.icon,
+                        contentDescription = null,
+                        tint = slide.iconColor,
+                        modifier = Modifier.size(iconSize),
+                    )
+                }
+
+                Spacer(Modifier.height(titleGap))
+
+                // Título -- sombra agregada junto con la foto de fondo (antes
+                // el fondo era un degradado plano, no hacía falta): garantiza
+                // contraste sin importar qué tan clara sea la zona de la foto
+                // que quede detrás del texto en cada slide.
+                val textShadow =
+                    Shadow(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        offset = Offset(0f, 2f),
+                        blurRadius = 8f,
+                    )
+                Text(
+                    text = stringResource(slide.titleRes),
+                    style = MaterialTheme.typography.headlineMedium.copy(shadow = textShadow),
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 36.sp,
                 )
+
+                Spacer(Modifier.height(bodyGap))
+
+                // Descripción
+                Text(
+                    text = stringResource(slide.descRes),
+                    style = MaterialTheme.typography.bodyLarge.copy(shadow = textShadow),
+                    color = Color.White.copy(alpha = 0.9f),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 26.sp,
+                )
+
+                if (slide.isFolderLinkSlide) {
+                    Spacer(Modifier.height(if (compact) 16.dp else 28.dp))
+                    OnboardingFolderLinkAction(
+                        linkedFolderName = linkedFolderName,
+                        onLinkClick = onLinkFolderClick,
+                    )
+                }
             }
-
-            Spacer(Modifier.height(48.dp))
-
-            // Título -- sombra agregada junto con la foto de fondo (antes
-            // el fondo era un degradado plano, no hacía falta): garantiza
-            // contraste sin importar qué tan clara sea la zona de la foto
-            // que quede detrás del texto en cada slide.
-            val textShadow =
-                Shadow(
-                    color = Color.Black.copy(alpha = 0.5f),
-                    offset = Offset(0f, 2f),
-                    blurRadius = 8f,
-                )
-            Text(
-                text = stringResource(slide.titleRes),
-                style = MaterialTheme.typography.headlineMedium.copy(shadow = textShadow),
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                lineHeight = 36.sp,
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            // Descripción
-            Text(
-                text = stringResource(slide.descRes),
-                style = MaterialTheme.typography.bodyLarge.copy(shadow = textShadow),
-                color = Color.White.copy(alpha = 0.9f),
-                textAlign = TextAlign.Center,
-                lineHeight = 26.sp,
-            )
-
-            if (slide.isFolderLinkSlide) {
-                Spacer(Modifier.height(28.dp))
-                OnboardingFolderLinkAction(
-                    linkedFolderName = linkedFolderName,
-                    onLinkClick = onLinkFolderClick,
-                )
-            }
-
-            Spacer(Modifier.weight(if (slide.isFolderLinkSlide) 1f else 2f))
         }
     }
 }
+
+// Alto que ocupan los controles fijos de abajo (puntos + botones + su margen).
+private val OnboardingControlsReserve = 150.dp
+
+// Por debajo de este alto disponible el contenido usa medidas compactas.
+private val ONBOARDING_COMPACT_HEIGHT = 520.dp
 
 // ── Acción de vincular carpeta (fila 22 backlog UX) ────────────────────────────
 @Composable
