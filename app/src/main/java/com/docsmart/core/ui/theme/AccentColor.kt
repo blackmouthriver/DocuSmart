@@ -67,8 +67,8 @@ enum class AccentColor(
     ),
     TEAL(
         label = "Turquesa",
-        swatch = Color(0xFF0D9488),
-        light = AccentTone(Color(0xFF0D9488), Color.White, Color(0xFFCCFBF1), Color(0xFF134E4A)),
+        swatch = Color(0xFF0F766E),
+        light = AccentTone(Color(0xFF0F766E), Color.White, Color(0xFFCCFBF1), Color(0xFF134E4A)),
         dark = AccentTone(Color(0xFF5EEAD4), Color(0xFF042F2E), Color(0xFF115E59), Color(0xFFCCFBF1)),
     ),
 

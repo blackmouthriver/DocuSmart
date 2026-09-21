@@ -108,11 +108,12 @@ private fun contrastBetween(
 fun ensureIconContrast(
     color: Color,
     background: Color,
+    minContrast: Float = MIN_ICON_CONTRAST,
 ): Color {
     val target = if (background.luminance() < 0.5f) Color.White else Color.Black
     var result = color
     var steps = 0
-    while (contrastBetween(result, background) < MIN_ICON_CONTRAST && steps < MAX_ICON_CONTRAST_STEPS) {
+    while (contrastBetween(result, background) < minContrast && steps < MAX_ICON_CONTRAST_STEPS) {
         result = lerp(result, target, ICON_CONTRAST_STEP)
         steps++
     }
