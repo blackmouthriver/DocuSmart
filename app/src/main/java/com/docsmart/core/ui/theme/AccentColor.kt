@@ -49,14 +49,14 @@ enum class AccentColor(
     ),
     GREEN(
         label = "Verde",
-        swatch = Color(0xFF16A34A),
-        light = AccentTone(Color(0xFF16A34A), Color.White, Color(0xFFDCFCE7), Color(0xFF14532D)),
+        swatch = Color(0xFF15803D),
+        light = AccentTone(Color(0xFF15803D), Color.White, Color(0xFFDCFCE7), Color(0xFF14532D)),
         dark = AccentTone(Color(0xFF86EFAC), Color(0xFF052E16), Color(0xFF166534), Color(0xFFDCFCE7)),
     ),
     ORANGE(
         label = "Naranja",
-        swatch = Color(0xFFEA580C),
-        light = AccentTone(Color(0xFFEA580C), Color.White, Color(0xFFFFEDD5), Color(0xFF7C2D12)),
+        swatch = Color(0xFFC2410C),
+        light = AccentTone(Color(0xFFC2410C), Color.White, Color(0xFFFFEDD5), Color(0xFF7C2D12)),
         dark = AccentTone(Color(0xFFFDBA74), Color(0xFF431407), Color(0xFF9A3412), Color(0xFFFFEDD5)),
     ),
     PINK(
@@ -90,14 +90,14 @@ enum class AccentColor(
     ),
     AMBER(
         label = "Ámbar",
-        swatch = Color(0xFFD97706),
-        light = AccentTone(Color(0xFFD97706), Color.White, Color(0xFFFEF3C7), Color(0xFF78350F)),
+        swatch = Color(0xFFB45309),
+        light = AccentTone(Color(0xFFB45309), Color.White, Color(0xFFFEF3C7), Color(0xFF78350F)),
         dark = AccentTone(Color(0xFFFCD34D), Color(0xFF451A03), Color(0xFFB45309), Color(0xFFFEF3C7)),
     ),
     CYAN(
         label = "Cian",
-        swatch = Color(0xFF0891B2),
-        light = AccentTone(Color(0xFF0891B2), Color.White, Color(0xFFCFFAFE), Color(0xFF164E63)),
+        swatch = Color(0xFF0E7490),
+        light = AccentTone(Color(0xFF0E7490), Color.White, Color(0xFFCFFAFE), Color(0xFF164E63)),
         dark = AccentTone(Color(0xFF67E8F9), Color(0xFF083344), Color(0xFF0E7490), Color(0xFFCFFAFE)),
     ),
 }
