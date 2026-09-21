@@ -682,7 +682,7 @@ dependencies {
     // buildHealth: la API de JUnit5 (org.junit.jupiter.api.Test/Assertions,
     // usada en casi toda la suite) vive en junit-jupiter-api, submódulo del
     // paraguas junit-jupiter (removido arriba).
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.14.4")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.3")
     // buildHealth: motor de specs de Kotest (kotest-framework-engine) y las
     // DSL de mockk (every/coEvery/slot, kotest-runner-junit5→mockk-dsl) usadas
     // directo desde los tests, no solo vía los paraguas mockk/kotest-runner.
