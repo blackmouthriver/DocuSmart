@@ -102,8 +102,7 @@ class StudyReadingTest {
     private var toggleClicks = 0
     private var voiceClicks = 0
     private var speedClicks = 0
-    private var previousClicks = 0
-    private var nextClicks = 0
+    private val stepDeltas = mutableListOf<Int>()
     private var resumed: ReadingProgress? = null
     private var deleted: ReadingProgress? = null
 
@@ -131,8 +130,7 @@ class StudyReadingTest {
                 onVoiceSelectorClick = { voiceClicks++ },
                 speedLabel = "1.25×",
                 onSpeedClick = { speedClicks++ },
-                onPreviousParagraph = { previousClicks++ },
-                onNextParagraph = { nextClicks++ },
+                onStepParagraph = { stepDeltas += it },
             )
         }
     }
@@ -255,7 +253,7 @@ class StudyReadingTest {
     }
 
     @Test
-    fun controlesDeLectura_velocidadYSaltoDeParrafo() {
+    fun controlesDeLectura_enPausa_soloMuevenElPuntoDeRetoma() {
         val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
         setReading(state)
 
@@ -263,13 +261,32 @@ class StudyReadingTest {
         composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).performClick()
         composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).performClick()
         assertEquals(1, speedClicks)
-        assertEquals(1, previousClicks)
-        assertEquals(1, nextClicks)
+        assertEquals(listOf(-1, 1), stepDeltas)
+        // En pausa no se toca "Leer todo".
+        assertEquals(0, speakClicks)
 
         // Sin motor TTS los saltos se deshabilitan.
         update { state.ttsReady = false }
         composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).assertIsNotEnabled()
         composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun controlesDeLectura_leyendo_reinicianLaLecturaConLeerTodoDosVeces() {
+        val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
+        state.isSpeaking = true
+        setReading(state)
+
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).performClick()
+        assertEquals(listOf(1), stepDeltas)
+        assertEquals(2, speakClicks)
+
+        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).performClick()
+        assertEquals(4, speakClicks)
+
+        composeRule.onNodeWithText("1.25×").performClick()
+        assertEquals(1, speedClicks)
+        assertEquals(6, speakClicks)
     }
 
     @Test
