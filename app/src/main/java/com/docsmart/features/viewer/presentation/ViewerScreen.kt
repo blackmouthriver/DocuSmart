@@ -556,7 +556,6 @@ private fun BoxScope.ViewerTopBarSection(
                 Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 56.dp)
-                    .statusBarsPadding()
                     .zIndex(10f),
         ) {
             SearchBar(
@@ -595,11 +594,16 @@ private fun BoxScope.ViewerTopBarSection(
                 Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 56.dp)
-                    .statusBarsPadding()
                     .zIndex(10f),
         )
     }
 }
+
+// Espacio superior que el contenido reserva para librar la barra de herramientas
+// flotante (56dp + un margen). Antes eran 100dp/92dp porque la barra sumaba además
+// el inset de la barra de estado, que MainActivity ya reserva.
+private val VIEWER_TOP_CLEARANCE = 64.dp
+private val VIEWER_TOP_CLEARANCE_ZOOM = 60.dp
 
 // ── Barra de búsqueda inline ──────────────────────────────────────────────────
 @Composable
@@ -732,7 +736,7 @@ private fun ImageViewerContent(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(top = 92.dp, bottom = 92.dp),
+                        .padding(top = VIEWER_TOP_CLEARANCE_ZOOM, bottom = 92.dp),
             )
         }
     }
@@ -962,7 +966,7 @@ private fun PdfViewerContent(
     LazyColumn(
         state = listState,
         modifier = columnModifier,
-        contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp, start = 8.dp, end = 8.dp),
+        contentPadding = PaddingValues(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         itemsIndexed(pages) { index, pageBitmap ->
@@ -1432,7 +1436,7 @@ private fun WordViewerContent(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
+            contentPadding = PaddingValues(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 20.dp, end = 20.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             if (searchQuery.isNotBlank()) {
@@ -1949,7 +1953,7 @@ private fun PptViewerContent(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 100.dp, bottom = 100.dp, start = 16.dp, end = 16.dp),
+            contentPadding = PaddingValues(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (searchQuery.isNotBlank()) {
@@ -2115,7 +2119,7 @@ private fun TextViewerBody(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 100.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
+                .padding(top = VIEWER_TOP_CLEARANCE, bottom = 100.dp, start = 20.dp, end = 20.dp),
     ) {
         if (searchQuery.isBlank()) {
             Text(

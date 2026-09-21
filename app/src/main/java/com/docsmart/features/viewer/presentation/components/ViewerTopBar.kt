@@ -69,7 +69,9 @@ fun ViewerTopBar(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .statusBarsPadding()
+                        // Sin statusBarsPadding(): MainActivity ya reserva el
+                        // inset de la barra de estado (antes se sumaba dos veces
+                        // y dejaba una franja vacía sobre la barra de herramientas).
                         .height(56.dp)
                         .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
