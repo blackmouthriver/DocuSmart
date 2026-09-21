@@ -69,6 +69,7 @@ import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.core.pdf.PdfPageBitmap
 import com.docsmart.core.pdf.renderPdfPagesToBitmaps
+import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.SuccessGreen
@@ -2017,39 +2018,13 @@ private fun NotesListHeader(
     }
 }
 
-// Extraída de NotesTab() (detekt: LongMethod) -- estado vacío, misma
-// insignia circular con degradado de acento que Lectura/Resumen.
+// Extraída de NotesTab() (detekt: LongMethod) -- estado vacío con el componente común.
 @Composable
 private fun NotesEmptyState() {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(64.dp)
-                    .background(
-                        brush = Brush.linearGradient(rememberAccentGradient()),
-                        shape = MaterialTheme.shapes.extraLarge,
-                    ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.NoteAlt,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(30.dp),
-            )
-        }
-        Text(
-            text = stringResource(R.string.study_no_notes_yet),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
+    DocuSmartEmptyState(
+        icon = Icons.Rounded.NoteAlt,
+        title = stringResource(R.string.study_no_notes_yet),
+    )
 }
 
 // Extraída de NotesTab() (detekt: LongMethod) -- tarjeta del editor de

@@ -70,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.docsmart.R
+import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.SuccessGreen
 import com.docsmart.core.ui.theme.accentBorder
@@ -169,28 +170,11 @@ fun QrHistoryScreen(
 
 @Composable
 private fun QrHistoryEmptyState() {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Icon(
-            Icons.Rounded.History,
-            contentDescription = null,
-            modifier = Modifier.size(56.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-        )
-        Text(
-            stringResource(R.string.qr_history_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            stringResource(R.string.qr_history_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    DocuSmartEmptyState(
+        icon = Icons.Rounded.History,
+        title = stringResource(R.string.qr_history_empty_title),
+        description = stringResource(R.string.qr_history_empty_body),
+    )
 }
 
 private const val HISTORY_DATE_FORMAT = "d MMM yyyy, HH:mm"

@@ -63,6 +63,7 @@ import com.docsmart.core.data.db.AnnotationEntity
 import com.docsmart.core.data.db.AnnotationType
 import com.docsmart.core.pdf.PdfPageBitmap
 import com.docsmart.core.pdf.renderPdfPagesToBitmaps
+import com.docsmart.core.ui.components.DocuSmartErrorState
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
@@ -277,30 +278,16 @@ fun ViewerScreen(
                         )
                     }
                     uiState.error != null -> {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.BrokenImage,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.error,
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = uiState.error ?: stringResource(R.string.viewer_error),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = onBack) {
-                                Text(stringResource(R.string.viewer_back))
-                            }
-                        }
+                        DocuSmartErrorState(
+                            icon = Icons.Rounded.BrokenImage,
+                            message = uiState.error ?: stringResource(R.string.viewer_error),
+                            modifier = Modifier.align(Alignment.Center),
+                            retry = {
+                                Button(onClick = onBack) {
+                                    Text(stringResource(R.string.viewer_back))
+                                }
+                            },
+                        )
                     }
                     uiState.document != null -> {
                         val fileUri = uiState.fileUri

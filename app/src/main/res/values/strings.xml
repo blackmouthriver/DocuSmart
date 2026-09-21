@@ -992,7 +992,7 @@
     <string name="qr_history_title">Historial</string>
     <string name="qr_history_subtitle">Tus últimos códigos QR creados y leídos</string>
     <string name="qr_history_empty_title">Sin historial todavía</string>
-    <string name="qr_history_empty_body">Los QR que crees o leas aparecerán acá</string>
+    <string name="qr_history_empty_body">Los QR que crees o leas aparecerán aquí</string>
     <string name="qr_history_clear_all">Vaciar historial</string>
     <string name="qr_history_clear_all_confirm_title">¿Vaciar todo el historial?</string>
     <string name="qr_history_clear_all_confirm_body">Se eliminarán las %1$d entradas. Esta acción no se puede deshacer.</string>
@@ -1166,7 +1166,7 @@
     <string name="agenda_title">Agenda y calendario</string>
     <string name="agenda_subtitle">Organiza tus eventos y recordatorios</string>
     <string name="agenda_new_event">Nuevo evento</string>
-    <string name="agenda_empty_state">No tenés eventos guardados todavía</string>
+    <string name="agenda_empty_state">No tienes eventos guardados todavía</string>
     <string name="agenda_view_list">Lista</string>
     <string name="agenda_view_calendar">Calendario</string>
     <string name="agenda_calendar_no_events_day">No hay eventos este día</string>
