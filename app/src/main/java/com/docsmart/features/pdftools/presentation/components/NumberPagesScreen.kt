@@ -14,7 +14,6 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.FormatListNumbered
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,8 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.IndigoAccent
 import com.docsmart.core.ui.theme.accentBorder
+import com.docsmart.core.ui.theme.accentFilterChipColors
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.features.pdftools.domain.usecase.PageNumberFormat
 
@@ -66,7 +65,6 @@ fun NumberPagesScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_number_pages_ready),
-            accentColor = IndigoAccent,
         )
 
         // ── Formato de numeración ──────────────────────
@@ -88,7 +86,6 @@ fun NumberPagesScreen(
             buttonLabel = stringResource(R.string.pdf_number_pages_execute),
             buttonIcon = Icons.Rounded.FormatListNumbered,
             onExecute = onExecute,
-            accentColor = IndigoAccent,
         )
     }
 }
@@ -199,9 +196,6 @@ private fun FormatChip(
                 null
             },
         colors =
-            FilterChipDefaults.filterChipColors(
-                selectedContainerColor = IndigoAccent.copy(alpha = 0.2f),
-                selectedLabelColor = IndigoAccent,
-            ),
+            accentFilterChipColors(),
     )
 }

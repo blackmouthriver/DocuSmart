@@ -126,7 +126,6 @@ fun RotatePdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_rotate_ready),
-            accentColor = WarningAmber,
         )
 
         // ── Card: Vista previa + controles ────────────
@@ -287,7 +286,6 @@ fun RotatePdfScreen(
             buttonLabel = stringResource(R.string.pdf_rotate_execute, degrees),
             buttonIcon = Icons.Rounded.RotateRight,
             onExecute = onExecute,
-            accentColor = WarningAmber,
         )
     }
 }

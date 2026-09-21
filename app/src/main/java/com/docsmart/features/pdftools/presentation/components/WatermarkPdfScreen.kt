@@ -63,7 +63,6 @@ fun WatermarkPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_watermark_ready),
-            accentColor = ColorImage,
         )
 
         // ── Texto de marca de agua ─────────────────────
@@ -85,7 +84,6 @@ fun WatermarkPdfScreen(
             buttonLabel = stringResource(R.string.pdf_watermark_execute),
             buttonIcon = Icons.Rounded.BrandingWatermark,
             onExecute = onExecute,
-            accentColor = ColorImage,
         )
     }
 }

@@ -25,7 +25,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.SmartBlue
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 
@@ -65,7 +64,6 @@ fun EditTextPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_edit_text_ready),
-            accentColor = SmartBlue,
         )
 
         // ── Buscar / Reemplazar ────────────────────────
@@ -87,7 +85,6 @@ fun EditTextPdfScreen(
             buttonLabel = stringResource(R.string.pdf_edit_text_execute),
             buttonIcon = Icons.Rounded.Edit,
             onExecute = onExecute,
-            accentColor = SmartBlue,
         )
     }
 }
@@ -132,7 +129,7 @@ private fun EditTextSearchReplaceCard(
                 shape = MaterialTheme.shapes.medium,
                 colors =
                     OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = SmartBlue,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -160,7 +157,7 @@ private fun EditTextSearchReplaceCard(
                 shape = MaterialTheme.shapes.medium,
                 colors =
                     OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = SmartBlue,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,

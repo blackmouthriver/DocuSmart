@@ -96,7 +96,7 @@ fun QuickAccessGrid(
             QuickAccessItem(
                 icon = Icons.Rounded.School,
                 label = stringResource(R.string.study_title),
-                color = DocuBlue,
+                color = MaterialTheme.colorScheme.primary,
                 onClick = onStudyMenuClick,
             ),
             QuickAccessItem(
@@ -126,13 +126,13 @@ fun QuickAccessGrid(
             QuickAccessItem(
                 icon = Icons.Rounded.QrCodeScanner,
                 label = stringResource(R.string.home_qr_read),
-                color = DocuBlue,
+                color = MaterialTheme.colorScheme.primary,
                 onClick = onQrReaderClick,
             ),
             QuickAccessItem(
                 icon = Icons.Rounded.QrCode,
                 label = stringResource(R.string.home_qr_create),
-                color = SmartBlue,
+                color = MaterialTheme.colorScheme.primary,
                 onClick = onQrCreatorClick,
             ),
             QuickAccessItem(

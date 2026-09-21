@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.docsmart.R
 import com.docsmart.core.ui.theme.ErrorRed
-import com.docsmart.core.ui.theme.SmartBlue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -112,7 +111,6 @@ fun ReorderPagesScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_reorder_pages_ready),
-            accentColor = SmartBlue,
         )
 
         when {
@@ -121,7 +119,7 @@ fun ReorderPagesScreen(
                     modifier = Modifier.fillMaxWidth().height(120.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = SmartBlue)
+                    CircularProgressIndicator()
                 }
             }
             selectedPdf != null && pageOrder.isNotEmpty() -> {
@@ -155,7 +153,6 @@ fun ReorderPagesScreen(
             buttonLabel = stringResource(R.string.pdf_reorder_pages_execute),
             buttonIcon = Icons.Rounded.Reorder,
             onExecute = onExecute,
-            accentColor = SmartBlue,
         )
     }
 }
