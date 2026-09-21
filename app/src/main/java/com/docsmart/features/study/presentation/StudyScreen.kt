@@ -19,7 +19,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -2306,6 +2305,7 @@ internal enum class NoteReminderChip { NONE, TOMORROW, DAYS_3, WEEK_1, CUSTOM }
 // personalizada. RNF2: si el usuario negó POST_NOTIFICATIONS, la sección
 // queda deshabilitada con una explicación en vez de dejar programar una
 // alarma cuya notificación nunca va a poder mostrarse.
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun NoteReminderSection(
     reminderChip: NoteReminderChip,
@@ -2354,9 +2354,13 @@ internal fun NoteReminderSection(
             return
         }
 
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+        // Rediseño 2026-09-20: eran 5 chips en una fila desplazable y los dos últimos
+        // ("En 1 semana", "Personalizado") quedaban fuera de pantalla sin ninguna pista
+        // de que se podía deslizar. FlowRow los ajusta al ancho en dos líneas.
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             FilterChip(
                 selected = reminderChip == NoteReminderChip.NONE,
@@ -2599,7 +2603,7 @@ private fun NoteListItem(
                 }
                 // Backlog UX #50: vincular a un documento de la Biblioteca
                 // -- ícono resaltado en acento cuando ya tiene un vínculo.
-                IconButton(onClick = onLinkClick, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = onLinkClick, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector =
                             if (note.documentId != null) {
@@ -2956,7 +2960,7 @@ private fun StudyExportSingleNoteButton(note: NoteWithImages) {
     }
 
     Box {
-        IconButton(onClick = { expanded = true }, enabled = !isExporting, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = { expanded = true }, enabled = !isExporting, modifier = Modifier.size(48.dp)) {
             if (isExporting) {
                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
             } else {

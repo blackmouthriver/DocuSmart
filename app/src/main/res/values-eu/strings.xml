@@ -677,6 +677,8 @@
          antes decía "44%%" porque alguien lo escapó como si fuera a pasar
          por String.format, mostrando el "%" duplicado en pantalla). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">%44 aurreztu</string>
+    <string name="premium_feature_state_unlocked">Desblokeatuta</string>
+    <string name="premium_feature_state_locked">Blokeatuta</string>
     <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
          configurada una fase de prueba real para el producto, nunca se
          muestran como texto fijo sin que Play Billing la confirme. -->

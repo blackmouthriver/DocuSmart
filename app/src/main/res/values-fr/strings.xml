@@ -675,6 +675,8 @@
          avant il était écrit "44%%" car quelqu'un l'avait échappé comme s'il
          devait passer par String.format, affichant le "%" en double à l'écran). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Économise 44 %</string>
+    <string name="premium_feature_state_unlocked">Débloqué</string>
+    <string name="premium_feature_state_locked">Verrouillé</string>
     <string name="premium_trial_badge">%1$d jours gratuits</string>
     <string name="premium_start_trial">Essayer %1$d jours gratuits</string>
     <string name="premium_trial_active_message">Essai gratuit actif — facturation le %1$s</string>

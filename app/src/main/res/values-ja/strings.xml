@@ -666,6 +666,8 @@
          誰かがString.formatを通すかのようにエスケープしたため以前は「44%%」となっており、
          画面に「%」が重複して表示されていた)。 -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44%お得</string>
+    <string name="premium_feature_state_unlocked">利用可能</string>
+    <string name="premium_feature_state_locked">ロック中</string>
     <string name="premium_trial_badge">%1$d日間無料</string>
     <string name="premium_start_trial">%1$d日間無料で始める</string>
     <string name="premium_trial_active_message">無料トライアル中 — %1$sに課金されます</string>

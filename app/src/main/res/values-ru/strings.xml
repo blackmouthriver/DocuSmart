@@ -665,6 +665,8 @@
     <string name="premium_period_month">в месяц</string>
     <string name="premium_period_year">в год</string>
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Экономия 44%</string>
+    <string name="premium_feature_state_unlocked">Доступно</string>
+    <string name="premium_feature_state_locked">Заблокировано</string>
     <string name="premium_trial_badge">%1$d дней бесплатно</string>
     <string name="premium_start_trial">Начать %1$d дней бесплатно</string>
     <string name="premium_trial_active_message">Бесплатный период активен — списание %1$s</string>

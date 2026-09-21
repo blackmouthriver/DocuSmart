@@ -666,6 +666,8 @@
          因为有人按 String.format 的方式对其进行了转义，
          导致界面上显示出重复的 "%"）。 -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">节省 44%</string>
+    <string name="premium_feature_state_unlocked">已解锁</string>
+    <string name="premium_feature_state_locked">已锁定</string>
     <string name="premium_trial_badge">%1$d 天免费</string>
     <string name="premium_start_trial">开始 %1$d 天免费试用</string>
     <string name="premium_trial_active_message">免费试用中 — 将于 %1$s 扣费</string>
