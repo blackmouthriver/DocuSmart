@@ -72,7 +72,6 @@ fun FillFormScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_fill_form_ready),
-            accentColor = ColorZip,
         )
 
         if (selectedPdf != null) {
@@ -93,7 +92,6 @@ fun FillFormScreen(
             buttonLabel = stringResource(R.string.pdf_fill_form_execute),
             buttonIcon = Icons.Rounded.Checklist,
             onExecute = onExecute,
-            accentColor = ColorZip,
         )
     }
 }

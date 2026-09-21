@@ -15,10 +15,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -27,7 +31,6 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AlarmOn
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material3.Button
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -56,6 +59,7 @@ import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
+import com.docsmart.core.ui.components.buttons.DocuSmartFab
 import com.docsmart.core.ui.util.ReloadOnScreenResume
 import com.docsmart.features.agenda.presentation.components.AgendaCalendarView
 import com.docsmart.features.agenda.presentation.components.AgendaEventCard
@@ -144,10 +148,16 @@ fun AgendaScreen(
     }
 
     Scaffold(
+        // Mismo criterio que StudyScreen: MainActivity ya consume el inset de la
+        // barra de estado, así que acá solo se respetan los laterales (antes se
+        // sumaba dos veces y dejaba un hueco sobre el anuncio).
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.startCreating() }) {
-                Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.agenda_new_event))
-            }
+            DocuSmartFab(
+                icon = Icons.Rounded.Add,
+                contentDescription = stringResource(R.string.agenda_new_event),
+                onClick = { viewModel.startCreating() },
+            )
         },
     ) { innerPadding ->
         LazyColumn(
@@ -167,6 +177,8 @@ fun AgendaScreen(
                         screenSubtitle = stringResource(R.string.agenda_subtitle),
                         onBack = onBack,
                         onHome = onHome,
+                        // Piloto del encabezado compacto (Fase 1).
+                        compact = true,
                     )
                 }
             }

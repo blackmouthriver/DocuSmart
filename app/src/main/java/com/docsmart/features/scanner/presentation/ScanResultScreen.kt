@@ -105,6 +105,7 @@ fun ScanResultScreen(
     scannedUris: List<Uri>,
     isPdf: Boolean,
     onBack: () -> Unit,
+    onHome: (() -> Unit)? = null,
     onDone: () -> Unit,
     onPremiumClick: () -> Unit = {},
     onOpenDocument: (String) -> Unit = {},
@@ -263,6 +264,7 @@ fun ScanResultScreen(
                 adManager = converterViewModel.adManager,
                 scannedUris = scannedUris,
                 onBack = onBack,
+                onHome = onHome,
             ),
         previewArgs =
             ScanPreviewArgs(
@@ -677,6 +679,7 @@ private data class ScanResultHeaderArgs(
     val adManager: AdManager,
     val scannedUris: List<Uri>,
     val onBack: () -> Unit,
+    val onHome: (() -> Unit)? = null,
 )
 
 private data class ScanPreviewArgs(
@@ -828,9 +831,12 @@ private fun LazyListScope.scanResultContent(
                 Spacer(Modifier.height(8.dp))
             }
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.scanner_result_title),
                 screenSubtitle = stringResource(R.string.scan_result_subtitle_pages, headerArgs.scannedUris.size),
                 onBack = headerArgs.onBack,
+                onHome = headerArgs.onHome,
             )
         }
     }

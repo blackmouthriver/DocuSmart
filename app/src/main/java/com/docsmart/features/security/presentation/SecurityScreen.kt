@@ -38,7 +38,7 @@ import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
-import com.docsmart.core.ui.theme.rememberAccentGradient
+import com.docsmart.core.ui.theme.rememberBannerGradient
 import com.docsmart.core.ui.util.SecureScreenEffect
 import timber.log.Timber
 import java.io.File
@@ -96,6 +96,7 @@ private fun OriginalNotDeletedWarningDialog(
 @Composable
 fun SecurityScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     onPdfPassword: () -> Unit = {},
     // Acceso directo "Mover a Carpeta Segura" desde un archivo ya elegido
     // (backlog UX 2026-08-30/09-10, HU-42): el archivo queda pendiente y
@@ -206,9 +207,7 @@ fun SecurityScreen(
         // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
         // detalle completo).
         contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         containerColor = Color.Transparent,
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
@@ -251,6 +250,7 @@ fun SecurityScreen(
                     SecureFolderContent(
                         uiState = uiState,
                         onBack = onBack,
+                        onHome = onHome,
                         onDeleteFile = { file -> viewModel.deleteFile(file, deleteErrorMessage) },
                         onRestoreFile = { file ->
                             viewModel.restoreFile(file, context, restoreErrorMessage, restoreOriginalKept)
@@ -380,7 +380,7 @@ private fun PinUnlockScreen(
 
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): fondo fijo
     // en tonos de azul, ignorando el "Color de acento" elegido en Ajustes.
-    val securityBannerGradient = rememberAccentGradient()
+    val securityBannerGradient = rememberBannerGradient()
 
     Box(
         modifier =
@@ -605,7 +605,7 @@ private fun SetupPinScreen(
 
     // Bug real corregido 2026-09-04 (backlog UX §7, HU-UX-06): fondo fijo
     // en tonos de azul, ignorando el "Color de acento" elegido en Ajustes.
-    val pinBannerGradient = rememberAccentGradient()
+    val pinBannerGradient = rememberBannerGradient()
 
     Box(
         modifier =
@@ -709,6 +709,7 @@ private fun SetupPinScreen(
 private fun SecureFolderContent(
     uiState: SecurityUiState,
     onBack: () -> Unit,
+    onHome: (() -> Unit)?,
     onDeleteFile: (java.io.File) -> Unit,
     onRestoreFile: (java.io.File) -> Unit,
     onPreviewFile: (java.io.File) -> Unit,
@@ -761,9 +762,12 @@ private fun SecureFolderContent(
     ) {
         item {
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.security_secure_folder),
                 screenSubtitle = stringResource(R.string.security_files_protected_count, uiState.secureFiles.size),
                 onBack = onBack,
+                onHome = onHome,
             )
         }
 

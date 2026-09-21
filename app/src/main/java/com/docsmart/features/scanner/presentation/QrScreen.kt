@@ -99,6 +99,7 @@ private fun isCameraPermissionGranted(context: Context): Boolean =
 @Composable
 fun QrReaderScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     // HU-44: acceso al Historial de QR desde el banner.
     onHistoryClick: () -> Unit = {},
     viewModel: QrViewModel = hiltViewModel(),
@@ -260,9 +261,7 @@ fun QrReaderScreen(
         // reserva MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt
         // para el detalle completo).
         contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         // fondo animado global (backlog UX 2026-09-06)
         containerColor = Color.Transparent,
     ) { innerPadding ->
@@ -342,9 +341,12 @@ fun QrReaderScreen(
             // explícito del usuario) -- reemplaza el TopAppBar plano de
             // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.qr_reader_title),
                 screenSubtitle = stringResource(R.string.qr_reader_subtitle),
                 onBack = onBack,
+                onHome = onHome,
                 actions = {
                     IconButton(onClick = onHistoryClick) {
                         Icon(
@@ -880,6 +882,7 @@ private val QrLocalDateTimeSaver =
 @Composable
 fun QrCreatorScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     // Atajo "Crear QR" desde el menú "⋮" de un archivo ya elegido (backlog
     // UX 2026-08-30, HU-UX-01) -- `initialFileType` es "image" o "document",
     // decide qué chip preseleccionar ya que ambos comparten el mismo
@@ -1079,9 +1082,7 @@ fun QrCreatorScreen(
         // reserva MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt
         // para el detalle completo).
         contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         // fondo animado global (backlog UX 2026-09-06)
         containerColor = Color.Transparent,
     ) { innerPadding ->
@@ -1118,9 +1119,12 @@ fun QrCreatorScreen(
             // explícito del usuario) -- reemplaza el TopAppBar plano de
             // antes, mismo componente que ya usan Estudio/Seguridad/Ajustes.
             DocuSmartTopBanner(
+                // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                compact = true,
                 screenTitle = stringResource(R.string.qr_creator_title),
                 screenSubtitle = stringResource(R.string.qr_creator_subtitle),
                 onBack = onBack,
+                onHome = onHome,
                 actions = {
                     IconButton(onClick = onHistoryClick) {
                         Icon(
@@ -1131,8 +1135,6 @@ fun QrCreatorScreen(
                     }
                 },
             )
-
-            Spacer(Modifier.height(4.dp))
 
             // ── Selector de tipo ──────────────────────────────────────────────
             // Pedido explícito del usuario 2026-09-08: los chips sin

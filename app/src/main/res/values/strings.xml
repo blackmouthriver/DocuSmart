@@ -177,6 +177,8 @@
     <string name="settings_about_dialog_title">Acerca de DocuSmart</string>
     <string name="settings_about_body">Visor y convertidor inteligente de documentos. Gestiona, convierte y organiza tus archivos de forma rápida y segura.</string>
     <string name="settings_copyright">© 2026 mouthblack technology</string>
+    <!-- Créditos de tipografías (SIL OFL 1.1): solo nombres propios, sin traducción. Textos completos en assets/licenses/. -->
+    <string name="settings_about_fonts" translatable="false">Plus Jakarta Sans · Inter — SIL OFL 1.1</string>
 
     <!-- ── Temas ──────────────────────────────────── -->
     <string name="theme_light">Claro</string>

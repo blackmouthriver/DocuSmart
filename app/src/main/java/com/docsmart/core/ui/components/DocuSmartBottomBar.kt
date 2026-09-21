@@ -145,12 +145,12 @@ fun DocuSmartBottomBar(
     // manteniéndolo bastante más tenue que la pastilla (que usa el acento a
     // toda intensidad) para que esta siga contrastando y destacando encima.
     val accent = MaterialTheme.colorScheme.primary
-    val barTopColor = lerp(MaterialTheme.colorScheme.surface, accent, 0.14f)
-    val barBottomColor = lerp(MaterialTheme.colorScheme.surfaceVariant, accent, 0.24f)
+    val barTopColor = lerp(MaterialTheme.colorScheme.surface, accent, 0.06f)
+    val barBottomColor = lerp(MaterialTheme.colorScheme.surfaceVariant, accent, 0.10f)
     val surfaceGradient = listOf(barTopColor, barBottomColor)
     // Borde superior un poco más oscuro que el acento, para separar
     // visualmente la barra del contenido que se ve detrás (mismo pedido).
-    val barBorderColor = lerp(accent, Color.Black, 0.3f).copy(alpha = 0.4f)
+    val barBorderColor = MaterialTheme.colorScheme.outline
 
     Box(
         modifier =
@@ -191,7 +191,7 @@ fun DocuSmartBottomBar(
                 .matchParentSize()
                 .clip(barShape)
                 .background(Brush.verticalGradient(surfaceGradient))
-                .border(width = 1.5.dp, color = barBorderColor, shape = barShape),
+                .border(width = 1.dp, color = barBorderColor, shape = barShape),
         )
 
         // Items

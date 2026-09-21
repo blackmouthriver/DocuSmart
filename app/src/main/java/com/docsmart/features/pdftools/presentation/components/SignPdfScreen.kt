@@ -47,7 +47,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.NavyDark
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -104,7 +103,6 @@ fun SignPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_sign_ready),
-            accentColor = NavyDark,
         )
 
         if (selectedPdf != null) {
@@ -152,7 +150,12 @@ fun SignPdfScreen(
                             if (hasSignature) R.string.pdf_sign_captured else R.string.pdf_sign_hint,
                         ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (hasSignature) NavyDark else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color =
+                        if (hasSignature) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                 )
                 TextButton(onClick = onClearSignature, enabled = hasSignature) {
                     Text(text = stringResource(R.string.pdf_sign_clear), style = MaterialTheme.typography.labelMedium)
@@ -172,7 +175,6 @@ fun SignPdfScreen(
             buttonLabel = stringResource(R.string.pdf_sign_execute),
             buttonIcon = Icons.Rounded.Draw,
             onExecute = onExecute,
-            accentColor = NavyDark,
         )
     }
 }

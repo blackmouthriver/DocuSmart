@@ -176,6 +176,7 @@ fun DocuSmartNavGraph(
         composable(NavRoutes.Security.route) {
             SecurityMenuScreen(
                 onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
                 onSecureFolder = { navController.navigate(NavRoutes.SecureFolder.route) },
                 onPdfPassword = { navController.navigate(NavRoutes.PdfPassword.route) },
             )
@@ -195,6 +196,7 @@ fun DocuSmartNavGraph(
         ) { backStackEntry ->
             SecurityScreen(
                 onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
                 pendingFileUri = backStackEntry.arguments?.getString("pendingFileUri"),
                 // Hallazgo #53 (revisión general 2026-09-16): navega al Visor
                 // con la copia efímera de vista previa (ruta local en
@@ -205,7 +207,10 @@ fun DocuSmartNavGraph(
 
         // ── PDF Password ──────────────────────────────────────────────────────
         composable(NavRoutes.PdfPassword.route) {
-            PdfPasswordScreen(onBack = { navController.popBackStack() })
+            PdfPasswordScreen(
+                onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
+            )
         }
 
         // ── Study ─────────────────────────────────────────────────────────────
@@ -266,6 +271,7 @@ fun DocuSmartNavGraph(
         composable(NavRoutes.QrReader.route) {
             QrReaderScreen(
                 onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
                 onHistoryClick = { navController.navigate(NavRoutes.QrHistory.route) },
             )
         }
@@ -294,6 +300,7 @@ fun DocuSmartNavGraph(
         ) { backStackEntry ->
             QrCreatorScreen(
                 onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
                 initialFileUri = backStackEntry.arguments?.getString("initialFileUri"),
                 initialFileType = backStackEntry.arguments?.getString("initialFileType"),
                 initialFileName = backStackEntry.arguments?.getString("initialFileName"),
@@ -303,12 +310,18 @@ fun DocuSmartNavGraph(
 
         // ── Historial de QR (HU-44) ──────────────────────────────────────────
         composable(NavRoutes.QrHistory.route) {
-            QrHistoryScreen(onBack = { navController.popBackStack() })
+            QrHistoryScreen(
+                onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
+            )
         }
 
         // ── Papelera (RF-VIS-07) ──────────────────────────────────────────────
         composable(NavRoutes.Trash.route) {
-            TrashScreen(onBack = { navController.popBackStack() })
+            TrashScreen(
+                onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
+            )
         }
     }
 }
@@ -697,6 +710,7 @@ private fun NavGraphBuilder.viewerComposable(navController: NavHostController) {
         val context = LocalContext.current
         ViewerScreen(
             documentId = documentId,
+            onHome = { navController.goHome() },
             onBack = {
                 // Siempre intentar finish si el previous destination también es Viewer
                 val prevRoute = navController.previousBackStackEntry?.destination?.route
@@ -774,6 +788,7 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
             scannedUris = uris,
             isPdf = isPdf,
             onBack = { navController.popBackStack() },
+            onHome = { navController.goHome() },
             onDone = {
                 navController.navigate(NavRoutes.Home.route) {
                     popUpTo(NavRoutes.Scanner.route) { inclusive = true }
@@ -796,5 +811,14 @@ private fun NavGraphBuilder.scanResultComposable(navController: NavHostControlle
                     onMoveToSecureFolder = { doc -> navController.navigateToSecureFolder(doc) },
                 ),
         )
+    }
+}
+
+// Vuelve a Inicio limpiando la pila hasta él (mismo gesto que ya usaban Estudio y
+// Agenda): el botón "Inicio" de las vistas secundarias.
+private fun NavHostController.goHome() {
+    navigate(NavRoutes.Home.route) {
+        popUpTo(NavRoutes.Home.route) { inclusive = false }
+        launchSingleTop = true
     }
 }

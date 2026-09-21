@@ -61,6 +61,7 @@ import com.docsmart.core.ui.theme.accentShadow
 @Composable
 fun TrashScreen(
     onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
     viewModel: TrashViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -124,9 +125,12 @@ fun TrashScreen(
 
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         DocuSmartTopBanner(
+            // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+            compact = true,
             screenTitle = stringResource(R.string.trash_title),
             screenSubtitle = stringResource(R.string.trash_subtitle),
             onBack = onBack,
+            onHome = onHome,
         )
 
         if (uiState.items.isNotEmpty()) {

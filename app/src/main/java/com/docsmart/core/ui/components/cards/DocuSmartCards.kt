@@ -10,13 +10,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.docsmart.core.ui.theme.DocuBlue
 import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
+import com.docsmart.core.ui.theme.ensureIconContrast
 
 // ── Card base reutilizable ────────────────────────────
 // Úsala como contenedor para cualquier contenido
@@ -60,10 +62,15 @@ fun DocuSmartQuickAccessCard(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    iconTint: Color = DocuBlue,
+    iconTint: Color = Color.Unspecified,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
 ) {
     val shape = MaterialTheme.shapes.large
+    val baseTint = iconTint.takeOrElse { MaterialTheme.colorScheme.primary }
+    // Se mide contra el fondo real del icono (superficie + su propio tinte al
+    // 12-14%), no solo contra la superficie.
+    val iconBackground = lerp(MaterialTheme.colorScheme.surface, baseTint, 0.14f)
+    val tint = ensureIconContrast(baseTint, iconBackground)
     Box(
         modifier =
             modifier
@@ -89,9 +96,9 @@ fun DocuSmartQuickAccessCard(
             Box(
                 modifier =
                     Modifier
-                        .size(40.dp) // ← reducido de 48dp a 40dp
+                        .size(44.dp)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(iconTint.copy(alpha = 0.12f)),
+                        .background(tint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -105,9 +112,8 @@ fun DocuSmartQuickAccessCard(
                     // rápidos. Mismo criterio que DocuSmartToolCard más
                     // abajo, que ya usa null para este mismo patrón.
                     contentDescription = null,
-                    tint = iconTint,
-                    // ← reducido de 28dp a 22dp
-                    modifier = Modifier.size(22.dp),
+                    tint = tint,
+                    modifier = Modifier.size(24.dp),
                 )
             }
             Spacer(modifier = Modifier.height(6.dp))
@@ -115,6 +121,7 @@ fun DocuSmartQuickAccessCard(
                 text = label,
                 // ← labelMedium → labelSmall
                 style = MaterialTheme.typography.labelSmall,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -133,9 +140,14 @@ fun DocuSmartToolCard(
     description: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    iconTint: Color = DocuBlue,
+    iconTint: Color = Color.Unspecified,
 ) {
     val shape = MaterialTheme.shapes.large
+    val baseTint = iconTint.takeOrElse { MaterialTheme.colorScheme.primary }
+    // Se mide contra el fondo real del icono (superficie + su propio tinte al
+    // 12-14%), no solo contra la superficie.
+    val iconBackground = lerp(MaterialTheme.colorScheme.surface, baseTint, 0.14f)
+    val tint = ensureIconContrast(baseTint, iconBackground)
     Box(
         modifier =
             modifier
@@ -160,13 +172,13 @@ fun DocuSmartToolCard(
                     Modifier
                         .size(52.dp)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(iconTint.copy(alpha = 0.12f)),
+                        .background(tint.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = iconTint,
+                    tint = tint,
                     modifier = Modifier.size(28.dp),
                 )
             }

@@ -106,7 +106,6 @@ fun CropPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_crop_ready),
-            accentColor = PremiumGold,
         )
 
         // ── Vista previa + control de margen ───────────
@@ -134,7 +133,6 @@ fun CropPdfScreen(
             buttonLabel = stringResource(R.string.pdf_crop_execute),
             buttonIcon = Icons.Rounded.Crop,
             onExecute = onExecute,
-            accentColor = PremiumGold,
         )
     }
 }

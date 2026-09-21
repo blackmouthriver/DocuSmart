@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.ColorPowerPoint
 
 @Composable
 fun ComparePdfScreen(
@@ -49,14 +48,12 @@ fun ComparePdfScreen(
             selectedPdf = pdfA,
             onSelectPdf = onSelectPdfA,
             readyText = stringResource(R.string.pdf_compare_ready),
-            accentColor = ColorPowerPoint,
             label = stringResource(R.string.pdf_compare_document_a),
         )
         PdfSelectZone(
             selectedPdf = pdfB,
             onSelectPdf = onSelectPdfB,
             readyText = stringResource(R.string.pdf_compare_ready),
-            accentColor = ColorPowerPoint,
             label = stringResource(R.string.pdf_compare_document_b),
         )
 
@@ -76,7 +73,6 @@ fun ComparePdfScreen(
             buttonLabel = stringResource(R.string.pdf_compare_execute),
             buttonIcon = Icons.Rounded.CompareArrows,
             onExecute = onExecute,
-            accentColor = ColorPowerPoint,
         )
     }
 }

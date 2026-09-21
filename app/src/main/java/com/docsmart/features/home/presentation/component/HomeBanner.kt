@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.SwapHoriz
@@ -20,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.rememberAccentGradient
+import com.docsmart.core.ui.theme.rememberBannerGradient
 
 @Composable
 fun HomeBanner(
@@ -32,7 +33,7 @@ fun HomeBanner(
     // degradado estaba fijo en tonos de azul (DocuBlue/SmartBlue/
     // IndigoAccent) sin importar el "Color de acento" elegido en Ajustes
     // -- era el único elemento de Home que no respetaba esa elección.
-    val bannerGradient = rememberAccentGradient()
+    val bannerGradient = rememberBannerGradient()
     val primary = MaterialTheme.colorScheme.primary
 
     Column(modifier = modifier) {
@@ -40,9 +41,9 @@ fun HomeBanner(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.large)
+                    .clip(MaterialTheme.shapes.extraLarge)
                     .background(brush = Brush.linearGradient(colors = bannerGradient))
-                    .padding(20.dp),
+                    .padding(24.dp),
         ) {
             // ── Círculos decorativos ──────────────────────────────────────────────
             Box(
@@ -130,7 +131,7 @@ fun HomeBanner(
                     text = stringResource(R.string.home_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -161,11 +162,11 @@ fun HomeBanner(
             Button(
                 onClick = onOpenFileClick,
                 modifier = Modifier.weight(1f).height(48.dp),
-                shape = MaterialTheme.shapes.medium,
+                shape = CircleShape,
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = primary,
-                        contentColor = Color.White,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                     ),
                 elevation = ButtonDefaults.buttonElevation(0.dp),
             ) {
@@ -180,7 +181,7 @@ fun HomeBanner(
             OutlinedButton(
                 onClick = onConvertClick,
                 modifier = Modifier.weight(1f).height(48.dp),
-                shape = MaterialTheme.shapes.medium,
+                shape = CircleShape,
                 colors =
                     ButtonDefaults.outlinedButtonColors(
                         contentColor = primary,

@@ -128,7 +128,7 @@ fun HomeScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 100.dp),
+        contentPadding = PaddingValues(bottom = 132.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         // Pedido explícito del usuario 2026-09-07: los banners de todas las

@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
-import com.docsmart.core.ui.theme.ColorImage
 
 @Composable
 fun ExtractImagesPdfScreen(
@@ -46,7 +45,6 @@ fun ExtractImagesPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_extract_images_ready),
-            accentColor = ColorImage,
         )
 
         if (selectedPdf != null) {
@@ -64,7 +62,6 @@ fun ExtractImagesPdfScreen(
             buttonLabel = stringResource(R.string.pdf_extract_images),
             buttonIcon = Icons.Rounded.Image,
             onExecute = onExecute,
-            accentColor = ColorImage,
         )
     }
 }

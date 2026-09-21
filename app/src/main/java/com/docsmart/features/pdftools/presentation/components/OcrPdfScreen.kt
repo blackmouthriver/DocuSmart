@@ -54,7 +54,6 @@ fun OcrPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_ocr_ready),
-            accentColor = ColorOcr,
         )
 
         if (selectedPdf != null) {
@@ -73,7 +72,6 @@ fun OcrPdfScreen(
             buttonLabel = stringResource(R.string.pdf_ocr_execute),
             buttonIcon = Icons.Rounded.FindInPage,
             onExecute = onExecute,
-            accentColor = ColorOcr,
         )
     }
 }

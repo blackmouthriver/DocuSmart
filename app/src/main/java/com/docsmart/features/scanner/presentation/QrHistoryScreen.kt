@@ -91,7 +91,10 @@ import java.util.Locale
  * patrón que Notas/Progreso de lectura de Estudio).
  */
 @Composable
-fun QrHistoryScreen(onBack: () -> Unit = {}) {
+fun QrHistoryScreen(
+    onBack: () -> Unit = {},
+    onHome: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
     var entries by remember { mutableStateOf(QrHistoryStorage.loadAll(context)) }
     var pendingDelete by remember { mutableStateOf<QrHistoryEntry?>(null) }
@@ -129,9 +132,12 @@ fun QrHistoryScreen(onBack: () -> Unit = {}) {
 
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         DocuSmartTopBanner(
+            // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+            compact = true,
             screenTitle = stringResource(R.string.qr_history_title),
             screenSubtitle = stringResource(R.string.qr_history_subtitle),
             onBack = onBack,
+            onHome = onHome,
             actions = {
                 if (entries.isNotEmpty()) {
                     IconButton(onClick = { pendingClearAll = true }) {

@@ -51,7 +51,6 @@ fun CompressPdfScreen(
             selectedPdf = selectedPdf,
             onSelectPdf = onSelectPdf,
             readyText = stringResource(R.string.pdf_compress_ready),
-            accentColor = SuccessGreen,
         )
 
         // ── Control de calidad ────────────────────────
@@ -188,7 +187,6 @@ fun CompressPdfScreen(
             buttonLabel = stringResource(R.string.pdf_compress),
             buttonIcon = Icons.Rounded.Compress,
             onExecute = onExecute,
-            accentColor = SuccessGreen,
         )
     }
 }
