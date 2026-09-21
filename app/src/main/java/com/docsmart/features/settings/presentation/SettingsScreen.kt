@@ -764,12 +764,20 @@ fun SettingsScreen(
                             // segmento de ancho fijo justo al elegirla.
                             // maxLines=1 + ellipsis evita esa deformación
                             // sin depender de un tamaño de fuente fijo.
+                            // Rediseño 2026-09-20: con "Muy grande" seleccionada la
+                            // palabra igual se cortaba ("Muy gra…") porque el icono de
+                            // "seleccionado" le quita ancho. Este selector es el único
+                            // control que NO debe crecer con la letra elegida: se fija a
+                            // labelMedium sin escalar y se deja una sola línea.
                             Text(
                                 text = fontScaleLabel(scale),
+                                style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false,
+                                overflow = TextOverflow.Clip,
                             )
                         },
+                        icon = { SegmentedButtonDefaults.Icon(active = currentFontScale == scale) },
                     )
                 }
             }

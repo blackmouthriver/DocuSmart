@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -278,19 +279,36 @@ private fun TrashItemCard(
                 // "Restaurar" (reversible) pasa a relleno/tonal para que
                 // destaque más que "Eliminar ahora" (irreversible), en vez
                 // de diferenciarse solo por el color de texto.
-                FilledTonalButton(onClick = onRestore, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.trash_restore))
+                // Rediseño 2026-09-20: "Eliminar ahora" se partía en dos líneas y dejaba
+                // los dos botones de distinto alto -- padding lateral menor, icono más
+                // pequeño y una sola línea con puntos suspensivos si aun así no cabe.
+                val buttonPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                FilledTonalButton(
+                    onClick = onRestore,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = buttonPadding,
+                ) {
+                    Icon(Icons.Rounded.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.trash_restore),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 OutlinedButton(
                     onClick = onDeleteForever,
                     modifier = Modifier.weight(1f),
+                    contentPadding = buttonPadding,
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.trash_delete_forever))
+                    Icon(Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.trash_delete_forever),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }
