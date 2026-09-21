@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
+import com.docsmart.core.ui.components.DocuSmartEmptyState
 
 // Backlog UX #47: lista de páginas marcadas del documento actual -- tocar
 // una fila salta ahí (ViewerViewModel.navigateToBookmark), el ícono de
@@ -58,11 +60,10 @@ fun ViewerBookmarksSheet(
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
             if (bookmarkedPages.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.viewer_bookmarks_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                DocuSmartEmptyState(
+                    icon = Icons.Rounded.BookmarkBorder,
+                    title = stringResource(R.string.viewer_bookmarks_empty),
+                    compact = true,
                 )
             } else {
                 LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {

@@ -88,6 +88,18 @@ class DocuSmartRediseno2026Test {
     }
 
     @Test
+    fun estadoVacio_sinDescripcion_yEnVarianteCompacta_muestraSoloElTitulo() {
+        themed(dark = false) {
+            Column {
+                DocuSmartEmptyState(icon = Icons.Rounded.FolderOff, title = "Sin marcadores", compact = true)
+                DocuSmartEmptyState(icon = Icons.Rounded.FolderOff, title = "Sin notas")
+            }
+        }
+        composeRule.onNodeWithText("Sin marcadores").assertIsDisplayed()
+        composeRule.onNodeWithText("Sin notas").assertIsDisplayed()
+    }
+
+    @Test
     fun estadoDeCarga_conYSinMensaje() {
         themed(dark = false) {
             Column {

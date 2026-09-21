@@ -1,8 +1,9 @@
 package com.docsmart.features.agenda.presentation.components
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,6 +67,7 @@ import java.time.LocalDateTime
 // trabaja en la zona horaria REAL del dispositivo al convertir hacia/desde
 // epoch millis (a diferencia del truco interno UTC del propio picker, que
 // es solo un detalle de implementación de ese componente).
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun AgendaEventEditorDialog(
     draft: AgendaEventDraft,
@@ -155,9 +157,13 @@ fun AgendaEventEditorDialog(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    // Rediseño 2026-09-20: era una fila desplazable y los últimos chips
+                    // ("15 m…") quedaban cortados a la derecha sin ninguna pista; FlowRow
+                    // los ajusta al ancho del diálogo (mismo arreglo que en Notas).
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         ReminderPreset.ALL.forEach { minutes ->
                             FilterChip(
@@ -225,33 +231,53 @@ fun AgendaEventEditorDialog(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (isEditing) {
-                        TextButton(onClick = { showDeleteConfirm = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Delete,
-                                contentDescription = null,
-                                tint = ErrorRed,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.general_delete), color = ErrorRed)
-                        }
-                    } else {
-                        Spacer(Modifier.width(1.dp))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel)) }
-                        Button(onClick = onSave, enabled = draft.title.isNotBlank()) {
-                            Text(stringResource(R.string.general_save))
-                        }
-                    }
-                }
+                EditorActions(
+                    isEditing = isEditing,
+                    canSave = draft.title.isNotBlank(),
+                    onDelete = { showDeleteConfirm = true },
+                    onDismiss = onDismiss,
+                    onSave = onSave,
+                )
             }
+        }
+    }
+}
+
+// Rediseño 2026-09-20: "Guardar" se partía en dos líneas ("Guar/dar") porque
+// Eliminar + Cancelar + Guardar no caben en una fila. "Eliminar" pasa a su propia
+// fila (acción destructiva, separada de las de confirmar) y Cancelar/Guardar
+// quedan a la derecha con el ancho que necesitan.
+@Composable
+private fun ColumnScope.EditorActions(
+    isEditing: Boolean,
+    canSave: Boolean,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+) {
+    if (isEditing) {
+        TextButton(
+            onClick = onDelete,
+            modifier = Modifier.align(Alignment.Start),
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Delete,
+                contentDescription = null,
+                tint = ErrorRed,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(stringResource(R.string.general_delete), color = ErrorRed)
+        }
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = onDismiss) { Text(stringResource(R.string.general_cancel), maxLines = 1) }
+        Button(onClick = onSave, enabled = canSave) {
+            Text(stringResource(R.string.general_save), maxLines = 1, softWrap = false)
         }
     }
 }

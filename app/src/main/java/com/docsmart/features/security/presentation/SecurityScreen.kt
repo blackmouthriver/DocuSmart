@@ -33,6 +33,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.docsmart.R
 import com.docsmart.core.ui.components.AppLibraryPickerViewModel
+import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.components.FileSourcePickerDialog
 import com.docsmart.core.ui.components.toContentUri
@@ -877,35 +878,14 @@ private fun SecureFolderContent(
                     shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        // Bug real corregido 2026-09-08: usaba `PremiumGold`,
-                        // el mismo color que la app reserva exclusivamente
-                        // para señalar funciones Premium (banner Premium,
-                        // tarjetas de plan, Ajustes) -- Carpeta Segura NO es
-                        // una función Premium, así que confundía al usuario.
-                        Icon(
-                            Icons.Rounded.Lock,
-                            null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(48.dp),
-                        )
-                        Text(
-                            stringResource(R.string.security_no_protected_files),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            stringResource(R.string.security_no_protected_files_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+                    // Bug real corregido 2026-09-08: el icono usaba `PremiumGold`, el color
+                    // reservado a las funciones Premium (Carpeta Segura no lo es) -- ahora usa
+                    // el acento vía el componente común.
+                    DocuSmartEmptyState(
+                        icon = Icons.Rounded.Lock,
+                        title = stringResource(R.string.security_no_protected_files),
+                        description = stringResource(R.string.security_no_protected_files_hint),
+                    )
                 }
             }
         } else {
