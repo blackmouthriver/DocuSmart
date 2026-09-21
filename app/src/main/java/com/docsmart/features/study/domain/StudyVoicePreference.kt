@@ -13,6 +13,7 @@ import android.content.Context
 object StudyVoicePreference {
     private const val PREFS_NAME = "study_voice"
     private const val KEY_VOICE_NAME = "voice_name"
+    private const val KEY_SPEED = "reading_speed"
 
     fun save(
         context: Context,
@@ -22,6 +23,16 @@ object StudyVoicePreference {
     }
 
     fun load(context: Context): String? = prefs(context).getString(KEY_VOICE_NAME, null)
+
+    // Velocidad de lectura elegida (factor sobre la base; 1.0 = la de siempre).
+    fun saveSpeed(
+        context: Context,
+        speed: Float,
+    ) {
+        prefs(context).edit().putFloat(KEY_SPEED, speed).apply()
+    }
+
+    fun loadSpeed(context: Context): Float = prefs(context).getFloat(KEY_SPEED, 1f)
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }

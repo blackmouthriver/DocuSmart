@@ -1055,6 +1055,9 @@
     <string name="study_mark_current_paragraph">Marcar párrafo actual</string>
     <string name="study_listened_percent">%1$d %% escuchado</string>
     <string name="study_voice_chip">Voz: %1$s</string>
+    <string name="study_previous_paragraph">Párrafo anterior</string>
+    <string name="study_next_paragraph">Párrafo siguiente</string>
+    <string name="study_reading_speed">Velocidad de lectura</string>
     <string name="study_new_note">Nueva nota</string>
     <string name="study_note_title_label">Título de la nota</string>
     <string name="study_note_title_placeholder">Ej: Conceptos clave del capítulo 3</string>

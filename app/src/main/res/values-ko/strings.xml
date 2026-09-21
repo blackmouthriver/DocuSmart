@@ -1012,6 +1012,9 @@
     <string name="study_mark_current_paragraph">현재 단락 강조 표시</string>
     <string name="study_listened_percent">%1$d %% 청취함</string>
     <string name="study_voice_chip">음성: %1$s</string>
+    <string name="study_previous_paragraph">이전 단락</string>
+    <string name="study_next_paragraph">다음 단락</string>
+    <string name="study_reading_speed">읽기 속도</string>
     <string name="study_new_note">새 메모</string>
     <string name="study_note_title_label">메모 제목</string>
     <string name="study_note_title_placeholder">예: 3장 핵심 개념</string>

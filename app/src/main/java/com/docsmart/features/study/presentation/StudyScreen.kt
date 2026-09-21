@@ -53,6 +53,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -255,6 +257,8 @@ fun StudyScreen(
     // corta. `readingFinished` = terminó todo el documento (ofrece "Volver a leer").
     val ttsHighestStarted = remember { mutableIntStateOf(-1) }
     val readingFinished = remember { mutableStateOf(false) }
+    // Velocidad de lectura (factor sobre la base): se conserva entre sesiones.
+    val readingSpeed = remember { mutableFloatStateOf(StudyVoicePreference.loadSpeed(context)) }
     // Extracción en curso: al elegir otro documento mientras el anterior
     // seguía extrayéndose, las dos corrutinas escribían a la vez sobre el mismo
     // `documentText` (párrafos de un documento mezclados con los del otro).
@@ -282,6 +286,170 @@ fun StudyScreen(
         if (uriString != null) {
             StudyReadingProgressStorage.remove(context, uriString)
             readingHistory = StudyReadingProgressStorage.loadAll(context)
+        }
+    }
+
+    // Empieza (o reinicia) la lectura desde `startIndex`: la usan "Leer todo",
+    // los saltos de párrafo y el cambio de velocidad (este último aplica desde el
+    // siguiente párrafo que se encola, por eso se reinicia la cola).
+    fun startReading(startIndex: Int) {
+        val currentTts = ttsRef.value
+        if (currentTts == null || !ttsReady.value || documentText.isEmpty()) {
+            Timber.e("TTS no está listo")
+            return
+        }
+        // Bug real corregido 2026-09-08: "Leer todo" unía
+        // TODOS los párrafos en un solo string y hacía
+        // una única llamada a speak() -- Android limita
+        // cada llamada a ~4000 caracteres
+        // (TextToSpeech.getMaxSpeechInputLength()), así
+        // que con cualquier documento largo esa llamada
+        // fallaba en silencio y no se oía nada. Ahora se
+        // encola un párrafo por llamada (ya probados
+        // individualmente por "leer este párrafo", cada
+        // uno bien por debajo del límite), con
+        // QUEUE_ADD para que se reproduzcan en orden.
+        //
+        // "Retomar lectura": el punto de partida ya no es
+        // siempre 0 -- si `currentSpeakingIndex` quedó en
+        // un párrafo válido (por "Detener" o por venir de
+        // "Continuar leyendo"), se sigue desde ahí.
+        currentTts.setSpeechRate(BASE_SPEECH_RATE * readingSpeed.floatValue)
+        val uriString = documentUri?.toString()
+        readingFinished.value = false
+        ttsHighestStarted.intValue = -1
+        // Ronda 16: se congela la lista que se encola ahora y se
+        // recuerda hasta dónde llegó la cola (ver
+        // ttsQueueStepAfterUtterance), y se invalida cualquier
+        // callback pendiente de una lectura anterior.
+        val queuedParagraphs = documentText
+        ttsQueuedUpTo.intValue = queuedParagraphs.lastIndex
+        ttsSession.intValue += 1
+        val session = ttsSession.intValue
+        // Hallazgo real de la auditoría general
+        // 2026-09-17 (B19, resto): UtteranceProgressListener
+        // corre en un hilo interno del motor TTS, no
+        // garantizado por Android -- se despacha cada
+        // callback al hilo principal (mismo mecanismo ya
+        // aplicado a previewVoice() más arriba), sin
+        // tocar la lógica interna de ninguno de los 3
+        // (mismo orden relativo de ejecución, solo se
+        // corre en el hilo principal en vez del hilo del
+        // motor TTS). Esto además vuelve seguros los
+        // `tts.speak()` reentrantes de onDone() -- antes
+        // se llamaban de vuelta al motor TTS desde su
+        // propio hilo de callback.
+        val mainHandler = Handler(Looper.getMainLooper())
+        currentTts.setOnUtteranceProgressListener(
+            object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {
+                    mainHandler.post {
+                        if (ttsSession.intValue != session) return@post
+                        val index = parseUtteranceIndex(utteranceId)
+                        if (index != null && index < ttsHighestStarted.intValue) {
+                            // Retrocedió a un párrafo ya leído: es una repetición.
+                            finishReading(uriString)
+                            return@post
+                        }
+                        if (index != null) ttsHighestStarted.intValue = index
+                        isSpeaking.value = true
+                        if (index != null) {
+                            currentSpeakingIndex.intValue = index
+                            if (uriString != null) {
+                                StudyReadingProgressStorage.save(
+                                    context,
+                                    ReadingProgress(
+                                        uri = uriString,
+                                        documentName = documentName,
+                                        paragraphIndex = index,
+                                        totalParagraphs = documentText.size,
+                                        currentPage = pageForParagraph(index, pageBoundaries),
+                                        totalPages = pageBoundaries.size,
+                                        lastReadAtMillis = System.currentTimeMillis(),
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                override fun onDone(utteranceId: String?) {
+                    mainHandler.post {
+                        if (ttsSession.intValue != session) return@post
+                        val index = parseUtteranceIndex(utteranceId)
+                        if (index == null) return@post
+                        // "Procesamiento incremental": si el PDF seguía
+                        // extrayéndose de fondo puede haber párrafos nuevos
+                        // que todavía NO están en la cola -- solo esos se
+                        // agregan (antes se re-encolaba todo lo posterior
+                        // al párrafo terminado y el texto se repetía).
+                        val step =
+                            ttsQueueStepAfterUtterance(
+                                finishedIndex = index,
+                                queuedUpTo = ttsQueuedUpTo.intValue,
+                                lastIndex = documentText.lastIndex,
+                                extractionComplete = extractionComplete,
+                            )
+                        ttsQueuedUpTo.intValue = step.newQueuedUpTo
+                        ttsRef.value?.let { tts ->
+                            for (nextIndex in step.toEnqueue) {
+                                tts.speak(
+                                    documentText[nextIndex],
+                                    TextToSpeech.QUEUE_ADD,
+                                    null,
+                                    "study_all_$nextIndex",
+                                )
+                            }
+                        }
+                        when (step.outcome) {
+                            TtsQueueOutcome.KEEP_PLAYING -> Unit
+                            // No hay más texto TODAVÍA, pero el PDF sigue
+                            // procesándose -- esperar en vez de dar la
+                            // lectura por terminada (ver LaunchedEffect
+                            // que retoma cuando llegue más).
+                            TtsQueueOutcome.WAIT_FOR_MORE_TEXT -> {
+                                waitingForMoreText.value = true
+                            }
+                            // Terminó todo el documento -- ya no hay nada
+                            // que retomar.
+                            TtsQueueOutcome.FINISHED -> finishReading(uriString)
+                        }
+                    }
+                }
+
+                override fun onError(utteranceId: String?) {
+                    // No se resetea el índice -- si falla
+                    // a mitad de un documento largo, "Leer
+                    // todo" debe poder reintentar desde
+                    // ahí, no desde el principio.
+                    mainHandler.post {
+                        if (ttsSession.intValue == session) isSpeaking.value = false
+                    }
+                }
+            },
+        )
+        queuedParagraphs.withIndex().drop(startIndex).forEachIndexed { queuePos, indexed ->
+            val (index, paragraph) = indexed
+            currentTts.speak(
+                paragraph,
+                if (queuePos == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
+                null,
+                "study_all_$index",
+            )
+        }
+        isSpeaking.value = true
+    }
+
+    // Salta al párrafo anterior/siguiente: con la voz activa reinicia desde ahí;
+    // en pausa solo mueve el punto de retoma (la página del visor lo sigue).
+    fun stepReading(delta: Int) {
+        val target = steppedParagraph(currentSpeakingIndex.intValue, delta, documentText.lastIndex)
+        if (target < 0) return
+        if (isSpeaking.value) {
+            startReading(target)
+        } else {
+            readingFinished.value = false
+            currentSpeakingIndex.intValue = target
         }
     }
 
@@ -813,6 +981,15 @@ fun StudyScreen(
                         currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
                         totalPages = pageBoundaries.size,
                         selectedVoiceName = selectedVoice.value?.let { personaForVoice(it.name).name },
+                        speedLabel = readingSpeedLabel(readingSpeed.floatValue),
+                        onSpeedClick = {
+                            val next = nextReadingSpeed(readingSpeed.floatValue)
+                            readingSpeed.floatValue = next
+                            StudyVoicePreference.saveSpeed(context, next)
+                            if (isSpeaking.value) startReading(currentSpeakingIndex.intValue.coerceAtLeast(0))
+                        },
+                        onPreviousParagraph = { stepReading(-1) },
+                        onNextParagraph = { stepReading(1) },
                         onSpeakAll = {
                             if (isSpeaking.value) {
                                 // "Retomar lectura" (2026-09-08): antes esto
@@ -823,153 +1000,9 @@ fun StudyScreen(
                                 // "Leer todo" retoma desde ahí la próxima vez.
                                 stopReading()
                             } else {
-                                val currentTts = ttsRef.value
-                                if (currentTts == null || !ttsReady.value || documentText.isEmpty()) {
-                                    Timber.e("TTS no está listo")
-                                    return@ReadingTab
-                                }
-                                // Bug real corregido 2026-09-08: "Leer todo" unía
-                                // TODOS los párrafos en un solo string y hacía
-                                // una única llamada a speak() -- Android limita
-                                // cada llamada a ~4000 caracteres
-                                // (TextToSpeech.getMaxSpeechInputLength()), así
-                                // que con cualquier documento largo esa llamada
-                                // fallaba en silencio y no se oía nada. Ahora se
-                                // encola un párrafo por llamada (ya probados
-                                // individualmente por "leer este párrafo", cada
-                                // uno bien por debajo del límite), con
-                                // QUEUE_ADD para que se reproduzcan en orden.
-                                //
-                                // "Retomar lectura": el punto de partida ya no es
-                                // siempre 0 -- si `currentSpeakingIndex` quedó en
-                                // un párrafo válido (por "Detener" o por venir de
-                                // "Continuar leyendo"), se sigue desde ahí.
-                                val startIndex =
-                                    currentSpeakingIndex.intValue
-                                        .takeIf { it in documentText.indices } ?: 0
-                                val uriString = documentUri?.toString()
-                                readingFinished.value = false
-                                ttsHighestStarted.intValue = -1
-                                // Ronda 16: se congela la lista que se encola ahora y se
-                                // recuerda hasta dónde llegó la cola (ver
-                                // ttsQueueStepAfterUtterance), y se invalida cualquier
-                                // callback pendiente de una lectura anterior.
-                                val queuedParagraphs = documentText
-                                ttsQueuedUpTo.intValue = queuedParagraphs.lastIndex
-                                ttsSession.intValue += 1
-                                val session = ttsSession.intValue
-                                // Hallazgo real de la auditoría general
-                                // 2026-09-17 (B19, resto): UtteranceProgressListener
-                                // corre en un hilo interno del motor TTS, no
-                                // garantizado por Android -- se despacha cada
-                                // callback al hilo principal (mismo mecanismo ya
-                                // aplicado a previewVoice() más arriba), sin
-                                // tocar la lógica interna de ninguno de los 3
-                                // (mismo orden relativo de ejecución, solo se
-                                // corre en el hilo principal en vez del hilo del
-                                // motor TTS). Esto además vuelve seguros los
-                                // `tts.speak()` reentrantes de onDone() -- antes
-                                // se llamaban de vuelta al motor TTS desde su
-                                // propio hilo de callback.
-                                val mainHandler = Handler(Looper.getMainLooper())
-                                currentTts.setOnUtteranceProgressListener(
-                                    object : UtteranceProgressListener() {
-                                        override fun onStart(utteranceId: String?) {
-                                            mainHandler.post {
-                                                if (ttsSession.intValue != session) return@post
-                                                val index = parseUtteranceIndex(utteranceId)
-                                                if (index != null && index < ttsHighestStarted.intValue) {
-                                                    // Retrocedió a un párrafo ya leído: es una repetición.
-                                                    finishReading(uriString)
-                                                    return@post
-                                                }
-                                                if (index != null) ttsHighestStarted.intValue = index
-                                                isSpeaking.value = true
-                                                if (index != null) {
-                                                    currentSpeakingIndex.intValue = index
-                                                    if (uriString != null) {
-                                                        StudyReadingProgressStorage.save(
-                                                            context,
-                                                            ReadingProgress(
-                                                                uri = uriString,
-                                                                documentName = documentName,
-                                                                paragraphIndex = index,
-                                                                totalParagraphs = documentText.size,
-                                                                currentPage = pageForParagraph(index, pageBoundaries),
-                                                                totalPages = pageBoundaries.size,
-                                                                lastReadAtMillis = System.currentTimeMillis(),
-                                                            ),
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        override fun onDone(utteranceId: String?) {
-                                            mainHandler.post {
-                                                if (ttsSession.intValue != session) return@post
-                                                val index = parseUtteranceIndex(utteranceId)
-                                                if (index == null) return@post
-                                                // "Procesamiento incremental": si el PDF seguía
-                                                // extrayéndose de fondo puede haber párrafos nuevos
-                                                // que todavía NO están en la cola -- solo esos se
-                                                // agregan (antes se re-encolaba todo lo posterior
-                                                // al párrafo terminado y el texto se repetía).
-                                                val step =
-                                                    ttsQueueStepAfterUtterance(
-                                                        finishedIndex = index,
-                                                        queuedUpTo = ttsQueuedUpTo.intValue,
-                                                        lastIndex = documentText.lastIndex,
-                                                        extractionComplete = extractionComplete,
-                                                    )
-                                                ttsQueuedUpTo.intValue = step.newQueuedUpTo
-                                                ttsRef.value?.let { tts ->
-                                                    for (nextIndex in step.toEnqueue) {
-                                                        tts.speak(
-                                                            documentText[nextIndex],
-                                                            TextToSpeech.QUEUE_ADD,
-                                                            null,
-                                                            "study_all_$nextIndex",
-                                                        )
-                                                    }
-                                                }
-                                                when (step.outcome) {
-                                                    TtsQueueOutcome.KEEP_PLAYING -> Unit
-                                                    // No hay más texto TODAVÍA, pero el PDF sigue
-                                                    // procesándose -- esperar en vez de dar la
-                                                    // lectura por terminada (ver LaunchedEffect
-                                                    // que retoma cuando llegue más).
-                                                    TtsQueueOutcome.WAIT_FOR_MORE_TEXT -> {
-                                                        waitingForMoreText.value = true
-                                                    }
-                                                    // Terminó todo el documento -- ya no hay nada
-                                                    // que retomar.
-                                                    TtsQueueOutcome.FINISHED -> finishReading(uriString)
-                                                }
-                                            }
-                                        }
-
-                                        override fun onError(utteranceId: String?) {
-                                            // No se resetea el índice -- si falla
-                                            // a mitad de un documento largo, "Leer
-                                            // todo" debe poder reintentar desde
-                                            // ahí, no desde el principio.
-                                            mainHandler.post {
-                                                if (ttsSession.intValue == session) isSpeaking.value = false
-                                            }
-                                        }
-                                    },
+                                startReading(
+                                    currentSpeakingIndex.intValue.takeIf { it in documentText.indices } ?: 0,
                                 )
-                                queuedParagraphs.withIndex().drop(startIndex).forEachIndexed { queuePos, indexed ->
-                                    val (index, paragraph) = indexed
-                                    currentTts.speak(
-                                        paragraph,
-                                        if (queuePos == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD,
-                                        null,
-                                        "study_all_$index",
-                                    )
-                                }
-                                isSpeaking.value = true
                             }
                         },
                         onSelectDoc = { docLauncher.launch(arrayOf("application/pdf")) },
@@ -1128,6 +1161,10 @@ internal fun ReadingTab(
     availableVoices: List<Voice> = emptyList(),
     onVoiceSelectorClick: () -> Unit = {},
     selectedVoiceName: String? = null,
+    speedLabel: String? = null,
+    onSpeedClick: () -> Unit = {},
+    onPreviousParagraph: (() -> Unit)? = null,
+    onNextParagraph: (() -> Unit)? = null,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -1184,6 +1221,10 @@ internal fun ReadingTab(
                         onSpeakAll = onSpeakAll,
                         onSelectDoc = onSelectDoc,
                         onVoiceSelectorClick = onVoiceSelectorClick,
+                        speedLabel = speedLabel,
+                        onSpeedClick = onSpeedClick,
+                        onPreviousParagraph = onPreviousParagraph,
+                        onNextParagraph = onNextParagraph,
                     )
                 }
             }
@@ -1254,8 +1295,13 @@ private fun ReadingPlayerBar(
     onSpeakAll: () -> Unit,
     onSelectDoc: () -> Unit,
     onVoiceSelectorClick: () -> Unit,
+    speedLabel: String?,
+    onSpeedClick: () -> Unit,
+    onPreviousParagraph: (() -> Unit)?,
+    onNextParagraph: (() -> Unit)?,
 ) {
     val gradient = rememberBannerGradient()
+    val speedDescription = stringResource(R.string.study_reading_speed)
     val panelShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     Column(
         modifier =
@@ -1321,7 +1367,31 @@ private fun ReadingPlayerBar(
                 )
             }
             Spacer(Modifier.weight(1f))
+            if (speedLabel != null) {
+                TextButton(
+                    onClick = onSpeedClick,
+                    modifier = Modifier.semantics { contentDescription = speedDescription },
+                ) {
+                    Text(speedLabel, color = Color.White, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (onPreviousParagraph != null) {
+                IconButton(onClick = onPreviousParagraph, enabled = ttsReady, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        Icons.Rounded.SkipPrevious,
+                        contentDescription = stringResource(R.string.study_previous_paragraph),
+                        tint = Color.White.copy(alpha = if (ttsReady) 1f else 0.45f),
+                    )
+                }
+            }
             Button(
+                modifier = Modifier.weight(1f),
                 onClick = onSpeakAll,
                 shape = RoundedCornerShape(50),
                 enabled = ttsReady,
@@ -1346,6 +1416,15 @@ private fun ReadingPlayerBar(
                         else -> stringResource(R.string.study_read_all)
                     },
                 )
+            }
+            if (onNextParagraph != null) {
+                IconButton(onClick = onNextParagraph, enabled = ttsReady, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        Icons.Rounded.SkipNext,
+                        contentDescription = stringResource(R.string.study_next_paragraph),
+                        tint = Color.White.copy(alpha = if (ttsReady) 1f else 0.45f),
+                    )
+                }
             }
         }
     }

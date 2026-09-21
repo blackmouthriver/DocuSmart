@@ -1031,6 +1031,9 @@
     <string name="study_mark_current_paragraph">Markatu uneko paragrafoa</string>
     <string name="study_listened_percent">%1$d %% entzunda</string>
     <string name="study_voice_chip">Ahotsa: %1$s</string>
+    <string name="study_previous_paragraph">Aurreko paragrafoa</string>
+    <string name="study_next_paragraph">Hurrengo paragrafoa</string>
+    <string name="study_reading_speed">Irakurketa-abiadura</string>
     <string name="study_new_note">Ohar berria</string>
     <string name="study_note_title_label">Oharraren izenburua</string>
     <string name="study_note_title_placeholder">Adib.: 3. kapituluko funtsezko kontzeptuak</string>

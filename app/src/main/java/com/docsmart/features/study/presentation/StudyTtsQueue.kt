@@ -78,3 +78,24 @@ internal fun splitForSpeech(
 }
 
 private val SENTENCE_BREAKS = listOf(". ", "? ", "! ", "; ")
+
+// Fase 2 de Lectura (2026-09-21): velocidad y salto de párrafo.
+// El factor 1.0 equivale a la velocidad base que ya usaba la app (0.85 del motor).
+internal const val BASE_SPEECH_RATE = 0.85f
+internal val READING_SPEEDS = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
+
+internal fun nextReadingSpeed(current: Float): Float {
+    val index = READING_SPEEDS.indexOfFirst { it >= current - 0.001f }
+    return if (index < 0 || index == READING_SPEEDS.lastIndex) READING_SPEEDS.first() else READING_SPEEDS[index + 1]
+}
+
+// "1×", "1.25×"; sin ceros sobrantes.
+internal fun readingSpeedLabel(speed: Float): String = "${speed.toString().removeSuffix(".0")}\u00D7"
+
+// Párrafo al que salta "anterior"/"siguiente": acotado al documento; sin lectura
+// iniciada (-1) se parte del primer párrafo.
+internal fun steppedParagraph(
+    current: Int,
+    delta: Int,
+    lastIndex: Int,
+): Int = if (lastIndex < 0) -1 else (current.coerceAtLeast(0) + delta).coerceIn(0, lastIndex)

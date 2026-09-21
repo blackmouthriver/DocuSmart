@@ -101,6 +101,9 @@ class StudyReadingTest {
     private var speakClicks = 0
     private var toggleClicks = 0
     private var voiceClicks = 0
+    private var speedClicks = 0
+    private var previousClicks = 0
+    private var nextClicks = 0
     private var resumed: ReadingProgress? = null
     private var deleted: ReadingProgress? = null
 
@@ -126,6 +129,10 @@ class StudyReadingTest {
                 onDeleteDocument = { deleted = it },
                 availableVoices = state.voices,
                 onVoiceSelectorClick = { voiceClicks++ },
+                speedLabel = "1.25×",
+                onSpeedClick = { speedClicks++ },
+                onPreviousParagraph = { previousClicks++ },
+                onNextParagraph = { nextClicks++ },
             )
         }
     }
@@ -245,6 +252,24 @@ class StudyReadingTest {
         update { state.voices = listOf(voice("es-es-x-a-local"), voice("es-es-x-b-local")) }
         composeRule.onNodeWithContentDescription(esString(R.string.study_choose_voice)).assertIsEnabled().performClick()
         assertEquals(1, voiceClicks)
+    }
+
+    @Test
+    fun controlesDeLectura_velocidadYSaltoDeParrafo() {
+        val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
+        setReading(state)
+
+        composeRule.onNodeWithText("1.25×").performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).performClick()
+        assertEquals(1, speedClicks)
+        assertEquals(1, previousClicks)
+        assertEquals(1, nextClicks)
+
+        // Sin motor TTS los saltos se deshabilitan.
+        update { state.ttsReady = false }
+        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).assertIsNotEnabled()
     }
 
     @Test

@@ -1043,6 +1043,9 @@
     <string name="study_mark_current_paragraph">Marcar el paràgraf actual</string>
     <string name="study_listened_percent">%1$d %% escoltat</string>
     <string name="study_voice_chip">Veu: %1$s</string>
+    <string name="study_previous_paragraph">Paràgraf anterior</string>
+    <string name="study_next_paragraph">Paràgraf següent</string>
+    <string name="study_reading_speed">Velocitat de lectura</string>
     <string name="study_new_note">Nota nova</string>
     <string name="study_note_title_label">Títol de la nota</string>
     <string name="study_note_title_placeholder">Ex: Conceptes clau del capítol 3</string>
