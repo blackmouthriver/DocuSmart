@@ -252,8 +252,15 @@ class MainActivity : AppCompatActivity() {
                 // para la excepción del Visor, que mantiene fondo sólido fijo
                 // por legibilidad de lectura).
                 val backgroundColor = MaterialTheme.colorScheme.background
+                // Franja de la barra de estado: el contenido se dibuja solo debajo de
+                // ella, así que lo que se veía allí era el fondo de la ventana (azul
+                // marino fijo del splash). En tema Claro los iconos oscuros de la barra
+                // quedaban casi ilegibles sobre ese azul. Se pinta el fondo del tema
+                // detrás de todo; el splash y la bienvenida llevan su propio fondo
+                // oscuro y mantienen el de la ventana para no mostrar una banda clara.
+                val systemBarsBackground = systemBarsBackgroundFor(currentRoute, backgroundColor)
                 Scaffold(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().background(systemBarsBackground),
                     containerColor = Color.Transparent,
                     bottomBar = {
                         DocuSmartBottomBar(
@@ -472,6 +479,14 @@ class MainActivity : AppCompatActivity() {
     // de arranque en frío (URI externa + notificación de Agenda) -- de paso
     // baja la complejidad ciclomática de onCreate() al sacar la rama de acá.
     private fun isStillOnSplashOrOnboarding(route: String?): Boolean = isSplashOrOnboardingRoute(route)
+
+    // Fondo detrás de las barras del sistema: el del tema, salvo en el splash y la
+    // bienvenida (llevan su propio fondo oscuro). Extraído de onCreate() por
+    // complejidad ciclomática (detekt).
+    private fun systemBarsBackgroundFor(
+        route: String?,
+        themeBackground: Color,
+    ): Color = if (isStillOnSplashOrOnboarding(route)) Color.Transparent else themeBackground
 
     companion object {
         // HU-65: nombre de la extra que AgendaReminderReceiver pone en el
