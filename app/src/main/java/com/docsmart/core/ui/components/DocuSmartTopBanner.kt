@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
 import com.docsmart.core.ui.theme.rememberBannerGradient
@@ -302,6 +303,9 @@ private fun CompactTopBanner(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
+                    // Nombres de archivo largos (Lectura): máximo 2 líneas.
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (screenSubtitle.isNotBlank()) {
                     Text(

@@ -1014,6 +1014,8 @@
     <string name="study_delete_all_notes_body">Sei sicuro di voler eliminare tutte le note? Questa azione non può essere annullata.</string>
     <string name="study_highlighted_paragraphs_count">Paragrafi evidenziati (%1$d)</string>
     <string name="study_mark_current_paragraph">Evidenzia paragrafo corrente</string>
+    <string name="study_listened_percent">%1$d %% ascoltato</string>
+    <string name="study_voice_chip">Voce: %1$s</string>
     <string name="study_new_note">Nuova nota</string>
     <string name="study_note_title_label">Titolo della nota</string>
     <string name="study_note_title_placeholder">Es: Concetti chiave del capitolo 3</string>

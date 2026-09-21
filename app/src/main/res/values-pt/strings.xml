@@ -1007,6 +1007,8 @@
     <string name="study_delete_all_notes_body">Tem certeza de que deseja excluir todas as notas? Esta ação não pode ser desfeita.</string>
     <string name="study_highlighted_paragraphs_count">Parágrafos destacados (%1$d)</string>
     <string name="study_mark_current_paragraph">Destacar parágrafo atual</string>
+    <string name="study_listened_percent">%1$d %% ouvido</string>
+    <string name="study_voice_chip">Voz: %1$s</string>
     <string name="study_new_note">Nova nota</string>
     <string name="study_note_title_label">Título da nota</string>
     <string name="study_note_title_placeholder">Ex: Conceitos-chave do capítulo 3</string>

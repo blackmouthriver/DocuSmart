@@ -1010,6 +1010,8 @@
     <string name="study_delete_all_notes_body">すべてのメモを削除してもよろしいですか?この操作は取り消せません。</string>
     <string name="study_highlighted_paragraphs_count">ハイライトした段落(%1$d)</string>
     <string name="study_mark_current_paragraph">現在の段落をハイライト</string>
+    <string name="study_listened_percent">%1$d %% 聴取済み</string>
+    <string name="study_voice_chip">音声: %1$s</string>
     <string name="study_new_note">新しいメモ</string>
     <string name="study_note_title_label">メモのタイトル</string>
     <string name="study_note_title_placeholder">例: 第3章の重要ポイント</string>

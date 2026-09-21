@@ -1010,6 +1010,8 @@
     <string name="study_delete_all_notes_body">确定要删除所有笔记吗？此操作无法撤销。</string>
     <string name="study_highlighted_paragraphs_count">已高亮段落（%1$d）</string>
     <string name="study_mark_current_paragraph">高亮当前段落</string>
+    <string name="study_listened_percent">已收听 %1$d %%</string>
+    <string name="study_voice_chip">语音：%1$s</string>
     <string name="study_new_note">新建笔记</string>
     <string name="study_note_title_label">笔记标题</string>
     <string name="study_note_title_placeholder">例如：第 3 章核心概念</string>

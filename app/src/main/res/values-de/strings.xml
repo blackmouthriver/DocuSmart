@@ -1007,6 +1007,8 @@
     <string name="study_delete_all_notes_body">Möchtest du wirklich alle Notizen löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="study_highlighted_paragraphs_count">Markierte Absätze (%1$d)</string>
     <string name="study_mark_current_paragraph">Aktuellen Absatz markieren</string>
+    <string name="study_listened_percent">%1$d %% gehört</string>
+    <string name="study_voice_chip">Stimme: %1$s</string>
     <string name="study_new_note">Neue Notiz</string>
     <string name="study_note_title_label">Titel der Notiz</string>
     <string name="study_note_title_placeholder">Z. B.: Schlüsselkonzepte aus Kapitel 3</string>
