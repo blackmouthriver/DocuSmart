@@ -548,10 +548,10 @@ dependencies {
     // bcpkix-jdk15on:1.70 transitivo (misma versión que la declaración
     // explícita de bcpkix-jdk15on más abajo), así que el exclude de
     // bouncycastle que tenía itext7-core no hacía falta repetirlo acá.
-    implementation("com.itextpdf:forms:7.2.5")
-    implementation("com.itextpdf:io:7.2.5")
-    implementation("com.itextpdf:kernel:7.2.5")
-    implementation("com.itextpdf:layout:7.2.5")
+    implementation("com.itextpdf:forms:9.7.1")
+    implementation("com.itextpdf:io:9.7.1")
+    implementation("com.itextpdf:kernel:9.7.1")
+    implementation("com.itextpdf:layout:9.7.1")
     // Módulo pdfCleanup — RF-PDF-14 (censurar contenido de forma irreversible):
     // a diferencia de dibujar un rectángulo negro con PdfCanvas (que deja el
     // texto/vector original intacto y extraíble debajo), este módulo elimina
