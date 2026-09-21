@@ -676,7 +676,7 @@ dependencies {
     // (junit-jupiter-api, declarado directo abajo). jupiter-engine sigue
     // presente en el classpath de test en runtime vía otras dependencias.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("io.mockk:mockk:1.14.11")
     testImplementation("app.cash.turbine:turbine:1.2.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     // buildHealth: la API de JUnit5 (org.junit.jupiter.api.Test/Assertions,
@@ -687,7 +687,7 @@ dependencies {
     // DSL de mockk (every/coEvery/slot, kotest-runner-junit5→mockk-dsl) usadas
     // directo desde los tests, no solo vía los paraguas mockk/kotest-runner.
     testImplementation("io.kotest:kotest-framework-engine:6.2.5")
-    testImplementation("io.mockk:mockk-dsl:1.13.13")
+    testImplementation("io.mockk:mockk-dsl:1.14.11")
     // ArchUnit core (ArchRule/JavaClasses/ClassFileImporter) -- ver
     // ArchitectureTest.kt, que NO usa el runner de archunit-junit5 (removido
     // más abajo), solo corre las reglas dentro de un @Test normal de JUnit5.
@@ -743,13 +743,13 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test:1.11.0")
     // mockk-android, no mockk: mockear en el dispositivo necesita soporte
     // dexmaker/bytebuddy-android, distinto del mockk de test/ (JVM).
-    androidTestImplementation("io.mockk:mockk-android:1.13.13")
+    androidTestImplementation("io.mockk:mockk-android:1.14.11")
     // buildHealth: DSL de mockk (every/coEvery/mockk<T>()) resuelta directo
     // desde mockk-dsl; mockk-agent-android/mockk-agent son el motor de
     // bytebuddy-android que mockk-android carga por ServiceLoader en runtime.
-    androidTestImplementation("io.mockk:mockk-dsl:1.13.13")
-    androidTestRuntimeOnly("io.mockk:mockk-agent-android:1.13.13")
-    androidTestRuntimeOnly("io.mockk:mockk-agent:1.13.13")
+    androidTestImplementation("io.mockk:mockk-dsl:1.14.11")
+    androidTestRuntimeOnly("io.mockk:mockk-agent-android:1.14.11")
+    androidTestRuntimeOnly("io.mockk:mockk-agent:1.14.11")
     debugImplementation(libs.androidx.compose.ui.tooling)
     // El manifest de la actividad de test (ComposeTestActivity) se consume
     // vía manifest merge, no por código Kotlin compilado contra esta librería.
