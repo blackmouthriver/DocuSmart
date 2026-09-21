@@ -666,6 +666,13 @@
          誰かがString.formatを通すかのようにエスケープしたため以前は「44%%」となっており、
          画面に「%」が重複して表示されていた)。 -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44%お得</string>
+    <string name="home_section_documents">ドキュメント</string>
+    <string name="home_section_study">学習</string>
+    <string name="home_section_protection">保護</string>
+    <string name="pdf_tools_section_organize">整理</string>
+    <string name="pdf_tools_section_edit">編集</string>
+    <string name="pdf_tools_section_sign_protect">署名と保護</string>
+    <string name="pdf_tools_section_extract">抽出と最適化</string>
     <string name="premium_feature_state_unlocked">利用可能</string>
     <string name="premium_feature_state_locked">ロック中</string>
     <string name="premium_trial_badge">%1$d日間無料</string>

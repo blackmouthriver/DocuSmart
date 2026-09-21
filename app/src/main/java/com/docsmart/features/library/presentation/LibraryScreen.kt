@@ -541,12 +541,14 @@ private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
             ),
     ) {
+        // Rediseño 2026-09-21: título y botón comparten fila y el texto se limita
+        // a dos líneas; antes apilados empujaban filtros y lista hacia abajo.
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -560,20 +562,25 @@ private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
+                Button(
+                    onClick = onLinkClick,
+                    shape = MaterialTheme.shapes.medium,
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                ) {
+                    Text(text = stringResource(R.string.library_link_downloads_button), maxLines = 1)
+                }
             }
             Text(
                 text = stringResource(R.string.library_link_downloads_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
-            Button(
-                onClick = onLinkClick,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.align(Alignment.End),
-            ) {
-                Text(stringResource(R.string.library_link_downloads_button))
-            }
         }
     }
 }

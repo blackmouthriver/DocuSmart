@@ -666,6 +666,13 @@
          因为有人按 String.format 的方式对其进行了转义，
          导致界面上显示出重复的 "%"）。 -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">节省 44%</string>
+    <string name="home_section_documents">文档</string>
+    <string name="home_section_study">学习</string>
+    <string name="home_section_protection">保护</string>
+    <string name="pdf_tools_section_organize">整理</string>
+    <string name="pdf_tools_section_edit">编辑</string>
+    <string name="pdf_tools_section_sign_protect">签名与保护</string>
+    <string name="pdf_tools_section_extract">提取与优化</string>
     <string name="premium_feature_state_unlocked">已解锁</string>
     <string name="premium_feature_state_locked">已锁定</string>
     <string name="premium_trial_badge">%1$d 天免费</string>

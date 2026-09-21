@@ -665,6 +665,13 @@
     <string name="premium_period_month">в месяц</string>
     <string name="premium_period_year">в год</string>
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Экономия 44%</string>
+    <string name="home_section_documents">Документы</string>
+    <string name="home_section_study">Учёба</string>
+    <string name="home_section_protection">Защита</string>
+    <string name="pdf_tools_section_organize">Упорядочить</string>
+    <string name="pdf_tools_section_edit">Редактировать</string>
+    <string name="pdf_tools_section_sign_protect">Подпись и защита</string>
+    <string name="pdf_tools_section_extract">Извлечь и оптимизировать</string>
     <string name="premium_feature_state_unlocked">Доступно</string>
     <string name="premium_feature_state_locked">Заблокировано</string>
     <string name="premium_trial_badge">%1$d дней бесплатно</string>

@@ -666,6 +666,13 @@
          String.format을 거칠 것으로 착각해 "44%%"로 이스케이프해 두는 바람에
          화면에 "%"가 두 번 표시되었습니다). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44% 절약</string>
+    <string name="home_section_documents">문서</string>
+    <string name="home_section_study">학습</string>
+    <string name="home_section_protection">보호</string>
+    <string name="pdf_tools_section_organize">정리</string>
+    <string name="pdf_tools_section_edit">편집</string>
+    <string name="pdf_tools_section_sign_protect">서명 및 보호</string>
+    <string name="pdf_tools_section_extract">추출 및 최적화</string>
     <string name="premium_feature_state_unlocked">잠금 해제됨</string>
     <string name="premium_feature_state_locked">잠김</string>
     <string name="premium_trial_badge">%1$d일 무료</string>

@@ -701,6 +701,13 @@
          antes decía "44%%" porque alguien lo escapó como si fuera a pasar
          por String.format, mostrando el "%" duplicado en pantalla). -->
     <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Ahorra 44%</string>
+    <string name="home_section_documents">Documentos</string>
+    <string name="home_section_study">Estudio</string>
+    <string name="home_section_protection">Protección</string>
+    <string name="pdf_tools_section_organize">Organizar</string>
+    <string name="pdf_tools_section_edit">Editar</string>
+    <string name="pdf_tools_section_sign_protect">Firmar y proteger</string>
+    <string name="pdf_tools_section_extract">Extraer y optimizar</string>
     <string name="premium_feature_state_unlocked">Desbloqueado</string>
     <string name="premium_feature_state_locked">Bloqueado</string>
     <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
