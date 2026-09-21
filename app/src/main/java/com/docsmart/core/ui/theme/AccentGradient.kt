@@ -85,6 +85,40 @@ fun rememberBannerGradient(): List<Color> {
     }
 }
 
+private const val MIN_ICON_CONTRAST = 4.5f
+private const val ICON_CONTRAST_STEP = 0.05f
+private const val MAX_ICON_CONTRAST_STEPS = 20
+
+private fun contrastBetween(
+    a: Color,
+    b: Color,
+): Float {
+    val la = a.luminance()
+    val lb = b.luminance()
+    return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)
+}
+
+/**
+ * Ajusta [color] para que un icono dibujado sobre [background] tenga al menos
+ * 3:1 de contraste (mínimo WCAG para elementos gráficos): lo aclara en fondos
+ * oscuros y lo oscurece en fondos claros. Si ya contrasta lo suficiente, lo
+ * devuelve igual. Hallazgo real en el teléfono: el icono de "Firmar PDF"
+ * (azul marino fijo) desaparecía sobre el fondo oscuro.
+ */
+fun ensureIconContrast(
+    color: Color,
+    background: Color,
+): Color {
+    val target = if (background.luminance() < 0.5f) Color.White else Color.Black
+    var result = color
+    var steps = 0
+    while (contrastBetween(result, background) < MIN_ICON_CONTRAST && steps < MAX_ICON_CONTRAST_STEPS) {
+        result = lerp(result, target, ICON_CONTRAST_STEP)
+        steps++
+    }
+    return result
+}
+
 /**
  * Sombra tenue tintada con el Color de acento, para reemplazar la sombra
  * neutra/negra por defecto de `Card` de Material3 (esa API no expone
