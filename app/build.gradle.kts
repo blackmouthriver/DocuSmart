@@ -505,8 +505,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     // buildHealth: @Inject/@Module/@Provides son de Dagger/javax.inject
     // directo, no solo de hilt-android (que los re-expone transitivamente).
-    implementation("com.google.dagger:dagger:2.57")
-    implementation("com.google.dagger:hilt-core:2.57")
+    implementation("com.google.dagger:dagger:2.60.1")
+    implementation("com.google.dagger:hilt-core:2.60.1")
     implementation("javax.inject:javax.inject:1")
 
     // ── Coil ──────────────────────────────────────────────────────────────────
