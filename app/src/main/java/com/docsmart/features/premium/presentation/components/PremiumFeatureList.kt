@@ -71,12 +71,10 @@ private fun PremiumFeatureItem(
                 Modifier
                     .size(44.dp)
                     .background(
-                        color =
-                            if (isUnlocked) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
+                        // Es una página de venta: los beneficios se ven atractivos
+                        // (acento) también cuando están bloqueados; el candado de la
+                        // derecha ya indica que aún no están disponibles.
+                        color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialTheme.shapes.medium,
                     ),
             contentAlignment = Alignment.Center,
@@ -84,12 +82,7 @@ private fun PremiumFeatureItem(
             Icon(
                 imageVector = getFeatureIcon(feature),
                 contentDescription = null,
-                tint =
-                    if (isUnlocked) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    },
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(22.dp),
             )
         }
@@ -99,12 +92,7 @@ private fun PremiumFeatureItem(
             Text(
                 text = stringResource(feature.titleRes),
                 style = MaterialTheme.typography.titleSmall,
-                color =
-                    if (isUnlocked) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    },
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(feature.descRes),
@@ -131,7 +119,7 @@ private fun PremiumFeatureItem(
                 if (isUnlocked) {
                     SuccessGreen
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 },
             modifier = Modifier.size(20.dp),
         )

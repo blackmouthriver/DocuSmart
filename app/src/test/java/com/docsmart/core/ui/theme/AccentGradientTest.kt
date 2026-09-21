@@ -38,6 +38,18 @@ class AccentGradientTest {
     }
 
     @Test
+    fun `el texto sobre el contenedor del acento supera 4,5 a 1 en los 10 acentos`() {
+        // Regresion: DocuSmartSecondaryButton usaba `primary` sobre `primaryContainer`
+        // (2,6:1 en oscuro con Azul); el par correcto es onContainer sobre container.
+        AccentColor.entries.forEach { accent ->
+            listOf("claro" to accent.light, "oscuro" to accent.dark).forEach { (modo, tone) ->
+                val ratio = contrast(tone.onContainer, tone.container)
+                assertTrue(ratio >= 4.5f, "${accent.label} $modo container: $ratio")
+            }
+        }
+    }
+
+    @Test
     fun `darkenForWhiteText deja igual un color que ya contrasta`() {
         val dark = Color(0xFF15803D)
         assertEquals(dark, darkenForWhiteText(dark))

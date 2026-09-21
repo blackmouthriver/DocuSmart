@@ -84,10 +84,9 @@ fun PremiumScreen(
         // Scaffold lo reservaba por duplicado sobre el que ya reserva
         // MainActivity para DocuSmartBottomBar -- ver StudyScreen.kt para el
         // detalle completo).
-        contentWindowInsets =
-            WindowInsets.systemBars.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-            ),
+        // Rediseño 2026-09-20: sin el inset superior (MainActivity ya lo reserva): el
+        // banner dejaba ~32dp vacíos sobre él.
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal),
         containerColor = Color.Transparent,
     ) { innerPadding ->
         LazyColumn(
@@ -280,16 +279,16 @@ private fun PurchaseActionsSection(
         ) {
             Text(
                 text = stringResource(R.string.premium_restore_purchases),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
 
         TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = stringResource(R.string.premium_continue_free),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

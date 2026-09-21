@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.docsmart.R
@@ -59,7 +60,7 @@ private fun PlanCard(
         if (isSelected) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.outline
         }
 
     Box(
@@ -68,13 +69,16 @@ private fun PlanCard(
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
                 .border(
-                    width = if (isSelected) 1.5.dp else 0.5.dp,
+                    width = if (isSelected) 1.5.dp else 1.dp,
                     color = borderColor,
                     shape = MaterialTheme.shapes.large,
                 )
+                // Sin `role`, TalkBack no anunciaba cada plan como opción exclusiva
+                // (radio); el icono de abajo es solo decorativo.
                 .selectable(
                     selected = isSelected,
                     onClick = onSelected,
+                    role = Role.RadioButton,
                 ),
     ) {
         Column(
