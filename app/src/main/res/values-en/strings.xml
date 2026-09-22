@@ -1021,6 +1021,8 @@
     <string name="study_previous_paragraph">Previous paragraph</string>
     <string name="study_next_paragraph">Next paragraph</string>
     <string name="study_reading_speed">Reading speed</string>
+    <string name="study_view_mode_pdf">PDF</string>
+    <string name="study_view_mode_text">Text</string>
     <string name="study_new_note">New note</string>
     <string name="study_note_title_label">Note title</string>
     <string name="study_note_title_placeholder">E.g.: Key concepts from chapter 3</string>

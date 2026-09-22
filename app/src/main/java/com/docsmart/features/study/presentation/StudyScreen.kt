@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -816,6 +817,7 @@ fun StudyScreen(
                         },
                         currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
                         totalPages = pageBoundaries.size,
+                        currentSpeakingIndex = currentSpeakingIndex.intValue,
                         selectedVoiceName = selectedVoice.value?.let { personaForVoice(it.name).name },
                         speedLabel = readingSpeedLabel(readingSpeed.floatValue),
                         onSpeedClick = {
@@ -830,6 +832,12 @@ fun StudyScreen(
                                 readingFinished.value = false
                                 currentSpeakingIndex.intValue = target
                             }
+                        },
+                        documentText = documentText,
+                        highlights = highlights,
+                        onJumpToParagraph = { index ->
+                            readingFinished.value = false
+                            currentSpeakingIndex.intValue = index
                         },
                         onSpeakAll = {
                             if (isSpeaking.value) {
@@ -1127,6 +1135,7 @@ internal fun ReadingTab(
     isLoading: Boolean,
     highlightedCount: Int,
     isCurrentHighlighted: Boolean,
+    currentSpeakingIndex: Int,
     isSpeaking: Boolean,
     ttsReady: Boolean,
     // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): null = sin error,
@@ -1149,7 +1158,15 @@ internal fun ReadingTab(
     speedLabel: String? = null,
     onSpeedClick: () -> Unit = {},
     onStepParagraph: ((delta: Int) -> Unit)? = null,
+    documentText: List<String> = emptyList(),
+    highlights: Set<Int> = emptySet(),
+    onJumpToParagraph: ((Int) -> Unit)? = null,
 ) {
+    // Fase 3 del rediseño de Lectura (2026-09-22): además del PDF real, un modo Texto
+    // que sigue la lectura -- útil cuando el PDF es una foto/escaneo denso y ayuda a
+    // seguir el punto exacto que está sonando. Empieza siempre en PDF (comportamiento
+    // de siempre); Texto es una vista alterna, no reemplaza al visor.
+    var viewMode by rememberSaveable { mutableStateOf(ReadingViewMode.PDF) }
     // Con la voz activa, cambiar de párrafo o de velocidad reinicia la lectura desde el
     // punto de retoma: "Leer todo" detiene y otra vez "Leer todo" arranca desde ahí.
     val restartIfSpeaking = {
@@ -1190,15 +1207,30 @@ internal fun ReadingTab(
                         highlightedCount = highlightedCount,
                         voiceName = selectedVoiceName,
                     )
-                    // ── PDF real, la voz lee de fondo ─
+                    ReadingViewModeSelector(mode = viewMode, onModeChange = { viewMode = it })
+                    // ── PDF real o texto extraído, la voz lee de fondo ─
                     // Rediseño 2026-09-21: el documento ocupa todo el alto disponible;
                     // los controles (abrir, voz, marcar y leer) viven en un reproductor
                     // fijo abajo, al alcance del pulgar, en vez de tres franjas arriba.
-                    StudyPdfViewer(
-                        uri = documentUri,
-                        currentPage = currentPage,
-                        modifier = Modifier.fillMaxWidth().weight(1f),
-                    )
+                    when (viewMode) {
+                        ReadingViewMode.PDF ->
+                            StudyPdfViewer(
+                                uri = documentUri,
+                                currentPage = currentPage,
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                            )
+                        ReadingViewMode.TEXT ->
+                            ReadingTextView(
+                                paragraphs = documentText,
+                                currentIndex = currentSpeakingIndex,
+                                highlightedIndices = highlights,
+                                onParagraphClick = { index ->
+                                    onJumpToParagraph?.invoke(index)
+                                    restartIfSpeaking()
+                                },
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                            )
+                    }
                     ReadingPlayerBar(
                         isSpeaking = isSpeaking,
                         ttsReady = ttsReady,
@@ -1234,6 +1266,107 @@ internal fun ReadingTab(
                             },
                     )
                 }
+            }
+        }
+    }
+}
+
+// Fase 3 (2026-09-22): PDF (por defecto) o Texto extraído, con el párrafo que
+// suena resaltado y seguimiento automático.
+internal enum class ReadingViewMode { PDF, TEXT }
+
+@Composable
+private fun ReadingViewModeSelector(
+    mode: ReadingViewMode,
+    onModeChange: (ReadingViewMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterChip(
+            selected = mode == ReadingViewMode.PDF,
+            onClick = { onModeChange(ReadingViewMode.PDF) },
+            leadingIcon = {
+                Icon(Icons.Rounded.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            label = { Text(stringResource(R.string.study_view_mode_pdf)) },
+        )
+        FilterChip(
+            selected = mode == ReadingViewMode.TEXT,
+            onClick = { onModeChange(ReadingViewMode.TEXT) },
+            leadingIcon = {
+                Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            label = { Text(stringResource(R.string.study_view_mode_text)) },
+        )
+    }
+}
+
+// Texto extraído, un párrafo por fila (misma granularidad que "marcar" y que la cola
+// del TTS: no hay una frase individual rastreable dentro del párrafo). El que está
+// sonando se resalta y la lista se sigue automáticamente; tocar cualquier párrafo
+// mueve el punto de lectura (y reinicia la voz si estaba sonando).
+@Composable
+private fun ReadingTextView(
+    paragraphs: List<String>,
+    currentIndex: Int,
+    highlightedIndices: Set<Int>,
+    onParagraphClick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (paragraphs.isEmpty()) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            LoadingIndicator(stringResource(R.string.study_loading_document))
+        }
+        return
+    }
+    val listState = rememberLazyListState()
+    LaunchedEffect(currentIndex) {
+        if (currentIndex in paragraphs.indices) listState.animateScrollToItem(currentIndex)
+    }
+    LazyColumn(
+        state = listState,
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        itemsIndexed(paragraphs) { index, paragraph ->
+            val isCurrent = index == currentIndex
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.small)
+                        .then(
+                            if (isCurrent) {
+                                Modifier.background(MaterialTheme.colorScheme.primaryContainer)
+                            } else {
+                                Modifier
+                            },
+                        ).clickable(role = Role.Button) { onParagraphClick(index) }
+                        .padding(10.dp),
+            ) {
+                if (index in highlightedIndices) {
+                    Icon(
+                        imageVector = Icons.Rounded.Bookmark,
+                        contentDescription = null,
+                        tint = WarningAmber,
+                        modifier = Modifier.size(16.dp).padding(top = 3.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                }
+                Text(
+                    text = paragraph,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (isCurrent) FontWeight.Medium else FontWeight.Normal,
+                    color =
+                        if (isCurrent) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                )
             }
         }
     }

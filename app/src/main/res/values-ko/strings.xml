@@ -1015,6 +1015,8 @@
     <string name="study_previous_paragraph">이전 단락</string>
     <string name="study_next_paragraph">다음 단락</string>
     <string name="study_reading_speed">읽기 속도</string>
+    <string name="study_view_mode_pdf">PDF</string>
+    <string name="study_view_mode_text">텍스트</string>
     <string name="study_new_note">새 메모</string>
     <string name="study_note_title_label">메모 제목</string>
     <string name="study_note_title_placeholder">예: 3장 핵심 개념</string>

@@ -93,8 +93,11 @@ class StudyReadingTest {
         var finished by mutableStateOf(false)
         var currentPage by mutableIntStateOf(1)
         var totalPages by mutableIntStateOf(0)
+        var currentSpeakingIndex by mutableIntStateOf(-1)
         var history by mutableStateOf<List<ReadingProgress>>(emptyList())
         var voices by mutableStateOf<List<Voice>>(emptyList())
+        var documentText by mutableStateOf<List<String>>(emptyList())
+        var highlights by mutableStateOf<Set<Int>>(emptySet())
     }
 
     private var openClicks = 0
@@ -103,6 +106,7 @@ class StudyReadingTest {
     private var voiceClicks = 0
     private var speedClicks = 0
     private val stepDeltas = mutableListOf<Int>()
+    private val jumpedTo = mutableListOf<Int>()
     private var resumed: ReadingProgress? = null
     private var deleted: ReadingProgress? = null
 
@@ -120,6 +124,7 @@ class StudyReadingTest {
                 readingFinished = state.finished,
                 currentPage = state.currentPage,
                 totalPages = state.totalPages,
+                currentSpeakingIndex = state.currentSpeakingIndex,
                 onToggleHighlightCurrent = { toggleClicks++ },
                 onSpeakAll = { speakClicks++ },
                 onSelectDoc = { openClicks++ },
@@ -131,6 +136,9 @@ class StudyReadingTest {
                 speedLabel = "1.25×",
                 onSpeedClick = { speedClicks++ },
                 onStepParagraph = { stepDeltas += it },
+                documentText = state.documentText,
+                highlights = state.highlights,
+                onJumpToParagraph = { jumpedTo += it },
             )
         }
     }
@@ -250,6 +258,55 @@ class StudyReadingTest {
         update { state.voices = listOf(voice("es-es-x-a-local"), voice("es-es-x-b-local")) }
         composeRule.onNodeWithContentDescription(esString(R.string.study_choose_voice)).assertIsEnabled().performClick()
         assertEquals(1, voiceClicks)
+    }
+
+    // ── ReadingTab: modo Texto (fase 3, 2026-09-22) ───────────────────────────
+    @Test
+    fun modoTexto_muestraLosParrafosYElQueSuenaSeResalta() {
+        val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
+        state.documentText = listOf("Primer párrafo.", "Segundo párrafo.", "Tercer párrafo.")
+        state.highlights = setOf(1)
+        state.currentSpeakingIndex = 1
+        setReading(state)
+
+        // Empieza en PDF: el texto todavía no se ve.
+        composeRule.onNodeWithText("Segundo párrafo.").assertDoesNotExist()
+
+        composeRule.onNodeWithText(esString(R.string.study_view_mode_text)).performClick()
+        composeRule.onNodeWithText("Primer párrafo.").assertExists()
+        composeRule.onNodeWithText("Segundo párrafo.").assertExists()
+        composeRule.onNodeWithText("Tercer párrafo.").assertExists()
+
+        // Tocar un párrafo mueve el punto de lectura.
+        composeRule.onNodeWithText("Tercer párrafo.").performClick()
+        assertEquals(listOf(2), jumpedTo)
+        // En pausa, tocar un párrafo no toca "Leer todo".
+        assertEquals(0, speakClicks)
+
+        composeRule.onNodeWithText(esString(R.string.study_view_mode_pdf)).performClick()
+        composeRule.onNodeWithText("Primer párrafo.").assertDoesNotExist()
+    }
+
+    @Test
+    fun modoTexto_sinTextoExtraidoAunMuestraCargando() {
+        val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
+        setReading(state)
+
+        composeRule.onNodeWithText(esString(R.string.study_view_mode_text)).performClick()
+        composeRule.onNodeWithText(esString(R.string.study_loading_document)).assertExists()
+    }
+
+    @Test
+    fun modoTexto_leyendo_tocarUnParrafoReiniciaConLeerTodoDosVeces() {
+        val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
+        state.documentText = listOf("Primer párrafo.", "Segundo párrafo.")
+        state.isSpeaking = true
+        setReading(state)
+
+        composeRule.onNodeWithText(esString(R.string.study_view_mode_text)).performClick()
+        composeRule.onNodeWithText("Segundo párrafo.").performClick()
+        assertEquals(listOf(1), jumpedTo)
+        assertEquals(2, speakClicks)
     }
 
     @Test

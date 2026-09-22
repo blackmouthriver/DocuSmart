@@ -1046,6 +1046,8 @@
     <string name="study_previous_paragraph">Paràgraf anterior</string>
     <string name="study_next_paragraph">Paràgraf següent</string>
     <string name="study_reading_speed">Velocitat de lectura</string>
+    <string name="study_view_mode_pdf">PDF</string>
+    <string name="study_view_mode_text">Text</string>
     <string name="study_new_note">Nota nova</string>
     <string name="study_note_title_label">Títol de la nota</string>
     <string name="study_note_title_placeholder">Ex: Conceptes clau del capítol 3</string>
