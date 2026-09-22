@@ -106,9 +106,11 @@ import com.docsmart.features.study.domain.StudyStatsStorage
 import com.docsmart.features.study.domain.StudySummaryExporter
 import com.docsmart.features.study.domain.StudyVoicePreference
 import com.docsmart.features.study.domain.TextSummarizer
+import com.docsmart.features.study.domain.VoicePersona
 import com.docsmart.features.study.domain.millisToHoursAndMinutes
 import com.docsmart.features.study.domain.pageForParagraph
 import com.docsmart.features.study.domain.personaForVoice
+import com.docsmart.features.study.domain.personasForVoices
 import com.docsmart.features.study.domain.pomodoroCountsByWeekday
 import com.docsmart.features.study.presentation.components.NoteLinkDocumentDialog
 import com.itextpdf.kernel.geom.Vector
@@ -239,6 +241,12 @@ fun StudyScreen(
     // requieren red (`isNetworkConnectionRequired`) -- se queda 100% local
     // y gratis para todos, sin depender de ningún servicio en la nube.
     val availableVoices = remember { mutableStateOf<List<Voice>>(emptyList()) }
+    // Pedido explícito del usuario 2026-09-22: un personaje distinto por voz
+    // instalada -- `personasForVoices` (VoicePersona.kt) asigna posiciones sin
+    // colisión mientras no se superen los personajes curados, a diferencia de
+    // `personaForVoice` sola (hash % 10, repetía nombre con más de 10 voces).
+    val voicePersonas =
+        remember(availableVoices.value) { personasForVoices(availableVoices.value.map { it.name }) }
     val selectedVoice = remember { mutableStateOf<Voice?>(null) }
     var showVoicePicker by remember { mutableStateOf(false) }
     // HU-64 (feedback real de testers de la prueba cerrada, 2026-09-16):
@@ -622,7 +630,7 @@ fun StudyScreen(
 
     fun previewVoice(voice: Voice) {
         val tts = ttsRef.value ?: return
-        val persona = personaForVoice(voice.name)
+        val persona = voicePersonas[voice.name] ?: personaForVoice(voice.name)
         val sampleText = String.format(voiceSampleTemplate, persona.name)
         val voiceToRestore = selectedVoice.value
         previewingVoiceName = voice.name
@@ -691,6 +699,7 @@ fun StudyScreen(
         if (showVoicePicker) {
             VoiceSelectorDialog(
                 voices = availableVoices.value,
+                personas = voicePersonas,
                 selectedVoice = selectedVoice.value,
                 previewingVoiceName = previewingVoiceName,
                 onVoiceSelected = { voice ->
@@ -756,7 +765,10 @@ fun StudyScreen(
                         totalPages = pageBoundaries.size,
                         readingFinished = readingFinished.value,
                         highlightedCount = highlights.size,
-                        voiceName = selectedVoice.value?.let { personaForVoice(it.name).name },
+                        voiceName =
+                            selectedVoice.value?.let {
+                                (voicePersonas[it.name] ?: personaForVoice(it.name)).name
+                            },
                         onBack = {
                             stopReading()
                             selectedTab = STUDY_TAB_MENU
@@ -3654,6 +3666,11 @@ internal fun VoiceSelectorDialog(
     onVoiceSelected: (Voice) -> Unit,
     onPreviewVoice: (Voice) -> Unit,
     onDismiss: () -> Unit,
+    // Pedido explícito del usuario 2026-09-22: un personaje distinto por voz --
+    // `personasForVoices(voices)` (calculado por quien llama, para no repetirlo
+    // acá en cada recomposición). Con `null` (compatibilidad hacia atrás, o
+    // pruebas que no lo necesitan) cae en `personaForVoice` sola, la de antes.
+    personas: Map<String, VoicePersona>? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -3664,7 +3681,10 @@ internal fun VoiceSelectorDialog(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 items(voices, key = { it.name }) { voice ->
-                    val persona = remember(voice.name) { personaForVoice(voice.name) }
+                    val persona =
+                        remember(voice.name, personas) {
+                            personas?.get(voice.name) ?: personaForVoice(voice.name)
+                        }
                     val isSelected = voice.name == selectedVoice?.name
                     val isPreviewing = voice.name == previewingVoiceName
                     Row(

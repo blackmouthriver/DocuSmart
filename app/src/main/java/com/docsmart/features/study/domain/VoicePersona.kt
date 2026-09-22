@@ -103,7 +103,31 @@ private val VOICE_PERSONAS =
 // (ej. "es-es-x-eef-local") siempre cae en el mismo índice, así que
 // muestra siempre el mismo personaje entre sesiones y entre reaperturas
 // del selector, sin guardar ningún mapeo aparte.
+//
+// Solo para cuando no se tiene la lista completa de voces a mano (fallback
+// de `personasForVoices`, más abajo) -- usada sola, dos voces técnicas
+// distintas pueden caer en el mismo personaje si el dispositivo tiene más
+// voces instaladas que personajes en la lista (frecuente: Google TTS expone
+// varias variantes de "es" por región y calidad).
 fun personaForVoice(voiceTechnicalName: String): VoicePersona {
     val index = Math.floorMod(voiceTechnicalName.hashCode(), VOICE_PERSONAS.size)
     return VOICE_PERSONAS[index]
 }
+
+// Pedido explícito del usuario 2026-09-22 ("hay varios personajes que repiten
+// nombre... la idea es que cada uno sea diferente"): un personaje ÚNICO por
+// voz DENTRO de la lista que se muestra junta en el selector -- a diferencia
+// de `personaForVoice`, que resuelve cada voz sola (con hash % 10, así que
+// con más de 10 voces instaladas, dos técnicas distintas repetían personaje).
+// Acá cada voz recibe una posición fija dentro de la lista ordenada por su
+// nombre técnico (determinístico: mismas voces instaladas -> mismo orden ->
+// mismos personajes, sesión tras sesión) y esa posición indexa directo la
+// lista de personajes -- sin colisiones mientras la cantidad de voces no
+// supere la de personajes; si la supera, recién ahí se repite (imposible
+// evitarlo con solo 10 personajes curados, pero ya no antes de eso).
+fun personasForVoices(voiceTechnicalNames: List<String>): Map<String, VoicePersona> =
+    voiceTechnicalNames
+        .distinct()
+        .sorted()
+        .mapIndexed { index, name -> name to VOICE_PERSONAS[index % VOICE_PERSONAS.size] }
+        .toMap()

@@ -22,7 +22,7 @@ import com.docsmart.features.agenda.presentation.components.esString
 import com.docsmart.features.study.domain.PomodoroEngine
 import com.docsmart.features.study.domain.StudyStats
 import com.docsmart.features.study.domain.StudyStatsStorage
-import com.docsmart.features.study.domain.personaForVoice
+import com.docsmart.features.study.domain.personasForVoices
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -195,9 +195,14 @@ class StudyPomodoroAndDialogsTest {
         var previewed: Voice? = null
         var dismissed = 0
         var previewing by mutableStateOf<String?>(null)
+        // Pedido explícito del usuario 2026-09-22: un personaje distinto por voz --
+        // `personasForVoices` (no `personaForVoice` sola) es lo que usa el diálogo real.
+        val personas = personasForVoices(voices.map { it.name })
+        val firstVoiceName = personas.getValue("es-es-x-a-local").name
         env.setContent {
             VoiceSelectorDialog(
                 voices = voices,
+                personas = personas,
                 selectedVoice = voices[0],
                 previewingVoiceName = previewing,
                 onVoiceSelected = { selected = it },
@@ -211,13 +216,13 @@ class StudyPomodoroAndDialogsTest {
 
         composeRule.onNodeWithText(esString(R.string.study_choose_voice)).assertExists()
         // Un personaje por voz (los 4 nombres técnicos caen en personajes distintos), con su calidad.
-        composeRule.onNodeWithText(personaForVoice("es-es-x-a-local").name).assertExists()
+        composeRule.onNodeWithText(firstVoiceName).assertExists()
         composeRule.onAllNodesWithText("calidad muy alta", substring = true).assertCountEquals(1)
         val previewDesc = esString(R.string.study_voice_preview)
         composeRule.onAllNodesWithContentDescription(previewDesc).assertCountEquals(voices.size)
 
         // Elegir una voz por su nombre.
-        composeRule.onNodeWithText(personaForVoice("es-es-x-a-local").name).performClick()
+        composeRule.onNodeWithText(firstVoiceName).performClick()
         assertEquals("es-es-x-a-local", selected?.name)
 
         // Escuchar una muestra: la fila pasa a "reproduciendo" y su botón se deshabilita.
