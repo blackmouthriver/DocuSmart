@@ -1532,24 +1532,14 @@ internal fun ReadingDocumentBanner(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                // Pedido explícito del usuario 2026-09-22 ("quita el logo de
+                // DocuSmart... dejémoslo como el modelo"): sin el logo, la portada
+                // queda como lo primero que se ve, igual que en la maqueta.
                 Box(
                     modifier =
                         Modifier
-                            .size(40.dp)
-                            .background(Color.White.copy(alpha = 0.18f), MaterialTheme.shapes.medium),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_docusmart_logo),
-                        contentDescription = null,
-                        modifier = Modifier.size(26.dp),
-                    )
-                }
-                Box(
-                    modifier =
-                        Modifier
-                            .width(40.dp)
-                            .height(52.dp)
+                            .width(48.dp)
+                            .height(64.dp)
                             .clip(MaterialTheme.shapes.small)
                             .background(Color.White.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
@@ -1561,7 +1551,7 @@ internal fun ReadingDocumentBanner(
                         imageVector = Icons.Rounded.MenuBook,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(22.dp),
                     )
                     AsyncImage(
                         model = documentUri,
