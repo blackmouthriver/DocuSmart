@@ -26,7 +26,11 @@ internal val KNOWN_VOICE_GENDERS: Map<String, Boolean> =
         "es-ES-language" to true,
         "es-es-x-eea-local" to true,
         "es-es-x-eee-local" to true,
-        "es-us-x-esc-local" to false,
+        // Corregido 2026-09-22 (segunda ronda de feedback real): esta voz
+        // resultó femenina, no masculina como se había marcado en la primera
+        // pasada -- confirmado escuchando el personaje "Emilio" (nombre que
+        // le tocó en esa corrida) en dispositivo real.
+        "es-us-x-esc-local" to true,
         "es-us-x-esd-local" to false,
         "es-us-x-esf-local" to false,
         "es-es-x-eec-local" to false,
