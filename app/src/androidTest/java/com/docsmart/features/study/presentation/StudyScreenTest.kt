@@ -115,6 +115,14 @@ class StudyScreenTest {
             store[firstArg<String>()] = secondArg<Long>()
             editor
         }
+        // Mismo bug, ahora con StudyVoicePreference.saveSpeed/loadSpeed (fase 2 de
+        // Lectura, putFloat/getFloat): sin este stub, CUALQUIER prueba que renderice
+        // StudyScreen fallaba con MockKException, no solo las de Lectura -- la
+        // velocidad se lee en la composición sin importar la pestaña activa.
+        every { editor.putFloat(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Float>()
+            editor
+        }
         every { editor.apply() } just Runs
 
         val prefs = mockk<SharedPreferences>()
@@ -124,6 +132,9 @@ class StudyScreenTest {
         }
         every { prefs.getLong(any(), any()) } answers {
             (store[firstArg<String>()] as? Long) ?: secondArg()
+        }
+        every { prefs.getFloat(any(), any()) } answers {
+            (store[firstArg<String>()] as? Float) ?: secondArg()
         }
         return prefs
     }

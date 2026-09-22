@@ -99,3 +99,34 @@ internal fun steppedParagraph(
     delta: Int,
     lastIndex: Int,
 ): Int = if (lastIndex < 0) -1 else (current.coerceAtLeast(0) + delta).coerceIn(0, lastIndex)
+
+// Fase 4 (2026-09-22): partir un párrafo en "antes / frase que suena / después"
+// para el resaltado en tiempo real de `onRangeStart`. Función pura (sin
+// Compose) para poder testearla sola -- de ahí salió un bug real: el rango que
+// llega es `start until end` (con `range.last == end - 1`, la convención
+// habitual de Kotlin para índices), pero `String.substring(a, b)` trata `b`
+// como EXCLUSIVO -- usar `range.last` directo como límite le comía la última
+// letra de cada palabra resaltada (verificado en pantalla: "Linea" en vez de
+// "Línea", "pagin" en vez de "pagina"). También se acota a los límites del
+// texto (`coerceIn`) porque no todos los motores/voces reportan rangos
+// consistentes -- antes de esto, un rango igual a la longitud del texto podía
+// lanzar `StringIndexOutOfBoundsException` y tumbar el modo Texto.
+internal data class HighlightedText(
+    val before: String,
+    val highlighted: String,
+    val after: String,
+)
+
+internal fun splitForHighlight(
+    text: String,
+    range: IntRange?,
+): HighlightedText {
+    if (range == null) return HighlightedText(text, "", "")
+    val start = range.first.coerceIn(0, text.length)
+    val endExclusive = (range.last + 1).coerceIn(start, text.length)
+    return HighlightedText(
+        before = text.substring(0, start),
+        highlighted = text.substring(start, endExclusive),
+        after = text.substring(endExclusive),
+    )
+}

@@ -1421,17 +1421,21 @@ private fun ReadingTextView(
     ) {
         itemsIndexed(paragraphs) { index, paragraph ->
             val isCurrent = index == currentIndex
-            val range = currentRange?.takeIf { isCurrent && it.last <= paragraph.length && it.first >= 0 }
+            // `splitForHighlight` (StudyTtsQueue.kt) es la única que interpreta el
+            // rango -- acota límites y corrige el "start until end" de onRangeStart,
+            // así que acá solo se pregunta si terminó habiendo una frase real.
+            val parts = if (isCurrent) splitForHighlight(paragraph, currentRange) else null
+            val hasPhraseHighlight = parts != null && parts.highlighted.isNotEmpty()
             Row(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.small)
                         .then(
-                            // Sin rango exacto, el párrafo completo se resalta (mismo
-                            // fallback de antes); con rango, el párrafo queda plano y
-                            // solo la frase exacta se resalta más abajo.
-                            if (isCurrent && range == null) {
+                            // Sin rango exacto (o sin nada resaltable todavía), el párrafo
+                            // completo se resalta (fallback de siempre); con frase real, el
+                            // párrafo queda plano y solo esa frase se resalta más abajo.
+                            if (isCurrent && !hasPhraseHighlight) {
                                 Modifier.background(MaterialTheme.colorScheme.primaryContainer)
                             } else {
                                 Modifier
@@ -1449,11 +1453,11 @@ private fun ReadingTextView(
                     Spacer(Modifier.width(6.dp))
                 }
                 Text(
-                    text = readingParagraphText(paragraph, range),
+                    text = readingParagraphText(paragraph, parts),
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isCurrent && range == null) FontWeight.Medium else FontWeight.Normal,
+                    fontWeight = if (isCurrent && !hasPhraseHighlight) FontWeight.Medium else FontWeight.Normal,
                     color =
-                        if (isCurrent && range == null) {
+                        if (isCurrent && !hasPhraseHighlight) {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         } else {
                             MaterialTheme.colorScheme.onSurface
@@ -1465,13 +1469,13 @@ private fun ReadingTextView(
 }
 
 // Construye el AnnotatedString con la frase exacta resaltada dentro del párrafo
-// (fase 4); sin rango, devuelve el texto tal cual.
+// (fase 4); sin partes resaltables, devuelve el texto tal cual.
 @Composable
 private fun readingParagraphText(
     paragraph: String,
-    range: IntRange?,
+    parts: HighlightedText?,
 ): AnnotatedString {
-    if (range == null) return AnnotatedString(paragraph)
+    if (parts == null || parts.highlighted.isEmpty()) return AnnotatedString(paragraph)
     val highlightStyle =
         SpanStyle(
             background = MaterialTheme.colorScheme.tertiaryContainer,
@@ -1479,9 +1483,9 @@ private fun readingParagraphText(
             fontWeight = FontWeight.SemiBold,
         )
     return buildAnnotatedString {
-        append(paragraph.substring(0, range.first))
-        withStyle(highlightStyle) { append(paragraph.substring(range.first, range.last)) }
-        append(paragraph.substring(range.last))
+        append(parts.before)
+        withStyle(highlightStyle) { append(parts.highlighted) }
+        append(parts.after)
     }
 }
 
@@ -1492,7 +1496,7 @@ private fun readingParagraphText(
 // el resto de los banners compactos; "Volver"/"Inicio" siguen debajo (mismo
 // `BannerNavRow` que usa `DocuSmartTopBanner`, para no duplicar esa lógica).
 @Composable
-private fun ReadingDocumentBanner(
+internal fun ReadingDocumentBanner(
     documentUri: Uri,
     documentName: String,
     currentPage: Int,
@@ -1685,9 +1689,12 @@ private fun ReadingPlayerBar(
             Spacer(Modifier.weight(1f))
             if (speedLabel != null) {
                 Box(
+                    // H17 (auditoría de accesibilidad TalkBack 2026-09-18): objetivo
+                    // táctil mínimo de 48dp -- mismo mínimo que ya exige el resto de la
+                    // app (ver BannerNavAction), 44dp quedaba por debajo.
                     modifier =
                         Modifier
-                            .height(44.dp)
+                            .height(48.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color.White.copy(alpha = 0.15f))
                             .clickable(role = Role.Button, onClick = onSpeedClick)
@@ -1773,9 +1780,12 @@ private fun ReadingWellIconButton(
     enabled: Boolean = true,
 ) {
     Box(
+        // H17 (auditoría de accesibilidad TalkBack 2026-09-18): objetivo táctil
+        // mínimo de 48dp -- 44dp quedaba por debajo del mínimo que ya exige el
+        // resto de la app (ver BannerNavAction).
         modifier =
             modifier
-                .size(44.dp)
+                .size(48.dp)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Color.White.copy(alpha = 0.15f)),
         contentAlignment = Alignment.Center,
