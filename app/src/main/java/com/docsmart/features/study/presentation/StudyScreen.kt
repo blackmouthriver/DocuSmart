@@ -1264,6 +1264,7 @@ internal fun ReadingTab(
                         onModeChange = { viewMode = it },
                         onVoiceSelectorClick = onVoiceSelectorClick,
                         voiceEnabled = availableVoices.isNotEmpty(),
+                        onSelectDoc = onSelectDoc,
                     )
                     // ── PDF real o texto extraído, la voz lee de fondo ─
                     // Rediseño 2026-09-21: el documento ocupa todo el alto disponible;
@@ -1298,11 +1299,8 @@ internal fun ReadingTab(
                         isCurrentHighlighted = isCurrentHighlighted,
                         currentPage = currentPage,
                         totalPages = totalPages,
-                        voiceEnabled = availableVoices.isNotEmpty(),
                         onToggleHighlightCurrent = onToggleHighlightCurrent,
                         onSpeakAll = onSpeakAll,
-                        onSelectDoc = onSelectDoc,
-                        onVoiceSelectorClick = onVoiceSelectorClick,
                         speedLabel = speedLabel,
                         onSpeedClick = {
                             onSpeedClick()
@@ -1342,6 +1340,7 @@ private fun ReadingViewModeSelector(
     // tener que bajar hasta la barra de controles.
     onVoiceSelectorClick: () -> Unit,
     voiceEnabled: Boolean,
+    onSelectDoc: () -> Unit,
 ) {
     Row(
         modifier =
@@ -1374,6 +1373,15 @@ private fun ReadingViewModeSelector(
                 Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, modifier = Modifier.size(16.dp))
             },
             label = { Text(stringResource(R.string.study_choose_voice)) },
+        )
+        // Pedido explícito del usuario 2026-09-22: "abrir documento" sale del
+        // reproductor de abajo y se une acá, junto a PDF/Texto/Elegir voz.
+        AssistChip(
+            onClick = onSelectDoc,
+            leadingIcon = {
+                Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            label = { Text(stringResource(R.string.qr_open_document)) },
         )
     }
 }
@@ -1602,11 +1610,8 @@ private fun ReadingPlayerBar(
     isCurrentHighlighted: Boolean,
     currentPage: Int,
     totalPages: Int,
-    voiceEnabled: Boolean,
     onToggleHighlightCurrent: () -> Unit,
     onSpeakAll: () -> Unit,
-    onSelectDoc: () -> Unit,
-    onVoiceSelectorClick: () -> Unit,
     speedLabel: String?,
     onSpeedClick: () -> Unit,
     onPreviousParagraph: (() -> Unit)?,
@@ -1652,17 +1657,9 @@ private fun ReadingPlayerBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ReadingWellIconButton(
-                icon = Icons.Rounded.FolderOpen,
-                contentDescription = stringResource(R.string.qr_open_document),
-                onClick = onSelectDoc,
-            )
-            ReadingWellIconButton(
-                icon = Icons.Rounded.RecordVoiceOver,
-                contentDescription = stringResource(R.string.study_choose_voice),
-                onClick = onVoiceSelectorClick,
-                enabled = voiceEnabled,
-            )
+            // Pedido explícito del usuario 2026-09-22: "abrir" y "voz" se mudaron
+            // arriba, junto a PDF/Texto -- acá solo queda "marcar", que sí es una
+            // acción propia de la lectura en curso.
             // Marca el párrafo que suena ahora (alimenta "Párrafos resaltados" de Notas).
             ReadingWellIconButton(
                 icon = if (isCurrentHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
