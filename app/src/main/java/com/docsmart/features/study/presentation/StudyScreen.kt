@@ -97,6 +97,7 @@ import com.docsmart.features.agenda.domain.agendaTimeFormatter
 import com.docsmart.features.agenda.domain.formatAgendaDateTime
 import com.docsmart.features.scanner.presentation.ScannerMode
 import com.docsmart.features.scanner.presentation.rememberDocumentScannerAction
+import com.docsmart.features.study.domain.KNOWN_VOICE_GENDERS
 import com.docsmart.features.study.domain.PomodoroEngine
 import com.docsmart.features.study.domain.ReadingProgress
 import com.docsmart.features.study.domain.StudyNotesExporter
@@ -278,7 +279,15 @@ fun StudyScreen(
         if (!ttsReady.value) return@LaunchedEffect
         val names = availableVoices.value.map { it.name }
         if (names.isEmpty()) return@LaunchedEffect
-        voiceGenders.value = StudyVoicePreference.loadGenders(context, names)
+        val cachedGenders = StudyVoicePreference.loadGenders(context, names)
+        // La tabla verificada a oído real (KnownVoiceGenders.kt) manda SIEMPRE,
+        // incluso sobre un valor ya cacheado por una corrida anterior del
+        // detector de tono -- ese detector demostró fallar mas de la mitad de
+        // las veces, así que un valor cacheado suyo puede estar mal. Se
+        // regraba en la preferencia para que quede corregido también ahí.
+        val knownGenders = KNOWN_VOICE_GENDERS.filterKeys { it in names }
+        knownGenders.forEach { (name, isFeminine) -> StudyVoicePreference.saveGender(context, name, isFeminine) }
+        voiceGenders.value = cachedGenders + knownGenders
         val pending = names.filterNot { voiceGenders.value.containsKey(it) }
         if (pending.isEmpty()) return@LaunchedEffect
         val tts = ttsRef.value ?: return@LaunchedEffect
