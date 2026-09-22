@@ -1026,6 +1026,7 @@
     <string name="study_reading_speed">Vitesse de lecture</string>
     <string name="study_view_mode_pdf">PDF</string>
     <string name="study_view_mode_text">Texte</string>
+    <string name="study_total_pages">%1$d pages</string>
     <string name="study_new_note">Nouvelle note</string>
     <string name="study_note_title_label">Titre de la note</string>
     <string name="study_note_title_placeholder">Ex : Concepts clés du chapitre 3</string>

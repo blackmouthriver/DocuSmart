@@ -56,9 +56,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -258,6 +262,11 @@ fun StudyScreen(
     // corta. `readingFinished` = terminó todo el documento (ofrece "Volver a leer").
     val ttsHighestStarted = remember { mutableIntStateOf(-1) }
     val readingFinished = remember { mutableStateOf(false) }
+    // Fase 4 (2026-09-22): rango exacto (caracteres dentro del párrafo que suena)
+    // que reporta `onRangeStart` del motor TTS, cuando lo soporta -- null mientras
+    // no hay lectura o el motor/voz no lo reporta (el modo Texto cae al fallback
+    // de resaltar el párrafo completo, como antes).
+    val speakingRange = remember { mutableStateOf<IntRange?>(null) }
     // Velocidad de lectura (factor sobre la base): se conserva entre sesiones.
     val readingSpeed = remember { mutableFloatStateOf(StudyVoicePreference.loadSpeed(context)) }
     // Extracción en curso: al elegir otro documento mientras el anterior
@@ -270,6 +279,7 @@ fun StudyScreen(
         ttsRef.value?.stop()
         isSpeaking.value = false
         waitingForMoreText.value = false
+        speakingRange.value = null
     }
 
     // Terminó de leer TODO el documento: se detiene el motor, se invalida
@@ -284,6 +294,7 @@ fun StudyScreen(
         currentSpeakingIndex.intValue = -1
         ttsHighestStarted.intValue = -1
         readingFinished.value = true
+        speakingRange.value = null
         if (uriString != null) {
             StudyReadingProgressStorage.remove(context, uriString)
             readingHistory = StudyReadingProgressStorage.loadAll(context)
@@ -796,9 +807,11 @@ fun StudyScreen(
                 0 ->
                     ReadingTab(
                         documentUri = documentUri,
+                        documentName = documentName,
                         isLoading = isLoadingDoc,
                         highlightedCount = highlights.size,
                         isCurrentHighlighted = highlights.contains(currentSpeakingIndex.intValue),
+                        currentSpeakingRange = speakingRange.value,
                         isSpeaking = isSpeaking.value,
                         ttsReady = ttsReady.value,
                         ttsErrorMessage = ttsErrorMessage.value,
@@ -911,6 +924,12 @@ fun StudyScreen(
                                                 }
                                                 if (index != null) ttsHighestStarted.intValue = index
                                                 isSpeaking.value = true
+                                                // Nuevo párrafo: el rango exacto de la frase que suena
+                                                // (fase 4) se vuelve a conocer recién con el primer
+                                                // `onRangeStart` de ESTE párrafo -- limpiarlo acá evita
+                                                // que se vea, aunque sea un instante, el rango del
+                                                // párrafo anterior sobre el nuevo texto.
+                                                speakingRange.value = null
                                                 if (index != null) {
                                                     currentSpeakingIndex.intValue = index
                                                     if (uriString != null) {
@@ -931,9 +950,29 @@ fun StudyScreen(
                                             }
                                         }
 
+                                        // Fase 4 (2026-09-22): rango exacto (en caracteres, sobre el
+                                        // texto de ESE párrafo) que se está pronunciando ahora mismo --
+                                        // disponible desde la API 26 (nuestro minSdk), pero no todos los
+                                        // motores/voces lo reportan; cuando no llega, el modo Texto sigue
+                                        // resaltando el párrafo completo (ver `ReadingTextView`).
+                                        override fun onRangeStart(
+                                            utteranceId: String?,
+                                            start: Int,
+                                            end: Int,
+                                            frame: Int,
+                                        ) {
+                                            mainHandler.post {
+                                                if (ttsSession.intValue != session) return@post
+                                                if (parseUtteranceIndex(utteranceId) == currentSpeakingIndex.intValue) {
+                                                    speakingRange.value = start until end
+                                                }
+                                            }
+                                        }
+
                                         override fun onDone(utteranceId: String?) {
                                             mainHandler.post {
                                                 if (ttsSession.intValue != session) return@post
+                                                speakingRange.value = null
                                                 val index = parseUtteranceIndex(utteranceId)
                                                 if (index == null) return@post
                                                 // "Procesamiento incremental": si el PDF seguía
@@ -981,7 +1020,10 @@ fun StudyScreen(
                                             // todo" debe poder reintentar desde
                                             // ahí, no desde el principio.
                                             mainHandler.post {
-                                                if (ttsSession.intValue == session) isSpeaking.value = false
+                                                if (ttsSession.intValue == session) {
+                                                    isSpeaking.value = false
+                                                    speakingRange.value = null
+                                                }
                                             }
                                         }
                                     },
@@ -1132,10 +1174,17 @@ private fun LoadingIndicator(
 @Composable
 internal fun ReadingTab(
     documentUri: Uri?,
+    documentName: String,
     isLoading: Boolean,
     highlightedCount: Int,
     isCurrentHighlighted: Boolean,
     currentSpeakingIndex: Int,
+    // Fase 4 (2026-09-22): rango exacto (en caracteres, sobre el párrafo que
+    // suena) que reporta el motor TTS en tiempo real, cuando lo soporta --
+    // permite resaltar la frase/palabra exacta en el modo Texto, no solo el
+    // párrafo completo. Null si el motor no lo reporta (fallback: se sigue
+    // viendo el párrafo completo resaltado, como antes).
+    currentSpeakingRange: IntRange? = null,
     isSpeaking: Boolean,
     ttsReady: Boolean,
     // Hallazgo H3 de la auditoría (ronda 13, 2026-09-18): null = sin error,
@@ -1200,7 +1249,9 @@ internal fun ReadingTab(
                 )
             else -> {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    ReadingInfoStrip(
+                    ReadingDocumentCard(
+                        documentUri = documentUri,
+                        documentName = documentName,
                         currentPage = currentPage,
                         totalPages = totalPages,
                         readingFinished = readingFinished,
@@ -1223,6 +1274,7 @@ internal fun ReadingTab(
                             ReadingTextView(
                                 paragraphs = documentText,
                                 currentIndex = currentSpeakingIndex,
+                                currentRange = currentSpeakingRange,
                                 highlightedIndices = highlights,
                                 onParagraphClick = { index ->
                                     onJumpToParagraph?.invoke(index)
@@ -1314,6 +1366,11 @@ private fun ReadingTextView(
     highlightedIndices: Set<Int>,
     onParagraphClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    // Fase 4 (2026-09-22): rango exacto que suena dentro del párrafo actual,
+    // cuando el motor TTS lo reporta (ver `onRangeStart` en StudyScreen). Con
+    // rango, solo esa frase/palabra se resalta -- sin él, se resalta el
+    // párrafo completo (fallback para motores/voces que no lo soportan).
+    currentRange: IntRange? = null,
 ) {
     if (paragraphs.isEmpty()) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -1333,13 +1390,17 @@ private fun ReadingTextView(
     ) {
         itemsIndexed(paragraphs) { index, paragraph ->
             val isCurrent = index == currentIndex
+            val range = currentRange?.takeIf { isCurrent && it.last <= paragraph.length && it.first >= 0 }
             Row(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.small)
                         .then(
-                            if (isCurrent) {
+                            // Sin rango exacto, el párrafo completo se resalta (mismo
+                            // fallback de antes); con rango, el párrafo queda plano y
+                            // solo la frase exacta se resalta más abajo.
+                            if (isCurrent && range == null) {
                                 Modifier.background(MaterialTheme.colorScheme.primaryContainer)
                             } else {
                                 Modifier
@@ -1357,11 +1418,11 @@ private fun ReadingTextView(
                     Spacer(Modifier.width(6.dp))
                 }
                 Text(
-                    text = paragraph,
+                    text = readingParagraphText(paragraph, range),
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isCurrent) FontWeight.Medium else FontWeight.Normal,
+                    fontWeight = if (isCurrent && range == null) FontWeight.Medium else FontWeight.Normal,
                     color =
-                        if (isCurrent) {
+                        if (isCurrent && range == null) {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         } else {
                             MaterialTheme.colorScheme.onSurface
@@ -1372,31 +1433,119 @@ private fun ReadingTextView(
     }
 }
 
-// Datos del libro en una tira de chips (rediseño 2026-09-21): avance, marcadores
-// y voz activa. Sin tiempos restantes: el motor de voz no reporta duración.
+// Construye el AnnotatedString con la frase exacta resaltada dentro del párrafo
+// (fase 4); sin rango, devuelve el texto tal cual.
 @Composable
-private fun ReadingInfoStrip(
+private fun readingParagraphText(
+    paragraph: String,
+    range: IntRange?,
+): AnnotatedString {
+    if (range == null) return AnnotatedString(paragraph)
+    val highlightStyle =
+        SpanStyle(
+            background = MaterialTheme.colorScheme.tertiaryContainer,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            fontWeight = FontWeight.SemiBold,
+        )
+    return buildAnnotatedString {
+        append(paragraph.substring(0, range.first))
+        withStyle(highlightStyle) { append(paragraph.substring(range.first, range.last)) }
+        append(paragraph.substring(range.last))
+    }
+}
+
+// Ficha del documento (fase 4, 2026-09-22, a partir de una maqueta que el
+// usuario compartió): portada real -- Coil ya sabe renderizar la primera
+// página de un PDF (PdfThumbnailFetcher, mismo mecanismo que Biblioteca/
+// Favoritos/Recientes) --, título, avance y los mismos chips que antes
+// vivían en una tira aparte. Sin autor ni tiempo restante: el PDF no
+// siempre trae autor en sus metadatos y el motor TTS no reporta duración --
+// mostrar una estimación inventada sería peor que no mostrar nada.
+@Composable
+private fun ReadingDocumentCard(
+    documentUri: Uri,
+    documentName: String,
     currentPage: Int,
     totalPages: Int,
     readingFinished: Boolean,
     highlightedCount: Int,
     voiceName: String?,
 ) {
+    val shape = MaterialTheme.shapes.large
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape)
+                .padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (totalPages > 0) {
-            val percent = (listenedFraction(currentPage, totalPages, readingFinished) * 100).toInt()
-            ReadingInfoChip(stringResource(R.string.study_listened_percent, percent))
+        Box(
+            modifier =
+                Modifier
+                    .width(56.dp)
+                    .height(78.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            // Portada real -- Coil ya sabe renderizar la primera página de un PDF
+            // (PdfThumbnailFetcher, mismo mecanismo que Biblioteca/Favoritos). Si
+            // falla (documento no PDF, sin permiso, etc.), queda el ícono de libro.
+            Icon(
+                imageVector = Icons.Rounded.MenuBook,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
+            AsyncImage(
+                model = documentUri,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
-        ReadingInfoChip(stringResource(R.string.study_highlighted_count, highlightedCount))
-        if (voiceName != null) {
-            ReadingInfoChip(stringResource(R.string.study_voice_chip, voiceName))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = documentName,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (totalPages > 0) {
+                Text(
+                    text = stringResource(R.string.study_total_pages, totalPages),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            val fraction = listenedFraction(currentPage, totalPages, readingFinished)
+            LinearProgressIndicator(
+                progress = { fraction },
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)),
+            )
+            Text(
+                text = stringResource(R.string.study_listened_percent, (fraction * 100).toInt()),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                ReadingInfoChip(stringResource(R.string.study_highlighted_count, highlightedCount))
+                if (voiceName != null) {
+                    ReadingInfoChip(stringResource(R.string.study_voice_chip, voiceName))
+                }
+            }
         }
     }
 }

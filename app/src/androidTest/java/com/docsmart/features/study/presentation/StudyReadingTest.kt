@@ -114,6 +114,7 @@ class StudyReadingTest {
         env.setContent {
             ReadingTab(
                 documentUri = state.uri,
+                documentName = "Documento.pdf",
                 isLoading = state.isLoading,
                 highlightedCount = state.highlightedCount,
                 isCurrentHighlighted = state.isCurrentHighlighted,

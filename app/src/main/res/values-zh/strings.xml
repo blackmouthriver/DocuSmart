@@ -1017,6 +1017,7 @@
     <string name="study_reading_speed">朗读速度</string>
     <string name="study_view_mode_pdf">PDF</string>
     <string name="study_view_mode_text">文字</string>
+    <string name="study_total_pages">%1$d 页</string>
     <string name="study_new_note">新建笔记</string>
     <string name="study_note_title_label">笔记标题</string>
     <string name="study_note_title_placeholder">例如：第 3 章核心概念</string>

@@ -1017,6 +1017,7 @@
     <string name="study_reading_speed">読み上げ速度</string>
     <string name="study_view_mode_pdf">PDF</string>
     <string name="study_view_mode_text">テキスト</string>
+    <string name="study_total_pages">%1$d ページ</string>
     <string name="study_new_note">新しいメモ</string>
     <string name="study_note_title_label">メモのタイトル</string>
     <string name="study_note_title_placeholder">例: 第3章の重要ポイント</string>
