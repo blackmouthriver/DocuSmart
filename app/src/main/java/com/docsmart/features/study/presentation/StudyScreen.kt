@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -1258,7 +1259,12 @@ internal fun ReadingTab(
                         highlightedCount = highlightedCount,
                         voiceName = selectedVoiceName,
                     )
-                    ReadingViewModeSelector(mode = viewMode, onModeChange = { viewMode = it })
+                    ReadingViewModeSelector(
+                        mode = viewMode,
+                        onModeChange = { viewMode = it },
+                        onVoiceSelectorClick = onVoiceSelectorClick,
+                        voiceEnabled = availableVoices.isNotEmpty(),
+                    )
                     // ── PDF real o texto extraído, la voz lee de fondo ─
                     // Rediseño 2026-09-21: el documento ocupa todo el alto disponible;
                     // los controles (abrir, voz, marcar y leer) viven en un reproductor
@@ -1331,9 +1337,18 @@ internal enum class ReadingViewMode { PDF, TEXT }
 private fun ReadingViewModeSelector(
     mode: ReadingViewMode,
     onModeChange: (ReadingViewMode) -> Unit,
+    // Pedido explícito del usuario 2026-09-22: un tercer botón acá mismo para elegir
+    // voz, además del que ya vive en el reproductor de abajo -- acceso rápido sin
+    // tener que bajar hasta la barra de controles.
+    onVoiceSelectorClick: () -> Unit,
+    voiceEnabled: Boolean,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         FilterChip(
@@ -1351,6 +1366,14 @@ private fun ReadingViewModeSelector(
                 Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(16.dp))
             },
             label = { Text(stringResource(R.string.study_view_mode_text)) },
+        )
+        AssistChip(
+            onClick = onVoiceSelectorClick,
+            enabled = voiceEnabled,
+            leadingIcon = {
+                Icon(Icons.Rounded.RecordVoiceOver, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            label = { Text(stringResource(R.string.study_choose_voice)) },
         )
     }
 }
@@ -1626,48 +1649,52 @@ private fun ReadingPlayerBar(
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onSelectDoc, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    Icons.Rounded.FolderOpen,
-                    contentDescription = stringResource(R.string.qr_open_document),
-                    tint = Color.White,
-                )
-            }
-            IconButton(onClick = onVoiceSelectorClick, enabled = voiceEnabled, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    Icons.Rounded.RecordVoiceOver,
-                    contentDescription = stringResource(R.string.study_choose_voice),
-                    tint = Color.White.copy(alpha = if (voiceEnabled) 1f else 0.45f),
-                )
-            }
+            ReadingWellIconButton(
+                icon = Icons.Rounded.FolderOpen,
+                contentDescription = stringResource(R.string.qr_open_document),
+                onClick = onSelectDoc,
+            )
+            ReadingWellIconButton(
+                icon = Icons.Rounded.RecordVoiceOver,
+                contentDescription = stringResource(R.string.study_choose_voice),
+                onClick = onVoiceSelectorClick,
+                enabled = voiceEnabled,
+            )
             // Marca el párrafo que suena ahora (alimenta "Párrafos resaltados" de Notas).
-            IconButton(
+            ReadingWellIconButton(
+                icon = if (isCurrentHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                contentDescription = stringResource(R.string.study_mark_current_paragraph),
                 onClick = onToggleHighlightCurrent,
                 enabled = isSpeaking,
-                modifier = Modifier.size(48.dp),
-            ) {
-                Icon(
-                    imageVector = if (isCurrentHighlighted) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
-                    contentDescription = stringResource(R.string.study_mark_current_paragraph),
-                    tint = Color.White.copy(alpha = if (isSpeaking) 1f else 0.45f),
-                )
-            }
+            )
             Spacer(Modifier.weight(1f))
             if (speedLabel != null) {
-                TextButton(
-                    onClick = onSpeedClick,
-                    modifier = Modifier.semantics { contentDescription = speedDescription },
+                Box(
+                    modifier =
+                        Modifier
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .clickable(role = Role.Button, onClick = onSpeedClick)
+                            .semantics { contentDescription = speedDescription }
+                            .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(speedLabel, color = Color.White, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = speedLabel,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (onPreviousParagraph != null) {
@@ -1675,46 +1702,79 @@ private fun ReadingPlayerBar(
                     Icon(
                         Icons.Rounded.SkipPrevious,
                         contentDescription = stringResource(R.string.study_previous_paragraph),
-                        tint = Color.White,
+                        tint = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.size(26.dp),
                     )
                 }
+                Spacer(Modifier.width(8.dp))
             }
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = onSpeakAll,
-                shape = RoundedCornerShape(50),
-                enabled = ttsReady,
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = gradient[1],
-                        disabledContainerColor = Color.White.copy(alpha = 0.4f),
-                        disabledContentColor = Color.White,
-                    ),
+            // Círculo blanco con solo el ícono, a partir de una maqueta que el usuario
+            // compartió (2026-09-22) -- la etiqueta ("Leer todo"/"Detener"/"Volver a
+            // leer") sigue viva como descripción de accesibilidad, no como texto visible.
+            val playLabel =
+                when {
+                    isSpeaking -> stringResource(R.string.study_stop)
+                    readingFinished -> stringResource(R.string.study_read_again)
+                    else -> stringResource(R.string.study_read_all)
+                }
+            Box(
+                modifier =
+                    Modifier
+                        .size(58.dp)
+                        .clip(CircleShape)
+                        .background(if (ttsReady) Color.White else Color.White.copy(alpha = 0.4f))
+                        .clickable(enabled = ttsReady, role = Role.Button, onClick = onSpeakAll)
+                        .semantics { contentDescription = playLabel },
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = if (isSpeaking) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    when {
-                        isSpeaking -> stringResource(R.string.study_stop)
-                        readingFinished -> stringResource(R.string.study_read_again)
-                        else -> stringResource(R.string.study_read_all)
-                    },
+                    tint = if (ttsReady) gradient[1] else Color.White,
+                    modifier = Modifier.size(28.dp),
                 )
             }
             if (onNextParagraph != null) {
+                Spacer(Modifier.width(8.dp))
                 IconButton(onClick = onNextParagraph, modifier = Modifier.size(48.dp)) {
                     Icon(
                         Icons.Rounded.SkipNext,
                         contentDescription = stringResource(R.string.study_next_paragraph),
-                        tint = Color.White,
+                        tint = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.size(26.dp),
                     )
                 }
             }
+        }
+    }
+}
+
+// Botón de ícono en una caja translúcida ("well"), a partir de la maqueta que el
+// usuario compartió (2026-09-22) -- reemplaza al `IconButton` plano de antes para
+// las tres acciones secundarias del reproductor (abrir, voz, marcar).
+@Composable
+private fun ReadingWellIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Box(
+        modifier =
+            modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.White.copy(alpha = 0.15f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.matchParentSize()) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = Color.White.copy(alpha = if (enabled) 1f else 0.45f),
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

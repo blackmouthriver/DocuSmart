@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.platform.app.InstrumentationRegistry
@@ -275,6 +276,17 @@ internal fun ComposeTestRule.waitForTextExists(
 ) {
     waitUntilOrDump(STUDY_TEST_TAG, timeoutMillis) {
         onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+    }
+}
+
+// Rediseño 2026-09-22: el botón de "Leer todo" pasó de texto visible a un círculo
+// solo con ícono (la etiqueta sigue viva como contentDescription).
+internal fun ComposeTestRule.waitForContentDescriptionExists(
+    contentDescription: String,
+    timeoutMillis: Long = 15_000,
+) {
+    waitUntilOrDump(STUDY_TEST_TAG, timeoutMillis) {
+        onAllNodesWithContentDescription(contentDescription).fetchSemanticsNodes().isNotEmpty()
     }
 }
 

@@ -210,7 +210,7 @@ class StudyReadingTest {
 
         // Reposo: sin resaltados, se puede leer pero no marcar.
         composeRule.onNodeWithText(esString(R.string.study_highlighted_count, 0)).assertExists()
-        composeRule.onNodeWithText(esString(R.string.study_read_all)).assertIsEnabled()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_read_all)).assertIsEnabled()
         composeRule.onAllNodesWithContentDescription(mark).assertCountEquals(1)
         composeRule.onNodeWithContentDescription(esString(R.string.study_choose_voice)).assertIsNotEnabled()
         composeRule.onNodeWithContentDescription(esString(R.string.qr_open_document)).performClick()
@@ -233,7 +233,7 @@ class StudyReadingTest {
             state.isCurrentHighlighted = true
         }
         composeRule.onNodeWithText(esString(R.string.study_reading_page, 2, 5)).assertExists()
-        composeRule.onNodeWithText(esString(R.string.study_stop)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_stop)).performClick()
         assertEquals(1, speakClicks)
         composeRule.onAllNodesWithContentDescription(mark)[0].performClick()
         assertEquals(1, toggleClicks)
@@ -246,7 +246,7 @@ class StudyReadingTest {
             state.finished = true
         }
         composeRule.onNodeWithText(esString(R.string.study_reading_finished)).assertExists()
-        composeRule.onNodeWithText(esString(R.string.study_read_again)).assertIsEnabled()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_read_again)).assertIsEnabled()
 
         // Motor TTS no disponible: aviso visible y botón deshabilitado.
         update {
@@ -254,7 +254,7 @@ class StudyReadingTest {
             state.ttsError = "Aviso de prueba TTS"
         }
         composeRule.onNodeWithText("Aviso de prueba TTS").assertExists()
-        composeRule.onNodeWithText(esString(R.string.study_read_again)).assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_read_again)).assertIsNotEnabled()
 
         update { state.voices = listOf(voice("es-es-x-a-local"), voice("es-es-x-b-local")) }
         composeRule.onNodeWithContentDescription(esString(R.string.study_choose_voice)).assertIsEnabled().performClick()
@@ -397,19 +397,21 @@ class StudyReadingTest {
     private fun exerciseSpeakButtonIfPossible() {
         val readAll = esString(R.string.study_read_all)
         val unavailable = esString(R.string.study_tts_unavailable)
-        val isReadEnabled = { runCatching { composeRule.onNodeWithText(readAll).assertIsEnabled() }.isSuccess }
+        val isReadEnabled = {
+            runCatching { composeRule.onNodeWithContentDescription(readAll).assertIsEnabled() }.isSuccess
+        }
         try {
             composeRule.waitUntil(timeoutMillis = 6_000) { exists(unavailable) || isReadEnabled() }
         } catch (e: ComposeTimeoutException) {
             return
         }
         if (exists(unavailable)) {
-            composeRule.onNodeWithText(readAll).assertIsNotEnabled()
+            composeRule.onNodeWithContentDescription(readAll).assertIsNotEnabled()
         } else {
-            composeRule.onNodeWithText(readAll).performClick()
-            composeRule.waitForTextExists(esString(R.string.study_stop), timeoutMillis = 6_000)
-            composeRule.onNodeWithText(esString(R.string.study_stop)).performClick()
-            composeRule.waitForTextExists(readAll, timeoutMillis = 6_000)
+            composeRule.onNodeWithContentDescription(readAll).performClick()
+            composeRule.waitForContentDescriptionExists(esString(R.string.study_stop), timeoutMillis = 6_000)
+            composeRule.onNodeWithContentDescription(esString(R.string.study_stop)).performClick()
+            composeRule.waitForContentDescriptionExists(readAll, timeoutMillis = 6_000)
         }
     }
 
@@ -430,7 +432,7 @@ class StudyReadingTest {
         // Elegir un PDF real: extracción con iText y visor.
         composeRule.onNodeWithText(esString(R.string.qr_open_document)).performClick()
         env.registry.respond(Activity.RESULT_OK, Intent().setData(Uri.fromFile(first)))
-        composeRule.waitForTextExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
+        composeRule.waitForContentDescriptionExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
         waitForExtractionDone()
         // Velocidad y saltos de párrafo con un PDF real: cambian sin necesitar el motor de voz.
         composeRule.onNodeWithContentDescription(esString(R.string.study_reading_speed)).performClick()
@@ -441,7 +443,7 @@ class StudyReadingTest {
         // Elegir otro documento con el primero ya abierto (cancela la carga anterior).
         composeRule.onNodeWithContentDescription(esString(R.string.qr_open_document)).performClick()
         env.registry.respond(Activity.RESULT_OK, Intent().setData(Uri.fromFile(second)))
-        composeRule.waitForTextExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
+        composeRule.waitForContentDescriptionExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
         waitForExtractionDone()
 
         // Volver detiene la lectura y regresa al menú.
@@ -461,7 +463,7 @@ class StudyReadingTest {
 
         composeRule.onNodeWithText("Apuntes.pdf").performScrollTo().performClick()
 
-        composeRule.waitForTextExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
+        composeRule.waitForContentDescriptionExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
         waitForExtractionDone()
         // El progreso guardado sigue ahí (no se leyó hasta el final).
         assertNotNull(StudyReadingProgressStorage.findFor(env.seedContext, Uri.fromFile(pdf).toString()))
