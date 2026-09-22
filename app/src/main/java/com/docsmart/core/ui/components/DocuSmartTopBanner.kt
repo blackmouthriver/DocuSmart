@@ -200,7 +200,7 @@ fun DocuSmartTopBanner(
 // real medía ~20-24dp de alto (por debajo del mínimo de 48dp) -- se asegura
 // el mínimo sin tocar el tamaño visual del ícono/texto.
 @Composable
-private fun BannerNavAction(
+internal fun BannerNavAction(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
@@ -230,7 +230,7 @@ private fun BannerNavAction(
 // Fila "Volver" / "Inicio" debajo del banner; compartida por la variante normal
 // y la compacta para no duplicar la lógica.
 @Composable
-private fun BannerNavRow(
+internal fun BannerNavRow(
     onBack: (() -> Unit)?,
     onHome: (() -> Unit)?,
 ) {
