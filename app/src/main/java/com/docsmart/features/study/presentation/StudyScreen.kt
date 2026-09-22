@@ -53,6 +53,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -255,6 +257,8 @@ fun StudyScreen(
     // corta. `readingFinished` = terminó todo el documento (ofrece "Volver a leer").
     val ttsHighestStarted = remember { mutableIntStateOf(-1) }
     val readingFinished = remember { mutableStateOf(false) }
+    // Velocidad de lectura (factor sobre la base): se conserva entre sesiones.
+    val readingSpeed = remember { mutableFloatStateOf(StudyVoicePreference.loadSpeed(context)) }
     // Extracción en curso: al elegir otro documento mientras el anterior
     // seguía extrayéndose, las dos corrutinas escribían a la vez sobre el mismo
     // `documentText` (párrafos de un documento mezclados con los del otro).
@@ -337,7 +341,7 @@ fun StudyScreen(
                     if (fallbackFailed) {
                         ttsErrorMessage.value = ttsUnavailableMessage
                     } else {
-                        ttsInstance?.setSpeechRate(0.85f)
+                        ttsInstance?.setSpeechRate(BASE_SPEECH_RATE * StudyVoicePreference.loadSpeed(context))
                         ttsInstance?.setPitch(1.05f)
 
                         // Bug real encontrado al verificar en dispositivo (2026-09-12):
@@ -813,6 +817,20 @@ fun StudyScreen(
                         currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
                         totalPages = pageBoundaries.size,
                         selectedVoiceName = selectedVoice.value?.let { personaForVoice(it.name).name },
+                        speedLabel = readingSpeedLabel(readingSpeed.floatValue),
+                        onSpeedClick = {
+                            val next = nextReadingSpeed(readingSpeed.floatValue)
+                            readingSpeed.floatValue = next
+                            StudyVoicePreference.saveSpeed(context, next)
+                            ttsRef.value?.setSpeechRate(BASE_SPEECH_RATE * next)
+                        },
+                        onStepParagraph = { delta ->
+                            val target = steppedParagraph(currentSpeakingIndex.intValue, delta, documentText.lastIndex)
+                            if (target >= 0) {
+                                readingFinished.value = false
+                                currentSpeakingIndex.intValue = target
+                            }
+                        },
                         onSpeakAll = {
                             if (isSpeaking.value) {
                                 // "Retomar lectura" (2026-09-08): antes esto
@@ -1128,7 +1146,18 @@ internal fun ReadingTab(
     availableVoices: List<Voice> = emptyList(),
     onVoiceSelectorClick: () -> Unit = {},
     selectedVoiceName: String? = null,
+    speedLabel: String? = null,
+    onSpeedClick: () -> Unit = {},
+    onStepParagraph: ((delta: Int) -> Unit)? = null,
 ) {
+    // Con la voz activa, cambiar de párrafo o de velocidad reinicia la lectura desde el
+    // punto de retoma: "Leer todo" detiene y otra vez "Leer todo" arranca desde ahí.
+    val restartIfSpeaking = {
+        if (isSpeaking) {
+            onSpeakAll()
+            onSpeakAll()
+        }
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             // Pedido explícito del usuario 2026-09-08: la extracción de un
@@ -1184,6 +1213,25 @@ internal fun ReadingTab(
                         onSpeakAll = onSpeakAll,
                         onSelectDoc = onSelectDoc,
                         onVoiceSelectorClick = onVoiceSelectorClick,
+                        speedLabel = speedLabel,
+                        onSpeedClick = {
+                            onSpeedClick()
+                            restartIfSpeaking()
+                        },
+                        onPreviousParagraph =
+                            onStepParagraph?.let { step ->
+                                {
+                                    step(-1)
+                                    restartIfSpeaking()
+                                }
+                            },
+                        onNextParagraph =
+                            onStepParagraph?.let { step ->
+                                {
+                                    step(1)
+                                    restartIfSpeaking()
+                                }
+                            },
                     )
                 }
             }
@@ -1254,8 +1302,13 @@ private fun ReadingPlayerBar(
     onSpeakAll: () -> Unit,
     onSelectDoc: () -> Unit,
     onVoiceSelectorClick: () -> Unit,
+    speedLabel: String?,
+    onSpeedClick: () -> Unit,
+    onPreviousParagraph: (() -> Unit)?,
+    onNextParagraph: (() -> Unit)?,
 ) {
     val gradient = rememberBannerGradient()
+    val speedDescription = stringResource(R.string.study_reading_speed)
     val panelShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     Column(
         modifier =
@@ -1321,7 +1374,31 @@ private fun ReadingPlayerBar(
                 )
             }
             Spacer(Modifier.weight(1f))
+            if (speedLabel != null) {
+                TextButton(
+                    onClick = onSpeedClick,
+                    modifier = Modifier.semantics { contentDescription = speedDescription },
+                ) {
+                    Text(speedLabel, color = Color.White, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (onPreviousParagraph != null) {
+                IconButton(onClick = onPreviousParagraph, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        Icons.Rounded.SkipPrevious,
+                        contentDescription = stringResource(R.string.study_previous_paragraph),
+                        tint = Color.White,
+                    )
+                }
+            }
             Button(
+                modifier = Modifier.weight(1f),
                 onClick = onSpeakAll,
                 shape = RoundedCornerShape(50),
                 enabled = ttsReady,
@@ -1346,6 +1423,15 @@ private fun ReadingPlayerBar(
                         else -> stringResource(R.string.study_read_all)
                     },
                 )
+            }
+            if (onNextParagraph != null) {
+                IconButton(onClick = onNextParagraph, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        Icons.Rounded.SkipNext,
+                        contentDescription = stringResource(R.string.study_next_paragraph),
+                        tint = Color.White,
+                    )
+                }
             }
         }
     }

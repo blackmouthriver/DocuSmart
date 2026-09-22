@@ -101,6 +101,8 @@ class StudyReadingTest {
     private var speakClicks = 0
     private var toggleClicks = 0
     private var voiceClicks = 0
+    private var speedClicks = 0
+    private val stepDeltas = mutableListOf<Int>()
     private var resumed: ReadingProgress? = null
     private var deleted: ReadingProgress? = null
 
@@ -126,6 +128,9 @@ class StudyReadingTest {
                 onDeleteDocument = { deleted = it },
                 availableVoices = state.voices,
                 onVoiceSelectorClick = { voiceClicks++ },
+                speedLabel = "1.25×",
+                onSpeedClick = { speedClicks++ },
+                onStepParagraph = { stepDeltas += it },
             )
         }
     }
@@ -248,6 +253,43 @@ class StudyReadingTest {
     }
 
     @Test
+    fun controlesDeLectura_enPausa_soloMuevenElPuntoDeRetoma() {
+        val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
+        setReading(state)
+
+        composeRule.onNodeWithText("1.25×").performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).performClick()
+        assertEquals(1, speedClicks)
+        assertEquals(listOf(-1, 1), stepDeltas)
+        // En pausa no se toca "Leer todo".
+        assertEquals(0, speakClicks)
+
+        // Sin motor TTS los saltos siguen funcionando (solo mueven el punto de retoma).
+        update { state.ttsReady = false }
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).assertIsEnabled().performClick()
+        assertEquals(listOf(-1, 1, 1), stepDeltas)
+    }
+
+    @Test
+    fun controlesDeLectura_leyendo_reinicianLaLecturaConLeerTodoDosVeces() {
+        val state = ReadingState(uri = Uri.parse("file:///no/existe/documento.pdf"))
+        state.isSpeaking = true
+        setReading(state)
+
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).performClick()
+        assertEquals(listOf(1), stepDeltas)
+        assertEquals(2, speakClicks)
+
+        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).performClick()
+        assertEquals(4, speakClicks)
+
+        composeRule.onNodeWithText("1.25×").performClick()
+        assertEquals(1, speedClicks)
+        assertEquals(6, speakClicks)
+    }
+
+    @Test
     fun visorDePdfReal_renderizaPaginasYSigueLaPaginaActual() {
         val pdf = newPdf(pages = 3)
         val state = ReadingState(uri = Uri.fromFile(pdf))
@@ -332,6 +374,10 @@ class StudyReadingTest {
         env.registry.respond(Activity.RESULT_OK, Intent().setData(Uri.fromFile(first)))
         composeRule.waitForTextExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
         waitForExtractionDone()
+        // Velocidad y saltos de párrafo con un PDF real: cambian sin necesitar el motor de voz.
+        composeRule.onNodeWithContentDescription(esString(R.string.study_reading_speed)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).performClick()
         exerciseSpeakButtonIfPossible()
 
         // Elegir otro documento con el primero ya abierto (cancela la carga anterior).

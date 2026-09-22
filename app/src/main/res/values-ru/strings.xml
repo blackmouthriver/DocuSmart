@@ -1011,6 +1011,9 @@
     <string name="study_mark_current_paragraph">Выделить текущий абзац</string>
     <string name="study_listened_percent">%1$d %% прослушано</string>
     <string name="study_voice_chip">Голос: %1$s</string>
+    <string name="study_previous_paragraph">Предыдущий абзац</string>
+    <string name="study_next_paragraph">Следующий абзац</string>
+    <string name="study_reading_speed">Скорость чтения</string>
     <string name="study_new_note">Новая заметка</string>
     <string name="study_note_title_label">Заголовок заметки</string>
     <string name="study_note_title_placeholder">Например: Ключевые понятия главы 3</string>

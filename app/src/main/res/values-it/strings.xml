@@ -1016,6 +1016,9 @@
     <string name="study_mark_current_paragraph">Evidenzia paragrafo corrente</string>
     <string name="study_listened_percent">%1$d %% ascoltato</string>
     <string name="study_voice_chip">Voce: %1$s</string>
+    <string name="study_previous_paragraph">Paragrafo precedente</string>
+    <string name="study_next_paragraph">Paragrafo successivo</string>
+    <string name="study_reading_speed">Velocità di lettura</string>
     <string name="study_new_note">Nuova nota</string>
     <string name="study_note_title_label">Titolo della nota</string>
     <string name="study_note_title_placeholder">Es: Concetti chiave del capitolo 3</string>
