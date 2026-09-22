@@ -79,6 +79,7 @@ import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.core.pdf.PdfPageBitmap
 import com.docsmart.core.pdf.renderPdfPagesToBitmaps
+import com.docsmart.core.ui.components.BannerNavRow
 import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
@@ -741,48 +742,58 @@ fun StudyScreen(
                 adUnitId = AdConstants.BANNER_STUDY_ID,
                 adManager = viewModel.adManager,
             ) {
-                DocuSmartTopBanner(
-                    // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
-                    compact = currentView != StudyView.MENU,
-                    // En Lectura el título es "Lectura" (no "Modo Estudio"): pedido del usuario.
-                    // Rediseño 2026-09-21: con un documento abierto el título es el
-                    // archivo y el subtítulo su página; sin repetir "Lectura".
-                    screenTitle =
-                        when {
-                            currentView == StudyView.READING && documentUri != null -> documentName
-                            currentView == StudyView.READING -> stringResource(R.string.study_tab_reading)
-                            else -> stringResource(R.string.study_title)
+                // Pedido explícito del usuario 2026-09-22: con un documento abierto, la
+                // ficha (portada, avance, voz, resaltados) vive DENTRO del banner azul en
+                // vez de en su propia tarjeta blanca debajo -- libera espacio vertical
+                // para el documento. El logo se mantiene. El resto de las vistas de
+                // Modo Estudio siguen con el banner de siempre.
+                val openDocumentUri = documentUri
+                if (currentView == StudyView.READING && openDocumentUri != null) {
+                    ReadingDocumentBanner(
+                        documentUri = openDocumentUri,
+                        documentName = documentName,
+                        currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
+                        totalPages = pageBoundaries.size,
+                        readingFinished = readingFinished.value,
+                        highlightedCount = highlights.size,
+                        voiceName = selectedVoice.value?.let { personaForVoice(it.name).name },
+                        onBack = {
+                            stopReading()
+                            selectedTab = STUDY_TAB_MENU
                         },
-                    screenSubtitle =
-                        when (currentView) {
-                            StudyView.MENU -> stringResource(R.string.study_menu_subtitle)
-                            StudyView.READING ->
-                                if (documentUri != null && pageBoundaries.isNotEmpty()) {
-                                    stringResource(
-                                        R.string.viewer_bottom_bar_page_format,
-                                        pageForParagraph(
-                                            currentSpeakingIndex.intValue.coerceAtLeast(0),
-                                            pageBoundaries,
-                                        ),
-                                        pageBoundaries.size,
-                                    )
-                                } else if (documentUri != null) {
-                                    stringResource(R.string.study_tab_reading)
-                                } else {
-                                    documentName
-                                }
-                            StudyView.NOTES -> stringResource(R.string.study_tab_notes)
-                            StudyView.POMODORO -> stringResource(R.string.study_tab_pomodoro)
+                        onHome = {
+                            stopReading()
+                            onHome()
                         },
-                    onBack = {
-                        stopReading()
-                        if (currentView == StudyView.MENU) onBack() else selectedTab = STUDY_TAB_MENU
-                    },
-                    onHome = {
-                        stopReading()
-                        onHome()
-                    },
-                )
+                    )
+                } else {
+                    DocuSmartTopBanner(
+                        // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
+                        compact = currentView != StudyView.MENU,
+                        // En Lectura el título es "Lectura" (no "Modo Estudio"): pedido del usuario.
+                        screenTitle =
+                            if (currentView == StudyView.READING) {
+                                stringResource(R.string.study_tab_reading)
+                            } else {
+                                stringResource(R.string.study_title)
+                            },
+                        screenSubtitle =
+                            when (currentView) {
+                                StudyView.MENU -> stringResource(R.string.study_menu_subtitle)
+                                StudyView.READING -> documentName
+                                StudyView.NOTES -> stringResource(R.string.study_tab_notes)
+                                StudyView.POMODORO -> stringResource(R.string.study_tab_pomodoro)
+                            },
+                        onBack = {
+                            stopReading()
+                            if (currentView == StudyView.MENU) onBack() else selectedTab = STUDY_TAB_MENU
+                        },
+                        onHome = {
+                            stopReading()
+                            onHome()
+                        },
+                    )
+                }
             }
 
             when (selectedTab) {
@@ -808,9 +819,7 @@ fun StudyScreen(
                 0 ->
                     ReadingTab(
                         documentUri = documentUri,
-                        documentName = documentName,
                         isLoading = isLoadingDoc,
-                        highlightedCount = highlights.size,
                         isCurrentHighlighted = highlights.contains(currentSpeakingIndex.intValue),
                         currentSpeakingRange = speakingRange.value,
                         isSpeaking = isSpeaking.value,
@@ -832,7 +841,6 @@ fun StudyScreen(
                         currentPage = pageForParagraph(currentSpeakingIndex.intValue.coerceAtLeast(0), pageBoundaries),
                         totalPages = pageBoundaries.size,
                         currentSpeakingIndex = currentSpeakingIndex.intValue,
-                        selectedVoiceName = selectedVoice.value?.let { personaForVoice(it.name).name },
                         speedLabel = readingSpeedLabel(readingSpeed.floatValue),
                         onSpeedClick = {
                             val next = nextReadingSpeed(readingSpeed.floatValue)
@@ -1175,9 +1183,7 @@ private fun LoadingIndicator(
 @Composable
 internal fun ReadingTab(
     documentUri: Uri?,
-    documentName: String,
     isLoading: Boolean,
-    highlightedCount: Int,
     isCurrentHighlighted: Boolean,
     currentSpeakingIndex: Int,
     // Fase 4 (2026-09-22): rango exacto (en caracteres, sobre el párrafo que
@@ -1204,7 +1210,6 @@ internal fun ReadingTab(
     onDeleteDocument: (ReadingProgress) -> Unit,
     availableVoices: List<Voice> = emptyList(),
     onVoiceSelectorClick: () -> Unit = {},
-    selectedVoiceName: String? = null,
     speedLabel: String? = null,
     onSpeedClick: () -> Unit = {},
     onStepParagraph: ((delta: Int) -> Unit)? = null,
@@ -1250,15 +1255,10 @@ internal fun ReadingTab(
                 )
             else -> {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    ReadingDocumentCard(
-                        documentUri = documentUri,
-                        documentName = documentName,
-                        currentPage = currentPage,
-                        totalPages = totalPages,
-                        readingFinished = readingFinished,
-                        highlightedCount = highlightedCount,
-                        voiceName = selectedVoiceName,
-                    )
+                    // Pedido explícito del usuario 2026-09-22: la ficha del documento
+                    // (portada, avance, voz, resaltados) se mudó al banner azul de
+                    // arriba (`ReadingDocumentBanner` en StudyScreen) para dejarle más
+                    // alto al documento -- ya no vive acá como tarjeta aparte.
                     ReadingViewModeSelector(
                         mode = viewMode,
                         onModeChange = { viewMode = it },
@@ -1485,15 +1485,14 @@ private fun readingParagraphText(
     }
 }
 
-// Ficha del documento (fase 4, 2026-09-22, a partir de una maqueta que el
-// usuario compartió): portada real -- Coil ya sabe renderizar la primera
-// página de un PDF (PdfThumbnailFetcher, mismo mecanismo que Biblioteca/
-// Favoritos/Recientes) --, título, avance y los mismos chips que antes
-// vivían en una tira aparte. Sin autor ni tiempo restante: el PDF no
-// siempre trae autor en sus metadatos y el motor TTS no reporta duración --
-// mostrar una estimación inventada sería peor que no mostrar nada.
+// Banner de Lectura con la ficha del documento integrada (fase 4, 2026-09-22,
+// pedido explícito del usuario): antes la portada/avance/voz/resaltados vivían
+// en una tarjeta blanca aparte, debajo del banner -- ahora comparten el mismo
+// degradado, dejándole más alto al documento. El logo se mantiene, igual que en
+// el resto de los banners compactos; "Volver"/"Inicio" siguen debajo (mismo
+// `BannerNavRow` que usa `DocuSmartTopBanner`, para no duplicar esa lógica).
 @Composable
-private fun ReadingDocumentCard(
+private fun ReadingDocumentBanner(
     documentUri: Uri,
     documentName: String,
     currentPage: Int,
@@ -1501,98 +1500,114 @@ private fun ReadingDocumentCard(
     readingFinished: Boolean,
     highlightedCount: Int,
     voiceName: String?,
+    onBack: () -> Unit,
+    onHome: () -> Unit,
 ) {
-    val shape = MaterialTheme.shapes.large
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surface)
-                .accentBorder(shape = shape)
-                .padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
+    val gradient = rememberBannerGradient()
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
             modifier =
                 Modifier
-                    .width(56.dp)
-                    .height(78.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(brush = Brush.linearGradient(gradient))
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            // Portada real -- Coil ya sabe renderizar la primera página de un PDF
-            // (PdfThumbnailFetcher, mismo mecanismo que Biblioteca/Favoritos). Si
-            // falla (documento no PDF, sin permiso, etc.), queda el ícono de libro.
-            Icon(
-                imageVector = Icons.Rounded.MenuBook,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
-            AsyncImage(
-                model = documentUri,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = documentName,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (totalPages > 0) {
-                Text(
-                    text = stringResource(R.string.study_total_pages, totalPages),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .background(Color.White.copy(alpha = 0.18f), MaterialTheme.shapes.medium),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_docusmart_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(26.dp),
+                    )
+                }
+                Box(
+                    modifier =
+                        Modifier
+                            .width(40.dp)
+                            .height(52.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(Color.White.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    // Portada real -- Coil ya sabe renderizar la primera página de un PDF
+                    // (PdfThumbnailFetcher, mismo mecanismo que Biblioteca/Favoritos). Si
+                    // falla (documento no PDF, sin permiso, etc.), queda el ícono de libro.
+                    Icon(
+                        imageVector = Icons.Rounded.MenuBook,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    AsyncImage(
+                        model = documentUri,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = documentName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (totalPages > 0) {
+                        Text(
+                            text = stringResource(R.string.study_total_pages, totalPages),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.78f),
+                        )
+                    }
+                }
             }
+            Spacer(Modifier.height(10.dp))
             val fraction = listenedFraction(currentPage, totalPages, readingFinished)
             LinearProgressIndicator(
                 progress = { fraction },
                 modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)),
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.3f),
             )
-            Text(
-                text = stringResource(R.string.study_listened_percent, (fraction * 100).toInt()),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Spacer(Modifier.height(8.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
             ) {
-                ReadingInfoChip(stringResource(R.string.study_highlighted_count, highlightedCount))
+                ReadingBannerChip(stringResource(R.string.study_listened_percent, (fraction * 100).toInt()))
+                ReadingBannerChip(stringResource(R.string.study_highlighted_count, highlightedCount))
                 if (voiceName != null) {
-                    ReadingInfoChip(stringResource(R.string.study_voice_chip, voiceName))
+                    ReadingBannerChip(stringResource(R.string.study_voice_chip, voiceName))
                 }
             }
         }
+        BannerNavRow(onBack = onBack, onHome = onHome)
     }
 }
 
 @Composable
-private fun ReadingInfoChip(text: String) {
+private fun ReadingBannerChip(text: String) {
     Surface(
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.secondaryContainer,
+        color = Color.White.copy(alpha = 0.18f),
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            color = Color.White,
             maxLines = 1,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
         )
     }
 }

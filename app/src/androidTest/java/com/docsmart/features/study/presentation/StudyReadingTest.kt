@@ -84,7 +84,6 @@ class StudyReadingTest {
     ) {
         var uri by mutableStateOf(uri)
         var isLoading by mutableStateOf(false)
-        var highlightedCount by mutableIntStateOf(0)
         var isCurrentHighlighted by mutableStateOf(false)
         var isSpeaking by mutableStateOf(false)
         var ttsReady by mutableStateOf(true)
@@ -114,9 +113,7 @@ class StudyReadingTest {
         env.setContent {
             ReadingTab(
                 documentUri = state.uri,
-                documentName = "Documento.pdf",
                 isLoading = state.isLoading,
-                highlightedCount = state.highlightedCount,
                 isCurrentHighlighted = state.isCurrentHighlighted,
                 isSpeaking = state.isSpeaking,
                 ttsReady = state.ttsReady,
@@ -208,16 +205,12 @@ class StudyReadingTest {
         setReading(state)
         val mark = esString(R.string.study_mark_current_paragraph)
 
-        // Reposo: sin resaltados, se puede leer pero no marcar.
-        composeRule.onNodeWithText(esString(R.string.study_highlighted_count, 0)).assertExists()
+        // Reposo: se puede leer pero no marcar.
         composeRule.onNodeWithContentDescription(esString(R.string.study_read_all)).assertIsEnabled()
         composeRule.onAllNodesWithContentDescription(mark).assertCountEquals(1)
         composeRule.onNodeWithText(esString(R.string.study_choose_voice)).assertIsNotEnabled()
         composeRule.onNodeWithText(esString(R.string.qr_open_document)).performClick()
         assertEquals(1, openClicks)
-
-        update { state.highlightedCount = 3 }
-        composeRule.onNodeWithText(esString(R.string.study_highlighted_count, 3)).assertExists()
 
         update {
             state.extractingMore = true
