@@ -1012,6 +1012,8 @@
     <string name="study_previous_paragraph">Vorheriger Absatz</string>
     <string name="study_next_paragraph">Nächster Absatz</string>
     <string name="study_reading_speed">Lesegeschwindigkeit</string>
+    <string name="study_view_mode_pdf">PDF</string>
+    <string name="study_view_mode_text">Text</string>
     <string name="study_new_note">Neue Notiz</string>
     <string name="study_note_title_label">Titel der Notiz</string>
     <string name="study_note_title_placeholder">Z. B.: Schlüsselkonzepte aus Kapitel 3</string>

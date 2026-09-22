@@ -1019,6 +1019,8 @@
     <string name="study_previous_paragraph">Paragrafo precedente</string>
     <string name="study_next_paragraph">Paragrafo successivo</string>
     <string name="study_reading_speed">Velocità di lettura</string>
+    <string name="study_view_mode_pdf">PDF</string>
+    <string name="study_view_mode_text">Testo</string>
     <string name="study_new_note">Nuova nota</string>
     <string name="study_note_title_label">Titolo della nota</string>
     <string name="study_note_title_placeholder">Es: Concetti chiave del capitolo 3</string>

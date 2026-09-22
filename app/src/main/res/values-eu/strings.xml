@@ -1034,6 +1034,8 @@
     <string name="study_previous_paragraph">Aurreko paragrafoa</string>
     <string name="study_next_paragraph">Hurrengo paragrafoa</string>
     <string name="study_reading_speed">Irakurketa-abiadura</string>
+    <string name="study_view_mode_pdf">PDF</string>
+    <string name="study_view_mode_text">Testua</string>
     <string name="study_new_note">Ohar berria</string>
     <string name="study_note_title_label">Oharraren izenburua</string>
     <string name="study_note_title_placeholder">Adib.: 3. kapituluko funtsezko kontzeptuak</string>
