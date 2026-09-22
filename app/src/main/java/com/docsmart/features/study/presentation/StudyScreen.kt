@@ -1389,11 +1389,11 @@ private fun ReadingPlayerBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (onPreviousParagraph != null) {
-                IconButton(onClick = onPreviousParagraph, enabled = ttsReady, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onPreviousParagraph, modifier = Modifier.size(48.dp)) {
                     Icon(
                         Icons.Rounded.SkipPrevious,
                         contentDescription = stringResource(R.string.study_previous_paragraph),
-                        tint = Color.White.copy(alpha = if (ttsReady) 1f else 0.45f),
+                        tint = Color.White,
                     )
                 }
             }
@@ -1425,11 +1425,11 @@ private fun ReadingPlayerBar(
                 )
             }
             if (onNextParagraph != null) {
-                IconButton(onClick = onNextParagraph, enabled = ttsReady, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onNextParagraph, modifier = Modifier.size(48.dp)) {
                     Icon(
                         Icons.Rounded.SkipNext,
                         contentDescription = stringResource(R.string.study_next_paragraph),
-                        tint = Color.White.copy(alpha = if (ttsReady) 1f else 0.45f),
+                        tint = Color.White,
                     )
                 }
             }

@@ -265,10 +265,10 @@ class StudyReadingTest {
         // En pausa no se toca "Leer todo".
         assertEquals(0, speakClicks)
 
-        // Sin motor TTS los saltos se deshabilitan.
+        // Sin motor TTS los saltos siguen funcionando (solo mueven el punto de retoma).
         update { state.ttsReady = false }
-        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).assertIsNotEnabled()
-        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).assertIsEnabled().performClick()
+        assertEquals(listOf(-1, 1, 1), stepDeltas)
     }
 
     @Test
@@ -374,6 +374,10 @@ class StudyReadingTest {
         env.registry.respond(Activity.RESULT_OK, Intent().setData(Uri.fromFile(first)))
         composeRule.waitForTextExists(esString(R.string.study_read_all), timeoutMillis = 30_000)
         waitForExtractionDone()
+        // Velocidad y saltos de párrafo con un PDF real: cambian sin necesitar el motor de voz.
+        composeRule.onNodeWithContentDescription(esString(R.string.study_reading_speed)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_next_paragraph)).performClick()
+        composeRule.onNodeWithContentDescription(esString(R.string.study_previous_paragraph)).performClick()
         exerciseSpeakButtonIfPossible()
 
         // Elegir otro documento con el primero ya abierto (cancela la carga anterior).
