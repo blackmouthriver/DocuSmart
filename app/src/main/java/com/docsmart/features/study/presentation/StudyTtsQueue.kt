@@ -46,38 +46,10 @@ internal fun ttsQueueStepAfterUtterance(
     return TtsQueueStep(toEnqueue, newQueuedUpTo, outcome)
 }
 
-// Android limita cada llamada a TextToSpeech.speak() a
-// TextToSpeech.getMaxSpeechInputLength() (4000 caracteres). Un PDF con
-// interlineado uniforme (sin huecos entre líneas) se agrupa en un único
-// "párrafo" de toda la página, que puede pasar ese límite: speak() devuelve
-// ERROR y ese texto se omitía en silencio de "Leer todo". Se deja margen bajo
-// el límite real.
-internal const val TTS_MAX_PARAGRAPH_CHARS = 3500
-
-internal fun splitForSpeech(
-    text: String,
-    maxLength: Int = TTS_MAX_PARAGRAPH_CHARS,
-): List<String> {
-    if (text.length <= maxLength) return listOf(text)
-    val parts = mutableListOf<String>()
-    var remaining = text
-    while (remaining.length > maxLength) {
-        val window = remaining.substring(0, maxLength)
-        val sentenceEnd = SENTENCE_BREAKS.maxOf { window.lastIndexOf(it) }
-        val cutAt =
-            when {
-                // Corte tras el signo de puntuación, si cae en la segunda mitad.
-                sentenceEnd > maxLength / 2 -> sentenceEnd + 1
-                else -> window.lastIndexOf(' ').takeIf { it > 0 } ?: maxLength
-            }
-        parts.add(remaining.substring(0, cutAt).trim())
-        remaining = remaining.substring(cutAt).trim()
-    }
-    if (remaining.isNotEmpty()) parts.add(remaining)
-    return parts.filter { it.isNotEmpty() }
-}
-
-private val SENTENCE_BREAKS = listOf(". ", "? ", "! ", "; ")
+// `TTS_MAX_PARAGRAPH_CHARS` y `splitForSpeech` viven en
+// `domain.StudyTextSplitter` (movidos el 2026-09-22: el OCR de páginas
+// escaneadas, en `domain`, también los necesita, y `domain` no puede
+// depender de `presentation`).
 
 // Fase 2 de Lectura (2026-09-21): velocidad y salto de párrafo.
 // El factor 1.0 equivale a la velocidad base que ya usaba la app (0.85 del motor).

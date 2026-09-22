@@ -107,11 +107,14 @@ import com.docsmart.features.study.domain.StudySummaryExporter
 import com.docsmart.features.study.domain.StudyVoicePreference
 import com.docsmart.features.study.domain.TextSummarizer
 import com.docsmart.features.study.domain.VoicePersona
+import com.docsmart.features.study.domain.detectIsFeminineVoice
+import com.docsmart.features.study.domain.extractTextByOcr
 import com.docsmart.features.study.domain.millisToHoursAndMinutes
 import com.docsmart.features.study.domain.pageForParagraph
 import com.docsmart.features.study.domain.personaForVoice
 import com.docsmart.features.study.domain.personasForVoices
 import com.docsmart.features.study.domain.pomodoroCountsByWeekday
+import com.docsmart.features.study.domain.splitForSpeech
 import com.docsmart.features.study.presentation.components.NoteLinkDocumentDialog
 import com.itextpdf.kernel.geom.Vector
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -241,12 +244,20 @@ fun StudyScreen(
     // requieren red (`isNetworkConnectionRequired`) -- se queda 100% local
     // y gratis para todos, sin depender de ningún servicio en la nube.
     val availableVoices = remember { mutableStateOf<List<Voice>>(emptyList()) }
+    // Pedido explícito del usuario 2026-09-22 ("las voces femeninas tienen
+    // nombres y personajes masculinos... discrimina"): género real de cada
+    // voz, detectado por tono en segundo plano (ver LaunchedEffect más abajo
+    // y VoiceGenderProbe.kt) -- vacío hasta que la detección corre, o si
+    // falla para alguna voz en particular.
+    val voiceGenders = remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     // Pedido explícito del usuario 2026-09-22: un personaje distinto por voz
-    // instalada -- `personasForVoices` (VoicePersona.kt) asigna posiciones sin
-    // colisión mientras no se superen los personajes curados, a diferencia de
-    // `personaForVoice` sola (hash % 10, repetía nombre con más de 10 voces).
+    // instalada, y del género correcto -- `personasForVoices` (VoicePersona.kt)
+    // asigna posiciones sin colisión dentro de cada género mientras no se
+    // superen los 5 personajes curados por género.
     val voicePersonas =
-        remember(availableVoices.value) { personasForVoices(availableVoices.value.map { it.name }) }
+        remember(availableVoices.value, voiceGenders.value) {
+            personasForVoices(availableVoices.value.map { it.name }, voiceGenders.value)
+        }
     val selectedVoice = remember { mutableStateOf<Voice?>(null) }
     var showVoicePicker by remember { mutableStateOf(false) }
     // HU-64 (feedback real de testers de la prueba cerrada, 2026-09-16):
@@ -254,6 +265,40 @@ fun StudyScreen(
     // ninguna) -- distinto de `selectedVoice`, que es la voz que se usa
     // para la lectura real. Escuchar una muestra NUNCA cambia la lectura.
     var previewingVoiceName by remember { mutableStateOf<String?>(null) }
+    // Pedido explícito del usuario 2026-09-22: detecta en segundo plano el
+    // género real de cada voz instalada (por tono, ver VoiceGenderProbe.kt)
+    // para que el personaje mostrado (nombre + avatar) coincida con cómo
+    // suena -- antes se asignaba sin importar el género real de la voz. Corre
+    // una sola vez por voz (se cachea en StudyVoicePreference) y se detiene
+    // por completo si el usuario está leyendo o escuchando una muestra en
+    // ese momento, para no pisarle la voz activa del motor TTS -- las que
+    // queden sin detectar siguen mostrando un personaje (sin discriminar por
+    // género) hasta la próxima vez que se abra la app.
+    LaunchedEffect(availableVoices.value, ttsReady.value) {
+        if (!ttsReady.value) return@LaunchedEffect
+        val names = availableVoices.value.map { it.name }
+        if (names.isEmpty()) return@LaunchedEffect
+        voiceGenders.value = StudyVoicePreference.loadGenders(context, names)
+        val pending = names.filterNot { voiceGenders.value.containsKey(it) }
+        if (pending.isEmpty()) return@LaunchedEffect
+        val tts = ttsRef.value ?: return@LaunchedEffect
+        val voicesByName = availableVoices.value.associateBy { it.name }
+        val pendingVoices = pending.mapNotNull { voicesByName[it] }
+        val workFile = File(context.cacheDir, "study_gender_probe.wav")
+        for (voice in pendingVoices) {
+            if (isSpeaking.value || previewingVoiceName != null) break
+            val isFeminine = detectIsFeminineVoice(tts, voice, workFile)
+            if (isFeminine != null) {
+                StudyVoicePreference.saveGender(context, voice.name, isFeminine)
+                voiceGenders.value = voiceGenders.value + (voice.name to isFeminine)
+            }
+        }
+        // Cada sonda cambia `tts.voice` (ver `detectIsFeminineVoice`) -- se
+        // restaura la voz elegida por el usuario, porque "Leer todo" no la
+        // vuelve a fijar antes de hablar, confía en que quedó en la última
+        // elegida.
+        selectedVoice.value?.let { tts.voice = it }
+    }
     // Ver comentario de `extractionComplete` -- si "Leer todo" alcanza el
     // último párrafo ya extraído mientras el resto del PDF sigue procesándose
     // en segundo plano, esto queda en true hasta que aparezcan más párrafos
@@ -1266,6 +1311,36 @@ internal fun ReadingTab(
                     onDeleteDocument = onDeleteDocument,
                 )
             else -> {
+                // Pedido explícito del usuario 2026-09-22: antes las páginas del PDF
+                // vivían DENTRO de `StudyPdfViewer`, que el `when (viewMode)` de más
+                // abajo saca de composición al pasar a Texto -- volver a PDF lo
+                // recreaba desde cero y releía el documento entero del disco. Ahora
+                // viven acá, un nivel arriba del `when`, así que sobreviven el
+                // cambio de modo y solo se recargan si cambia el documento.
+                val pdfContext = LocalContext.current
+                var pdfPages by remember(documentUri) { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
+                var pdfLoadError by remember(documentUri) { mutableStateOf(false) }
+                LaunchedEffect(documentUri) {
+                    pdfPages =
+                        withContext(Dispatchers.IO) {
+                            try {
+                                renderPdfPagesToBitmaps(documentUri, pdfContext, cachePrefix = "study")
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Timber.e("Estudio: error renderizando PDF (${e.javaClass.simpleName})")
+                                pdfLoadError = true
+                                emptyList()
+                            }
+                        }
+                }
+                // H6 (ronda 13, 2026-09-18): recicla los bitmaps de ESTE documento al
+                // cambiar de documento o salir de Lectura -- ya no al cambiar de modo.
+                DisposableEffect(documentUri) {
+                    onDispose {
+                        pdfPages.forEach { it.bitmap.recycle() }
+                    }
+                }
                 Column(modifier = Modifier.fillMaxSize()) {
                     // Pedido explícito del usuario 2026-09-22: la ficha del documento
                     // (portada, avance, voz, resaltados) se mudó al banner azul de
@@ -1285,7 +1360,8 @@ internal fun ReadingTab(
                     when (viewMode) {
                         ReadingViewMode.PDF ->
                             StudyPdfViewer(
-                                uri = documentUri,
+                                pages = pdfPages,
+                                loadError = pdfLoadError,
                                 currentPage = currentPage,
                                 modifier = Modifier.fillMaxWidth().weight(1f),
                             )
@@ -2056,13 +2132,16 @@ private fun ReadingHistoryCard(
 // sin la lógica de resaltado de búsqueda -- Estudio no la necesita.
 @Composable
 private fun StudyPdfViewer(
-    uri: Uri,
+    // Pedido explícito del usuario 2026-09-22: antes esta función cargaba y
+    // dueñaba `pages` ella misma (keyed por `uri`) -- como el `when (viewMode)`
+    // de ReadingTab la saca de composición al pasar a Texto, volver a PDF la
+    // recreaba desde cero y releía el PDF entero. Ahora `pages`/`loadError` los
+    // dueña ReadingTab (que sobrevive el cambio de modo) y se los pasa acá.
+    pages: List<PdfPageBitmap>,
+    loadError: Boolean,
     currentPage: Int,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    var pages by remember(uri) { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
-    var loadError by remember(uri) { mutableStateOf(false) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -2077,40 +2156,6 @@ private fun StudyPdfViewer(
     LaunchedEffect(currentPage, pages) {
         val index = pdfViewerPageIndex(currentPage, pages.size)
         if (pages.isNotEmpty()) listState.animateScrollToItem(index)
-    }
-
-    LaunchedEffect(uri) {
-        pages =
-            withContext(Dispatchers.IO) {
-                try {
-                    renderPdfPagesToBitmaps(uri, context, cachePrefix = "study")
-                } catch (e: CancellationException) {
-                    // Hallazgo H5 de la auditoría (ronda 13, 2026-09-18): si `uri`
-                    // cambia mientras el render está en curso, la cancelación no
-                    // debe quedar atrapada por el catch genérico de abajo --
-                    // mismo mecanismo ya aplicado en otros puntos de este mismo
-                    // archivo (ver líneas ~2764, ~3503, ~3576).
-                    throw e
-                } catch (e: Exception) {
-                    Timber.e("Estudio: error renderizando PDF (${e.javaClass.simpleName})")
-                    loadError = true
-                    emptyList()
-                }
-            }
-    }
-
-    // Hallazgo H6 de la auditoría (ronda 13, 2026-09-18): mismo fix ya
-    // aplicado en ViewerScreen.kt (R11, riesgo real de OOM) -- cada bitmap
-    // ARGB_8888 de página es 2x el tamaño de la página, hasta 240-400MB
-    // nativos residentes para un documento de 30-50 páginas si nunca se
-    // reciclan. `remember(uri)` arriba ya fuerza una lista nueva de `pages`
-    // por documento, así que este DisposableEffect(uri) libera la lista
-    // ANTERIOR de forma determinista, tanto al cambiar de documento como al
-    // salir de Estudio.
-    DisposableEffect(uri) {
-        onDispose {
-            pages.forEach { it.bitmap.recycle() }
-        }
     }
 
     when {
@@ -4450,8 +4495,19 @@ private suspend fun extractPdfText(
             extractPdfPages(pdfDoc, paragraphs, pageBoundaries, onPageExtracted)
         }
 
+        // Pedido explícito del usuario 2026-09-22: un PDF escaneado no tiene
+        // capa de texto real -- `extractPdfPages` no encuentra nada -- así que
+        // antes de darlo por perdido se intenta con OCR (ML Kit on-device,
+        // `extractTextByOcr`), el mismo motor que ya usa "Hacer buscable" en
+        // Herramientas PDF, pero sin escribir ningún PDF nuevo.
         if (paragraphs.isEmpty()) {
-            Triple(listOf(messages.pdfNoText), emptyList(), true)
+            Timber.d("Estudio: el PDF no tiene texto real, se intenta OCR")
+            val (ocrParagraphs, ocrPageBoundaries) = extractTextByOcr(cacheFile, onPageExtracted)
+            if (ocrParagraphs.isNotEmpty()) {
+                Triple(ocrParagraphs, ocrPageBoundaries, false)
+            } else {
+                Triple(listOf(messages.pdfNoText), emptyList(), true)
+            }
         } else {
             Triple(paragraphs, pageBoundaries, false)
         }

@@ -125,9 +125,40 @@ fun personaForVoice(voiceTechnicalName: String): VoicePersona {
 // lista de personajes -- sin colisiones mientras la cantidad de voces no
 // supere la de personajes; si la supera, recién ahí se repite (imposible
 // evitarlo con solo 10 personajes curados, pero ya no antes de eso).
-fun personasForVoices(voiceTechnicalNames: List<String>): Map<String, VoicePersona> =
-    voiceTechnicalNames
-        .distinct()
-        .sorted()
-        .mapIndexed { index, name -> name to VOICE_PERSONAS[index % VOICE_PERSONAS.size] }
-        .toMap()
+// Pedido explícito del usuario 2026-09-22 ("las voces femeninas tienen
+// nombres y personajes masculinos... discrimina para que voces femeninas
+// tengan personajes femeninos y voces masculinas personajes masculinos"):
+// [isFeminineByVoice] es el resultado de `detectIsFeminineVoice`
+// (VoiceGenderProbe.kt, por tono real de una muestra sintetizada) -- una voz
+// detectada como femenina SOLO puede caer en uno de los 5 personajes
+// femeninos curados, una masculina solo en uno de los 5 masculinos. Una voz
+// todavía sin detectar (el análisis corre en segundo plano y tarda unos
+// segundos por voz) cae en cualquier personaje libre, igual que antes de
+// esta discriminación por género -- nunca deja una voz sin personaje
+// mientras se completa la detección.
+fun personasForVoices(
+    voiceTechnicalNames: List<String>,
+    isFeminineByVoice: Map<String, Boolean> = emptyMap(),
+): Map<String, VoicePersona> {
+    val names = voiceTechnicalNames.distinct().sorted()
+    val femaleNames = names.filter { isFeminineByVoice[it] == true }
+    val maleNames = names.filter { isFeminineByVoice[it] == false }
+    val unknownNames = names - femaleNames.toSet() - maleNames.toSet()
+
+    val femalePersonas = VOICE_PERSONAS.filter { it.isFeminine }
+    val malePersonas = VOICE_PERSONAS.filter { !it.isFeminine }
+    val result = mutableMapOf<String, VoicePersona>()
+    femaleNames.forEachIndexed { index, name -> result[name] = femalePersonas[index % femalePersonas.size] }
+    maleNames.forEachIndexed { index, name -> result[name] = malePersonas[index % malePersonas.size] }
+
+    // Sin género conocido: cualquier personaje libre primero (para no repetir
+    // uno ya usado por una voz de género conocido mientras queden personajes
+    // sin asignar), y solo si se agotan, se repite empezando por el primero
+    // -- mismo criterio de "no repetir hasta agotar" que ya usaba esta
+    // función antes de discriminar por género.
+    val used = result.values.toSet()
+    val free = VOICE_PERSONAS.filterNot { it in used }
+    val fallbackOrder = (free + VOICE_PERSONAS).distinct()
+    unknownNames.forEachIndexed { index, name -> result[name] = fallbackOrder[index % fallbackOrder.size] }
+    return result
+}

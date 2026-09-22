@@ -84,4 +84,65 @@ class VoicePersonaTest {
     fun `personasForVoices con una lista vacia no lanza excepcion`() {
         assertEquals(0, personasForVoices(emptyList()).size)
     }
+
+    // Pedido explícito del usuario 2026-09-22 ("las voces femeninas tienen
+    // nombres y personajes masculinos... discrimina"): con el género real
+    // conocido, cada voz solo puede caer en un personaje de SU género.
+    @Test
+    fun `una voz femenina siempre recibe un personaje femenino`() {
+        val names = listOf("voz-a", "voz-b", "voz-c")
+        val genders = mapOf("voz-a" to true, "voz-b" to true, "voz-c" to true)
+
+        val personas = personasForVoices(names, genders)
+
+        personas.values.forEach { assertTrue(it.isFeminine) }
+    }
+
+    @Test
+    fun `una voz masculina siempre recibe un personaje masculino`() {
+        val names = listOf("voz-a", "voz-b", "voz-c")
+        val genders = mapOf("voz-a" to false, "voz-b" to false, "voz-c" to false)
+
+        val personas = personasForVoices(names, genders)
+
+        personas.values.forEach { assertTrue(!it.isFeminine) }
+    }
+
+    @Test
+    fun `voces mezcladas no cruzan de genero ni entre si`() {
+        val names = listOf("f1", "f2", "m1", "m2", "m3")
+        val genders = mapOf("f1" to true, "f2" to true, "m1" to false, "m2" to false, "m3" to false)
+
+        val personas = personasForVoices(names, genders)
+
+        assertTrue(personas.getValue("f1").isFeminine)
+        assertTrue(personas.getValue("f2").isFeminine)
+        assertTrue(!personas.getValue("m1").isFeminine)
+        assertTrue(!personas.getValue("m2").isFeminine)
+        assertTrue(!personas.getValue("m3").isFeminine)
+        // Con solo 5 personajes por género (10 curados / 2), ninguno se
+        // repite todavía dentro de cada grupo.
+        assertEquals(2, setOf(personas.getValue("f1"), personas.getValue("f2")).size)
+        assertEquals(3, setOf(personas.getValue("m1"), personas.getValue("m2"), personas.getValue("m3")).size)
+    }
+
+    @Test
+    fun `una voz sin genero detectado todavia recibe igual un personaje`() {
+        val names = listOf("desconocida")
+
+        val personas = personasForVoices(names, isFeminineByVoice = emptyMap())
+
+        assertEquals(1, personas.size)
+        assertTrue(personas.getValue("desconocida").name.isNotBlank())
+    }
+
+    @Test
+    fun `sin informacion de genero se comporta igual que antes (por posicion)`() {
+        val names = listOf("es-es-x-eef-local", "es-us-x-sfb-local", "en-us-x-tpf-local")
+
+        val withoutGenders = personasForVoices(names)
+        val withEmptyGenders = personasForVoices(names, emptyMap())
+
+        assertEquals(withoutGenders, withEmptyGenders)
+    }
 }
