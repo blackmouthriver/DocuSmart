@@ -5,5 +5,9 @@
     <!-- Solo debug (pruebas instrumentadas): la suite corre en un solo proceso y
          acumula bitmaps de ~560 pruebas; con el heap de 192 MB del emulador de CI
          terminaba en OutOfMemoryError. Release no se ve afectado. -->
-    <application android:largeHeap="true" tools:replace="android:largeHeap" />
+    <application
+        android:allowBackup="false"
+        android:largeHeap="true"
+        android:usesCleartextTraffic="false"
+        tools:replace="android:largeHeap" />
 </manifest>
