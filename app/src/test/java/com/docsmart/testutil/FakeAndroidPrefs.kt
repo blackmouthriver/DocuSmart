@@ -72,6 +72,8 @@ fun fakeContextWithPrefs(
         (store[getBoolKey.captured] as? Boolean) ?: getBoolDefault.captured
     }
     every { prefs.edit() } returns editor
+    val containsKey = slot<String>()
+    every { prefs.contains(capture(containsKey)) } answers { store.containsKey(containsKey.captured) }
 
     val packageInfo = PackageInfo().apply { firstInstallTime = firstInstallTimeMillis }
     val packageManager = mockk<PackageManager>()

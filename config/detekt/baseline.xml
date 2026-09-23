@@ -203,6 +203,8 @@
     <ID>TooGenericExceptionCaught:SignPdfScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SignPdfUseCase.kt$SignPdfUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SplitPdfUseCase.kt$SplitPdfUseCase$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:StudyOcrTextExtractor.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:VoiceGenderProbe.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:StudyScreen.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TrashRepository.kt$TrashRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:TrashViewModel.kt$TrashViewModel$e: Exception</ID>
