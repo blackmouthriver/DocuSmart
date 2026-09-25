@@ -179,14 +179,24 @@ private fun MouthblackLockup(
 }
 
 @Composable
-fun SplashMouthBlackScreen(onFinished: () -> Unit) {
+fun SplashMouthBlackScreen(
+    onFinished: () -> Unit,
+    // Cambio mínimo para testeabilidad (ronda 23): sin esto, una prueba
+    // instrumentada no puede forzar la rama animada -- depende de
+    // Settings.Global.ANIMATOR_DURATION_SCALE real del dispositivo/emulador
+    // (en el emulador de CI viene en 0, así que esa rama nunca se ejerce ahí).
+    // null (valor por defecto) conserva el comportamiento real de siempre;
+    // DocuSmartNavGraph sigue llamando solo con onFinished, sin cambios ahí.
+    reduceMotionOverride: Boolean? = null,
+) {
     val context = LocalContext.current
-    val reduceMotion =
+    val systemReduceMotion =
         remember {
             Settings.Global.getFloat(
                 context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f,
             ) == 0f
         }
+    val reduceMotion = reduceMotionOverride ?: systemReduceMotion
 
     val scale = remember { Animatable(if (reduceMotion) 1f else 0.35f) }
     val alpha = remember { Animatable(if (reduceMotion) 1f else 0f) }

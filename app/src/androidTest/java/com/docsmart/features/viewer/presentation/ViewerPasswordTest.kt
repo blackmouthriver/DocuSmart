@@ -76,6 +76,24 @@ class ViewerPasswordTest {
         composeRule.waitForViewerNode(hasContentDescription(vs(R.string.password_show)))
     }
 
+    // Gap real (ronda 23): el unico test que ejercitaba `passwordError` en
+    // pantalla estaba completo (@Ignore) porque su SEGUNDA mitad (desbloqueo
+    // con la contraseña correcta + render real de paginas) es inestable en el
+    // emulador de CI. Aislado acá solo el rechazo de la contraseña incorrecta
+    // -- no dispara ningun render de PDF, solo el chequeo rapido de iText
+    // (isPasswordAccepted) -- para no perder cobertura activa de ese mensaje.
+    @Test
+    fun pdfProtegido_contrasenaIncorrectaMuestraElMensajeDeReintentoYSigueBloqueado() {
+        openProtected(files.pdf(password = "clave123"))
+
+        composeRule.onNode(hasSetTextAction()).performTextInput("mala")
+        openButton().performClick()
+
+        composeRule.waitForText(vs(R.string.pdf_pw_wrong_password_retry))
+        assertEquals(true, harness.viewModel.uiState.value.requiresPassword)
+        assertEquals(0, backCalls)
+    }
+
     @Ignore("inestable en el emulador de CI 320x640 (temporización); pendiente, ver backlog v17")
     @Test
     fun pdfProtegido_rechazaLaContrasenaIncorrectaYAbreConLaCorrecta() {

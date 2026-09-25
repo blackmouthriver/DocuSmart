@@ -363,4 +363,184 @@ class NoteRepositoryTest {
             assertEquals("documento-123", result.note.documentId)
             assertEquals(1, result.images.size, "las imágenes ya adjuntas no deben desaparecer al vincular")
         }
+
+    // ── createNote() -- recordatorio (backlog UX #52) ─────────────────────────
+
+    @Test
+    fun `createNote con recordatorio programa la alarma con el id ya generado`() =
+        runTest {
+            repository.createNote("Repasar", "texto", reminderAt = 5_000L)
+
+            val note =
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .first()
+                    .note
+            verify(exactly = 1) { reminderScheduler.schedule(note.id, "Repasar", 5_000L) }
+        }
+
+    @Test
+    fun `createNote sin recordatorio no programa ninguna alarma`() =
+        runTest {
+            repository.createNote("Sin repaso", "texto")
+
+            verify(exactly = 0) { reminderScheduler.schedule(any(), any(), any()) }
+        }
+
+    // Hallazgo real (auditoría de la capa de persistencia): una imagen que falla
+    // al copiar (proveedor externo caído, formato raro) no debe frenar la
+    // creación de la nota ni de las demás imágenes -- se salta esa sola.
+    @Test
+    fun `createNote con una imagen que falla al copiar guarda la nota y el resto de las imagenes`() =
+        runTest {
+            val goodUri = stubImageUri(byteArrayOf(9))
+            val badUri = mockk<Uri>()
+            every { resolver.openInputStream(badUri) } throws java.io.IOException("proveedor caido")
+
+            repository.createNote("Con una imagen rota", "texto", imageUris = listOf(badUri, goodUri))
+
+            val saved =
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .first()
+            assertEquals(1, saved.images.size, "solo la imagen que sí pudo copiarse debe quedar guardada")
+            assertTrue(File(saved.images.single().filePath).exists())
+            // Sin huérfanos: el .jpg de la imagen fallida no debe quedar en disco.
+            val noteImagesDir = File(filesDir, "note_images")
+            assertEquals(1, noteImagesDir.listFiles()?.size ?: 0)
+        }
+
+    // ── deleteNote() / deleteAll() -- ronda 13, Media (mismo lock que update/link) ──
+
+    @Test
+    fun `deleteNote borra la fila, sus imagenes en disco y cancela el recordatorio`() =
+        runTest {
+            val uri = stubImageUri(byteArrayOf(1))
+            repository.createNote("A borrar", "texto", imageUris = listOf(uri), reminderAt = 10_000L)
+            val saved =
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .first()
+            val imagePath = saved.images.single().filePath
+            assertTrue(File(imagePath).exists())
+
+            repository.deleteNote(saved)
+
+            assertTrue(
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .isEmpty(),
+            )
+            assertFalse(File(imagePath).exists(), "el archivo de imagen debe borrarse del disco")
+            verify(exactly = 1) { reminderScheduler.cancel(saved.note.id) }
+        }
+
+    @Test
+    fun `deleteNote sin recordatorio no llama a cancelar ninguna alarma`() =
+        runTest {
+            repository.createNote("Sin recordatorio", "texto")
+            val saved =
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .first()
+
+            repository.deleteNote(saved)
+
+            verify(exactly = 0) { reminderScheduler.cancel(any()) }
+        }
+
+    @Test
+    fun `deleteAll borra todas las notas, sus imagenes y cancela solo los recordatorios pendientes`() =
+        runTest {
+            val uri1 = stubImageUri(byteArrayOf(1))
+            repository.createNote("Con recordatorio", "texto 1", imageUris = listOf(uri1), reminderAt = 1_000L)
+            repository.createNote("Sin recordatorio", "texto 2")
+            val all =
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+            val withReminder = all.first { it.note.title == "Con recordatorio" }
+            val withoutReminder = all.first { it.note.title == "Sin recordatorio" }
+            val imagePath = withReminder.images.single().filePath
+
+            repository.deleteAll(all)
+
+            assertTrue(
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .isEmpty(),
+            )
+            assertFalse(File(imagePath).exists())
+            verify(exactly = 1) { reminderScheduler.cancel(withReminder.note.id) }
+            verify(exactly = 0) { reminderScheduler.cancel(withoutReminder.note.id) }
+        }
+
+    // ── migrateLegacyNotesIfNeeded() -- parseLegacyDate() fallback ────────────
+
+    @Test
+    fun `una fecha legada con formato invalido y un id numerico usa el id como fecha`() =
+        runTest {
+            val array = JSONArray()
+            array.put(
+                JSONObject().apply {
+                    put("id", "123456789")
+                    put("title", "Fecha rota")
+                    put("text", "contenido")
+                    put("date", "no-es-una-fecha-valida")
+                },
+            )
+            prefsStore["notes_list"] = array.toString()
+
+            repository.migrateLegacyNotesIfNeeded()
+
+            val migrated =
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .single()
+                    .note
+            assertEquals(123456789L, migrated.createdAt)
+        }
+
+    @Test
+    fun `una fecha legada invalida y un id no numerico caen a la hora actual`() =
+        runTest {
+            val before = System.currentTimeMillis()
+            val array = JSONArray()
+            array.put(
+                JSONObject().apply {
+                    put("id", "id-no-numerico")
+                    put("title", "Fecha y id rotos")
+                    put("text", "contenido")
+                    put("date", "tampoco-es-una-fecha")
+                },
+            )
+            prefsStore["notes_list"] = array.toString()
+
+            repository.migrateLegacyNotesIfNeeded()
+
+            val migrated =
+                db
+                    .noteDao()
+                    .observeAll()
+                    .first()
+                    .single()
+                    .note
+            val after = System.currentTimeMillis()
+            assertTrue(migrated.createdAt in before..after)
+        }
 }

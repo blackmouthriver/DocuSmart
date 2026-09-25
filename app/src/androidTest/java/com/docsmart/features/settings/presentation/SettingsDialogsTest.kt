@@ -1,7 +1,18 @@
 package com.docsmart.features.settings.presentation
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -17,6 +28,8 @@ import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.security.SecurityManager
 import com.docsmart.core.ui.AppLanguage
 import com.docsmart.core.ui.LanguageManager
+import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.core.ui.test.testViewportDensity
 import com.docsmart.core.ui.theme.ThemeManager
 import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
@@ -33,6 +46,7 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -46,8 +60,14 @@ import java.util.Locale
  * carpeta vinculada, Privacidad, Ayuda, Acerca de, tutorial, interruptores y
  * el manejo de fallo de "Restablecer configuración").
  *
- * No se tocan las filas que lanzan intents reales (Compartir, Valorar,
- * Gestionar permisos, Contactar soporte, vincular carpeta sin vincular).
+ * Ronda 23: se suman Compartir/Valorar/Gestionar permisos/Contactar soporte
+ * (shareApp/openPlayStore/openAppSettings/sendSupportEmail, 0% de cobertura)
+ * usando `ActionRecordingContext`, que intercepta `startActivity()` -- nunca
+ * se abre un chooser/Settings/navegador/app de correo real (regla 5). Sigue
+ * sin tocarse "vincular carpeta" (SIN vincular): requiere simular un
+ * resultado de `ActivityResultRegistry` para `OpenDocumentTree`, patrón no
+ * usado aún en el proyecto -- se dejó fuera por riesgo/beneficio dado que no
+ * se puede compilar ni correr acá para validarlo (ver entrega de ronda 23).
  */
 class SettingsDialogsTest {
     @get:Rule
@@ -125,6 +145,48 @@ class SettingsDialogsTest {
         bytes: Int,
     ) {
         File(workDir, folder).apply { mkdirs() }.let { File(it, name).writeBytes(ByteArray(bytes)) }
+    }
+
+    // Ronda 23: shareApp()/openPlayStore()/sendSupportEmail()/openAppSettings() nunca se
+    // ejercían (0% de cobertura) porque lanzan Intents reales -- mismo patrón ya usado en
+    // LibraryScreenExtrasTest (RecordingContext/NoAppContext) para el atajo de Descargas,
+    // unificado acá en una sola clase configurable por Intent: intercepta startActivity()
+    // así que NUNCA se abre un chooser/Settings/navegador/app de correo real (regla 5).
+    private class ActionRecordingContext(
+        base: Context,
+        private val shouldThrow: (Intent) -> Boolean = { false },
+    ) : ContextWrapper(base) {
+        val startedIntents = mutableListOf<Intent>()
+        var attempts = 0
+
+        override fun startActivity(intent: Intent) {
+            attempts++
+            if (shouldThrow(intent)) throw ActivityNotFoundException("simulado")
+            startedIntents += intent
+        }
+    }
+
+    // Contexto ya en español, sin envolver -- para construir un ActionRecordingContext
+    // ANTES de componer (mismo orden que RecordingContext(strings)/NoAppContext(strings) de
+    // LibraryScreenExtrasTest, evita depender de un `remember` para capturar la instancia).
+    private fun localizedTarget(): Context = forceLocale(InstrumentationRegistry.getInstrumentation().targetContext, "es-ES")
+
+    // Variante de `show()` que reemplaza el Context real por un ActionRecordingContext ya
+    // construido -- no usa `setContentEsScaled()` (esa no permite inyectar un Context propio).
+    private fun showWithActionContext(recorder: ActionRecordingContext) {
+        val viewModel = buildViewModel()
+        composeRule.setContent {
+            CompositionLocalProvider(
+                LocalContext provides recorder,
+                LocalResources provides recorder.resources,
+                LocalDensity provides testViewportDensity(),
+                LocalActivityResultRegistryOwner provides composeRule.activity,
+                LocalOnBackPressedDispatcherOwner provides composeRule.activity,
+            ) {
+                SettingsScreen(themeManager = themeManager, languageManager = languageManager, viewModel = viewModel)
+            }
+        }
+        composeRule.waitForText(esText(R.string.settings_title))
     }
 
     @Test
@@ -318,5 +380,129 @@ class SettingsDialogsTest {
         composeRule.waitForIdle()
 
         verify(exactly = 0) { languageManager.setLanguage(any()) }
+    }
+
+    // ── Ronda 23: Privacidad → "Gestionar permisos" (openAppSettings) ──────────────────────
+    @Test
+    fun privacidad_gestionarPermisos_conAppDisponible_lanzaIntentDeAjustesDeLaApp() {
+        val recorder = ActionRecordingContext(localizedTarget())
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_privacy_item))
+
+        composeRule.onNodeWithText(esText(R.string.settings_privacy_manage_permissions)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, recorder.startedIntents.size)
+        assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, recorder.startedIntents[0].action)
+    }
+
+    @Test
+    fun privacidad_gestionarPermisos_sinAppDisponible_noRompe() {
+        val recorder = ActionRecordingContext(localizedTarget(), shouldThrow = { true })
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_privacy_item))
+
+        composeRule.onNodeWithText(esText(R.string.settings_privacy_manage_permissions)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, recorder.attempts)
+        assertEquals(0, recorder.startedIntents.size)
+    }
+
+    // ── Ronda 23: "Compartir app" (shareApp) ────────────────────────────────────────────────
+    @Suppress("DEPRECATION")
+    @Test
+    fun compartirApp_lanzaIntentDeCompartirConElMensajeYElEnlace() {
+        val recorder = ActionRecordingContext(localizedTarget())
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_share_app))
+
+        assertEquals(1, recorder.startedIntents.size)
+        val chooserIntent = recorder.startedIntents[0]
+        assertEquals(Intent.ACTION_CHOOSER, chooserIntent.action)
+        val innerIntent = chooserIntent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+        assertEquals(Intent.ACTION_SEND, innerIntent?.action)
+        assertTrue(innerIntent?.getStringExtra(Intent.EXTRA_TEXT)?.contains("play.google.com") == true)
+    }
+
+    @Test
+    fun compartirApp_sinAppDisponible_noRompe() {
+        val recorder = ActionRecordingContext(localizedTarget(), shouldThrow = { true })
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_share_app))
+
+        assertEquals(1, recorder.attempts)
+        assertEquals(0, recorder.startedIntents.size)
+    }
+
+    // ── Ronda 23: "Valorar" (openPlayStore: market:// → https:// → Toast) ──────────────────
+    @Test
+    fun valorar_conPlayStoreDisponible_usaEsquemaMarket() {
+        val recorder = ActionRecordingContext(localizedTarget())
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_rate))
+
+        assertEquals(1, recorder.startedIntents.size)
+        assertEquals("market", recorder.startedIntents[0].data?.scheme)
+    }
+
+    @Test
+    fun valorar_sinPlayStoreConNavegadorDisponible_usaHttpsComoRespaldo() {
+        val recorder =
+            ActionRecordingContext(localizedTarget(), shouldThrow = { intent -> intent.data?.scheme == "market" })
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_rate))
+
+        assertEquals(2, recorder.attempts)
+        assertEquals(1, recorder.startedIntents.size)
+        assertEquals("https", recorder.startedIntents[0].data?.scheme)
+    }
+
+    @Test
+    fun valorar_sinNingunaAppDisponible_muestraToastYNoRompe() {
+        val recorder = ActionRecordingContext(localizedTarget(), shouldThrow = { true })
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_rate))
+
+        assertEquals(2, recorder.attempts)
+        assertEquals(0, recorder.startedIntents.size)
+    }
+
+    // ── Ronda 23: Ayuda → "Contactar soporte" (sendSupportEmail) ────────────────────────────
+    @Test
+    fun contactarSoporte_conAppDeCorreoDisponible_lanzaIntentSendToConAsuntoYCuerpo() {
+        val recorder = ActionRecordingContext(localizedTarget())
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_help))
+        composeRule.onNodeWithText(esText(R.string.settings_contact_support)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, recorder.startedIntents.size)
+        val sent = recorder.startedIntents[0]
+        assertEquals(Intent.ACTION_SENDTO, sent.action)
+        assertEquals("mailto", sent.data?.scheme)
+        assertEquals(esText(R.string.settings_support_email_subject), sent.getStringExtra(Intent.EXTRA_SUBJECT))
+    }
+
+    @Test
+    fun contactarSoporte_sinAppDeCorreoDisponible_noRompe() {
+        val recorder = ActionRecordingContext(localizedTarget(), shouldThrow = { true })
+        showWithActionContext(recorder)
+        clickItem(esText(R.string.settings_help))
+        composeRule.onNodeWithText(esText(R.string.settings_contact_support)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, recorder.attempts)
+        assertEquals(0, recorder.startedIntents.size)
+    }
+
+    // ── Ronda 23: rama Bytes/MB de formatStorageSize() (solo KB/Bytes estaba cubierta) ─────
+    @Test
+    fun almacenamiento_conMasDeUnMegabyte_muestraFormatoMB() {
+        writeGenerated("pdftools", "grande.bin", 1_500_000)
+        show()
+        clickItem(esText(R.string.settings_storage))
+
+        assertTrue(composeRule.onAllNodesWithText(" MB", substring = true).fetchSemanticsNodes().isNotEmpty())
     }
 }

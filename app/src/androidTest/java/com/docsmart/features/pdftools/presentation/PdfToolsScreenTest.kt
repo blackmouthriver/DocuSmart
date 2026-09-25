@@ -19,12 +19,15 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ads.DailyLimitManager
 import com.docsmart.core.premium.PremiumManager
+import com.docsmart.core.ui.components.AppLibraryPickerViewModel
 import com.docsmart.core.ui.test.forceLocale
+import com.docsmart.features.library.data.DocumentRepository
 import com.docsmart.features.pdftools.domain.usecase.RotatePdfUseCase
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Paragraph
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,6 +100,15 @@ class PdfToolsScreenTest {
         )
     }
 
+    // AppLibraryPickerViewModel es un ViewModel real (no hiltViewModel()) armado
+    // a mano con un DocumentRepository simulado, para evitar que el selector
+    // compartido de origen de PDF (FileSourcePickerDialog) dependa de Hilt.
+    private fun buildLibraryPickerViewModel(): AppLibraryPickerViewModel {
+        val repository = mockk<DocumentRepository>(relaxed = true)
+        coEvery { repository.loadAllDocuments() } returns emptyList()
+        return AppLibraryPickerViewModel(repository)
+    }
+
     // PDF real de 1 página -- mismo patrón de creación de archivo real que
     // ConverterScreenTest.createTestImageFile()/ViewerSearchTest, vía
     // iText7 (ya usado en producción, ver StudyNotesExporter.kt).
@@ -139,8 +151,14 @@ class PdfToolsScreenTest {
     fun elegirRotarPdf_ejecutarSobreUnPdfReal_muestraResultadoExitoso() {
         val viewModel = buildViewModel()
         val pdfFile = createTestPdf()
+        // Construido una sola vez fuera de la composición -- pasarlo como
+        // parámetro por defecto reevaluado en cada recomposición crearía un
+        // ViewModel (y una corrutina) nuevos en cada una.
+        val libraryPickerViewModel = buildLibraryPickerViewModel()
 
-        setContentWithLocale { PdfToolsScreen(viewModel = viewModel) }
+        setContentWithLocale {
+            PdfToolsScreen(viewModel = viewModel, libraryPickerViewModel = libraryPickerViewModel)
+        }
         waitForText("Rotar PDF")
 
         composeRule.onNodeWithText("Rotar PDF").performClick()

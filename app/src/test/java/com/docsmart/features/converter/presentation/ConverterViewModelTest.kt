@@ -164,6 +164,16 @@ class ConverterViewModelTest {
         viewModel.uiState.value.selectedFiles shouldBe emptyList()
     }
 
+    // Ronda 23: onImagesSelected() (usado por ScanResultScreen) delega en
+    // onFilesSelected() -- nadie lo llamaba en las pruebas del ViewModel.
+    @Test
+    fun `onImagesSelected delega en onFilesSelected`() {
+        viewModel.onImagesSelected(listOf(uri))
+
+        viewModel.uiState.value.selectedFiles shouldBe listOf(uri)
+        viewModel.uiState.value.selectedImages shouldBe listOf(uri)
+    }
+
     @Test
     fun `removeImage quita solo ese archivo y clearAll vuelve al estado inicial`() {
         val other = mockk<Uri>()
@@ -220,6 +230,26 @@ class ConverterViewModelTest {
 
             viewModel.uiState.value.errorMessage shouldBe "archivo danado"
             viewModel.uiState.value.isConverting shouldBe false
+            verify(exactly = 0) { dailyLimitManager.registerConversion() }
+            verify(exactly = 0) { soundEffectPlayer.playConvert() }
+        }
+
+    // Ronda 23: applySingleConversionResult()/logConversionOutcome() tienen una
+    // rama "else" defensiva para ConversionResult.Loading -- ningun use case
+    // real la devuelve, pero al ser un sealed class con 3 miembros, un mock
+    // puede forzarla sin necesitar ningun cambio de produccion.
+    @Test
+    fun `convert con resultado Loading no registra el limite ni reproduce el sonido`() =
+        runTest {
+            selectWordToText(uri)
+            coEvery { wordToText(any(), any()) } returns ConversionResult.Loading
+
+            viewModel.convert(context)
+
+            val state = viewModel.uiState.value
+            state.isConverting shouldBe false
+            state.conversionResult shouldBe null
+            state.errorMessage shouldBe null
             verify(exactly = 0) { dailyLimitManager.registerConversion() }
             verify(exactly = 0) { soundEffectPlayer.playConvert() }
         }
@@ -620,6 +650,32 @@ class ConverterViewModelTest {
 
             val names = viewModel.uiState.value.batchResults.map { it.originalFileName }
             names shouldBe listOf("respaldo.docx", "otro.docx")
+        }
+
+    // Ronda 23: resolveDisplayName() solo se probaba en su camino feliz (con
+    // fila) y en su catch (query() lanzando) -- si el cursor responde pero
+    // esta vacio (moveToFirst() en false, proveedor sin datos para esa URI en
+    // vez de caido), `name` sigue null y debe caer igual al ultimo segmento.
+    @Test
+    fun `en un lote, si el cursor no tiene fila se usa el ultimo segmento de la URI`() =
+        runTest {
+            val uri2 = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            val cursorVacio = mockk<Cursor>(relaxed = true)
+            every { cursorVacio.moveToFirst() } returns false
+            every { context.contentResolver } returns resolver
+            every { resolver.query(uri, any<Array<String>>(), null, null, null) } returns cursorVacio
+            every { resolver.query(uri2, any<Array<String>>(), null, null, null) } returns cursorVacio
+            every { uri.lastPathSegment } returns "sinfila.docx"
+            every { uri2.lastPathSegment } returns "sinfila2.docx"
+            coEvery { wordToText(uri, "sinfila") } returns success(File("a.txt"))
+            coEvery { wordToText(uri2, "sinfila2") } returns success(File("b.txt"))
+            selectWordToText(uri, uri2)
+
+            viewModel.convert(context)
+
+            val names = viewModel.uiState.value.batchResults.map { it.originalFileName }
+            names shouldBe listOf("sinfila.docx", "sinfila2.docx")
         }
 
     @Test

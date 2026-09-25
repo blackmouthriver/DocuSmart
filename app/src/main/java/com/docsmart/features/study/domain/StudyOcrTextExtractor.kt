@@ -87,6 +87,17 @@ private suspend fun ocrAllPages(
     }
 }
 
+// Extraída de ocrOnePage() para poder testearla en JVM puro (sin `Bitmap`/
+// `PdfRenderer`/ML Kit real, ver comentario de archivo): agrupa el texto ya
+// reconocido en párrafos aptos para TTS, mismo criterio que
+// `groupPdfChunksIntoParagraphs` usa para el texto real de un PDF con capa de
+// texto.
+internal fun ocrTextBlocksToParagraphs(blockTexts: List<String>): List<String> =
+    blockTexts
+        .map { it.replace('\n', ' ').trim() }
+        .filter { it.length > MIN_PARAGRAPH_LENGTH }
+        .flatMap { splitForSpeech(it) }
+
 private fun ocrOnePage(
     renderer: PdfRenderer,
     index: Int,
@@ -105,10 +116,7 @@ private fun ocrOnePage(
         val recognized = Tasks.await(recognizer.process(InputImage.fromBitmap(bitmap, 0)))
         // Un bloque de ML Kit ya agrupa líneas que van juntas -- se trata como
         // un párrafo, igual que un párrafo real de `groupPdfChunksIntoParagraphs`.
-        recognized.textBlocks
-            .map { it.text.replace('\n', ' ').trim() }
-            .filter { it.length > MIN_PARAGRAPH_LENGTH }
-            .flatMap { splitForSpeech(it) }
+        ocrTextBlocksToParagraphs(recognized.textBlocks.map { it.text })
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {

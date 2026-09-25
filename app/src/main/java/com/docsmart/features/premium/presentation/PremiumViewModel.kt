@@ -103,16 +103,24 @@ class PremiumViewModel
                 billingManager.planOffers.collect { offers ->
                     if (offers.isEmpty()) return@collect
                     _uiState.update { state ->
+                        val updatedPlans =
+                            state.plans.map { plan ->
+                                offers[plan.productId]?.let { offer ->
+                                    plan.copy(
+                                        price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
+                                        trialDays = offer.trialDays,
+                                    )
+                                } ?: plan
+                            }
                         state.copy(
-                            plans =
-                                state.plans.map { plan ->
-                                    offers[plan.productId]?.let { offer ->
-                                        plan.copy(
-                                            price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
-                                            trialDays = offer.trialDays,
-                                        )
-                                    } ?: plan
-                                },
+                            plans = updatedPlans,
+                            // Bug real (ronda 23): antes solo se refrescaba `plans`, dejando
+                            // `selectedPlan` con el precio/trialDays viejos que llegó de
+                            // PremiumRepository -- el CTA de compra (purchaseCtaFor) usa
+                            // selectedPlan, así que mostraba datos obsoletos aunque las
+                            // tarjetas de abajo ya tuvieran el precio real de Play Billing.
+                            selectedPlan =
+                                updatedPlans.find { it.id == state.selectedPlan?.id } ?: state.selectedPlan,
                         )
                     }
                 }

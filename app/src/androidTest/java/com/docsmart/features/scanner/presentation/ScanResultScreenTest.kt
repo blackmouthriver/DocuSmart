@@ -133,6 +133,9 @@ class ScanResultScreenTest {
         rewardedReady: Boolean = false,
         val isPdf: Boolean = false,
         allowSaveSlot: Boolean = true,
+        // Hallazgo de cobertura (ronda 23): ningún test pasaba `onHome` -- la
+        // rama "Inicio" de BannerNavRow (DocuSmartTopBanner) quedaba en 0%.
+        val onHome: (() -> Unit)? = null,
     ) {
         val pdfFile: File? = if (isPdf) newFile("origen", "pdf") else null
         val pages: List<Uri> =
@@ -180,6 +183,7 @@ class ScanResultScreenTest {
                     scannedUris = pages,
                     isPdf = isPdf,
                     onBack = { backCount.incrementAndGet() },
+                    onHome = onHome,
                     onDone = { doneCount.incrementAndGet() },
                     onPremiumClick = { premiumCount.incrementAndGet() },
                     onOpenDocument = { calls += "open:$it" },
@@ -604,6 +608,58 @@ class ScanResultScreenTest {
         composeRule.waitForIdle()
 
         verify(exactly = 1) { fx.session.dismissScanLimitDialog() }
+    }
+
+    // Hallazgo de cobertura (ronda 23): el diálogo de límite de "escaneos
+    // guardados" solo se probaba con `rewardedReady = false` (implícito, ver
+    // arriba) y "Cancelar" -- la rama `isRewardedReady = true` ("Ver
+    // anuncio" habilitado) de ScanSaveLimitDialog quedaba en 0%. No se
+    // verifica `watchAdForScanSave()`: el contexto de esta pantalla de
+    // prueba no es una Activity real (`context as? Activity` es null bajo
+    // `setContentEsFit`, mismo motivo por el que el resto de esta clase
+    // tampoco verifica showRewardedAd/watchAdForConversion), así que
+    // `onWatchAd = { activity?.let { ... } }` es un no-op aquí a propósito
+    // -- solo se comprueba que la rama se renderiza y que tocarla no falla.
+    @Test
+    fun limiteDiarioDeEscaneosGuardados_conAnuncioListo_muestraVerAnuncioYNoFalla() {
+        val fx = Fixture(premium = true, rewardedReady = true)
+        fx.limitState.value = ScanSaveLimitUiState(savedCount = 8, savedLimit = 8, showLimitDialog = true)
+        fx.show()
+
+        waitForText(str(R.string.daily_limit_title))
+        composeRule.onAllNodesWithText(str(R.string.daily_limit_ad_not_ready)).assertCountEquals(0)
+        composeRule.onNodeWithText(str(R.string.daily_limit_watch_ad)).performClick()
+        composeRule.waitForIdle()
+
+        // No se autocierra (depende de que el ViewModel actualice el estado):
+        // sigue visible, sin haber lanzado ninguna excepción.
+        composeRule.onNodeWithText(str(R.string.daily_limit_title)).assertExists()
+    }
+
+    @Test
+    fun limiteDiarioDeEscaneosGuardados_obtenerPremiumInvocaElCallback() {
+        val fx = Fixture(premium = true)
+        fx.limitState.value = ScanSaveLimitUiState(savedCount = 8, savedLimit = 8, showLimitDialog = true)
+        fx.show()
+
+        waitForText(str(R.string.daily_limit_title))
+        composeRule.onNodeWithText(str(R.string.daily_limit_get_premium)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, fx.premiumCount.get())
+    }
+
+    // Hallazgo de cobertura (ronda 23): ningún test pasaba `onHome`.
+    @Test
+    fun banner_conOnHome_invocaSuCallback() {
+        var homeCount = 0
+        val fx = Fixture(onHome = { homeCount++ })
+        fx.show()
+
+        composeRule.onNodeWithText(str(R.string.nav_home)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, homeCount)
     }
 
     // ── Lote de imágenes ─────────────────────────────────────────────────────────

@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
 import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ui.components.AppLibraryPickerViewModel
 import com.docsmart.core.ui.components.DailyLimitDialog
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
 import com.docsmart.core.ui.components.DocuSmartTopBanner
@@ -77,6 +78,10 @@ fun PdfToolsScreen(
     initialTool: String? = null,
     initialFileUri: String? = null,
     viewModel: PdfToolsViewModel = hiltViewModel(),
+    // Inyectable por separado (patrón ya usado en otras pantallas) para que las
+    // pruebas de Compose UI puedan construir FileSourcePickerDialog con un
+    // AppLibraryPickerViewModel armado a mano en vez de depender de Hilt.
+    libraryPickerViewModel: AppLibraryPickerViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
@@ -369,6 +374,7 @@ fun PdfToolsScreen(
                 viewModel.onPdfsSelected(listOf(document.toContentUri()))
             },
             filter = { it.type == DocumentType.PDF },
+            viewModel = libraryPickerViewModel,
         )
     }
 

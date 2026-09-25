@@ -11,6 +11,7 @@ import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.junit.jupiter.api.AfterEach
@@ -140,6 +141,77 @@ class PdfToWordUseCaseTest {
             assertTrue(result is ConversionResult.Error)
         }
 
+    // Ronda 23: todas las pruebas anteriores usaban un PDF de 1 sola pagina --
+    // la rama `pageIndex > 0` de buildDocx() (salto de pagina real + reinicio
+    // de parrafo/previousY/previousXEnd) nunca se ejercitaba.
+    @Test
+    fun `un pdf de varias paginas separa el contenido de cada pagina en su propio parrafo`() =
+        runTest {
+            stubResolver(createTwoPagePdf())
+
+            val result = useCase(mockk<Uri>(), "salida")
+
+            assertTrue(result is ConversionResult.Success)
+            val success = result as ConversionResult.Success
+            assertEquals(2, success.pageCount)
+            val doc = XWPFDocument(success.outputFile.inputStream())
+            assertEquals(2, doc.paragraphs.size)
+            assertTrue(doc.paragraphs[0].text.contains("primera pagina"))
+            assertTrue(doc.paragraphs[1].text.contains("segunda pagina"))
+        }
+
+    // Ronda 23: catch (e: OutOfMemoryError) nunca se ejercitaba -- se fuerza
+    // desde la lectura del PDF de origen (un escenario real: un archivo
+    // grande agotando memoria al copiarlo a cacheDir), sin tocar produccion.
+    @Test
+    fun `sin memoria leyendo el pdf de origen devuelve Error generico`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { context.contentResolver } returns resolver
+            every { resolver.openInputStream(uri) } throws OutOfMemoryError("sin memoria")
+
+            val result = useCase(uri, "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
+
+    // Ronda 23: catch (e: CancellationException) -- debe propagarse (no
+    // convertirse en un ConversionResult.Error) para que salir de la pantalla
+    // a mitad de la conversion cancele de verdad, mismo criterio que el resto
+    // de use cases del Convertidor.
+    @Test
+    fun `una cancelacion leyendo el pdf de origen se propaga sin convertirse en error`() =
+        runTest {
+            val uri = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { context.contentResolver } returns resolver
+            every { resolver.openInputStream(uri) } throws CancellationException("cancelado")
+
+            var propagada = false
+            try {
+                useCase(uri, "salida")
+            } catch (_: CancellationException) {
+                propagada = true
+            }
+
+            assertTrue(propagada)
+        }
+
+    // Ronda 23: catch (e: Exception) generico -- ningun test anterior lo
+    // ejercitaba (el de "archivo no legible" retorna antes, sin excepcion).
+    // Un PDF con bytes invalidos hace que PdfReader lance una excepcion real
+    // de iText7, camino realista para un archivo corrupto/no-PDF renombrado.
+    @Test
+    fun `un pdf con bytes invalidos devuelve Error en vez de propagar la excepcion de iText`() =
+        runTest {
+            stubResolver(byteArrayOf(1, 2, 3, 4, 5))
+
+            val result = useCase(mockk<Uri>(), "salida")
+
+            assertTrue(result is ConversionResult.Error)
+        }
+
     // ── helpers ────────────────────────────────────────────────────────────
 
     private fun stubResolver(bytes: ByteArray) {
@@ -234,6 +306,36 @@ class PdfToWordUseCaseTest {
             .setFontAndSize(normal, 12f)
             .moveText(150.0, 700.0)
             .showText("Cundinamarca,")
+            .endText()
+
+        pdfDoc.close()
+        return out.toByteArray()
+    }
+
+    private fun createTwoPagePdf(): ByteArray {
+        val out = ByteArrayOutputStream()
+        val pdfDoc = PdfDocument(PdfWriter(out))
+        val normal =
+            PdfFontFactory.createFont(
+                com.itextpdf.io.font.constants.StandardFonts.HELVETICA,
+                "",
+                EmbeddingStrategy.PREFER_EMBEDDED,
+            )
+
+        val page1 = pdfDoc.addNewPage()
+        PdfCanvas(page1)
+            .beginText()
+            .setFontAndSize(normal, 12f)
+            .moveText(50.0, 700.0)
+            .showText("Contenido de la primera pagina.")
+            .endText()
+
+        val page2 = pdfDoc.addNewPage()
+        PdfCanvas(page2)
+            .beginText()
+            .setFontAndSize(normal, 12f)
+            .moveText(50.0, 700.0)
+            .showText("Contenido de la segunda pagina.")
             .endText()
 
         pdfDoc.close()

@@ -117,6 +117,28 @@ class QrReaderScreenTest {
         assertEquals(1, shown.back.get())
     }
 
+    // Hallazgo de cobertura (ronda 23): ningún test existente pasaba `onHome`
+    // -- la rama "Inicio" de BannerNavRow (DocuSmartTopBanner) quedaba en 0%
+    // para esta pantalla.
+    @Test
+    fun banner_conOnHome_muestraElBotonInicioYLoInvoca() {
+        var homeCount = 0
+        val viewModel = buildViewModel()
+        composeRule.setContentEsFit(registryOwner = FakeResultRegistryOwner()) {
+            QrReaderScreen(
+                viewModel = viewModel,
+                onHome = { homeCount++ },
+                cameraPermissionChecker = { false },
+            )
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(str(R.string.nav_home)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, homeCount)
+    }
+
     // ── Resultado de un QR ya leído ──────────────────────────────────────────────
 
     @Test

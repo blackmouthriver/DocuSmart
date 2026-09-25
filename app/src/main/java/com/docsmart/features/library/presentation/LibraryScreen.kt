@@ -586,8 +586,14 @@ private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
 }
 
 // ── Sin permisos ──────────────────────────────────────────────────────────────
+// internal (no private, ronda 23): forzar el estado real "sin permiso" a través de
+// LibraryScreen requeriría negar READ_MEDIA_IMAGES/READ_EXTERNAL_STORAGE en tiempo de
+// prueba -- el permiso ya queda concedido de forma persistente por GrantPermissionRule
+// de otras clases de prueba en la misma instalación (mismo APK durante toda la corrida
+// de instrumentación), así que revocarlo sería estado compartido entre pruebas (regla 5/7
+// de la campaña). Se prueba este Composable de forma aislada en su lugar.
 @Composable
-private fun NoPermissionContent(
+internal fun NoPermissionContent(
     permissionDenied: Boolean,
     onRequestPermission: () -> Unit,
 ) {

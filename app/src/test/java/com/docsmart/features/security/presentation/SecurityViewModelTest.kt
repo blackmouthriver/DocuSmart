@@ -451,6 +451,51 @@ class SecurityViewModelTest {
         }
 
     @Test
+    fun `removePdfPassword exitoso actualiza pdfOutputFile y successMessage`() =
+        runTest {
+            // Gap real: solo estaba cubierto el camino WrongPassword de
+            // removePdfPassword() -- Success/Error son ramas propias del
+            // mismo `when`, nunca ejercitadas.
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            val outputFile = File(secureFolder, "abierto.pdf")
+            coEvery {
+                pdfPasswordUseCase.removePassword(context, uri, "1234", "doc", testMessages)
+            } returns PdfPasswordResult.Success(outputFile, "Contraseña quitada")
+
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem() // estado inicial
+                viewModel.removePdfPassword(context, uri, "1234", "doc", testMessages, "Contraseña incorrecta")
+
+                val result = awaitUntil { !it.isPdfProcessing }
+                assertEquals(outputFile, result.pdfOutputFile)
+                assertEquals("Contraseña quitada", result.successMessage)
+                assertNull(result.pdfPasswordError)
+            }
+        }
+
+    @Test
+    fun `removePdfPassword con error del UseCase actualiza pdfPasswordError`() =
+        runTest {
+            val context = mockk<Context>(relaxed = true)
+            val uri = mockk<android.net.Uri>(relaxed = true)
+            coEvery {
+                pdfPasswordUseCase.removePassword(context, uri, "1234", "doc", testMessages)
+            } returns PdfPasswordResult.Error("No se pudo leer el PDF")
+
+            val viewModel = buildViewModel()
+            viewModel.uiState.test {
+                awaitItem() // estado inicial
+                viewModel.removePdfPassword(context, uri, "1234", "doc", testMessages, "Contraseña incorrecta")
+
+                val result = awaitUntil { !it.isPdfProcessing }
+                assertEquals("No se pudo leer el PDF", result.pdfPasswordError)
+                assertNull(result.pdfOutputFile)
+            }
+        }
+
+    @Test
     fun `removePdfPassword con contraseña incorrecta usa wrongPasswordMessage`() =
         runTest {
             val context = mockk<Context>(relaxed = true)

@@ -507,4 +507,22 @@ class QrCreatorFlowsTest {
         assertEquals(1, shown.back.get())
         composeRule.onAllNodesWithContentDescription(str(R.string.qr_history_title)).assertCountEquals(1)
     }
+
+    // Hallazgo de cobertura (ronda 23): ningún test existente pasaba `onHome`
+    // -- la rama "Inicio" de BannerNavRow (DocuSmartTopBanner) quedaba en 0%
+    // para esta pantalla.
+    @Test
+    fun banner_conOnHome_invocaSuCallback() {
+        var homeCount = 0
+        val viewModel = buildViewModel()
+        composeRule.setContentEsFit(registryOwner = FakeResultRegistryOwner()) {
+            QrCreatorScreen(onHome = { homeCount++ }, viewModel = viewModel)
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(str(R.string.nav_home)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, homeCount)
+    }
 }

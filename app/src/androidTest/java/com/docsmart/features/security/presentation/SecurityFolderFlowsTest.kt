@@ -79,11 +79,13 @@ class SecurityFolderFlowsTest {
         onPreviewFile: (String) -> Unit = {},
         picker: AppLibraryPickerViewModel? = null,
         onBack: () -> Unit = {},
+        onHome: (() -> Unit)? = null,
     ): SecurityViewModel {
         val viewModel = buildViewModel()
         composeRule.setContentEsScaled {
             SecurityScreen(
                 onBack = onBack,
+                onHome = onHome,
                 pendingFileUri = pendingFileUri,
                 onPreviewFile = onPreviewFile,
                 viewModel = viewModel,
@@ -375,5 +377,20 @@ class SecurityFolderFlowsTest {
         // En el banner de la carpeta la acción "Atrás" es un texto (no un ícono con descripción).
         composeRule.onNodeWithText(esText(R.string.general_back)).performClick()
         assertEquals(1, backs)
+    }
+
+    // Gap real (ronda 23): SecurityScreen acepta un `onHome` opcional para el
+    // banner "Volver"/"Inicio" (mismo patron de pantallas anidadas que Modo
+    // Estudio/Agenda), pero ningun test de la Carpeta Segura lo pasaba
+    // distinto de null -- el boton "Inicio" del banner
+    // (DocuSmartTopBanner/BannerNavRow) nunca se ejercitaba en esta pantalla.
+    @Test
+    fun botonInicioDeLaCarpeta_invocaOnHome() {
+        stubBase()
+        var homes = 0
+        showUnlocked(onHome = { homes++ })
+
+        composeRule.onNodeWithText(esText(R.string.nav_home)).performClick()
+        assertEquals(1, homes)
     }
 }
