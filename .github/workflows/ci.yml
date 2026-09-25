@@ -59,7 +59,13 @@ jobs:
   instrumented-tests:
     name: Compose UI Testing (emulador)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # Subido de 40 a 75 en la ronda 21: con ~638 pruebas (creció desde las
+    # ~260-370 de rondas anteriores) el job venía terminando CANCELLED por
+    # timeout, no FAILED -- continue-on-error (abajo) solo evita que una
+    # falla de test tumbe el workflow, pero un timeout cancela el job igual
+    # y el run completo queda como "cancelled" en vez de "success", aunque
+    # el resultado no debería bloquear nada (ver el comentario de abajo).
+    timeout-minutes: 75
     # No bloqueante desde 2026-09-02: 14-15/30 pruebas fallan de forma
     # conocida y reproducible SOLO en este emulador de CI (confirmado con
     # certeza que performClick() no logra entregar el touch para esas
