@@ -32,6 +32,12 @@ import kotlin.math.sin
  * callback de `synthesizeToFile()` a mano, escribiendo un WAV sintético real en el archivo de
  * trabajo -- ejercita el código real de esta clase (el puente entre el motor y el análisis de
  * tono) sin depender de que exista un motor de voz instalado.
+ *
+ * Nombres de test en snake_case (no el estilo backtick con espacios del resto del proyecto):
+ * D8 rechazó en CI el .class del lambda de `answers`/`runBlocking` generado para un nombre de
+ * test con espacios en este archivo ("Space characters in SimpleName ... not allowed prior to
+ * DEX version 040"). El resto del proyecto usa nombres con espacios sin problema, así que es un
+ * límite puntual de esta combinación (archivo nuevo + mockk-android + lambdas), no general.
  */
 class VoiceGenderProbeInstrumentedTest {
     private val cacheDir get() = InstrumentationRegistry.getInstrumentation().targetContext.cacheDir
@@ -103,7 +109,7 @@ class VoiceGenderProbeInstrumentedTest {
     }
 
     @Test
-    fun `una voz aguda con sintesis exitosa se detecta como femenina`() =
+    fun una_voz_aguda_con_sintesis_exitosa_se_detecta_como_femenina() =
         runBlocking {
             val (tts, listenerSlot) = mockTts()
             val fileSlot = slot<File>()
@@ -122,7 +128,7 @@ class VoiceGenderProbeInstrumentedTest {
         }
 
     @Test
-    fun `una voz grave con sintesis exitosa se detecta como masculina`() =
+    fun una_voz_grave_con_sintesis_exitosa_se_detecta_como_masculina() =
         runBlocking {
             val (tts, listenerSlot) = mockTts()
             val fileSlot = slot<File>()
@@ -141,7 +147,7 @@ class VoiceGenderProbeInstrumentedTest {
         }
 
     @Test
-    fun `si el motor no acepta encolar la sintesis devuelve null sin invocar el listener`() =
+    fun si_el_motor_no_acepta_encolar_la_sintesis_devuelve_null_sin_invocar_el_listener() =
         runBlocking {
             val (tts, _) = mockTts()
             every {
@@ -156,7 +162,7 @@ class VoiceGenderProbeInstrumentedTest {
         }
 
     @Test
-    fun `si el motor reporta onError la sintesis se da por fallida`() =
+    fun si_el_motor_reporta_onError_la_sintesis_se_da_por_fallida() =
         runBlocking {
             val (tts, listenerSlot) = mockTts()
             val idSlot = slot<String>()
@@ -175,7 +181,7 @@ class VoiceGenderProbeInstrumentedTest {
         }
 
     @Test
-    fun `un wav corrupto en el archivo resultante no lanza excepcion y devuelve null`() =
+    fun un_wav_corrupto_en_el_archivo_resultante_no_lanza_excepcion_y_devuelve_null() =
         runBlocking {
             val (tts, listenerSlot) = mockTts()
             val fileSlot = slot<File>()
@@ -194,7 +200,7 @@ class VoiceGenderProbeInstrumentedTest {
         }
 
     @Test
-    fun `una excepcion durante la sintesis se captura, devuelve null y borra igual el archivo`() =
+    fun una_excepcion_durante_la_sintesis_se_captura_devuelve_null_y_borra_igual_el_archivo() =
         runBlocking {
             val (tts, _) = mockTts()
             every {
