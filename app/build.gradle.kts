@@ -103,6 +103,12 @@ android {
             if (releaseSigningProps != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            // Play Console avisaba "código nativo sin símbolos de depuración" (de
+            // librerías de terceros con .so, ej. ML Kit) -- FULL empaqueta los
+            // símbolos dentro del propio .aab automáticamente, sin subirlos a mano.
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
     }
 
