@@ -57,15 +57,21 @@ jobs:
           if-no-files-found: ignore
 
   instrumented-tests:
-    name: Compose UI Testing (emulador)
+    name: Compose UI Testing (shard ${{ matrix.shardIndex }}/4)
     runs-on: ubuntu-latest
-    # Subido de 40 a 75 en la ronda 21: con ~638 pruebas (creció desde las
-    # ~260-370 de rondas anteriores) el job venía terminando CANCELLED por
-    # timeout, no FAILED -- continue-on-error (abajo) solo evita que una
-    # falla de test tumbe el workflow, pero un timeout cancela el job igual
-    # y el run completo queda como "cancelled" en vez de "success", aunque
-    # el resultado no debería bloquear nada (ver el comentario de abajo).
-    timeout-minutes: 75
+    # Antes un solo job con 40 min, luego 75 -- ni eso alcanzaba: con ~638
+    # pruebas (creció desde las ~260-370 de rondas anteriores) venía
+    # terminando CANCELLED por timeout antes de imprimir el resultado.
+    # continue-on-error (abajo) solo evita que una falla de TEST tumbe el
+    # workflow, pero un timeout cancela el job igual. Se divide en 4 shards
+    # en paralelo (sharding nativo de AndroidJUnitRunner, mismo mecanismo
+    # que sonarcloud.yml) -- cada uno corre en su propia máquina, así que el
+    # tiempo de pared baja a una fracción del original.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [0, 1, 2, 3]
     # No bloqueante desde 2026-09-02: 14-15/30 pruebas fallan de forma
     # conocida y reproducible SOLO en este emulador de CI (confirmado con
     # certeza que performClick() no logra entregar el touch para esas
@@ -210,13 +216,13 @@ jobs:
           # el bucle se corta en la primera línea que falla (gradle) antes
           # de llegar a las siguientes. Por eso va todo en una sola línea
           # con ";" -- así es un único `sh -c` que sí conserva $? real.
-          script: ./gradlew connectedDebugAndroidTest --no-daemon; GRADLE_EXIT=$?; echo "===== LOGCAT DUMP START ====="; adb logcat -d; echo "===== LOGCAT DUMP END ====="; exit $GRADLE_EXIT
+          script: ./gradlew connectedDebugAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shardIndex }}; GRADLE_EXIT=$?; echo "===== LOGCAT DUMP START ====="; adb logcat -d; echo "===== LOGCAT DUMP END ====="; exit $GRADLE_EXIT
 
-      - name: Publicar reporte de pruebas instrumentadas
+      - name: Publicar reporte de pruebas instrumentadas (este shard)
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: reporte-compose-ui-testing
+          name: reporte-compose-ui-testing-shard-${{ matrix.shardIndex }}
           retention-days: 14
           path: app/build/reports/androidTests/connected/
           if-no-files-found: ignore
