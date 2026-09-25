@@ -165,4 +165,30 @@ class AgendaRepositoryTest {
 
             assertTrue(cancelled, "la CancellationException debia propagarse")
         }
+
+    // Ningún otro test llama a observeAll()/getById() -- son simples
+    // delegados a AgendaEventDao, pero quedaban sin ejercer.
+    @Test
+    fun `observeAll delega en el dao`() {
+        val flow = mockk<kotlinx.coroutines.flow.Flow<List<AgendaEventEntity>>>()
+        every { dao.observeAll() } returns flow
+
+        assertEquals(flow, repository.observeAll())
+    }
+
+    @Test
+    fun `getById delega en el dao`() =
+        runTest {
+            val event =
+                AgendaEventEntity(
+                    id = "e1",
+                    title = "Uno",
+                    dateTimeMillis = 1_000L,
+                    reminderMinutesBefore = null,
+                    createdAt = 0L,
+                )
+            coEvery { dao.getById("e1") } returns event
+
+            assertEquals(event, repository.getById("e1"))
+        }
 }

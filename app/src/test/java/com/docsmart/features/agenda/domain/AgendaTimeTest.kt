@@ -78,4 +78,22 @@ class AgendaTimeTest {
 
         assertEquals(date, localDate)
     }
+
+    // Los tests de arriba siempre pasan nowMillis/zoneId explícitos -- nunca
+    // ejercen el valor por defecto (System.currentTimeMillis()/ZoneId.systemDefault()).
+    @Test
+    fun `classifyAgendaEvent sin nowMillis ni zoneId usa el reloj y la zona reales`() {
+        val status = classifyAgendaEvent(System.currentTimeMillis())
+
+        assertEquals(AgendaEventStatus.TODAY, status)
+    }
+
+    // Mismo motivo: agendaEventLocalDate sin zoneId nunca ejercía el valor
+    // por defecto (ZoneId.systemDefault()).
+    @Test
+    fun `agendaEventLocalDate sin zoneId usa la zona real del sistema`() {
+        val localDate = agendaEventLocalDate(System.currentTimeMillis())
+
+        assertEquals(LocalDate.now(), localDate)
+    }
 }
