@@ -21,7 +21,13 @@ jobs:
     # §4 para el porqué de duplicar el emulador acá en vez de reutilizar el
     # job `instrumented-tests` de ci.yml (workflows separados no comparten
     # jobs sin la complejidad de `workflow_run`).
-    timeout-minutes: 60
+    # Subido de 60 a 100 en la ronda 21 (mismo motivo que ci.yml): con ~638
+    # pruebas este job venía terminando CANCELLED por timeout antes de
+    # llegar a `sonar`, así que SonarCloud se quedaba sin analizar el commit
+    # (ver el historial de análisis, saltaba directo al commit anterior).
+    # Este job además hace más pasos que el de ci.yml (build + unit tests +
+    # emulador + jacocoTestReport + sonar), de ahí el margen extra.
+    timeout-minutes: 100
     steps:
       # Mismo fix ya aplicado en ci.yml (ver deployment.md §3): ubuntu-latest
       # no trae suficiente espacio libre de fábrica para este build (iText7 +
