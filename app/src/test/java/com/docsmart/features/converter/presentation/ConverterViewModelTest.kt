@@ -569,4 +569,111 @@ class ConverterViewModelTest {
 
         viewModel.uiState.value.errorMessage shouldBe "sin anuncio"
     }
+
+    // ── Ronda 21: ramas sin cubrir de convert()/resolveDisplayName/Descargas ──
+
+    @Test
+    fun `sin nombre elegido convert genera un nombre por defecto con marca de tiempo`() =
+        runTest {
+            selectWordToText(uri)
+            val nameSlot = slot<String>()
+            coEvery { wordToText(any(), capture(nameSlot)) } returns success()
+
+            viewModel.convert(context)
+
+            Regex("DocuSmart_\\d{8}_\\d{6}").matches(nameSlot.captured) shouldBe true
+        }
+
+    @Test
+    fun `convertToImageFormat fija el tipo elegido y convierte los archivos ya seleccionados`() =
+        runTest {
+            coEvery { imageFormat(uri, ConversionType.IMAGE_TO_PNG, any()) } returns success()
+            viewModel.onFilesSelected(listOf(uri))
+
+            viewModel.convertToImageFormat(context, ConversionType.IMAGE_TO_PNG)
+
+            viewModel.uiState.value.selectedType shouldBe ConversionType.IMAGE_TO_PNG
+            coVerify(exactly = 1) { imageFormat(uri, ConversionType.IMAGE_TO_PNG, any()) }
+        }
+
+    // Hallazgo real de la ronda 21: resolveDisplayName() solo se probaba en su
+    // camino feliz (query() exitoso) -- si el ContentProvider del origen
+    // lanza (proveedor caído/revocado a mitad de un lote), el nombre debe
+    // caer a uri.lastPathSegment en vez de tumbar todo el lote.
+    @Test
+    fun `en un lote, si falla resolver el nombre original se usa el ultimo segmento de la URI`() =
+        runTest {
+            val uri2 = mockk<Uri>()
+            val resolver = mockk<ContentResolver>()
+            every { context.contentResolver } returns resolver
+            every { resolver.query(uri, any<Array<String>>(), null, null, null) } throws
+                IllegalStateException("proveedor caido")
+            every { resolver.query(uri2, any<Array<String>>(), null, null, null) } throws
+                IllegalStateException("proveedor caido")
+            every { uri.lastPathSegment } returns "respaldo.docx"
+            every { uri2.lastPathSegment } returns "otro.docx"
+            coEvery { wordToText(uri, "respaldo") } returns success(File("a.txt"))
+            coEvery { wordToText(uri2, "otro") } returns success(File("b.txt"))
+            selectWordToText(uri, uri2)
+
+            viewModel.convert(context)
+
+            val names = viewModel.uiState.value.batchResults.map { it.originalFileName }
+            names shouldBe listOf("respaldo.docx", "otro.docx")
+        }
+
+    @Test
+    fun `un OutOfMemoryError guardando en Descargas libera isSaving y muestra el error desconocido`() =
+        runTest {
+            mockkObject(DownloadsSaver)
+            coEvery { DownloadsSaver.saveFile(any(), any(), any(), any()) } throws OutOfMemoryError("sin memoria")
+            every { context.getString(R.string.converter_error_unknown) } returns "desconocido"
+            selectWordToText(uri)
+            coEvery { wordToText(any(), any()) } returns success()
+            viewModel.convert(context)
+
+            viewModel.saveToDownloads(context)
+
+            viewModel.uiState.value.isSaving shouldBe false
+            viewModel.uiState.value.errorMessage shouldBe "desconocido"
+        }
+
+    @Test
+    fun `un OutOfMemoryError guardando el lote en Descargas libera isSaving y muestra el error desconocido`() =
+        runTest {
+            mockkObject(DownloadsSaver)
+            coEvery { DownloadsSaver.saveFile(any(), any(), any(), any()) } throws OutOfMemoryError("sin memoria")
+            every { context.getString(R.string.converter_error_unknown) } returns "desconocido"
+            val uri2 = mockk<Uri>()
+            mockDisplayNames(mapOf(uri to "a.docx", uri2 to "b.docx"))
+            coEvery { wordToText(uri, "a") } returns success(File("a.txt"))
+            coEvery { wordToText(uri2, "b") } returns success(File("b.txt"))
+            selectWordToText(uri, uri2)
+            viewModel.convert(context)
+
+            viewModel.saveAllToDownloads(context)
+
+            viewModel.uiState.value.isSaving shouldBe false
+            viewModel.uiState.value.errorMessage shouldBe "desconocido"
+        }
+
+    // Mismo criterio que convert(): una cancelacion durante el guardado del
+    // lote no debe actualizar el estado de una pantalla ya abandonada -- a
+    // diferencia de OOM/Exception, isSaving se queda en true a propósito.
+    @Test
+    fun `una cancelacion guardando el lote no resetea isSaving`() =
+        runTest {
+            mockkObject(DownloadsSaver)
+            coEvery { DownloadsSaver.saveFile(any(), any(), any(), any()) } throws CancellationException("cancelado")
+            val uri2 = mockk<Uri>()
+            mockDisplayNames(mapOf(uri to "a.docx", uri2 to "b.docx"))
+            coEvery { wordToText(uri, "a") } returns success(File("a.txt"))
+            coEvery { wordToText(uri2, "b") } returns success(File("b.txt"))
+            selectWordToText(uri, uri2)
+            viewModel.convert(context)
+
+            viewModel.saveAllToDownloads(context)
+
+            viewModel.uiState.value.isSaving shouldBe true
+        }
 }

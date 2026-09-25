@@ -102,7 +102,12 @@ class StudyNotesTest {
     private fun exists(text: String) = composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
     private fun chip(text: String) {
-        composeRule.onNodeWithText(text).performScrollTo().performClick()
+        // Algunos tests montan NoteReminderSection directo (sin el LazyColumn de
+        // NotesTab alrededor): performScrollTo() ahí lanza "no parent layout with a
+        // Scroll SemanticsAction". runCatching lo hace tolerante a ambos casos.
+        val node = composeRule.onNodeWithText(text)
+        runCatching { node.performScrollTo() }
+        node.performClick()
     }
 
     private fun typeNote(

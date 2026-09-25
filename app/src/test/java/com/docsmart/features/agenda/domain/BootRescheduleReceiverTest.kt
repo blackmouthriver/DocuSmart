@@ -9,7 +9,10 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -126,5 +129,73 @@ class BootRescheduleReceiverTest {
 
             coVerify(exactly = 1) { reminderScheduler.schedule(healthy) }
             coVerify(exactly = 1) { noteReminderScheduler.schedule("note-1", "Nota note-1", reminderAt) }
+        }
+
+    // Ronda 21: rescheduleGuarded() es `private inline fun` -- se usa en dos
+    // sitios distintos (el forEach de eventos y el de notas), así que cada
+    // uso se inlinea con su propio bytecode. El caso anterior solo cubría la
+    // falla de un EVENTO; acá se cubre la misma protección para una NOTA.
+    @Test
+    fun `una nota que falla al reprogramarse no impide reprogramar las demas notas ni los eventos`() =
+        runTest {
+            val event = agendaEvent("evt-1")
+            coEvery { agendaEventDao.getAllWithReminder() } returns listOf(event)
+            val reminderAt = System.currentTimeMillis() + 60_000
+            val failingNote = note("note-falla", reminderAt)
+            val healthyNote = note("note-sana", reminderAt)
+            coEvery { noteDao.getAllWithReminder() } returns listOf(failingNote, healthyNote)
+            every {
+                noteReminderScheduler.schedule("note-falla", "Nota note-falla", reminderAt)
+            } throws IllegalStateException("AlarmManager rechazo la alarma")
+
+            rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+
+            coVerify(exactly = 1) { reminderScheduler.schedule(event) }
+            coVerify(exactly = 1) { noteReminderScheduler.schedule("note-sana", "Nota note-sana", reminderAt) }
+        }
+
+    // A diferencia de una excepción real (AlarmManager rechazando la alarma),
+    // una CancellationException real (ej. el proceso se detiene a mitad del
+    // reinicio) no debe tratarse como "este recordatorio no se pudo
+    // reprogramar" -- rescheduleGuarded() la relanza en vez de tragársela.
+    @Test
+    fun `una cancelacion reprogramando un evento se propaga en vez de tratarse como un fallo mas`() =
+        runTest {
+            val event = agendaEvent("evt-1")
+            coEvery { agendaEventDao.getAllWithReminder() } returns listOf(event)
+            coEvery { noteDao.getAllWithReminder() } returns emptyList()
+            every { reminderScheduler.schedule(event) } throws CancellationException("cancelado")
+
+            var cancelled = false
+            try {
+                rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+            } catch (e: CancellationException) {
+                cancelled = true
+                assertEquals("cancelado", e.message)
+            }
+
+            assertTrue(cancelled, "la CancellationException debia propagarse")
+        }
+
+    @Test
+    fun `una cancelacion reprogramando una nota se propaga en vez de tratarse como un fallo mas`() =
+        runTest {
+            coEvery { agendaEventDao.getAllWithReminder() } returns emptyList()
+            val reminderAt = System.currentTimeMillis() + 60_000
+            val cancelledNote = note("note-1", reminderAt)
+            coEvery { noteDao.getAllWithReminder() } returns listOf(cancelledNote)
+            every {
+                noteReminderScheduler.schedule("note-1", "Nota note-1", reminderAt)
+            } throws CancellationException("cancelado")
+
+            var cancelled = false
+            try {
+                rescheduleAllReminders(agendaEventDao, reminderScheduler, noteDao, noteReminderScheduler)
+            } catch (e: CancellationException) {
+                cancelled = true
+                assertEquals("cancelado", e.message)
+            }
+
+            assertTrue(cancelled, "la CancellationException debia propagarse")
         }
 }

@@ -15,11 +15,21 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Ronda 20: `AdManager` real (con `Handler`/`Looper` de Android) pero SIN
- * cargar anuncios: nunca se llama a `initialize()` y el estado Premium solo
- * cambia de "no premium" a "premium" (que vacía la caché en vez de recargar).
- * Los caminos que pedirían un anuncio real (rewarded sin anuncio cargado
- * fuera de Premium) quedan sin cubrir a propósito.
+ * `AdManager` real (con `Handler`/`Looper` de Android) pero SIN cargar
+ * anuncios: nunca se llama a `initialize()` y el estado Premium solo cambia
+ * de "no premium" a "premium" (que vacía la caché en vez de recargar).
+ *
+ * Ronda 21 (revertido): se intentó cubrir "premium -> gratis"
+ * (`AdCacheAction.RELOAD`) mockeando `InterstitialAd.load()`/`RewardedAd.load()`
+ * (mockkStatic) para capturar el callback real y disparar `onAdLoaded`/
+ * `onAdFailedToLoad` a mano. En el emulador de CI funcionaba, pero en un
+ * teléfono real el mock nunca interceptaba la llamada (falla de forma
+ * consistente incluso con 15s de margen): Google Mobile Ads carga sus
+ * clases vía módulos "dynamite" de Play Services, lo que hace que
+ * `mockkStatic` sobre `InterstitialAd`/`RewardedAd` no sea confiable fuera
+ * del emulador. Se revirtió en vez de forzarlo; `initialize()`,
+ * `MobileAds.initialize()` y el `show()` de un anuncio ya cargado siguen sin
+ * cubrirse.
  */
 class AdManagerPremiumFlowTest {
     @get:Rule

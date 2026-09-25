@@ -123,6 +123,46 @@ class ComparePdfUseCaseTest {
             assertTrue(reportText.contains("reportPageOnlyInA"))
         }
 
+    // La pareja de "solo existe en un documento" de arriba solo cubría
+    // pageExistsOnlyInA (A más largo que B) -- pageExistsOnlyInB (B más largo
+    // que A) es una rama de buildPageDiff() distinta, sin cubrir.
+    @Test
+    fun `una pagina que solo existe en el documento B tambien se marca como tal`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            stubResolver(
+                uriA,
+                createPdf(listOf(listOf("Igual"))),
+                uriB,
+                createPdf(listOf(listOf("Igual"), listOf("SoloEnB"))),
+            )
+
+            val result = useCase(uriA, uriB, messages = messages)
+
+            assertTrue(result is PdfToolResult.Success)
+            assertEquals("differencesFound 1 2", (result as PdfToolResult.Success).message)
+            val reportText = pageTextsOf(result.outputFile).joinToString(" ")
+            assertTrue(reportText.contains("reportPageOnlyInB"))
+        }
+
+    // Hallazgo real de la ronda 21: el catch(Exception) genérico (PDF de
+    // origen corrupto, no solo stream nulo) no tenía cobertura -- solo se
+    // probaban los dos casos de stream nulo (previos a intentar abrir el PDF).
+    @Test
+    fun `un PDF de origen corrupto devuelve Error generico sin dejar un reporte huerfano`() =
+        runTest {
+            val uriA = mockk<Uri>()
+            val uriB = mockk<Uri>()
+            stubResolver(uriA, "esto no es un pdf".toByteArray(), uriB, createPdf(listOf(listOf("x"))))
+
+            val result = useCase(uriA, uriB, messages = messages)
+
+            assertTrue(result is PdfToolResult.Error)
+            assertTrue((result as PdfToolResult.Error).message.startsWith("genericError"))
+            assertTrue(filesDir.walkTopDown().none { it.isFile })
+        }
+
     @Test
     fun `stream nulo al leer el documento A devuelve Error de lectura A`() =
         runTest {

@@ -211,4 +211,88 @@ class ConvertImageToPdfUseCaseTest {
 
         assertThrows(CancellationException::class.java) { readExifOrientation(context, uri) }
     }
+
+    // ── computePageDrawRect/embedTargetSize/needsDownscale: funciones puras ──
+    // Ronda 21: solo se ejercitaban indirectamente vía las pruebas
+    // instrumentadas (una imagen concreta por test) -- acá se cubren las 3
+    // ramas del recuadro (limitado por ancho, por alto, o sin reescalar
+    // porque ya entra) y los bordes de embedTargetSize/needsDownscale.
+
+    @Test
+    fun `computePageDrawRect no agranda una imagen mas chica que el area disponible`() {
+        val rect =
+
+            computePageDrawRect(bitmapWidth = 100, bitmapHeight = 50, pageWidth = 595, pageHeight = 842, margin = 20)
+
+        assertEquals(100f, rect.width, 0.01f)
+        assertEquals(50f, rect.height, 0.01f)
+        assertEquals(247.5f, rect.left, 0.01f)
+        assertEquals(396f, rect.top, 0.01f)
+    }
+
+    @Test
+    fun `computePageDrawRect limita por ancho cuando la imagen es muy ancha`() {
+        val rect =
+
+            computePageDrawRect(bitmapWidth = 2000, bitmapHeight = 1000, pageWidth = 595, pageHeight = 842, margin = 20)
+
+        // maxWidth = 595 - 2*20 = 555 -- el ancho dibujado llega justo a ese tope.
+        assertEquals(555f, rect.width, 0.5f)
+        assertEquals(20f, rect.left, 0.5f)
+        assertTrue(rect.height < 842f - 2 * 20)
+    }
+
+    @Test
+    fun `computePageDrawRect limita por alto cuando la imagen es muy alta`() {
+        val rect =
+
+            computePageDrawRect(bitmapWidth = 1000, bitmapHeight = 3000, pageWidth = 595, pageHeight = 842, margin = 20)
+
+        // maxHeight = 842 - 2*20 = 802 -- el alto dibujado llega justo a ese tope.
+        assertEquals(802f, rect.height, 0.5f)
+        assertEquals(20f, rect.top, 0.5f)
+        assertTrue(rect.width < 595f - 2 * 20)
+    }
+
+    @Test
+    fun `embedTargetSize multiplica el recuadro por los pixeles por punto pedidos`() {
+        val (width, height) = embedTargetSize(drawWidthPts = 100f, drawHeightPts = 50f, multiplier = 3)
+
+        assertEquals(300, width)
+        assertEquals(150, height)
+    }
+
+    @Test
+    fun `embedTargetSize nunca baja de 1 pixel aunque el recuadro sea casi nulo`() {
+        val (width, height) = embedTargetSize(drawWidthPts = 0.1f, drawHeightPts = 0.1f, multiplier = 1)
+
+        assertEquals(1, width)
+        assertEquals(1, height)
+    }
+
+    @Test
+    fun `embedTargetSize redondea al entero mas cercano`() {
+        val (width, height) = embedTargetSize(drawWidthPts = 10.6f, drawHeightPts = 10.4f, multiplier = 1)
+
+        assertEquals(11, width)
+        assertEquals(10, height)
+    }
+
+    @Test
+    fun `needsDownscale es falso cuando el bitmap ya entra en el objetivo`() {
+        assertEquals(
+            false,
+            needsDownscale(bitmapWidth = 100, bitmapHeight = 100, targetWidth = 200, targetHeight = 200),
+        )
+        assertEquals(
+            false,
+            needsDownscale(bitmapWidth = 200, bitmapHeight = 200, targetWidth = 200, targetHeight = 200),
+        )
+    }
+
+    @Test
+    fun `needsDownscale es verdadero si el bitmap excede el objetivo en ancho o en alto`() {
+        assertEquals(true, needsDownscale(bitmapWidth = 300, bitmapHeight = 100, targetWidth = 200, targetHeight = 200))
+        assertEquals(true, needsDownscale(bitmapWidth = 100, bitmapHeight = 300, targetWidth = 200, targetHeight = 200))
+    }
 }

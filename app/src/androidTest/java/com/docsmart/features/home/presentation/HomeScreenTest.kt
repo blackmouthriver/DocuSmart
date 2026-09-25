@@ -162,6 +162,11 @@ class HomeScreenTest {
             HomeScreen(viewModel = viewModel, onSecurity = { securityTapped = true })
         }
         waitForText("Seguridad")
+        // Hallazgo real (ronda 21, reproducido en un teléfono real fuera del
+        // emulador 320x640 de CI): el acceso rápido puede quedar fuera de la
+        // parte visible en una pantalla más alta -- waitForText solo confirma
+        // que el nodo existe, no lo desplaza a la vista (ver waitForRecent).
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Seguridad"))
 
         composeRule.onNodeWithText("Seguridad").performClick()
         composeRule.waitForIdle()

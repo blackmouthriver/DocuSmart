@@ -123,6 +123,14 @@ class StudyScreenTest {
             store[firstArg<String>()] = secondArg<Float>()
             editor
         }
+        // Mismo bug otra vez, ahora con StudyVoicePreference.saveGender/loadGenders
+        // (género recordado por voz): contains()/getBoolean/putBoolean sin stub
+        // rompían StudyScreenTest entero apenas se montaba StudyScreen (loadGenders
+        // corre en la composición, sin importar la pestaña activa).
+        every { editor.putBoolean(any(), any()) } answers {
+            store[firstArg<String>()] = secondArg<Boolean>()
+            editor
+        }
         every { editor.apply() } just Runs
 
         val prefs = mockk<SharedPreferences>()
@@ -135,6 +143,12 @@ class StudyScreenTest {
         }
         every { prefs.getFloat(any(), any()) } answers {
             (store[firstArg<String>()] as? Float) ?: secondArg()
+        }
+        every { prefs.getBoolean(any(), any()) } answers {
+            (store[firstArg<String>()] as? Boolean) ?: secondArg()
+        }
+        every { prefs.contains(any()) } answers {
+            store.containsKey(firstArg<String>())
         }
         return prefs
     }

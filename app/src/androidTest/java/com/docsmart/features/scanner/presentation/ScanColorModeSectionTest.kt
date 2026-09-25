@@ -9,7 +9,6 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.R
 import com.docsmart.core.ui.test.forceLocale
@@ -63,7 +62,9 @@ class ScanColorModeSectionTest {
         }
 
         labels.forEach { (mode, label) ->
-            composeRule.onNodeWithText(str(label)).performScrollTo().performClick()
+            // FlowRow (sin scroll): no hace falta desplazar, todos los chips ya
+            // están dispuestos en el layout (se envuelven a otra fila si no caben).
+            composeRule.onNodeWithText(str(label)).performClick()
             composeRule.waitForIdle()
             composeRule.onNodeWithText(str(label)).assertIsSelected()
             assertEquals(mode, selected)
@@ -83,7 +84,7 @@ class ScanColorModeSectionTest {
         labels.values.forEach { composeRule.onNodeWithText(str(it)).assertExists() }
         composeRule.onNodeWithText(str(R.string.scan_color_mode_grayscale)).assertIsSelected()
 
-        composeRule.onNodeWithText(str(R.string.scan_color_mode_highlight)).performScrollTo().performClick()
+        composeRule.onNodeWithText(str(R.string.scan_color_mode_highlight)).performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText(str(R.string.scan_color_mode_highlight)).assertIsSelected()
     }

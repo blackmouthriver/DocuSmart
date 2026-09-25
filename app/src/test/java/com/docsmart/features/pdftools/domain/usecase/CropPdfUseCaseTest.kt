@@ -125,6 +125,11 @@ class CropPdfUseCaseTest {
             assertTrue(result is PdfToolResult.Error)
         }
 
+    // Hallazgo real de la ronda 21: el chequeo `pdf.numberOfPages == 0` (que
+    // además borra el archivo que PdfWriter ya crea en disco al abrirse) no
+    // tenía ningún test -- todos los PDF de prueba existentes tenían al menos
+    // una página.
+    @Test
     // ── helpers ────────────────────────────────────────────────────────────
 
     private fun stubResolver(bytes: ByteArray) {

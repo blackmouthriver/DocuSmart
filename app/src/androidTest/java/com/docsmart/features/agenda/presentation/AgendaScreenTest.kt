@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.rule.GrantPermissionRule
@@ -261,5 +262,38 @@ class AgendaScreenTest {
         waitForText(esString(R.string.agenda_empty_state))
         coVerify(timeout = 5_000) { repository.getById("fantasma") }
         composeRule.onNodeWithText(esString(R.string.agenda_editor_title_edit)).assertDoesNotExist()
+    }
+
+    // Ronda 21: la pestaña Calendario no tenía ninguna cobertura desde
+    // AgendaScreen -- AgendaCalendarView ya se prueba aislada (ver
+    // AgendaCalendarViewTest), esto cubre el cableado real: cambiar de
+    // pestaña actualiza uiState.viewMode y tocar un evento del detalle del
+    // día abre el mismo editor que la lista.
+    @Test
+    fun pestanaCalendario_muestraElCalendarioYAlTocarUnEventoAbreElEditor() {
+        val now = System.currentTimeMillis()
+        val viewModel = setScreen(events = listOf(event("e1", "Evento de hoy", now)))
+        waitForText("Evento de hoy")
+
+        composeRule.onNodeWithText(esString(R.string.agenda_view_calendar)).performClick()
+        waitForViewMode(viewModel, AgendaViewMode.CALENDAR)
+        waitForContentDescription(esString(R.string.agenda_calendar_next_month))
+
+        // El día seleccionado por defecto es hoy, así que el detalle del
+        // calendario ya muestra el evento recién creado -- se toca desde ahí.
+        composeRule.onNodeWithText("Evento de hoy").performScrollTo().performClick()
+
+        waitForText(esString(R.string.agenda_editor_title_edit))
+    }
+
+    @Test
+    fun pestanaCalendario_vaciaMuestraElMensajeDeSinEventosDelDia() {
+        val viewModel = setScreen()
+        waitForText(esString(R.string.agenda_empty_state))
+
+        composeRule.onNodeWithText(esString(R.string.agenda_view_calendar)).performClick()
+        waitForViewMode(viewModel, AgendaViewMode.CALENDAR)
+
+        waitForText(esString(R.string.agenda_calendar_no_events_day))
     }
 }

@@ -47,6 +47,18 @@ class ConverterComponentsTest {
         return File(File(appContext.filesDir, "converted"), name)
     }
 
+    // Hallazgo de seguridad 2026-09-16 (ver file_provider_paths.xml): "secure/"
+    // se dejó deliberadamente fuera de las carpetas declaradas al FileProvider
+    // -- un archivo real ahí existe en disco, pero FileProvider.getUriForFile()
+    // lanza IllegalArgumentException al no encontrar una raíz configurada para
+    // esa ruta. Sirve para ejercitar esa rama de shareFile()/shareFiles() sin
+    // simular nada, es el mismo camino real que protege la Carpeta Segura.
+    private fun fileOutsideProviderPaths(name: String): File {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val dir = File(appContext.filesDir, "secure").apply { mkdirs() }
+        return File(dir, name).apply { writeText("contenido") }
+    }
+
     @Suppress("DEPRECATION")
     private fun innerIntent(chooser: Intent): Intent? = chooser.getParcelableExtra(Intent.EXTRA_INTENT)
 
@@ -221,6 +233,45 @@ class ConverterComponentsTest {
         val shareLabel = strings.getString(R.string.converter_share)
         composeRule.onAllNodesWithText(shareLabel)[0].performScrollTo().performClick()
         composeRule.onAllNodesWithText(shareLabel)[1].performScrollTo().performClick()
+
+        assertTrue(recording.startedIntents.isEmpty())
+    }
+
+    @Test
+    fun exito_compartirArchivoFueraDeLasRutasDelFileProvider_noLanzaNadaYNoCrashea() {
+        val file = fileOutsideProviderPaths("bloqueado.pdf")
+        val recording = RecordingContext(esContext())
+        composeRule.setEsContent(overrideContext = recording) {
+            ConversionSuccess(
+                result = ConversionResult.Success(file, pageCount = 1, fileSizeKb = 1),
+                savedToDownloads = false,
+                onConvertAnother = {},
+                onSaveToDownloads = {},
+                onOpenDocument = {},
+            )
+        }
+
+        composeRule.onNodeWithText(strings.getString(R.string.converter_share)).performScrollTo().performClick()
+
+        assertTrue(recording.startedIntents.isEmpty())
+    }
+
+    @Test
+    fun exito_compartirVariosArchivosConUnoFueraDeLasRutasDelFileProvider_abortaSinLanzarNada() {
+        val file = outputFile("multi_ok.png")
+        val extras = listOf(fileOutsideProviderPaths("multi_bloqueado.png"))
+        val recording = RecordingContext(esContext())
+        composeRule.setEsContent(overrideContext = recording) {
+            ConversionSuccess(
+                result = ConversionResult.Success(file, pageCount = 2, fileSizeKb = 5, extraFiles = extras),
+                savedToDownloads = false,
+                onConvertAnother = {},
+                onSaveToDownloads = {},
+                onOpenDocument = {},
+            )
+        }
+
+        composeRule.onNodeWithText(strings.getString(R.string.converter_share)).performScrollTo().performClick()
 
         assertTrue(recording.startedIntents.isEmpty())
     }
