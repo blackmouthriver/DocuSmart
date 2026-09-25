@@ -63,4 +63,21 @@ class SplashMouthBlackScreenTest {
         composeRule.waitUntil(timeoutMillis = 3_000) { finished }
         assertTrue(finished)
     }
+
+    // Sin overrides los tests de arriba no ejercen la rama por defecto
+    // (reduceMotionOverride == null): DocuSmartNavGraph llama así en
+    // producción, dejando que se use el valor real del sistema.
+    @Test
+    fun sinOverride_usaElValorRealDelSistemaYNavegaAlTerminar() {
+        var finished = false
+        composeRule.setContent {
+            SplashMouthBlackScreen(onFinished = { finished = true })
+        }
+
+        waitForText("mouthblack")
+        composeRule.onNodeWithText("V1.0").assertIsDisplayed()
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { finished }
+        assertTrue(finished)
+    }
 }

@@ -325,6 +325,26 @@ class PremiumViewModelTest {
             assertEquals(7, selected?.trialDays)
         }
 
+    // Rama complementaria de la anterior: si la oferta no incluye el plan
+    // seleccionado (find() no encuentra coincidencia por id), selectedPlan
+    // debe conservarse tal cual, sin caer al primer plan de la lista.
+    @Test
+    fun `una oferta que no incluye el plan seleccionado no le cambia el plan seleccionado`() =
+        runTest {
+            val otherPlan = plan.copy(id = "monthly", productId = "com.docsmart.premium.monthly", price = "$9")
+            every { premiumRepository.getAvailablePlans() } returns listOf(plan, otherPlan)
+            val offers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+            every { billingManager.planOffers } returns offers
+            val viewModel = buildViewModel()
+            viewModel.selectPlan(otherPlan)
+
+            offers.value = mapOf(plan.productId to PlanOffer(price = "$2.99", trialDays = 7))
+
+            val selected = viewModel.uiState.value.selectedPlan
+            assertEquals("monthly", selected?.id)
+            assertEquals("$9", selected?.price)
+        }
+
     @Test
     fun `una oferta con precio en blanco conserva el precio de respaldo`() =
         runTest {
