@@ -2,6 +2,7 @@ package com.docsmart.features.viewer.presentation
 
 import android.content.ContentResolver
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import com.docsmart.R
 import com.docsmart.core.ads.AdManager
@@ -232,6 +233,18 @@ class ViewerViewModelTest {
         loadRealAndAwait(REAL_DOC_ID)
 
         assertEquals("Mi alias", viewModel.uiState.value.document?.name)
+    }
+
+    @Test
+    fun `resolveFileName usa el DISPLAY_NAME cuando el proveedor lo entrega`() {
+        val cursor = mockk<Cursor>(relaxed = true)
+        every { cursor.moveToFirst() } returns true
+        every { cursor.getString(0) } returns "Reporte Final.docx"
+        every { resolver.query(any(), any(), any(), any(), any()) } returns cursor
+
+        loadRealAndAwait("content://media/algo")
+
+        assertEquals("Reporte Final.docx", viewModel.uiState.value.document?.name)
     }
 
     @Test
@@ -967,6 +980,116 @@ class ViewerViewModelTest {
         assertNull(state.decryptedFile)
     }
 
+    // ── deteccion de contrasena: rutas absoluta / file:// (no solo content://) ──
+
+    // isPdfPasswordProtected()/isRealUri() detectan una ruta absoluta real de
+    // Android con `startsWith("/")` (esas rutas nunca llevan letra de unidad).
+    // `File(...).absolutePath` en Windows devuelve `C:\...` (con backslash y
+    // letra de unidad), así que no basta para simular el caso real -- se le
+    // quita la unidad y se normaliza a "/", igual que en Linux (donde
+    // absolutePath ya es "/..."). En Windows, `File("/Users/...")` sin letra
+    // de unidad resuelve contra la unidad actual, que es la misma del
+    // directorio temporal, así que sigue apuntando al archivo real.
+    private fun File.asAndroidAbsolutePath(): String {
+        val normalized = absolutePath.replace('\\', '/')
+        val driveEnd = normalized.indexOf(":/")
+        return if (driveEnd >= 0) normalized.substring(driveEnd + 1) else normalized
+    }
+
+    @Test
+    fun `PDF protegido en ruta absoluta pide contrasena y error de lectura si desaparece el origen`() {
+        // Cubre la rama `originalId.startsWith("/")` de isPdfPasswordProtected()
+        // Y de unlockPdfWithPassword() -- las pruebas existentes solo ejercitan
+        // el camino content:// (ver LOCKED_DOC_ID).
+        val encryptedFile = File(tempDir, "locked_abs.pdf").apply { writeBytes(createEncryptedPdf()) }
+        val absoluteId = encryptedFile.asAndroidAbsolutePath()
+
+        viewModel.loadDocument(absoluteId, context)
+        val loaded = awaitState { it.requiresPassword }
+        assertEquals(absoluteId, loaded.document?.id)
+        assertFalse(loaded.isLoading)
+
+        encryptedFile.delete()
+        viewModel.unlockPdfWithPassword(PDF_PASSWORD)
+        val state = awaitState { !it.isLoading }
+
+        assertEquals(str(R.string.pdf_pw_read_error), state.passwordError)
+        assertTrue(state.requiresPassword)
+    }
+
+    @Test
+    fun `un PDF protegido en ruta absoluta que no existe no bloquea la carga (no pide contrasena)`() {
+        // Rama `if (!sourceFile.exists()) return false` de isPdfPasswordProtected():
+        // un .pdf ausente no debe quedar marcado como protegido.
+        val missingPath = File(tempDir, "no_existe.pdf").asAndroidAbsolutePath()
+
+        viewModel.loadDocument(missingPath, context)
+        val state = awaitState { !it.isLoading }
+
+        assertFalse(state.requiresPassword)
+        assertNotNull(state.document)
+    }
+
+    @Test
+    fun `un PDF protegido via uri file tambien pide la contrasena, y si el origen desaparece el error es de lectura`() {
+        // Cubre la rama `uri.scheme == "file"` de isPdfPasswordProtected() y
+        // de unlockPdfWithPassword() -- forzamos mimeType via el resolver
+        // porque el nombre resuelto para un docId "file://" no termina en
+        // ".pdf" con los mocks de este test (ver resolveFileName).
+        every { resolver.getType(any()) } returns "application/pdf"
+        val encryptedFile = File(tempDir, "locked_file_uri.pdf").apply { writeBytes(createEncryptedPdf()) }
+        every { fakeUri.scheme } returns "file"
+        every { fakeUri.path } returns encryptedFile.absolutePath
+
+        viewModel.loadDocument("file://${encryptedFile.absolutePath}", context)
+        val loaded = awaitState { it.requiresPassword }
+        assertFalse(loaded.isLoading)
+
+        encryptedFile.delete()
+        viewModel.unlockPdfWithPassword(PDF_PASSWORD)
+        val state = awaitState { !it.isLoading }
+
+        assertEquals(str(R.string.pdf_pw_read_error), state.passwordError)
+    }
+
+    @Test
+    fun `un PDF valido sin cifrar via content no pide contrasena`() {
+        // Completa el arbol de isPdfPasswordProtected(): hasta ahora solo se
+        // probaba el PDF SI cifrado (LOCKED_DOC_ID) -- falta el "feliz" (PDF
+        // real, valido, sin contrasena) que debe cargar normal.
+        every { resolver.getType(any()) } returns "application/pdf"
+        val plainBytes = createPlainPdf()
+        every { resolver.openInputStream(any()) } answers { ByteArrayInputStream(plainBytes) }
+
+        viewModel.loadDocument(LOCKED_DOC_ID, context)
+        val state = awaitState { !it.isLoading }
+
+        assertFalse(state.requiresPassword)
+        assertNotNull(state.document)
+        assertEquals("application/pdf", state.mimeType)
+    }
+
+    @Test
+    fun `bug real corregido -- un pdf corrupto (sin firma PDF) ya no se confunde con protegido por contrasena`() {
+        // Regresion del hallazgo documentado en la ronda 20
+        // (docs/requirements/backlog-bugs-2026-09-20-v17.md): antes,
+        // isPdfPasswordProtected() marcaba "pdf header" (el mensaje que lanza
+        // iText para un archivo que NO empieza con la firma "%PDF-") como
+        // sinonimo de "protegido con contrasena" -- un .pdf corrupto/no-PDF
+        // quedaba pidiendo una contrasena para siempre, sin ninguna que
+        // pudiera "desbloquearlo" (nunca estuvo cifrado). Corregido quitando
+        // esa marca de la deteccion -- ahora sigue el camino normal de carga.
+        every { resolver.getType(any()) } returns "application/pdf"
+        val garbageBytes = "esto no es un pdf, no tiene la firma esperada".toByteArray()
+        every { resolver.openInputStream(any()) } answers { ByteArrayInputStream(garbageBytes) }
+
+        viewModel.loadDocument(LOCKED_DOC_ID, context)
+        val state = awaitState { !it.isLoading }
+
+        assertFalse(state.requiresPassword)
+        assertNotNull(state.document)
+    }
+
     // ── helpers ────────────────────────────────────────────────────────────
 
     private fun str(id: Int) = "str:$id"
@@ -1025,6 +1148,13 @@ class ViewerViewModelTest {
                 EncryptionConstants.ENCRYPTION_AES_128,
             )
         PdfDocument(PdfWriter(out, props)).use { it.addNewPage() }
+        return out.toByteArray()
+    }
+
+    // PDF real, SIN cifrado -- para el "camino feliz" de isPdfPasswordProtected().
+    private fun createPlainPdf(): ByteArray {
+        val out = ByteArrayOutputStream()
+        PdfDocument(PdfWriter(out)).use { it.addNewPage() }
         return out.toByteArray()
     }
 }

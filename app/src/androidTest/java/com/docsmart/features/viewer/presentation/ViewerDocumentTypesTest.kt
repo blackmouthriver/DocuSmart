@@ -132,6 +132,21 @@ class ViewerDocumentTypesTest {
         composeRule.waitForText(vs(R.string.viewer_error))
     }
 
+    // Gap real (ronda 23): el icono de buscar de ViewerTopBar se muestra
+    // SIEMPRE (sin importar el tipo de documento) -- pero ViewerTopBarSection
+    // solo activa la barra de busqueda si `isTextBased` (PDF/Word/Excel/
+    // PowerPoint/texto). Ningun test tocaba ese icono sobre una imagen para
+    // confirmar que de verdad es un no-op.
+    @Test
+    fun imagen_elIconoDeBuscarEsUnNoOpYNoAbreLaBarra() {
+        open(files.png())
+
+        composeRule.onNodeWithContentDescription(vs(R.string.viewer_search_content_desc)).performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
+    }
+
     // ── Word ────────────────────────────────────────────────────────────────
 
     @Test
@@ -193,6 +208,17 @@ class ViewerDocumentTypesTest {
         composeRule.waitForText(vs(R.string.viewer_excel_read_error))
     }
 
+    // Gap real (ronda 23): ExcelSheetTabs se oculta con `sheets.size > 1` --
+    // todos los fixtures existentes tenian 2 hojas, asi que esa rama (un
+    // libro de una sola hoja, sin pestañas que elegir) nunca se probaba.
+    @Test
+    fun excel_conUnaSolaHojaNoMuestraPestanas() {
+        open(files.xlsxSingleSheet())
+        composeRule.waitForText("Lapiz")
+
+        composeRule.onNodeWithText("Resumen").assertDoesNotExist()
+    }
+
     // ── PowerPoint ──────────────────────────────────────────────────────────
 
     // El .pptx mínimo hecho a mano puede no ser aceptado por POI en todos los entornos:
@@ -227,6 +253,11 @@ class ViewerDocumentTypesTest {
             ViewerScreen(documentId = file.absolutePath, onBack = {}, viewModel = harness.viewModel)
         }
         composeRule.waitForText(vs(R.string.viewer_unsupported))
+        // Gap real (ronda 23): la etiqueta del recuadro de icono (formatLabel)
+        // nunca se afirmaba -- solo el mensaje "no soportado" y el botón.
+        // Un .bin no cae en ninguna rama conocida (Word/Excel/PowerPoint/
+        // texto), así que usa el genérico.
+        composeRule.onNodeWithText(vs(R.string.viewer_format_generic)).assertExists()
 
         composeRule.onNodeWithText(vs(R.string.viewer_open_other)).performClick()
         composeRule.waitForIdle()

@@ -1,6 +1,9 @@
 package com.docsmart.features.scanner.presentation
 
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -18,11 +21,14 @@ import com.docsmart.features.scanner.domain.QrCrypto
 import com.docsmart.features.scanner.domain.QrHistoryEntry
 import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 /**
  * QrHistoryScreen.kt (HU-44): lista, vacío, borrar una entrada, vaciar todo y
@@ -37,6 +43,35 @@ class QrHistoryScreenTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private lateinit var ctx: Context
+    private val startMillis = System.currentTimeMillis()
+
+    // Limpia los PNG temporales de "Guardar"/"Compartir" del diálogo de
+    // regenerar (mismo criterio de limpieza que QrCreatorFlowsTest): solo
+    // los archivos creados durante ESTE test, nunca QR reales del usuario.
+    @After
+    fun limpiarArchivosDeQrRegenerado() {
+        val target = InstrumentationRegistry.getInstrumentation().targetContext
+        val names = mutableListOf<String>()
+        File(target.cacheDir, "qr").listFiles()?.forEach {
+            if (it.lastModified() >= startMillis - 2_000) {
+                names += it.name
+                it.delete()
+            }
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                names.forEach {
+                    target.contentResolver.delete(
+                        MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                        "${MediaStore.MediaColumns.DISPLAY_NAME} = ?",
+                        arrayOf(it),
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Sin permiso o sin dueño: no hay nada más que limpiar.
+        }
+    }
 
     private fun str(
         id: Int,
@@ -250,5 +285,75 @@ class QrHistoryScreenTest {
         composeRule.waitForIdle()
 
         assertAbsent(str(R.string.qr_protected_title))
+    }
+
+    // Hallazgo de cobertura (ronda 23): el diálogo de "regenerar" (entrada
+    // CREATED) nunca pulsaba Guardar/Compartir -- solo se comprobaba que el
+    // QR se mostraba y que "Cerrar" funcionaba. Los `onClick` reales de esos
+    // dos botones (saveQrToFile + DownloadsSaver / shareQrImage) quedaban en
+    // 0%. Mismo patrón ya probado en QrCreatorFlowsTest (Guardar real vía
+    // MediaStore, limpiado en @After; Compartir grabado con RecordingContext
+    // sin abrir ningún chooser real).
+    @Test
+    fun entradaCreada_guardarMuestraLaConfirmacion() {
+        seed(created)
+        render()
+
+        composeRule.onNodeWithText("https://creado.com").performClick()
+        composeRule.waitUntilOrDump("CI_HANG_QrHistoryScreenTest", timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodesWithContentDescription(str(R.string.qr_generated_content_desc))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+
+        composeRule.onNodeWithText(str(R.string.general_save)).performClick()
+        composeRule.waitUntilOrDump("CI_HANG_QrHistoryScreenTest", timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText(str(R.string.general_saved_downloads)).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    @Test
+    fun entradaCreada_compartirArmaElChooserConElPng() {
+        seed(created)
+        var recording: RecordingContext? = null
+        composeRule.setContentEs(overrideContext = { RecordingContext(ctx).also { recording = it } }) {
+            QrHistoryScreen(onBack = {})
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("https://creado.com").performClick()
+        composeRule.waitUntilOrDump("CI_HANG_QrHistoryScreenTest", timeoutMillis = 10_000) {
+            composeRule
+                .onAllNodesWithContentDescription(str(R.string.qr_generated_content_desc))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeRule.onNodeWithText(str(R.string.general_share)).performClick()
+        composeRule.waitUntilOrDump("CI_HANG_QrHistoryScreenTest", timeoutMillis = 10_000) {
+            recording?.started?.isNotEmpty() == true
+        }
+
+        val chooser = recording!!.started.first()
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        @Suppress("DEPRECATION")
+        val send = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+        assertNotNull(send)
+        assertEquals("image/png", send!!.type)
+    }
+
+    // Hallazgo de cobertura (ronda 23): ningún test existente pasaba `onHome`
+    // -- la rama "Inicio" de BannerNavRow (DocuSmartTopBanner) quedaba en 0%
+    // para esta pantalla.
+    @Test
+    fun banner_conOnHome_invocaSuCallback() {
+        var homeCount = 0
+        composeRule.setContentEs(overrideContext = { ctx }) { QrHistoryScreen(onHome = { homeCount++ }) }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(str(R.string.nav_home)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, homeCount)
     }
 }

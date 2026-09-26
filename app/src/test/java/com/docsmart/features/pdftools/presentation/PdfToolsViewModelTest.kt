@@ -216,6 +216,19 @@ class PdfToolsViewModelTest {
         viewModel.uiState.value.signaturePageNumber shouldBe 3
     }
 
+    // onClearSignature() no tenia ninguna prueba (ni JVM ni instrumentada): la
+    // pantalla de Firmar la invoca solo cuando hay una firma capturada, rama
+    // que ningun test instrumentado ejercia sobre el ViewModel real.
+    @Test
+    fun `onClearSignature borra la firma capturada`() {
+        viewModel.onSignatureCaptured(byteArrayOf(1, 2, 3))
+        viewModel.uiState.value.signatureImageBytes?.contentEquals(byteArrayOf(1, 2, 3)) shouldBe true
+
+        viewModel.onClearSignature()
+
+        (viewModel.uiState.value.signatureImageBytes == null) shouldBe true
+    }
+
     @Test
     fun `los rectangulos de redaccion se agregan deshacen y limpian`() {
         val r1 = RedactionRect(1, 0.1f, 0.1f, 0.2f, 0.2f)

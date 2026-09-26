@@ -1,5 +1,6 @@
 package com.docsmart.features.scanner.presentation
 
+import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -8,6 +9,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -21,6 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import android.graphics.Color as AndroidColor
 
 /**
  * QrContentForms.kt: formularios de Wi-Fi, Contacto y Evento del Creador de QR.
@@ -245,5 +248,56 @@ class QrContentFormsTest {
         composeRule.waitForIdle()
         assertAbsent(str(R.string.general_accept))
         assertEquals(end, state.end)
+    }
+
+    // ── Diseño del QR (QrDesignSection.kt, HU-45) ───────────────────────────
+    // Hallazgo de cobertura (ronda 23): la rama "logoBitmap != null" (Imagen +
+    // texto + botón quitar) solo se ejercía a través del selector real de
+    // imagen en QrCreatorFlowsTest.logo_agregarGenerarYQuitar, marcado
+    // @Ignore por inestabilidad de temporización en el emulador de CI (ver
+    // backlog v17). Al renderizar QrDesignSection de forma aislada con un
+    // Bitmap ya decodificado (sin picker ni ContentResolver de por medio) se
+    // cubre la misma rama de forma determinista.
+
+    @Test
+    fun diseno_conLogo_muestraLaImagenYQuitarInvocaElCallback() {
+        var removed = 0
+        val logo = Bitmap.createBitmap(40, 40, Bitmap.Config.ARGB_8888).apply { eraseColor(AndroidColor.BLUE) }
+        composeRule.setContentEs {
+            QrDesignSection(
+                selectedColor = QR_DEFAULT_MODULE_COLOR,
+                onColorSelected = {},
+                hasSufficientContrast = true,
+                logoBitmap = logo,
+                onPickLogo = {},
+                onRemoveLogo = { removed++ },
+            )
+        }
+
+        composeRule.onNodeWithText(str(R.string.qr_design_logo_added)).assertExists()
+        assertAbsent(str(R.string.qr_design_add_logo))
+        composeRule.onNodeWithContentDescription(str(R.string.qr_design_remove_logo)).performClick()
+
+        assertEquals(1, removed)
+    }
+
+    @Test
+    fun diseno_sinLogo_muestraElBotonAgregarYLoInvoca() {
+        var picked = 0
+        composeRule.setContentEs {
+            QrDesignSection(
+                selectedColor = QR_DEFAULT_MODULE_COLOR,
+                onColorSelected = {},
+                hasSufficientContrast = true,
+                logoBitmap = null,
+                onPickLogo = { picked++ },
+                onRemoveLogo = {},
+            )
+        }
+
+        assertAbsent(str(R.string.qr_design_logo_added))
+        composeRule.onNodeWithText(str(R.string.qr_design_add_logo)).performClick()
+
+        assertEquals(1, picked)
     }
 }

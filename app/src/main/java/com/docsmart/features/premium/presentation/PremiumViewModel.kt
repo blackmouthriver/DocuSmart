@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.billing.BillingManager
+import com.docsmart.core.billing.PlanOffer
 import com.docsmart.core.billing.PurchaseResult
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.features.premium.data.repository.PremiumRepository
@@ -104,20 +105,32 @@ class PremiumViewModel
                     if (offers.isEmpty()) return@collect
                     _uiState.update { state ->
                         state.copy(
-                            plans =
-                                state.plans.map { plan ->
-                                    offers[plan.productId]?.let { offer ->
-                                        plan.copy(
-                                            price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
-                                            trialDays = offer.trialDays,
-                                        )
-                                    } ?: plan
-                                },
+                            plans = state.plans.map { plan -> applyOffer(plan, offers) },
+                            // Bug real (ronda 23): antes solo se refrescaba `plans`, dejando
+                            // `selectedPlan` con el precio/trialDays viejos que llegó de
+                            // PremiumRepository -- el CTA de compra (purchaseCtaFor) usa
+                            // selectedPlan, así que mostraba datos obsoletos aunque las
+                            // tarjetas de abajo ya tuvieran el precio real de Play Billing.
+                            // Se aplica la misma transformación por separado (en vez de
+                            // buscar por id en `plans` ya actualizado) para no depender de
+                            // que selectedPlan siga estando en la lista.
+                            selectedPlan = state.selectedPlan?.let { applyOffer(it, offers) },
                         )
                     }
                 }
             }
         }
+
+        private fun applyOffer(
+            plan: PremiumPlan,
+            offers: Map<String, PlanOffer>,
+        ): PremiumPlan =
+            offers[plan.productId]?.let { offer ->
+                plan.copy(
+                    price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
+                    trialDays = offer.trialDays,
+                )
+            } ?: plan
 
         // HU-54, AC1: mientras dure la prueba, PremiumActiveCard debe poder
         // mostrar la fecha real de cobro.

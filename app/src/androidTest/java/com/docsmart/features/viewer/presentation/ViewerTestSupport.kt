@@ -302,6 +302,9 @@ internal class ViewerTestFiles {
     /** .xlsx mínimo hecho a mano con dos hojas (Resumen y Ventas). */
     fun xlsx(): File = bytes(".xlsx", zip(XLSX_PARTS))
 
+    /** .xlsx mínimo con UNA sola hoja -- para probar que las pestañas de hoja se ocultan. */
+    fun xlsxSingleSheet(): File = bytes(".xlsx", zip(XLSX_SINGLE_SHEET_PARTS))
+
     /** .pptx mínimo hecho a mano con una diapositiva (título + cuerpo). */
     fun pptx(): File = bytes(".pptx", zip(PPTX_PARTS))
 
@@ -404,6 +407,28 @@ private val XLSX_PARTS =
             excelSheet(listOf(listOf("Producto", "Detalle"), listOf("Lapiz", "Azul"), listOf("Cuaderno", "Rayado"))),
         "xl/worksheets/sheet2.xml" to
             excelSheet(listOf(listOf("Mes", "Total"), listOf("Enero", "TotalEnero"), listOf("Febrero", "Otro"))),
+    )
+
+// Gap real (ronda 23): ExcelSheetTabs solo se muestra con sheets.size > 1 --
+// hasta ahora ningun fixture de prueba tenia una sola hoja, asi que esa rama
+// (ocultar las pestañas) nunca se ejercitaba.
+private val XLSX_SINGLE_SHEET_PARTS =
+    listOf(
+        "[Content_Types].xml" to
+            contentTypes(
+                listOf(
+                    "/xl/workbook.xml" to CT_XLSX_BOOK,
+                    "/xl/worksheets/sheet1.xml" to CT_XLSX_SHEET,
+                ),
+            ),
+        "_rels/.rels" to rels(Triple("rId1", REL_DOC, "xl/workbook.xml")),
+        "xl/workbook.xml" to
+            XML_HEAD + "<workbook xmlns=\"$SML\" xmlns:r=\"$NS_R\"><sheets>" +
+            "<sheet name=\"Resumen\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>",
+        "xl/_rels/workbook.xml.rels" to
+            rels(Triple("rId1", "$NS_R/worksheet", "worksheets/sheet1.xml")),
+        "xl/worksheets/sheet1.xml" to
+            excelSheet(listOf(listOf("Producto", "Detalle"), listOf("Lapiz", "Azul"), listOf("Cuaderno", "Rayado"))),
     )
 
 private const val DML = "http://schemas.openxmlformats.org/drawingml/2006/main"

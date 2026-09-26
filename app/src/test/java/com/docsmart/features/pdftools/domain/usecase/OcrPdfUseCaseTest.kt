@@ -148,6 +148,66 @@ class OcrPdfUseCaseTest {
         assertEquals(1f, horizontalScalingPercent(naturalWidthPts = 1000f, targetWidthPts = 1f), 0.001f)
     }
 
+    // ── ocrOutcomeFor / ocrFontSizeFor (funciones puras, sin cobertura previa) ──
+    // Ninguna de las dos depende de Android/ML Kit: decide el desenlace y el
+    // tamaño de fuente a partir de valores ya calculados, así que se pueden
+    // testear directamente en JVM sin pasar por invoke().
+
+    @Test
+    fun `ocrOutcomeFor devuelve GENERATE_ERROR cuando el archivo de salida queda vacio`() {
+        // El orden importa (ver comentario de la función): outputLengthBytes en 0
+        // gana aunque processedPages/totalWords indiquen que sí se proceso algo.
+        assertEquals(
+            OcrOutcome.GENERATE_ERROR,
+            ocrOutcomeFor(outputLengthBytes = 0L, processedPages = 5, totalWords = 10),
+        )
+    }
+
+    @Test
+    fun `ocrOutcomeFor devuelve ALREADY_HAS_TEXT cuando no se proceso ninguna pagina`() {
+        assertEquals(
+            OcrOutcome.ALREADY_HAS_TEXT,
+            ocrOutcomeFor(outputLengthBytes = 100L, processedPages = 0, totalWords = 0),
+        )
+    }
+
+    @Test
+    fun `ocrOutcomeFor devuelve NO_TEXT_FOUND cuando se procesaron paginas pero no se reconocio ninguna palabra`() {
+        assertEquals(
+            OcrOutcome.NO_TEXT_FOUND,
+            ocrOutcomeFor(outputLengthBytes = 100L, processedPages = 3, totalWords = 0),
+        )
+    }
+
+    @Test
+    fun `ocrOutcomeFor devuelve SUCCESS cuando hay paginas procesadas y palabras reconocidas`() {
+        assertEquals(
+            OcrOutcome.SUCCESS,
+            ocrOutcomeFor(outputLengthBytes = 100L, processedPages = 3, totalWords = 42),
+        )
+    }
+
+    @Test
+    fun `ocrFontSizeFor devuelve la altura tal cual cuando esta dentro del rango por defecto`() {
+        assertEquals(12f, ocrFontSizeFor(12f), 0.001f)
+    }
+
+    @Test
+    fun `ocrFontSizeFor se limita al minimo por defecto`() {
+        assertEquals(2f, ocrFontSizeFor(0.5f), 0.001f)
+    }
+
+    @Test
+    fun `ocrFontSizeFor se limita al maximo por defecto`() {
+        assertEquals(200f, ocrFontSizeFor(500f), 0.001f)
+    }
+
+    @Test
+    fun `ocrFontSizeFor respeta un minSize y maxSize personalizados`() {
+        assertEquals(5f, ocrFontSizeFor(1f, minSize = 5f, maxSize = 10f), 0.001f)
+        assertEquals(10f, ocrFontSizeFor(50f, minSize = 5f, maxSize = 10f), 0.001f)
+    }
+
     // ── copyUriToCache / camino de error de lectura (antes de tocar ML Kit) ──
 
     // Bug real corregido en la ronda 15: copyUriToCache() devolvia null dejando
@@ -214,6 +274,27 @@ class OcrPdfUseCaseTest {
             }
 
             assertTrue(cancelled, "la CancellationException debia propagarse")
+            assertTrue(cacheDir.listFiles().isNullOrEmpty())
+        }
+
+    // Rama de invoke() sin cobertura previa: OutOfMemoryError es un Error, no una
+    // Exception, así que copyUriToCache() no lo atrapa (solo CancellationException
+    // y Exception) y se propaga tal cual hasta el catch(OutOfMemoryError) de
+    // invoke() -- el mismo camino real que un bitmap de OCR agotando memoria,
+    // pero disparable en JVM puro sin tocar PdfRenderer/ML Kit.
+    @Test
+    fun `un OutOfMemoryError leyendo el origen se propaga y no deja cache`() =
+        runTest {
+            val uri = resolverReturning { throw OutOfMemoryError("sin memoria") }
+
+            var outOfMemory = false
+            try {
+                useCase(uri, messages = messages)
+            } catch (_: OutOfMemoryError) {
+                outOfMemory = true
+            }
+
+            assertTrue(outOfMemory, "el OutOfMemoryError debia propagarse")
             assertTrue(cacheDir.listFiles().isNullOrEmpty())
         }
 

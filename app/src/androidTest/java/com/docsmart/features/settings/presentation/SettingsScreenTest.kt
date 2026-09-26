@@ -225,6 +225,36 @@ class SettingsScreenTest {
         assertEquals(com.docsmart.core.ui.AppLanguage.PORTUGUESE, languageManager.currentLanguage.value)
     }
 
+    // Ronda 23: `accentColorLabel()` es un `when` exhaustivo de 10 ramas, pero el carrusel
+    // (LazyRow) solo compone los círculos visibles en el viewport chico de CI -- Turquesa/
+    // Índigo/Rojo/Ámbar/Cian nunca se pintaban (0% de esas 5 ramas). No hace falta scrollear
+    // el carrusel para ejercerlas: el subtítulo de la fila ("Color de acento: <label>") llama
+    // a `accentColorLabel(currentAccentColor)` con el color YA seleccionado, así que basta con
+    // cambiarlo por código (mismo ThemeManager real que usa la UI) para recomponer ese texto.
+    @Test
+    fun colorDeAcento_muestraLaEtiquetaDeLosColoresQueElCarruselNoLlegaAPintar() {
+        val (themeManager, languageManager) = buildManagers()
+        val viewModel = buildSettingsViewModel()
+
+        setContentWithLocale {
+            SettingsScreen(themeManager = themeManager, languageManager = languageManager, viewModel = viewModel)
+        }
+        waitForText("Tema")
+
+        listOf(
+            AccentColor.TEAL to "Turquesa",
+            AccentColor.INDIGO to "Índigo",
+            AccentColor.RED to "Rojo",
+            AccentColor.AMBER to "Ámbar",
+            AccentColor.CYAN to "Cian",
+        ).forEach { (color, label) ->
+            themeManager.setAccentColor(color)
+            composeRule.waitForIdle()
+            composeRule.onNodeWithText(label).assertExists()
+            assertEquals(color, themeManager.accentColor.value)
+        }
+    }
+
     @Test
     fun restablecerConfiguracion_vuelveTemaAcentoYTamanoDeLetraADefault() {
         val (themeManager, languageManager) = buildManagers()

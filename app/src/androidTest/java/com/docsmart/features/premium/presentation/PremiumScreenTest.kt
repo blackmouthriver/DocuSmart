@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -247,5 +248,71 @@ class PremiumScreenTest {
 
         waitForText("fallo simulado")
         composeRule.onNodeWithText("fallo simulado").assertExists()
+    }
+
+    // ── Ronda 23: ramas de PurchaseActionsSection y PremiumActiveCard que
+    // ningún test anterior alcanzaba ──────────────────────────────────────
+
+    @Test
+    fun sinPlanSeleccionado_elBotonDeCompraQuedaDeshabilitadoYPideElegirUnPlan() {
+        // Con la app real, PremiumRepository nunca devuelve una lista vacía
+        // (siempre 2 planes fijos) -- por eso la única forma de ejercer la
+        // rama PurchaseCta.SelectPlan (selectedPlan == null) es mockear el
+        // ViewModel directamente en vez de armar uno real.
+        val viewModel = mockk<PremiumViewModel>(relaxed = true)
+        every { viewModel.uiState } returns
+            MutableStateFlow(PremiumUiState(plans = listOf(monthly, annual), selectedPlan = null))
+        setScreen(viewModel)
+
+        val selectPlanCta = string(R.string.premium_select_plan)
+        scrollToText(selectPlanCta)
+        composeRule.onNodeWithText(selectPlanCta).assertIsNotEnabled()
+    }
+
+    @Test
+    fun planConPruebaGratuita_elBotonDeCompraOfreceIniciarLaPruebaEnVezDelPrecio() {
+        // HU-54 RF2: si el plan seleccionado tiene trialDays (Play Billing),
+        // el CTA debe decir "Iniciar prueba de N días" en vez del precio.
+        val trialAnnual = annual.copy(trialDays = 7)
+        val viewModel = mockk<PremiumViewModel>(relaxed = true)
+        every { viewModel.uiState } returns
+            MutableStateFlow(PremiumUiState(plans = listOf(monthly, trialAnnual), selectedPlan = trialAnnual))
+        setScreen(viewModel)
+
+        val startTrialCta = string(R.string.premium_start_trial, 7)
+        scrollToText(startTrialCta)
+        composeRule.onNodeWithText(startTrialCta).assertExists()
+    }
+
+    @Test
+    fun comprar_sinActivityDisponibleEnElContexto_noLanzaLaCompra() {
+        // findActivity() recorre la cadena de ContextWrapper buscando un Activity:
+        // el contexto de forceLocale() (createConfigurationContext) no es un
+        // ContextWrapper, así que la corta y no encuentra ninguno -- mismo motivo
+        // por el que "comprar_lanzaElFlujoDeCompra..." usa localized = false para
+        // sí tener un Activity real. Acá se aprovecha ese mismo efecto (localized
+        // = true, el valor por defecto de setScreen) para ejercer la rama
+        // `?: Timber.e(...)` de onPurchaseClick.
+        setScreen(buildViewModel())
+
+        val cta = string(R.string.premium_get_plan, string(annual.titleRes), annual.price)
+        scrollToText(cta)
+        composeRule.onNodeWithText(cta).performClick()
+        composeRule.waitForIdle()
+
+        verify(exactly = 0) { billingManager.launchPurchase(any(), any()) }
+        // Sin compra lanzada, el botón sigue mostrando el precio (no "Procesando...").
+        composeRule.onNodeWithText(cta).assertExists()
+    }
+
+    @Test
+    fun clientePagador_conPruebaDeSuscripcionYaVencida_muestraElTextoNormal() {
+        // trialEndsAtMillis no nulo pero en el pasado: distinto del caso ya
+        // cubierto (trialEndsAtMillis nulo) -- acá sí se evalúa
+        // isSubscriptionTrialActive() y da false por vencimiento, no por null.
+        val trialEnds = System.currentTimeMillis() - 1_000
+        setScreen(buildViewModel(isPaid = true, trialEndsAtMillis = trialEnds))
+
+        composeRule.onNodeWithText(string(R.string.premium_active_body)).assertExists()
     }
 }

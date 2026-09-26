@@ -10,6 +10,7 @@ import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -36,8 +37,10 @@ import com.docsmart.features.library.data.DownloadsAccessManager
 import com.docsmart.features.library.data.TrashRepository
 import com.docsmart.features.library.data.TrashedDocumentUiModel
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -215,5 +218,135 @@ class LibraryScreenExtrasTest {
 
         assertTrue(noApp.attempts >= 1)
         composeRule.onNodeWithText("MisDocs").assertExists()
+    }
+
+    // ── NoPermissionContent (ronda 23) ────────────────────────────────────────
+    // Se prueba de forma aislada (internal, no a través de LibraryScreen): forzar el
+    // estado real "sin permiso" negaría READ_MEDIA_IMAGES/READ_EXTERNAL_STORAGE, un
+    // permiso que GrantPermissionRule de otras clases de prueba ya concede de forma
+    // persistente en la misma instalación -- revocarlo sería estado compartido entre
+    // pruebas (reglas 5/7 de la campaña).
+
+    private fun setNoPermissionContent(
+        permissionDenied: Boolean,
+        onRequestPermission: () -> Unit = {},
+    ) {
+        composeRule.setContent {
+            val base = LocalContext.current
+            val localized = remember(base) { forceLocale(base, "es-ES") }
+            CompositionLocalProvider(
+                LocalContext provides localized,
+                LocalResources provides localized.resources,
+            ) {
+                MaterialTheme {
+                    NoPermissionContent(permissionDenied = permissionDenied, onRequestPermission = onRequestPermission)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun noPermissionContentSinDenegarMuestraElTituloYElBotonDePermitir() {
+        var requested = 0
+        setNoPermissionContent(permissionDenied = false, onRequestPermission = { requested++ })
+
+        composeRule.onNodeWithText(text(R.string.library_no_permission_required_title)).assertExists()
+        composeRule.onNodeWithText(text(R.string.library_no_permission_required_body)).assertExists()
+        composeRule.onNodeWithText(text(R.string.library_no_permission_allow_button)).performClick()
+
+        assertEquals(1, requested)
+    }
+
+    @Test
+    fun noPermissionContentDenegadoOcultaElBotonDePermitir() {
+        setNoPermissionContent(permissionDenied = true)
+
+        composeRule.onNodeWithText(text(R.string.library_no_permission_denied_title)).assertExists()
+        composeRule.onNodeWithText(text(R.string.library_no_permission_denied_body)).assertExists()
+        composeRule.onAllNodesWithText(text(R.string.library_no_permission_allow_button)).assertCountEquals(0)
+    }
+
+    // ── Toasts de error (ronda 23): LaunchedEffect(uiState.deleteError) /
+    // LaunchedEffect(uiState.linkFolderError) -- se invoca al ViewModel directo
+    // (mismo patron ya usado en el proyecto para viewModel.clearAll()/reset(), ver
+    // ConverterScreenFlowsTest/PdfToolsScreenFlowsTest) en vez de simular el picker
+    // real de carpeta o forzar un fallo real de MediaStore.
+
+    @Test
+    fun errorAlEliminarUnDocumentoMuestraToastYLoLimpiaSolo() {
+        val adManager = mockk<AdManager>(relaxed = true)
+        every { adManager.isPremium } returns MutableStateFlow(true)
+        every { adManager.isInitialized } returns MutableStateFlow(false)
+        val repository = mockk<DocumentRepository>(relaxed = true)
+        coEvery { repository.loadAllDocuments() } returns
+            listOf(DocumentUiModel("/app/a.pdf", "A.pdf", DocumentType.PDF, "1 KB", "Hoy"))
+        val trashRepository = mockk<TrashRepository>(relaxed = true)
+        coEvery { trashRepository.loadTrashedDocuments() } returns emptyList()
+        // moveToTrash() falla: removeDocument() debe guardar deleteError y NO tocar la lista.
+        coEvery { trashRepository.moveToTrash(any()) } returns false
+        val downloadsAccessManager = mockk<DownloadsAccessManager>(relaxed = true)
+        every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
+        val viewModel =
+            LibraryViewModel(
+                adManager = adManager,
+                repository = repository,
+                trashRepository = trashRepository,
+                favoritesRepository = mockk<FavoritesRepository>(relaxed = true),
+                downloadsAccessManager = downloadsAccessManager,
+                soundEffectPlayer = mockk(relaxed = true),
+                context = target,
+            )
+
+        setScreen { LibraryScreen(viewModel = viewModel) }
+        waitForText("A.pdf")
+
+        composeRule.runOnUiThread { viewModel.removeDocument("/app/a.pdf") }
+        // El LaunchedEffect(uiState.deleteError) de LibraryScreen muestra el Toast y
+        // llama a dismissDeleteError() en la misma composicion -- el estado vuelve a null.
+        composeRule.waitUntilOrDump("CI_HANG_LibraryScreenExtrasTest") {
+            viewModel.uiState.value.deleteError == null
+        }
+
+        coVerify { trashRepository.moveToTrash("/app/a.pdf") }
+        // Al fallar moveToTrash(), removeDocument() vuelve antes de quitar el documento.
+        composeRule.onNodeWithText("A.pdf").assertExists()
+    }
+
+    @Test
+    fun errorAlVincularCarpetaMuestraToastYLoLimpiaSolo() {
+        val downloadsAccessManager = mockk<DownloadsAccessManager>(relaxed = true)
+        every { downloadsAccessManager.linkedFolderUri } returns MutableStateFlow(null)
+        // onFolderPicked() falla (p.ej. takePersistableUriPermission lanzo): debe fijar linkFolderError.
+        every { downloadsAccessManager.onFolderPicked(folderUri) } returns false
+        val trashRepository = mockk<TrashRepository>(relaxed = true)
+        coEvery { trashRepository.loadTrashedDocuments() } returns emptyList()
+        val repository = mockk<DocumentRepository>(relaxed = true)
+        coEvery { repository.loadAllDocuments() } returns
+            listOf(DocumentUiModel("/app/a.pdf", "A.pdf", DocumentType.PDF, "1 KB", "Hoy"))
+        val adManager = mockk<AdManager>(relaxed = true)
+        every { adManager.isPremium } returns MutableStateFlow(true)
+        every { adManager.isInitialized } returns MutableStateFlow(false)
+        val viewModel =
+            LibraryViewModel(
+                adManager = adManager,
+                repository = repository,
+                trashRepository = trashRepository,
+                favoritesRepository = mockk<FavoritesRepository>(relaxed = true),
+                downloadsAccessManager = downloadsAccessManager,
+                soundEffectPlayer = mockk(relaxed = true),
+                context = target,
+            )
+
+        setScreen { LibraryScreen(viewModel = viewModel) }
+        waitForText("A.pdf")
+
+        composeRule.runOnUiThread { viewModel.onDownloadsFolderPicked(folderUri) }
+        // El LaunchedEffect(uiState.linkFolderError) de LibraryScreen muestra el Toast y
+        // llama a dismissLinkFolderError() en la misma composicion -- el estado vuelve a null.
+        composeRule.waitUntilOrDump("CI_HANG_LibraryScreenExtrasTest") {
+            viewModel.uiState.value.linkFolderError == null
+        }
+
+        verify { downloadsAccessManager.onFolderPicked(folderUri) }
     }
 }

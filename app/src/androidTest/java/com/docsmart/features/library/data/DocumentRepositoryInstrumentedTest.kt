@@ -423,4 +423,221 @@ class DocumentRepositoryInstrumentedTest {
         assertEquals(file.absolutePath, id)
         coVerify { favorites.saveAlias(file.absolutePath, "tres.pdf") }
     }
+
+    // ── Ramas de error/borde (ronda 23) ─────────────────────────────────────────
+
+    @Test
+    fun unaFilaConIdNoNumericoEnDescargasSeOmiteYElRestoSeCarga() {
+        // MatrixCursor.getLong() sobre un valor no numerico lanza
+        // NumberFormatException -- el catch por fila de loadDocumentsFromDownloads()
+        // debe descartar solo esa fila, no toda la fuente.
+        downloadsCursor = {
+            mediaCursor(
+                arrayOf("no-es-numero", "malo.pdf", 10L, 1_700_000_000L, "application/pdf"),
+                arrayOf(11L, "bueno.pdf", 10L, 1_700_000_000L, "application/pdf"),
+            )
+        }
+
+        val names = load().map { it.name }
+
+        assertEquals(listOf("bueno.pdf"), names)
+    }
+
+    @Test
+    fun unaFilaConIdNoNumericoEnImagenesSeOmiteYElRestoSeCarga() {
+        imagesCursor = {
+            mediaCursor(
+                arrayOf("no-es-numero", "mala.jpg", 10L, 1_700_000_000L, "image/jpeg"),
+                arrayOf(21L, "buena.jpg", 10L, 1_700_000_000L, "image/jpeg"),
+            )
+        }
+
+        val names = load().map { it.name }
+
+        assertEquals(listOf("buena.jpg"), names)
+    }
+
+    @Test
+    fun soloTomaLasPrimeras50ImagenesDeMediaStore() {
+        imagesCursor = {
+            mediaCursor(
+                *(1..55)
+                    .map { i -> arrayOf<Any?>(i.toLong(), "img$i.jpg", 10L, 1_700_000_000L + i, "image/jpeg") }
+                    .toTypedArray(),
+            )
+        }
+
+        val names = load().map { it.name }.filter { it.startsWith("img") }
+
+        assertEquals(50, names.size)
+    }
+
+    @Test
+    fun documentoDelHistorialViaUriSinCursorOVacioSeOmiteSinCrashear() {
+        val sinProveedor = "content://com.docsmart.fake/doc/sin-proveedor"
+        val vacio = "content://com.docsmart.fake/doc/vacio"
+        val ok = "content://com.docsmart.fake/doc/ok"
+        otherQuery = { uri, _ ->
+            when (uri.toString()) {
+                // Proveedor desinstalado/revocado: query() devuelve null.
+                sinProveedor -> null
+                // Documento borrado del lado del proveedor: cursor sin filas.
+                vacio -> MatrixCursor(arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE))
+                ok ->
+                    MatrixCursor(arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)).apply {
+                        addRow(arrayOf("ok.pdf", 100L))
+                    }
+                else -> null
+            }
+        }
+        coEvery { history.allEntries() } returns
+            listOf(
+                DocumentHistoryEntry(sinProveedor, 1_700_000_000_000L),
+                DocumentHistoryEntry(vacio, 1_700_000_000_000L),
+                DocumentHistoryEntry(ok, 1_700_000_000_000L),
+            )
+
+        val names = load().map { it.name }
+
+        assertEquals(listOf("ok.pdf"), names)
+    }
+
+    @Test
+    fun documentoDelHistorialViaUriSinColumnaDeNombreSeOmite() {
+        val sinNombre = "content://com.docsmart.fake/doc/sin-nombre"
+        otherQuery = { uri, _ ->
+            if (uri.toString() == sinNombre) {
+                MatrixCursor(arrayOf(OpenableColumns.SIZE)).apply { addRow(arrayOf(10L)) }
+            } else {
+                null
+            }
+        }
+        coEvery { history.allEntries() } returns listOf(DocumentHistoryEntry(sinNombre, 1_700_000_000_000L))
+
+        assertTrue(load().isEmpty())
+    }
+
+    @Test
+    fun documentoDelHistorialViaUriSiLaConsultaOElTipoMimeFallanSeManejaSinCrashear() {
+        val consultaFalla = "content://com.docsmart.fake/doc/consulta-falla"
+        val tipoFalla = "content://com.docsmart.fake/doc/tipo-falla"
+        otherQuery = { uri, _ ->
+            when (uri.toString()) {
+                consultaFalla -> throw SecurityException("sin permiso")
+                tipoFalla ->
+                    MatrixCursor(arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)).apply {
+                        addRow(arrayOf("tipofalla.pdf", 50L))
+                    }
+                else -> null
+            }
+        }
+        every { resolver.getType(Uri.parse(tipoFalla)) } throws SecurityException("sin tipo")
+        coEvery { history.allEntries() } returns
+            listOf(
+                DocumentHistoryEntry(consultaFalla, 1_700_000_000_000L),
+                DocumentHistoryEntry(tipoFalla, 1_700_000_000_000L),
+            )
+
+        val docs = load()
+
+        // consultaFalla: query() lanza -> se descarta sin crashear.
+        // tipoFalla: getType() lanza -> mime cae a "", pero el documento igual
+        // se incluye (mimeToDocumentType("", "tipofalla.pdf") resuelve por extension).
+        assertEquals(listOf("tipofalla.pdf"), docs.map { it.name })
+        assertEquals(DocumentType.PDF, docs.single().type)
+    }
+
+    @Test
+    fun laCarpetaVinculadaNoBajaMasAllaDelTopeDeProfundidad() {
+        // LINKED_FOLDER_MAX_DEPTH = 8: una cadena de carpetas anidadas de "root"
+        // hasta "n9" deja el archivo del noveno nivel (depth 9) fuera del recorrido.
+        val tree = Uri.parse("content://com.docsmart.fake/tree/root")
+        linkedFolder.value = tree
+        val docs = mutableMapOf<String, Triple<String, String, Long>>()
+        val children = mutableMapOf<String, List<String>>()
+        docs["file_root"] = Triple("file_root.pdf", "application/pdf", 10L)
+        children["root"] = listOf("file_root")
+        var parent = "root"
+        for (level in 1..9) {
+            val folderId = "n$level"
+            val fileId = "file_$level"
+            docs[folderId] = Triple(folderId, DocumentsContract.Document.MIME_TYPE_DIR, 0L)
+            docs[fileId] = Triple("file_$level.pdf", "application/pdf", 10L)
+            children[parent] = children.getValue(parent) + folderId
+            children[folderId] = listOf(fileId)
+            parent = folderId
+        }
+        otherQuery = { uri, projection ->
+            val column = projection?.firstOrNull().orEmpty()
+            val documentId = DocumentsContract.getDocumentId(uri)
+            if (uri.lastPathSegment == "children") {
+                MatrixCursor(arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID)).apply {
+                    children[documentId].orEmpty().forEach { addRow(arrayOf(it)) }
+                }
+            } else {
+                val (name, mime, size) = docs.getValue(documentId)
+                val value: Any =
+                    when (column) {
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME -> name
+                        DocumentsContract.Document.COLUMN_MIME_TYPE -> mime
+                        DocumentsContract.Document.COLUMN_SIZE -> size
+                        DocumentsContract.Document.COLUMN_LAST_MODIFIED -> 1_700_000_000_000L
+                        else -> 0
+                    }
+                MatrixCursor(arrayOf(column)).apply { addRow(arrayOf(value)) }
+            }
+        }
+
+        val names = load().map { it.name }.toSet()
+
+        assertTrue("file_1.pdf" in names)
+        assertTrue("file_8.pdf" in names)
+        assertFalse("file_9.pdf" in names)
+    }
+
+    // Nota: no se agrega un test donde la consulta SAF "lance" al leer nombre/mime de un
+    // archivo -- androidx.documentfile.provider.DocumentFile (TreeDocumentFile) atrapa
+    // internamente cualquier excepcion de sus propias consultas (queryForString/queryForLong)
+    // y devuelve null en vez de propagarla, asi que el catch por archivo de
+    // collectLinkedFolderDocuments() (Timber.w "Error leyendo archivo de la carpeta
+    // vinculada") es inalcanzable con una falla de consulta real -- el mismo caso ya queda
+    // cubierto (via un `name`/`mime` null, sin excepcion) por el test siguiente.
+
+    @Test
+    fun archivosDeLaCarpetaVinculadaSinNombreSinMimeOConMimeNoSoportadoSeOmiten() {
+        val tree = Uri.parse("content://com.docsmart.fake/tree/root")
+        linkedFolder.value = tree
+        val docs =
+            mapOf(
+                "ok.pdf" to Triple<String?, String?, Long>("ok.pdf", "application/pdf", 10L),
+                "sinnombre" to Triple(null, "application/pdf", 10L),
+                "sinmime" to Triple("sinmime.pdf", null, 10L),
+                "novideo.mp4" to Triple("novideo.mp4", "video/mp4", 10L),
+            )
+        val children = mapOf("root" to docs.keys.toList())
+        otherQuery = { uri, projection ->
+            val column = projection?.firstOrNull().orEmpty()
+            val documentId = DocumentsContract.getDocumentId(uri)
+            if (uri.lastPathSegment == "children") {
+                MatrixCursor(arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID)).apply {
+                    children[documentId].orEmpty().forEach { addRow(arrayOf(it)) }
+                }
+            } else {
+                val (name, mime, size) = docs.getValue(documentId)
+                val value: Any? =
+                    when (column) {
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME -> name
+                        DocumentsContract.Document.COLUMN_MIME_TYPE -> mime
+                        DocumentsContract.Document.COLUMN_SIZE -> size
+                        DocumentsContract.Document.COLUMN_LAST_MODIFIED -> 1_700_000_000_000L
+                        else -> 0
+                    }
+                MatrixCursor(arrayOf(column)).apply { addRow(arrayOf(value)) }
+            }
+        }
+
+        val names = load().map { it.name }
+
+        assertEquals(listOf("ok.pdf"), names)
+    }
 }

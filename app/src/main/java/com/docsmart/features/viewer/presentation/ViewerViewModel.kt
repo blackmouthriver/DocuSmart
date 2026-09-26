@@ -660,12 +660,22 @@ class ViewerViewModel
                     isEncrypted = false
                 } catch (e: Exception) {
                     val msg = e.message?.lowercase() ?: ""
+                    // Bug real encontrado en la ronda 20 (docs/requirements/backlog-bugs-2026-09-20-v17.md)
+                    // y confirmado en la ronda 23: "pdf header" es el mensaje que
+                    // lanza iText cuando el archivo NO empieza con la firma "%PDF-"
+                    // (corrupto, vacío truncado, o algo con extensión .pdf que en
+                    // realidad no es un PDF) -- nada que ver con contraseña/cifrado.
+                    // Con esa marca, un .pdf corrupto quedaba indistinguible de uno
+                    // protegido: mostraba el diálogo de contraseña para siempre, sin
+                    // que ninguna contraseña pudiera "desbloquearlo" (no está cifrado).
+                    // Sin la marca, sigue el camino normal de carga y termina en el
+                    // manejo de PDF roto que ya existe en el Visor (ver hallazgo de
+                    // la propia ronda 20 en este mismo archivo).
                     isEncrypted = msg.contains("password") ||
                         msg.contains("encrypt") ||
                         msg.contains("decrypt") ||
                         msg.contains("bad user") ||
-                        msg.contains("owner") ||
-                        msg.contains("pdf header")
+                        msg.contains("owner")
                     Timber.d("$TAG: PdfDocument excepción → clase=${e.javaClass.simpleName} msg=${e.message} isEncrypted=$isEncrypted")
                 }
                 Timber.d("$TAG: PDF isEncrypted=$isEncrypted")
