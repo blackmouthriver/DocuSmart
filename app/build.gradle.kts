@@ -671,7 +671,7 @@ dependencies {
     // Sin versión propia en los artefactos individuales — el BOM es quien la
     // fija. Antes analytics/crashlytics traían una versión fija por su cuenta,
     // lo que anulaba el propósito del BOM (podían quedar desalineados entre sí).
-    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-config")
