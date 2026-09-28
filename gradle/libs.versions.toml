@@ -26,7 +26,7 @@ spotless = "7.0.2"
 kover = "0.9.9"
 dependency-analysis = "3.19.2"
 kotest = "6.2.5"
-archunit = "1.5.0"
+archunit = "1.5.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
