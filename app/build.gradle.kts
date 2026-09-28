@@ -595,7 +595,7 @@ dependencies {
     implementation("com.zaxxer:SparseBitSet:1.3")
 
     // ── AdMob ─────────────────────────────────────────────────────────────────
-    implementation("com.google.android.gms:play-services-ads:23.3.0")
+    implementation("com.google.android.gms:play-services-ads:25.5.0")
     // UMP (User Messaging Platform) -- consentimiento de anuncios UE/Reino
     // Unido (RF pendiente, ver docs/requirements/settings-premium.md). Es un
     // artefacto separado, NO viene incluido en play-services-ads -- versión
