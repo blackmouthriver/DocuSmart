@@ -539,7 +539,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     // buildHealth: anotaciones de Room (@Entity, @Dao, etc.) y el driver base
     // de SQLite usados directo, no solo vía room-runtime/room-ktx.
-    implementation("androidx.room:room-common:2.8.4")
+    implementation("androidx.room:room-common:2.8.5")
     implementation("androidx.sqlite:sqlite:2.7.0")
     // Driver real de SQLite para pruebas de integración de Room en la JVM
     // (ver sustitución de variante -jvm más arriba en androidComponents).
