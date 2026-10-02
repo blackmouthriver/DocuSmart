@@ -84,6 +84,14 @@ class PremiumScreenTest {
         return if (args.isEmpty()) context.getString(resId) else context.getString(resId, *args)
     }
 
+    private fun plural(
+        resId: Int,
+        count: Int,
+    ): String {
+        val context = forceLocale(InstrumentationRegistry.getInstrumentation().targetContext, "es-ES")
+        return context.resources.getQuantityString(resId, count, count)
+    }
+
     private fun buildViewModel(
         isPaid: Boolean = false,
         trialEndsAtMillis: Long? = null,
@@ -279,7 +287,7 @@ class PremiumScreenTest {
             MutableStateFlow(PremiumUiState(plans = listOf(monthly, trialAnnual), selectedPlan = trialAnnual))
         setScreen(viewModel)
 
-        val startTrialCta = string(R.string.premium_start_trial, 7)
+        val startTrialCta = plural(R.plurals.premium_start_trial, 7)
         scrollToText(startTrialCta)
         composeRule.onNodeWithText(startTrialCta).assertExists()
     }

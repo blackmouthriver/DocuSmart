@@ -64,6 +64,14 @@ class PremiumComponentsTest {
         return if (args.isEmpty()) context.getString(resId) else context.getString(resId, *args)
     }
 
+    private fun plural(
+        resId: Int,
+        count: Int,
+    ): String {
+        val context = forceLocale(InstrumentationRegistry.getInstrumentation().targetContext, "es-ES")
+        return context.resources.getQuantityString(resId, count, count)
+    }
+
     private fun setContent(content: @Composable () -> Unit) {
         composeRule.setContent {
             val baseContext = LocalContext.current
@@ -116,7 +124,7 @@ class PremiumComponentsTest {
         composeRule.onNodeWithText(string(R.string.premium_choose_plan)).assertExists()
         composeRule.onNodeWithText(string(R.string.premium_recommended)).assertExists()
         composeRule.onNodeWithText(string(R.string.premium_savings_44)).assertExists()
-        composeRule.onNodeWithText(string(R.string.premium_trial_badge, 7)).assertExists()
+        composeRule.onNodeWithText(plural(R.plurals.premium_trial_badge, 7)).assertExists()
         composeRule.onNodeWithText(monthly.price).assertIsNotSelected()
         composeRule.onNodeWithText(annual.price).assertIsSelected()
     }

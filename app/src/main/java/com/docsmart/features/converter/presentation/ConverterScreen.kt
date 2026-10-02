@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -693,7 +694,11 @@ private fun ConversionDetailCard(
                 Text(
                     text =
                         if (isBatchMode) {
-                            stringResource(R.string.converter_convert_batch_button, selectedFiles.size)
+                            pluralStringResource(
+                                R.plurals.converter_convert_batch_button,
+                                selectedFiles.size,
+                                selectedFiles.size,
+                            )
                         } else {
                             stringResource(R.string.converter_to_format, type.localizedToFormat())
                         },

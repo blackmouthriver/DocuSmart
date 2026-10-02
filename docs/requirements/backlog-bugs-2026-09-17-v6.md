@@ -78,17 +78,19 @@ banner no colisiona con nada. Se cierra agregando el margen en vez de
 mantenerlo como excepción documentada.
 
 ### G5 — Agenda usa el `adUnitId` de Modo Estudio en vez de uno propio
-**Estado: ⚠️ Evaluado, no corregido -- requiere acción del usuario en
-AdMob** · **Severidad: Baja** · `features/agenda/presentation/AgendaScreen.kt:149`
+**Estado: ✅ Corregido (2026-09-18)** · **Severidad: Baja** ·
+`features/agenda/presentation/AgendaScreen.kt:149`
 
 Hallazgo incidental del barrido de banners: `AdConstants.BANNER_STUDY_ID`
 en vez de un ID propio de Agenda. No afecta posición/margen ni
 funcionamiento (los anuncios siguen mostrándose con normalidad), solo la
 atribución de impresiones en la consola de AdMob (Agenda se contabiliza
-como si fuera Estudio). **No corregible solo con código**: requiere que
-el usuario cree un nuevo bloque de anuncios "Banner" para Agenda en la
-consola de AdMob y comparta el ID real (`ca-app-pub-.../...`) -- no se
-puede inventar un ID nuevo desde acá sin que apunte a un bloque real.
+como si fuera Estudio). El usuario creó el bloque "Banner" propio de
+Agenda en la consola de AdMob el 2026-09-18 y compartió el ID real --
+`AdConstants.BANNER_AGENDA_ID` (`ca-app-pub-1109506701099935/9228781384`)
+ya está en el código y en uso. Confirmado vigente 2026-10-01 al revisar
+el backlog: este ítem seguía marcado como pendiente por error, el fix ya
+estaba aplicado.
 
 ## Pantalla de Inicio
 

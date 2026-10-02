@@ -628,7 +628,9 @@
 
     <!-- ── 转换器：批量转换（RF-CONV-08） ── -->
     <string name="converter_batch_hint">将保留每个文件的原始名称</string>
-    <string name="converter_convert_batch_button">转换 %1$d 个文件</string>
+    <plurals name="converter_convert_batch_button">
+        <item quantity="other">转换 %1$d 个文件</item>
+    </plurals>
     <string name="converter_batch_success_title">已转换 %2$d 个文件中的 %1$d 个</string>
     <string name="converter_batch_save_all">全部保存到下载</string>
     <string name="converter_batch_convert_another">转换另一批文件</string>
@@ -675,11 +677,17 @@
     <string name="pdf_tools_section_extract">提取与优化</string>
     <string name="premium_feature_state_unlocked">已解锁</string>
     <string name="premium_feature_state_locked">已锁定</string>
-    <string name="premium_trial_badge">%1$d 天免费</string>
-    <string name="premium_start_trial">开始 %1$d 天免费试用</string>
+    <plurals name="premium_trial_badge">
+        <item quantity="other">%1$d 天免费</item>
+    </plurals>
+    <plurals name="premium_start_trial">
+        <item quantity="other">开始 %1$d 天免费试用</item>
+    </plurals>
     <string name="premium_trial_active_message">免费试用中 — 将于 %1$s 扣费</string>
     <string name="premium_auto_trial_title">免费体验高级版</string>
-    <string name="premium_auto_trial_body">你还有 %1$d 天可以免费使用全部功能且无广告。请在结束前选择套餐以继续使用。</string>
+    <plurals name="premium_auto_trial_body">
+        <item quantity="other">你还有 %1$d 天可以免费使用全部功能且无广告。请在结束前选择套餐以继续使用。</item>
+    </plurals>
     <string name="premium_feature_no_ads_title">无广告</string>
     <string name="premium_feature_no_ads_desc">畅享无干扰的 DocuSmart 体验</string>
     <string name="premium_feature_pdf_word_title">PDF 转 Word</string>
@@ -961,7 +969,9 @@
     <string name="qr_history_empty_body">你创建或扫描的二维码会显示在这里</string>
     <string name="qr_history_clear_all">清空历史记录</string>
     <string name="qr_history_clear_all_confirm_title">要清空全部历史记录吗？</string>
-    <string name="qr_history_clear_all_confirm_body">将删除 %1$d 条记录，此操作无法撤销。</string>
+    <plurals name="qr_history_clear_all_confirm_body">
+        <item quantity="other">将删除 %1$d 条记录，此操作无法撤销。</item>
+    </plurals>
     <string name="qr_history_delete_confirm_title">要删除这条记录吗？</string>
     <string name="qr_history_delete_confirm_body">此操作无法撤销。</string>
     <string name="qr_history_source_created">已创建</string>
@@ -999,7 +1009,9 @@
     <string name="study_loading_document">正在加载文档…可能需要一些时间</string>
     <string name="study_summary_local_note">在设备本地生成，无需联网</string>
     <string name="study_summary_share_title">分享摘要</string>
-    <string name="study_summary_sentences_count">%1$d 个要点</string>
+    <plurals name="study_summary_sentences_count">
+        <item quantity="other">%1$d 个要点</item>
+    </plurals>
     <string name="study_reading_page">正在朗读…第 %1$d/%2$d 页</string>
     <string name="study_extracting_more">正在处理文档的其余部分…(已就绪 %1$d 页)</string>
     <string name="study_continue_reading">继续阅读</string>
@@ -1101,7 +1113,9 @@
     <string name="trash_delete_forever_confirm_body">"%1$s 将被永久删除，无法恢复。"</string>
     <string name="trash_delete_all">全部清空</string>
     <string name="trash_delete_all_confirm_title">清空回收站？</string>
-    <string name="trash_delete_all_confirm_body">"将永久删除 %1$d 个文件，且无法恢复。"</string>
+    <plurals name="trash_delete_all_confirm_body">
+        <item quantity="other">"将永久删除 %1$d 个文件，且无法恢复。"</item>
+    </plurals>
     <string name="trash_total_size">回收站中共 %1$s</string>
     <string name="trash_delete_forever_permission_note">Android 可能会要求你确认删除非本应用创建的照片。</string>
     <string name="trash_bulk_delete_partial_error">部分文件需要逐个删除</string>

@@ -3,6 +3,7 @@ package com.docsmart.core.navegation
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.compose.animation.core.tween
@@ -392,6 +393,35 @@ internal fun shouldFinishActivityOnViewerBack(previousRoute: String?): Boolean {
     return previousRoute == null || previousRoute.startsWith("viewer")
 }
 
+// Guard de doble-toque compartido por los 5 accesos directos de abajo
+// (Convertir/Crear QR/Hacer buscable/Firmar/Mover a Carpeta Segura --
+// hallazgo S4, backlog-bugs-2026-09-17-v4.md: a diferencia de Favorito/
+// Compartir/Renombrar/Eliminar, no tenían ninguna protección de
+// doble-toque porque son navegaciones puras hacia el NavGraph, sin
+// ViewModel propio donde poner el guard habitual). `launchSingleTop` no
+// sirve acá (ver nota de navigateToConvert() más abajo: reutiliza
+// argumentos viejos si el documento cambia entre llamadas) -- un
+// debounce por tiempo, compartido entre los 5, ignora un segundo toque
+// a menos de 500ms sin tocar argumentos ni el back stack.
+private var lastQuickActionNavigateAtMillis = 0L
+
+// Solo para tests JVM: este debounce es estado global de proceso (correcto
+// en producción, compartido a propósito entre Home/Biblioteca/Visor/
+// Escáner), pero eso mismo lo hace persistir entre pruebas dentro de la
+// misma corrida -- sin resetearlo, el orden de ejecución de los tests
+// podría hacer que uno "herede" el cronómetro de otro y falle sin ser un
+// bug real.
+internal fun resetQuickActionNavigateDebounceForTests() {
+    lastQuickActionNavigateAtMillis = 0L
+}
+
+private fun debounceQuickActionNavigate(navigate: () -> Unit) {
+    val now = SystemClock.elapsedRealtime()
+    if (now - lastQuickActionNavigateAtMillis < 500L) return
+    lastQuickActionNavigateAtMillis = now
+    navigate()
+}
+
 internal fun NavHostController.navigateToConvert(document: DocumentUiModel) {
     // Hallazgo real de la revisión adversarial de la octava ronda (Alta):
     // el fix de G6 le agregó `launchSingleTop=true` a esta función, pero
@@ -405,16 +435,18 @@ internal fun NavHostController.navigateToConvert(document: DocumentUiModel) {
     // documento A otra vez. Se revierte a `navigate()` simple; el guard
     // de doble-toque de G6 queda solo en los destinos de Home cuyos
     // argumentos NO varían (ver homeComposable() más abajo).
-    navigate(
-        NavRoutes.Converter.createRoute(
-            // Bug real encontrado 2026-09-14 (revisión pre-fusión HU-42):
-            // `document.id` puede ser una ruta absoluta sin esquema (ver
-            // comentario de `toContentUri()`), que `Uri.parse()` no
-            // reconstruye como URI válido -- hay que normalizar siempre.
-            initialFileUri = document.toContentUri().toString(),
-            initialFileCategory = document.type.toConverterCategoryOrNull(),
-        ),
-    )
+    debounceQuickActionNavigate {
+        navigate(
+            NavRoutes.Converter.createRoute(
+                // Bug real encontrado 2026-09-14 (revisión pre-fusión HU-42):
+                // `document.id` puede ser una ruta absoluta sin esquema (ver
+                // comentario de `toContentUri()`), que `Uri.parse()` no
+                // reconstruye como URI válido -- hay que normalizar siempre.
+                initialFileUri = document.toContentUri().toString(),
+                initialFileCategory = document.type.toConverterCategoryOrNull(),
+            ),
+        )
+    }
 }
 
 // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada): a
@@ -460,13 +492,15 @@ internal fun NavHostController.navigateToQrCreator(
     // Ver nota de navigateToConvert() más arriba -- mismo motivo, se
     // revierte launchSingleTop acá también (argumentos varían por
     // documento).
-    navigate(
-        NavRoutes.QrCreator.createRoute(
-            initialFileUri = safeUri.toString(),
-            initialFileType = document.type.toQrFileType(),
-            initialFileName = document.name,
-        ),
-    )
+    debounceQuickActionNavigate {
+        navigate(
+            NavRoutes.QrCreator.createRoute(
+                initialFileUri = safeUri.toString(),
+                initialFileType = document.type.toQrFileType(),
+                initialFileName = document.name,
+            ),
+        )
+    }
 }
 
 // ── Accesos directos a OCR/Firmar/Carpeta Segura desde un archivo ya
@@ -478,15 +512,25 @@ internal fun NavHostController.navigateToQrCreator(
 // funciones de abajo, se revierte launchSingleTop (argumentos varían por
 // documento).
 internal fun NavHostController.navigateToOcr(document: DocumentUiModel) {
-    navigate(NavRoutes.PdfTools.createRoute(initialTool = "OCR", initialFileUri = document.toContentUri().toString()))
+    debounceQuickActionNavigate {
+        navigate(
+            NavRoutes.PdfTools.createRoute(initialTool = "OCR", initialFileUri = document.toContentUri().toString()),
+        )
+    }
 }
 
 internal fun NavHostController.navigateToSign(document: DocumentUiModel) {
-    navigate(NavRoutes.PdfTools.createRoute(initialTool = "SIGN", initialFileUri = document.toContentUri().toString()))
+    debounceQuickActionNavigate {
+        navigate(
+            NavRoutes.PdfTools.createRoute(initialTool = "SIGN", initialFileUri = document.toContentUri().toString()),
+        )
+    }
 }
 
 internal fun NavHostController.navigateToSecureFolder(document: DocumentUiModel) {
-    navigate(NavRoutes.SecureFolder.createRoute(pendingFileUri = document.toContentUri().toString()))
+    debounceQuickActionNavigate {
+        navigate(NavRoutes.SecureFolder.createRoute(pendingFileUri = document.toContentUri().toString()))
+    }
 }
 
 // ── Splash 1: MouthBlack ────────────────────────────────────────────────────

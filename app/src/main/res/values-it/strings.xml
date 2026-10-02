@@ -631,7 +631,10 @@
 
     <!-- ── Converter: conversione in batch (RF-CONV-08) ── -->
     <string name="converter_batch_hint">Verrà mantenuto il nome originale di ogni file</string>
-    <string name="converter_convert_batch_button">Converti %1$d file</string>
+    <plurals name="converter_convert_batch_button">
+        <item quantity="one">Converti %1$d file</item>
+        <item quantity="other">Converti %1$d file</item>
+    </plurals>
     <string name="converter_batch_success_title">%1$d di %2$d file convertiti</string>
     <string name="converter_batch_save_all">Salva tutti in Download</string>
     <string name="converter_batch_convert_another">Converti un altro batch</string>
@@ -679,11 +682,20 @@
     <string name="pdf_tools_section_extract">Estrai e ottimizza</string>
     <string name="premium_feature_state_unlocked">Sbloccato</string>
     <string name="premium_feature_state_locked">Bloccato</string>
-    <string name="premium_trial_badge">%1$d giorni gratis</string>
-    <string name="premium_start_trial">Inizia %1$d giorni gratis</string>
+    <plurals name="premium_trial_badge">
+        <item quantity="one">%1$d giorno gratis</item>
+        <item quantity="other">%1$d giorni gratis</item>
+    </plurals>
+    <plurals name="premium_start_trial">
+        <item quantity="one">Inizia %1$d giorno gratis</item>
+        <item quantity="other">Inizia %1$d giorni gratis</item>
+    </plurals>
     <string name="premium_trial_active_message">Prova gratuita attiva — addebito il %1$s</string>
     <string name="premium_auto_trial_title">Prova Premium gratuita</string>
-    <string name="premium_auto_trial_body">Ti restano %1$d giorni di accesso completo, senza pubblicità. Scegli un piano prima che finisca per non perderlo.</string>
+    <plurals name="premium_auto_trial_body">
+        <item quantity="one">Ti resta %1$d giorno di accesso completo, senza pubblicità. Scegli un piano prima che finisca per non perderlo.</item>
+        <item quantity="other">Ti restano %1$d giorni di accesso completo, senza pubblicità. Scegli un piano prima che finisca per non perderlo.</item>
+    </plurals>
     <string name="premium_feature_no_ads_title">Senza pubblicità</string>
     <string name="premium_feature_no_ads_desc">Goditi DocuSmart senza interruzioni</string>
     <string name="premium_feature_pdf_word_title">PDF in Word</string>
@@ -965,7 +977,10 @@
     <string name="qr_history_empty_body">I QR che crei o leggi appariranno qui</string>
     <string name="qr_history_clear_all">Svuota cronologia</string>
     <string name="qr_history_clear_all_confirm_title">Svuotare tutta la cronologia?</string>
-    <string name="qr_history_clear_all_confirm_body">Le %1$d voci verranno eliminate. Questa azione non può essere annullata.</string>
+    <plurals name="qr_history_clear_all_confirm_body">
+        <item quantity="one">%1$d voce verrà eliminata. Questa azione non può essere annullata.</item>
+        <item quantity="other">%1$d voci verranno eliminate. Questa azione non può essere annullata.</item>
+    </plurals>
     <string name="qr_history_delete_confirm_title">Eliminare questa voce?</string>
     <string name="qr_history_delete_confirm_body">Questa azione non può essere annullata.</string>
     <string name="qr_history_source_created">Creato</string>
@@ -1003,7 +1018,10 @@
     <string name="study_loading_document">Caricamento del documento… potrebbe richiedere qualche istante</string>
     <string name="study_summary_local_note">Generato sul tuo dispositivo, senza connessione a internet</string>
     <string name="study_summary_share_title">Condividi riepilogo</string>
-    <string name="study_summary_sentences_count">%1$d punti chiave</string>
+    <plurals name="study_summary_sentences_count">
+        <item quantity="one">%1$d punto chiave</item>
+        <item quantity="other">%1$d punti chiave</item>
+    </plurals>
     <string name="study_reading_page">Lettura… pagina %1$d di %2$d</string>
     <string name="study_extracting_more">Elaborazione del resto del documento… (%1$d pagine pronte)</string>
     <string name="study_continue_reading">Continua a leggere</string>
@@ -1105,7 +1123,10 @@
     <string name="trash_delete_forever_confirm_body">"%1$s verrà eliminato per sempre e non potrà più essere recuperato."</string>
     <string name="trash_delete_all">Elimina tutto</string>
     <string name="trash_delete_all_confirm_title">Svuotare il cestino?</string>
-    <string name="trash_delete_all_confirm_body">"Verranno eliminati %1$d file per sempre e non potranno più essere recuperati."</string>
+    <plurals name="trash_delete_all_confirm_body">
+        <item quantity="one">"Verrà eliminato %1$d file per sempre e non potrà più essere recuperato."</item>
+        <item quantity="other">"Verranno eliminati %1$d file per sempre e non potranno più essere recuperati."</item>
+    </plurals>
     <string name="trash_total_size">%1$s nel cestino</string>
     <string name="trash_delete_forever_permission_note">Android potrebbe chiederti di confermare l\'eliminazione di foto non create da questa app.</string>
     <string name="trash_bulk_delete_partial_error">Alcuni file devono essere eliminati uno alla volta</string>

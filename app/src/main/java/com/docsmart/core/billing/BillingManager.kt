@@ -273,6 +273,18 @@ class BillingManager
                 productDetailsCache = allDetails.associateBy { it.productId }
                 _planOffers.value = allDetails.associate { it.productId to planOfferOf(it) }
                 Timber.d("BillingManager: ${productDetailsCache.size} productos encontrados en Play Console")
+                // Diagnóstico de "No se pudo completar la compra" (2026-10-02): sin
+                // este log no se distinguía "Play respondió error" de "respondió OK
+                // pero sin productos" (producto/plan sin activar, app no instalada
+                // desde Play, cuenta sin acceso). Solo códigos, nunca datos del usuario.
+                val code = subsResult.billingResult.responseCode
+                if (code != BillingClient.BillingResponseCode.OK || allDetails.size < SUBSCRIPTION_PRODUCT_IDS.size) {
+                    Timber.w(
+                        "BillingManager: consulta de productos incompleta code=$code " +
+                            "encontrados=${allDetails.size}/${SUBSCRIPTION_PRODUCT_IDS.size} " +
+                            "msg=${subsResult.billingResult.debugMessage}",
+                    )
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -285,6 +297,19 @@ class BillingManager
                 Timber.e(
                     "BillingManager: excepción al consultar productos de Play Billing (${e.javaClass.simpleName})",
                 )
+            }
+        }
+
+        /**
+         * Reintenta la consulta de productos solo si la anterior no trajo todos
+         * (típico justo después de crear/activar planes en Play Console, que tarda
+         * en propagarse): sin esto el catálogo quedaba vacío hasta reiniciar el
+         * proceso y la pantalla Premium seguía con los precios de respaldo.
+         */
+        fun refreshProductDetailsIfIncomplete() {
+            if (productDetailsCache.size >= SUBSCRIPTION_PRODUCT_IDS.size) return
+            scope.launch {
+                if (readyDeferred.await()) queryProductDetails()
             }
         }
 

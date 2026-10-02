@@ -69,6 +69,9 @@ class PremiumViewModel
         private var restoreSuccessMessage = ""
 
         init {
+            // Si Play aún no había devuelto los productos al arrancar la app, se
+            // reintenta al abrir esta pantalla (los precios reales llegan por observeOffers).
+            billingManager.refreshProductDetailsIfIncomplete()
             loadPlans()
             observePremiumStatus()
             observeOffers()

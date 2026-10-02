@@ -639,7 +639,10 @@
 
     <!-- ── Converter: conversión por lotes (RF-CONV-08) ── -->
     <string name="converter_batch_hint">Fitxategi bakoitzak jatorrizko izena mantenduko du</string>
-    <string name="converter_convert_batch_button">Bihurtu %1$d fitxategi</string>
+    <plurals name="converter_convert_batch_button">
+        <item quantity="one">Bihurtu %1$d fitxategi</item>
+        <item quantity="other">Bihurtu %1$d fitxategi</item>
+    </plurals>
     <string name="converter_batch_success_title">%2$d fitxategitik %1$d bihurtu dira</string>
     <string name="converter_batch_save_all">Gorde denak Deskargak karpetan</string>
     <string name="converter_batch_convert_another">Bihurtu beste lote bat</string>
@@ -689,14 +692,23 @@
     <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
          configurada una fase de prueba real para el producto, nunca se
          muestran como texto fijo sin que Play Billing la confirme. -->
-    <string name="premium_trial_badge">%1$d egun doan</string>
-    <string name="premium_start_trial">Hasi %1$d egun doan</string>
+    <plurals name="premium_trial_badge">
+        <item quantity="one">%1$d egun doan</item>
+        <item quantity="other">%1$d egun doan</item>
+    </plurals>
+    <plurals name="premium_start_trial">
+        <item quantity="one">Hasi %1$d egun doan</item>
+        <item quantity="other">Hasi %1$d egun doan</item>
+    </plurals>
     <string name="premium_trial_active_message">Doako proba aktibo — ordainketa: %1$s</string>
     <!-- Trial automático sin tarjeta (pedido explícito del usuario
          2026-09-12): todo el que instala la app tiene unos días de Premium
          completo gratis sin suscribirse a nada. -->
     <string name="premium_auto_trial_title">Probatu Premium doan</string>
-    <string name="premium_auto_trial_body">%1$d egun geratzen zaizkizu sarbide osoarekin, iragarkirik gabe. Aukeratu plan bat amaitu aurretik, ez galtzeko.</string>
+    <plurals name="premium_auto_trial_body">
+        <item quantity="one">%1$d egun geratzen zaizu sarbide osoarekin, iragarkirik gabe. Aukeratu plan bat amaitu aurretik, ez galtzeko.</item>
+        <item quantity="other">%1$d egun geratzen zaizkizu sarbide osoarekin, iragarkirik gabe. Aukeratu plan bat amaitu aurretik, ez galtzeko.</item>
+    </plurals>
     <string name="premium_feature_no_ads_title">Iragarkirik gabe</string>
     <string name="premium_feature_no_ads_desc">Gozatu DocuSmartez etenik gabe</string>
     <string name="premium_feature_pdf_word_title">PDF Word-era</string>
@@ -978,7 +990,10 @@
     <string name="qr_history_empty_body">Sortzen edo irakurtzen dituzun QRak hemen agertuko dira</string>
     <string name="qr_history_clear_all">Hustu historia</string>
     <string name="qr_history_clear_all_confirm_title">Historia osoa hustu?</string>
-    <string name="qr_history_clear_all_confirm_body">%1$d sarrera ezabatuko dira. Ekintza hau ezin da desegin.</string>
+    <plurals name="qr_history_clear_all_confirm_body">
+        <item quantity="one">%1$d sarrera ezabatuko da. Ekintza hau ezin da desegin.</item>
+        <item quantity="other">%1$d sarrera ezabatuko dira. Ekintza hau ezin da desegin.</item>
+    </plurals>
     <string name="qr_history_delete_confirm_title">Sarrera hau ezabatu?</string>
     <string name="qr_history_delete_confirm_body">Ekintza hau ezin da desegin.</string>
     <string name="qr_history_source_created">Sortua</string>
@@ -1018,7 +1033,10 @@
     <string name="study_loading_document">Zure dokumentua kargatzen… une batzuk behar izan ditzake</string>
     <string name="study_summary_local_note">Zure gailuan sortua, interneterako konexiorik gabe</string>
     <string name="study_summary_share_title">Partekatu laburpena</string>
-    <string name="study_summary_sentences_count">%1$d gako-puntu</string>
+    <plurals name="study_summary_sentences_count">
+        <item quantity="one">%1$d gako-puntu</item>
+        <item quantity="other">%1$d gako-puntu</item>
+    </plurals>
     <string name="study_reading_page">Irakurtzen… %2$d orrialdetik %1$d</string>
     <string name="study_extracting_more">Dokumentuaren gainerakoa prozesatzen… (%1$d orrialde prest)</string>
     <string name="study_continue_reading">Jarraitu irakurtzen</string>
@@ -1120,7 +1138,10 @@
     <string name="trash_delete_forever_confirm_body">"%1$s betiko ezabatuko da eta ezingo da gehiago berreskuratu."</string>
     <string name="trash_delete_all">Ezabatu dena</string>
     <string name="trash_delete_all_confirm_title">Zakarrontzia hustu?</string>
-    <string name="trash_delete_all_confirm_body">"%1$d fitxategi betiko ezabatuko dira eta ezingo dira gehiago berreskuratu."</string>
+    <plurals name="trash_delete_all_confirm_body">
+        <item quantity="one">"%1$d fitxategi betiko ezabatuko da eta ezingo da gehiago berreskuratu."</item>
+        <item quantity="other">"%1$d fitxategi betiko ezabatuko dira eta ezingo dira gehiago berreskuratu."</item>
+    </plurals>
     <string name="trash_total_size">%1$s zakarrontzian</string>
     <string name="trash_delete_forever_permission_note">Android-ek aplikazio honek sortu ez dituen argazkien ezabaketa berresteko eska diezazuke.</string>
     <string name="trash_bulk_delete_partial_error">Fitxategi batzuk banan-banan ezabatu behar dira</string>

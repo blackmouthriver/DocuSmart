@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -4269,7 +4270,12 @@ private fun SummaryResultView(
                     modifier = Modifier.size(18.dp),
                 )
                 Text(
-                    text = stringResource(R.string.study_summary_sentences_count, sentences.size),
+                    text =
+                        pluralStringResource(
+                            R.plurals.study_summary_sentences_count,
+                            sentences.size,
+                            sentences.size,
+                        ),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )

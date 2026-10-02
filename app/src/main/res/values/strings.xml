@@ -663,7 +663,10 @@
 
     <!-- ── Converter: conversión por lotes (RF-CONV-08) ── -->
     <string name="converter_batch_hint">Se conservará el nombre original de cada archivo</string>
-    <string name="converter_convert_batch_button">Convertir %1$d archivos</string>
+    <plurals name="converter_convert_batch_button">
+        <item quantity="one">Convertir %1$d archivo</item>
+        <item quantity="other">Convertir %1$d archivos</item>
+    </plurals>
     <string name="converter_batch_success_title">%1$d de %2$d archivos convertidos</string>
     <string name="converter_batch_save_all">Guardar todos en Descargas</string>
     <string name="converter_batch_convert_another">Convertir otro lote</string>
@@ -713,14 +716,23 @@
     <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
          configurada una fase de prueba real para el producto, nunca se
          muestran como texto fijo sin que Play Billing la confirme. -->
-    <string name="premium_trial_badge">%1$d días gratis</string>
-    <string name="premium_start_trial">Empezar %1$d días gratis</string>
+    <plurals name="premium_trial_badge">
+        <item quantity="one">%1$d día gratis</item>
+        <item quantity="other">%1$d días gratis</item>
+    </plurals>
+    <plurals name="premium_start_trial">
+        <item quantity="one">Empezar %1$d día gratis</item>
+        <item quantity="other">Empezar %1$d días gratis</item>
+    </plurals>
     <string name="premium_trial_active_message">Prueba gratis activa — se cobrará el %1$s</string>
     <!-- Trial automático sin tarjeta (pedido explícito del usuario
          2026-09-12): todo el que instala la app tiene unos días de Premium
          completo gratis sin suscribirse a nada. -->
     <string name="premium_auto_trial_title">Prueba Premium gratis</string>
-    <string name="premium_auto_trial_body">Te quedan %1$d días con acceso completo, sin anuncios. Elegí un plan antes de que termine para no perderlo.</string>
+    <plurals name="premium_auto_trial_body">
+        <item quantity="one">Te queda %1$d día con acceso completo, sin anuncios. Elegí un plan antes de que termine para no perderlo.</item>
+        <item quantity="other">Te quedan %1$d días con acceso completo, sin anuncios. Elegí un plan antes de que termine para no perderlo.</item>
+    </plurals>
     <string name="premium_feature_no_ads_title">Sin anuncios</string>
     <string name="premium_feature_no_ads_desc">Disfruta DocuSmart sin interrupciones</string>
     <string name="premium_feature_pdf_word_title">PDF a Word</string>
@@ -1002,7 +1014,10 @@
     <string name="qr_history_empty_body">Los QR que crees o leas aparecerán aquí</string>
     <string name="qr_history_clear_all">Vaciar historial</string>
     <string name="qr_history_clear_all_confirm_title">¿Vaciar todo el historial?</string>
-    <string name="qr_history_clear_all_confirm_body">Se eliminarán las %1$d entradas. Esta acción no se puede deshacer.</string>
+    <plurals name="qr_history_clear_all_confirm_body">
+        <item quantity="one">Se eliminará %1$d entrada. Esta acción no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán %1$d entradas. Esta acción no se puede deshacer.</item>
+    </plurals>
     <string name="qr_history_delete_confirm_title">¿Eliminar esta entrada?</string>
     <string name="qr_history_delete_confirm_body">Esta acción no se puede deshacer.</string>
     <string name="qr_history_source_created">Creado</string>
@@ -1042,7 +1057,10 @@
     <string name="study_loading_document">Cargando tu documento… puede tardar unos momentos</string>
     <string name="study_summary_local_note">Generado en tu dispositivo, sin conexión a internet</string>
     <string name="study_summary_share_title">Compartir resumen</string>
-    <string name="study_summary_sentences_count">%1$d puntos clave</string>
+    <plurals name="study_summary_sentences_count">
+        <item quantity="one">%1$d punto clave</item>
+        <item quantity="other">%1$d puntos clave</item>
+    </plurals>
     <string name="study_reading_page">Leyendo… página %1$d de %2$d</string>
     <string name="study_extracting_more">Procesando el resto del documento… (%1$d páginas listas)</string>
     <string name="study_continue_reading">Continuar leyendo</string>
@@ -1144,7 +1162,10 @@
     <string name="trash_delete_forever_confirm_body">"%1$s se eliminará para siempre y ya no se podrá recuperar."</string>
     <string name="trash_delete_all">Borrar todo</string>
     <string name="trash_delete_all_confirm_title">¿Vaciar la papelera?</string>
-    <string name="trash_delete_all_confirm_body">"Se eliminarán %1$d archivos para siempre y ya no se podrán recuperar."</string>
+    <plurals name="trash_delete_all_confirm_body">
+        <item quantity="one">"Se eliminará %1$d archivo para siempre y ya no se podrá recuperar."</item>
+        <item quantity="other">"Se eliminarán %1$d archivos para siempre y ya no se podrán recuperar."</item>
+    </plurals>
     <string name="trash_total_size">%1$s en la papelera</string>
     <string name="trash_delete_forever_permission_note">Android puede pedirte que confirmes el borrado de fotos que no creó esta app.</string>
     <!-- Bug real encontrado 2026-09-14: hardcodeado en español, saltándose
